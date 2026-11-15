@@ -1,6 +1,6 @@
 services:
   wavemp:
-    image: ghcr.io/lk-code/wavemp:latest
+    image: ghcr.io/wavemp-app/wavemp:latest
     container_name: wavemp
     ports:
       - "8080:8080"

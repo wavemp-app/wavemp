@@ -1,6 +1,5 @@
 # Builds and tests everything: .NET with unit, media and integration tests, the web app, the
-# license check and the Docker image with the E2E tests. Called by pull-request.yml, main.yml and
-# release.yml.
+# license check and the Docker image with the E2E tests. Called by pull-request.yml and main.yml.
 #
 # All Docker images are pinned by the digest of their multi-arch index (image:tag@sha256:...); the
 # tag only documents the version. Resolve a new digest with docker buildx imagetools inspect.
@@ -10,7 +9,7 @@ on:
   workflow_call:
     inputs:
       version:
-        description: Version the image reports (release builds). Empty keeps the version from Directory.Build.props.
+        description: Version of the build, <major>.<minor>.<run number> (main.yml). Empty builds the development version <major>.<minor>.0-dev (Directory.Build.props).
         type: string
         required: false
         default: ''
@@ -72,7 +71,9 @@ jobs:
         run: dotnet restore WaveMP.slnx
 
       - name: Build
-        run: dotnet build WaveMP.slnx --no-restore
+        env:
+          VERSION: ${{ inputs.version }}
+        run: dotnet build WaveMP.slnx --no-restore ${VERSION:+-p:Version=$VERSION}
 
       - name: Check that openapi.json is up to date
         run: git diff --exit-code -- source/WaveMP.Service/openapi.json
@@ -111,6 +112,9 @@ jobs:
     defaults:
       run:
         working-directory: source/WaveMP.Web
+    env:
+      # Version the web app reports (see vite.config.ts); empty builds the development version.
+      WAVEMP_VERSION: ${{ inputs.version }}
     steps:
       - name: Check out
         uses: actions/checkout@v7
@@ -209,6 +213,18 @@ jobs:
           cache-from: type=gha,scope=wavemp-image
           cache-to: type=gha,mode=max,scope=wavemp-image
 
+      # The E2E tests check that the service and the web app report exactly this version.
+      - name: Expected version
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          if [[ -z "$VERSION" ]]; then
+            prefix=$(sed -n 's:.*<VersionPrefix>\([^<]*\)</VersionPrefix>.*:\1:p' Directory.Build.props)
+            VERSION="$prefix.0-dev"
+          fi
+          echo "E2E_EXPECTED_VERSION=$VERSION" >> "$GITHUB_ENV"
+          echo "Expected version: $VERSION"
+
       # Synthetic media for the scan (4 tracks), created with the ffmpeg of the image itself.
       - name: Generate test media
         run: |
@@ -245,7 +261,6 @@ jobs:
         working-directory: tests/WaveMP.E2E
         env:
           E2E_BASE_URL: http://localhost:8080
-          E2E_EXPECTED_VERSION: ${{ inputs.version }}
           E2E_EXPECTED_TRACKS: '4'
           PLAYWRIGHT_IMAGE: mcr.microsoft.com/playwright:v1.65.0-noble@sha256:9beb546099e11f52d62e505537914870e01a67e0e6b00ae41da4775324e73dbe
         run: |

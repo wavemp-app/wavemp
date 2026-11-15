@@ -2,8 +2,8 @@
 
 **A nostalgic media player for your self-hosted music and music videos.**
 
-[![Main](https://github.com/lk-code/wavemp/actions/workflows/main.yml/badge.svg?branch=main)](https://github.com/lk-code/wavemp/actions/workflows/main.yml)
-[![Release](https://github.com/lk-code/wavemp/actions/workflows/release.yml/badge.svg)](https://github.com/lk-code/wavemp/actions/workflows/release.yml)
+[![Main](https://github.com/wavemp-app/wavemp/actions/workflows/main.yml/badge.svg?branch=main)](https://github.com/wavemp-app/wavemp/actions/workflows/main.yml)
+[![Release](https://img.shields.io/github/v/release/wavemp-app/wavemp)](https://github.com/wavemp-app/wavemp/releases)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 > **Status:** WaveMP is in early development. Features listed below are planned and will be added step by step.
@@ -46,7 +46,7 @@ Create a `docker-compose.yml` next to it:
 ```yaml
 services:
   wavemp:
-    image: ghcr.io/lk-code/wavemp:latest
+    image: ghcr.io/wavemp-app/wavemp:latest
     container_name: wavemp
     ports:
       - "8080:8080"
@@ -84,7 +84,7 @@ volumes:
   wavemp-db:
 ```
 
-The database is not exposed outside the Docker network. The app image is also available on Docker Hub as `lkcode/wavemp`.
+The database is not exposed outside the Docker network. The app image is also available on Docker Hub as `wavemp/wavemp`.
 
 Start it:
 
@@ -98,17 +98,17 @@ WaveMP can be installed as an app (PWA). Browsers require HTTPS for that, except
 
 ### Image tags
 
-Images are built for `linux/amd64` and `linux/arm64` and published as `ghcr.io/lk-code/wavemp` and on Docker Hub as `lkcode/wavemp`, both with the same tags:
+Images are built for `linux/amd64` and `linux/arm64` and published as `ghcr.io/wavemp-app/wavemp` and on Docker Hub as `wavemp/wavemp`, both with the same tags. Every change on `main` that passes all tests is published as a new version `1.0.N`:
 
 | Tag | Content |
 |---|---|
-| `latest` | Latest stable version |
-| `1.2.3` | A specific version |
-| `1.2` | Latest patch of a minor version |
-| `edge` | Current state of `main`, may be unstable |
-| `sha-<commit>` | A specific commit on `main` (short hash) |
+| `latest` | Current version; the Quick Start uses it |
+| `1.0.N` | A specific version, for example `1.0.42`; use it to pin your installation and update on your own schedule |
+| `1.0` | Current version of the 1.0 series |
+| `edge` | Same as `latest` |
+| `sha-<commit>` | The version of a specific commit on `main` (short hash) |
 
-Until the first release, only `edge` and `sha-<commit>` are available.
+The running version is shown under **Settings** and reported by `GET /api/v1/health`. Each completed milestone is also marked as a [GitHub release](https://github.com/wavemp-app/wavemp/releases) with release notes, named after the version it was published with.
 
 ### Settings
 
@@ -230,7 +230,7 @@ Profiles are not protected yet: everyone who can open WaveMP can select any prof
 
 | Platform | Status |
 |---|---|
-| Docker (linux/amd64, linux/arm64) | Preview images (`edge`), first release planned |
+| Docker (linux/amd64, linux/arm64) | Available (`latest`, or `1.0.N` to pin a version) |
 | TrueNAS, ZimaOS and other app catalogs | Planned |
 | Android, iOS, Windows, macOS | Planned |
 
@@ -239,7 +239,7 @@ Profiles are not protected yet: everyone who can open WaveMP can select any prof
 Requirements: .NET 10 SDK, Node.js 24, Docker, and ffmpeg for running the service and the tests outside of Docker (Windows: `winget install --id Gyan.FFmpeg -e`, Debian/Ubuntu: `sudo apt install ffmpeg`, macOS: `brew install ffmpeg`). The Docker image brings its own ffmpeg.
 
 ```bash
-git clone https://github.com/lk-code/wavemp.git
+git clone https://github.com/wavemp-app/wavemp.git
 cd wavemp
 cp .env.example .env    # then set DB_PASSWORD
 docker compose -f docker-compose.dev.yml up --build
@@ -369,7 +369,7 @@ The E2E tests first select the built-in admin profile once (project `setup`) and
 
 If you set `WAVEMP_PORT` in `.env`, point the E2E tests at it, for example `E2E_BASE_URL=http://localhost:8081 npm test`. `npm run test:unit` runs the unit tests of the web app (Vitest), including checks that every text comes from the translation files and that `THEMING.md` matches the code.
 
-`npm run lint:check` only reports problems, like the CI does; `npm run lint` fixes what it can. The E2E tests check the version reported by `/api/v1/health` exactly if `E2E_EXPECTED_VERSION` is set (the release workflow sets it), otherwise any version. They scan the media folder of the running instance before the tests (project `setup`) and need the test media of `tests/WaveMP.E2E/scripts/generate-media.sh` in it (see [Local development](#local-development)): the library tests browse and search exactly these songs. With `E2E_EXPECTED_TRACKS=4` they also check the number of songs, as the CI does. "Loose Song" lasts 20 seconds, so the tests can switch the view of Now Playing while it plays. The test of the metadata editor writes genre and year of "Loose Song" and removes them again afterwards, so the media folder must be writable for the container (`generate-media.sh` makes the files it creates writable for everyone).
+`npm run lint:check` only reports problems, like the CI does; `npm run lint` fixes what it can. The E2E tests check the version that `/api/v1/health` and the settings page report: exactly if `E2E_EXPECTED_VERSION` is set (the CI sets it to the version of the image it built), otherwise any version of the form `1.0.N` or `1.0.0-dev`. They scan the media folder of the running instance before the tests (project `setup`) and need the test media of `tests/WaveMP.E2E/scripts/generate-media.sh` in it (see [Local development](#local-development)): the library tests browse and search exactly these songs. With `E2E_EXPECTED_TRACKS=4` they also check the number of songs, as the CI does. "Loose Song" lasts 20 seconds, so the tests can switch the view of Now Playing while it plays. The test of the metadata editor writes genre and year of "Loose Song" and removes them again afterwards, so the media folder must be writable for the container (`generate-media.sh` makes the files it creates writable for everyone).
 
 ### License check
 
@@ -384,7 +384,9 @@ It restores the .NET tools and npm packages it needs by itself and fails if a pa
 
 ### Continuous integration
 
-GitHub Actions run `.github/workflows/test.yml` for every pull request (`pull-request.yml`) and every push to `main` (`main.yml`): the .NET build with unit and media tests (with ffmpeg) and integration tests against a PostgreSQL 18 service container, lint, type check, unit tests (Vitest) and build of the web app, the license check, and the E2E tests against the Docker image with synthetic test media. After the tests pass, `main.yml` publishes the images `edge` and `sha-<commit>`. A version tag such as `v1.2.3` (`release.yml`) runs the tests, publishes `1.2.3`, `1.2` and `latest` and creates a GitHub release with generated release notes.
+GitHub Actions run `.github/workflows/test.yml` for every pull request (`pull-request.yml`) and every push to `main` (`main.yml`): the .NET build with unit and media tests (with ffmpeg) and integration tests against a PostgreSQL 18 service container, lint, type check, unit tests (Vitest) and build of the web app, the license check, and the E2E tests against the Docker image with synthetic test media. After the tests pass, `main.yml` publishes the image with the tags `1.0.N`, `1.0`, `latest`, `edge` and `sha-<commit>` and checks that both registries deliver it.
+
+Versions are `<major>.<minor>.<N>`: major and minor are the `VersionPrefix` in `Directory.Build.props` (changed by the maintainer only), N is the run number of `main.yml`. The CI passes the version to the .NET build (`-p:Version=1.0.N`), to the web app build (`WAVEMP_VERSION`) and to the Docker build (build argument `VERSION`), and sets it as the label `org.opencontainers.image.version` of the image. Builds without it, such as local builds and pull requests, report `1.0.0-dev`. Tags trigger no workflow: the GitHub release of a milestone (`v1.0.N`) marks a version that `main.yml` has already published.
 
 All foreign Docker images in the `Dockerfile`, in `docker-compose.dev.yml` and in the workflows (base images, PostgreSQL, the static ffmpeg build, the Playwright image, BuildKit and QEMU) are pinned by the digest of their multi-arch index, for example `postgres:18@sha256:...`; the tag only shows the version. To update an image, change the tag if needed and replace the digest with the one printed by `docker buildx imagetools inspect <image>:<tag>`. The Playwright image in `test.yml` has to be updated together with `@playwright/test` in `tests/WaveMP.E2E`; the E2E job fails if the two versions differ. The `docker-compose.yml` for users keeps the plain tags, so PostgreSQL patch releases arrive with `docker compose pull`.
 

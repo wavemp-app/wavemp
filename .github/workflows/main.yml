@@ -1,4 +1,6 @@
-# Tests every push to main and then publishes the image with the tags edge and sha-<commit>.
+# Tests every push to main and then publishes the image as version <major>.<minor>.<run number>
+# (major and minor from the VersionPrefix in Directory.Build.props) with the tags 1.0.N, 1.0,
+# latest, edge and sha-<commit>.
 name: Main
 
 on:
@@ -9,28 +11,57 @@ on:
 permissions:
   contents: read
 
-# A newer push to main cancels the running workflow; the newer one publishes edge.
+# A newer push to main cancels the running workflow; the newer one publishes its own version.
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
+  version:
+    name: Version
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - name: Check out
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+          sparse-checkout: Directory.Build.props
+          sparse-checkout-cone-mode: false
+
+      - name: Version from Directory.Build.props and the run number
+        id: version
+        env:
+          RUN_NUMBER: ${{ github.run_number }}
+        run: |
+          prefix=$(sed -n 's:.*<VersionPrefix>\([^<]*\)</VersionPrefix>.*:\1:p' Directory.Build.props)
+          if [[ ! "$prefix" =~ ^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]; then
+            echo "::error::Directory.Build.props needs a VersionPrefix of the form <major>.<minor>, found '$prefix'."
+            exit 1
+          fi
+          echo "version=$prefix.$RUN_NUMBER" >> "$GITHUB_OUTPUT"
+          echo "Version: $prefix.$RUN_NUMBER"
+
   test:
     name: Test
+    needs: version
     uses: ./.github/workflows/test.yml
+    with:
+      version: ${{ needs.version.outputs.version }}
 
   publish:
     name: Publish
-    needs: test
+    needs:
+      - version
+      - test
     permissions:
       contents: read
       packages: write
     uses: ./.github/workflows/publish.yml
     with:
-      tags: |
-        type=edge,branch=main
-        type=sha,prefix=sha-,format=short
-      flavor: latest=false
+      version: ${{ needs.version.outputs.version }}
     secrets:
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
       DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
