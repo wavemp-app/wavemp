@@ -21,6 +21,12 @@ public sealed class UserSettingsDto
     public required PlayerViewModeDto PlayerViewMode { get; init; }
 
     /// <summary>
+    /// Whether the sidebar of the desktop layout shows only its icons; false (expanded) by default. Clients without
+    /// a sidebar ignore it.
+    /// </summary>
+    public required bool SidebarCollapsed { get; init; }
+
+    /// <summary>
     /// Equalizer of the players.
     /// </summary>
     public required EqualizerSettingsDto Equalizer { get; init; }

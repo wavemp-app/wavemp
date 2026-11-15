@@ -10,8 +10,10 @@ const props = withDefaults(
         label: string
         /** Id of the node of the current page (aria-current). */
         active?: string
+        /** Shows the label of every item as tooltip, e.g. while a theme shows only the icons. */
+        tooltips?: boolean
     }>(),
-    { active: undefined },
+    { active: undefined, tooltips: false },
 )
 
 /** Ids of the expanded nodes. */
@@ -87,6 +89,7 @@ defineExpose({ focusItem, tabStop })
             :active="active"
             :tab-stop="tabStop"
             :element-id="elementId"
+            :tooltips="tooltips"
             @toggle="toggle"
             @focus-item="(id: string) => (focusedId = id)"
         />

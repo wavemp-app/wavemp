@@ -127,6 +127,8 @@
         --wmp-icon-tree-favorites: url('/icons/phosphor/duotone/heart-duotone.svg');
         --wmp-icon-tree-expand: url('/icons/phosphor/regular/plus-square.svg');
         --wmp-icon-tree-collapse: url('/icons/phosphor/regular/minus-square.svg');
+        --wmp-icon-sidebar-collapse: url('/icons/phosphor/duotone/caret-double-left-duotone.svg');
+        --wmp-icon-sidebar-expand: url('/icons/phosphor/duotone/caret-double-right-duotone.svg');
         --wmp-icon-has-video: url('/icons/phosphor/regular/video-camera.svg');
         --wmp-icon-info: url('/icons/phosphor/regular/info.svg');
         --wmp-icon-cover-placeholder: url('/icons/phosphor/fill/music-notes-fill.svg');
@@ -220,6 +222,7 @@
         --wmp-header-height: 3rem;
         --wmp-toolbar-height: 2.75rem;
         --wmp-sidebar-width: 15rem;
+        --wmp-sidebar-collapsed-width: 3.25rem;
         --wmp-transport-height: 4.5rem;
         --wmp-seek-height: 0.25rem;
         --wmp-bottom-nav-height: 3.5rem;

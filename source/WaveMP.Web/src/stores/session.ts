@@ -75,6 +75,8 @@ export const useSessionStore = defineStore('session', () => {
     const replayGain = ref<ReplayGainMode>(ReplayGainModeObject.Off)
     /** What Now Playing shows for the profile; the video until the settings are loaded. */
     const playerViewMode = ref<PlayerViewMode>(PlayerViewModeObject.Video)
+    /** Whether the desktop sidebar of the profile shows only its icons; expanded until loaded. */
+    const sidebarCollapsed = ref(false)
     /** Equalizer of the profile; off until the settings are loaded. */
     const equalizer = ref<EqualizerSettings>(defaultEqualizerSettings)
     /** Crossfade of the profile; gapless until the settings are loaded. */
@@ -104,6 +106,7 @@ export const useSessionStore = defineStore('session', () => {
         language.value = session?.language ?? null
         replayGain.value = ReplayGainModeObject.Off
         playerViewMode.value = PlayerViewModeObject.Video
+        sidebarCollapsed.value = false
         resetPlaybackSettings()
         sessionTokens.current = token.value
     }
@@ -183,6 +186,7 @@ export const useSessionStore = defineStore('session', () => {
         language.value = null
         replayGain.value = ReplayGainModeObject.Off
         playerViewMode.value = PlayerViewModeObject.Video
+        sidebarCollapsed.value = false
         resetPlaybackSettings()
         if (!applySession(created.session)) {
             clear()
@@ -194,6 +198,7 @@ export const useSessionStore = defineStore('session', () => {
             language.value = toLocale(settings?.language)
             replayGain.value = toReplayGain(settings) ?? ReplayGainModeObject.Off
             playerViewMode.value = toPlayerViewMode(settings) ?? PlayerViewModeObject.Video
+            sidebarCollapsed.value = settings?.sidebarCollapsed ?? false
             applyPlaybackSettings(settings)
         } catch {
             // The language follows with the next refresh; until then the browser language applies.
@@ -222,6 +227,7 @@ export const useSessionStore = defineStore('session', () => {
             language.value = toLocale(settings?.language) ?? language.value
             replayGain.value = toReplayGain(settings) ?? replayGain.value
             playerViewMode.value = toPlayerViewMode(settings) ?? playerViewMode.value
+            sidebarCollapsed.value = settings?.sidebarCollapsed ?? sidebarCollapsed.value
             applyPlaybackSettings(settings)
             persist()
         } catch (error) {
@@ -255,6 +261,25 @@ export const useSessionStore = defineStore('session', () => {
             const settings = await apiClient.api.v1.me.settings.patch({ playerViewMode: mode })
             if (token.value === requestToken && playerViewMode.value === mode) {
                 playerViewMode.value = toPlayerViewMode(settings) ?? mode
+            }
+        } catch {
+            // The local choice applies; the server keeps the previous one.
+        }
+    }
+
+    /**
+     * Collapses or expands the desktop sidebar at once and saves it for the profile on the server.
+     * If saving fails (e.g. offline), the choice stays for this device until the next refresh.
+     */
+    async function updateSidebarCollapsed(collapsed: boolean): Promise<void> {
+        const requestToken = token.value
+        sidebarCollapsed.value = collapsed
+        try {
+            const settings = await apiClient.api.v1.me.settings.patch({
+                sidebarCollapsed: collapsed,
+            })
+            if (token.value === requestToken && sidebarCollapsed.value === collapsed) {
+                sidebarCollapsed.value = settings?.sidebarCollapsed ?? collapsed
             }
         } catch {
             // The local choice applies; the server keeps the previous one.
@@ -338,6 +363,7 @@ export const useSessionStore = defineStore('session', () => {
         language,
         replayGain,
         playerViewMode,
+        sidebarCollapsed,
         equalizer,
         crossfade,
         sleepTimer,
@@ -350,6 +376,7 @@ export const useSessionStore = defineStore('session', () => {
         updateLanguage,
         updateReplayGain,
         updatePlayerViewMode,
+        updateSidebarCollapsed,
         updateEqualizer,
         updateCrossfade,
         setCrossfadeEnabled,

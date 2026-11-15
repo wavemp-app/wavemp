@@ -30,7 +30,9 @@
     "playlists": "Playlists",
     "createPlaylist": "Playlist erstellen",
     "library": "Bibliothek",
-    "playlist": "Playlist"
+    "playlist": "Playlist",
+    "collapse": "Seitenleiste einklappen",
+    "expand": "Seitenleiste ausklappen"
   },
   "library": {
     "recentlyAdded": "Zuletzt hinzugefügt",
@@ -274,6 +276,7 @@
     "title": "Komponentenübersicht",
     "intro": "Interne Seite für die Entwicklung. Sie zeigt alle Parts der Theme-API im aktuellen Theme.",
     "language": "Sprache",
+    "sidebarCollapsed": "Eingeklappt (Desktop)",
     "sections": {
       "buttons": "Buttons",
       "tabs": "Tabs",

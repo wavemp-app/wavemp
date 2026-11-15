@@ -21,6 +21,11 @@ public sealed class UpdateUserSettingsDto
     public PlayerViewModeDto? PlayerViewMode { get; init; }
 
     /// <summary>
+    /// Whether the sidebar of the desktop layout shows only its icons.
+    /// </summary>
+    public bool? SidebarCollapsed { get; init; }
+
+    /// <summary>
     /// Changes of the equalizer.
     /// </summary>
     public UpdateEqualizerSettingsDto? Equalizer { get; init; }

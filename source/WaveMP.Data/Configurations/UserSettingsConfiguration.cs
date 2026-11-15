@@ -36,6 +36,10 @@ internal sealed class UserSettingsConfiguration : IEntityTypeConfiguration<UserS
             .HasDefaultValue(PlayerViewMode.Video)
             .ValueGeneratedNever();
 
+        builder.Property(settings => settings.SidebarCollapsed)
+            .HasDefaultValue(false)
+            .ValueGeneratedNever();
+
         // The columns below give existing rows the defaults of a new profile. The entity always writes its values
         // (ValueGeneratedNever), so the default of a column never replaces a value set in the code. For
         // CrossfadeSeconds, CrossfadeAlbumsGapless and SleepTimerFadeSeconds the defaults of the CLR types (0, false)

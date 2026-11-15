@@ -48,6 +48,31 @@ public class MeSettingsApiTests
             settings.Language.Should().Be(LanguageDto.En);
             settings.ReplayGain.Should().Be(ReplayGainModeDto.Off);
             settings.PlayerViewMode.Should().Be(PlayerViewModeDto.Video);
+            settings.SidebarCollapsed.Should().BeFalse();
+        }
+    }
+
+    [Test]
+    public async Task UpdateMySettings_WithSidebarCollapsed_KeepsItForTheProfileAndTheOtherSettings()
+    {
+        (Guid profileId, HttpClient client) = await CreateProfileAsync();
+        using (client)
+        {
+            await PatchAsync(client, new { language = "de", playerViewMode = "Cover" });
+
+            HttpResponseMessage response = await PatchAsync(client, new { sidebarCollapsed = true });
+            using HttpClient otherSession = _factory.CreateAuthorizedClient(
+                (await _anonymous.CreateSessionAsync(profileId)).Token);
+            UserSettingsDto read = await otherSession.GetJsonAsync<UserSettingsDto>("/api/v1/me/settings");
+            await PatchAsync(client, new { sidebarCollapsed = false });
+            UserSettingsDto expanded = await client.GetJsonAsync<UserSettingsDto>("/api/v1/me/settings");
+
+            response.StatusCode.Should().Be(HttpStatusCode.OK);
+            (await response.Content.ReadAsStringAsync()).Should().Contain("\"sidebarCollapsed\":true");
+            read.SidebarCollapsed.Should().BeTrue();
+            read.Language.Should().Be(LanguageDto.De);
+            read.PlayerViewMode.Should().Be(PlayerViewModeDto.Cover);
+            expanded.SidebarCollapsed.Should().BeFalse();
         }
     }
 

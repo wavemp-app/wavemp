@@ -288,6 +288,44 @@ describe('session store', () => {
         expect(session.playerViewMode).toBe('Cover')
     })
 
+    it('loads the collapsed sidebar with the settings and forgets it for another profile', async () => {
+        api.createSession.mockResolvedValue(created('a'))
+        api.getSettings.mockResolvedValue({ language: 'en', sidebarCollapsed: true })
+        const session = useSessionStore()
+        session.restore()
+        expect(session.sidebarCollapsed).toBe(false)
+
+        await session.select('a')
+        expect(session.sidebarCollapsed).toBe(true)
+
+        api.getCurrentSession.mockResolvedValue(created('a').session)
+        api.getSettings.mockResolvedValue({ language: 'en', sidebarCollapsed: false })
+        await session.refresh()
+        expect(session.sidebarCollapsed).toBe(false)
+
+        session.sidebarCollapsed = true
+        session.clear()
+        expect(session.sidebarCollapsed).toBe(false)
+    })
+
+    it('collapses the sidebar at once, saves it and keeps it when it cannot be saved', async () => {
+        saveStoredSession(stored('a'))
+        let answer: (value: unknown) => void = () => {}
+        api.updateSettings.mockReturnValueOnce(new Promise((resolve) => (answer = resolve)))
+        const session = useSessionStore()
+        session.restore()
+
+        const saving = session.updateSidebarCollapsed(true)
+        expect(session.sidebarCollapsed).toBe(true)
+        answer({ language: 'en', sidebarCollapsed: true })
+        await saving
+        expect(api.updateSettings).toHaveBeenCalledWith({ sidebarCollapsed: true })
+
+        api.updateSettings.mockRejectedValueOnce(new TypeError('Failed to fetch'))
+        await session.updateSidebarCollapsed(false)
+        expect(session.sidebarCollapsed).toBe(false)
+    })
+
     it('passes errors of saving the language on', async () => {
         saveStoredSession(stored('a', 'en'))
         api.updateSettings.mockRejectedValue(new TypeError('Failed to fetch'))

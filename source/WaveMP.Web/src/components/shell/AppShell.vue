@@ -10,10 +10,13 @@ import AppTransport from './AppTransport.vue'
 import type { SleepTimerChoice } from './transport'
 import BaseAlert from '@/components/base/BaseAlert.vue'
 import { pageTitleKey } from '@/navigation/breadcrumb'
+import { useMediaQuery } from '@/composables/useMediaQuery'
 import { useCollectionStore } from '@/stores/collection'
 import { useHealthStore } from '@/stores/health'
 import { usePageTitleStore } from '@/stores/pageTitle'
 import { usePlayerStore } from '@/stores/player'
+import { useSessionStore } from '@/stores/session'
+import { desktopMediaQuery } from '@/themes/breakpoints'
 
 /**
  * App shell: the fixed areas of the theme API around the content of the current page. The DOM is
@@ -27,8 +30,12 @@ const pageTitle = usePageTitleStore()
 const collection = useCollectionStore()
 
 const player = usePlayerStore()
+const session = useSessionStore()
+const isDesktop = useMediaQuery(desktopMediaQuery)
 
 const sidebarOpen = ref(false)
+/** The desktop sidebar shows only its icons; kept per profile. The mobile drawer is unchanged. */
+const sidebarCollapsed = computed(() => isDesktop.value && session.sidebarCollapsed)
 const playerExpanded = ref(false)
 // Detail pages show their name (album, artist, ...), the other pages the name of the page.
 const title = computed(() => pageTitle.title ?? t(pageTitleKey(route)))
@@ -44,6 +51,10 @@ function toggleSidebar(): void {
     if (sidebarOpen.value) {
         void focus('[data-part="sidebar"] [data-part="tree-item"][tabindex="0"]')
     }
+}
+
+function toggleSidebarCollapsed(): void {
+    void session.updateSidebarCollapsed(!session.sidebarCollapsed)
 }
 
 function closeSidebar(): void {
@@ -120,7 +131,12 @@ onUnmounted(() => {
     <div data-part="app">
         <AppHeader :sidebar-open="sidebarOpen" @toggle-sidebar="toggleSidebar" />
         <AppToolbar />
-        <AppSidebar :open="sidebarOpen" @close="closeSidebar" />
+        <AppSidebar
+            :open="sidebarOpen"
+            :collapsed="sidebarCollapsed"
+            @close="closeSidebar"
+            @toggle-collapsed="toggleSidebarCollapsed"
+        />
         <main id="wavemp-content" data-part="content">
             <h1 data-part="content-title">{{ title }}</h1>
             <BaseAlert

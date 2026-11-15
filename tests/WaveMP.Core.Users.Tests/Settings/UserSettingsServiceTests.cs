@@ -100,6 +100,20 @@ public class UserSettingsServiceTests
     }
 
     [Test]
+    public async Task UpdateAsync_WithSidebarCollapsed_SavesItAndKeepsTheOtherSettings()
+    {
+        User user = Given(Language.De);
+        user.Settings!.PlayerViewMode = PlayerViewMode.Cover;
+
+        UserSettings? result = await _service.UpdateAsync(user.Id, new UpdateUserSettingsCommand(SidebarCollapsed: true));
+        UserSettings? unchanged = await _service.UpdateAsync(user.Id, new UpdateUserSettingsCommand(Language.En));
+
+        result!.SidebarCollapsed.Should().BeTrue();
+        result.PlayerViewMode.Should().Be(PlayerViewMode.Cover);
+        unchanged!.SidebarCollapsed.Should().BeTrue();
+    }
+
+    [Test]
     public async Task UpdateAsync_WithoutPlayerViewMode_KeepsIt()
     {
         User user = Given(Language.En);

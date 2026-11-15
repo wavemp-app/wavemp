@@ -10214,6 +10214,13 @@
               }
             ]
           },
+          "sidebarCollapsed": {
+            "type": [
+              "null",
+              "boolean"
+            ],
+            "description": "Whether the sidebar of the desktop layout shows only its icons."
+          },
           "equalizer": {
             "oneOf": [
               {
@@ -10332,6 +10339,7 @@
           "language",
           "replayGain",
           "playerViewMode",
+          "sidebarCollapsed",
           "equalizer",
           "crossfade",
           "sleepTimer"
@@ -10349,6 +10357,10 @@
           "playerViewMode": {
             "description": "What the Now Playing view shows; Video by default. Clients keep the choice of the profile with it.",
             "$ref": "#/components/schemas/PlayerViewMode"
+          },
+          "sidebarCollapsed": {
+            "type": "boolean",
+            "description": "Whether the sidebar of the desktop layout shows only its icons; false (expanded) by default. Clients without a sidebar ignore it."
           },
           "equalizer": {
             "description": "Equalizer of the players.",

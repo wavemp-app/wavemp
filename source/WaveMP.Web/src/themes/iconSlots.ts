@@ -52,6 +52,8 @@ export const iconSlots = {
     'tree-favorites': { file: duotone('heart'), area: 'sidebar' },
     'tree-expand': { file: regular('plus-square'), area: 'sidebar' },
     'tree-collapse': { file: regular('minus-square'), area: 'sidebar' },
+    'sidebar-collapse': { file: duotone('caret-double-left'), area: 'sidebar' },
+    'sidebar-expand': { file: duotone('caret-double-right'), area: 'sidebar' },
 
     // Content
     'has-video': { file: regular('video-camera'), area: 'content' },

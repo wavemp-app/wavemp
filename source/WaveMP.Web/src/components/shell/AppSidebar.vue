@@ -2,6 +2,7 @@
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
+import BaseButton from '@/components/base/BaseButton.vue'
 import BaseTree from '@/components/base/BaseTree.vue'
 import type { TreeNode } from '@/components/base/BaseTreeItem.vue'
 import { activeTreeId, type RouteInfo } from '@/navigation/breadcrumb'
@@ -17,14 +18,18 @@ const props = withDefaults(
     defineProps<{
         /** Drawer state on mobile; on the desktop the sidebar is always shown. */
         open?: boolean
+        /** Desktop only: the sidebar shows only the icons of the tree. */
+        collapsed?: boolean
         /** Location that decides the active node; by default the current route. */
         location?: RouteInfo
     }>(),
-    { open: false, location: undefined },
+    { open: false, collapsed: false, location: undefined },
 )
 
 const emit = defineEmits<{
     close: []
+    /** The button asks to collapse or expand the sidebar (desktop). */
+    toggleCollapsed: []
 }>()
 
 const { t } = useI18n()
@@ -47,6 +52,9 @@ function toTreeNode(node: NavigationTreeNode): TreeNode {
 
 const nodes = computed(() => buildLibraryTree(playlists.playlists).map(toTreeNode))
 const active = computed(() => activeTreeId(props.location ?? route))
+const state = computed(() =>
+    [props.open ? 'open' : 'closed', props.collapsed ? 'collapsed' : 'expanded'].join(' '),
+)
 
 // The playlists of the profile below "Playlists", loaded again for every session.
 watch(
@@ -65,14 +73,24 @@ watch(
     <aside
         id="wavemp-sidebar"
         data-part="sidebar"
-        :data-state="open ? 'open' : 'closed'"
+        :data-state="state"
         :aria-label="t('sidebar.label')"
     >
+        <BaseButton
+            part="btn-sidebar-toggle"
+            variant="icon"
+            :icon="collapsed ? 'sidebar-expand' : 'sidebar-collapse'"
+            :label="collapsed ? t('sidebar.expand') : t('sidebar.collapse')"
+            :aria-expanded="collapsed ? 'false' : 'true'"
+            aria-controls="wavemp-sidebar"
+            @click="emit('toggleCollapsed')"
+        />
         <BaseTree
             v-model:expanded="expanded"
             :nodes="nodes"
             :label="t('sidebar.label')"
             :active="active"
+            :tooltips="collapsed"
         />
     </aside>
     <div

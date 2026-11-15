@@ -166,6 +166,14 @@
             grid-template-rows: auto auto minmax(0, 1fr) auto;
         }
 
+        /*
+         * The collapsed sidebar narrows its column. Layouts of themes that size the sidebar with
+         * --wmp-sidebar-width follow, because the base sets it on app while it is collapsed.
+         */
+        [data-part='app']:has(> [data-part='sidebar'][data-state~='collapsed']) {
+            --wmp-sidebar-width: var(--wmp-sidebar-collapsed-width);
+        }
+
         [data-part='bottom-nav'],
         [data-part='btn-menu'],
         [data-part='sidebar-backdrop'],

@@ -366,6 +366,11 @@ a[data-part="breadcrumb-link"]:hover {
     --wmp-icon-fill: #8a929d;
 }
 
+/* The button that collapses the sidebar takes the blue of the tree icons. */
+[data-part="btn-sidebar-toggle"] {
+    --wmp-icon-fill: linear-gradient(#8cc8ff, #2a7de1);
+}
+
 /* --- Content: white list grouped by album -------------------------------------------------------- */
 
 [data-part="content"] {

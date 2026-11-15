@@ -38,6 +38,7 @@ export const parts = [
     // Sidebar
     'sidebar',
     'sidebar-backdrop',
+    'btn-sidebar-toggle',
     'tree',
     'tree-node',
     'tree-item',

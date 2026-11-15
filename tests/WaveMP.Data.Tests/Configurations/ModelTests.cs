@@ -144,6 +144,7 @@ public class ModelTests
         gains.ValueGenerated.Should().Be(ValueGenerated.Never);
     }
 
+    [TestCase(nameof(UserSettings.SidebarCollapsed), false)]
     [TestCase(nameof(UserSettings.EqualizerEnabled), false)]
     [TestCase(nameof(UserSettings.EqualizerPreampDb), 0d)]
     [TestCase(nameof(UserSettings.CrossfadeEnabled), false)]

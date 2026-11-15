@@ -100,6 +100,10 @@
         max-inline-size: 18rem;
     }
 
+    [data-part='dev-sample'] > [data-part='sidebar'][data-state~='collapsed'] {
+        max-inline-size: var(--wmp-sidebar-collapsed-width);
+    }
+
     /* Samples of full pages keep their content height. */
     [data-part='dev-sample'] > [data-part='profile-select'] {
         min-block-size: 0;

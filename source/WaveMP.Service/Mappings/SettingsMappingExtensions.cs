@@ -14,6 +14,7 @@ public static class SettingsMappingExtensions
             Language = settings.Language.ToDto(),
             ReplayGain = settings.ReplayGain.ToDto(),
             PlayerViewMode = settings.PlayerViewMode.ToDto(),
+            SidebarCollapsed = settings.SidebarCollapsed,
             Equalizer = new EqualizerSettingsDto
             {
                 Enabled = settings.EqualizerEnabled,
@@ -48,7 +49,8 @@ public static class SettingsMappingExtensions
             request.Crossfade?.Enabled,
             request.Crossfade?.Seconds,
             request.Crossfade?.AlbumsGapless,
-            request.SleepTimer?.FadeSeconds);
+            request.SleepTimer?.FadeSeconds,
+            request.SidebarCollapsed);
     }
 
     public static EqualizerPresetDto ToDto(this EqualizerPreset preset)

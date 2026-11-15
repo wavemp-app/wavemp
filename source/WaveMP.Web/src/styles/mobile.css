@@ -152,6 +152,11 @@
             display: none !important;
         }
 
+        /* The drawer always shows the whole tree; collapsing is for the desktop only. */
+        [data-part='sidebar'] > [data-part='btn-sidebar-toggle'] {
+            display: none !important;
+        }
+
         /* --- Transport as mini player ---------------------------------------------------- */
 
         [data-part='app'] > [data-part='transport'] {

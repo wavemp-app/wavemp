@@ -27,6 +27,11 @@ public class UserSettings
     public PlayerViewMode PlayerViewMode { get; set; } = PlayerViewMode.Video;
 
     /// <summary>
+    /// Whether the sidebar of the desktop layout shows only its icons; expanded by default.
+    /// </summary>
+    public bool SidebarCollapsed { get; set; }
+
+    /// <summary>
     /// Whether the players shape the sound with the equalizer; off by default.
     /// </summary>
     public bool EqualizerEnabled { get; set; }

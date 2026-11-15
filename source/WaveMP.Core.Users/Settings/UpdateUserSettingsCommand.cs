@@ -16,6 +16,7 @@ namespace WaveMP.Core.Users.Settings;
 /// <param name="CrossfadeSeconds">Seconds of the crossfade between tracks; 0 plays them gapless.</param>
 /// <param name="CrossfadeAlbumsGapless">Whether consecutive tracks of the same album play without crossfade.</param>
 /// <param name="SleepTimerFadeSeconds">Seconds the sleep timer fades out the music.</param>
+/// <param name="SidebarCollapsed">Whether the sidebar of the desktop layout shows only its icons.</param>
 public sealed record UpdateUserSettingsCommand(
     Language? Language = null,
     ReplayGainMode? ReplayGain = null,
@@ -27,4 +28,5 @@ public sealed record UpdateUserSettingsCommand(
     bool? CrossfadeEnabled = null,
     int? CrossfadeSeconds = null,
     bool? CrossfadeAlbumsGapless = null,
-    int? SleepTimerFadeSeconds = null);
+    int? SleepTimerFadeSeconds = null,
+    bool? SidebarCollapsed = null);

@@ -25,6 +25,8 @@ const props = defineProps<{
     active?: string
     tabStop?: string
     elementId: (nodeId: string) => string
+    /** Shows the label as tooltip. */
+    tooltips?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -89,6 +91,7 @@ function onToggleClick(event: MouseEvent): void {
             :aria-current="isActive ? 'page' : undefined"
             :aria-disabled="node.disabled ? 'true' : undefined"
             :data-state="state"
+            :title="tooltips ? node.label : undefined"
             :style="{ '--wmp-tree-level': level }"
             @click="activate"
             @focus="emit('focusItem', node.id)"
@@ -120,6 +123,7 @@ function onToggleClick(event: MouseEvent): void {
                 :active="active"
                 :tab-stop="tabStop"
                 :element-id="elementId"
+                :tooltips="tooltips"
                 @toggle="(id: string) => emit('toggle', id)"
                 @focus-item="(id: string) => emit('focusItem', id)"
             />

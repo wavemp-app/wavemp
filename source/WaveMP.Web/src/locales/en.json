@@ -27,6 +27,8 @@
   },
   "sidebar": {
     "label": "Library navigation",
+    "collapse": "Collapse sidebar",
+    "expand": "Expand sidebar",
     "playlists": "Playlists",
     "createPlaylist": "Create Playlist",
     "library": "Library",
@@ -274,6 +276,7 @@
     "title": "Component overview",
     "intro": "Internal page for development. It shows all parts of the theme API in the current theme.",
     "language": "Language",
+    "sidebarCollapsed": "Collapsed (desktop)",
     "sections": {
       "buttons": "Buttons",
       "tabs": "Tabs",

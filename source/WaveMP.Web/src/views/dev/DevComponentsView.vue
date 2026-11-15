@@ -1021,6 +1021,10 @@ const sampleTranscodeJobs = computed<TranscodeJob[]>(() => {
             <div data-part="dev-sample">
                 <AppSidebar :location="libraryLocation" />
             </div>
+            <div data-part="dev-sample">
+                <p data-part="dev-sample-title">{{ t('dev.sidebarCollapsed') }}</p>
+                <AppSidebar :location="libraryLocation" collapsed />
+            </div>
         </section>
 
         <section data-part="dev-section">

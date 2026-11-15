@@ -513,6 +513,43 @@
         color: var(--wmp-color-text-muted);
     }
 
+    /* --- Collapsible sidebar (desktop) ---------------------------------------------------- */
+
+    [data-part='sidebar'] > [data-part='btn-sidebar-toggle'] {
+        display: flex;
+        margin: var(--wmp-space-xs) var(--wmp-space-xs) 0 auto;
+    }
+
+    /*
+     * Collapsed, the sidebar shows only the icons of the tree; the labels stay for assistive
+     * technology and show as tooltip. The toggles of the nodes and the indentation are left out.
+     */
+    [data-part='sidebar'][data-state~='collapsed'] {
+        overflow-x: hidden;
+    }
+
+    [data-part='sidebar'][data-state~='collapsed'] > [data-part='btn-sidebar-toggle'] {
+        margin-inline: auto;
+    }
+
+    [data-part='sidebar'][data-state~='collapsed'] [data-part='tree-item'] {
+        justify-content: center;
+        padding-inline: var(--wmp-space-xs);
+    }
+
+    [data-part='sidebar'][data-state~='collapsed'] [data-part='tree-item'] > [data-part='label'] {
+        position: absolute;
+        inline-size: 1px;
+        block-size: 1px;
+        overflow: hidden;
+        clip-path: inset(50%);
+        white-space: nowrap;
+    }
+
+    [data-part='sidebar'][data-state~='collapsed'] [data-part='tree-toggle'] {
+        display: none;
+    }
+
     /* --- List ---------------------------------------------------------------------------- */
 
     /*

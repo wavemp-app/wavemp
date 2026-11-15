@@ -2269,6 +2269,7 @@ export function deserializeIntoUpdateUserSettings(updateUserSettings: Partial<Up
         "language": n => { updateUserSettings.language = n.getEnumValue<Language>(LanguageObject); },
         "playerViewMode": n => { updateUserSettings.playerViewMode = n.getEnumValue<PlayerViewMode>(PlayerViewModeObject); },
         "replayGain": n => { updateUserSettings.replayGain = n.getEnumValue<ReplayGainMode>(ReplayGainModeObject); },
+        "sidebarCollapsed": n => { updateUserSettings.sidebarCollapsed = n.getBooleanValue(); },
         "sleepTimer": n => { updateUserSettings.sleepTimer = n.getObjectValue<UpdateSleepTimerSettings>(createUpdateSleepTimerSettingsFromDiscriminatorValue); },
     }
 }
@@ -2316,6 +2317,7 @@ export function deserializeIntoUserSettings(userSettings: Partial<UserSettings> 
         "language": n => { userSettings.language = n.getEnumValue<Language>(LanguageObject); },
         "playerViewMode": n => { userSettings.playerViewMode = n.getEnumValue<PlayerViewMode>(PlayerViewModeObject); },
         "replayGain": n => { userSettings.replayGain = n.getEnumValue<ReplayGainMode>(ReplayGainModeObject); },
+        "sidebarCollapsed": n => { userSettings.sidebarCollapsed = n.getBooleanValue(); },
         "sleepTimer": n => { userSettings.sleepTimer = n.getObjectValue<SleepTimerSettings>(createSleepTimerSettingsFromDiscriminatorValue); },
     }
 }
@@ -4623,6 +4625,7 @@ export function serializeUpdateUserSettings(writer: SerializationWriter, updateU
     writer.writeEnumValue<Language>("language", updateUserSettings.language);
     writer.writeEnumValue<PlayerViewMode>("playerViewMode", updateUserSettings.playerViewMode);
     writer.writeEnumValue<ReplayGainMode>("replayGain", updateUserSettings.replayGain);
+    writer.writeBooleanValue("sidebarCollapsed", updateUserSettings.sidebarCollapsed);
     writer.writeObjectValue<UpdateSleepTimerSettings>("sleepTimer", updateUserSettings.sleepTimer, serializeUpdateSleepTimerSettings);
     writer.writeAdditionalData(updateUserSettings.additionalData);
 }
@@ -4673,6 +4676,7 @@ export function serializeUserSettings(writer: SerializationWriter, userSettings:
     writer.writeEnumValue<Language>("language", userSettings.language);
     writer.writeEnumValue<PlayerViewMode>("playerViewMode", userSettings.playerViewMode);
     writer.writeEnumValue<ReplayGainMode>("replayGain", userSettings.replayGain);
+    writer.writeBooleanValue("sidebarCollapsed", userSettings.sidebarCollapsed);
     writer.writeObjectValue<SleepTimerSettings>("sleepTimer", userSettings.sleepTimer, serializeSleepTimerSettings);
     writer.writeAdditionalData(userSettings.additionalData);
 }
@@ -5376,6 +5380,10 @@ export interface UpdateUserSettings extends AdditionalDataHolder, Parsable {
      */
     replayGain?: ReplayGainMode | null;
     /**
+     * Whether the sidebar of the desktop layout shows only its icons.
+     */
+    sidebarCollapsed?: boolean | null;
+    /**
      * The sleepTimer property
      */
     sleepTimer?: UpdateSleepTimerSettings | null;
@@ -5458,6 +5466,10 @@ export interface UserSettings extends AdditionalDataHolder, Parsable {
      * Whether the players even out the volume with the ReplayGain tags; Off by default.
      */
     replayGain?: ReplayGainMode | null;
+    /**
+     * Whether the sidebar of the desktop layout shows only its icons; false (expanded) by default. Clients without a sidebar ignore it.
+     */
+    sidebarCollapsed?: boolean | null;
     /**
      * Sleep timer of the players.
      */
@@ -5672,14 +5684,14 @@ export const HealthStatusObject = {
     Unhealthy: "Unhealthy",
 } as const;
 /**
- * Video with sound or sound only.
+ * What an HLS stream of a track carries.
  */
 export const HlsMediaObject = {
     Audio: "Audio",
     Video: "Video",
 } as const;
 /**
- * Why the scan failed or was interrupted.
+ * Why the run failed or was interrupted.
  */
 export const JobErrorCodeObject = {
     JobFailed: "job.failed",

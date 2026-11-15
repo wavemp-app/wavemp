@@ -57,6 +57,8 @@ const icons: Record<IconStyle, string[]> = {
     duotone: [
         'books',
         'calendar-blank',
+        'caret-double-left',
+        'caret-double-right',
         'clock-counter-clockwise',
         'guitar',
         'headphones',

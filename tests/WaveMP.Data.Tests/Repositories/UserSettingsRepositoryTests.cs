@@ -79,6 +79,7 @@ public class UserSettingsRepositoryTests : LibraryDatabaseTests
         settings.Should().BeEquivalentTo(new
         {
             Language = Language.De,
+            SidebarCollapsed = false,
             EqualizerEnabled = false,
             EqualizerPreset = EqualizerPreset.Flat,
             EqualizerPreampDb = 0d,

@@ -147,6 +147,14 @@
         --_icon: var(--wmp-icon-tree-collapse);
     }
 
+    [data-icon='sidebar-collapse'] {
+        --_icon: var(--wmp-icon-sidebar-collapse);
+    }
+
+    [data-icon='sidebar-expand'] {
+        --_icon: var(--wmp-icon-sidebar-expand);
+    }
+
     [data-icon='has-video'] {
         --_icon: var(--wmp-icon-has-video);
     }

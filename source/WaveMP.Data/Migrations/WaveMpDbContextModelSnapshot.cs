@@ -1114,6 +1114,11 @@ namespace WaveMP.Data.Migrations
                         .HasDefaultValue("Off")
                         .HasColumnName("replay_gain");
 
+                    b.Property<bool>("SidebarCollapsed")
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("sidebar_collapsed");
+
                     b.Property<int>("SleepTimerFadeSeconds")
                         .HasColumnType("integer")
                         .HasDefaultValue(10)

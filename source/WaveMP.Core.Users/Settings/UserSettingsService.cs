@@ -42,6 +42,11 @@ internal sealed class UserSettingsService(IUserRepository users) : IUserSettings
             settings.PlayerViewMode = playerViewMode;
         }
 
+        if (command.SidebarCollapsed is { } sidebarCollapsed)
+        {
+            settings.SidebarCollapsed = sidebarCollapsed;
+        }
+
         ApplyPlayback(settings, command);
 
         await users.UpdateAsync(user, cancellationToken);
