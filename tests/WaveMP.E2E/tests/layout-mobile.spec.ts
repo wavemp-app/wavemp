@@ -50,7 +50,7 @@ test('opens the sidebar as a drawer', async ({ page }) => {
     await expect(menu).toHaveAttribute('aria-expanded', 'false')
     await menu.click()
 
-    await expect(sidebar).toHaveAttribute('data-state', 'open')
+    await expect(sidebar).toHaveAttribute('data-state', 'open expanded')
     await expect(sidebar).toBeVisible()
     await expect(part(page, 'tree')).toBeVisible()
     await expect(menu).toHaveAttribute('aria-expanded', 'true')
@@ -60,7 +60,7 @@ test('opens the sidebar as a drawer', async ({ page }) => {
         position: { x: viewport.width - 10, y: viewport.height / 2 },
     })
 
-    await expect(sidebar).toHaveAttribute('data-state', 'closed')
+    await expect(sidebar).toHaveAttribute('data-state', 'closed expanded')
     await expect(sidebar).toBeHidden()
 
     // Choosing an entry navigates and closes the drawer.
