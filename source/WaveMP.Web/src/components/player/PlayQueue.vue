@@ -1,15 +1,19 @@
 <script setup lang="ts">
-import { useId } from 'vue'
+import { computed, ref, useId } from 'vue'
 import { useI18n } from 'vue-i18n'
 import BaseButton from '@/components/base/BaseButton.vue'
+import LibraryCover from '@/components/library/LibraryCover.vue'
 import { useFormat } from '@/composables/useFormat'
+import { useKeepInView } from '@/composables/useKeepInView'
 import { artistLabelKey, durationSeconds } from '@/library/presentation'
 import type { Track } from '@/api/generated/models'
-import type { QueueItem } from '@/player/queue'
+import { visibleQueueEntries, type QueueItem } from '@/player/queue'
 
 /**
- * The queue: every entry plays when it is chosen, and its buttons move it up and down or remove
- * it. The current entry cannot be removed, and clearing keeps it.
+ * The queue: the last played entries, the current one and all that follow, each with its cover.
+ * Every entry plays when it is chosen, and its buttons move it up and down or remove it. The
+ * current entry cannot be removed, and clearing keeps it. Where the queue scrolls itself (beside
+ * the stage on the desktop), it keeps the current entry in view.
  */
 const props = defineProps<{
     items: readonly QueueItem[]
@@ -26,18 +30,19 @@ const emit = defineEmits<{
 const { t } = useI18n()
 const format = useFormat()
 const titleId = useId()
+const queue = ref<HTMLElement | null>(null)
+
+const entries = computed(() => visibleQueueEntries(props.items, props.currentIndex))
+const firstNumber = computed(() => (entries.value[0]?.index ?? 0) + 1)
+
+useKeepInView(queue, '[data-part="queue-item"][aria-current="true"]', () => [
+    props.currentIndex,
+    props.items[props.currentIndex]?.key,
+])
 
 function artistName(track: Track): string {
     const key = artistLabelKey(track.artist)
     return key ? t(key) : (track.artist?.name ?? '')
-}
-
-function itemState(index: number): string | undefined {
-    if (index === props.currentIndex) {
-        return 'current'
-    }
-
-    return index < props.currentIndex ? 'played' : undefined
 }
 
 function duration(track: Track): string {
@@ -47,7 +52,7 @@ function duration(track: Track): string {
 </script>
 
 <template>
-    <section data-part="queue" :aria-labelledby="titleId">
+    <section ref="queue" data-part="queue" :aria-labelledby="titleId">
         <h2 :id="titleId" data-part="section-title">{{ t('nowPlaying.queue') }}</h2>
         <BaseButton
             data-item="clear-queue"
@@ -56,13 +61,13 @@ function duration(track: Track): string {
             :disabled="items.length <= 1"
             @click="emit('clear')"
         />
-        <ol data-part="queue-list">
+        <ol data-part="queue-list" :start="firstNumber">
             <li
-                v-for="(item, index) in items"
+                v-for="{ item, index, state } in entries"
                 :key="item.key"
                 data-part="queue-item"
-                :data-state="itemState(index)"
-                :aria-current="index === currentIndex ? 'true' : undefined"
+                :data-state="state"
+                :aria-current="state === 'current' ? 'true' : undefined"
             >
                 <button
                     type="button"
@@ -70,6 +75,11 @@ function duration(track: Track): string {
                     :aria-label="t('nowPlaying.playItem', { title: item.track.title ?? '' })"
                     @click="emit('play', item.key)"
                 >
+                    <LibraryCover
+                        kind="track"
+                        :id="item.track.id"
+                        :available="item.track.hasCover ?? false"
+                    />
                     <span data-part="queue-item-title">{{ item.track.title }}</span>
                     <span data-part="queue-item-artist">{{ artistName(item.track) }}</span>
                 </button>

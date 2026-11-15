@@ -237,3 +237,33 @@ export function previousIndex(queue: Queue, repeat: RepeatMode): number | null {
 
     return repeat === 'off' ? null : queue.items.length - 1
 }
+
+/** How many played entries the queue shows before the current one. */
+export const playedEntriesShown = 3
+
+export interface QueueEntry {
+    readonly item: QueueItem
+    /** Index of the entry in the whole queue. */
+    readonly index: number
+    readonly state: 'played' | 'current' | undefined
+}
+
+/**
+ * The entries the queue shows: the last played ones (at most `played`), the current one and all
+ * that follow. Without a current entry, all entries.
+ */
+export function visibleQueueEntries(
+    items: readonly QueueItem[],
+    index: number,
+    played: number = playedEntriesShown,
+): QueueEntry[] {
+    const first = index < 0 ? 0 : Math.max(0, index - Math.max(0, played))
+    return items.slice(first).map((item, offset) => {
+        const position = first + offset
+        return {
+            item,
+            index: position,
+            state: position === index ? 'current' : position < index ? 'played' : undefined,
+        }
+    })
+}

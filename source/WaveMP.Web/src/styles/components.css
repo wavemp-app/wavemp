@@ -2086,8 +2086,12 @@
         color: var(--wmp-color-text-muted);
     }
 
+    /* The cover beside title and artist. */
     [data-part='queue-item-info'] {
         display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        align-items: center;
+        column-gap: var(--wmp-space-s);
         min-inline-size: 0;
         padding: var(--wmp-space-xs) 0;
         color: inherit;
@@ -2098,8 +2102,14 @@
         cursor: pointer;
     }
 
+    [data-part='queue-item-info'] > [data-part='cover'] {
+        grid-row: 1 / span 2;
+        inline-size: var(--wmp-cover-size-queue);
+    }
+
     [data-part='queue-item-title'],
     [data-part='queue-item-artist'] {
+        grid-column: 2;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;

@@ -14,6 +14,7 @@ import {
     remove,
     setShuffle,
     withIndex,
+    visibleQueueEntries,
     type Queue,
 } from '../queue'
 
@@ -197,5 +198,41 @@ describe('navigation', () => {
         expect(previousIndex(withIndex(middle, 0), 'off')).toBeNull()
         expect(previousIndex(withIndex(middle, 0), 'all')).toBe(3)
         expect(previousIndex(emptyQueue, 'all')).toBeNull()
+    })
+})
+
+describe('visibleQueueEntries', () => {
+    const queue = playTracks([...abcd, track('e'), track('f')], 4, false)
+
+    function shown(index: number, played?: number): string[] {
+        return visibleQueueEntries(queue.items, index, played).map(
+            (entry) => `${entry.index}:${entry.item.track.id}:${entry.state ?? ''}`,
+        )
+    }
+
+    it('shows the last three played entries, the current one and all that follow', () => {
+        expect(shown(4)).toEqual(['1:b:played', '2:c:played', '3:d:played', '4:e:current', '5:f:'])
+    })
+
+    it('shows fewer played entries near the start', () => {
+        expect(shown(0)).toEqual(['0:a:current', '1:b:', '2:c:', '3:d:', '4:e:', '5:f:'])
+        expect(shown(2)).toEqual([
+            '0:a:played',
+            '1:b:played',
+            '2:c:current',
+            '3:d:',
+            '4:e:',
+            '5:f:',
+        ])
+    })
+
+    it('shows the last entry as current at the end', () => {
+        expect(shown(5, 1)).toEqual(['4:e:played', '5:f:current'])
+        expect(shown(5, 0)).toEqual(['5:f:current'])
+    })
+
+    it('shows all entries without a current one', () => {
+        expect(shown(-1)).toHaveLength(6)
+        expect(visibleQueueEntries([], -1)).toEqual([])
     })
 })
