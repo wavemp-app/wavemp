@@ -70,6 +70,10 @@
         --wmp-icon-fill: linear-gradient(#ffffff 40%, #bfe0ff);
     }
 
+    [data-part='dev-samples'][data-tone='dark'] [data-variant]:not([data-part='btn-favorite']) {
+        --wmp-icon-fill: linear-gradient(#ffffff 40%, #bfe0ff);
+    }
+
     [data-part='dev-samples'][data-tone='dark'] [data-part='tabs'] {
         min-block-size: var(--wmp-header-height);
         background: var(--wmp-header-background);

@@ -177,6 +177,15 @@
     color-scheme: dark;
 }
 
+/*
+ * Buttons take the icon color of their area (the base fills icons in buttons with the text color);
+ * hearts keep their own color.
+ */
+:where([data-part="header"], [data-part="transport"], [data-part="bottom-nav"])
+    [data-variant]:not([data-part="btn-favorite"]) {
+    --wmp-icon-fill: linear-gradient(#ffffff 40%, #bfe0ff);
+}
+
 /* No highlight at the top edge: the status bar above continues the header without a seam. */
 [data-part="header"] {
     box-shadow: 0 1px 0 #000000;
@@ -256,6 +265,10 @@
 
     border-block-end: 1px solid #b6bec8;
     box-shadow: inset 0 1px #ffffff;
+}
+
+[data-part="toolbar"] [data-variant] {
+    --wmp-icon-fill: #4a4f57;
 }
 
 [data-part="toolbar"] :is(button, a):hover:not(:disabled) [data-part="icon"] {
@@ -696,8 +709,11 @@ a[data-part="breadcrumb-link"]:hover {
     color: inherit;
 }
 
-/* Actions of a detail page, e.g. "Edit metadata", carry a blue icon like the job actions. */
-[data-part="detail-actions"] [data-part="icon"] {
+/*
+ * Actions of a detail page, e.g. "Edit metadata", carry a blue icon like the job actions; the blue
+ * primary button ("Play") keeps its white icon.
+ */
+[data-part="detail-actions"] :not([data-variant="primary"]) > [data-part="icon"] {
     --wmp-icon-fill: linear-gradient(#4aa8ff, #1f6fd6);
 }
 
@@ -821,7 +837,7 @@ a[data-part="breadcrumb-link"]:hover {
 }
 
 /* The glowing play button keeps its blue orb while nothing plays, only the symbol dims. */
-[data-part="btn-play"] {
+[data-part="transport"] [data-part="btn-play"] {
     --wmp-icon-size: 1.375rem;
     --wmp-icon-fill: linear-gradient(#ffffff 40%, #d9f0ff);
 
@@ -1289,7 +1305,7 @@ a[data-part="breadcrumb-link"]:hover {
     background: linear-gradient(#fdfdfe, #eceff2 48%, #dfe3e8 52%, #e8ebef);
 }
 
-[data-part="dialog"] [data-part="icon"],
+[data-part="dialog"] :not([data-variant="primary"]) > [data-part="icon"],
 [data-part="context-menu"] [data-part="icon"] {
     --wmp-icon-fill: #4a4f57;
 }
@@ -1385,6 +1401,10 @@ a[data-part="breadcrumb-link"]:hover {
         0 2px 8px rgb(0 0 0 / 35%);
     color: #e6ebf1;
     color-scheme: dark;
+}
+
+[data-part="equalizer"] [data-variant] {
+    --wmp-icon-fill: linear-gradient(#ffffff 40%, #bfe0ff);
 }
 
 [data-part="equalizer"] [data-part="field"] > [data-part="label"] {

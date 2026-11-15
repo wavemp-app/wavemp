@@ -89,7 +89,12 @@
 
     /* --- Buttons ------------------------------------------------------------------------ */
 
+    /*
+     * Icons in buttons take the text color of the button, whatever the area around it fills its
+     * icons with; themes set --wmp-icon-fill on the button (or its icon) for something else.
+     */
     :where(button, a)[data-variant] {
+        --wmp-icon-fill: currentColor;
         --_image: var(--wmp-image-default-button);
         --_image-hover: var(--wmp-image-default-button-hover);
         --_image-active: var(--wmp-image-default-button-active);
