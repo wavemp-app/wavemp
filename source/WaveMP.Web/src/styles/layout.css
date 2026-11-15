@@ -21,6 +21,16 @@
         background: var(--wmp-theme-color);
     }
 
+    /*
+     * Only the areas scroll, never the page: no scroll bar of the page beside the one of the
+     * content and no bouncing of the whole app on touch screens (e.g. on the iPad).
+     */
+    :root:has([data-part='app']),
+    :root:has([data-part='app']) > body {
+        overflow: hidden;
+        overscroll-behavior: none;
+    }
+
     [data-part='app'] > [data-part='header'] {
         grid-area: header;
     }
@@ -29,17 +39,25 @@
         grid-area: toolbar;
     }
 
+    /*
+     * The scrolling areas are containing blocks: content that is positioned absolutely inside them,
+     * e.g. labels hidden for assistive technology, stays in them and cannot make the page scroll.
+     */
     [data-part='app'] > [data-part='sidebar'] {
         grid-area: sidebar;
+        position: relative;
         min-block-size: 0;
         overflow: auto;
+        overscroll-behavior: contain;
     }
 
     [data-part='app'] > [data-part='content'] {
         grid-area: content;
+        position: relative;
         min-inline-size: 0;
         min-block-size: 0;
         overflow: auto;
+        overscroll-behavior: contain;
     }
 
     [data-part='app'] > [data-part='transport'] {

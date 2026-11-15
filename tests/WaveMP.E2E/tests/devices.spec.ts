@@ -99,3 +99,73 @@ test.describe('status bar of an iPhone', () => {
         expect(padding).toBeGreaterThanOrEqual(safeArea.bottom)
     })
 })
+
+const iPadSizes = [
+    { name: 'portrait', viewport: { width: 820, height: 1180 } },
+    { name: 'landscape', viewport: { width: 1180, height: 820 } },
+]
+
+const pages = [
+    '/',
+    '/library',
+    '/library/songs',
+    '/library/albums',
+    '/playlists',
+    '/now-playing',
+    '/settings',
+    '/admin/library',
+    '/admin/jobs',
+    '/admin/users',
+]
+
+for (const size of iPadSizes) {
+    test.describe(`iPad in ${size.name}`, () => {
+        test.use({ viewport: size.viewport, isMobile: true, hasTouch: true })
+
+        test('scrolls only the areas, never the page', async ({ page }) => {
+            for (const path of pages) {
+                await page.goto(path)
+                await expect(
+                    page.locator("[data-part='app'] > [data-part='content']"),
+                ).toBeVisible()
+                await expect(page.locator("[data-part='view']").first()).toBeVisible()
+
+                const scrolling = await page.evaluate(() => {
+                    const root = document.documentElement
+                    const scrollers = [...document.querySelectorAll<HTMLElement>('body *')].filter(
+                        (element) => {
+                            const style = getComputedStyle(element)
+                            return (
+                                /auto|scroll/.test(style.overflowX + style.overflowY) &&
+                                (element.scrollWidth > element.clientWidth + 1 ||
+                                    element.scrollHeight > element.clientHeight + 1)
+                            )
+                        },
+                    )
+                    window.scrollTo(200, 200)
+                    return {
+                        pageWidth: root.scrollWidth - root.clientWidth,
+                        pageHeight: root.scrollHeight - root.clientHeight,
+                        scrolled: [window.scrollX, window.scrollY],
+                        nested: scrollers
+                            .filter((inner) =>
+                                scrollers.some((outer) => outer !== inner && outer.contains(inner)),
+                            )
+                            .map((element) => element.dataset.part ?? element.tagName),
+                        sideways: scrollers
+                            .filter((element) => element.scrollWidth > element.clientWidth + 1)
+                            .map((element) => element.dataset.part ?? element.tagName),
+                    }
+                })
+
+                expect(scrolling, path).toEqual({
+                    pageWidth: 0,
+                    pageHeight: 0,
+                    scrolled: [0, 0],
+                    nested: [],
+                    sideways: [],
+                })
+            }
+        })
+    })
+}
