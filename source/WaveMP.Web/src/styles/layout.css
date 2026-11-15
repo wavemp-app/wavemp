@@ -233,15 +233,24 @@
             justify-self: end;
         }
 
-        [data-part='list-group'] {
-            grid-template-areas:
-                'list-group-header list-group-header'
-                'list-group-info list-group-rows';
-            grid-template-columns: var(--wmp-list-group-info-width) minmax(0, 1fr);
+        /*
+         * The first column of the list holds the cover and details of each group; the column
+         * headers start after it, but their bar spans the whole list.
+         */
+        [data-part='list'] {
+            grid-template-columns: var(--wmp-list-group-info-width) var(--wmp-list-columns);
         }
 
-        [data-part='list-header'] {
-            margin-inline-start: var(--wmp-list-group-info-width);
+        [data-part='list-header'] > [data-part='list-column']:first-child {
+            grid-column-start: 2;
+        }
+
+        [data-part='list-group-info'] {
+            grid-column: 1;
+        }
+
+        [data-part='list-group-rows'] {
+            grid-column: 2 / -1;
         }
     }
 }

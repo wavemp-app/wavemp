@@ -399,14 +399,6 @@
             min-block-size: 2.75rem;
         }
 
-        [data-part='list-group'] {
-            grid-template-areas:
-                'list-group-header'
-                'list-group-info'
-                'list-group-rows';
-            grid-template-columns: minmax(0, 1fr);
-        }
-
         [data-part='list-group-info'] {
             flex-direction: row;
             align-items: center;

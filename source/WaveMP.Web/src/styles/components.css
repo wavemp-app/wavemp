@@ -510,19 +510,43 @@
 
     /* --- List ---------------------------------------------------------------------------- */
 
+    /*
+     * The list is one grid: the column headers, the groups, their rows and the cells share its
+     * columns (subgrid), so headers and cells line up exactly, also while the list scrolls and its
+     * width changes. On the desktop, the first column holds the cover and details of each group
+     * (layout.css). Column headers and cells have the same padding; rows and headers have none, so
+     * themes keep both in line as long as they style list-column and list-cell alike.
+     */
     [data-part='list'] {
         display: grid;
+        grid-template-columns: var(--wmp-list-columns);
         align-content: start;
+        column-gap: var(--wmp-space-s);
+    }
+
+    [data-part='list-header'],
+    [data-part='list-group'],
+    [data-part='list-group-rows'],
+    [data-part='list-row'] {
+        display: grid;
+        grid-column: 1 / -1;
+        grid-template-columns: subgrid;
     }
 
     [data-part='list-header'],
     [data-part='list-row'] {
-        display: grid;
-        grid-template-columns: var(--wmp-list-columns);
         align-items: center;
-        column-gap: var(--wmp-space-s);
         min-block-size: var(--wmp-list-row-height);
-        padding-inline: var(--wmp-space-s);
+    }
+
+    :is([data-part='list-header'], [data-part='list-row'])
+        > :is([data-part='list-column'], [data-part='list-cell']):first-child {
+        padding-inline-start: var(--wmp-space-s);
+    }
+
+    :is([data-part='list-header'], [data-part='list-row'])
+        > :is([data-part='list-column'], [data-part='list-cell']):last-child {
+        padding-inline-end: var(--wmp-space-s);
     }
 
     [data-part='list-header'] {
@@ -552,19 +576,20 @@
     }
 
     [data-part='list-group'] {
-        display: grid;
         padding-block: var(--wmp-space-m);
     }
 
+    /* Mobile first: heading, details and rows of a group one below the other, over all columns. */
     [data-part='list-group-header'] {
-        grid-area: list-group-header;
+        grid-column: 1 / -1;
         padding: var(--wmp-space-xs) var(--wmp-space-s);
         border-block-end: 1px solid var(--wmp-color-border);
         font-weight: var(--wmp-font-weight-bold);
     }
 
     [data-part='list-group-info'] {
-        grid-area: list-group-info;
+        grid-column: 1 / -1;
+        min-inline-size: 0;
         display: flex;
         flex-direction: column;
         gap: var(--wmp-space-s);
@@ -595,8 +620,6 @@
     }
 
     [data-part='list-group-rows'] {
-        grid-area: list-group-rows;
-        display: grid;
         align-content: start;
     }
 
@@ -1322,6 +1345,15 @@
     /* SortableJS marks the place where a dragged row lands with this class. */
     [data-part='list-row'].sortable-ghost {
         opacity: 0.4;
+    }
+
+    /*
+     * On touch screens, SortableJS moves a copy of the row (this class) with the finger. The copy
+     * is positioned outside the grid of the list, so it takes the columns of the list itself.
+     */
+    [data-part='list-row'].sortable-fallback {
+        grid-template-columns: var(--wmp-list-columns);
+        column-gap: var(--wmp-space-s);
     }
 
     [data-part='playlist-choices'] {
@@ -2162,11 +2194,21 @@
         }
     }
 
-    :is([data-part='list-column'], [data-part='list-cell']):is(
-        [data-column='rating'],
-        [data-column='favorite']
-    ) {
+    [data-part='list-cell']:is([data-column='rating'], [data-column='favorite']) {
         overflow: visible;
+    }
+
+    /*
+     * Column headers never reach into the next column. The heart column is too narrow for a word:
+     * its column header keeps the label for assistive technology only.
+     */
+    [data-part='list-column'][data-column='favorite'] > [data-part='label'] {
+        position: absolute;
+        inline-size: 1px;
+        block-size: 1px;
+        overflow: hidden;
+        clip-path: inset(50%);
+        white-space: nowrap;
     }
 
     [data-part='list-cell'][data-column='favorite'] [data-part='btn-favorite'] {
