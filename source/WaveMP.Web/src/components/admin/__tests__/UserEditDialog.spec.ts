@@ -169,7 +169,7 @@ describe('UserEditDialog', () => {
         expect(
             role
                 .findAll('[data-part="segment"]')
-                .every((segment) => segment.attributes('disabled') !== undefined),
+                .every((segment) => segment.attributes('aria-disabled') === 'true'),
         ).toBe(true)
         expect(wrapper.text()).toContain('The built-in admin profile always stays an admin.')
         const swatches = wrapper.findAll('[data-part="color-swatch"]')

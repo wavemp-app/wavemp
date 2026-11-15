@@ -376,7 +376,7 @@ The internal component overview (`/dev/components`) uses its own parts starting 
 | `aria-checked` | `color-swatch`, `segment`; `menu-item` with `role="menuitemradio"`, for example the chosen sort key and direction |
 | `aria-selected` | `list-row` |
 | `aria-pressed` | `btn-shuffle`, `btn-repeat`, `btn-crossfade`, `btn-mute`, `btn-favorite`, `rating-star`, `btn-sleep-timer`, the `button` `power` of `equalizer-controls` and other toggle buttons |
-| `aria-disabled="true"` | `tree-item`, `slider-thumb`, `segmented-control` while all of its segments are disabled |
+| `aria-disabled="true"` | `tree-item`, `slider-thumb`; `segmented-control` and its `segment`s while the whole group is disabled, for example while its value is saved (the segments stay focusable; a single option that cannot be chosen is a disabled `button` instead) |
 | `aria-valuemin`, `aria-valuemax`, `aria-valuenow`, `aria-valuetext` | `slider-thumb`, `progress` (`aria-valuenow` from 0 to 100, missing while indeterminate), `meter` (`aria-valuenow` from 0 to 100) |
 | `:disabled` | buttons and inputs |
 | `:checked` | `checkbox` |

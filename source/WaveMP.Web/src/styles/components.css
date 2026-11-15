@@ -386,6 +386,11 @@
         z-index: 1;
     }
 
+    /* A disabled group still shows which option is checked. */
+    [data-part='segment'][aria-checked='true']:is(:disabled, [aria-disabled='true']) {
+        background: var(--_image-active);
+    }
+
     [data-part='segmented-control'][aria-invalid='true'] > [data-part='segment'] {
         border-color: var(--wmp-color-danger);
     }

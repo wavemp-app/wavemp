@@ -150,12 +150,22 @@ describe('BaseSegmentedControl', () => {
         expect(wrapper.get('[data-part="segmented-control"]').attributes('aria-disabled')).toBe(
             'true',
         )
+        // The segments stay focusable, so the focus is not lost while the group is disabled.
         expect(
             wrapper
                 .findAll('[data-part="segment"]')
-                .every((segment) => segment.attributes('disabled') !== undefined),
-        ).toBe(true)
+                .map((segment) => [
+                    segment.attributes('aria-disabled'),
+                    segment.attributes('disabled'),
+                    segment.attributes('tabindex'),
+                ]),
+        ).toEqual([
+            ['true', undefined, '0'],
+            [undefined, '', '-1'],
+            ['true', undefined, '-1'],
+        ])
         await wrapper.get('[data-item="cover"]').trigger('keydown', { key: 'ArrowRight' })
+        await wrapper.get('[data-item="Visualization"]').trigger('click')
         expect(wrapper.emitted('update:modelValue')).toBeUndefined()
         wrapper.unmount()
     })

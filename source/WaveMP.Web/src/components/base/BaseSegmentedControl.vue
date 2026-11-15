@@ -51,7 +51,14 @@ const checked = computed(() => props.options.findIndex((option) => option.value 
 const disabledOptions = computed(() =>
     props.options.map((option) => props.disabled || !!option.disabled),
 )
-const tabStop = computed(() => segmentTabStop(checked.value, disabledOptions.value))
+// A disabled group (e.g. while its value is saved) keeps its segments focusable with aria-disabled,
+// so the focus stays where it is; disabled options are left out of the tab order.
+const tabStop = computed(() =>
+    segmentTabStop(
+        checked.value,
+        props.options.map((option) => !!option.disabled),
+    ),
+)
 const indicator = useIndicator(group, '[aria-checked="true"]', () => [
     checked.value,
     props.options.length,
@@ -107,7 +114,8 @@ async function onKeydown(event: KeyboardEvent): Promise<void> {
             :data-item="option.item ?? option.value"
             :aria-checked="index === checked ? 'true' : 'false'"
             :tabindex="index === tabStop ? 0 : -1"
-            :disabled="disabledOptions[index]"
+            :disabled="option.disabled"
+            :aria-disabled="disabled && !option.disabled ? 'true' : undefined"
             @click="choose(option)"
         >
             <BaseIcon v-if="option.icon" :name="option.icon" />
