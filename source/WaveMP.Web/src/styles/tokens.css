@@ -47,6 +47,12 @@
         --wmp-menu-background: var(--wmp-color-surface);
         --wmp-profile-select-color: var(--wmp-color-text);
         --wmp-profile-select-background: var(--wmp-color-surface-raised);
+        /*
+         * Plain color of the bars of the system and the browser around the app (theme-color, status
+         * bar) and of the safe areas, e.g. under the status bar of the installed app; it continues
+         * the top of the header.
+         */
+        --wmp-theme-color: var(--wmp-color-surface-raised);
 
         /* Profiles */
         --wmp-avatar-color: #ffffff;
@@ -243,7 +249,11 @@
         --wmp-progress-height: 0.5rem;
     }
 
-    /* Document defaults */
+    /* Document defaults; the root shows the theme color where a browser shows more than the page. */
+    html {
+        background-color: var(--wmp-theme-color);
+    }
+
     body {
         font-family: var(--wmp-font-family);
         font-size: var(--wmp-font-size-m);

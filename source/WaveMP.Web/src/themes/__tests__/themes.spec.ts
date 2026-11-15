@@ -1,6 +1,14 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { themeApiVersion } from '../parts'
-import { applyTheme, defaultThemeId, resolveThemeId, themeLinkId, themes } from '../themes'
+import {
+    applyTheme,
+    defaultThemeId,
+    resolveThemeId,
+    syncThemeColor,
+    themeColorVariable,
+    themeLinkId,
+    themes,
+} from '../themes'
 
 describe('resolveThemeId', () => {
     it('returns known themes', () => {
@@ -63,5 +71,47 @@ describe('applyTheme', () => {
         const links = themeLinks()
         expect(links).toHaveLength(1)
         expect(links[0]?.getAttribute('href')).toBe('/themes/midnight/theme.css')
+    })
+})
+
+describe('syncThemeColor', () => {
+    afterEach(() => {
+        document.documentElement.style.removeProperty(themeColorVariable)
+        document.head.querySelectorAll('meta[name="theme-color"]').forEach((meta) => meta.remove())
+    })
+
+    function themeColorMeta(): HTMLMetaElement | null {
+        return document.head.querySelector<HTMLMetaElement>('meta[name="theme-color"]')
+    }
+
+    it('hands the theme color of the theme to the browser', () => {
+        const meta = document.createElement('meta')
+        meta.name = 'theme-color'
+        meta.content = '#000000'
+        document.head.append(meta)
+        document.documentElement.style.setProperty(themeColorVariable, '#43484f')
+
+        syncThemeColor(document)
+
+        expect(themeColorMeta()?.content).toBe('#43484f')
+    })
+
+    it('creates the meta element if it is missing', () => {
+        document.documentElement.style.setProperty(themeColorVariable, 'rgb(1 2 3)')
+
+        syncThemeColor(document)
+
+        expect(themeColorMeta()?.content).toBe('rgb(1 2 3)')
+    })
+
+    it('keeps the current color while the theme sets none', () => {
+        const meta = document.createElement('meta')
+        meta.name = 'theme-color'
+        meta.content = '#43484f'
+        document.head.append(meta)
+
+        syncThemeColor(document)
+
+        expect(themeColorMeta()?.content).toBe('#43484f')
     })
 })

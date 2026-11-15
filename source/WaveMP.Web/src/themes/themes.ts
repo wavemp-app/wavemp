@@ -56,4 +56,47 @@ export function applyTheme(id: ThemeId, doc: Document = document): void {
     if (link.getAttribute('href') !== theme.stylesheet) {
         link.setAttribute('href', theme.stylesheet)
     }
+
+    // The theme color is known once the stylesheet is loaded; it may already be (index.html).
+    link.addEventListener('load', () => syncThemeColor(doc), { once: true })
+    if (link.sheet) {
+        syncThemeColor(doc)
+    }
+}
+
+/** Name of the meta element browsers color their bars and the status bar with. */
+export const themeColorMetaName = 'theme-color'
+
+/** Variable of the theme API with the theme color (THEMING.md, section "Areas"). */
+export const themeColorVariable = '--wmp-theme-color'
+
+/**
+ * Hands the theme color of the active theme (--wmp-theme-color) to the browser: <meta
+ * name="theme-color"> colors the status bar and the bars of the browser, so they blend into the
+ * header. Keeps the current value while the theme sets none.
+ */
+export function syncThemeColor(doc: Document = document): void {
+    const view = doc.defaultView
+    if (!view) {
+        return
+    }
+
+    const color = view
+        .getComputedStyle(doc.documentElement)
+        .getPropertyValue(themeColorVariable)
+        .trim()
+    if (color === '') {
+        return
+    }
+
+    let meta = doc.head.querySelector<HTMLMetaElement>(`meta[name="${themeColorMetaName}"]`)
+    if (!meta) {
+        meta = doc.createElement('meta')
+        meta.name = themeColorMetaName
+        doc.head.append(meta)
+    }
+
+    if (meta.content !== color) {
+        meta.content = color
+    }
 }

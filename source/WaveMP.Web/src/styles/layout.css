@@ -5,10 +5,20 @@
  * the areas in their own @media (width >= 64rem) rules.
  */
 @layer wavemp.layout {
+    /*
+     * The app fills the screen up to its edges (viewport-fit=cover). Its padding keeps the areas
+     * out of the safe areas at the top (status bar, notch) and at the sides; the padding shows the
+     * theme color, which continues the top of the header, so the status bar of Safari and of the
+     * installed app blends into the header. At the bottom, the bottom navigation (mobile) and the
+     * transport bar (desktop) reach under the home indicator themselves.
+     */
     [data-part='app'] {
         display: grid;
         block-size: 100dvh;
         overflow: hidden;
+        position: relative;
+        padding: env(safe-area-inset-top) env(safe-area-inset-right) 0 env(safe-area-inset-left);
+        background: var(--wmp-theme-color);
     }
 
     [data-part='app'] > [data-part='header'] {
@@ -198,7 +208,7 @@
             align-items: center;
             column-gap: var(--wmp-space-l);
             min-block-size: var(--wmp-transport-height);
-            padding: 0 var(--wmp-space-l) var(--wmp-space-s);
+            padding: 0 var(--wmp-space-l) max(var(--wmp-space-s), env(safe-area-inset-bottom));
         }
 
         [data-part='transport'] > [data-part='mode-switch'] {
