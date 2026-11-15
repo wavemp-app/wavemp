@@ -739,7 +739,7 @@ describe('player store', () => {
 
         it('lets the current track fade into one of another album', async () => {
             const session = useSessionStore()
-            session.crossfade = { seconds: 6, albumsGapless: true }
+            session.crossfade = { enabled: true, seconds: 6, albumsGapless: true }
             const player = usePlayerStore()
             player.playTracks(albums, 0)
             await flushPromises()
@@ -752,7 +752,7 @@ describe('player store', () => {
 
         it('keeps tracks of the same album gapless', async () => {
             const session = useSessionStore()
-            session.crossfade = { seconds: 6, albumsGapless: true }
+            session.crossfade = { enabled: true, seconds: 6, albumsGapless: true }
             const player = usePlayerStore()
             player.playTracks(albums, 1)
             await flushPromises()
@@ -772,13 +772,29 @@ describe('player store', () => {
             await flushPromises()
             expect(engine.prepared.at(-1)).toEqual({ url: '/stream/b', gain: 1 })
 
-            session.crossfade = { seconds: 4, albumsGapless: true }
+            session.crossfade = { enabled: true, seconds: 4, albumsGapless: true }
             await flushPromises()
             expect(engine.prepared.at(-1)).toBeNull()
 
             engine.events.timeupdate?.(186, 200)
             await flushPromises()
             expect(engine.prepared.at(-1)).toEqual({ url: '/stream/b', gain: 1, crossfade: 4 })
+        })
+
+        it('shows the crossfade in the transport bar and turns it on and off', () => {
+            const session = useSessionStore()
+            session.crossfade = { enabled: false, seconds: 4, albumsGapless: true }
+            const setEnabled = vi.spyOn(session, 'setCrossfadeEnabled').mockResolvedValue()
+            const player = usePlayerStore()
+            expect(player.state.crossfade).toBe(false)
+
+            player.toggleCrossfade()
+            expect(setEnabled).toHaveBeenCalledWith(true)
+
+            session.crossfade = { enabled: true, seconds: 4, albumsGapless: true }
+            expect(player.state.crossfade).toBe(true)
+            player.toggleCrossfade()
+            expect(setEnabled).toHaveBeenLastCalledWith(false)
         })
     })
 

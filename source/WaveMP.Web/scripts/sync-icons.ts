@@ -29,6 +29,7 @@ const icons: Record<IconStyle, string[]> = {
         'headphones',
         'heart',
         'house',
+        'intersect',
         'list',
         'magnifying-glass',
         'microphone-stage',

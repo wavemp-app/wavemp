@@ -18,7 +18,7 @@ public static class PlaybackSettingsLimits
     public const int PreampMaxDb = EqualizerBands.MaxGainDb;
 
     /// <summary>
-    /// Shortest crossfade in seconds; 0 turns it off, the tracks then play gapless.
+    /// Shortest crossfade in seconds; with 0 the tracks play gapless even while the crossfade is on.
     /// </summary>
     public const int CrossfadeMinSeconds = 0;
 

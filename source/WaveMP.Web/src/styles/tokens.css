@@ -149,6 +149,7 @@
         --wmp-icon-shuffle: url('/icons/phosphor/fill/shuffle-fill.svg');
         --wmp-icon-repeat: url('/icons/phosphor/fill/repeat-fill.svg');
         --wmp-icon-repeat-one: url('/icons/phosphor/fill/repeat-once-fill.svg');
+        --wmp-icon-crossfade: url('/icons/phosphor/fill/intersect-fill.svg');
         --wmp-icon-stop: url('/icons/phosphor/fill/stop-fill.svg');
         --wmp-icon-previous: url('/icons/phosphor/fill/skip-back-fill.svg');
         --wmp-icon-play: url('/icons/phosphor/fill/play-fill.svg');

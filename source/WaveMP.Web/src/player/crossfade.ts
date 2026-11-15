@@ -10,19 +10,26 @@ export const maxCrossfadeSeconds = 12
 
 /** The crossfade settings of a profile. */
 export interface CrossfadeSettings {
-    /** Seconds of the crossfade; 0 plays the tracks gapless. */
+    /** Whether the tracks fade into each other; off plays them gapless and keeps the seconds. */
+    readonly enabled: boolean
+    /** Seconds of the crossfade while it is on; 0 plays the tracks gapless. */
     readonly seconds: number
     /** Whether consecutive tracks of the same album play gapless. */
     readonly albumsGapless: boolean
 }
 
-export const defaultCrossfadeSettings: CrossfadeSettings = { seconds: 0, albumsGapless: true }
+export const defaultCrossfadeSettings: CrossfadeSettings = {
+    enabled: false,
+    seconds: 5,
+    albumsGapless: true,
+}
 
 /** The crossfade settings from an answer of the server, or null if they are incomplete. */
 export function toCrossfadeSettings(value: unknown): CrossfadeSettings | null {
     const settings = value as Partial<Record<keyof CrossfadeSettings, unknown>> | null | undefined
     if (
         !settings ||
+        typeof settings.enabled !== 'boolean' ||
         typeof settings.seconds !== 'number' ||
         !Number.isInteger(settings.seconds) ||
         settings.seconds < 0 ||
@@ -32,7 +39,11 @@ export function toCrossfadeSettings(value: unknown): CrossfadeSettings | null {
         return null
     }
 
-    return { seconds: settings.seconds, albumsGapless: settings.albumsGapless }
+    return {
+        enabled: settings.enabled,
+        seconds: settings.seconds,
+        albumsGapless: settings.albumsGapless,
+    }
 }
 
 function durationOf(track: Pick<Track, 'durationMilliseconds'>, known?: number): number {
@@ -60,7 +71,11 @@ export function crossfadeDuration(
     next: Pick<Track, 'album' | 'durationMilliseconds'>,
     currentDuration?: number,
 ): number {
-    if (settings.seconds <= 0 || (settings.albumsGapless && sameAlbum(current, next))) {
+    if (
+        !settings.enabled ||
+        settings.seconds <= 0 ||
+        (settings.albumsGapless && sameAlbum(current, next))
+    ) {
         return 0
     }
 

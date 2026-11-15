@@ -337,7 +337,7 @@ describe('session store', () => {
             api.getSettings.mockResolvedValue({
                 language: 'en',
                 equalizer,
-                crossfade: { seconds: 6, albumsGapless: false },
+                crossfade: { enabled: true, seconds: 6, albumsGapless: false },
                 sleepTimer: { fadeSeconds: 30 },
             })
             const session = useSessionStore()
@@ -345,7 +345,7 @@ describe('session store', () => {
             await session.select('a')
 
             expect(session.equalizer).toEqual(equalizer)
-            expect(session.crossfade).toEqual({ seconds: 6, albumsGapless: false })
+            expect(session.crossfade).toEqual({ enabled: true, seconds: 6, albumsGapless: false })
             expect(session.sleepTimer).toEqual({ fadeSeconds: 30 })
         })
 
@@ -354,7 +354,7 @@ describe('session store', () => {
             api.getSettings.mockResolvedValue({
                 language: 'en',
                 equalizer: { ...equalizer, preset: 'Loudness' },
-                crossfade: { seconds: 40, albumsGapless: true },
+                crossfade: { enabled: true, seconds: 40, albumsGapless: true },
                 sleepTimer: {},
             })
             const session = useSessionStore()
@@ -363,7 +363,7 @@ describe('session store', () => {
 
             expect(session.equalizer.enabled).toBe(false)
             expect(session.equalizer.preset).toBe('Flat')
-            expect(session.crossfade).toEqual({ seconds: 0, albumsGapless: true })
+            expect(session.crossfade).toEqual({ enabled: false, seconds: 5, albumsGapless: true })
             expect(session.sleepTimer).toEqual({ fadeSeconds: 10 })
         })
 
@@ -372,7 +372,7 @@ describe('session store', () => {
             api.getCurrentSession.mockResolvedValue(created('a').session)
             api.getSettings.mockResolvedValue({
                 language: 'de',
-                crossfade: { seconds: 3, albumsGapless: true },
+                crossfade: { enabled: true, seconds: 3, albumsGapless: true },
             })
             const session = useSessionStore()
             session.restore()
@@ -381,7 +381,41 @@ describe('session store', () => {
             expect(session.crossfade.seconds).toBe(3)
 
             session.clear()
-            expect(session.crossfade.seconds).toBe(0)
+            expect(session.crossfade.seconds).toBe(5)
+        })
+
+        it('turns the crossfade on and off at once and keeps its length', async () => {
+            saveStoredSession(stored('a'))
+            let answer: (value: unknown) => void = () => undefined
+            api.updateSettings.mockImplementationOnce(
+                () =>
+                    new Promise((resolve) => {
+                        answer = resolve
+                    }),
+            )
+            const session = useSessionStore()
+            session.restore()
+            session.crossfade = { enabled: false, seconds: 8, albumsGapless: true }
+
+            const saving = session.setCrossfadeEnabled(true)
+            expect(session.crossfade).toEqual({ enabled: true, seconds: 8, albumsGapless: true })
+            answer({ crossfade: { enabled: true, seconds: 8, albumsGapless: true } })
+            await saving
+
+            expect(api.updateSettings).toHaveBeenCalledWith({ crossfade: { enabled: true } })
+            expect(session.crossfade.enabled).toBe(true)
+        })
+
+        it('turns the crossfade back when saving the switch fails', async () => {
+            saveStoredSession(stored('a'))
+            api.updateSettings.mockRejectedValueOnce(new Error('offline'))
+            const session = useSessionStore()
+            session.restore()
+            session.crossfade = { enabled: true, seconds: 8, albumsGapless: true }
+
+            await expect(session.setCrossfadeEnabled(false)).rejects.toThrow('offline')
+
+            expect(session.crossfade).toEqual({ enabled: true, seconds: 8, albumsGapless: true })
         })
 
         it('saves a change of the equalizer and takes over the answer', async () => {
@@ -408,13 +442,15 @@ describe('session store', () => {
                             answerFirst = resolve
                         }),
                 )
-                .mockResolvedValueOnce({ crossfade: { seconds: 8, albumsGapless: true } })
+                .mockResolvedValueOnce({
+                    crossfade: { enabled: true, seconds: 8, albumsGapless: true },
+                })
             const session = useSessionStore()
             session.restore()
 
             const first = session.updateCrossfade({ seconds: 2 })
             await session.updateCrossfade({ seconds: 8 })
-            answerFirst({ crossfade: { seconds: 2, albumsGapless: true } })
+            answerFirst({ crossfade: { enabled: true, seconds: 2, albumsGapless: true } })
             await first
 
             expect(session.crossfade.seconds).toBe(8)

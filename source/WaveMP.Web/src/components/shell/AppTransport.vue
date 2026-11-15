@@ -42,6 +42,7 @@ const emit = defineEmits<{
     seek: [position: number]
     toggleShuffle: []
     cycleRepeat: []
+    toggleCrossfade: []
     toggleMute: []
     changeVolume: [volume: number]
     compact: []
@@ -176,6 +177,15 @@ function onMiniPlayer(): void {
                 :pressed="state.repeat !== 'off'"
                 :state="state.repeat"
                 @click="emit('cycleRepeat')"
+            />
+            <BaseButton
+                part="btn-crossfade"
+                variant="icon"
+                icon="crossfade"
+                :label="t('player.crossfade')"
+                :pressed="state.crossfade ?? false"
+                :state="state.crossfade ? 'on' : 'off'"
+                @click="emit('toggleCrossfade')"
             />
             <BaseButton
                 part="btn-stop"

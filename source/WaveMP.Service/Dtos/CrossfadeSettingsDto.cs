@@ -6,7 +6,14 @@ namespace WaveMP.Service.Dtos;
 public sealed class CrossfadeSettingsDto
 {
     /// <summary>
-    /// Seconds the players fade from one track into the next, from 0 to 12; 0 (the default) plays the tracks gapless.
+    /// Whether the players fade from one track into the next; false (the default) plays the tracks gapless. Turning it
+    /// off keeps the seconds, so turning it on again fades as long as before.
+    /// </summary>
+    public required bool Enabled { get; init; }
+
+    /// <summary>
+    /// Seconds the players fade from one track into the next while the crossfade is enabled, from 0 to 12 (5 by
+    /// default); 0 plays the tracks gapless.
     /// </summary>
     public required int Seconds { get; init; }
 

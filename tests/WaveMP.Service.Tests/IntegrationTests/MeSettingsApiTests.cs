@@ -229,9 +229,30 @@ public class MeSettingsApiTests
             settings.Equalizer.PreampDb.Should().Be(0);
             settings.Equalizer.GainsDb.Should().Equal(_zeros);
             settings.Equalizer.CustomGainsDb.Should().Equal(_zeros);
-            settings.Crossfade.Seconds.Should().Be(0);
+            settings.Crossfade.Enabled.Should().BeFalse();
+            settings.Crossfade.Seconds.Should().Be(5);
             settings.Crossfade.AlbumsGapless.Should().BeTrue();
             settings.SleepTimer.FadeSeconds.Should().Be(10);
+        }
+    }
+
+    [Test]
+    public async Task UpdateMySettings_WithCrossfadeOff_KeepsItsSeconds()
+    {
+        (Guid _, HttpClient client) = await CreateProfileAsync();
+        using (client)
+        {
+            await PatchAsync(client, new { crossfade = new { enabled = true, seconds = 8 } });
+
+            HttpResponseMessage response = await PatchAsync(client, new { crossfade = new { enabled = false } });
+            UserSettingsDto off = await client.GetJsonAsync<UserSettingsDto>("/api/v1/me/settings");
+            await PatchAsync(client, new { crossfade = new { enabled = true } });
+            UserSettingsDto on = await client.GetJsonAsync<UserSettingsDto>("/api/v1/me/settings");
+
+            response.StatusCode.Should().Be(HttpStatusCode.OK);
+            (await response.Content.ReadAsStringAsync()).Should().Contain("\"enabled\":false");
+            off.Crossfade.Should().BeEquivalentTo(new { Enabled = false, Seconds = 8 });
+            on.Crossfade.Should().BeEquivalentTo(new { Enabled = true, Seconds = 8 });
         }
     }
 
@@ -300,7 +321,7 @@ public class MeSettingsApiTests
                     replayGain = "Track",
                     playerViewMode = "Cover",
                     equalizer = new { enabled = true, preset = "Jazz", preampDb = -3 },
-                    crossfade = new { seconds = 6, albumsGapless = false },
+                    crossfade = new { enabled = true, seconds = 6, albumsGapless = false },
                     sleepTimer = new { fadeSeconds = 30 },
                 });
 
@@ -309,6 +330,7 @@ public class MeSettingsApiTests
 
             response.StatusCode.Should().Be(HttpStatusCode.OK);
             read.Crossfade.Seconds.Should().Be(12);
+            read.Crossfade.Enabled.Should().BeTrue();
             read.Crossfade.AlbumsGapless.Should().BeFalse();
             read.Equalizer.Enabled.Should().BeTrue();
             read.Equalizer.Preset.Should().Be(EqualizerPresetDto.Jazz);
@@ -402,7 +424,7 @@ public class MeSettingsApiTests
             read.Equalizer.Preset.Should().Be(EqualizerPresetDto.Flat);
             read.Equalizer.PreampDb.Should().Be(0);
             read.Equalizer.CustomGainsDb.Should().Equal(_zeros);
-            read.Crossfade.Seconds.Should().Be(0);
+            read.Crossfade.Seconds.Should().Be(5);
             read.SleepTimer.FadeSeconds.Should().Be(10);
         }
     }

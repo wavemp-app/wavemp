@@ -147,6 +147,7 @@ onUnmounted(() => {
             @seek="player.seek"
             @toggle-shuffle="player.toggleShuffle"
             @cycle-repeat="player.cycleRepeat"
+            @toggle-crossfade="player.toggleCrossfade"
             @toggle-mute="player.toggleMute"
             @change-volume="player.setVolume"
             @show-now-playing="router.push({ name: 'now-playing' })"

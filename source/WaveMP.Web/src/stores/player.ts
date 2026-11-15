@@ -705,6 +705,14 @@ export const usePlayerStore = defineStore('player', () => {
         forgetPrepared()
     }
 
+    /**
+     * Turns the crossfade of the profile on or off; it applies from the next track on. If saving
+     * fails, the switch goes back (the settings page shows the same state).
+     */
+    function toggleCrossfade(): void {
+        session.setCrossfadeEnabled(!session.crossfade.enabled).catch(() => undefined)
+    }
+
     function applyVolume(): void {
         saveVolume({ volume: volume.value, muted: muted.value })
         engine?.setVolume(outputGain())
@@ -955,6 +963,7 @@ export const usePlayerStore = defineStore('player', () => {
             muted: muted.value,
             message: message.value,
             equalizer: equalizer.settings.enabled,
+            crossfade: session.crossfade.enabled,
             sleepTimer: {
                 mode: sleepTimer.value.mode,
                 remaining: sleepRemaining.value,
@@ -1027,6 +1036,7 @@ export const usePlayerStore = defineStore('player', () => {
         seek,
         toggleShuffle,
         cycleRepeat,
+        toggleCrossfade,
         toggleMute,
         setVolume,
         clear,

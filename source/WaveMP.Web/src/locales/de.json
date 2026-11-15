@@ -112,6 +112,7 @@
     "repeatOff": "Wiederholen: aus",
     "repeatAll": "Wiederholen: alle",
     "repeatOne": "Wiederholen: einen",
+    "crossfade": "Überblenden",
     "mute": "Stummschalten",
     "volume": "Lautstärke",
     "seek": "Position",
@@ -344,7 +345,8 @@
       "loading": "Laden",
       "message": "Hinweis (Format nicht unterstützt)",
       "expanded": "Erweitert (mobiler Vollbild-Player)",
-      "sleepTimer": "Sleep-Timer läuft"
+      "sleepTimer": "Sleep-Timer läuft",
+      "crossfade": "Überblenden an"
     },
     "table": {
       "part": "Part",
@@ -396,7 +398,7 @@
     "equalizerHint": "Formt den Klang mit zehn Bändern und Voreinstellungen. Gilt für dieses Profil auf allen Geräten.",
     "openEqualizer": "Equalizer öffnen",
     "crossfade": "Überblenden",
-    "crossfadeHint": "Blendet einen Titel in den nächsten über. Aus spielt die Titel ohne Lücken.",
+    "crossfadeHint": "Blendet einen Titel in den nächsten über. Aus spielt die Titel ohne Lücken. Der Überblenden-Button des Players schaltet es ein und aus und behält die Dauer.",
     "crossfadeOff": "Aus (ohne Lücken)",
     "crossfadeSeconds": "{seconds} s",
     "crossfadeAlbums": "Titel desselben Albums nicht überblenden",

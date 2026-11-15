@@ -149,6 +149,31 @@ describe('AppTransport', () => {
         expect(wrapper.get('[data-part="btn-shuffle"]').attributes('data-state')).toBe('on')
     })
 
+    it('shows the crossfade switch between repeat and stop, pressed while it is on', async () => {
+        const off = mountTransport()
+        const buttons = off
+            .findAll('[data-part="transport-controls"] > button')
+            .map((button) => button.attributes('data-part'))
+        expect(buttons.slice(0, 4)).toEqual([
+            'btn-shuffle',
+            'btn-repeat',
+            'btn-crossfade',
+            'btn-stop',
+        ])
+        const crossfade = off.get('[data-part="btn-crossfade"]')
+        expect(crossfade.attributes('aria-pressed')).toBe('false')
+        expect(crossfade.attributes('data-state')).toBe('off')
+        expect(crossfade.get('[data-part="icon"]').attributes('data-icon')).toBe('crossfade')
+        expect(crossfade.get('[data-part="label"]').text()).toBe('Crossfade')
+
+        await crossfade.trigger('click')
+        expect(off.emitted('toggleCrossfade')).toHaveLength(1)
+
+        const on = mountTransport({ crossfade: true }).get('[data-part="btn-crossfade"]')
+        expect(on.attributes('aria-pressed')).toBe('true')
+        expect(on.attributes('data-state')).toBe('on')
+    })
+
     it('shows the muted state', () => {
         const wrapper = mountTransport({ muted: true })
         const mute = wrapper.get('[data-part="btn-mute"]')

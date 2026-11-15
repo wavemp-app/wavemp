@@ -124,13 +124,13 @@ describe('SettingsView playback', () => {
 
     it('shows crossfade, album crossfade, sleep timer fade-out and equalizer of the profile', async () => {
         const session = useSessionStore()
-        session.crossfade = { seconds: 0, albumsGapless: true }
+        session.crossfade = { enabled: false, seconds: 5, albumsGapless: true }
         session.sleepTimer = { fadeSeconds: 20 }
         const { wrapper } = mountView()
         await flushPromises()
 
         const crossfade = field<HTMLSelectElement>(wrapper, 'crossfade', 'select')
-        expect(crossfade.element.value).toBe('0')
+        expect(crossfade.element.value).toBe('off')
         expect(crossfade.findAll('option').map((option) => option.text())).toHaveLength(13)
         expect(crossfade.find('option').text()).toBe('Off (without gaps)')
         const albums = field<HTMLInputElement>(wrapper, 'crossfade-albums', 'input')
@@ -156,6 +156,7 @@ describe('SettingsView playback', () => {
         const { wrapper, session } = mountView()
         const update = vi.spyOn(session, 'updateCrossfade').mockImplementation(async (change) => {
             session.crossfade = {
+                enabled: change.enabled ?? session.crossfade.enabled,
                 seconds: change.seconds ?? session.crossfade.seconds,
                 albumsGapless: change.albumsGapless ?? session.crossfade.albumsGapless,
             }
@@ -163,13 +164,29 @@ describe('SettingsView playback', () => {
 
         await field(wrapper, 'crossfade', 'select').setValue('6')
         await flushPromises()
-        expect(update).toHaveBeenCalledWith({ seconds: 6 })
+        expect(update).toHaveBeenCalledWith({ enabled: true, seconds: 6 })
         const albums = field<HTMLInputElement>(wrapper, 'crossfade-albums', 'input')
         expect(albums.element.disabled).toBe(false)
 
         await albums.setValue(false)
         await flushPromises()
         expect(update).toHaveBeenLastCalledWith({ albumsGapless: false })
+
+        await field(wrapper, 'crossfade', 'select').setValue('off')
+        await flushPromises()
+        expect(update).toHaveBeenLastCalledWith({ enabled: false })
+        expect(session.crossfade).toEqual({ enabled: false, seconds: 6, albumsGapless: false })
+    })
+
+    it('follows the switch of the transport bar', async () => {
+        const { wrapper, session } = mountView()
+        session.crossfade = { enabled: true, seconds: 8, albumsGapless: true }
+        await flushPromises()
+        expect(field<HTMLSelectElement>(wrapper, 'crossfade', 'select').element.value).toBe('8')
+
+        session.crossfade = { enabled: false, seconds: 8, albumsGapless: true }
+        await flushPromises()
+        expect(field<HTMLSelectElement>(wrapper, 'crossfade', 'select').element.value).toBe('off')
     })
 
     it('saves the fade-out and restores it after an error', async () => {

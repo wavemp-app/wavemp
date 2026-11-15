@@ -9,6 +9,11 @@ namespace WaveMP.Service.Dtos;
 public sealed class UpdateCrossfadeSettingsDto
 {
     /// <summary>
+    /// Whether the players fade from one track into the next; the seconds stay when it is turned off.
+    /// </summary>
+    public bool? Enabled { get; init; }
+
+    /// <summary>
     /// Seconds the players fade from one track into the next, from 0 to 12; 0 plays the tracks gapless.
     /// </summary>
     [Range(PlaybackSettingsLimits.CrossfadeMinSeconds, PlaybackSettingsLimits.CrossfadeMaxSeconds)]

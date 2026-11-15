@@ -12,6 +12,7 @@ namespace WaveMP.Core.Users.Settings;
 /// <param name="EqualizerPreset">Curve of the equalizer.</param>
 /// <param name="EqualizerPreampDb">Preamp of the equalizer in dB, see <see cref="PlaybackSettingsLimits"/>.</param>
 /// <param name="EqualizerCustomGainsDb">Own curve of the user, one gain in dB per band.</param>
+/// <param name="CrossfadeEnabled">Whether the players fade from one track into the next.</param>
 /// <param name="CrossfadeSeconds">Seconds of the crossfade between tracks; 0 plays them gapless.</param>
 /// <param name="CrossfadeAlbumsGapless">Whether consecutive tracks of the same album play without crossfade.</param>
 /// <param name="SleepTimerFadeSeconds">Seconds the sleep timer fades out the music.</param>
@@ -23,6 +24,7 @@ public sealed record UpdateUserSettingsCommand(
     EqualizerPreset? EqualizerPreset = null,
     double? EqualizerPreampDb = null,
     IReadOnlyList<double>? EqualizerCustomGainsDb = null,
+    bool? CrossfadeEnabled = null,
     int? CrossfadeSeconds = null,
     bool? CrossfadeAlbumsGapless = null,
     int? SleepTimerFadeSeconds = null);

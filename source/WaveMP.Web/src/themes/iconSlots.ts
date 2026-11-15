@@ -80,6 +80,7 @@ export const iconSlots = {
     shuffle: { file: fill('shuffle'), area: 'transport' },
     repeat: { file: fill('repeat'), area: 'transport' },
     'repeat-one': { file: fill('repeat-once'), area: 'transport' },
+    crossfade: { file: fill('intersect'), area: 'transport' },
     stop: { file: fill('stop'), area: 'transport' },
     previous: { file: fill('skip-back'), area: 'transport' },
     play: { file: fill('play'), area: 'transport' },

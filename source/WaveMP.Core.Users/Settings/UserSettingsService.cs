@@ -71,6 +71,11 @@ internal sealed class UserSettingsService(IUserRepository users) : IUserSettings
             settings.EqualizerCustomGainsDb = EqualizerGains.Normalize(gains);
         }
 
+        if (command.CrossfadeEnabled is { } crossfadeEnabled)
+        {
+            settings.CrossfadeEnabled = crossfadeEnabled;
+        }
+
         if (command.CrossfadeSeconds is { } crossfade)
         {
             settings.CrossfadeSeconds = crossfade;

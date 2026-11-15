@@ -24,6 +24,7 @@ public static class SettingsMappingExtensions
             },
             Crossfade = new CrossfadeSettingsDto
             {
+                Enabled = settings.CrossfadeEnabled,
                 Seconds = settings.CrossfadeSeconds,
                 AlbumsGapless = settings.CrossfadeAlbumsGapless,
             },
@@ -44,6 +45,7 @@ public static class SettingsMappingExtensions
             request.Equalizer?.Preset?.ToEntity(),
             request.Equalizer?.PreampDb,
             request.Equalizer?.CustomGainsDb,
+            request.Crossfade?.Enabled,
             request.Crossfade?.Seconds,
             request.Crossfade?.AlbumsGapless,
             request.SleepTimer?.FadeSeconds);

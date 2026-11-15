@@ -146,7 +146,8 @@ public class ModelTests
 
     [TestCase(nameof(UserSettings.EqualizerEnabled), false)]
     [TestCase(nameof(UserSettings.EqualizerPreampDb), 0d)]
-    [TestCase(nameof(UserSettings.CrossfadeSeconds), 0)]
+    [TestCase(nameof(UserSettings.CrossfadeEnabled), false)]
+    [TestCase(nameof(UserSettings.CrossfadeSeconds), 5)]
     [TestCase(nameof(UserSettings.CrossfadeAlbumsGapless), true)]
     [TestCase(nameof(UserSettings.SleepTimerFadeSeconds), 10)]
     public void UserSettings_PlaybackSettings_HaveTheDefaultsOfANewProfile(string property, object expected)
@@ -166,7 +167,8 @@ public class ModelTests
         settings.EqualizerPreset.Should().Be(EqualizerPreset.Flat);
         settings.EqualizerCustomGainsDb.Should().HaveCount(UserSettings.EqualizerBandCount)
             .And.OnlyContain(gain => gain == 0);
-        settings.CrossfadeSeconds.Should().Be(0);
+        settings.CrossfadeEnabled.Should().BeFalse();
+        settings.CrossfadeSeconds.Should().Be(5);
         settings.CrossfadeAlbumsGapless.Should().BeTrue();
         settings.SleepTimerFadeSeconds.Should().Be(10);
     }

@@ -274,6 +274,29 @@ export const useSessionStore = defineStore('session', () => {
         }
     }
 
+    /**
+     * Turns the crossfade of the profile on or off at once and saves it; the length stays. If saving
+     * fails, the previous state comes back, unless a newer change was made meanwhile. Errors are
+     * passed on.
+     */
+    async function setCrossfadeEnabled(enabled: boolean): Promise<void> {
+        const requestToken = token.value
+        const request = ++requests.crossfade
+        const previous = crossfade.value
+        crossfade.value = { ...previous, enabled }
+        try {
+            const settings = await apiClient.api.v1.me.settings.patch({ crossfade: { enabled } })
+            if (token.value === requestToken && request === requests.crossfade) {
+                crossfade.value = toCrossfadeSettings(settings?.crossfade) ?? crossfade.value
+            }
+        } catch (error) {
+            if (token.value === requestToken && request === requests.crossfade) {
+                crossfade.value = previous
+            }
+            throw error
+        }
+    }
+
     /** Saves the crossfade of the profile like updateEqualizer. Errors are passed on. */
     async function updateCrossfade(change: UpdateCrossfadeSettings): Promise<void> {
         const requestToken = token.value
@@ -329,6 +352,7 @@ export const useSessionStore = defineStore('session', () => {
         updatePlayerViewMode,
         updateEqualizer,
         updateCrossfade,
+        setCrossfadeEnabled,
         updateSleepTimer,
         signOut,
         clear,

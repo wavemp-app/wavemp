@@ -154,6 +154,7 @@ export const parts = [
     'transport-controls',
     'btn-shuffle',
     'btn-repeat',
+    'btn-crossfade',
     'btn-stop',
     'btn-prev',
     'btn-play',

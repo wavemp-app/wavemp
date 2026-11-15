@@ -292,6 +292,12 @@ const transports = computed(() => [
         expanded: false,
     },
     {
+        id: 'crossfade',
+        label: t('dev.transportStates.crossfade'),
+        state: { ...idle, ...track.value, playback: 'playing' as const, crossfade: true },
+        expanded: false,
+    },
+    {
         id: 'expanded',
         label: t('dev.transportStates.expanded'),
         state: { ...idle, ...track.value, playback: 'playing' as const },

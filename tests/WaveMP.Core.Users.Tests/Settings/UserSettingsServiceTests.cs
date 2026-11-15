@@ -135,7 +135,8 @@ public class UserSettingsServiceTests
         result.EqualizerPreset.Should().Be(EqualizerPreset.Flat);
         result.EqualizerPreampDb.Should().Be(0);
         result.EqualizerCustomGainsDb.Should().Equal(0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
-        result.CrossfadeSeconds.Should().Be(0);
+        result.CrossfadeEnabled.Should().BeFalse();
+        result.CrossfadeSeconds.Should().Be(5);
         result.CrossfadeAlbumsGapless.Should().BeTrue();
         result.SleepTimerFadeSeconds.Should().Be(10);
     }
@@ -201,14 +202,31 @@ public class UserSettingsServiceTests
         UserSettings? result = await _service.UpdateAsync(
             user.Id,
             new UpdateUserSettingsCommand(
+                CrossfadeEnabled: true,
                 CrossfadeSeconds: 12,
                 CrossfadeAlbumsGapless: false,
                 SleepTimerFadeSeconds: 60));
 
-        result!.CrossfadeSeconds.Should().Be(12);
+        result!.CrossfadeEnabled.Should().BeTrue();
+        result.CrossfadeSeconds.Should().Be(12);
         result.CrossfadeAlbumsGapless.Should().BeFalse();
         result.SleepTimerFadeSeconds.Should().Be(60);
         result.EqualizerPreset.Should().Be(EqualizerPreset.Jazz);
+    }
+
+    [Test]
+    public async Task UpdateAsync_WithCrossfadeOff_KeepsItsSeconds()
+    {
+        User user = Given(Language.En);
+        user.Settings!.CrossfadeEnabled = true;
+        user.Settings.CrossfadeSeconds = 8;
+
+        UserSettings? result = await _service.UpdateAsync(
+            user.Id,
+            new UpdateUserSettingsCommand(CrossfadeEnabled: false));
+
+        result!.CrossfadeEnabled.Should().BeFalse();
+        result.CrossfadeSeconds.Should().Be(8);
     }
 
     [Test]
@@ -219,7 +237,8 @@ public class UserSettingsServiceTests
         settings.EqualizerEnabled = true;
         settings.EqualizerPreset = EqualizerPreset.Bass;
         settings.EqualizerPreampDb = -2;
-        settings.CrossfadeSeconds = 5;
+        settings.CrossfadeEnabled = true;
+        settings.CrossfadeSeconds = 7;
         settings.CrossfadeAlbumsGapless = false;
         settings.SleepTimerFadeSeconds = 20;
 
@@ -230,7 +249,8 @@ public class UserSettingsServiceTests
             EqualizerEnabled = true,
             EqualizerPreset = EqualizerPreset.Bass,
             EqualizerPreampDb = -2d,
-            CrossfadeSeconds = 5,
+            CrossfadeEnabled = true,
+            CrossfadeSeconds = 7,
             CrossfadeAlbumsGapless = false,
             SleepTimerFadeSeconds = 20,
         });

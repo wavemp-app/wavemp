@@ -9,7 +9,7 @@ import ProfileSummary from '@/components/profiles/ProfileSummary.vue'
 import { ReplayGainModeObject, type ReplayGainMode } from '@/api/generated/models'
 import { useFormat } from '@/composables/useFormat'
 import { isSupportedLocale, type SupportedLocale } from '@/i18n/locales'
-import { maxCrossfadeSeconds } from '@/player/crossfade'
+import { maxCrossfadeSeconds, type CrossfadeSettings } from '@/player/crossfade'
 import { useEqualizerStore } from '@/stores/equalizer'
 import { useHealthStore } from '@/stores/health'
 import { useSessionStore } from '@/stores/session'
@@ -105,15 +105,20 @@ async function changeLanguage(value: string): Promise<void> {
         saving.value = false
     }
 }
-const crossfadeOptions = computed<SelectOption[]>(() =>
-    Array.from({ length: maxCrossfadeSeconds + 1 }, (_, seconds) => ({
-        value: String(seconds),
-        label:
-            seconds === 0
-                ? t('settings.crossfadeOff')
-                : t('settings.crossfadeSeconds', { seconds: format.number(seconds) }),
+/** Value of the crossfade menu: "off" while the crossfade is off, otherwise its seconds. */
+const crossfadeOff = 'off'
+
+function crossfadeValue(settings: CrossfadeSettings): string {
+    return settings.enabled && settings.seconds > 0 ? String(settings.seconds) : crossfadeOff
+}
+
+const crossfadeOptions = computed<SelectOption[]>(() => [
+    { value: crossfadeOff, label: t('settings.crossfadeOff') },
+    ...Array.from({ length: maxCrossfadeSeconds }, (_, index) => ({
+        value: String(index + 1),
+        label: t('settings.crossfadeSeconds', { seconds: format.number(index + 1) }),
     })),
-)
+])
 
 /** Seconds of the fade-out the menu offers; another value of the profile is added. */
 const sleepTimerFadeChoices = [5, 10, 15, 30, 60]
@@ -126,7 +131,7 @@ const sleepTimerFadeOptions = computed<SelectOption[]>(() =>
         })),
 )
 
-const crossfade = ref(String(session.crossfade.seconds))
+const crossfade = ref(crossfadeValue(session.crossfade))
 const crossfadeAlbums = ref(session.crossfade.albumsGapless)
 const sleepTimerFade = ref(String(session.sleepTimer.fadeSeconds))
 
@@ -134,7 +139,7 @@ watch(
     () => session.crossfade,
     (value) => {
         if (!saving.value) {
-            crossfade.value = String(value.seconds)
+            crossfade.value = crossfadeValue(value)
             crossfadeAlbums.value = value.albumsGapless
         }
     },
@@ -175,17 +180,24 @@ async function changeEqualizer(enabled: boolean): Promise<void> {
     }
 }
 
+/**
+ * "Off" turns the crossfade off and keeps its length (the switch in the transport bar turns it on
+ * again); a length turns it on with that length.
+ */
 async function changeCrossfade(value: string): Promise<void> {
+    const previous = crossfadeValue(session.crossfade)
     const seconds = Number(value)
-    if (!Number.isInteger(seconds) || seconds === session.crossfade.seconds) {
+    if (value === previous || (value !== crossfadeOff && !Number.isInteger(seconds))) {
         return
     }
 
-    const previous = session.crossfade.seconds
     await save(
-        () => session.updateCrossfade({ seconds }),
+        () =>
+            session.updateCrossfade(
+                value === crossfadeOff ? { enabled: false } : { enabled: true, seconds },
+            ),
         () => {
-            crossfade.value = String(previous)
+            crossfade.value = previous
         },
     )
 }
@@ -274,7 +286,7 @@ async function changeSleepTimerFade(value: string): Promise<void> {
                 v-model="crossfadeAlbums"
                 data-field="crossfade-albums"
                 :label="t('settings.crossfadeAlbums')"
-                :disabled="saving || crossfade === '0'"
+                :disabled="saving || crossfade === crossfadeOff"
                 @update:model-value="changeCrossfadeAlbums"
             />
             <BaseSelect

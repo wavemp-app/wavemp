@@ -1091,7 +1091,11 @@ export interface CrossfadeSettings extends AdditionalDataHolder, Parsable {
      */
     albumsGapless?: boolean | null;
     /**
-     * Seconds the players fade from one track into the next, from 0 to 12; 0 (the default) plays the tracks gapless.
+     * Whether the players fade from one track into the next; false (the default) plays the tracks gapless. Turning it off keeps the seconds, so turning it on again fades as long as before.
+     */
+    enabled?: boolean | null;
+    /**
+     * Seconds the players fade from one track into the next while the crossfade is enabled, from 0 to 12 (5 by default); 0 plays the tracks gapless.
      */
     seconds?: number | null;
 }
@@ -1319,6 +1323,7 @@ export function deserializeIntoCreateUser(createUser: Partial<CreateUser> | unde
 export function deserializeIntoCrossfadeSettings(crossfadeSettings: Partial<CrossfadeSettings> | undefined = {}) : Record<string, (node: ParseNode) => void> {
     return {
         "albumsGapless": n => { crossfadeSettings.albumsGapless = n.getBooleanValue(); },
+        "enabled": n => { crossfadeSettings.enabled = n.getBooleanValue(); },
         "seconds": n => { crossfadeSettings.seconds = n.getNumberValue(); },
     }
 }
@@ -2116,6 +2121,7 @@ export function deserializeIntoUpdateCacheSettings(updateCacheSettings: Partial<
 export function deserializeIntoUpdateCrossfadeSettings(updateCrossfadeSettings: Partial<UpdateCrossfadeSettings> | undefined = {}) : Record<string, (node: ParseNode) => void> {
     return {
         "albumsGapless": n => { updateCrossfadeSettings.albumsGapless = n.getBooleanValue(); },
+        "enabled": n => { updateCrossfadeSettings.enabled = n.getBooleanValue(); },
         "seconds": n => { updateCrossfadeSettings.seconds = n.getNumberValue(); },
     }
 }
@@ -3609,6 +3615,7 @@ export function serializeCreateUser(writer: SerializationWriter, createUser: Par
 export function serializeCrossfadeSettings(writer: SerializationWriter, crossfadeSettings: Partial<CrossfadeSettings> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
     if (!crossfadeSettings || isSerializingDerivedType) { return; }
     writer.writeBooleanValue("albumsGapless", crossfadeSettings.albumsGapless);
+    writer.writeBooleanValue("enabled", crossfadeSettings.enabled);
     writer.writeNumberValue("seconds", crossfadeSettings.seconds);
     writer.writeAdditionalData(crossfadeSettings.additionalData);
 }
@@ -4457,6 +4464,7 @@ export function serializeUpdateCacheSettings(writer: SerializationWriter, update
 export function serializeUpdateCrossfadeSettings(writer: SerializationWriter, updateCrossfadeSettings: Partial<UpdateCrossfadeSettings> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
     if (!updateCrossfadeSettings || isSerializingDerivedType) { return; }
     writer.writeBooleanValue("albumsGapless", updateCrossfadeSettings.albumsGapless);
+    writer.writeBooleanValue("enabled", updateCrossfadeSettings.enabled);
     writer.writeNumberValue("seconds", updateCrossfadeSettings.seconds);
     writer.writeAdditionalData(updateCrossfadeSettings.additionalData);
 }
@@ -5161,6 +5169,10 @@ export interface UpdateCrossfadeSettings extends AdditionalDataHolder, Parsable 
      */
     albumsGapless?: boolean | null;
     /**
+     * Whether the players fade from one track into the next; the seconds stay when it is turned off.
+     */
+    enabled?: boolean | null;
+    /**
      * Seconds the players fade from one track into the next, from 0 to 12; 0 plays the tracks gapless.
      */
     seconds?: number | null;
@@ -5591,7 +5603,7 @@ export const EqualizerFilterTypeObject = {
     HighShelf: "HighShelf",
 } as const;
 /**
- * The selected curve; Flat by default.
+ * The preset.
  */
 export const EqualizerPresetObject = {
     Flat: "Flat",

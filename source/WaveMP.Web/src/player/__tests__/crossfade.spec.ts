@@ -14,13 +14,12 @@ function track(album: string | null, seconds: number | null = 300): Track {
     }
 }
 
-const on: CrossfadeSettings = { seconds: 6, albumsGapless: true }
+const on: CrossfadeSettings = { enabled: true, seconds: 6, albumsGapless: true }
 
 describe('crossfade', () => {
-    it('does not fade when it is off', () => {
-        expect(
-            crossfadeDuration({ seconds: 0, albumsGapless: false }, track('a'), track('b')),
-        ).toBe(0)
+    it('does not fade when it is off, whatever its length', () => {
+        expect(crossfadeDuration({ ...on, enabled: false }, track('a'), track('b'))).toBe(0)
+        expect(crossfadeDuration({ ...on, seconds: 0 }, track('a'), track('b'))).toBe(0)
     })
 
     it('fades between tracks of different albums', () => {
@@ -61,12 +60,14 @@ describe('crossfade', () => {
     })
 
     it('reads complete settings only', () => {
-        expect(toCrossfadeSettings({ seconds: 4, albumsGapless: false })).toEqual({
+        expect(toCrossfadeSettings({ enabled: false, seconds: 4, albumsGapless: false })).toEqual({
+            enabled: false,
             seconds: 4,
             albumsGapless: false,
         })
-        expect(toCrossfadeSettings({ seconds: 13, albumsGapless: true })).toBeNull()
-        expect(toCrossfadeSettings({ seconds: 2.5, albumsGapless: true })).toBeNull()
+        expect(toCrossfadeSettings({ seconds: 4, albumsGapless: false })).toBeNull()
+        expect(toCrossfadeSettings({ enabled: true, seconds: 13, albumsGapless: true })).toBeNull()
+        expect(toCrossfadeSettings({ enabled: true, seconds: 2.5, albumsGapless: true })).toBeNull()
         expect(toCrossfadeSettings(undefined)).toBeNull()
     })
 })

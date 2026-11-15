@@ -38,8 +38,8 @@ internal sealed class UserSettingsConfiguration : IEntityTypeConfiguration<UserS
 
         // The columns below give existing rows the defaults of a new profile. The entity always writes its values
         // (ValueGeneratedNever), so the default of a column never replaces a value set in the code. For
-        // CrossfadeAlbumsGapless and SleepTimerFadeSeconds the defaults of the CLR types (false, 0) differ from the
-        // column defaults; EF would otherwise leave them out on insert.
+        // CrossfadeSeconds, CrossfadeAlbumsGapless and SleepTimerFadeSeconds the defaults of the CLR types (0, false)
+        // differ from the column defaults; EF would otherwise leave them out on insert.
         builder.Property(settings => settings.EqualizerEnabled)
             .HasDefaultValue(false)
             .ValueGeneratedNever();
@@ -59,8 +59,12 @@ internal sealed class UserSettingsConfiguration : IEntityTypeConfiguration<UserS
             .HasDefaultValueSql("'{0,0,0,0,0,0,0,0,0,0}'::double precision[]")
             .ValueGeneratedNever();
 
+        builder.Property(settings => settings.CrossfadeEnabled)
+            .HasDefaultValue(false)
+            .ValueGeneratedNever();
+
         builder.Property(settings => settings.CrossfadeSeconds)
-            .HasDefaultValue(0)
+            .HasDefaultValue(5)
             .ValueGeneratedNever();
 
         builder.Property(settings => settings.CrossfadeAlbumsGapless)

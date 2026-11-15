@@ -112,6 +112,7 @@
     "repeatOff": "Repeat: off",
     "repeatAll": "Repeat: all",
     "repeatOne": "Repeat: one",
+    "crossfade": "Crossfade",
     "mute": "Mute",
     "volume": "Volume",
     "seek": "Position",
@@ -344,7 +345,8 @@
       "loading": "Loading",
       "message": "Notice (format not supported)",
       "expanded": "Expanded (full-screen player on mobile)",
-      "sleepTimer": "Sleep timer running"
+      "sleepTimer": "Sleep timer running",
+      "crossfade": "Crossfade on"
     },
     "table": {
       "part": "Part",
@@ -396,7 +398,7 @@
     "equalizerHint": "Shapes the sound with ten bands and presets. Applies to this profile on all devices.",
     "openEqualizer": "Open the equalizer",
     "crossfade": "Crossfade",
-    "crossfadeHint": "Fades one song into the next. Off plays the songs without gaps.",
+    "crossfadeHint": "Fades one song into the next. Off plays the songs without gaps. The crossfade button of the player turns it on and off and keeps the length.",
     "crossfadeOff": "Off (without gaps)",
     "crossfadeSeconds": "{seconds} s",
     "crossfadeAlbums": "Do not crossfade songs of the same album",

@@ -20,15 +20,24 @@ public sealed class TestDatabase : IAsyncDisposable
     public string ConnectionString { get; }
 
     /// <summary>
-    /// Drops a database of the same name and creates it again with all migrations.
+    /// Drops a database of the same name and creates it again with all migrations, or with the migrations up to
+    /// <paramref name="targetMigration"/> (for tests of a later migration).
     /// </summary>
-    public static async Task<TestDatabase> CreateMigratedAsync(string name)
+    public static async Task<TestDatabase> CreateMigratedAsync(string name, string? targetMigration = null)
     {
         TestDatabaseSettings.DropDatabase(name);
         TestDatabase database = new(name);
-        await using WaveMpDbContext dbContext = database.CreateDbContext();
-        await dbContext.Database.MigrateAsync();
+        await database.MigrateAsync(targetMigration);
         return database;
+    }
+
+    /// <summary>
+    /// Applies the migrations up to <paramref name="targetMigration"/>, or all of them.
+    /// </summary>
+    public async Task MigrateAsync(string? targetMigration = null)
+    {
+        await using WaveMpDbContext dbContext = CreateDbContext();
+        await dbContext.Database.MigrateAsync(targetMigration);
     }
 
     /// <summary>

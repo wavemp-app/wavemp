@@ -48,9 +48,16 @@ public class UserSettings
     public double[] EqualizerCustomGainsDb { get; set; } = new double[EqualizerBandCount];
 
     /// <summary>
-    /// Seconds the players fade from one track into the next; 0 plays them gapless.
+    /// Whether the players fade from one track into the next; off by default. Turning it off keeps
+    /// <see cref="CrossfadeSeconds"/>, so turning it on again fades as long as before.
     /// </summary>
-    public int CrossfadeSeconds { get; set; }
+    public bool CrossfadeEnabled { get; set; }
+
+    /// <summary>
+    /// Seconds the players fade from one track into the next while <see cref="CrossfadeEnabled"/> is on; 0 plays them
+    /// gapless. 5 by default.
+    /// </summary>
+    public int CrossfadeSeconds { get; set; } = 5;
 
     /// <summary>
     /// Whether consecutive tracks of the same album play gapless even with a crossfade; on by default.
