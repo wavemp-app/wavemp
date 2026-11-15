@@ -172,10 +172,23 @@ Neue Projekte und Ordner fügen sich in diese Struktur ein. Abweichungen nur, we
 - **Abschlusskommentar:** Jedes Issue bekommt zum Schluss einen kurzen englischen Kommentar mit den Änderungen und den getroffenen Annahmen ("Assumptions").
 - **Neue Funde:** Fehler oder Folgearbeiten, die nicht zum aktuellen Issue gehören, werden als neues Issue mit dem Label `triage` angelegt und nicht umgesetzt.
 - **IDs und Befehle** (werden in WMP-15 eingetragen):
-  - Projekt-Nummer: _offen_
-  - Status-Feld-ID: _offen_
-  - Status-Optionen (Todo, In Progress, In Review, Done): _offen_
-  - Befehle zum Setzen des Status: _offen_
+  - Projekt-Nummer: `1` (Org-Projekt "WaveMP Roadmap", https://github.com/orgs/wavemp-app/projects/1), Projekt-ID `PVT_kwDOFTYNss4Brwn4`
+  - Status-Feld-ID: `PVTSSF_lADOFTYNss4Brwn4zhqByL0`
+  - Status-Optionen: Todo `22c94051`, In Progress `ea5869be`, In Review `0133a05e`, Done `f94201b0`
+  - Befehle zum Setzen des Status (Bash; `ISSUE` ist die GitHub-Issue-Nummer, nicht die WMP-Nummer):
+    ```bash
+    # Issue dem Projekt hinzufügen (nur nötig, wenn es noch nicht im Projekt ist, z. B. übernommene Nutzer-Issues)
+    gh project item-add 1 --owner wavemp-app --url "https://github.com/wavemp-app/wavemp/issues/$ISSUE"
+
+    # Projekt-Item des Issues ermitteln
+    ITEM=$(gh api graphql -f query='query($n:Int!){repository(owner:"wavemp-app",name:"wavemp"){issue(number:$n){projectItems(first:20){nodes{id project{number}}}}}}' -F n="$ISSUE" --jq '.data.repository.issue.projectItems.nodes[] | select(.project.number == 1) | .id')
+
+    # Status setzen (eine der vier Zeilen)
+    gh project item-edit --id "$ITEM" --project-id PVT_kwDOFTYNss4Brwn4 --field-id PVTSSF_lADOFTYNss4Brwn4zhqByL0 --single-select-option-id 22c94051   # Todo
+    gh project item-edit --id "$ITEM" --project-id PVT_kwDOFTYNss4Brwn4 --field-id PVTSSF_lADOFTYNss4Brwn4zhqByL0 --single-select-option-id ea5869be   # In Progress
+    gh project item-edit --id "$ITEM" --project-id PVT_kwDOFTYNss4Brwn4 --field-id PVTSSF_lADOFTYNss4Brwn4zhqByL0 --single-select-option-id 0133a05e   # In Review
+    gh project item-edit --id "$ITEM" --project-id PVT_kwDOFTYNss4Brwn4 --field-id PVTSSF_lADOFTYNss4Brwn4zhqByL0 --single-select-option-id f94201b0   # Done
+    ```
 
 ## Arbeitsweise
 
