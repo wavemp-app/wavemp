@@ -125,12 +125,17 @@ describe('PlaylistCover', () => {
             wrapper
                 .findAll('[data-part="playlist-cover-slide"]')
                 .map((slide) => slide.attributes('data-state') === 'active')
+        const variable = (name: string) =>
+            (cover.element as HTMLElement).style.getPropertyValue(name)
         expect(cover.attributes('data-count')).toBe('3')
         expect(cover.attributes('aria-hidden')).toBe('true')
         expect(active()).toEqual([true, false, false])
+        expect(variable('--wmp-item-count')).toBe('3')
+        expect(variable('--wmp-active-index')).toBe('0')
 
         await vi.advanceTimersByTimeAsync(6000)
         expect(active()).toEqual([false, true, false])
+        expect(variable('--wmp-active-index')).toBe('1')
         await vi.advanceTimersByTimeAsync(12000)
         expect(active()).toEqual([true, false, false])
         wrapper.unmount()

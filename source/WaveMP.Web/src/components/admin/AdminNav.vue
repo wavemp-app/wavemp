@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { RouterLink, useRoute } from 'vue-router'
 import BaseIcon from '@/components/base/BaseIcon.vue'
+import { indicatorVariables, useIndicator } from '@/composables/useIndicator'
 import type { IconSlotName } from '@/themes/iconSlots'
 
 interface AdminNavItem {
@@ -11,7 +12,11 @@ interface AdminNavItem {
     readonly icon: IconSlotName
 }
 
-/** Navigation between the pages of the administration. */
+/**
+ * Navigation between the pages of the administration. Like the tabs, it holds an indicator part
+ * and tells themes the position of the current page (--wmp-active-index, --wmp-item-count,
+ * --wmp-indicator-x, -y, -width and -height).
+ */
 const { t } = useI18n()
 const route = useRoute()
 
@@ -24,10 +29,19 @@ const items: readonly AdminNavItem[] = [
 ]
 
 const active = computed(() => route.name)
+const activeIndex = computed(() => items.findIndex((item) => item.id === active.value))
+const navigation = ref<HTMLElement | null>(null)
+const indicator = useIndicator(navigation, '[aria-current="page"]', () => activeIndex.value)
 </script>
 
 <template>
-    <nav data-part="admin-nav" :aria-label="t('admin.nav.label')">
+    <nav
+        ref="navigation"
+        data-part="admin-nav"
+        :aria-label="t('admin.nav.label')"
+        :style="indicatorVariables(items.length, activeIndex, indicator)"
+    >
+        <span data-part="indicator" aria-hidden="true"></span>
         <RouterLink
             v-for="item in items"
             :key="item.id"

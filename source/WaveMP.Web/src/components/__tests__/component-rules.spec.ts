@@ -54,9 +54,15 @@ function vueFiles(directory: string): string[] {
     })
 }
 
-/** True if a :style expression only sets runtime variables of the theme API (--wmp-*). */
+/**
+ * True if a :style expression only sets runtime variables of the theme API (--wmp-*): an object
+ * literal with --wmp-* keys, or the variables of an active element from indicatorVariables().
+ */
 export function isAllowedStyleBinding(expression: string): boolean {
     const trimmed = expression.trim()
+    if (/^indicatorVariables\([^;]*\)$/.test(trimmed)) {
+        return true
+    }
     if (!trimmed.startsWith('{') || !trimmed.endsWith('}')) {
         return false
     }
@@ -143,5 +149,7 @@ describe('isAllowedStyleBinding', () => {
         expect(isAllowedStyleBinding("{ color: 'red' }")).toBe(false)
         expect(isAllowedStyleBinding("{ 'color': 'red' }")).toBe(false)
         expect(isAllowedStyleBinding('styles')).toBe(false)
+        expect(isAllowedStyleBinding('indicatorVariables(items.length, active, box)')).toBe(true)
+        expect(isAllowedStyleBinding('otherStyles(items.length)')).toBe(false)
     })
 })

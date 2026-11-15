@@ -9,7 +9,8 @@ import { useCollectionStore } from '@/stores/collection'
  * Rating of a track with five stars. A click on a star rates the track with it, a click on the
  * star of the current rating removes the rating. It shows the state of the API (rating) unless
  * the profile changed it since. In lists the stars are no tab stops (focusable false), since the
- * rows are.
+ * rows are. The rating tells themes the number of stars and the index of the star of the rating
+ * (--wmp-item-count, --wmp-active-index, -1 without a rating), e.g. for a fill drawn with CSS only.
  */
 const props = withDefaults(
     defineProps<{
@@ -41,6 +42,7 @@ function rate(star: number): void {
         :aria-description="description"
         :data-state="value > 0 ? 'rated' : 'unrated'"
         :data-value="value"
+        :style="{ '--wmp-item-count': ratingStars.length, '--wmp-active-index': value - 1 }"
         @click.stop
         @dblclick.stop
         @pointerdown.stop

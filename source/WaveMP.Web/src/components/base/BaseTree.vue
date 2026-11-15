@@ -2,7 +2,13 @@
 import { computed, nextTick, ref, useId, watch } from 'vue'
 import BaseTreeItem, { type TreeNode } from './BaseTreeItem.vue'
 import { nextFocus, visibleItems } from './tree'
+import { indicatorVariables, useIndicator } from '@/composables/useIndicator'
 
+/**
+ * Tree view with a roving tabindex. The tree holds an indicator part and tells themes the position
+ * of the item of the current page among the visible items (--wmp-active-index, --wmp-item-count,
+ * --wmp-indicator-x, -y, -width and -height), so a theme can slide a highlight or a line to it.
+ */
 const props = withDefaults(
     defineProps<{
         nodes: readonly TreeNode[]
@@ -22,12 +28,22 @@ const expanded = defineModel<string[]>('expanded', { default: () => [] })
 const treeId = useId()
 const expandedSet = computed(() => new Set(expanded.value))
 const focusedId = ref<string | undefined>(undefined)
+const tree = ref<HTMLElement | null>(null)
+
+const visible = computed(() => visibleItems(props.nodes, expandedSet.value))
+const activeIndex = computed(() => visible.value.findIndex((item) => item.id === props.active))
+const indicator = useIndicator(tree, '[role="treeitem"][aria-current="page"]', () => [
+    activeIndex.value,
+    visible.value.length,
+])
 
 // Roving tabindex: exactly one item is in the tab order, by default the active one.
 const tabStop = computed(() => {
-    const visible = visibleItems(props.nodes, expandedSet.value)
     const candidates = [focusedId.value, props.active]
-    return candidates.find((id) => id && visible.some((item) => item.id === id)) ?? visible[0]?.id
+    return (
+        candidates.find((id) => id && visible.value.some((item) => item.id === id)) ??
+        visible.value[0]?.id
+    )
 })
 
 watch(
@@ -79,7 +95,15 @@ defineExpose({ focusItem, tabStop })
 </script>
 
 <template>
-    <ul data-part="tree" role="tree" :aria-label="label" @keydown="onKeydown">
+    <ul
+        ref="tree"
+        data-part="tree"
+        role="tree"
+        :aria-label="label"
+        :style="indicatorVariables(visible.length, activeIndex, indicator)"
+        @keydown="onKeydown"
+    >
+        <li data-part="indicator" role="none" aria-hidden="true"></li>
         <BaseTreeItem
             v-for="node in nodes"
             :key="node.id"

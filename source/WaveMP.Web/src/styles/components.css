@@ -264,6 +264,37 @@
         display: none;
     }
 
+    /*
+     * Groups with one active element carry an indicator of their own as first child and the box of
+     * the active element (--wmp-indicator-x, -y, -width, -height). The base hides it and lays it
+     * over the active element, so a theme only has to show it (display, background, transition).
+     */
+    :is(
+        [data-part='tabs'],
+        [data-part='bottom-nav'],
+        [data-part='admin-nav'],
+        [data-part='tree'],
+        [data-part='color-picker']
+    ) {
+        position: relative;
+    }
+
+    :is(
+            [data-part='tabs'],
+            [data-part='bottom-nav'],
+            [data-part='admin-nav'],
+            [data-part='tree'],
+            [data-part='color-picker']
+        )
+        > [data-part='indicator'] {
+        position: absolute;
+        inset-block-start: var(--wmp-indicator-y, 0);
+        left: var(--wmp-indicator-x, 0);
+        inline-size: var(--wmp-indicator-width, 0);
+        block-size: var(--wmp-indicator-height, 0);
+        pointer-events: none;
+    }
+
     [data-part='tab'][aria-current='page'] > [data-part='indicator'] {
         position: absolute;
         inset-block-end: calc(var(--wmp-icon-size-s) / -2);

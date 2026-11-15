@@ -28,7 +28,9 @@ const runtimeVariables = [
     '--wmp-item-count',
     '--wmp-active-index',
     '--wmp-indicator-x',
+    '--wmp-indicator-y',
     '--wmp-indicator-width',
+    '--wmp-indicator-height',
 ]
 
 function read(file: string): string {

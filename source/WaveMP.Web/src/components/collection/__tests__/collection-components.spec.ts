@@ -93,8 +93,14 @@ describe('collection components', () => {
         const rating = wrapper.get('[data-part="rating"]')
         const stars = () => wrapper.findAll('[data-part="rating-star"]')
 
+        const variable = (name: string) =>
+            (wrapper.get('[data-part="rating"]').element as HTMLElement).style.getPropertyValue(
+                name,
+            )
         expect(rating.attributes('data-value')).toBe('2')
         expect(rating.attributes('data-state')).toBe('rated')
+        expect(variable('--wmp-item-count')).toBe('5')
+        expect(variable('--wmp-active-index')).toBe('1')
         expect(stars().map((star) => star.attributes('data-state'))).toEqual([
             'on',
             'on',
@@ -109,11 +115,13 @@ describe('collection components', () => {
         await flushPromises()
         expect(api.setTrackRating).toHaveBeenLastCalledWith('t1', 4)
         expect(rating.attributes('data-value')).toBe('4')
+        expect(variable('--wmp-active-index')).toBe('3')
 
         await stars()[3]!.trigger('click')
         await flushPromises()
         expect(api.setTrackRating).toHaveBeenLastCalledWith('t1', 0)
         expect(rating.attributes('data-state')).toBe('unrated')
+        expect(variable('--wmp-active-index')).toBe('-1')
         wrapper.unmount()
     })
 

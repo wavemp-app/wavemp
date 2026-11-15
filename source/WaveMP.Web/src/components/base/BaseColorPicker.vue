@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, ref, useId } from 'vue'
 import { colorTabStop, nextColorIndex } from './colorPicker'
+import { indicatorVariables, useIndicator } from '@/composables/useIndicator'
 
 export interface ColorOption {
     /** Color as #rrggbb. */
@@ -9,7 +10,11 @@ export interface ColorOption {
     readonly label: string
 }
 
-/** Selection of a color from swatches (radio group); v-model is the value, null for none. */
+/**
+ * Selection of a color from swatches (radio group); v-model is the value, null for none. The
+ * picker holds an indicator part and tells themes the position of the selected swatch
+ * (--wmp-active-index, --wmp-item-count, --wmp-indicator-x, -y, -width and -height).
+ */
 const props = defineProps<{
     label: string
     options: readonly ColorOption[]
@@ -24,6 +29,10 @@ const selected = computed(() =>
     props.options.findIndex((option) => option.value.toLowerCase() === value.value?.toLowerCase()),
 )
 const tabStop = computed(() => colorTabStop(selected.value))
+const indicator = useIndicator(picker, '[aria-checked="true"]', () => [
+    selected.value,
+    props.options.length,
+])
 
 async function onKeydown(event: KeyboardEvent): Promise<void> {
     const next = nextColorIndex(event.key, selected.value, props.options.length)
@@ -47,8 +56,10 @@ async function onKeydown(event: KeyboardEvent): Promise<void> {
             data-part="color-picker"
             role="radiogroup"
             :aria-labelledby="labelId"
+            :style="indicatorVariables(options.length, selected, indicator)"
             @keydown="onKeydown"
         >
+            <span data-part="indicator" aria-hidden="true"></span>
             <button
                 v-for="(option, index) in options"
                 :key="option.value"

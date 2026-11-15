@@ -90,8 +90,8 @@ Example of a desktop layout with the sidebar on the right:
 | `nav-history` | `div` (`role="group"`) | `header` | Back and forward buttons |
 | `btn-back` | `button` | `nav-history` | Back in the history |
 | `btn-forward` | `button` | `nav-history` | Forward in the history |
-| `tabs` | `nav` | `header` | Main navigation |
-| `tab` | `a` (`aria-current`) | `tabs` | Entry of the main navigation with `icon`, `label` and `indicator` |
+| `tabs` | `nav` | `header` | Main navigation: an `indicator` and one `tab` per entry; tells the active `tab` with the runtime variables of an active element, see [Active element of a group](#active-element-of-a-group) |
+| `tab` | `a` (`aria-current`) | `tabs` | Entry of the main navigation with `icon`, `label` and an `indicator` of its own (the arrow of the active tab) |
 | `server-status` | `div` (`role="status"`) | `header` | Connection to the server with `status-indicator` and `label` |
 | `status-indicator` | `span` | `server-status` | Dot that shows the state |
 | `btn-profile` | `button` (`aria-haspopup="menu"`, `aria-expanded`) | `header` | Opens the profile menu (settings, switch profile); `avatar` and `label` with the name |
@@ -109,7 +109,7 @@ Example of a desktop layout with the sidebar on the right:
 | `sidebar` | `aside` | `app` | Navigation tree; a drawer on mobile; on the desktop collapsible to its icons, see [Responsive layout](#responsive-layout) |
 | `btn-sidebar-toggle` | `button` (`aria-expanded`, `aria-controls`) | `sidebar` | Collapses the sidebar to its icons (icon `sidebar-collapse`) or expands it again (icon `sidebar-expand`); before the `tree`; desktop only |
 | `sidebar-backdrop` | `div` | `app` | Backdrop behind the drawer (mobile) |
-| `tree` | `ul` (`role="tree"`) | `sidebar` | Tree view |
+| `tree` | `ul` (`role="tree"`) | `sidebar` | Tree view: an `indicator` (a `li` with `role="none"`) and its `tree-node`s; tells the `tree-item` of the current page among the visible items with the runtime variables of an active element, see [Active element of a group](#active-element-of-a-group) |
 | `tree-node` | `li` (`role="none"`) | `tree`, `tree-group` | Node with its item and its children |
 | `tree-item` | `a` or `span` (`role="treeitem"`) | `tree-node` | Row of a node with `tree-toggle`, `icon` and `label` |
 | `tree-toggle` | `span` | `tree-item` | Expand and collapse icon of nodes with children |
@@ -165,17 +165,17 @@ Example of a desktop layout with the sidebar on the right:
 | `file-item` | `li` | `file-list` | One file with `file-path` and `file-meta` |
 | `file-path` | `span` | `file-item` | Path of the file relative to the media folder |
 | `file-meta` | `span` | `file-item` | Kind, use and problem of the file as `badge` with a visible `label`, and its technical details (format, bitrate, resolution, size, ...) as `label`s |
-| `playlist-cover` | `span` (`aria-hidden`, `data-count`) | `tile`, `detail-header`, `playlist-choice` | Cover of a playlist without a picture of its own: the covers of up to four of its songs (of different albums) as `playlist-cover-slide`s, shown one after the other; `data-count` holds their number. A playlist with its own picture shows a `cover` instead, one without any song cover a `cover` with the icon `playlist` |
+| `playlist-cover` | `span` (`aria-hidden`, `data-count`) | `tile`, `detail-header`, `playlist-choice` | Cover of a playlist without a picture of its own: the covers of up to four of its songs (of different albums) as `playlist-cover-slide`s, shown one after the other; `data-count` and `--wmp-item-count` hold their number, `--wmp-active-index` the index of the shown slide. A playlist with its own picture shows a `cover` instead, one without any song cover a `cover` with the icon `playlist` |
 | `playlist-cover-slide` | `span` | `playlist-cover` | One song cover (a `cover`) of a `playlist-cover`; the shown one has the state `active`. The base stacks the slides and fades between them; with `prefers-reduced-motion` the slides do not change |
 | `playlist-choices` | `ul` (`aria-label`) | `dialog-body` | Playlists of the profile in the dialog "Add to playlist" |
 | `playlist-choice` | `button` | `playlist-choices` (in a `li`) | One playlist with its cover, its name as `label` and `playlist-choice-count`; adds the songs at its end |
 | `playlist-choice-count` | `span` | `playlist-choice` | Number of songs of the playlist |
 | `drag-handle` | `span` | `list-cell` with `data-column="handle"` | Handle that drags an entry of a playlist to another place (mouse, pen and touch), with `icon` and a `label` for screen readers; the menu of the entry moves it with the keyboard |
 | `btn-favorite` | `button` (`aria-pressed`) | `detail-actions`, `list-cell` with `data-column="favorite"`, `now-playing-actions` | Heart that marks a song, album or artist as favorite of the profile, with `icon` and `label`; in lists it is no tab stop (the menu of the song offers the same) |
-| `rating` | `span` (`role="group"`) | `meta-value` of the `meta-item` `rating`, `list-cell` with `data-column="rating"`, `now-playing-actions` | Rating of a song with five `rating-star`s; `data-value` holds the stars (0 to 5) |
+| `rating` | `span` (`role="group"`) | `meta-value` of the `meta-item` `rating`, `list-cell` with `data-column="rating"`, `now-playing-actions` | Rating of a song with five `rating-star`s; `data-value` holds the stars (0 to 5), `--wmp-item-count` the number of stars and `--wmp-active-index` the index of the star of the rating (`-1` without one) |
 | `rating-star` | `button` (`aria-pressed` for the star of the rating) | `rating` | One star with `icon` and `label`; a click rates the song with it, a click on the star of the rating removes it; in lists no tab stop |
 | `scope-switch` | `div` | `view` (library) | Switch between the whole library and the "my music" of the profile: a `segmented-control` (`data-item="scope"`) with the `segment`s `all-music` and `my-music` |
-| `segmented-control` | `div` (`role="radiogroup"`, `aria-label` or `aria-labelledby`) | `scope-switch`, `stage-actions`, `field`, any | Mutually exclusive options as one connected group of buttons: an `indicator` and one `segment` per option. One tab stop; the arrow keys, Home and End check another option. Its `data-item` names the choice (see [Other attributes](#other-attributes)); it carries the runtime variables `--wmp-item-count`, `--wmp-active-index`, `--wmp-indicator-x` and `--wmp-indicator-width`, so a theme can move the `indicator` to the checked segment with CSS only, for example as a highlight that slides between the segments |
+| `segmented-control` | `div` (`role="radiogroup"`, `aria-label` or `aria-labelledby`) | `scope-switch`, `stage-actions`, `field`, any | Mutually exclusive options as one connected group of buttons: an `indicator` and one `segment` per option. One tab stop; the arrow keys, Home and End check another option. Its `data-item` names the choice (see [Other attributes](#other-attributes)); it carries the runtime variables of an active element (`--wmp-item-count`, `--wmp-active-index`, `--wmp-indicator-x`, `--wmp-indicator-y`, `--wmp-indicator-width` and `--wmp-indicator-height`), so a theme can move the `indicator` to the checked segment with CSS only, for example as a highlight that slides between the segments |
 | `segment` | `button` (`role="radio"`, `aria-checked`, `data-variant="default"`) | `segmented-control` | One option with an optional `icon` and its `label`; `data-item` names the option. The base joins the segments to one bar and gives the checked one the active image of buttons (`--wmp-image-default-button-active`) |
 | `shelf` | `section` | `view` (home) | One row of the home page with `shelf-header` and a `tile-list` of its first entries |
 | `shelf-header` | `div` | `shelf` | `shelf-title` and `shelf-actions` |
@@ -220,7 +220,7 @@ Example of a desktop layout with the sidebar on the right:
 | `equalizer-band` | `div` | `equalizer-bands` | One band (`data-kind`): `equalizer-value`, a vertical `slider` and a `label` with the frequency or "Preamp" |
 | `equalizer-value` | `span` (`aria-hidden`) | `equalizer-band` | Gain of the band in dB |
 | `equalizer-scale` | `div` (`aria-hidden`) | `equalizer-bands` | Three `label`s with the highest gain, 0 dB and the lowest gain, from top to bottom |
-| `bottom-nav` | `nav` | `app` | Main navigation at the bottom (mobile) |
+| `bottom-nav` | `nav` | `app` | Main navigation at the bottom (mobile): an `indicator` and one `bottom-nav-item` per entry; tells the active entry with the runtime variables of an active element, see [Active element of a group](#active-element-of-a-group) |
 | `bottom-nav-item` | `a` (`aria-current`) | `bottom-nav` | Entry with `icon` and `label` |
 | `profile-select` | `main` | `body` (without `app`) | Profile selection, shown before a profile is selected; with `logo`, title, `profile-list` and, on the first start, a hint |
 | `profile-select-title` | `h1` | `profile-select` | Title of the profile selection |
@@ -238,7 +238,7 @@ Example of a desktop layout with the sidebar on the right:
 | `user-name` | `span` | `user-info` | Name of the profile |
 | `user-meta` | `span` | `user-info` | Role and built-in state as `badge` with a visible `label`, and the creation date as `label` |
 | `user-actions` | `div` | `user-item` | Buttons to edit and delete the profile |
-| `admin-nav` | `nav` | `view` | Navigation between the pages of the administration (library, jobs, cache, profiles) |
+| `admin-nav` | `nav` | `view` | Navigation between the pages of the administration (library, jobs, cache, transcoding, profiles): an `indicator` and one `admin-nav-item` per page; tells the current page with the runtime variables of an active element, see [Active element of a group](#active-element-of-a-group) |
 | `admin-nav-item` | `a` (`aria-current`) | `admin-nav` | Page of the administration with `icon` and `label` |
 | `section` | `section` (`aria-labelledby`) | `view` | Part of a page with a `section-title` |
 | `section-title` | `h2` | `section`, `queue` | Title of the section or of the queue |
@@ -278,7 +278,7 @@ Example of a desktop layout with the sidebar on the right:
 | `icon` | `span` (`aria-hidden`) | any | Icon wrapper with the slot in `data-icon`, see [Icons](#icons) |
 | `icon-glyph` | `span` | `icon` | Masked shape of the icon |
 | `label` | `span` | any | Text of a button, entry or area |
-| `indicator` | `span` (`aria-hidden`) | `tab`, `segmented-control` | Small arrow of the active tab; in a `segmented-control` a decorative layer that the base hides and places at the checked `segment` (`left: var(--wmp-indicator-x)`, `inline-size: var(--wmp-indicator-width)`, the whole height), for themes that show it |
+| `indicator` | `span` (`aria-hidden`), in `tree` a `li` (`role="none"`, `aria-hidden`) | `tab`, `tabs`, `bottom-nav`, `admin-nav`, `tree`, `color-picker`, `segmented-control` | In a `tab` the small arrow of the active tab (with the icon `tab-indicator`). As first child of a group with one active element an empty decorative layer that the base hides and lays over the active element, for themes that show it, for example as a line or a highlight that slides between the entries; see [Active element of a group](#active-element-of-a-group) |
 | `slider` | `div` | `seek`, `volume`, `equalizer-band`, any | Slider with `slider-track` and `slider-thumb`; horizontal, or vertical (`data-orientation="vertical"`, from the bottom to the top) in the equalizer |
 | `slider-track` | `div` | `slider` | Track of the slider |
 | `slider-fill` | `div` | `slider-track` | Filled part of the track |
@@ -291,7 +291,7 @@ Example of a desktop layout with the sidebar on the right:
 | `select` | `select` (`aria-invalid`) | `field` | Selection list |
 | `field-hint` | `span` | `field` | Help text of the field |
 | `field-error` | `span` | `field` | Error message of the field |
-| `color-picker` | `div` (`role="radiogroup"`) | `field` | Selection of a color |
+| `color-picker` | `div` (`role="radiogroup"`) | `field` | Selection of a color: an `indicator` and one `color-swatch` per color; tells the selected swatch with the runtime variables of an active element, see [Active element of a group](#active-element-of-a-group) |
 | `color-swatch` | `button` (`role="radio"`, `aria-checked`) | `color-picker` | One color (`--wmp-swatch-color`) with a visually hidden `label` |
 | `dialog` | `dialog` | any | Modal dialog |
 | `dialog-header` | `div` | `dialog` | Title bar of the dialog |
@@ -325,6 +325,7 @@ The internal component overview (`/dev/components`) uses its own parts starting 
 | `sleep-timer` | `off`, `duration`, `end-of-track` or `end-of-queue`; additionally `fading` while the music fades out before the stop |
 | `btn-sleep-timer` | `on` while a timer runs, otherwise `off` |
 | `equalizer` | `on` or `off` |
+| `button` `power` of `equalizer-controls` | `on` or `off`: whether the equalizer of the profile is on |
 | `seek` | `disabled` while nothing plays |
 | `volume` | `muted` |
 | `slider` | `disabled`, `dragging` |
@@ -363,6 +364,39 @@ The internal component overview (`/dev/components`) uses its own parts starting 
 | `file-item` | `audio`, `video` or `image`; additionally `primary` for the file the song plays |
 | `playlist-cover-slide` | `active` for the song cover that is shown |
 | `playlist-choice` | `busy` while the songs are being added to this playlist |
+
+### Active element of a group
+
+Every group in which one entry is the active one gives the theme the same means to highlight it, also with an animation in CSS only:
+
+| Group | Active entry |
+|---|---|
+| `tabs`, `bottom-nav` | `tab` or `bottom-nav-item` of the current page |
+| `admin-nav` | `admin-nav-item` of the current page |
+| `tree` | `tree-item` of the current page (among the visible items) |
+| `color-picker` | selected `color-swatch` |
+| `segmented-control` | checked `segment` |
+
+- The state is an attribute of the entry: `aria-current="page"` and `data-state="active"`, or `aria-checked="true"`.
+- The group has an `indicator` as its first child: empty, `aria-hidden`, hidden by the base (`display: none`) and laid over the active entry (`position: absolute` in the group, `left: var(--wmp-indicator-x)`, `top: var(--wmp-indicator-y)`, `inline-size: var(--wmp-indicator-width)`, `block-size: var(--wmp-indicator-height)`; in a `segmented-control` the whole height). A theme shows it and decides its shape, for example a line below the entry or a sliding pane of glass behind it. The group is a containing block (`position: relative`).
+- The group carries the runtime variables `--wmp-item-count`, `--wmp-active-index`, `--wmp-indicator-x`, `--wmp-indicator-y`, `--wmp-indicator-width` and `--wmp-indicator-height` (see [Runtime variables](#runtime-variables)). The app measures the box again when the active entry changes and when the group or its entries change their size. Without an active entry (`--wmp-active-index: -1`) the box has no size.
+- `rating` and `playlist-cover` carry `--wmp-item-count` and `--wmp-active-index` only.
+
+Example of a line that slides below the active tab:
+
+```css
+[data-part='tabs'] > [data-part='indicator'] {
+    display: block;
+    inset-block-start: auto;
+    inset-block-end: 0;
+    block-size: 3px;
+    border-radius: 3px;
+    background: linear-gradient(90deg, #8fd2ff, #ffffff);
+    transition:
+        left 0.25s ease,
+        inline-size 0.25s ease;
+}
+```
 
 ### ARIA attributes and native states
 
@@ -612,10 +646,12 @@ The app sets these variables on single elements. Themes can read them, but never
 | `--wmp-progress-value` | `progress` | Share of the work done between 0 and 1 (0 while indeterminate) |
 | `--wmp-meter-value` | `meter` | Share of the range between 0 and 1 |
 | `--wmp-video-aspect-ratio` | `video-stage` | Width divided by the height of the picture of the video, for example `1.7778` or `0.5625`; missing while the video has not loaded its size |
-| `--wmp-item-count` | `segmented-control` | Number of its `segment`s |
-| `--wmp-active-index` | `segmented-control` | Index of the checked `segment`, starting at 0; `-1` without one |
-| `--wmp-indicator-x` | `segmented-control` | Distance of the checked `segment` from the left edge of the group, in pixels, for example `84.5px` |
-| `--wmp-indicator-width` | `segmented-control` | Width of the checked `segment` in pixels; `0px` without one |
+| `--wmp-item-count` | `segmented-control`, `tabs`, `bottom-nav`, `admin-nav`, `tree`, `color-picker`, `rating`, `playlist-cover` | Number of entries of the group: `segment`s, `tab`s, `bottom-nav-item`s, `admin-nav-item`s, visible `tree-item`s, `color-swatch`es, `rating-star`s or `playlist-cover-slide`s |
+| `--wmp-active-index` | the same | Index of the active entry, starting at 0: the checked `segment`, the `tab`, `bottom-nav-item` or `admin-nav-item` of the current page, the `tree-item` of the current page among the visible items, the selected `color-swatch`, the `rating-star` of the rating or the shown `playlist-cover-slide`; `-1` without one |
+| `--wmp-indicator-x` | `segmented-control`, `tabs`, `bottom-nav`, `admin-nav`, `tree`, `color-picker` | Distance of the active entry from the left edge of the group (including its scrolled distance), in pixels, for example `84.5px`; `0px` without one |
+| `--wmp-indicator-y` | the same | Distance of the active entry from the top edge of the group (including its scrolled distance), in pixels; `0px` without one |
+| `--wmp-indicator-width` | the same | Width of the active entry in pixels; `0px` without one or while it is hidden, for example in a collapsed node of the tree |
+| `--wmp-indicator-height` | the same | Height of the active entry in pixels; `0px` without one or while it is hidden |
 
 ## Icons
 
@@ -775,6 +811,7 @@ The version of the theme API is in `data-theme-api` on the root element and at t
 ### Changelog
 
 - **Version 4:** fixes from the first test on phones and tablets. Changed: the `video` lies over the whole `video-stage` with a transparent background and always shows its picture whole and centered, also for portrait videos and in full screen; the free areas around it show the background of the `video-stage` and the new `video-backdrop`, so themes that styled the background of the `video` have to style the `video-stage` or the `video-backdrop` instead; `app` pads the safe areas at the top and at the sides (showing `--wmp-theme-color`) instead of the mobile `header`, and the transport bar on the desktop pads the safe area at the bottom; the page never scrolls, `sidebar` and `content` are containing blocks and contain their overscroll; the `list` is one grid whose `list-header`, `list-group`, `list-group-rows` and `list-row` are subgrids, so `list-group` no longer has grid areas and `list-header` no longer has a margin at its start, and the padding at the start and end of rows moved to their first and last `list-column` and `list-cell`; the `label` of the column header `favorite` is visually hidden; icons in buttons (`data-variant`) no longer inherit `--wmp-icon-fill` from their area but take the text color of the button, unless the theme sets `--wmp-icon-fill` on the button or its `icon`; mutually exclusive options are segmented controls: the buttons `btn-view-cover`, `btn-view-video` and `btn-view-visualization` are replaced by the `segment`s `cover`, `video` and `visualization` of the `segmented-control` `stage-view` in `stage-actions`, and the `button`s of `scope-switch` by the `segment`s `all-music` and `my-music` of the `segmented-control` `scope`, both checked with `aria-checked` instead of `aria-pressed`; `stage-actions` and `scope-switch` lost their `role="group"`; the ReplayGain mode on the settings page, the role in the dialog of a profile and the hardware acceleration on the transcoding page are segmented controls instead of `select`s; the `queue-list` shows only the last three played entries before the current one, and `queue-item-info` is a grid with the `cover` of the song in its first column, spanning title and artist. Added: the part `video-backdrop`, the attribute `data-orientation` on `video-stage`, the runtime variable `--wmp-video-aspect-ratio` and the variable `--wmp-theme-color`, which the app also hands to the browser as theme color; the toggle button `btn-crossfade` (states `on` and `off`, `aria-pressed`) between `btn-repeat` and `btn-stop` with the icon slot `crossfade`, in the mobile full-screen player in the second row between the volume and `btn-stop`; the parts `segmented-control` (`role="radiogroup"`, `data-item`, `aria-disabled`, `aria-invalid`, the runtime variables `--wmp-item-count`, `--wmp-active-index`, `--wmp-indicator-x` and `--wmp-indicator-width`) and `segment` (`role="radio"`, `aria-checked`) with an `indicator`, and the values `role` and `hardware-acceleration` of `data-field`; the collapsible sidebar on the desktop with the button `btn-sidebar-toggle`, the states `collapsed` and `expanded` of `sidebar`, the variable `--wmp-sidebar-collapsed-width` and the icon slots `sidebar-collapse` and `sidebar-expand`; the `cover` in `queue-item-info` with the variable `--wmp-cover-size-queue` and the attribute `start` of `queue-list`.
+    - Theme-capable groups: every group with one active entry (`tabs`, `bottom-nav`, `admin-nav`, `tree`, `color-picker` and `segmented-control`) has an `indicator` as first child and carries the runtime variables of its active entry, see [Active element of a group](#active-element-of-a-group). Changed: `tabs`, `bottom-nav`, `admin-nav`, `tree` and `color-picker` are containing blocks (`position: relative`) with a new first child; the `indicator` of a `tab` is `aria-hidden`. Added: the `indicator` of these groups, the runtime variables `--wmp-item-count`, `--wmp-active-index`, `--wmp-indicator-x` and `--wmp-indicator-width` on them and the new runtime variables `--wmp-indicator-y` and `--wmp-indicator-height` (also on `segmented-control`), `--wmp-item-count` and `--wmp-active-index` on `rating` and `playlist-cover`, and the documented states `on` and `off` of the `button` `power` of `equalizer-controls`.
 - **Version 3:** cover, video and visualization on the stage, with a fade. Changed: `btn-video` is replaced by `btn-view-video`, one of the three buttons `btn-view-cover`, `btn-view-video` and `btn-view-visualization`, of which the chosen view is pressed; `stage-actions` is shown for every current song, not only for songs with a video; the `cover` and the `video-stage` of the stage no longer lie directly in `stage` but each in a `stage-view` inside `stage-views`, so themes that address `stage > cover`, `stage cover` or `stage > video-stage` have to use `stage-view > cover` and `stage-view > video-stage`; the `video` is muted and follows the music. Added: the state `visualization` of `stage`, the parts `stage-views`, `stage-view` (with `data-kind` and the states `active`, `loading` and `failed`), `stage-notice`, `visualization` (state `placeholder`) and the `btn-view-*` buttons, the variables `--wmp-stage-transition-duration` and `--wmp-stage-view-background`, and for admins the `section` `video-sync` on the page of a song with a video (`field` `video-offset`, `button` `save-video-offset`). The icon slots `view-cover`, `view-video` and `view-visualization` now belong to the content.
     - Additions without a version change: the versions on the settings page, a `section` `about` with a `stat-list` whose `stat-item`s carry `data-field` `app-version` and `server-version`.
     - Additions without a version change: equalizer, crossfade and sleep timer. The page `data-view="equalizer"` below Now Playing with the parts `equalizer` (states `on` and `off`), `equalizer-controls`, `equalizer-bands`, `equalizer-band` (`data-kind` `preamp` or `band`, `data-frequency`), `equalizer-value` and `equalizer-scale`; the vertical `slider` (`data-orientation`, `aria-orientation`) with the variable `--wmp-equalizer-slider-height`; in `mode-switch` the button `btn-equalizer` (states `on` and `off`) and the sleep timer `sleep-timer` (states `off`, `duration`, `end-of-track`, `end-of-queue` and `fading`) with `btn-sleep-timer` and `sleep-timer-remaining`; on mobile the full-screen player shows `mode-switch` below the transport controls; new values of `data-field` (`equalizer`, `crossfade`, `crossfade-albums`, `sleep-timer-fade`, `equalizer-preset`) and `data-item` (`power`, `reset`, `open-equalizer` and the entries of the sleep timer menu), `section-title` on the settings page and the icon slots `equalizer`, `sleep-timer` and `reset`.

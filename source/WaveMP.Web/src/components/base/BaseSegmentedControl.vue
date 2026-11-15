@@ -2,7 +2,7 @@
 import { computed, nextTick, ref } from 'vue'
 import BaseIcon from './BaseIcon.vue'
 import { nextSegmentIndex, segmentTabStop } from './segmented'
-import { useIndicator } from '@/composables/useIndicator'
+import { indicatorVariables, useIndicator } from '@/composables/useIndicator'
 import type { IconSlotName } from '@/themes/iconSlots'
 
 export interface SegmentOption {
@@ -18,7 +18,7 @@ export interface SegmentOption {
  * Mutually exclusive options as one connected group of buttons (segmented control), accessible as
  * a radio group: one tab stop, the arrow keys check the next option. v-model is the value of the
  * checked option. The group holds an indicator part and tells themes the position of the checked
- * option (--wmp-active-index, --wmp-item-count, --wmp-indicator-x, --wmp-indicator-width), so a
+ * option (--wmp-active-index, --wmp-item-count, --wmp-indicator-x, -y, -width and -height), so a
  * theme can slide a highlight between the options with CSS only.
  */
 const props = withDefaults(
@@ -95,12 +95,7 @@ async function onKeydown(event: KeyboardEvent): Promise<void> {
         :aria-disabled="disabled ? 'true' : undefined"
         :aria-invalid="invalid ? 'true' : undefined"
         :data-item="item"
-        :style="{
-            '--wmp-item-count': options.length,
-            '--wmp-active-index': checked,
-            '--wmp-indicator-x': `${indicator.x}px`,
-            '--wmp-indicator-width': `${indicator.width}px`,
-        }"
+        :style="indicatorVariables(options.length, checked, indicator)"
         @keydown="onKeydown"
     >
         <span data-part="indicator" aria-hidden="true"></span>

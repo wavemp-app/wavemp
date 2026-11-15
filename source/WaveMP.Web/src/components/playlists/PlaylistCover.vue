@@ -12,7 +12,8 @@ import { coverSlideMilliseconds, coverViewOf, nextSlide } from '@/playlists/pres
  * Cover of a playlist: its own picture, otherwise the covers of up to four of its tracks, one after
  * the other (the active slide has data-state="active"; the theme fades them), otherwise the
  * placeholder. The slides only change while the cover is in view and nobody asked for reduced
- * motion.
+ * motion. The cover tells themes the number of slides and the index of the active one
+ * (--wmp-item-count, --wmp-active-index), e.g. to slide them sideways with CSS only.
  */
 const props = defineProps<{
     id: string | null | undefined
@@ -68,6 +69,7 @@ onBeforeUnmount(stop)
         data-part="playlist-cover"
         :data-count="trackIds.length"
         aria-hidden="true"
+        :style="{ '--wmp-item-count': trackIds.length, '--wmp-active-index': active }"
     >
         <span
             v-for="(trackId, index) in trackIds"
