@@ -1,0 +1,82 @@
+name: Bug report
+description: Report something in WaveMP that does not work as expected.
+title: "[Bug] "
+labels:
+  - bug
+  - community
+  - triage
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for taking the time to report a bug. Please search the existing issues first, and
+        ask questions in [GitHub Discussions](https://github.com/wavemp-app/wavemp/discussions)
+        instead. Remove passwords, tokens and other secrets from everything you paste here.
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: The version shown under Settings in WaveMP, or the image tag you use.
+      placeholder: 1.0.42
+    validations:
+      required: true
+  - type: dropdown
+    id: installation
+    attributes:
+      label: Platform and installation
+      description: How do you run WaveMP?
+      options:
+        - Docker Compose
+        - Docker (other)
+        - TrueNAS
+        - Unraid
+        - ZimaOS / CasaOS
+        - Synology
+        - QNAP
+        - Built from source
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: client
+    attributes:
+      label: Device and browser
+      description: Where does the problem occur? Mention whether WaveMP is installed as an app (PWA).
+      placeholder: iPhone 15, iOS 26, Safari, installed as an app
+    validations:
+      required: false
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: The exact steps that lead to the problem.
+      placeholder: |
+        1. Open the library
+        2. Select an album
+        3. Click on the first song
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What should have happened?
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: What happened instead? Screenshots help.
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: >-
+        The output of `docker compose logs wavemp` around the time of the problem and, if
+        possible, errors from the browser console. Write "none" if there are no logs.
+      render: text
+    validations:
+      required: true

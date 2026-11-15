@@ -1,0 +1,50 @@
+name: Feature request
+description: Suggest a new feature or an improvement for WaveMP.
+title: "[Feature] "
+labels:
+  - enhancement
+  - community
+  - triage
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for your idea. Please search the existing issues first; for open-ended ideas
+        and questions, [GitHub Discussions](https://github.com/wavemp-app/wavemp/discussions) is
+        the better place.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What do you want to do that WaveMP does not support yet?
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+      description: How should WaveMP solve it?
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives
+      description: Other solutions or workarounds you considered.
+    validations:
+      required: false
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      description: Which part of WaveMP is it about?
+      multiple: true
+      options:
+        - Web app
+        - Server and API
+        - Installation and Docker
+        - Native apps
+        - Website
+        - Other
+    validations:
+      required: false
