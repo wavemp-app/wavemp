@@ -1,3 +1,4 @@
+using System.Reflection;
 using AwesomeAssertions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -58,6 +59,23 @@ public class HealthControllerTests
             .Which.Value.Should().BeOfType<HealthDto>().Subject;
         health.Status.Should().Be(expected);
         health.Version.Should().NotBeNullOrWhiteSpace();
+    }
+
+    [Test]
+    public async Task GetHealthAsync_ReportsTheVersionOfTheServiceWithoutTheSourceRevision()
+    {
+        SetupReport(HealthStatus.Healthy);
+        string informationalVersion = typeof(HealthController).Assembly
+            .GetCustomAttribute<AssemblyInformationalVersionAttribute>()!
+            .InformationalVersion;
+
+        ActionResult<HealthDto> result = await _controller.GetHealthAsync(CancellationToken.None);
+
+        HealthDto health = result.Result.Should().BeOfType<OkObjectResult>()
+            .Which.Value.Should().BeOfType<HealthDto>().Subject;
+        health.Version.Should().Be(informationalVersion.Split('+')[0]);
+        // <major>.<minor>.<run number> in the CI images, <major>.<minor>.0-dev in other builds.
+        health.Version.Should().MatchRegex(@"^\d+\.\d+\.(\d+|0-dev)$");
     }
 
     [Test]

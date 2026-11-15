@@ -402,7 +402,11 @@
     "crossfadeAlbums": "Do not crossfade songs of the same album",
     "sleepTimerFade": "Sleep timer fade-out",
     "sleepTimerFadeHint": "How long the music fades out before the sleep timer stops it.",
-    "sleepTimerFadeSeconds": "{seconds} seconds"
+    "sleepTimerFadeSeconds": "{seconds} seconds",
+    "about": "About WaveMP",
+    "appVersion": "App version",
+    "serverVersion": "Server version",
+    "versionUnknown": "Unknown"
   },
   "adminUsers": {
     "title": "Manage profiles",

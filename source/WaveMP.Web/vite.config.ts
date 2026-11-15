@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs'
 import { fileURLToPath, URL } from 'node:url'
 
 import { defineConfig } from 'vite'
@@ -9,11 +10,37 @@ import { VitePWA } from 'vite-plugin-pwa'
 // Address of WaveMP.Service during development (see Properties/launchSettings.json).
 const serviceUrl = process.env.WAVEMP_SERVICE_URL ?? 'http://localhost:5080'
 
+/**
+ * Version the web app reports, like the service: WAVEMP_VERSION from the CI (<major>.<minor>.<run
+ * number>), otherwise a development build <major>.<minor>.0-dev with the VersionPrefix of
+ * Directory.Build.props.
+ */
+function resolveAppVersion(): string {
+    const version = process.env.WAVEMP_VERSION?.trim()
+    if (version) {
+        return version
+    }
+
+    const props = readFileSync(
+        fileURLToPath(new URL('../../Directory.Build.props', import.meta.url)),
+        'utf8',
+    )
+    const prefix = /<VersionPrefix>\s*(\d+\.\d+)\s*<\/VersionPrefix>/.exec(props)?.[1]
+    if (!prefix) {
+        throw new Error('Directory.Build.props has no VersionPrefix of the form <major>.<minor>.')
+    }
+
+    return `${prefix}.0-dev`
+}
+
 // https://vite.dev/config/
 export default defineConfig({
     // Graphics, icons and themes from /assets/web are served unchanged at the root (e.g.
     // /themes/midnight/theme.css), in development and in the build.
     publicDir: fileURLToPath(new URL('../../assets/web', import.meta.url)),
+    define: {
+        __WAVEMP_VERSION__: JSON.stringify(resolveAppVersion()),
+    },
     plugins: [
         vue(),
         vueDevTools(),

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, ref, useId, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import BaseAlert from '@/components/base/BaseAlert.vue'
 import BaseCheckbox from '@/components/base/BaseCheckbox.vue'
@@ -11,13 +11,28 @@ import { useFormat } from '@/composables/useFormat'
 import { isSupportedLocale, type SupportedLocale } from '@/i18n/locales'
 import { maxCrossfadeSeconds } from '@/player/crossfade'
 import { useEqualizerStore } from '@/stores/equalizer'
+import { useHealthStore } from '@/stores/health'
 import { useSessionStore } from '@/stores/session'
+import { appVersion } from '@/version'
 
 /** Settings of the current profile; changes are saved at once. */
 const { t, locale } = useI18n({ useScope: 'global' })
 const session = useSessionStore()
 const equalizer = useEqualizerStore()
+const health = useHealthStore()
 const format = useFormat()
+
+const aboutTitleId = useId()
+
+/** Versions of this web app and of the service (from the health check of the app shell). */
+const versions = computed(() => [
+    { field: 'app-version', labelKey: 'settings.appVersion', value: appVersion },
+    {
+        field: 'server-version',
+        labelKey: 'settings.serverVersion',
+        value: health.version ?? t('settings.versionUnknown'),
+    },
+])
 
 // Every language in its own language, so it can be found without understanding the current one.
 const languageOptions = computed<SelectOption[]>(() => [
@@ -272,5 +287,19 @@ async function changeSleepTimerFade(value: string): Promise<void> {
                 @update:model-value="changeSleepTimerFade"
             />
         </form>
+        <section data-part="section" data-item="about" :aria-labelledby="aboutTitleId">
+            <h2 :id="aboutTitleId" data-part="section-title">{{ t('settings.about') }}</h2>
+            <dl data-part="stat-list">
+                <div
+                    v-for="item in versions"
+                    :key="item.field"
+                    data-part="stat-item"
+                    :data-field="item.field"
+                >
+                    <dt data-part="label">{{ t(item.labelKey) }}</dt>
+                    <dd data-part="stat-value">{{ item.value }}</dd>
+                </div>
+            </dl>
+        </section>
     </div>
 </template>

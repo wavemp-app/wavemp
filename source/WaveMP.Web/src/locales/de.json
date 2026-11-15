@@ -402,7 +402,11 @@
     "crossfadeAlbums": "Titel desselben Albums nicht überblenden",
     "sleepTimerFade": "Ausblenden des Sleep-Timers",
     "sleepTimerFadeHint": "Wie lange die Musik ausgeblendet wird, bevor der Sleep-Timer sie stoppt.",
-    "sleepTimerFadeSeconds": "{seconds} Sekunden"
+    "sleepTimerFadeSeconds": "{seconds} Sekunden",
+    "about": "Über WaveMP",
+    "appVersion": "App-Version",
+    "serverVersion": "Server-Version",
+    "versionUnknown": "Unbekannt"
   },
   "adminUsers": {
     "title": "Profile verwalten",

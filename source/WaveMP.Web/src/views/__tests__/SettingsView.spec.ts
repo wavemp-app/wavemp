@@ -4,7 +4,9 @@ import { createPinia, setActivePinia } from 'pinia'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import SettingsView from '../SettingsView.vue'
 import { createWaveMpI18n } from '@/i18n'
+import { useHealthStore } from '@/stores/health'
 import { useSessionStore } from '@/stores/session'
+import { appVersion } from '@/version'
 
 function mountView() {
     const session = useSessionStore()
@@ -195,5 +197,56 @@ describe('SettingsView playback', () => {
         expect(update).toHaveBeenCalledWith({ enabled: true })
         expect(field<HTMLInputElement>(wrapper, 'equalizer', 'input').element.checked).toBe(true)
         expect(wrapper.find('[data-part="alert"]').exists()).toBe(false)
+    })
+})
+
+describe('SettingsView versions', () => {
+    beforeEach(() => {
+        setActivePinia(createPinia())
+    })
+
+    const version = (wrapper: ReturnType<typeof mountView>['wrapper'], field: string) =>
+        wrapper.get(
+            `[data-part="section"][data-item="about"] [data-part="stat-item"][data-field="${field}"]`,
+        )
+
+    it('shows the version of the web app and of the server', () => {
+        useHealthStore().version = '1.0.42'
+        const { wrapper } = mountView()
+
+        const section = wrapper.get('[data-part="section"][data-item="about"]')
+        const title = section.get('[data-part="section-title"]')
+        expect(title.text()).toBe('About WaveMP')
+        expect(section.attributes('aria-labelledby')).toBe(title.attributes('id'))
+        expect(version(wrapper, 'app-version').get('[data-part="label"]').text()).toBe(
+            'App version',
+        )
+        expect(version(wrapper, 'app-version').get('[data-part="stat-value"]').text()).toBe(
+            appVersion,
+        )
+        expect(version(wrapper, 'server-version').get('[data-part="label"]').text()).toBe(
+            'Server version',
+        )
+        expect(version(wrapper, 'server-version').get('[data-part="stat-value"]').text()).toBe(
+            '1.0.42',
+        )
+    })
+
+    it('reports an unknown server version while the server does not answer', () => {
+        const { wrapper } = mountView()
+
+        expect(version(wrapper, 'server-version').get('[data-part="stat-value"]').text()).toBe(
+            'Unknown',
+        )
+    })
+
+    it('uses the CI version or a development version of the VersionPrefix', () => {
+        // Without WAVEMP_VERSION (local builds, pull requests) the build is <major>.<minor>.0-dev.
+        const ciVersion = process.env.WAVEMP_VERSION?.trim()
+        if (ciVersion) {
+            expect(appVersion).toBe(ciVersion)
+        } else {
+            expect(appVersion).toMatch(/^\d+\.\d+\.0-dev$/)
+        }
     })
 })

@@ -18,7 +18,11 @@ RUN npm ci
 # Graphics, icons and themes, served unchanged by the web app (Vite publicDir).
 COPY assets/web/ /src/assets/web/
 COPY source/WaveMP.Web/ ./
-RUN npm run build
+# Major and minor version for builds without VERSION (the web app then reports <major>.<minor>.0-dev).
+COPY Directory.Build.props /src/
+# Version of CI images (1.0.N); empty means a development build, see Directory.Build.props.
+ARG VERSION
+RUN WAVEMP_VERSION="$VERSION" npm run build
 
 # --- Service (cross-compiled on the build machine for the target architecture) --
 FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:10.0-alpine@sha256:0294f285d062afacc8b5f6d7febb0cd4ee879320e5585fa15f2f4ebf1feb9ba7 AS build
@@ -54,7 +58,7 @@ COPY source/WaveMP.Data/ source/WaveMP.Data/
 COPY source/WaveMP.Service/ source/WaveMP.Service/
 # The built web app becomes part of the service's static assets.
 COPY --from=web /src/source/WaveMP.Web/dist/ source/WaveMP.Service/wwwroot/
-# Version of release images (e.g. 1.2.3); empty keeps the version from Directory.Build.props.
+# Version of CI images (1.0.N); empty means a development build, see Directory.Build.props.
 ARG VERSION
 RUN dotnet publish source/WaveMP.Service/WaveMP.Service.csproj -c Release -a "$TARGETARCH" \
     --no-self-contained --no-restore -o /app ${VERSION:+-p:Version=$VERSION}
