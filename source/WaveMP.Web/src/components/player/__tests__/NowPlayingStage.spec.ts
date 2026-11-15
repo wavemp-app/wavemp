@@ -34,11 +34,15 @@ function mountStage(props: {
 
 type Wrapper = ReturnType<typeof mountStage>
 
-function pressed(wrapper: Wrapper): Record<string, string | undefined> {
+function segment(wrapper: Wrapper, item: string) {
+    return wrapper.get(`[data-part="stage-actions"] [data-part="segment"][data-item="${item}"]`)
+}
+
+function checked(wrapper: Wrapper): Record<string, string | undefined> {
     return Object.fromEntries(
-        ['btn-view-cover', 'btn-view-video', 'btn-view-visualization'].map((part) => [
-            part,
-            wrapper.get(`[data-part="${part}"]`).attributes('aria-pressed'),
+        ['cover', 'video', 'visualization'].map((item) => [
+            item,
+            segment(wrapper, item).attributes('aria-checked'),
         ]),
     )
 }
@@ -54,21 +58,24 @@ describe('NowPlayingStage', () => {
         expect(wrapper.get('[data-part="stage"]').attributes('data-state')).toBe('cover')
         expect(viewState(wrapper, 'cover')).toBe('active')
         expect(wrapper.find('[data-kind="video"]').exists()).toBe(false)
-        expect(wrapper.get('[data-part="btn-view-video"]').attributes('disabled')).toBeDefined()
-        expect(pressed(wrapper)).toEqual({
-            'btn-view-cover': 'true',
-            'btn-view-video': 'false',
-            'btn-view-visualization': 'false',
+        expect(segment(wrapper, 'video').attributes('disabled')).toBeDefined()
+        expect(checked(wrapper)).toEqual({
+            cover: 'true',
+            video: 'false',
+            visualization: 'false',
         })
         wrapper.unmount()
     })
 
-    it('chooses the view with its buttons', async () => {
+    it('chooses the view with a segmented control', async () => {
         const wrapper = mountStage({ track: track(true), mode: 'Cover', view: 'cover' })
+        const group = wrapper.get('[data-part="stage-actions"] [data-part="segmented-control"]')
 
-        await wrapper.get('[data-part="btn-view-video"]').trigger('click')
-        await wrapper.get('[data-part="btn-view-visualization"]').trigger('click')
-        await wrapper.get('[data-part="btn-view-cover"]').trigger('click')
+        expect(group.attributes('role')).toBe('radiogroup')
+        expect(group.attributes('data-item')).toBe('stage-view')
+        await segment(wrapper, 'video').trigger('click')
+        await segment(wrapper, 'visualization').trigger('click')
+        await segment(wrapper, 'cover').trigger('click')
 
         expect(wrapper.emitted('selectMode')).toEqual([['Video'], ['Visualization'], ['Cover']])
         wrapper.unmount()
@@ -83,7 +90,7 @@ describe('NowPlayingStage', () => {
         expect(viewState(wrapper, 'cover')).toBeUndefined()
         expect(element.muted).toBe(true)
         expect(wrapper.emitted('attachVideo')).toEqual([[element]])
-        expect(pressed(wrapper)['btn-view-video']).toBe('true')
+        expect(checked(wrapper).video).toBe('true')
 
         await wrapper.setProps({ mode: 'Cover', view: 'cover' })
         expect(viewState(wrapper, 'video')).toBeUndefined()
@@ -99,7 +106,7 @@ describe('NowPlayingStage', () => {
         expect(wrapper.emitted('detachVideo')).toEqual([[element]])
     })
 
-    it('keeps the cover while the video loads, with the video button pressed', () => {
+    it('keeps the cover while the video loads, with the video checked', () => {
         const wrapper = mountStage({
             track: track(true),
             mode: 'Video',
@@ -109,7 +116,7 @@ describe('NowPlayingStage', () => {
 
         expect(viewState(wrapper, 'cover')).toBe('active')
         expect(viewState(wrapper, 'video')).toBe('loading')
-        expect(pressed(wrapper)['btn-view-video']).toBe('true')
+        expect(checked(wrapper).video).toBe('true')
         expect(wrapper.find('[data-part="stage-notice"]').exists()).toBe(false)
         // jsdom has no full screen, and the video view is not shown yet.
         expect(wrapper.get('[data-part="btn-fullscreen"]').attributes('disabled')).toBeDefined()
@@ -128,7 +135,7 @@ describe('NowPlayingStage', () => {
         expect(wrapper.get('[data-part="stage-notice"]').text()).toBe(
             'The video cannot be played. The song goes on.',
         )
-        expect(pressed(wrapper)['btn-view-cover']).toBe('true')
+        expect(checked(wrapper).cover).toBe('true')
         wrapper.unmount()
     })
 
@@ -144,7 +151,7 @@ describe('NowPlayingStage', () => {
         expect(visualization.get('[data-part="label"]').text()).toBe(
             'Visualizations are not available yet.',
         )
-        expect(pressed(wrapper)['btn-view-visualization']).toBe('true')
+        expect(checked(wrapper).visualization).toBe('true')
         wrapper.unmount()
     })
 

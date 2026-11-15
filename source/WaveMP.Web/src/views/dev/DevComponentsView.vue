@@ -34,6 +34,7 @@ import BaseMeter from '@/components/base/BaseMeter.vue'
 import BaseProgress from '@/components/base/BaseProgress.vue'
 import BaseRoundButton from '@/components/base/BaseRoundButton.vue'
 import BaseSearchField from '@/components/base/BaseSearchField.vue'
+import BaseSegmentedField from '@/components/base/BaseSegmentedField.vue'
 import BaseSelect from '@/components/base/BaseSelect.vue'
 import BaseSlider from '@/components/base/BaseSlider.vue'
 import BaseTabs from '@/components/base/BaseTabs.vue'
@@ -838,6 +839,27 @@ const sampleTranscodeJobs = computed<TranscodeJob[]>(() => {
                     :label="t('dev.samples.selectLabel')"
                     :options="selectOptions"
                     :error="t('dev.samples.error')"
+                />
+                <BaseSegmentedField
+                    v-model="selected"
+                    item="sample"
+                    :label="t('dev.samples.selectLabel')"
+                    :options="selectOptions"
+                    :hint="t('dev.samples.hint')"
+                />
+                <BaseSegmentedField
+                    v-model="selected"
+                    item="sample"
+                    :label="t('dev.samples.selectLabel')"
+                    :options="selectOptions"
+                    :error="t('dev.samples.error')"
+                />
+                <BaseSegmentedField
+                    v-model="selected"
+                    item="sample"
+                    :label="t('dev.samples.selectLabel')"
+                    :options="selectOptions"
+                    disabled
                 />
                 <BaseColorPicker
                     v-model="color"

@@ -15,7 +15,8 @@ import BaseAlert from '@/components/base/BaseAlert.vue'
 import BaseButton from '@/components/base/BaseButton.vue'
 import BaseColorPicker, { type ColorOption } from '@/components/base/BaseColorPicker.vue'
 import BaseDialog from '@/components/base/BaseDialog.vue'
-import BaseSelect, { type SelectOption } from '@/components/base/BaseSelect.vue'
+import type { SegmentOption } from '@/components/base/BaseSegmentedControl.vue'
+import BaseSegmentedField from '@/components/base/BaseSegmentedField.vue'
 import BaseTextField from '@/components/base/BaseTextField.vue'
 import { validationMessagesByField } from '@/i18n/validation'
 import { profileColorOptions } from '@/profiles/presentation'
@@ -63,9 +64,9 @@ const colorOptions = computed<ColorOption[]>(() => {
         : palette
 })
 
-const roleOptions = computed<SelectOption[]>(() => [
-    { value: RoleObject.User, label: t('adminUsers.roles.user') },
-    { value: RoleObject.Admin, label: t('adminUsers.roles.admin') },
+const roleOptions = computed<SegmentOption[]>(() => [
+    { value: RoleObject.User, item: 'user', label: t('adminUsers.roles.user') },
+    { value: RoleObject.Admin, item: 'admin', label: t('adminUsers.roles.admin') },
 ])
 
 function reset(): void {
@@ -200,8 +201,10 @@ async function save(): Promise<void> {
                 :label="t('adminUsers.dialog.color')"
                 :options="colorOptions"
             />
-            <BaseSelect
+            <BaseSegmentedField
                 v-model="role"
+                data-field="role"
+                item="role"
                 :label="t('adminUsers.dialog.role')"
                 :options="roleOptions"
                 :disabled="builtIn"

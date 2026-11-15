@@ -112,10 +112,10 @@ describe('NowPlayingView', () => {
         engine.load.mockClear()
         const wrapper = mountView()
 
-        await wrapper.get('[data-part="btn-view-visualization"]').trigger('click')
+        await wrapper.get('[data-part="segment"][data-item="visualization"]').trigger('click')
         expect(wrapper.get('[data-part="stage"]').attributes('data-state')).toBe('visualization')
 
-        await wrapper.get('[data-part="btn-view-cover"]').trigger('click')
+        await wrapper.get('[data-part="segment"][data-item="cover"]').trigger('click')
         expect(wrapper.get('[data-part="stage"]').attributes('data-state')).toBe('cover')
         expect(session.updatePlayerViewMode).toHaveBeenLastCalledWith('Cover')
         expect(engine.load).not.toHaveBeenCalled()

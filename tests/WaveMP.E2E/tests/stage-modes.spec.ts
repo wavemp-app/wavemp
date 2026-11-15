@@ -21,6 +21,13 @@ function part(page: Page, name: string): Locator {
     return page.locator(`[data-part='app'] [data-part='${name}']`)
 }
 
+/** A segment of the segmented control that chooses the view of the stage. */
+function viewSegment(page: Page, item: string): Locator {
+    return page.locator(
+        `[data-part='app'] [data-part='stage-actions'] [data-part='segment'][data-item='${item}']`,
+    )
+}
+
 function stageView(page: Page, kind: string): Locator {
     return page.locator(`[data-part='app'] [data-part='stage-view'][data-kind='${kind}']`)
 }
@@ -135,22 +142,22 @@ test.describe('with a profile of its own', () => {
         await playsOn(page)
         await expectVideoInSync(page)
 
-        await part(page, 'btn-view-cover').click()
+        await viewSegment(page, 'cover').click()
         await expect(stage).toHaveAttribute('data-state', 'cover')
-        await expect(part(page, 'btn-view-cover')).toHaveAttribute('aria-pressed', 'true')
+        await expect(viewSegment(page, 'cover')).toHaveAttribute('aria-checked', 'true')
         await expect(stageView(page, 'cover')).toHaveAttribute('data-state', 'active')
         await expect(stageView(page, 'video')).not.toHaveAttribute('data-state', 'active')
         await expect.poll(() => storedViewMode(request, user.id)).toBe('Cover')
         await playsOn(page)
 
-        await part(page, 'btn-view-visualization').click()
+        await viewSegment(page, 'visualization').click()
         await expect(stage).toHaveAttribute('data-state', 'visualization')
         await expect(part(page, 'visualization')).toBeVisible()
         await expect.poll(() => storedViewMode(request, user.id)).toBe('Visualization')
         await playsOn(page)
 
         // Back to the video: it catches up with the audio, which went on in the meantime.
-        await part(page, 'btn-view-video').click()
+        await viewSegment(page, 'video').click()
         await expect(stage).toHaveAttribute('data-state', 'video')
         await expect(part(page, 'video')).toBeVisible()
         await expect.poll(() => storedViewMode(request, user.id)).toBe('Video')
@@ -177,11 +184,20 @@ test.describe('with a profile of its own', () => {
         await playSong(page, firstSong, 'First Song')
         await openNowPlaying(page)
         await expect(part(page, 'stage')).toHaveAttribute('data-state', 'cover')
-        await expect(part(page, 'btn-view-video')).toBeDisabled()
-        await expect(part(page, 'btn-view-cover')).toHaveAttribute('aria-pressed', 'true')
+        await expect(viewSegment(page, 'video')).toBeDisabled()
+        await expect(viewSegment(page, 'cover')).toHaveAttribute('aria-checked', 'true')
         await expect(stageView(page, 'video')).toHaveCount(0)
+        await expect(
+            page.locator("[data-part='app'] [data-part='stage-actions'] [role='radiogroup']"),
+        ).toHaveAttribute('data-item', 'stage-view')
 
-        await part(page, 'btn-view-visualization').click()
+        // One tab stop; the arrow key skips the disabled video and checks the visualization.
+        await expect(viewSegment(page, 'cover')).toHaveAttribute('tabindex', '0')
+        await expect(viewSegment(page, 'visualization')).toHaveAttribute('tabindex', '-1')
+        await viewSegment(page, 'cover').focus()
+        await page.keyboard.press('ArrowRight')
+        await expect(viewSegment(page, 'visualization')).toHaveAttribute('aria-checked', 'true')
+        await expect(viewSegment(page, 'visualization')).toBeFocused()
         await expect(part(page, 'stage')).toHaveAttribute('data-state', 'visualization')
         await expect.poll(() => storedViewMode(request, user.id)).toBe('Visualization')
 
@@ -190,8 +206,8 @@ test.describe('with a profile of its own', () => {
         await playSong(page, looseSong, 'Loose Song')
         await openNowPlaying(page)
         await expect(part(page, 'stage')).toHaveAttribute('data-state', 'visualization')
-        await expect(part(page, 'btn-view-visualization')).toHaveAttribute('aria-pressed', 'true')
-        await expect(part(page, 'btn-view-video')).toBeEnabled()
+        await expect(viewSegment(page, 'visualization')).toHaveAttribute('aria-checked', 'true')
+        await expect(viewSegment(page, 'video')).toBeEnabled()
     })
 })
 

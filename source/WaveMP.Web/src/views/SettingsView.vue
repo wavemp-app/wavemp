@@ -4,6 +4,8 @@ import { useI18n } from 'vue-i18n'
 import BaseAlert from '@/components/base/BaseAlert.vue'
 import BaseCheckbox from '@/components/base/BaseCheckbox.vue'
 import BaseLink from '@/components/base/BaseLink.vue'
+import BaseSegmentedField from '@/components/base/BaseSegmentedField.vue'
+import type { SegmentOption } from '@/components/base/BaseSegmentedControl.vue'
 import BaseSelect, { type SelectOption } from '@/components/base/BaseSelect.vue'
 import ProfileSummary from '@/components/profiles/ProfileSummary.vue'
 import { ReplayGainModeObject, type ReplayGainMode } from '@/api/generated/models'
@@ -40,10 +42,18 @@ const languageOptions = computed<SelectOption[]>(() => [
     { value: 'de', label: t('settings.languages.de') },
 ])
 
-const replayGainOptions = computed<SelectOption[]>(() => [
-    { value: ReplayGainModeObject.Off, label: t('settings.replayGainModes.off') },
-    { value: ReplayGainModeObject.Track, label: t('settings.replayGainModes.track') },
-    { value: ReplayGainModeObject.Album, label: t('settings.replayGainModes.album') },
+const replayGainOptions = computed<SegmentOption[]>(() => [
+    { value: ReplayGainModeObject.Off, item: 'off', label: t('settings.replayGainModes.off') },
+    {
+        value: ReplayGainModeObject.Track,
+        item: 'track',
+        label: t('settings.replayGainModes.track'),
+    },
+    {
+        value: ReplayGainModeObject.Album,
+        item: 'album',
+        label: t('settings.replayGainModes.album'),
+    },
 ])
 const replayGainModes = new Set<string>(Object.values(ReplayGainModeObject))
 
@@ -251,9 +261,10 @@ async function changeSleepTimerFade(value: string): Promise<void> {
                 :disabled="saving"
                 @update:model-value="changeLanguage"
             />
-            <BaseSelect
+            <BaseSegmentedField
                 v-model="replayGain"
                 data-field="replay-gain"
+                item="replay-gain"
                 :label="t('settings.replayGain')"
                 :options="replayGainOptions"
                 :hint="t('settings.replayGainHint')"

@@ -123,9 +123,10 @@ describe('collection components', () => {
             {},
             '/library/songs?q=rock&sort=Title',
         )
-        const all = wrapper.get('[data-item="all-music"]')
-        const mine = wrapper.get('[data-item="my-music"]')
-        expect(all.attributes('aria-pressed')).toBe('true')
+        expect(wrapper.get('[data-part="segmented-control"]').attributes('data-item')).toBe('scope')
+        const all = wrapper.get('[data-part="segment"][data-item="all-music"]')
+        const mine = wrapper.get('[data-part="segment"][data-item="my-music"]')
+        expect(all.attributes('aria-checked')).toBe('true')
 
         await mine.trigger('click')
         await flushPromises()
@@ -134,7 +135,8 @@ describe('collection components', () => {
             sort: 'Title',
             myMusic: 'true',
         })
-        expect(mine.attributes('aria-pressed')).toBe('true')
+        expect(mine.attributes('aria-checked')).toBe('true')
+        expect(all.attributes('aria-checked')).toBe('false')
 
         await all.trigger('click')
         await flushPromises()

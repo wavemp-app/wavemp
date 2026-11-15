@@ -125,7 +125,8 @@
     }
 
     [data-variant]:active:not(:disabled, [aria-disabled='true']),
-    [data-variant][aria-pressed='true']:not(:disabled, [aria-disabled='true']) {
+    [data-variant][aria-pressed='true']:not(:disabled, [aria-disabled='true']),
+    [data-variant][aria-checked='true']:not(:disabled, [aria-disabled='true']) {
         background: var(--_image-active);
     }
 
@@ -333,6 +334,60 @@
     [data-part='field'] {
         display: grid;
         gap: var(--wmp-space-xs);
+    }
+
+    /* --- Segmented control ------------------------------------------------------------------ */
+
+    /*
+     * Mutually exclusive options as one connected group of buttons. The checked segment shows the
+     * active image of buttons; the indicator is hidden by the base and lies at the position of the
+     * checked segment (--wmp-indicator-x, --wmp-indicator-width) for themes that show it, e.g. as a
+     * highlight that slides between the segments.
+     */
+    [data-part='segmented-control'] {
+        position: relative;
+        display: inline-flex;
+        isolation: isolate;
+        max-inline-size: 100%;
+    }
+
+    [data-part='field'] > [data-part='segmented-control'] {
+        justify-self: start;
+    }
+
+    [data-part='segmented-control'] > [data-part='indicator'] {
+        position: absolute;
+        inset-block: 0;
+        left: var(--wmp-indicator-x, 0);
+        inline-size: var(--wmp-indicator-width, 0);
+        pointer-events: none;
+    }
+
+    [data-part='segment'] {
+        border-radius: 0;
+    }
+
+    [data-part='segment'] + [data-part='segment'] {
+        margin-inline-start: -1px;
+    }
+
+    [data-part='segment']:first-of-type {
+        border-start-start-radius: var(--wmp-radius-s);
+        border-end-start-radius: var(--wmp-radius-s);
+    }
+
+    [data-part='segment']:last-of-type {
+        border-start-end-radius: var(--wmp-radius-s);
+        border-end-end-radius: var(--wmp-radius-s);
+    }
+
+    [data-part='segment'][aria-checked='true'],
+    [data-part='segment']:focus-visible {
+        z-index: 1;
+    }
+
+    [data-part='segmented-control'][aria-invalid='true'] > [data-part='segment'] {
+        border-color: var(--wmp-color-danger);
     }
 
     [data-part='input'] {

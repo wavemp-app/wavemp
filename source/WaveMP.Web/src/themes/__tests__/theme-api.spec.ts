@@ -25,6 +25,10 @@ const runtimeVariables = [
     '--wmp-progress-value',
     '--wmp-meter-value',
     '--wmp-video-aspect-ratio',
+    '--wmp-item-count',
+    '--wmp-active-index',
+    '--wmp-indicator-x',
+    '--wmp-indicator-width',
 ]
 
 function read(file: string): string {

@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import BaseButton from '@/components/base/BaseButton.vue'
 import BaseCover from '@/components/base/BaseCover.vue'
+import BaseSegmentedControl, {
+    type SegmentOption,
+} from '@/components/base/BaseSegmentedControl.vue'
 import LibraryCover from '@/components/library/LibraryCover.vue'
 import StageVisualization from './StageVisualization.vue'
 import VideoStage from './VideoStage.vue'
@@ -74,6 +76,35 @@ const selected = computed<PlayerViewMode>(() =>
         : props.mode,
 )
 
+const viewOptions = computed<SegmentOption[]>(() => [
+    {
+        value: PlayerViewModeObject.Cover,
+        item: 'cover',
+        icon: 'view-cover',
+        label: t('nowPlaying.viewCover'),
+    },
+    {
+        value: PlayerViewModeObject.Video,
+        item: 'video',
+        icon: 'view-video',
+        label: t('nowPlaying.viewVideo'),
+        disabled: !hasVideo.value,
+    },
+    {
+        value: PlayerViewModeObject.Visualization,
+        item: 'visualization',
+        icon: 'view-visualization',
+        label: t('nowPlaying.viewVisualization'),
+    },
+])
+
+function selectMode(value: string): void {
+    const mode = viewOptions.value.find((option) => option.value === value)?.value
+    if (mode) {
+        emit('selectMode', mode as PlayerViewMode)
+    }
+}
+
 const subtitle = computed(() => {
     const key = artistLabelKey(props.track?.artist)
     const artist = key ? t(key) : (props.track?.artist?.name ?? '')
@@ -131,33 +162,13 @@ const subtitle = computed(() => {
             <p data-part="empty-state-title">{{ t('nowPlaying.emptyTitle') }}</p>
             <p data-part="empty-state-text">{{ t('nowPlaying.emptyText') }}</p>
         </div>
-        <div
-            v-if="track"
-            data-part="stage-actions"
-            role="group"
-            :aria-label="t('nowPlaying.stageActions')"
-        >
-            <BaseButton
-                part="btn-view-cover"
-                icon="view-cover"
-                :label="t('nowPlaying.viewCover')"
-                :pressed="selected === PlayerViewModeObject.Cover"
-                @click="emit('selectMode', PlayerViewModeObject.Cover)"
-            />
-            <BaseButton
-                part="btn-view-video"
-                icon="view-video"
-                :label="t('nowPlaying.viewVideo')"
-                :pressed="selected === PlayerViewModeObject.Video"
-                :disabled="!hasVideo"
-                @click="emit('selectMode', PlayerViewModeObject.Video)"
-            />
-            <BaseButton
-                part="btn-view-visualization"
-                icon="view-visualization"
-                :label="t('nowPlaying.viewVisualization')"
-                :pressed="selected === PlayerViewModeObject.Visualization"
-                @click="emit('selectMode', PlayerViewModeObject.Visualization)"
+        <div v-if="track" data-part="stage-actions">
+            <BaseSegmentedControl
+                item="stage-view"
+                :label="t('nowPlaying.stageActions')"
+                :options="viewOptions"
+                :model-value="selected"
+                @update:model-value="selectMode"
             />
         </div>
     </div>

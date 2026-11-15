@@ -2,7 +2,9 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
-import BaseButton from '@/components/base/BaseButton.vue'
+import BaseSegmentedControl, {
+    type SegmentOption,
+} from '@/components/base/BaseSegmentedControl.vue'
 import { isMyMusic, withMyMusic } from '@/collection/presentation'
 
 /**
@@ -15,28 +17,27 @@ const route = useRoute()
 const router = useRouter()
 const myMusic = computed(() => isMyMusic(route.query))
 
-function choose(value: boolean): void {
-    if (value !== myMusic.value) {
-        void router.replace({ query: withMyMusic(route.query, value) })
+const options = computed<SegmentOption[]>(() => [
+    { value: 'all-music', label: t('collection.scope.all') },
+    { value: 'my-music', label: t('collection.scope.myMusic') },
+])
+
+function choose(value: string): void {
+    const wanted = value === 'my-music'
+    if (wanted !== myMusic.value) {
+        void router.replace({ query: withMyMusic(route.query, wanted) })
     }
 }
 </script>
 
 <template>
-    <div data-part="scope-switch" role="group" :aria-label="t('collection.scope.label')">
-        <BaseButton
-            data-item="all-music"
-            :label="t('collection.scope.all')"
-            :pressed="!myMusic"
-            :state="myMusic ? undefined : 'active'"
-            @click="choose(false)"
-        />
-        <BaseButton
-            data-item="my-music"
-            :label="t('collection.scope.myMusic')"
-            :pressed="myMusic"
-            :state="myMusic ? 'active' : undefined"
-            @click="choose(true)"
+    <div data-part="scope-switch">
+        <BaseSegmentedControl
+            item="scope"
+            :label="t('collection.scope.label')"
+            :options="options"
+            :model-value="myMusic ? 'my-music' : 'all-music'"
+            @update:model-value="choose"
         />
     </div>
 </template>

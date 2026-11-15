@@ -62,9 +62,6 @@ export const parts = [
     'stage-title',
     'stage-subtitle',
     'stage-actions',
-    'btn-view-cover',
-    'btn-view-video',
-    'btn-view-visualization',
     'visualization',
     'video-stage',
     'video-backdrop',
@@ -118,6 +115,8 @@ export const parts = [
     'rating',
     'rating-star',
     'scope-switch',
+    'segmented-control',
+    'segment',
 
     // Home page
     'shelf',

@@ -11,6 +11,13 @@ function part(page: Page, name: string): Locator {
     return page.locator(`[data-part='app'] [data-part='${name}']`)
 }
 
+/** A segment of the segmented control that chooses the view of the stage. */
+function viewSegment(page: Page, item: string): Locator {
+    return page.locator(
+        `[data-part='app'] [data-part='stage-actions'] [data-part='segment'][data-item='${item}']`,
+    )
+}
+
 /** Opens Now Playing without loading the page again, so the player keeps its track. */
 async function openNowPlaying(page: Page): Promise<void> {
     await page.locator("[data-part='app'] a[href='/now-playing']").filter({ visible: true }).click()
@@ -45,7 +52,7 @@ test('shows the video of a song on the Now Playing stage', async ({ page, reques
 
     const stage = part(page, 'stage')
     await expect(stage).toHaveAttribute('data-state', 'video')
-    await expect(part(page, 'btn-view-video')).toHaveAttribute('aria-pressed', 'true')
+    await expect(viewSegment(page, 'video')).toHaveAttribute('aria-checked', 'true')
     const video = part(page, 'video')
     await expect(video).toBeVisible()
     // The audio leads: the video plays without sound.

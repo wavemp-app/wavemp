@@ -14,6 +14,8 @@ import {
 } from '@/admin/transcoding'
 import BaseAlert from '@/components/base/BaseAlert.vue'
 import BaseButton from '@/components/base/BaseButton.vue'
+import type { SegmentOption } from '@/components/base/BaseSegmentedControl.vue'
+import BaseSegmentedField from '@/components/base/BaseSegmentedField.vue'
 import BaseSelect, { type SelectOption } from '@/components/base/BaseSelect.vue'
 import { useFormat } from '@/composables/useFormat'
 import { validationMessagesByField } from '@/i18n/validation'
@@ -63,9 +65,17 @@ function optionsOf(values: readonly number[], current: string, label: (value: nu
     return offered
 }
 
-const hardwareOptions = computed<SelectOption[]>(() => [
-    { value: HardwareAccelerationModeObject.Auto, label: t('adminTranscoding.hardwareModes.auto') },
-    { value: HardwareAccelerationModeObject.Off, label: t('adminTranscoding.hardwareModes.off') },
+const hardwareOptions = computed<SegmentOption[]>(() => [
+    {
+        value: HardwareAccelerationModeObject.Auto,
+        item: 'auto',
+        label: t('adminTranscoding.hardwareModes.auto'),
+    },
+    {
+        value: HardwareAccelerationModeObject.Off,
+        item: 'off',
+        label: t('adminTranscoding.hardwareModes.off'),
+    },
 ])
 const parallelOptions = computed(() =>
     optionsOf(maxParallelJobOptions, maxParallelJobs.value, (value) => format.number(value)),
@@ -140,8 +150,10 @@ onMounted(async () => {
         :message="t('adminTranscoding.settingsLoadError')"
     />
     <form v-else data-part="form" @submit.prevent="save">
-        <BaseSelect
+        <BaseSegmentedField
             v-model="hardware"
+            data-field="hardware-acceleration"
+            item="hardware-acceleration"
             :label="t('adminTranscoding.hardwareMode')"
             :options="hardwareOptions"
             :hint="t('adminTranscoding.hardwareModeHint')"

@@ -120,9 +120,13 @@ describe('AdminTranscodingView', () => {
         expect(item.get('[data-part="progress"]').attributes('aria-valuenow')).toBe('25')
         expect(api.jobs).toHaveBeenCalledWith({ queryParameters: { limit: 50 } })
 
+        expect(
+            wrapper
+                .get('[data-field="hardware-acceleration"] [aria-checked="true"]')
+                .attributes('data-item'),
+        ).toBe('auto')
         const selects = wrapper.findAll('select')
         expect(selects.map((select) => (select.element as HTMLSelectElement).value)).toEqual([
-            'Auto',
             '2',
             '1080',
             '192',
@@ -154,9 +158,10 @@ describe('AdminTranscodingView', () => {
             maxParallelJobs: 4,
         })
 
-        const selects = wrapper.findAll('select')
-        await selects[0]!.setValue('Off')
-        await selects[1]!.setValue('4')
+        await wrapper
+            .get('[data-field="hardware-acceleration"] [data-part="segment"][data-item="off"]')
+            .trigger('click')
+        await wrapper.findAll('select')[0]!.setValue('4')
         await wrapper.get('form').trigger('submit')
         await flushPromises()
 

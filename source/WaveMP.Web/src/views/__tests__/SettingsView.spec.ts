@@ -55,13 +55,26 @@ describe('SettingsView', () => {
         )
         const select = wrapper.get<HTMLSelectElement>('[data-part="select"]')
         expect(select.element.value).toBe('en')
-        const options = wrapper
-            .findAll('[data-field="language"] option, [data-field="replay-gain"] option')
-            .map((option) => option.text())
-        expect(options).toEqual(['English', 'Deutsch', 'Off', 'Per song', 'Per album'])
-        expect(wrapper.findAll<HTMLSelectElement>('[data-part="select"]')[1]!.element.value).toBe(
-            'Off',
-        )
+        expect(
+            wrapper.findAll('[data-field="language"] option').map((option) => option.text()),
+        ).toEqual(['English', 'Deutsch'])
+        const replayGain = wrapper.get('[data-field="replay-gain"] [data-part="segmented-control"]')
+        expect(replayGain.attributes('role')).toBe('radiogroup')
+        expect(
+            replayGain
+                .findAll('[data-part="segment"]')
+                .map((segment) => [
+                    segment.attributes('data-item'),
+                    segment.text(),
+                    segment.attributes('aria-checked'),
+                ]),
+        ).toEqual([
+            ['off', 'Off', 'true'],
+            ['track', 'Per song', 'false'],
+            ['album', 'Per album', 'false'],
+        ])
+        const label = wrapper.get('[data-field="replay-gain"] > [data-part="label"]')
+        expect(replayGain.attributes('aria-labelledby')).toBe(label.attributes('id'))
         expect(wrapper.get('[data-part="field-hint"]').text()).toBe(
             'Applies to this profile on all devices.',
         )
@@ -86,17 +99,19 @@ describe('SettingsView', () => {
                 session.replayGain = mode
             })
             .mockRejectedValueOnce(new TypeError('Failed to fetch'))
-        const select = () => wrapper.findAll<HTMLSelectElement>('[data-part="select"]')[1]!
+        const segment = (item: string) =>
+            wrapper.get(`[data-field="replay-gain"] [data-part="segment"][data-item="${item}"]`)
 
-        await select().setValue('Album')
+        await segment('album').trigger('click')
         await flushPromises()
         expect(update).toHaveBeenCalledWith('Album')
         expect(session.replayGain).toBe('Album')
 
-        await select().setValue('Track')
+        await segment('track').trigger('click')
         await flushPromises()
         expect(wrapper.get('[data-part="alert"]').text()).toBe('The setting could not be saved.')
-        expect(select().element.value).toBe('Album')
+        expect(segment('album').attributes('aria-checked')).toBe('true')
+        expect(segment('track').attributes('aria-checked')).toBe('false')
     })
 
     it('reports an error and keeps the saved language', async () => {

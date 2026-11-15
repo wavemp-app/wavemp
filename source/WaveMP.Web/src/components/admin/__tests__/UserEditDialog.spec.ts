@@ -64,7 +64,9 @@ describe('UserEditDialog', () => {
 
         expect(wrapper.get('[data-part="dialog-title"]').text()).toBe('Edit profile')
         await wrapper.findAll('input')[1]?.setValue('XY')
-        await wrapper.get('select').setValue('Admin')
+        await wrapper
+            .get('[data-field="role"] [data-part="segment"][data-item="admin"]')
+            .trigger('click')
         await submit(wrapper)
 
         expect(update).toHaveBeenCalledWith('anna', { initials: 'XY', role: 'Admin' })
@@ -161,7 +163,14 @@ describe('UserEditDialog', () => {
             color: '#123456',
         })
 
-        expect(wrapper.get('select').attributes('disabled')).toBeDefined()
+        const role = wrapper.get('[data-field="role"] [data-part="segmented-control"]')
+        expect(role.attributes('aria-disabled')).toBe('true')
+        expect(role.get('[data-item="admin"]').attributes('aria-checked')).toBe('true')
+        expect(
+            role
+                .findAll('[data-part="segment"]')
+                .every((segment) => segment.attributes('disabled') !== undefined),
+        ).toBe(true)
         expect(wrapper.text()).toContain('The built-in admin profile always stays an admin.')
         const swatches = wrapper.findAll('[data-part="color-swatch"]')
         expect(swatches).toHaveLength(9)
