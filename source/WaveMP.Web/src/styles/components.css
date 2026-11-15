@@ -1855,11 +1855,15 @@
         font-size: var(--wmp-font-size-s);
     }
 
-    /* The video: black bars around it, the full-screen button in its corner. */
+    /*
+     * The video: always whole and undistorted in the middle of the stage, also in full screen and
+     * for portrait videos, whose size would otherwise stretch the box. The free areas beside or
+     * above and below it show the stage background and the video-backdrop, which the theme designs
+     * (with data-orientation and --wmp-video-aspect-ratio); the full-screen button in its corner.
+     */
     [data-part='video-stage'] {
         position: relative;
-        display: grid;
-        place-items: center;
+        display: block;
         inline-size: 100%;
         block-size: 100%;
         overflow: hidden;
@@ -1867,21 +1871,26 @@
         background: var(--wmp-stage-view-background);
     }
 
+    [data-part='video-backdrop'] {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+    }
+
     [data-part='video'] {
+        position: absolute;
+        inset: 0;
         display: block;
         inline-size: 100%;
         block-size: 100%;
         object-fit: contain;
-        background: var(--wmp-stage-view-background);
+        object-position: center;
+        background: transparent;
     }
 
     [data-part='video-stage'][data-state~='fullscreen'] {
         max-inline-size: none;
         border-radius: 0;
-    }
-
-    [data-part='video-stage'][data-state~='fullscreen'] > [data-part='video'] {
-        block-size: 100%;
     }
 
     [data-part='btn-fullscreen'] {

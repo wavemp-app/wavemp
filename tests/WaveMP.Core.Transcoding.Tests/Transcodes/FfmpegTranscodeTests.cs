@@ -97,6 +97,47 @@ public class FfmpegTranscodeTests
     }
 
     [Test]
+    public async Task GetSegmentAsync_PortraitVideoOfAPhone_StaysUprightAndUndistorted()
+    {
+        // Stored as 320x240 and turned by a quarter, like portrait videos of phones; the scan reads it as 240x320.
+        string path = _folder.Combine("media/Portrait.mp4");
+        await TestMediaGenerator.CreateVideoAsync(
+            path,
+            VideoFormat.Mp4,
+            320,
+            240,
+            durationSeconds: DurationSeconds,
+            displayRotation: 90);
+        TranscodeVariant variant = TestVariants.Video(Input(path, 240, 320));
+
+        Probe first = await ProbeSegmentAsync(variant, 0);
+
+        first.Width.Should().Be(240);
+        first.Height.Should().Be(320);
+    }
+
+    [Test]
+    public async Task GetSegmentAsync_SizeOfTheUnturnedPicture_KeepsTheAspectRatio()
+    {
+        // A library scanned before rotations were read knows the stored size only: the picture gets smaller but keeps
+        // its proportions.
+        string path = _folder.Combine("media/Portrait.mp4");
+        await TestMediaGenerator.CreateVideoAsync(
+            path,
+            VideoFormat.Mp4,
+            320,
+            240,
+            durationSeconds: DurationSeconds,
+            displayRotation: 90);
+        TranscodeVariant variant = TestVariants.Video(Input(path, 320, 240));
+
+        Probe first = await ProbeSegmentAsync(variant, 0);
+
+        first.Width.Should().Be(180);
+        first.Height.Should().Be(240);
+    }
+
+    [Test]
     public async Task GetSegmentAsync_Vp9WebmAfterASeek_StartsAtTheSegmentTime()
     {
         string path = _folder.Combine("media/Song.webm");
@@ -186,7 +227,8 @@ public class FfmpegTranscodeTests
         };
         foreach (string argument in (string[])
                  [
-                     "-v", "error", "-show_entries", "stream=codec_name,width:format=start_time", "-of", "json", path,
+                     "-v", "error", "-show_entries", "stream=codec_name,width,height:format=start_time", "-of", "json",
+                     path,
                  ])
         {
             startInfo.ArgumentList.Add(argument);
@@ -202,20 +244,22 @@ public class FfmpegTranscodeTests
         JsonElement root = document.RootElement;
         List<string> codecs = [];
         int? width = null;
+        int? height = null;
         foreach (JsonElement stream in root.GetProperty("streams").EnumerateArray())
         {
             codecs.Add(stream.GetProperty("codec_name").GetString()!);
             if (stream.TryGetProperty("width", out JsonElement value))
             {
                 width = value.GetInt32();
+                height = stream.GetProperty("height").GetInt32();
             }
         }
 
         double startTime = double.Parse(
             root.GetProperty("format").GetProperty("start_time").GetString()!,
             CultureInfo.InvariantCulture);
-        return new Probe(codecs, width, startTime);
+        return new Probe(codecs, width, height, startTime);
     }
 
-    private sealed record Probe(IReadOnlyList<string> Codecs, int? Width, double StartTime);
+    private sealed record Probe(IReadOnlyList<string> Codecs, int? Width, int? Height, double StartTime);
 }

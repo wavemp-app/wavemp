@@ -21,7 +21,9 @@ public class FfmpegHlsArgumentsTests
 
         string text = string.Join(' ', arguments);
         text.Should().StartWith("-hide_banner -nostdin -loglevel error -y -i /media/Artist/Song.mkv");
-        text.Should().Contain("-map 0:v:0 -map 0:a:0? -vf scale=1920:1080,format=yuv420p");
+        text.Should().Contain(
+            "-map 0:v:0 -map 0:a:0? -vf scale=1920:1080:force_original_aspect_ratio=decrease:force_divisible_by=2"
+            + ",format=yuv420p");
         text.Should().Contain("-c:v libx264 -preset veryfast -profile:v high -b:v 6000k -maxrate 9000k -bufsize 12000k");
         text.Should().Contain("-force_key_frames expr:gte(t,n_forced*2)");
         text.Should().Contain("-c:a aac -b:a 192k -ac 2 -ar 48000");
@@ -66,7 +68,9 @@ public class FfmpegHlsArgumentsTests
 
         text.Should().Contain(
             "-init_hw_device vaapi=va:/dev/dri/renderD128 -filter_hw_device va -i /media/Artist/Song.mkv");
-        text.Should().Contain("-vf scale=1920:1080,format=nv12,hwupload -c:v h264_vaapi -profile:v high");
+        text.Should().Contain(
+            "-vf scale=1920:1080:force_original_aspect_ratio=decrease:force_divisible_by=2,format=nv12,hwupload"
+            + " -c:v h264_vaapi -profile:v high");
         text.Should().NotContain("-preset");
     }
 

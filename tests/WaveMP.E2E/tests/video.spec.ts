@@ -75,6 +75,79 @@ test('plays a video the browser cannot play as HLS', async ({ page, request }, t
     await expect.poll(() => readyState(video), { timeout: 60_000 }).toBeGreaterThanOrEqual(1)
 })
 
+/** Position and size of an element; fails if it has no box. */
+async function box(locator: Locator) {
+    const result = await locator.boundingBox()
+    expect(result).not.toBeNull()
+    return result!
+}
+
+/** Expects the video to fill its stage exactly, so object-fit shows its picture whole. */
+async function expectVideoInsideStage(page: Page): Promise<void> {
+    const stage = await box(part(page, 'video-stage'))
+    const video = await box(part(page, 'video'))
+    expect(Math.abs(video.x - stage.x)).toBeLessThanOrEqual(1)
+    expect(Math.abs(video.y - stage.y)).toBeLessThanOrEqual(1)
+    expect(Math.abs(video.width - stage.width)).toBeLessThanOrEqual(1)
+    expect(Math.abs(video.height - stage.height)).toBeLessThanOrEqual(1)
+    expect(
+        await part(page, 'video').evaluate((element) => getComputedStyle(element).objectFit),
+    ).toBe('contain')
+}
+
+test('shows a portrait video whole, upright and in the middle', async ({
+    page,
+    request,
+}, testInfo) => {
+    test.skip(testInfo.project.name !== 'chromium', 'Transcodes on one project only.')
+    // Second Song has a portrait video stored lying and turned upright, like videos of phones.
+    const id = await findTrackId(request, 'Second Song')
+    await playSong(page, id)
+    await openNowPlaying(page)
+
+    const video = part(page, 'video')
+    await expect.poll(() => readyState(video), { timeout: 60_000 }).toBeGreaterThanOrEqual(1)
+    const size = await video.evaluate((element: HTMLVideoElement) => ({
+        width: element.videoWidth,
+        height: element.videoHeight,
+    }))
+    // The server transcodes the upright picture without distorting it.
+    expect(size).toEqual({ width: 240, height: 320 })
+
+    const videoStage = part(page, 'video-stage')
+    await expect(videoStage).toHaveAttribute('data-orientation', 'portrait')
+    expect(
+        await videoStage.evaluate((element) =>
+            getComputedStyle(element).getPropertyValue('--wmp-video-aspect-ratio').trim(),
+        ),
+    ).toBe('0.75')
+    await expect(part(page, 'video-backdrop')).toBeAttached()
+    await expectVideoInsideStage(page)
+})
+
+test('keeps the video whole in full screen', async ({ page, request }, testInfo) => {
+    test.skip(testInfo.project.name !== 'chromium', 'Full screen of the stage on the desktop.')
+    const id = await findTrackId(request, 'Loose Song')
+    await playSong(page, id)
+    await openNowPlaying(page)
+    const video = part(page, 'video')
+    await expect.poll(() => readyState(video), { timeout: 15_000 }).toBeGreaterThanOrEqual(1)
+    await expect(part(page, 'video-stage')).toHaveAttribute('data-orientation', 'landscape')
+    await expectVideoInsideStage(page)
+
+    await part(page, 'btn-fullscreen').click()
+
+    await expect(part(page, 'video-stage')).toHaveAttribute('data-state', 'fullscreen')
+    const viewport = page.viewportSize()!
+    const stage = await box(part(page, 'video-stage'))
+    expect(stage.width).toBeCloseTo(viewport.width, 0)
+    expect(stage.height).toBeCloseTo(viewport.height, 0)
+    await expectVideoInsideStage(page)
+
+    await part(page, 'btn-fullscreen').click()
+    await expect(part(page, 'video-stage')).not.toHaveAttribute('data-state', 'fullscreen')
+})
+
 test('transcodes the video to HLS behind signed URLs', async ({ request }, testInfo) => {
     test.skip(testInfo.project.name !== 'chromium', 'Transcodes on one project only.')
     const id = await findTrackId(request, 'Second Song')

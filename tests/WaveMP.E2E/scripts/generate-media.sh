@@ -2,8 +2,10 @@
 # Creates the synthetic test media of the E2E tests with ffmpeg: sine tones, test pictures and
 # tags written with -metadata, no files from other sources. The result are 4 tracks:
 #   E2E Artist/E2E Album/01 - First Song.mp3          tagged audio (genre E2E Genre, 2026)
-#   E2E Artist/E2E Album/02 - Second Song.flac + .mp4  audio with music video (MPEG-4 Part 2,
-#                                                      which browsers cannot play: transcoded to HLS)
+#   E2E Artist/E2E Album/02 - Second Song.flac + .mp4  audio with a portrait music video in
+#                                                      MPEG-4 Part 2, stored lying (320x240) and
+#                                                      turned upright like videos of phones;
+#                                                      browsers cannot play it: transcoded to HLS
 #   E2E Artist/E2E Album/cover.jpg                     album cover
 #   E2E Artist/Video Only.mp4                          music video without audio file
 #   Loose Artist - Loose Song.mp3 + .webm              audio without tags in the root, with a
@@ -48,7 +50,11 @@ audio 440 2 "$album/01 - First Song.mp3" -c:a libmp3lame -b:a 128k \
     -metadata album="E2E Album" -metadata track=1 -metadata date=2026 \
     -metadata genre="E2E Genre"
 audio 550 2 "$album/02 - Second Song.flac" -c:a flac
-video 320x240 "$album/02 - Second Song.mp4"
+# Portrait like a video of a phone: the picture is stored lying (320x240), the display matrix turns
+# it upright.
+video 320x240 "$album/second-song-lying.mp4"
+ff -display_rotation 90 -i "$album/second-song-lying.mp4" -c copy "$album/02 - Second Song.mp4"
+rm "$album/second-song-lying.mp4"
 ff -f lavfi -i "testsrc=size=300x300:rate=1" -frames:v 1 -update 1 "$album/cover.jpg"
 video 320x240 "$artist/Video Only.mp4"
 audio 660 20 "$target/Loose Artist - Loose Song.mp3" -c:a libmp3lame -b:a 128k

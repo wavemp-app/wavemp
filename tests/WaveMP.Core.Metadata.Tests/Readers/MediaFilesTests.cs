@@ -111,6 +111,18 @@ public class MediaFilesTests
     }
 
     [Test]
+    public async Task ReadAsync_PortraitVideoOfAPhone_ReadsTheSizeAsShown()
+    {
+        string path = _directory.Combine("portrait.mp4");
+        await TestMediaGenerator.CreateVideoAsync(path, VideoFormat.Mp4, 320, 240, displayRotation: 90);
+
+        MediaFileMetadata metadata = await _reader.ReadAsync(path, MediaFileKind.Video);
+
+        metadata.Width.Should().Be(240);
+        metadata.Height.Should().Be(320);
+    }
+
+    [Test]
     public async Task ReadAsync_WebmVideo_ReadsVp9AndOpus()
     {
         string path = _directory.Combine("clip.webm");

@@ -85,6 +85,9 @@ public static class TestMediaGenerator
     /// <param name="codec">Codecs of the video and its sound.</param>
     /// <param name="withAudio">Whether the video has sound.</param>
     /// <param name="durationSeconds">Length in seconds; 1 if not set.</param>
+    /// <param name="displayRotation">Rotation in degrees stored in the display matrix of the video stream (as phones
+    /// do for portrait videos), counterclockwise; <c>null</c> for none. The picture is stored with
+    /// <paramref name="width"/> and <paramref name="height"/>; players show it turned.</param>
     public static async Task CreateVideoAsync(
         string path,
         VideoFormat format,
@@ -93,7 +96,8 @@ public static class TestMediaGenerator
         TestTags? tags = null,
         TestVideoCodec codec = TestVideoCodec.Mpeg4,
         bool withAudio = true,
-        int durationSeconds = 1)
+        int durationSeconds = 1,
+        int? displayRotation = null)
     {
         string extension = format.ToString().ToLowerInvariant();
         string size = string.Create(CultureInfo.InvariantCulture, $"{width}x{height}");
@@ -112,6 +116,9 @@ public static class TestMediaGenerator
 
         await FfmpegTool.RunAsync(
         [
+            .. displayRotation is { } rotation
+                ? (string[])["-display_rotation", rotation.ToString(CultureInfo.InvariantCulture)]
+                : [],
             "-i", encoded, "-map", "0", "-c", "copy",
             .. tags?.ToArguments() ?? [],
             "-f", MuxerOf(format),

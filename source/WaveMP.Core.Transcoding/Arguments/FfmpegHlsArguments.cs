@@ -106,12 +106,17 @@ public static class FfmpegHlsArguments
 
     /// <summary>
     /// Scales the picture to the size of the profile (or, with an unknown source size, down to the largest height)
-    /// and hands it to the encoder.
+    /// and hands it to the encoder. ffmpeg turns rotated videos (e.g. portrait videos of phones) upright before the
+    /// filter; the size of the profile then fits the upright picture. The picture keeps its aspect ratio within the
+    /// size in any case, so a size that does not fit the picture (e.g. of a library scanned before rotations were
+    /// read) makes it smaller but never distorts it.
     /// </summary>
     public static string VideoFilter(TranscodeProfile profile, HardwareAccelerator accelerator)
     {
         string scale = profile.Size is { } size
-            ? string.Create(CultureInfo.InvariantCulture, $"scale={size.Width}:{size.Height}")
+            ? string.Create(
+                CultureInfo.InvariantCulture,
+                $"scale={size.Width}:{size.Height}:force_original_aspect_ratio=decrease:force_divisible_by=2")
             : string.Create(CultureInfo.InvariantCulture, $"scale=-2:'trunc(min(ih,{profile.MaxHeight})/2)*2'");
         return scale + "," + FfmpegHardwareArguments.UploadFilter(accelerator);
     }

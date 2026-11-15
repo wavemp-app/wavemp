@@ -1,6 +1,6 @@
 # WaveMP Theme API
 
-Version 3
+Version 4
 
 This document describes how themes change the look of the WaveMP web app: the parts of the DOM a theme can address, their states, the CSS variables and the icons. It is meant for theme authors.
 
@@ -13,7 +13,7 @@ The DOM is the same for every theme. Every element a theme can address has a sta
 The root element carries the active theme and the version of this API:
 
 ```html
-<html lang="en" data-theme="midnight" data-theme-api="3">
+<html lang="en" data-theme="midnight" data-theme-api="4">
 ```
 
 A theme can change everything: colors, graphics, fonts, sizes and the desktop layout. Only the mobile layout is fixed (see [Responsive layout](#responsive-layout)).
@@ -126,8 +126,9 @@ Example of a desktop layout with the sidebar on the right:
 | `btn-view-video` | `button` (`aria-pressed`) | `stage-actions` | Shows the video of songs with one; pressed while it is the chosen view, also while the video still loads; disabled for songs without a video |
 | `btn-view-visualization` | `button` (`aria-pressed`) | `stage-actions` | Shows the visualization; pressed while it is the chosen view |
 | `visualization` | `div` | `stage-view` | The visualization of the music; for now a placeholder (`data-state="placeholder"`) with an `icon` (`view-visualization`) and a `label` |
-| `video-stage` | `div` | `stage-view` | The video of the current song with `video` and `btn-fullscreen`; shown in full screen as a whole (a double click switches as well, only while the video view is shown). When it closes, the song simply goes on |
-| `video` | `video` (`aria-label`) | `video-stage` | The video element, always muted and without native controls: the sound comes from the player, the video follows its position plus the offset of the song; the transport bar controls both |
+| `video-stage` | `div` (`data-orientation`) | `stage-view` | The video of the current song with `video-backdrop`, `video` and `btn-fullscreen`; shown in full screen as a whole (a double click switches as well, only while the video view is shown). When it closes, the song simply goes on. `data-orientation` and `--wmp-video-aspect-ratio` describe the picture of the video, so the theme can design the free areas beside a portrait video or above and below a wide one |
+| `video-backdrop` | `span` (`aria-hidden`) | `video-stage` | Decorative layer behind the `video` that fills the whole `video-stage`; it shows in the free areas around the picture. Without a theme rule it is transparent and the background of the stage (`--wmp-stage-view-background`) shows |
+| `video` | `video` (`aria-label`) | `video-stage` | The video element, always muted and without native controls: the sound comes from the player, the video follows its position plus the offset of the song; the transport bar controls both. The base lays it over the whole `video-stage` with a transparent background and shows the picture whole, undistorted and centered (`object-fit: contain`), also in full screen and for portrait videos |
 | `btn-fullscreen` | `button` | `video-stage` | Shows the `video-stage` in full screen (icon `fullscreen`) or leaves it (icon `exit-fullscreen`); disabled where the browser has no full screen and while the video view is not shown. On the iPhone the video element itself goes full screen with the controls of the system |
 | `cover` | `span` | `stage-view`, `list-group-info`, `now-playing-mini`, `tile`, `detail-header` | Cover: `cover-image`, or the placeholder icon (`data-state="placeholder"`); on tiles and detail pages of artists, genres and years the `icon` of their kind |
 | `cover-image` | `img` (`alt=""`) | `cover` | Picture of the cover, loaded from the server |
@@ -382,6 +383,7 @@ The base links states to graphics: buttons use the variables `--wmp-image-<varia
 | `data-variant` | `field` | `checkbox` |
 | `data-icon` | `icon` | Icon slot, see [Icons](#icons) |
 | `data-orientation` | `slider` | `horizontal`, `vertical`; also as `aria-orientation` on `slider-thumb` |
+| `data-orientation` | `video-stage` | Orientation of the picture of the video as it is shown (rotation applied): `landscape`, `portrait` or `square`; missing while the video has not loaded its size |
 | `data-view` | `view` | `library`, `library-search`, `library-album`, `library-artist`, `library-genre`, `library-year`, `library-track`, `home`, `now-playing`, `playlists`, `playlist`, `recently-played`, `settings`, `equalizer`, `admin-library`, `admin-jobs`, `admin-cache`, `admin-transcoding`, `admin-users`, `not-found` |
 | `data-kind` | `tile` | `album`, `artist`, `track`, `genre`, `year`, `playlist`, `recently-played` |
 | `data-kind` | `stage-view` | `cover`, `video`, `visualization` |
@@ -573,7 +575,7 @@ The graphic of each icon slot is a variable as well, see [Icons](#icons).
 | Variable | Default | Used for |
 |---|---|---|
 | `--wmp-stage-transition-duration` | `0.6s` | Duration of the fade between the views of the stage (`stage-view`); the base leaves it out for `prefers-reduced-motion: reduce` |
-| `--wmp-stage-view-background` | `#000000` | Background of the video and visualization views, and the bars around the `video` |
+| `--wmp-stage-view-background` | `#000000` | Background of the video and visualization views and of the `video-stage`, so also of the free areas around the picture of the `video` (the `video-backdrop` lies above it) |
 
 On mobile, the base sets touch-friendly values for `--wmp-button-height`, `--wmp-round-button-size`, `--wmp-field-height` and `--wmp-swatch-size` on `app`, and its own `--wmp-list-columns` on `list` (in playlists with the handle); the columns `artist`, `album`, `detail` and `rating` are left out there.
 
@@ -591,6 +593,7 @@ The app sets these variables on single elements. Themes can read them, but never
 | `--wmp-swatch-color` | `color-swatch` | Color of the swatch as `#rrggbb` |
 | `--wmp-progress-value` | `progress` | Share of the work done between 0 and 1 (0 while indeterminate) |
 | `--wmp-meter-value` | `meter` | Share of the range between 0 and 1 |
+| `--wmp-video-aspect-ratio` | `video-stage` | Width divided by the height of the picture of the video, for example `1.7778` or `0.5625`; missing while the video has not loaded its size |
 
 ## Icons
 
@@ -745,6 +748,7 @@ The version of the theme API is in `data-theme-api` on the root element and at t
 
 ### Changelog
 
+- **Version 4:** fixes from the first test on phones and tablets. Changed: the `video` lies over the whole `video-stage` with a transparent background and always shows its picture whole and centered, also for portrait videos and in full screen; the free areas around it show the background of the `video-stage` and the new `video-backdrop`, so themes that styled the background of the `video` have to style the `video-stage` or the `video-backdrop` instead. Added: the part `video-backdrop`, the attribute `data-orientation` on `video-stage` and the runtime variable `--wmp-video-aspect-ratio`.
 - **Version 3:** cover, video and visualization on the stage, with a fade. Changed: `btn-video` is replaced by `btn-view-video`, one of the three buttons `btn-view-cover`, `btn-view-video` and `btn-view-visualization`, of which the chosen view is pressed; `stage-actions` is shown for every current song, not only for songs with a video; the `cover` and the `video-stage` of the stage no longer lie directly in `stage` but each in a `stage-view` inside `stage-views`, so themes that address `stage > cover`, `stage cover` or `stage > video-stage` have to use `stage-view > cover` and `stage-view > video-stage`; the `video` is muted and follows the music. Added: the state `visualization` of `stage`, the parts `stage-views`, `stage-view` (with `data-kind` and the states `active`, `loading` and `failed`), `stage-notice`, `visualization` (state `placeholder`) and the `btn-view-*` buttons, the variables `--wmp-stage-transition-duration` and `--wmp-stage-view-background`, and for admins the `section` `video-sync` on the page of a song with a video (`field` `video-offset`, `button` `save-video-offset`). The icon slots `view-cover`, `view-video` and `view-visualization` now belong to the content.
     - Additions without a version change: the versions on the settings page, a `section` `about` with a `stat-list` whose `stat-item`s carry `data-field` `app-version` and `server-version`.
     - Additions without a version change: equalizer, crossfade and sleep timer. The page `data-view="equalizer"` below Now Playing with the parts `equalizer` (states `on` and `off`), `equalizer-controls`, `equalizer-bands`, `equalizer-band` (`data-kind` `preamp` or `band`, `data-frequency`), `equalizer-value` and `equalizer-scale`; the vertical `slider` (`data-orientation`, `aria-orientation`) with the variable `--wmp-equalizer-slider-height`; in `mode-switch` the button `btn-equalizer` (states `on` and `off`) and the sleep timer `sleep-timer` (states `off`, `duration`, `end-of-track`, `end-of-queue` and `fading`) with `btn-sleep-timer` and `sleep-timer-remaining`; on mobile the full-screen player shows `mode-switch` below the transport controls; new values of `data-field` (`equalizer`, `crossfade`, `crossfade-albums`, `sleep-timer-fade`, `equalizer-preset`) and `data-item` (`power`, `reset`, `open-equalizer` and the entries of the sleep timer menu), `section-title` on the settings page and the icon slots `equalizer`, `sleep-timer` and `reset`.

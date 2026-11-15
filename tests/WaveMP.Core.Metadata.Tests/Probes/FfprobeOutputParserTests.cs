@@ -111,6 +111,50 @@ public class FfprobeOutputParserTests
         result.Bitrate.Should().BeNull();
     }
 
+    [TestCase(90, 1080, 1920)]
+    [TestCase(-90, 1080, 1920)]
+    [TestCase(270, 1080, 1920)]
+    [TestCase(-270, 1080, 1920)]
+    [TestCase(180, 1920, 1080)]
+    [TestCase(0, 1920, 1080)]
+    public void Parse_RotatedVideo_ReportsTheSizeAsShown(int rotation, int expectedWidth, int expectedHeight)
+    {
+        string json = $$"""
+            {
+                "streams": [
+                    {
+                        "codec_name": "h264", "codec_type": "video", "width": 1920, "height": 1080,
+                        "side_data_list": [
+                            { "side_data_type": "Display Matrix", "displaymatrix": "...", "rotation": {{rotation}} }
+                        ]
+                    }
+                ]
+            }
+            """;
+
+        VideoStreamInfo video = FfprobeOutputParser.Parse(json)!.Video!;
+
+        video.Width.Should().Be(expectedWidth);
+        video.Height.Should().Be(expectedHeight);
+    }
+
+    [Test]
+    public void Parse_RotateTag_ReportsTheSizeAsShown()
+    {
+        const string Json = """
+            {
+                "streams": [
+                    {
+                        "codec_name": "h264", "codec_type": "video", "width": 1280, "height": 720,
+                        "tags": { "rotate": "90" }
+                    }
+                ]
+            }
+            """;
+
+        FfprobeOutputParser.Parse(Json)!.Video.Should().Be(new VideoStreamInfo("h264", 720, 1280, null, null));
+    }
+
     [Test]
     public void Parse_WithoutStreamsAndFormat_ReturnsAnEmptyResult()
     {

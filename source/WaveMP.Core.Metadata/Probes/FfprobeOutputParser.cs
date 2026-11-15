@@ -6,7 +6,8 @@ namespace WaveMP.Core.Metadata.Probes;
 /// <summary>
 /// Reads the JSON output of <c>ffprobe -print_format json -show_format -show_streams</c>. ffprobe writes many
 /// numbers as strings (e.g. <c>"bit_rate": "320000"</c>) and leaves out unknown values, so every value is read
-/// leniently.
+/// leniently. The size of a video is the size it is shown in: a video turned by a quarter (the display matrix of
+/// portrait videos from phones) has its width and height swapped.
 /// </summary>
 internal static class FfprobeOutputParser
 {
@@ -61,14 +62,7 @@ internal static class FfprobeOutputParser
                         ReadInt(a, "channels"),
                         Positive(ReadInt(a, "bits_per_raw_sample")) ?? Positive(ReadInt(a, "bits_per_sample")))
                     : null,
-                video is { } v
-                    ? new VideoStreamInfo(
-                        ReadString(v, "codec_name"),
-                        ReadInt(v, "width"),
-                        ReadInt(v, "height"),
-                        ReadLong(v, "bit_rate"),
-                        ReadString(v, "pix_fmt"))
-                    : null,
+                video is { } v ? VideoOf(v) : null,
                 picture is { } p
                     ? new PictureStreamInfo(ReadString(p, "codec_name"), ReadInt(p, "width"), ReadInt(p, "height"))
                     : null);
@@ -77,6 +71,54 @@ internal static class FfprobeOutputParser
         {
             return null;
         }
+    }
+
+    private static VideoStreamInfo VideoOf(JsonElement stream)
+    {
+        int? width = ReadInt(stream, "width");
+        int? height = ReadInt(stream, "height");
+        if (IsQuarterTurn(RotationOf(stream)))
+        {
+            (width, height) = (height, width);
+        }
+
+        return new VideoStreamInfo(
+            ReadString(stream, "codec_name"),
+            width,
+            height,
+            ReadLong(stream, "bit_rate"),
+            ReadString(stream, "pix_fmt"));
+    }
+
+    /// <summary>
+    /// The rotation of a video in degrees: from the display matrix in the side data (current ffprobe) or from the
+    /// tag <c>rotate</c> (older files and ffprobe versions); 0 without either.
+    /// </summary>
+    private static double RotationOf(JsonElement stream)
+    {
+        if (stream.TryGetProperty("side_data_list", out JsonElement sideData)
+            && sideData.ValueKind == JsonValueKind.Array)
+        {
+            foreach (JsonElement entry in sideData.EnumerateArray())
+            {
+                if (ReadDouble(entry, "rotation") is { } rotation)
+                {
+                    return rotation;
+                }
+            }
+        }
+
+        return stream.TryGetProperty("tags", out JsonElement tags) && ReadDouble(tags, "rotate") is { } tagged
+            ? tagged
+            : 0;
+    }
+
+    /// <summary>
+    /// Whether a rotation turns the picture by a quarter (90 or 270 degrees, in either direction).
+    /// </summary>
+    private static bool IsQuarterTurn(double degrees)
+    {
+        return Math.Abs(Math.Round(degrees) % 180) == 90;
     }
 
     private static bool IsAttachedPicture(JsonElement stream)

@@ -24,6 +24,7 @@ const runtimeVariables = [
     '--wmp-swatch-color',
     '--wmp-progress-value',
     '--wmp-meter-value',
+    '--wmp-video-aspect-ratio',
 ]
 
 function read(file: string): string {
