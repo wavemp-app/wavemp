@@ -315,6 +315,84 @@ test('draws A-Force, which moves with the music and blends its styles', async ({
         .toMatchObject({ module: 'Milkdrop', preset: null })
 })
 
+test('draws BlackCap, which moves with the music and changes its scenes', async ({
+    page,
+    request,
+}) => {
+    // Both modules load and draw in software, BlackCap twice.
+    test.slow()
+    await drawAtLowQuality(request, user.id)
+    await turnOffAutoChange(request, user.id)
+    const visualization = await showVisualization(page, request)
+    await expect(visualization).toHaveAttribute('data-state', /\b(running|unsupported)\b/, {
+        timeout: 20_000,
+    })
+    if ((await visualization.getAttribute('data-state'))?.includes('unsupported')) {
+        test.skip(true, 'This browser has no WebGL 2')
+    }
+
+    // A running state means the shaders of BlackCap compiled; a failed one would show a message.
+    await moduleSegment(page, 'blackcap').click()
+    await expect(moduleSegment(page, 'blackcap')).toHaveAttribute('aria-checked', 'true')
+    await expect(visualization).toHaveAttribute('data-module', 'blackcap')
+    await expect(visualization).toHaveAttribute('data-state', /\brunning\b/, {
+        timeout: 20_000,
+    })
+    await expect(part(page, 'visualization-message')).toHaveCount(0)
+    await expect(visualization).toHaveAttribute('data-quality', 'low')
+    await settled
+        .poll(() => storedVisualization(request, user.id))
+        .toMatchObject({ module: 'BlackCap', preset: null })
+
+    // The scenes are the presets, with their names in the language of the app.
+    const preset = page.locator("[data-part='app'] [data-field='visualization-preset'] select")
+    await expect(preset).toBeEnabled()
+    await expect(preset.locator('option')).toHaveText([
+        'Lumen',
+        'Tide',
+        'Orchid',
+        'Mercury',
+        'Halo',
+        'Dusk',
+    ])
+
+    // The picture moves: two shots of the canvas a moment apart differ.
+    const canvas = part(page, 'visualization-canvas')
+    const first = await canvas.screenshot()
+    await page.waitForTimeout(400)
+    const second = await canvas.screenshot()
+    expect(first.equals(second)).toBe(false)
+
+    // A chosen scene is kept with the profile; the next button follows the list. BlackCap starts
+    // with a random scene, and choosing the shown one changes nothing, so the test chooses Halo,
+    // or Tide if it already shows Halo.
+    const chosen = (await preset.inputValue()) === 'halo' ? 'tide' : 'halo'
+    const following = chosen === 'halo' ? 'dusk' : 'orchid'
+    await preset.selectOption(chosen)
+    await settled
+        .poll(async () => (await storedVisualization(request, user.id)).preset)
+        .toBe(chosen)
+    await part(page, 'btn-preset-next').click()
+    await expect(preset).toHaveValue(following)
+    // The scenes blend into each other while the visualization keeps drawing.
+    await expect(visualization).toHaveAttribute('data-state', /\brunning\b/)
+    const blending = await canvas.screenshot()
+    await page.waitForTimeout(400)
+    expect(blending.equals(await canvas.screenshot())).toBe(false)
+
+    // After loading the app again, BlackCap starts with the stored scene.
+    await settled
+        .poll(async () => (await storedVisualization(request, user.id)).preset)
+        .toBe(following)
+    await page.reload()
+    await showVisualization(page, request)
+    await expect(visualization).toHaveAttribute('data-module', 'blackcap')
+    await expect(visualization).toHaveAttribute('data-state', /\brunning\b/, {
+        timeout: 20_000,
+    })
+    await expect(preset).toHaveValue(following)
+})
+
 test('sets the quality of the visualization in the settings', async ({ page, request }) => {
     await page.goto('/settings')
     const segment = (item: string) =>
