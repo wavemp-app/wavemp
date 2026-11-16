@@ -213,6 +213,12 @@ public class ApiIntegrationTests
     [TestCase("StartScan", true)]
     [TestCase("GetCurrentScan", true)]
     [TestCase("ListJobs", true)]
+    [TestCase("GetJob", true)]
+    [TestCase("ListBackups", true)]
+    [TestCase("CreateBackup", true)]
+    [TestCase("DeleteBackup", true)]
+    [TestCase("GetBackupSettings", true)]
+    [TestCase("UpdateBackupSettings", true)]
     [TestCase("StartJobRun", true)]
     [TestCase("UpdateLibrarySettings", true)]
     [TestCase("GetCacheSettings", true)]
@@ -257,10 +263,11 @@ public class ApiIntegrationTests
 
     [TestCase("Users", 5)]
     [TestCase("Scans", 4)]
-    [TestCase("Jobs", 4)]
-    [TestCase("Settings", 6)]
+    [TestCase("Jobs", 5)]
+    [TestCase("Settings", 8)]
     [TestCase("Cache", 2)]
     [TestCase("Transcoding", 3)]
+    [TestCase("Backups", 3)]
     public async Task GetOpenApiDocument_Always_DescribesUnauthorizedAndForbiddenResponses(string tag, int operations)
     {
         JsonNode document = await GetOpenApiDocumentAsync();
@@ -280,6 +287,7 @@ public class ApiIntegrationTests
     [TestCase("ScanPage", "Scan")]
     [TestCase("JobPage", "Job")]
     [TestCase("JobRunPage", "JobRun")]
+    [TestCase("BackupPage", "Backup")]
     [TestCase("ArtistPage", "Artist")]
     [TestCase("AlbumPage", "Album")]
     [TestCase("TrackPage", "Track")]
