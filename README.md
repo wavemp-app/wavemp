@@ -26,6 +26,7 @@ WaveMP brings back the glossy, glassy look of the classic desktop media players 
 - **Visualizations.** Classic Milkdrop presets plus WaveMP's own styles, *A-Force* and *BlackCap*.
 - **Plays almost anything.** Formats your browser supports are streamed directly; everything else is transcoded on the fly with ffmpeg. Intel Quick Sync is supported for hardware acceleration.
 - **Easy setup.** One compose file, one password, your media folder. That's it.
+- **Daily backups.** The database is exported every day and before every update, and the last exports are kept next to your other data.
 - **Open API.** A documented REST API (OpenAPI) for building your own clients. Native apps are planned.
 - **Installable as an app (PWA)** on desktop and mobile devices.
 - **English and German.** More languages will follow through community translations.
@@ -54,7 +55,8 @@ services:
       DB_HOST: wavemp-db
       DB_PASSWORD: ${DB_PASSWORD:?Please set DB_PASSWORD in .env}
     volumes:
-      # Data of WaveMP that is not in the database, e.g. the cache of scaled covers.
+      # Data of WaveMP that is not in the database: the daily exports of the database (backups),
+      # the covers of playlists and the cache of scaled covers.
       - wavemp-data:/data
       # Append :ro to keep WaveMP from changing your files; the metadata editor is then off.
       - /path/to/your/media:/media
@@ -117,7 +119,8 @@ The running version is shown under **Settings** and reported by `GET /api/v1/hea
 | `DB_PASSWORD` | Database password, used by both containers | *(required)* |
 | `ADMIN_PIN` | Protects the admin profile with a PIN (planned, not available yet) | *(none)* |
 | `MEDIA_PATH` | Media folder inside the container; only change it if you mount your media elsewhere | `/media` |
-| `DATA_PATH` | Data folder inside the container (cache, covers of playlists and, later, backups); only change it if you mount the volume elsewhere | `/data` |
+| `DATA_PATH` | Data folder inside the container (cache, covers of playlists and the exports of the database); only change it if you mount the volume elsewhere | `/data` |
+| `TZ` | Time zone of the server, for example `Europe/Berlin`; the daily backup runs at its time of day in this zone | `UTC` |
 | `Streaming__SignedUrlLifetime` | How long a stream address stays valid after it was handed out, on top of the length of the song | `01:00:00` |
 | `Streaming__MaxSignedUrlLifetime` | Upper limit of that validity, also for very long songs | `1.00:00:00` |
 | `Streaming__HistoryMaxAge` | How old a play may be when a client reports it to the history, for example after it was offline | `7.00:00:00` |
@@ -161,6 +164,30 @@ The folder `playlists` holds the pictures uploaded as covers of playlists, as sq
 The cache also holds transcoded media in its folder `transcodes`: the segments of the HLS streams of songs and videos your browser cannot play. A part that was transcoded once comes from the cache the next time; like the covers, the segments count towards the size limit and are removed when they were used least recently.
 
 Everything in the cache is created again when it is needed, so it does not have to be backed up. If `/data` cannot be written, WaveMP still works, shows the covers unscaled and skips songs and videos that would need transcoding; the cache page, the transcoding page and the log tell you so.
+
+### Backup & Restore
+
+WaveMP exports its database every day at 03:00 into the folder `backups` of the data volume (`/data/backups`), as a compressed PostgreSQL dump named after the time (UTC) and what created it, for example `wavemp-20261116T030000Z-schedule.dump`. The last 7 exports are kept; older ones are deleted after every export. Before an update changes the structure of the database, WaveMP exports it first (`...-migration.dump`); if that export fails, WaveMP does not touch the database and stops with an error in the log. **Administration > Backups** shows the last and next backup and the exports, backs up on demand, deletes exports and sets the time of day and the number of exports to keep. The time of day is the local time of the server; set the time zone with `TZ`, for example `TZ: Europe/Berlin` under `environment` of `wavemp`.
+
+The exports stay on the same disk as the database, so copy them elsewhere with the backup tool of your choice. Back up:
+
+- the volume `wavemp-data` (mounted at `/data`): the exports of the database in `backups` and the covers of playlists in `playlists`; its folder `cache` can be left out,
+- your media folder, which WaveMP does not back up.
+
+The database volume `wavemp-db` itself does not need to be copied: the exports contain everything in it, while a copy of the files of a running database may be inconsistent.
+
+To restore an export, stop WaveMP, replace the database with the export and start WaveMP again. In the folder of your `docker-compose.yml`, with the file name of the export:
+
+```bash
+docker compose stop wavemp
+docker compose cp wavemp:/data/backups/wavemp-20261116T030000Z-schedule.dump ./restore.dump
+docker compose exec wavemp-db dropdb --username=wavemp --force wavemp
+docker compose exec wavemp-db createdb --username=wavemp wavemp
+docker compose exec -T wavemp-db pg_restore --username=wavemp --dbname=wavemp --no-owner < ./restore.dump
+docker compose start wavemp
+```
+
+An export of an older version of WaveMP is updated to the current version on the next start. To restore on a new server, start WaveMP once with an empty database, copy the data volume back (or the export into the new volume) and restore the export as above. Restoring is not possible in the web app, so a wrong click cannot replace your library.
 
 ## Organizing Your Media
 
@@ -210,7 +237,7 @@ A number at the start of a file name is only a track number inside an album fold
 2. **Create profiles.** As admin, open the profile menu (your initials at the top right), choose **Administration** and then **Profiles** to add, edit or delete profiles: name, initials (created from the name if left empty), color and role (admin or user). The built-in admin profile can be renamed, but it cannot be deleted and always stays an admin. Once there are other profiles, it is shown less prominently in the selection.
 3. **Switch profiles** with **Switch profile** in the profile menu.
 4. **Choose your language** under **Settings** in the profile menu. It is stored with the profile and applies on all devices; before a profile is selected, WaveMP uses the language of the browser (English or German, otherwise English).
-5. **Scan your library.** As admin, open **Administration > Library**: **Scan now** starts a scan of your media folder, shows its progress and then its result (files found, added, updated and removed, tracks, albums and artists, and files with problems). Below are the history of scans and the settings: how often the library is scanned, whether the media folder is watched for changes, the file extensions of audio, video and pictures and the names of album covers. **Administration > Jobs** lists all background jobs with their last and next run and runs them on demand; **Prepare covers** runs after every scan. **Administration > Cache** shows how much space the cache of scaled covers and transcoded media uses, clears it and sets its maximum size. **Administration > Transcoding** shows whether transcoding works, the state of the hardware acceleration and the running transcodes, which you can stop there, and sets the hardware acceleration, how many transcodes run at the same time, the largest height of transcoded videos and the bitrate of transcoded sound.
+5. **Scan your library.** As admin, open **Administration > Library**: **Scan now** starts a scan of your media folder, shows its progress and then its result (files found, added, updated and removed, tracks, albums and artists, and files with problems). Below are the history of scans and the settings: how often the library is scanned, whether the media folder is watched for changes, the file extensions of audio, video and pictures and the names of album covers. **Administration > Jobs** lists all background jobs with their last and next run and runs them on demand; **Prepare covers** runs after every scan. **Administration > Cache** shows how much space the cache of scaled covers and transcoded media uses, clears it and sets its maximum size. **Administration > Transcoding** shows whether transcoding works, the state of the hardware acceleration and the running transcodes, which you can stop there, and sets the hardware acceleration, how many transcodes run at the same time, the largest height of transcoded videos and the bitrate of transcoded sound. **Administration > Backups** shows the daily exports of the database, backs up on demand and sets when and how many exports are kept (see [Backup & Restore](#backup--restore)).
 6. **Browse your library.** **Library** in the sidebar (the drawer behind the menu button on smartphones) has the sections **Recently Added** (newest first), **Favorites**, **Artist**, **Album**, **Songs** (grouped by album with cover), **Genre** and **Year**. Albums, artists, genres and years open their own page; the details of a song (cover, artist, album, length, audio and video) open from its context menu: right click, the context menu key or a long press on touch screens. Admins also see all files of a song there, with their technical details.
 7. **Edit metadata.** As admin, choose **Edit metadata** on the page of a song or in its context menu. Change title, artist, album, album artist, year, track and disc number or genre and save: WaveMP writes the changes into the audio file the song plays, keeps the previous tags in the database and reads the song again, so the library shows the new values at once. An empty field removes the value from the tags; WaveMP then takes it from the folder and file name again. Songs with a video only and files that cannot be written show the editor greyed out with a hint.
 8. **Search.** Type into the search field at the top: WaveMP searches artists, albums and songs while you type, and small typos are fine. **Show all** opens the full list filtered by your text. On the desktop, the sort button next to the search sorts the current list; sort order and search text are part of the address, so you can bookmark or share them.
@@ -262,6 +289,7 @@ This builds the image from source and starts WaveMP on `http://localhost:8080`. 
 | `source/WaveMP.Core.Streaming` | Playback: which audio and video formats a client can play, the signed media addresses and the play history |
 | `source/WaveMP.Core.Transcoding` | Transcoding with ffmpeg: HLS playlists and segments in the cache, the ffmpeg processes with their limit and clean-up, and the detection of the hardware acceleration (Intel Quick Sync through QSV or VA-API) |
 | `source/WaveMP.Core.Playlists` | Playlists of the profiles with their entries and covers (uploads under `/data/playlists`) and the list of recently played tracks |
+| `source/WaveMP.Core.Backups` | Exports of the database with pg_dump into `/data/backups`: the daily backup job, manual exports, the number of kept exports and the export before migrations |
 | `source/WaveMP.Core.Caching` | Cache under `/data/cache`: scaled covers (WebP with ffmpeg), their preparation after scans, size limit and clean-up of the files used least recently |
 | `source/WaveMP.Data` | EF Core with PostgreSQL (DbContext, entities, repositories, migrations) |
 | `source/WaveMP.Web` | Vue 3 web app |
@@ -294,6 +322,8 @@ docker run --rm -v "$PWD/media:/media" -v "$PWD/tests/WaveMP.E2E/scripts:/script
 ```
 
 In Git Bash on Windows, prefix the command with `MSYS_NO_PATHCONV=1` and use `$(pwd -W)` instead of `$PWD`.
+
+The backups need `pg_dump` of PostgreSQL 18, which the image contains. Without it on the development machine, manual and daily backups fail with a notice on the backup page; the export before migrations is turned off in development (`Backups:BeforeMigrations` in `appsettings.Development.json`). Set `Backups__PgDumpPath` to use a `pg_dump` outside the `PATH`.
 
 The development server also serves an internal component overview at `http://localhost:5173/dev/components`: all parts of the theme API in all states and the app at mobile and desktop size. It is not part of the production build.
 
@@ -331,6 +361,8 @@ Covers are scaled with `?size=` (1 to 4096): the server rounds the size up to 96
 Admins start a scan with `POST /api/v1/scans`; the answer is `202 Accepted` with the queued scan and its `Location`. `GET /api/v1/scans/current` returns the running scan with its progress (`404`, `scan.not_running`, while none runs), `GET /api/v1/scans` the history. A second start while a scan runs gets `409` (`scan.already_running`). All background jobs are listed with `GET /api/v1/jobs` and started with `POST /api/v1/jobs/{id}/runs` (for example `library-scan`); `GET /api/v1/jobs/{id}/runs` returns their run history (30 days, at most 100 runs per job). Errors of runs and problems of files are codes such as `scan.media_folder_empty` or `file.probe_failed`. The library settings are read and changed with `GET` and `PATCH /api/v1/settings/library`.
 
 After every full scan, and after a partial scan that changed files, the scan starts the job `cover-cache` (trigger `LibraryScan`); it prepares the covers and removes those of changed pictures from the cache, and fails with `cache.ffmpeg_unavailable` or `cache.folder_unwritable`. Admins read the usage of the cache with `GET /api/v1/cache` (total, covers, transcodes, limit and whether the cache folder can be written) and clear it with `DELETE /api/v1/cache` (`204`). The size limit is read and changed with `GET` and `PATCH /api/v1/settings/cache` (`maxSizeMegabytes`, 100 to 1,000,000; 1 MB = 1,000,000 bytes).
+
+Admins list the exports of the database with `GET /api/v1/backups` (newest first, each with `id`, `fileName`, `createdAt`, `sizeBytes` and the `trigger` `Schedule`, `Manual` or `Migration`), start one with `POST /api/v1/backups` (`202` with the queued run of the job `database-backup` and its `Location`; `409` with `job.already_running` while one runs) and delete one with `DELETE /api/v1/backups/{id}` (`204`, or `404` with `backup.not_found`). `GET /api/v1/jobs/{id}` returns a single job; jobs that run daily name their time of day in `dailyAt` (`HH:mm`, local time of the server). Runs of the backup fail with `backup.folder_unwritable`, `backup.pg_dump_unavailable` or `backup.failed`. The settings are read and changed with `GET` and `PATCH /api/v1/settings/backup`: `scheduleTime` (`HH:mm`, default `03:00`) and `retentionCount` (1 to 100, default 7).
 
 The library is available to every session: `GET /api/v1/artists`, `/api/v1/albums` and `/api/v1/tracks` with their items (`/{id}`), the albums of an artist (`/api/v1/artists/{id}/albums`), the tracks of an album (`/api/v1/albums/{id}/tracks`) and the lists of genres and years (`/api/v1/genres`, `/api/v1/years`). Lists are sorted with `sort` and `direction` (the defaults are documented per operation) and filtered with `q` (fault-tolerant search text), `artistId`, `albumId`, `genre`, `year`, `hasAudio` and `hasVideo` where they apply. Tracks tell with `hasAudio`, `hasVideo` and `hasCover` what they offer. `GET /api/v1/search?q=` returns the best artists, albums and tracks at once (`limit` up to 50 per group); it finds texts that contain the search text or are similar to it, using the PostgreSQL extension `pg_trgm`, which the database migration creates. `GET /api/v1/albums/{id}/cover` and `/api/v1/tracks/{id}/cover` return the cover, scaled with `size` (see above) or as the original picture (JPEG, PNG, WebP, GIF or BMP): by default the album cover (a picture such as `cover.jpg` in the album folder) before the cover of the track (a picture with its base name or embedded in its file), each falling back to the other and finally to the cover of another track of the album. Admins list all files of a track with `GET /api/v1/tracks/{id}/files`. Missing items get `404` with `artist.not_found`, `album.not_found`, `track.not_found` or `cover.not_found`.
 

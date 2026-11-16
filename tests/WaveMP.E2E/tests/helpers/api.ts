@@ -223,3 +223,36 @@ export async function adminHeaders(
 ): Promise<Record<string, string>> {
     return { ...authorization(await adminToken(request)), ...headers }
 }
+
+// Backups
+
+export interface BackupItem {
+    readonly id: string
+    readonly fileName: string
+    readonly sizeBytes: number
+    readonly trigger: string
+}
+
+export async function listBackups(request: APIRequestContext): Promise<BackupItem[]> {
+    const response = await request.get('/api/v1/backups?limit=100', {
+        headers: authorization(await adminToken(request)),
+    })
+    expect(response.status()).toBe(200)
+    return ((await response.json()) as { items: BackupItem[] }).items
+}
+
+export async function deleteBackup(request: APIRequestContext, id: string): Promise<void> {
+    const response = await request.delete(`/api/v1/backups/${encodeURIComponent(id)}`, {
+        headers: authorization(await adminToken(request)),
+    })
+    expect([204, 404]).toContain(response.status())
+}
+
+/** Restores the default time and number of kept exports of the database backups. */
+export async function resetBackupSettings(request: APIRequestContext): Promise<void> {
+    const response = await request.patch('/api/v1/settings/backup', {
+        data: { scheduleTime: '03:00', retentionCount: 7 },
+        headers: authorization(await adminToken(request)),
+    })
+    expect(response.status()).toBe(200)
+}
