@@ -2304,6 +2304,7 @@ export function deserializeIntoUpdateVisualizationSettings(updateVisualizationSe
         "autoChangeSeconds": n => { updateVisualizationSettings.autoChangeSeconds = n.getNumberValue(); },
         "module": n => { updateVisualizationSettings.module = n.getEnumValue<VisualizationModule>(VisualizationModuleObject); },
         "preset": n => { updateVisualizationSettings.preset = n.getStringValue(); },
+        "quality": n => { updateVisualizationSettings.quality = n.getEnumValue<VisualizationQuality>(VisualizationQualityObject); },
     }
 }
 /**
@@ -2398,6 +2399,7 @@ export function deserializeIntoVisualizationSettings(visualizationSettings: Part
         "autoChangeSeconds": n => { visualizationSettings.autoChangeSeconds = n.getNumberValue(); },
         "module": n => { visualizationSettings.module = n.getEnumValue<VisualizationModule>(VisualizationModuleObject); },
         "preset": n => { visualizationSettings.preset = n.getStringValue(); },
+        "quality": n => { visualizationSettings.quality = n.getEnumValue<VisualizationQuality>(VisualizationQualityObject); },
     }
 }
 /**
@@ -4691,6 +4693,7 @@ export function serializeUpdateVisualizationSettings(writer: SerializationWriter
     writer.writeNumberValue("autoChangeSeconds", updateVisualizationSettings.autoChangeSeconds);
     writer.writeEnumValue<VisualizationModule>("module", updateVisualizationSettings.module);
     writer.writeStringValue("preset", updateVisualizationSettings.preset);
+    writer.writeEnumValue<VisualizationQuality>("quality", updateVisualizationSettings.quality);
     writer.writeAdditionalData(updateVisualizationSettings.additionalData);
 }
 /**
@@ -4791,6 +4794,7 @@ export function serializeVisualizationSettings(writer: SerializationWriter, visu
     writer.writeNumberValue("autoChangeSeconds", visualizationSettings.autoChangeSeconds);
     writer.writeEnumValue<VisualizationModule>("module", visualizationSettings.module);
     writer.writeStringValue("preset", visualizationSettings.preset);
+    writer.writeEnumValue<VisualizationQuality>("quality", visualizationSettings.quality);
     writer.writeAdditionalData(visualizationSettings.additionalData);
 }
 /**
@@ -5492,6 +5496,10 @@ export interface UpdateVisualizationSettings extends AdditionalDataHolder, Parsa
      * Name of the chosen preset of the module, up to 200 characters; an empty string forgets it, so the player picks one.
      */
     preset?: string | null;
+    /**
+     * The quality property
+     */
+    quality?: VisualizationQuality | null;
 }
 /**
  * A user (profile) as managed by admins.
@@ -5643,6 +5651,7 @@ export interface ValidationProblem extends AdditionalDataHolder, ApiError, Parsa
 export type VideoCodec = (typeof VideoCodecObject)[keyof typeof VideoCodecObject];
 export type VideoContainer = (typeof VideoContainerObject)[keyof typeof VideoContainerObject];
 export type VisualizationModule = (typeof VisualizationModuleObject)[keyof typeof VisualizationModuleObject];
+export type VisualizationQuality = (typeof VisualizationQualityObject)[keyof typeof VisualizationQualityObject];
 /**
  * Visualization of the Now Playing view of the current profile.
  */
@@ -5656,13 +5665,17 @@ export interface VisualizationSettings extends AdditionalDataHolder, Parsable {
      */
     autoChangeSeconds?: number | null;
     /**
-     * The visualization; Milkdrop by default.
+     * The visualization; Milkdrop by default. The presets of A-Force are its style variants.
      */
     module?: VisualizationModule | null;
     /**
      * Name of the preset of the module the profile chose last, or null to let the player pick one. The players know the presets of their modules; a name a player does not know is treated like null.
      */
     preset?: string | null;
+    /**
+     * How much detail the visualization draws; Auto by default, which lets the player choose the level by the frame rate of the device.
+     */
+    quality?: VisualizationQuality | null;
 }
 /**
  * A year of the tracks.
@@ -6075,10 +6088,20 @@ export const VideoContainerObject = {
     Matroska: "Matroska",
 } as const;
 /**
- * The visualization; Milkdrop by default.
+ * The visualization; Milkdrop by default. The presets of A-Force are its style variants.
  */
 export const VisualizationModuleObject = {
     Milkdrop: "Milkdrop",
+    AForce: "AForce",
+} as const;
+/**
+ * How much detail the visualization draws; Auto by default, which lets the player choose the level by the frame rate of the device.
+ */
+export const VisualizationQualityObject = {
+    Auto: "Auto",
+    Low: "Low",
+    Medium: "Medium",
+    High: "High",
 } as const;
 /* tslint:enable */
 /* eslint-enable */
