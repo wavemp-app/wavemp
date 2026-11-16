@@ -9,4 +9,9 @@ public enum VisualizationModule
     /// Milkdrop presets; the default.
     /// </summary>
     Milkdrop,
+
+    /// <summary>
+    /// A-Force, the own visualization with flowing waveforms and particles; its presets are style variants.
+    /// </summary>
+    AForce,
 }

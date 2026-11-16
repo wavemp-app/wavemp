@@ -144,6 +144,17 @@ public class ModelTests
     }
 
     [Test]
+    public void UserSettings_VisualizationQuality_IsStoredAsNameWithAutoAsDefault()
+    {
+        IProperty quality = GetEntity(typeof(UserSettings)).FindProperty(nameof(UserSettings.VisualizationQuality))!;
+
+        quality.GetProviderClrType().Should().Be<string>();
+        quality.GetMaxLength().Should().Be(16);
+        quality.GetDefaultValue().Should().Be(VisualizationQuality.Auto);
+        quality.ValueGenerated.Should().Be(ValueGenerated.Never);
+    }
+
+    [Test]
     public void UserSettings_VisualizationPreset_IsAnOptionalNameOfLimitedLength()
     {
         IProperty preset = GetEntity(typeof(UserSettings)).FindProperty(nameof(UserSettings.VisualizationPreset))!;
@@ -197,6 +208,7 @@ public class ModelTests
         settings.VisualizationPreset.Should().BeNull();
         settings.VisualizationAutoChange.Should().BeTrue();
         settings.VisualizationAutoChangeSeconds.Should().Be(30);
+        settings.VisualizationQuality.Should().Be(VisualizationQuality.Auto);
     }
 
     [Test]

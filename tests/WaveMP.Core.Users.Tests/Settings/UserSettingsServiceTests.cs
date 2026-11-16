@@ -288,6 +288,8 @@ public class UserSettingsServiceTests
         yield return new TestCaseData(new UpdateUserSettingsCommand(SleepTimerFadeSeconds: 61)).SetName("Fade 61");
         yield return new TestCaseData(new UpdateUserSettingsCommand(VisualizationModule: (VisualizationModule)99))
             .SetName("Unknown visualization module");
+        yield return new TestCaseData(new UpdateUserSettingsCommand(VisualizationQuality: (VisualizationQuality)99))
+            .SetName("Unknown visualization quality");
         yield return new TestCaseData(new UpdateUserSettingsCommand(VisualizationPreset: new string('a', 201)))
             .SetName("Preset name of 201 characters");
         yield return new TestCaseData(new UpdateUserSettingsCommand(VisualizationAutoChangeSeconds: 4))
@@ -308,6 +310,54 @@ public class UserSettingsServiceTests
         result.VisualizationPreset.Should().BeNull();
         result.VisualizationAutoChange.Should().BeTrue();
         result.VisualizationAutoChangeSeconds.Should().Be(30);
+        result.VisualizationQuality.Should().Be(VisualizationQuality.Auto);
+    }
+
+    [Test]
+    public async Task UpdateAsync_WithAnotherModule_ForgetsThePresetOfThePreviousOne()
+    {
+        User user = Given(Language.En);
+        user.Settings!.VisualizationPreset = "Waves";
+
+        UserSettings? result = await _service.UpdateAsync(
+            user.Id,
+            new UpdateUserSettingsCommand(VisualizationModule: VisualizationModule.AForce));
+
+        result!.VisualizationModule.Should().Be(VisualizationModule.AForce);
+        result.VisualizationPreset.Should().BeNull();
+    }
+
+    [Test]
+    public async Task UpdateAsync_WithAnotherModuleAndItsPreset_KeepsTheNamedPreset()
+    {
+        User user = Given(Language.En);
+        user.Settings!.VisualizationPreset = "Waves";
+
+        UserSettings? result = await _service.UpdateAsync(
+            user.Id,
+            new UpdateUserSettingsCommand(VisualizationModule: VisualizationModule.AForce, VisualizationPreset: "aurora"));
+
+        result!.VisualizationModule.Should().Be(VisualizationModule.AForce);
+        result.VisualizationPreset.Should().Be("aurora");
+    }
+
+    [TestCase(VisualizationQuality.Low)]
+    [TestCase(VisualizationQuality.Medium)]
+    [TestCase(VisualizationQuality.High)]
+    [TestCase(VisualizationQuality.Auto)]
+    public async Task UpdateAsync_WithQuality_SavesItAndKeepsTheRestOfTheVisualization(VisualizationQuality quality)
+    {
+        User user = Given(Language.En);
+        user.Settings!.VisualizationQuality = VisualizationQuality.Medium;
+        user.Settings.VisualizationPreset = "Waves";
+
+        UserSettings? result = await _service.UpdateAsync(
+            user.Id,
+            new UpdateUserSettingsCommand(VisualizationQuality: quality));
+
+        result!.VisualizationQuality.Should().Be(quality);
+        result.VisualizationPreset.Should().Be("Waves");
+        result.VisualizationModule.Should().Be(VisualizationModule.Milkdrop);
     }
 
     [Test]
@@ -339,12 +389,14 @@ public class UserSettingsServiceTests
         user.Settings!.VisualizationPreset = "Waves";
         user.Settings.VisualizationAutoChange = false;
         user.Settings.VisualizationAutoChangeSeconds = 45;
+        user.Settings.VisualizationQuality = VisualizationQuality.Low;
 
         UserSettings? result = await _service.UpdateAsync(user.Id, new UpdateUserSettingsCommand(Language.De));
 
         result!.VisualizationPreset.Should().Be("Waves");
         result.VisualizationAutoChange.Should().BeFalse();
         result.VisualizationAutoChangeSeconds.Should().Be(45);
+        result.VisualizationQuality.Should().Be(VisualizationQuality.Low);
     }
 
     [Test]

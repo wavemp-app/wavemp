@@ -154,23 +154,40 @@ public class SettingsMappingExtensionsTests
     }
 
     [Test]
+    public void VisualizationQualities_MapBothWays()
+    {
+        foreach (VisualizationQuality quality in Enum.GetValues<VisualizationQuality>())
+        {
+            VisualizationQualityDto dto = quality.ToDto();
+
+            dto.ToString().Should().Be(quality.ToString());
+            dto.ToEntity().Should().Be(quality);
+        }
+
+        Enum.GetValues<VisualizationQualityDto>().Should().HaveSameCount(Enum.GetValues<VisualizationQuality>());
+    }
+
+    [Test]
     public void ToDto_Settings_CarriesTheVisualization()
     {
         UserSettings settings = new()
         {
-            VisualizationPreset = "Waves",
+            VisualizationModule = VisualizationModule.AForce,
+            VisualizationPreset = "aurora",
             VisualizationAutoChange = false,
             VisualizationAutoChangeSeconds = 120,
+            VisualizationQuality = VisualizationQuality.Medium,
         };
 
         UserSettingsDto dto = settings.ToDto();
 
         dto.Visualization.Should().BeEquivalentTo(new
         {
-            Module = VisualizationModuleDto.Milkdrop,
-            Preset = "Waves",
+            Module = VisualizationModuleDto.AForce,
+            Preset = "aurora",
             AutoChange = false,
             AutoChangeSeconds = 120,
+            Quality = VisualizationQualityDto.Medium,
         });
     }
 
@@ -181,20 +198,22 @@ public class SettingsMappingExtensionsTests
         {
             Visualization = new UpdateVisualizationSettingsDto
             {
-                Module = VisualizationModuleDto.Milkdrop,
+                Module = VisualizationModuleDto.AForce,
                 Preset = "Waves",
                 AutoChange = true,
                 AutoChangeSeconds = 15,
+                Quality = VisualizationQualityDto.Low,
             },
         };
 
         UpdateUserSettingsCommand command = request.ToCommand();
 
         command.Should().Be(new UpdateUserSettingsCommand(
-            VisualizationModule: VisualizationModule.Milkdrop,
+            VisualizationModule: VisualizationModule.AForce,
             VisualizationPreset: "Waves",
             VisualizationAutoChange: true,
-            VisualizationAutoChangeSeconds: 15));
+            VisualizationAutoChangeSeconds: 15,
+            VisualizationQuality: VisualizationQuality.Low));
     }
 
     [Test]

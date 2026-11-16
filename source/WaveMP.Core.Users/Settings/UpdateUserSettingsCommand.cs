@@ -25,6 +25,7 @@ namespace WaveMP.Core.Users.Settings;
 /// <param name="VisualizationAutoChangeSeconds">
 /// Seconds after which the visualization changes its preset, see <see cref="VisualizationSettingsLimits"/>.
 /// </param>
+/// <param name="VisualizationQuality">How much detail the visualization draws.</param>
 public sealed record UpdateUserSettingsCommand(
     Language? Language = null,
     ReplayGainMode? ReplayGain = null,
@@ -41,4 +42,5 @@ public sealed record UpdateUserSettingsCommand(
     VisualizationModule? VisualizationModule = null,
     string? VisualizationPreset = null,
     bool? VisualizationAutoChange = null,
-    int? VisualizationAutoChangeSeconds = null);
+    int? VisualizationAutoChangeSeconds = null,
+    VisualizationQuality? VisualizationQuality = null);

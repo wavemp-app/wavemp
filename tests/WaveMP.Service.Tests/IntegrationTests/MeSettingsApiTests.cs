@@ -377,13 +377,14 @@ public class MeSettingsApiTests
             UserSettingsDto settings = await client.GetJsonAsync<UserSettingsDto>("/api/v1/me/settings");
 
             (await response.Content.ReadAsStringAsync()).Should().Contain(
-                "\"visualization\":{\"module\":\"Milkdrop\",\"preset\":null,\"autoChange\":true,\"autoChangeSeconds\":30}");
+                "\"visualization\":{\"module\":\"Milkdrop\",\"preset\":null,\"autoChange\":true,\"autoChangeSeconds\":30,\"quality\":\"Auto\"}");
             settings.Visualization.Should().BeEquivalentTo(new
             {
                 Module = VisualizationModuleDto.Milkdrop,
                 Preset = (string?)null,
                 AutoChange = true,
                 AutoChangeSeconds = 30,
+                Quality = VisualizationQualityDto.Auto,
             });
         }
     }
@@ -398,7 +399,10 @@ public class MeSettingsApiTests
 
             HttpResponseMessage response = await PatchAsync(
                 client,
-                new { visualization = new { module = "Milkdrop", preset = "Waves", autoChangeSeconds = 120 } });
+                new
+                {
+                    visualization = new { module = "AForce", preset = "Waves", autoChangeSeconds = 120, quality = "Low" },
+                });
             await PatchAsync(client, new { visualization = new { autoChange = false } });
             using HttpClient otherSession = _factory.CreateAuthorizedClient(
                 (await _anonymous.CreateSessionAsync(profileId)).Token);
@@ -407,13 +411,15 @@ public class MeSettingsApiTests
             UserSettingsDto forgotten = await client.GetJsonAsync<UserSettingsDto>("/api/v1/me/settings");
 
             response.StatusCode.Should().Be(HttpStatusCode.OK);
-            (await response.Content.ReadAsStringAsync()).Should().Contain("\"preset\":\"Waves\"");
+            (await response.Content.ReadAsStringAsync()).Should()
+                .Contain("\"module\":\"AForce\",\"preset\":\"Waves\"").And.Contain("\"quality\":\"Low\"");
             read.Visualization.Should().BeEquivalentTo(new
             {
-                Module = VisualizationModuleDto.Milkdrop,
+                Module = VisualizationModuleDto.AForce,
                 Preset = "Waves",
                 AutoChange = false,
                 AutoChangeSeconds = 120,
+                Quality = VisualizationQualityDto.Low,
             });
             read.PlayerViewMode.Should().Be(PlayerViewModeDto.Visualization);
             read.Crossfade.Seconds.Should().Be(7);
@@ -452,6 +458,13 @@ public class MeSettingsApiTests
                 null,
                 null)
             .SetArgDisplayNames("UnknownModule");
+        yield return new TestCaseData(
+                "{\"visualization\":{\"quality\":\"Ultra\"}}",
+                "visualization.quality",
+                ValidationErrorCodeDto.InvalidFormat,
+                null,
+                null)
+            .SetArgDisplayNames("UnknownQuality");
     }
 
     [TestCaseSource(nameof(InvalidVisualizationSettings))]

@@ -77,6 +77,11 @@ internal sealed class UserSettingsService(IUserRepository users) : IUserSettings
         {
             settings.VisualizationAutoChangeSeconds = seconds;
         }
+
+        if (command.VisualizationQuality is { } quality)
+        {
+            settings.VisualizationQuality = quality;
+        }
     }
 
     private static void ApplyPlayback(UserSettings settings, UpdateUserSettingsCommand command)
@@ -170,6 +175,11 @@ internal sealed class UserSettingsService(IUserRepository users) : IUserSettings
                 nameof(command),
                 seconds,
                 "The interval of the automatic change is out of range.");
+        }
+
+        if (command.VisualizationQuality is { } quality && !Enum.IsDefined(quality))
+        {
+            throw new ArgumentOutOfRangeException(nameof(command), quality, "Unknown visualization quality.");
         }
     }
 }

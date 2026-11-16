@@ -30,4 +30,9 @@ public sealed class UpdateVisualizationSettingsDto
     /// </summary>
     [Range(VisualizationSettingsLimits.AutoChangeMinSeconds, VisualizationSettingsLimits.AutoChangeMaxSeconds)]
     public int? AutoChangeSeconds { get; init; }
+
+    /// <summary>
+    /// How much detail the visualization draws.
+    /// </summary>
+    public VisualizationQualityDto? Quality { get; init; }
 }

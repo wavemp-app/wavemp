@@ -11,6 +11,7 @@ internal sealed class UserSettingsConfiguration : IEntityTypeConfiguration<UserS
     public const int PlayerViewModeMaxLength = 16;
     public const int EqualizerPresetMaxLength = 16;
     public const int VisualizationModuleMaxLength = 32;
+    public const int VisualizationQualityMaxLength = 16;
 
     public void Configure(EntityTypeBuilder<UserSettings> builder)
     {
@@ -98,6 +99,12 @@ internal sealed class UserSettingsConfiguration : IEntityTypeConfiguration<UserS
 
         builder.Property(settings => settings.VisualizationAutoChangeSeconds)
             .HasDefaultValue(30)
+            .ValueGeneratedNever();
+
+        builder.Property(settings => settings.VisualizationQuality)
+            .HasConversion<string>()
+            .HasMaxLength(VisualizationQualityMaxLength)
+            .HasDefaultValue(VisualizationQuality.Auto)
             .ValueGeneratedNever();
     }
 }

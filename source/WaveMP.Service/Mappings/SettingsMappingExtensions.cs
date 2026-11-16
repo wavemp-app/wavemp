@@ -36,6 +36,7 @@ public static class SettingsMappingExtensions
                 Preset = settings.VisualizationPreset,
                 AutoChange = settings.VisualizationAutoChange,
                 AutoChangeSeconds = settings.VisualizationAutoChangeSeconds,
+                Quality = settings.VisualizationQuality.ToDto(),
             },
         };
     }
@@ -61,7 +62,8 @@ public static class SettingsMappingExtensions
             request.Visualization?.Module?.ToEntity(),
             request.Visualization?.Preset,
             request.Visualization?.AutoChange,
-            request.Visualization?.AutoChangeSeconds);
+            request.Visualization?.AutoChangeSeconds,
+            request.Visualization?.Quality?.ToEntity());
     }
 
     public static VisualizationModuleDto ToDto(this VisualizationModule module)
@@ -69,6 +71,7 @@ public static class SettingsMappingExtensions
         return module switch
         {
             VisualizationModule.Milkdrop => VisualizationModuleDto.Milkdrop,
+            VisualizationModule.AForce => VisualizationModuleDto.AForce,
             _ => throw new ArgumentOutOfRangeException(nameof(module), module, "Unknown visualization module."),
         };
     }
@@ -78,7 +81,32 @@ public static class SettingsMappingExtensions
         return module switch
         {
             VisualizationModuleDto.Milkdrop => VisualizationModule.Milkdrop,
+            VisualizationModuleDto.AForce => VisualizationModule.AForce,
             _ => throw new ArgumentOutOfRangeException(nameof(module), module, "Unknown visualization module."),
+        };
+    }
+
+    public static VisualizationQualityDto ToDto(this VisualizationQuality quality)
+    {
+        return quality switch
+        {
+            VisualizationQuality.Auto => VisualizationQualityDto.Auto,
+            VisualizationQuality.Low => VisualizationQualityDto.Low,
+            VisualizationQuality.Medium => VisualizationQualityDto.Medium,
+            VisualizationQuality.High => VisualizationQualityDto.High,
+            _ => throw new ArgumentOutOfRangeException(nameof(quality), quality, "Unknown visualization quality."),
+        };
+    }
+
+    public static VisualizationQuality ToEntity(this VisualizationQualityDto quality)
+    {
+        return quality switch
+        {
+            VisualizationQualityDto.Auto => VisualizationQuality.Auto,
+            VisualizationQualityDto.Low => VisualizationQuality.Low,
+            VisualizationQualityDto.Medium => VisualizationQuality.Medium,
+            VisualizationQualityDto.High => VisualizationQuality.High,
+            _ => throw new ArgumentOutOfRangeException(nameof(quality), quality, "Unknown visualization quality."),
         };
     }
 

@@ -14,4 +14,9 @@ public enum VisualizationModuleDto
     /// Milkdrop presets.
     /// </summary>
     Milkdrop,
+
+    /// <summary>
+    /// A-Force: flowing waveforms and particles; its presets are style variants.
+    /// </summary>
+    AForce,
 }

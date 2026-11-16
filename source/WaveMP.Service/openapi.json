@@ -10307,6 +10307,17 @@
             ],
             "description": "Seconds after which the visualization changes its preset, from 5 to 600.",
             "format": "int32"
+          },
+          "quality": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "How much detail the visualization draws.",
+                "$ref": "#/components/schemas/VisualizationQuality"
+              }
+            ]
           }
         },
         "description": "Changes the visualization of the current profile. Missing or null values stay unchanged."
@@ -10564,22 +10575,34 @@
       },
       "VisualizationModule": {
         "enum": [
-          "Milkdrop"
+          "Milkdrop",
+          "AForce"
         ],
         "type": "string",
         "description": "A visualization of the players: an engine that draws the music, with its own presets. Further modules may be added in later versions; clients fall back to their default for a module they do not know."
+      },
+      "VisualizationQuality": {
+        "enum": [
+          "Auto",
+          "Low",
+          "Medium",
+          "High"
+        ],
+        "type": "string",
+        "description": "How much detail the visualizations draw. Auto lets the player choose the level by the frame rate of the device."
       },
       "VisualizationSettings": {
         "required": [
           "module",
           "preset",
           "autoChange",
-          "autoChangeSeconds"
+          "autoChangeSeconds",
+          "quality"
         ],
         "type": "object",
         "properties": {
           "module": {
-            "description": "The visualization; Milkdrop by default.",
+            "description": "The visualization; Milkdrop by default. The presets of A-Force are its style variants.",
             "$ref": "#/components/schemas/VisualizationModule"
           },
           "preset": {
@@ -10597,6 +10620,10 @@
             "type": "integer",
             "description": "Seconds after which the visualization changes its preset while the automatic change is on, from 5 to 600; 30 by default.",
             "format": "int32"
+          },
+          "quality": {
+            "description": "How much detail the visualization draws; Auto by default, which lets the player choose the level by the frame rate of the device.",
+            "$ref": "#/components/schemas/VisualizationQuality"
           }
         },
         "description": "Visualization of the Now Playing view of the current profile."

@@ -101,4 +101,10 @@ public class UserSettings
     /// 30 by default.
     /// </summary>
     public int VisualizationAutoChangeSeconds { get; set; } = 30;
+
+    /// <summary>
+    /// How much detail the visualization draws; <see cref="VisualizationQuality.Auto"/> by default, which lets the
+    /// player choose the level by the frame rate of the device.
+    /// </summary>
+    public VisualizationQuality VisualizationQuality { get; set; } = VisualizationQuality.Auto;
 }
