@@ -2,7 +2,7 @@
 // the package butterchurn-presets (MIT). Both are loaded on demand in a chunk of their own, so the
 // app only loads them when the visualization is shown.
 
-import type { Butterchurn } from 'butterchurn'
+import type { Butterchurn, ButterchurnRendererOptions } from 'butterchurn'
 import type { ButterchurnPresetPack } from 'butterchurn-presets'
 import { VisualizationModuleObject } from '@/api/generated/models'
 import type {
@@ -13,7 +13,9 @@ import type {
     VisualizationRendererOptions,
 } from '../module'
 import { sortPresets } from '../presets'
+import type { QualityLevel } from '../quality'
 import { maxPresetNameLength } from '../settings'
+import { supportsWebGl2Visualization } from '../support'
 
 /** What the module needs from the browser and the packages; tests replace it. */
 export interface MilkdropEnvironment {
@@ -40,31 +42,8 @@ function exported<T>(module: unknown, has: (value: Record<string, unknown>) => b
     throw new Error('The package has an unexpected export.')
 }
 
-function browserSupported(): boolean {
-    if (typeof document === 'undefined' || typeof window === 'undefined') {
-        return false
-    }
-
-    const audio =
-        typeof window.AudioContext === 'function' ||
-        typeof (window as unknown as { webkitAudioContext?: unknown }).webkitAudioContext ===
-            'function'
-    if (!audio) {
-        return false
-    }
-
-    try {
-        const canvas = document.createElement('canvas')
-        const context = canvas.getContext('webgl2')
-        context?.getExtension('WEBGL_lose_context')?.loseContext()
-        return context !== null && context !== undefined
-    } catch {
-        return false
-    }
-}
-
 export const browserMilkdropEnvironment: MilkdropEnvironment = {
-    supported: browserSupported,
+    supported: supportsWebGl2Visualization,
     loadButterchurn: async () =>
         exported<Butterchurn>(
             await import('butterchurn'),
@@ -86,10 +65,27 @@ export function milkdropPresets(pack: Record<string, object>): VisualizationPres
     )
 }
 
+/**
+ * What the quality levels change: the resolution of the textures of butterchurn (the drawing
+ * buffer keeps its size) and the mesh its per-vertex equations run on. High is the default of
+ * butterchurn.
+ */
+export const milkdropQuality: Readonly<
+    Record<
+        QualityLevel,
+        Required<Pick<ButterchurnRendererOptions, 'textureRatio' | 'meshWidth' | 'meshHeight'>>
+    >
+> = {
+    low: { textureRatio: 0.5, meshWidth: 32, meshHeight: 24 },
+    medium: { textureRatio: 0.75, meshWidth: 48, meshHeight: 36 },
+    high: { textureRatio: 1, meshWidth: 48, meshHeight: 36 },
+}
+
 class MilkdropRenderer implements VisualizationRenderer {
     private readonly visualizer
     private readonly audio: AnalyserNode
     private readonly canvas: HTMLCanvasElement
+    private quality: QualityLevel
 
     constructor(
         butterchurn: Butterchurn,
@@ -100,12 +96,13 @@ class MilkdropRenderer implements VisualizationRenderer {
         this.audio = options.audio
         this.canvas.width = options.width
         this.canvas.height = options.height
+        this.quality = options.quality
         // The size is given in device pixels; butterchurn should not multiply it once more.
         this.visualizer = butterchurn.createVisualizer(options.audio.context, options.canvas, {
             width: options.width,
             height: options.height,
             pixelRatio: 1,
-            textureRatio: 1,
+            ...milkdropQuality[options.quality],
         })
         this.visualizer.connectAudio(options.audio)
     }
@@ -120,7 +117,17 @@ class MilkdropRenderer implements VisualizationRenderer {
     resize(width: number, height: number): void {
         this.canvas.width = width
         this.canvas.height = height
-        this.visualizer.setRendererSize(width, height, { pixelRatio: 1, textureRatio: 1 })
+        this.visualizer.setRendererSize(width, height, {
+            pixelRatio: 1,
+            ...milkdropQuality[this.quality],
+        })
+    }
+
+    setQuality(level: QualityLevel): void {
+        if (level !== this.quality) {
+            this.quality = level
+            this.resize(this.canvas.width, this.canvas.height)
+        }
     }
 
     render(): void {

@@ -46,6 +46,7 @@ describe('VisualizationController', () => {
             presets: vi.fn(),
             preset: vi.fn(),
             canvasReleased: vi.fn(),
+            quality: vi.fn(),
         }
     })
 
@@ -111,6 +112,7 @@ describe('VisualizationController', () => {
             audio,
             width: 640,
             height: 360,
+            quality: 'high',
         })
         expect(module.renderer?.showPreset).toHaveBeenCalledWith('A', 0)
 
@@ -227,6 +229,68 @@ describe('VisualizationController', () => {
         expect(module.renderers).toHaveLength(2)
         expect(module.renderer?.options.canvas).toBe(next)
         expect(controller.currentState).toBe('running')
+    })
+
+    it('draws at the quality of the profile', async () => {
+        const controller = create('A')
+        controller.setQuality('Low')
+        controller.setCanvas(canvas())
+        controller.setAudio(fakeAnalyser())
+        controller.setVisible(true)
+        await module.finishLoad()
+
+        expect(module.renderer?.options.quality).toBe('low')
+        expect(controller.quality).toBe('low')
+        expect(events.quality).toHaveBeenCalledWith('low')
+
+        controller.setQuality('Medium')
+        expect(module.renderer?.setQuality).toHaveBeenCalledWith('medium')
+
+        // A fixed level stays, however slowly the frames come.
+        clock.frameMs = 50
+        for (let index = 0; index < 120; index++) {
+            clock.frame()
+        }
+        expect(controller.quality).toBe('medium')
+    })
+
+    it('lowers the level with Auto while the frames come slowly', async () => {
+        const controller = await running()
+        expect(controller.quality).toBe('high')
+
+        clock.frameMs = 1000 / 30
+        for (let index = 0; index < 70; index++) {
+            clock.frame()
+        }
+
+        expect(controller.quality).toBe('medium')
+        expect(module.renderer?.setQuality).toHaveBeenLastCalledWith('medium')
+        expect(events.quality).toHaveBeenLastCalledWith('medium')
+    })
+
+    it('keeps the level with Auto while the frames come at 60 per second', async () => {
+        const controller = await running()
+
+        for (let index = 0; index < 600; index++) {
+            clock.frame()
+        }
+
+        expect(controller.quality).toBe('high')
+        expect(module.renderer?.setQuality).not.toHaveBeenCalled()
+    })
+
+    it('does not count a pause as a slow frame', async () => {
+        const controller = await running()
+        clock.frame()
+
+        controller.setVisible(false)
+        clock.time += 5000
+        controller.setVisible(true)
+        for (let index = 0; index < 200; index++) {
+            clock.frame()
+        }
+
+        expect(controller.quality).toBe('high')
     })
 
     it('reports a browser that cannot show the module', () => {

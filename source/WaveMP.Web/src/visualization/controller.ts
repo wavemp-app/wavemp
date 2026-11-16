@@ -3,8 +3,9 @@
 // analyser of its first playback) and a canvas, draws one frame per animation frame while the
 // visualization is visible and changes the preset automatically. While the visualization is hidden
 // (another view of the stage, another page, a hidden browser tab or out of the viewport), nothing
-// is drawn and the automatic change waits. The browser (animation frames, timers, randomness) comes
-// in through a clock, so tests drive it by hand.
+// is drawn and the automatic change waits. It hands the quality level to the renderer: the one of
+// the profile, or with Auto the one the measured frame rate allows. The browser (animation frames,
+// timers, time, randomness) comes in through a clock, so tests drive it by hand.
 
 import type {
     LoadedVisualizationModule,
@@ -12,7 +13,9 @@ import type {
     VisualizationPreset,
     VisualizationRenderer,
 } from './module'
+import type { VisualizationQuality } from '@/api/generated/models'
 import { adjacentPreset, randomPreset, startPreset } from './presets'
+import { AdaptiveQuality, fixedQualityLevel, type QualityLevel } from './quality'
 
 /**
  * State of the visualization (data-state of the visualization part):
@@ -42,6 +45,8 @@ export interface VisualizationClock {
     cancelFrame(handle: number): void
     setTimeout(callback: () => void, delay: number): number
     clearTimeout(handle: number): void
+    /** Milliseconds of a steady clock (performance.now). */
+    now(): number
     random(): number
 }
 
@@ -50,6 +55,7 @@ export const browserVisualizationClock: VisualizationClock = {
     cancelFrame: (handle) => window.cancelAnimationFrame(handle),
     setTimeout: (callback, delay) => window.setTimeout(callback, delay),
     clearTimeout: (handle) => window.clearTimeout(handle),
+    now: () => performance.now(),
     random: () => Math.random(),
 }
 
@@ -64,6 +70,8 @@ export interface VisualizationControllerEvents {
      * canvas element.
      */
     canvasReleased?(): void
+    /** The quality level the visualization draws with. */
+    quality?(level: QualityLevel): void
 }
 
 export interface AutoChange {
@@ -103,6 +111,12 @@ export class VisualizationController {
     private current: string | null = null
     private frame: number | null = null
     private timer: number | null = null
+    /** The quality of the profile; null for Auto. */
+    private fixedQuality: QualityLevel | null = null
+    private readonly adaptive = new AdaptiveQuality()
+    private qualityLevel: QualityLevel = this.adaptive.level
+    /** Time of the previous drawn frame, or null when the drawing starts (again). */
+    private lastFrame: number | null = null
 
     constructor(
         private readonly module: VisualizationModule,
@@ -123,6 +137,11 @@ export class VisualizationController {
 
     get preset(): string | null {
         return this.current
+    }
+
+    /** The quality level the visualization draws with. */
+    get quality(): QualityLevel {
+        return this.qualityLevel
     }
 
     /** Whether the visualization is shown; the first time it loads the module. */
@@ -163,6 +182,12 @@ export class VisualizationController {
 
         this.autoChange = autoChange
         this.restartTimer()
+    }
+
+    /** The quality of the profile: a fixed level, or Auto to follow the frame rate. */
+    setQuality(quality: VisualizationQuality): void {
+        this.fixedQuality = fixedQualityLevel(quality)
+        this.applyQuality(this.fixedQuality ?? this.adaptive.level)
     }
 
     /**
@@ -311,6 +336,7 @@ export class VisualizationController {
                 audio,
                 width: Math.max(1, this.width || canvas.width),
                 height: Math.max(1, this.height || canvas.height),
+                quality: this.qualityLevel,
             })
             this.renderer = renderer
             this.rendererAudio = audio
@@ -349,6 +375,28 @@ export class VisualizationController {
         }
     }
 
+    private applyQuality(level: QualityLevel): void {
+        if (level === this.qualityLevel) {
+            return
+        }
+
+        this.qualityLevel = level
+        this.events.quality?.(level)
+        if (this.renderer) {
+            this.guard(() => this.renderer?.setQuality(level))
+        }
+    }
+
+    /** Measures the frame rate for Auto. */
+    private measureFrame(): void {
+        const now = this.clock.now()
+        const last = this.lastFrame
+        this.lastFrame = now
+        if (last !== null && this.fixedQuality === null) {
+            this.applyQuality(this.adaptive.frame((now - last) / 1000))
+        }
+    }
+
     private show(id: string, blendSeconds: number): void {
         this.current = id
         this.events.preset?.(id)
@@ -379,12 +427,15 @@ export class VisualizationController {
                 return
             }
 
+            this.measureFrame()
             this.guard(() => this.renderer?.render())
             if (this.state === 'running' && this.frame === null) {
                 this.frame = this.clock.requestFrame(tick)
             }
         }
 
+        this.lastFrame = null
+        this.adaptive.restart()
         this.frame = this.clock.requestFrame(tick)
     }
 

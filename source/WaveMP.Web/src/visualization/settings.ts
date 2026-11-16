@@ -1,6 +1,11 @@
 // The visualization settings of a profile. Pure functions.
 
-import { VisualizationModuleObject, type VisualizationModule } from '@/api/generated/models'
+import {
+    VisualizationModuleObject,
+    VisualizationQualityObject,
+    type VisualizationModule,
+    type VisualizationQuality,
+} from '@/api/generated/models'
 
 /** Shortest interval of the automatic change in seconds, as the API allows it. */
 export const minAutoChangeSeconds = 5
@@ -23,6 +28,8 @@ export interface VisualizationSettings {
     readonly autoChange: boolean
     /** Seconds after which the preset changes while the automatic change is on. */
     readonly autoChangeSeconds: number
+    /** How much detail the visualization draws; Auto chooses by the frame rate. */
+    readonly quality: VisualizationQuality
 }
 
 export const defaultVisualizationSettings: VisualizationSettings = {
@@ -30,13 +37,17 @@ export const defaultVisualizationSettings: VisualizationSettings = {
     preset: null,
     autoChange: true,
     autoChangeSeconds: 30,
+    quality: VisualizationQualityObject.Auto,
 }
 
 const modules = new Set<string>(Object.values(VisualizationModuleObject))
 
+const qualities = new Set<string>(Object.values(VisualizationQualityObject))
+
 /**
  * The visualization settings from an answer of the server, or null if they are incomplete. A module
- * this app does not know (from a newer server) falls back to the default module without a preset.
+ * this app does not know (from a newer server) falls back to the default module without a preset,
+ * an unknown or missing quality to Auto.
  */
 export function toVisualizationSettings(value: unknown): VisualizationSettings | null {
     const settings = value as
@@ -64,6 +75,10 @@ export function toVisualizationSettings(value: unknown): VisualizationSettings |
         preset,
         autoChange: settings.autoChange,
         autoChangeSeconds: settings.autoChangeSeconds,
+        quality:
+            typeof settings.quality === 'string' && qualities.has(settings.quality)
+                ? (settings.quality as VisualizationQuality)
+                : defaultVisualizationSettings.quality,
     }
 }
 
@@ -73,6 +88,7 @@ export interface VisualizationSettingsChange {
     readonly preset?: string | null
     readonly autoChange?: boolean | null
     readonly autoChangeSeconds?: number | null
+    readonly quality?: VisualizationQuality | null
 }
 
 /**
@@ -94,5 +110,6 @@ export function applyVisualizationChange(
         preset,
         autoChange: change.autoChange ?? settings.autoChange,
         autoChangeSeconds: change.autoChangeSeconds ?? settings.autoChangeSeconds,
+        quality: change.quality ?? settings.quality,
     }
 }

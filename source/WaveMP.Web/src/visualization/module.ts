@@ -1,10 +1,11 @@
 // The interface of the visualization modules. A module draws the music of the player into a canvas
-// with presets of its own: Milkdrop presets, later the style variants of A-Force or the scenes of
+// with presets of its own: Milkdrop presets, the style variants of A-Force or later the scenes of
 // BlackCap. The stage knows modules only through this interface, so further modules plug in
 // without changes to the stage, the controller or the settings (besides a value of the API enum
 // VisualizationModule).
 
 import type { VisualizationModule as VisualizationModuleId } from '@/api/generated/models'
+import type { QualityLevel } from './quality'
 
 export type { VisualizationModuleId }
 
@@ -12,8 +13,10 @@ export type { VisualizationModuleId }
 export interface VisualizationPreset {
     /** Stable id; the settings of the profile keep it (at most maxPresetNameLength characters). */
     readonly id: string
-    /** Name to show; presets carry their own names, they are not translated. */
+    /** Name to show for presets that carry their own names (Milkdrop); these are not translated. */
     readonly name: string
+    /** Message key of the name for presets of the app itself (A-Force); shown instead of name. */
+    readonly labelKey?: string
 }
 
 export interface VisualizationRendererOptions {
@@ -27,6 +30,8 @@ export interface VisualizationRendererOptions {
     /** Size of the drawing buffer in device pixels. */
     readonly width: number
     readonly height: number
+    /** The level of detail to start with. */
+    readonly quality: QualityLevel
 }
 
 /** A running visualization of a module in one canvas. */
@@ -35,6 +40,8 @@ export interface VisualizationRenderer {
     showPreset(id: string, blendSeconds: number): void
     /** Changes the size of the drawing buffer (device pixels). */
     resize(width: number, height: number): void
+    /** Changes the level of detail. */
+    setQuality(level: QualityLevel): void
     /** Draws one frame; called once per animation frame while the visualization is visible. */
     render(): void
     /** Releases the drawing context and disconnects from the audio; the canvas is not used again. */

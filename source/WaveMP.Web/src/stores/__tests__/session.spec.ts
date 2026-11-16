@@ -515,6 +515,7 @@ describe('session store', () => {
             preset: 'Waves',
             autoChange: false,
             autoChangeSeconds: 120,
+            quality: 'Medium',
         }
 
         it('loads the visualization with the profile and resets it for another profile', async () => {
@@ -531,7 +532,35 @@ describe('session store', () => {
                 preset: null,
                 autoChange: true,
                 autoChangeSeconds: 30,
+                quality: 'Auto',
             })
+        })
+
+        it('takes Auto for an unknown or missing quality', async () => {
+            api.createSession.mockResolvedValue(created('a'))
+            api.getSettings.mockResolvedValue({
+                language: 'en',
+                visualization: { ...visualization, quality: 'Ultra' },
+            })
+            const session = useSessionStore()
+
+            await session.select('a')
+
+            expect(session.visualization).toEqual({ ...visualization, quality: 'Auto' })
+        })
+
+        it('saves the quality of the visualization', async () => {
+            saveStoredSession(stored('a'))
+            api.updateSettings.mockResolvedValueOnce({
+                visualization: { ...visualization, quality: 'Low' },
+            })
+            const session = useSessionStore()
+            session.restore()
+
+            await session.updateVisualization({ quality: 'Low' })
+
+            expect(api.updateSettings).toHaveBeenCalledWith({ visualization: { quality: 'Low' } })
+            expect(session.visualization.quality).toBe('Low')
         })
 
         it('keeps the defaults for incomplete visualization settings', async () => {

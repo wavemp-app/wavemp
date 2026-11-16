@@ -13,6 +13,7 @@ import type {
 export class FakeRenderer implements VisualizationRenderer {
     readonly showPreset = vi.fn()
     readonly resize = vi.fn()
+    readonly setQuality = vi.fn()
     readonly render = vi.fn()
     readonly dispose = vi.fn()
 
@@ -78,6 +79,9 @@ export class FakeClock implements VisualizationClock {
     readonly frames = new Map<number, () => void>()
     readonly timers = new Map<number, { callback: () => void; delay: number }>()
     randomValue = 0
+    /** Milliseconds of the clock; frame() advances it by frameMs. */
+    time = 0
+    frameMs = 1000 / 60
 
     requestFrame(callback: () => void): number {
         const handle = this.next++
@@ -103,8 +107,13 @@ export class FakeClock implements VisualizationClock {
         return this.randomValue
     }
 
-    /** Runs the requested animation frames once. */
+    now(): number {
+        return this.time
+    }
+
+    /** Advances the time by frameMs and runs the requested animation frames once. */
     frame(): void {
+        this.time += this.frameMs
         const callbacks = [...this.frames.values()]
         this.frames.clear()
         callbacks.forEach((callback) => callback())

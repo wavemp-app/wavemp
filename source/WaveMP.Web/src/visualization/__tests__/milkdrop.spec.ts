@@ -4,6 +4,7 @@ import {
     browserMilkdropEnvironment,
     createMilkdropModule,
     milkdropPresets,
+    milkdropQuality,
     type MilkdropEnvironment,
 } from '../modules/milkdrop'
 import { visualizationModule, visualizationModules } from '../modules'
@@ -95,13 +96,21 @@ describe('the module Milkdrop', () => {
         const canvas = document.createElement('canvas')
         const audio = analyser()
 
-        const renderer = loaded.createRenderer({ canvas, audio, width: 960, height: 540 })
+        const renderer = loaded.createRenderer({
+            canvas,
+            audio,
+            width: 960,
+            height: 540,
+            quality: 'high',
+        })
 
         expect(butterchurn.createVisualizer).toHaveBeenCalledWith(audio.context, canvas, {
             width: 960,
             height: 540,
             pixelRatio: 1,
             textureRatio: 1,
+            meshWidth: 48,
+            meshHeight: 36,
         })
         expect(visualizer.connectAudio).toHaveBeenCalledWith(audio)
         expect([canvas.width, canvas.height]).toEqual([960, 540])
@@ -115,11 +124,43 @@ describe('the module Milkdrop', () => {
         expect(visualizer.setRendererSize).toHaveBeenCalledWith(320, 180, {
             pixelRatio: 1,
             textureRatio: 1,
+            meshWidth: 48,
+            meshHeight: 36,
         })
         expect([canvas.width, canvas.height]).toEqual([320, 180])
 
         renderer.render()
         expect(visualizer.render).toHaveBeenCalledTimes(1)
+    })
+
+    it('draws its textures and mesh at the quality level', async () => {
+        const { env, butterchurn, visualizer } = environment()
+        const loaded = await createMilkdropModule(env).load()
+        const canvas = document.createElement('canvas')
+        const renderer = loaded.createRenderer({
+            canvas,
+            audio: analyser(),
+            width: 640,
+            height: 360,
+            quality: 'low',
+        })
+
+        expect(butterchurn.createVisualizer).toHaveBeenCalledWith(
+            expect.anything(),
+            canvas,
+            expect.objectContaining(milkdropQuality.low),
+        )
+
+        renderer.setQuality('low')
+        expect(visualizer.setRendererSize).not.toHaveBeenCalled()
+
+        renderer.setQuality('medium')
+        expect(visualizer.setRendererSize).toHaveBeenCalledWith(640, 360, {
+            pixelRatio: 1,
+            ...milkdropQuality.medium,
+        })
+        expect(milkdropQuality.low.textureRatio).toBeLessThan(milkdropQuality.medium.textureRatio)
+        expect(milkdropQuality.medium.textureRatio).toBeLessThan(milkdropQuality.high.textureRatio)
     })
 
     it('disconnects from the player and frees the drawing context when disposed', async () => {
@@ -131,7 +172,13 @@ describe('the module Milkdrop', () => {
             getExtension: () => ({ loseContext }),
         })) as unknown as HTMLCanvasElement['getContext']
         const audio = analyser()
-        const renderer = loaded.createRenderer({ canvas, audio, width: 10, height: 10 })
+        const renderer = loaded.createRenderer({
+            canvas,
+            audio,
+            width: 10,
+            height: 10,
+            quality: 'high',
+        })
 
         renderer.dispose()
 
@@ -153,6 +200,7 @@ describe('the packages', () => {
 describe('visualizationModule', () => {
     it('finds the module of the profile and falls back to the default', () => {
         expect(visualizationModule('Milkdrop')).toBe(visualizationModules.Milkdrop)
+        expect(visualizationModule('AForce')).toBe(visualizationModules.AForce)
         expect(visualizationModule(null)).toBe(visualizationModules.Milkdrop)
         expect(visualizationModule('Spectrum' as 'Milkdrop')).toBe(visualizationModules.Milkdrop)
     })
