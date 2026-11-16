@@ -2,8 +2,9 @@
 // are the presets of the module; a change of style blends every value smoothly from the current
 // look into the next one. Pure.
 
-/** A color with red, green and blue from 0 to 1. */
-export type Rgb = readonly [number, number, number]
+import { blendAmount, LookTransition, mixNumber, mixRecord, mixRgb, type Rgb } from '../../blend'
+
+export { ease, type Rgb } from '../../blend'
 
 /** The colors of a look. */
 export interface StyleColors {
@@ -277,36 +278,13 @@ export function aforceStyle(id: string): AForceStyle | undefined {
     return aforceStyles.find((style) => style.id === id)
 }
 
-function mixNumber(a: number, b: number, t: number): number {
-    return a * (1 - t) + b * t
-}
-
-function mixRgb(a: Rgb, b: Rgb, t: number): Rgb {
-    return [mixNumber(a[0], b[0], t), mixNumber(a[1], b[1], t), mixNumber(a[2], b[2], t)]
-}
-
-function mixRecord<T extends object>(a: T, b: T, mix: (x: never, y: never) => unknown): T {
-    const result: Record<string, unknown> = {}
-    for (const key of Object.keys(a) as (keyof T & string)[]) {
-        result[key] = mix(a[key] as never, b[key] as never)
-    }
-
-    return result as T
-}
-
 /** The look between a (t = 0) and b (t = 1); t outside is clamped. */
 export function mixLooks(a: StyleLook, b: StyleLook, t: number): StyleLook {
-    const amount = Math.min(1, Math.max(0, Number.isFinite(t) ? t : 1))
+    const amount = blendAmount(t)
     return {
         colors: mixRecord(a.colors, b.colors, (x: Rgb, y: Rgb) => mixRgb(x, y, amount)),
         motion: mixRecord(a.motion, b.motion, (x: number, y: number) => mixNumber(x, y, amount)),
     }
-}
-
-/** Smooth start and end of a blend (smoothstep). */
-export function ease(t: number): number {
-    const x = Math.min(1, Math.max(0, t))
-    return x * x * (3 - 2 * x)
 }
 
 /**
@@ -314,36 +292,8 @@ export function ease(t: number): number {
  * the new style, eased over the blend seconds. A change during a blend starts from the look shown
  * at that moment, so nothing jumps.
  */
-export class StyleTransition {
-    private from: StyleLook
-    private to: StyleLook
-    private start = 0
-    private seconds = 0
-
+export class StyleTransition extends LookTransition<StyleLook> {
     constructor(initial: StyleLook) {
-        this.from = initial
-        this.to = initial
-    }
-
-    /** Starts blending into a look at the time (seconds) over the given seconds (0: at once). */
-    show(look: StyleLook, seconds: number, time: number): void {
-        this.from = this.look(time)
-        this.to = look
-        this.start = time
-        this.seconds = Math.max(0, seconds)
-    }
-
-    /** The look at the time in seconds. */
-    look(time: number): StyleLook {
-        if (this.seconds <= 0 || time >= this.start + this.seconds) {
-            return this.to
-        }
-
-        return mixLooks(this.from, this.to, ease((time - this.start) / this.seconds))
-    }
-
-    /** Whether the blend still runs at the time. */
-    blending(time: number): boolean {
-        return this.seconds > 0 && time < this.start + this.seconds
+        super(initial, mixLooks)
     }
 }

@@ -10,67 +10,7 @@ import {
 import { aforceProfiles } from '../profiles'
 import { AForceRenderer } from '../renderer'
 import { aforceStyles } from '../styles'
-
-type Call = [string, unknown[]]
-
-/**
- * A stand-in for a WebGL 2 context: every method is recorded and succeeds, every constant is its
- * own name. jsdom has no WebGL, so the tests check what the renderer asks the context to do.
- */
-function fakeWebGl() {
-    const calls: Call[] = []
-    const loseContext = vi.fn()
-    let resources = 0
-    const results: Record<string, (...args: unknown[]) => unknown> = {
-        getShaderParameter: () => true,
-        getProgramParameter: () => true,
-        isContextLost: () => false,
-        getUniformLocation: (_, name) => ({ name }),
-        getExtension: (name) => (name === 'WEBGL_lose_context' ? { loseContext } : null),
-    }
-    const gl = new Proxy(
-        {},
-        {
-            get(_, property: string) {
-                if (/^[A-Z0-9_]+$/.test(property)) {
-                    return property
-                }
-
-                return (...args: unknown[]) => {
-                    calls.push([property, args])
-                    if (property in results) {
-                        return results[property]!(...args)
-                    }
-
-                    return property.startsWith('create') ? { id: ++resources } : undefined
-                }
-            },
-        },
-    )
-    const named = (name: string) => calls.filter(([property]) => property === name)
-    return { gl, calls, named, loseContext }
-}
-
-function fakeAudio() {
-    const analyser = {
-        fftSize: 0,
-        smoothingTimeConstant: 0,
-        get frequencyBinCount() {
-            return this.fftSize / 2
-        },
-        context: { sampleRate: 48000 },
-        getByteFrequencyData: vi.fn((data: Uint8Array) => data.fill(120)),
-        getFloatTimeDomainData: vi.fn((data: Float32Array) =>
-            data.forEach((_, index) => (data[index] = Math.sin(index / 10))),
-        ),
-    }
-    const audio = {
-        context: { createAnalyser: vi.fn(() => analyser) },
-        connect: vi.fn(),
-        disconnect: vi.fn(),
-    }
-    return { audio: audio as unknown as AnalyserNode, analyser, raw: audio }
-}
+import { fakeAudio, fakeWebGl } from '../../../__tests__/webgl'
 
 function setup(quality: VisualizationRendererOptions['quality'] = 'high') {
     const webgl = fakeWebGl()
@@ -159,7 +99,7 @@ describe('the module A-Force', () => {
 
     it('is offered after Milkdrop', () => {
         expect(visualizationModule('AForce')).toBe(visualizationModules.AForce)
-        expect(visualizationModuleChoices.map((choice) => choice.id)).toEqual([
+        expect(visualizationModuleChoices.map((choice) => choice.id).slice(0, 2)).toEqual([
             'Milkdrop',
             'AForce',
         ])

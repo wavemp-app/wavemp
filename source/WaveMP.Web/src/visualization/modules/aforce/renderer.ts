@@ -12,6 +12,7 @@
 import { AudioFeatureTracker } from '../../analysis/features'
 import type { VisualizationRenderer, VisualizationRendererOptions } from '../../module'
 import type { QualityLevel } from '../../quality'
+import { createProgram, requireResource, type Program } from '../../webgl'
 import { cameraPose, lookAt, multiply, perspective } from './camera'
 import { aforceProfiles, maxParticles, maxWaves, sceneSize, type AForceProfile } from './profiles'
 import {
@@ -44,63 +45,9 @@ const sampleSpan = 1024
 /** Longest frame the motion accounts for, so a hiccup does not make the scene jump. */
 const maxFrameSeconds = 0.1
 
-interface Program {
-    readonly program: WebGLProgram
-    uniform(name: string): WebGLUniformLocation | null
-}
-
 interface SceneTarget {
     readonly texture: WebGLTexture
     readonly framebuffer: WebGLFramebuffer
-}
-
-function compileShader(gl: WebGL2RenderingContext, type: number, source: string): WebGLShader {
-    const shader = gl.createShader(type)
-    if (!shader) {
-        throw new Error('WebGL could not create a shader.')
-    }
-
-    gl.shaderSource(shader, source)
-    gl.compileShader(shader)
-    if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS) && !gl.isContextLost()) {
-        const log = gl.getShaderInfoLog(shader)
-        gl.deleteShader(shader)
-        throw new Error(`A shader of A-Force does not compile: ${log ?? ''}`)
-    }
-
-    return shader
-}
-
-function createProgram(gl: WebGL2RenderingContext, vertex: string, fragment: string): Program {
-    const program = gl.createProgram()
-    if (!program) {
-        throw new Error('WebGL could not create a program.')
-    }
-
-    const vertexShader = compileShader(gl, gl.VERTEX_SHADER, vertex)
-    const fragmentShader = compileShader(gl, gl.FRAGMENT_SHADER, fragment)
-    gl.attachShader(program, vertexShader)
-    gl.attachShader(program, fragmentShader)
-    gl.linkProgram(program)
-    gl.deleteShader(vertexShader)
-    gl.deleteShader(fragmentShader)
-    if (!gl.getProgramParameter(program, gl.LINK_STATUS) && !gl.isContextLost()) {
-        const log = gl.getProgramInfoLog(program)
-        gl.deleteProgram(program)
-        throw new Error(`A program of A-Force does not link: ${log ?? ''}`)
-    }
-
-    const uniforms = new Map<string, WebGLUniformLocation | null>()
-    return {
-        program,
-        uniform: (name) => {
-            if (!uniforms.has(name)) {
-                uniforms.set(name, gl.getUniformLocation(program, name))
-            }
-
-            return uniforms.get(name) ?? null
-        },
-    }
 }
 
 /** A small seeded random generator (mulberry32), so the particles look the same every time. */
@@ -198,15 +145,15 @@ export class AForceRenderer implements VisualizationRenderer {
         }
 
         this.gl = gl
-        this.trail = createProgram(gl, fullscreenVertex, trailFragment)
-        this.particles = createProgram(gl, particleVertex, particleFragment)
-        this.waves = createProgram(gl, waveVertex, waveFragment)
-        this.composite = createProgram(gl, fullscreenVertex, compositeFragment)
+        this.trail = createProgram(gl, fullscreenVertex, trailFragment, 'A-Force')
+        this.particles = createProgram(gl, particleVertex, particleFragment, 'A-Force')
+        this.waves = createProgram(gl, waveVertex, waveFragment, 'A-Force')
+        this.composite = createProgram(gl, fullscreenVertex, compositeFragment, 'A-Force')
 
-        this.emptyVertices = this.required(gl.createVertexArray())
+        this.emptyVertices = requireResource(gl.createVertexArray())
 
-        this.particleVertices = this.required(gl.createVertexArray())
-        this.particleBuffer = this.required(gl.createBuffer())
+        this.particleVertices = requireResource(gl.createVertexArray())
+        this.particleBuffer = requireResource(gl.createBuffer())
         gl.bindVertexArray(this.particleVertices)
         gl.bindBuffer(gl.ARRAY_BUFFER, this.particleBuffer)
         gl.bufferData(
@@ -217,15 +164,15 @@ export class AForceRenderer implements VisualizationRenderer {
         gl.enableVertexAttribArray(0)
         gl.vertexAttribPointer(0, 4, gl.FLOAT, false, 0, 0)
 
-        this.waveVertices = this.required(gl.createVertexArray())
-        this.waveBuffer = this.required(gl.createBuffer())
+        this.waveVertices = requireResource(gl.createVertexArray())
+        this.waveBuffer = requireResource(gl.createBuffer())
         gl.bindVertexArray(this.waveVertices)
         gl.bindBuffer(gl.ARRAY_BUFFER, this.waveBuffer)
         gl.enableVertexAttribArray(0)
         gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0)
         gl.bindVertexArray(null)
 
-        this.waveTexture = this.required(gl.createTexture())
+        this.waveTexture = requireResource(gl.createTexture())
         this.prepareWaves()
         this.prepareScene()
 
@@ -458,14 +405,6 @@ export class AForceRenderer implements VisualizationRenderer {
         gl.getExtension('WEBGL_lose_context')?.loseContext()
     }
 
-    private required<T>(value: T | null): T {
-        if (value === null) {
-            throw new Error('WebGL could not create a resource.')
-        }
-
-        return value
-    }
-
     /** The strip and the texture of the waveforms for the points of the current profile. */
     private prepareWaves(): void {
         const gl = this.gl
@@ -505,7 +444,7 @@ export class AForceRenderer implements VisualizationRenderer {
         this.sceneWidth = size.width
         this.sceneHeight = size.height
         const create = (): SceneTarget => {
-            const texture = this.required(gl.createTexture())
+            const texture = requireResource(gl.createTexture())
             gl.bindTexture(gl.TEXTURE_2D, texture)
             gl.texImage2D(
                 gl.TEXTURE_2D,
@@ -526,7 +465,7 @@ export class AForceRenderer implements VisualizationRenderer {
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
             gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
-            const framebuffer = this.required(gl.createFramebuffer())
+            const framebuffer = requireResource(gl.createFramebuffer())
             gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer)
             gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0)
             gl.clearColor(0, 0, 0, 1)

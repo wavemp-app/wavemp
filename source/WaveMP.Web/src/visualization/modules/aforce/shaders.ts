@@ -1,15 +1,7 @@
 // The shaders of A-Force (GLSL ES 3.00 for WebGL 2). The scene (waveforms and particles with their
 // trails) is drawn into a texture; the composite pass lays it over the background with a glow.
 
-/** A triangle that covers the whole target; needs no vertex buffer. */
-export const fullscreenVertex = `#version 300 es
-out vec2 vUv;
-void main() {
-    vec2 position = vec2(float((gl_VertexID << 1) & 2), float(gl_VertexID & 2));
-    vUv = position;
-    gl_Position = vec4(position * 2.0 - 1.0, 0.0, 1.0);
-}
-`
+export { fullscreenVertex } from '../../webgl'
 
 /** The previous frame, a little larger and turned, fading out: the trails. */
 export const trailFragment = `#version 300 es
