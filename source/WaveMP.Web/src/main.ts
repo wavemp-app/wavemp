@@ -3,7 +3,8 @@ import { createPinia } from 'pinia'
 
 import './styles/index.css'
 import App from './App.vue'
-import router from './router'
+import router, { historyEntries } from './router'
+import { historyEntriesKey } from './router/entries'
 import { createWaveMpI18n } from './i18n'
 import { browserLocales, resolveLocale } from './i18n/locales'
 import { useSessionStore } from './stores/session'
@@ -28,6 +29,7 @@ const app = createApp(App)
 app.use(pinia)
 app.use(router)
 app.use(createWaveMpI18n(locale))
+app.provide(historyEntriesKey, historyEntries)
 
 // Mount after the first navigation, so that pages without the shell never show it.
 void router.isReady().then(() => app.mount('#app'))

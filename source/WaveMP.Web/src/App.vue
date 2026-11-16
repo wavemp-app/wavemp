@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted, watch } from 'vue'
 import { RouterView, useRoute, useRouter } from 'vue-router'
+import AppPage from '@/components/shell/AppPage.vue'
 import AppShell from '@/components/shell/AppShell.vue'
 import { useLocaleSync } from '@/composables/useLocaleSync'
 import { useSessionStore } from '@/stores/session'
@@ -33,6 +34,6 @@ onMounted(() => {
 <template>
     <RouterView v-if="route.meta.bare" />
     <AppShell v-else>
-        <RouterView />
+        <AppPage />
     </AppShell>
 </template>

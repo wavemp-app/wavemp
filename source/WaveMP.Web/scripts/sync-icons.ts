@@ -74,6 +74,7 @@ const icons: Record<IconStyle, string[]> = {
     ],
     regular: [
         'arrow-counter-clockwise',
+        'arrow-left',
         'arrows-clockwise',
         'caret-down',
         'caret-up',

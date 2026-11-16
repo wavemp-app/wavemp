@@ -183,6 +183,7 @@
         --wmp-icon-view-video: url('/icons/phosphor/regular/film-strip.svg');
         --wmp-icon-view-visualization: url('/icons/phosphor/regular/waveform.svg');
         --wmp-icon-view-cover: url('/icons/phosphor/regular/image.svg');
+        --wmp-icon-detail-back: url('/icons/phosphor/regular/arrow-left.svg');
         --wmp-icon-go-to-album: url('/icons/phosphor/regular/vinyl-record.svg');
         --wmp-icon-go-to-artist: url('/icons/phosphor/regular/microphone-stage.svg');
         --wmp-icon-play-now: url('/icons/phosphor/regular/play.svg');

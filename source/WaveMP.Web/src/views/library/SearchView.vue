@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, useId, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRoute } from 'vue-router'
 import type { SearchResult } from '@/api/generated/models'
 import BaseButton from '@/components/base/BaseButton.vue'
 import BaseLink from '@/components/base/BaseLink.vue'
@@ -9,6 +8,7 @@ import TileList from '@/components/library/TileList.vue'
 import TrackGroupList from '@/components/library/TrackGroupList.vue'
 import { useFormat } from '@/composables/useFormat'
 import { useLibraryTiles } from '@/composables/useLibraryTiles'
+import { useViewRoute } from '@/composables/useViewRoute'
 import { searchLibrary } from '@/library/api'
 import type { TrackGroup } from '@/library/grouping'
 import { queryText } from '@/library/search'
@@ -18,7 +18,7 @@ import { queryText } from '@/library/search'
  * field (?q=). Each group links to its list filtered by the text.
  */
 const { t } = useI18n()
-const route = useRoute()
+const route = useViewRoute()
 const format = useFormat()
 const tiles = useLibraryTiles()
 const artistsTitleId = useId()
@@ -28,7 +28,7 @@ const songsTitleId = useId()
 /** Matches per group. */
 const resultLimit = 10
 
-const q = computed(() => queryText(route.query))
+const q = computed(() => queryText(route.value.query))
 const result = ref<SearchResult | null>(null)
 const status = ref<'idle' | 'loading' | 'ready' | 'error'>('idle')
 let generation = 0

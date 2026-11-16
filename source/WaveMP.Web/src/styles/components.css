@@ -1610,6 +1610,11 @@
         padding-block-start: var(--wmp-space-s);
     }
 
+    /* The back button of a detail page stands above its head, at the start. */
+    [data-part='view'] > [data-part='btn-detail-back'] {
+        justify-self: start;
+    }
+
     [data-part='meta-value'] > [data-part='link'] {
         color: inherit;
         text-decoration: none;
@@ -2301,6 +2306,11 @@
     [data-part='dialog-title'] {
         font-size: var(--wmp-font-size-l);
         font-weight: var(--wmp-font-weight-bold);
+    }
+
+    /* After a back button the title takes the free space, so the close button stays at the end. */
+    [data-part='btn-detail-back'] + [data-part='dialog-title'] {
+        flex: 1 1 auto;
     }
 
     [data-part='dialog-body'] {

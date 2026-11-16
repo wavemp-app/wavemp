@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, ref, useId, watch } from 'vue'
+import { computed, ref, useId, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { Album, Artist } from '@/api/generated/models'
 import { statusOf } from '@/api/problems'
@@ -12,11 +12,11 @@ import DetailHeader from '@/components/library/DetailHeader.vue'
 import MetaItem from '@/components/library/MetaItem.vue'
 import TileCollection from '@/components/library/TileCollection.vue'
 import TrackCollection from '@/components/library/TrackCollection.vue'
+import { useDetailTitle } from '@/composables/useDetailTitle'
 import { useFormat } from '@/composables/useFormat'
 import { useLibraryTiles } from '@/composables/useLibraryTiles'
 import type { PagedListStatus } from '@/composables/usePagedList'
 import { getArtist, listArtistAlbums } from '@/library/api'
-import { usePageTitleStore } from '@/stores/pageTitle'
 
 /**
  * An artist with its albums (also those it only contributes to), its songs and the heart that marks
@@ -29,7 +29,6 @@ const props = defineProps<{
 const { t } = useI18n()
 const format = useFormat()
 const tiles = useLibraryTiles()
-const pageTitle = usePageTitleStore()
 const albumsTitleId = useId()
 const songsTitleId = useId()
 
@@ -50,7 +49,6 @@ const filter = computed(() => ({ artistId: props.id }))
 async function load(): Promise<void> {
     const current = ++generation
     status.value = 'loading'
-    pageTitle.clear()
     try {
         const loaded = await getArtist(props.id)
         if (current !== generation) {
@@ -59,7 +57,6 @@ async function load(): Promise<void> {
 
         artist.value = loaded ?? null
         status.value = loaded ? 'ready' : 'notFound'
-        pageTitle.set(loaded?.name ?? null)
     } catch (error) {
         if (current === generation) {
             artist.value = null
@@ -73,7 +70,7 @@ function fetchAlbums(offset: number, limit: number) {
 }
 
 watch(() => props.id, load, { immediate: true })
-onBeforeUnmount(() => pageTitle.clear())
+useDetailTitle(() => (status.value === 'ready' ? artist.value?.name : null))
 </script>
 
 <template>
@@ -89,7 +86,10 @@ onBeforeUnmount(() => pageTitle.clear())
             <BaseButton :label="t('library.retry')" @click="load" />
         </div>
         <template v-else-if="artist">
-            <DetailHeader :title="artist.name ?? ''">
+            <DetailHeader
+                :title="artist.name ?? ''"
+                :back="{ name: 'library-section', params: { section: 'artists' } }"
+            >
                 <template #media>
                     <BaseCover :placeholder="false">
                         <BaseIcon name="artist" />

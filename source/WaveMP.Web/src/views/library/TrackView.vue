@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, ref, useId, watch } from 'vue'
+import { computed, ref, useId, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import type { MediaFile, Track } from '@/api/generated/models'
@@ -15,10 +15,10 @@ import MetaItem from '@/components/library/MetaItem.vue'
 import TrackFileList from '@/components/library/TrackFileList.vue'
 import TrackMetadataDialog from '@/components/library/TrackMetadataDialog.vue'
 import TrackVideoOffsetForm from '@/components/library/TrackVideoOffsetForm.vue'
+import { useDetailTitle } from '@/composables/useDetailTitle'
 import { useFormat } from '@/composables/useFormat'
 import { getTrack, listTrackFiles } from '@/library/api'
 import { artistLabelKey, durationSeconds, mediaKey } from '@/library/presentation'
-import { usePageTitleStore } from '@/stores/pageTitle'
 import { usePlayerStore } from '@/stores/player'
 import { useSessionStore } from '@/stores/session'
 
@@ -36,7 +36,6 @@ const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
 const format = useFormat()
-const pageTitle = usePageTitleStore()
 const session = useSessionStore()
 const player = usePlayerStore()
 const filesTitleId = useId()
@@ -56,7 +55,6 @@ const editRequested = computed(() => route.query.edit === 'metadata')
 async function load(): Promise<void> {
     const current = ++generation
     status.value = 'loading'
-    pageTitle.clear()
     try {
         const loaded = await getTrack(props.id)
         if (current !== generation) {
@@ -65,7 +63,6 @@ async function load(): Promise<void> {
 
         track.value = loaded ?? null
         status.value = loaded ? 'ready' : 'notFound'
-        pageTitle.set(loaded?.title ?? null)
     } catch (error) {
         if (current === generation) {
             track.value = null
@@ -110,11 +107,15 @@ watch(
     { immediate: true },
 )
 
-// Opens the editor once per request, as soon as the track is loaded.
+// Opens the editor once per request, as soon as the track is loaded; it closes again when the
+// address no longer asks for it (back in the history).
 watch(
     [editRequested, status],
     ([requested, current]) => {
         if (!requested) {
+            if (editRequestHandled) {
+                editing.value = false
+            }
             editRequestHandled = false
         } else if (!editRequestHandled && current === 'ready' && session.isAdmin) {
             editRequestHandled = true
@@ -131,7 +132,7 @@ watch(editing, (value) => {
     }
 })
 
-onBeforeUnmount(() => pageTitle.clear())
+useDetailTitle(() => (status.value === 'ready' ? track.value?.title : null))
 </script>
 
 <template>
@@ -151,7 +152,10 @@ onBeforeUnmount(() => pageTitle.clear())
             <BaseButton :label="t('library.retry')" @click="reload" />
         </div>
         <template v-else-if="track">
-            <DetailHeader :title="track.title ?? ''">
+            <DetailHeader
+                :title="track.title ?? ''"
+                :back="{ name: 'library-section', params: { section: 'songs' } }"
+            >
                 <template #media>
                     <LibraryCover
                         kind="track"
@@ -263,6 +267,7 @@ onBeforeUnmount(() => pageTitle.clear())
                 v-if="session.isAdmin"
                 v-model:open="editing"
                 :track-id="id"
+                :return-to-previous="editRequested"
                 @saved="reload"
             />
         </template>

@@ -3,6 +3,7 @@ import { flushPromises, mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import type { Track } from '@/api/generated/models'
+import BaseDialog from '@/components/base/BaseDialog.vue'
 import { createWaveMpI18n } from '@/i18n'
 import { createRoutes } from '@/router/routes'
 import { usePageTitleStore } from '@/stores/pageTitle'
@@ -236,6 +237,21 @@ describe('AlbumView', () => {
 
         wrapper.unmount()
         expect(usePageTitleStore().title).toBeNull()
+    })
+
+    it('leads from an album opened directly back to the albums', async () => {
+        api.getAlbum.mockResolvedValue({ id: 'first', title: 'First Album', artist: alpha })
+        api.listAlbumTracks.mockResolvedValue({ items: [track('One')], total: 1 })
+        window.history.replaceState(null, '')
+
+        const { wrapper, router } = await mountView(AlbumView, '/library/albums/first', {
+            id: 'first',
+        })
+        await wrapper.get('[data-part="view"] > [data-part="btn-detail-back"]').trigger('click')
+        await flushPromises()
+
+        expect(router.currentRoute.value.fullPath).toBe('/library/albums')
+        wrapper.unmount()
     })
 
     it('plays the album in order or shuffled', async () => {
@@ -507,6 +523,50 @@ describe('TrackView', () => {
             expect(router.currentRoute.value.query.edit).toBeUndefined()
             expect(router.currentRoute.value.path).toBe('/library/tracks/Closing')
             expect(api.getTrackMetadata).toHaveBeenCalledTimes(1)
+            wrapper.unmount()
+        })
+
+        it('closes with its back button when it was opened on the page of the song', async () => {
+            signIn('Admin')
+            const { wrapper, router } = await mountView(TrackView, '/library/tracks/Closing', {
+                id: 'Closing',
+            })
+            await wrapper.get('[data-item="edit-metadata"]').trigger('click')
+            await flushPromises()
+            expect(wrapper.findComponent(BaseDialog).props('open')).toBe(true)
+
+            await wrapper
+                .get('[data-part="dialog-header"] [data-part="btn-detail-back"]')
+                .trigger('click')
+            await flushPromises()
+
+            expect(wrapper.findComponent(BaseDialog).props('open')).toBe(false)
+            expect(router.currentRoute.value.fullPath).toBe('/library/tracks/Closing')
+            wrapper.unmount()
+        })
+
+        it('returns with its back button to the list it was opened from', async () => {
+            signIn('Admin')
+            const router = createRouter({ history: createMemoryHistory(), routes: createRoutes() })
+            await router.push('/library/songs')
+            await router.push('/library/tracks/Closing?edit=metadata')
+            // The previous entry of the app, as Vue Router keeps it in the browser history.
+            window.history.replaceState({ back: '/library/songs' }, '')
+            const wrapper = mount(TrackView, {
+                props: { id: 'Closing' },
+                global: { plugins: [router, createWaveMpI18n('en')] },
+                attachTo: document.body,
+            })
+            await flushPromises()
+
+            await wrapper
+                .get('[data-part="dialog-header"] [data-part="btn-detail-back"]')
+                .trigger('click')
+
+            await vi.waitFor(() =>
+                expect(router.currentRoute.value.fullPath).toBe('/library/songs'),
+            )
+            window.history.replaceState(null, '')
             wrapper.unmount()
         })
 

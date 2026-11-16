@@ -114,6 +114,7 @@ export const iconSlots = {
     'view-video': { file: regular('film-strip'), area: 'general' },
     'view-visualization': { file: regular('waveform'), area: 'general' },
     'view-cover': { file: regular('image'), area: 'general' },
+    'detail-back': { file: regular('arrow-left'), area: 'general' },
     'go-to-album': { file: regular('vinyl-record'), area: 'general' },
     'go-to-artist': { file: regular('microphone-stage'), area: 'general' },
     'play-now': { file: regular('play'), area: 'general' },

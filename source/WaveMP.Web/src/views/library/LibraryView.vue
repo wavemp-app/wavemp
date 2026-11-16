@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRoute } from 'vue-router'
 import type {
     Album,
     AlbumSort,
@@ -20,6 +19,7 @@ import TrackCollection, { type TrackFilter } from '@/components/library/TrackCol
 import { isMyMusic } from '@/collection/presentation'
 import { useLibraryTiles } from '@/composables/useLibraryTiles'
 import type { PagedListStatus } from '@/composables/usePagedList'
+import { useViewRoute } from '@/composables/useViewRoute'
 import { listAlbums, listArtists, listGenres, listYears } from '@/library/api'
 import { queryText } from '@/library/search'
 import { parseSort, sortContext } from '@/library/sorting'
@@ -36,7 +36,7 @@ const props = defineProps<{
 }>()
 
 const { t } = useI18n()
-const route = useRoute()
+const route = useViewRoute()
 const tiles = useLibraryTiles()
 const status = ref<PagedListStatus>('idle')
 
@@ -44,18 +44,18 @@ const status = ref<PagedListStatus>('idle')
 const filterable = computed(() => props.section !== 'years' && props.section !== 'favorites')
 // The favorites belong to the "my music" anyway, so their section offers no switch.
 const scoped = computed(() => props.section !== 'favorites')
-const myMusic = computed(() => scoped.value && isMyMusic(route.query))
+const myMusic = computed(() => scoped.value && isMyMusic(route.value.query))
 const trackFilter = computed<TrackFilter>(() => (myMusic.value ? { myMusic: true } : {}))
-const search = computed(() => (filterable.value ? queryText(route.query) : ''))
+const search = computed(() => (filterable.value ? queryText(route.value.query) : ''))
 const sortState = computed(() => {
     const list = sortContext({ name: 'library-section', params: { section: props.section } })
-    return list ? parseSort(list, route.query, search.value !== '') : {}
+    return list ? parseSort(list, route.value.query, search.value !== '') : {}
 })
 const reloadKey = computed(() =>
     JSON.stringify([search.value, sortState.value.sort, sortState.value.direction, myMusic.value]),
 )
 const showAll = computed(() => {
-    const query = { ...route.query }
+    const query = { ...route.value.query }
     delete query.q
     return { name: 'library-section', params: { section: props.section }, query }
 })

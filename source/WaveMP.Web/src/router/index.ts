@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { trackHistoryEntries } from './entries'
 import { resolveAccess } from './guards'
 import { createRoutes, devRoutes } from './routes'
 import { contentAreaId, createScrollMemory } from './scroll'
@@ -25,5 +26,8 @@ router.afterEach((to, _from, failure) => {
         scroll.enter(to)
     }
 })
+
+/** The entries of the browser history; the app shell keeps their pages alive (see AppPage.vue). */
+export const historyEntries = trackHistoryEntries(router)
 
 export default router

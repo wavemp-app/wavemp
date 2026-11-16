@@ -13,6 +13,7 @@ import BaseButton from '@/components/base/BaseButton.vue'
 import BaseDialog from '@/components/base/BaseDialog.vue'
 import BaseProgress from '@/components/base/BaseProgress.vue'
 import BaseTextField from '@/components/base/BaseTextField.vue'
+import BackButton from './BackButton.vue'
 import { validationMessagesByField } from '@/i18n/validation'
 import { getTrackMetadata, updateTrackMetadata } from '@/library/api'
 import {
@@ -30,11 +31,18 @@ import {
  * Metadata editor of a track for admins: title, artist, album, album artist, year, track and
  * disc number and genre. The values are written into the tags of the audio file of the track;
  * without an audio file or if it cannot be written, the fields are disabled with a hint. Only
- * changed fields are sent; empty fields remove the value from the tags.
+ * changed fields are sent; empty fields remove the value from the tags. The back button in its
+ * header returns to the page the editor was opened from: the previous page if the editor came with
+ * the address (the menu of a song in a list), otherwise it closes and shows the song.
  */
-const props = defineProps<{
-    trackId: string
-}>()
+const props = withDefaults(
+    defineProps<{
+        trackId: string
+        /** Opened with the address from another page: back returns to that page. */
+        returnToPrevious?: boolean
+    }>(),
+    { returnToPrevious: false },
+)
 
 const emit = defineEmits<{
     saved: [metadata: TrackMetadata]
@@ -204,6 +212,9 @@ async function save(): Promise<void> {
 
 <template>
     <BaseDialog v-model:open="open" :title="t('trackMetadata.title')">
+        <template #header-start>
+            <BackButton variant="icon" :history="returnToPrevious" @close="open = false" />
+        </template>
         <BaseProgress v-if="state === 'loading'" :label="t('trackMetadata.loading')" />
         <template v-else-if="state === 'error'">
             <BaseAlert tone="error" :message="loadError ?? ''" />

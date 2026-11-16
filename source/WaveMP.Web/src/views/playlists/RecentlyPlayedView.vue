@@ -68,7 +68,7 @@ onMounted(load)
             <BaseButton :label="t('library.retry')" @click="load" />
         </div>
         <template v-else>
-            <DetailHeader :title="t('playlists.recentlyPlayed')">
+            <DetailHeader :title="t('playlists.recentlyPlayed')" :back="{ name: 'playlists' }">
                 <template #media>
                     <BaseCover :placeholder="false">
                         <BaseIcon name="recently-played" />

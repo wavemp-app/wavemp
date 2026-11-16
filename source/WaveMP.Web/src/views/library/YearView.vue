@@ -1,15 +1,15 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, ref, watch } from 'vue'
+import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRoute } from 'vue-router'
 import BaseCover from '@/components/base/BaseCover.vue'
 import BaseIcon from '@/components/base/BaseIcon.vue'
 import DetailHeader from '@/components/library/DetailHeader.vue'
 import TrackCollection from '@/components/library/TrackCollection.vue'
 import { useFormat } from '@/composables/useFormat'
+import { useDetailTitle } from '@/composables/useDetailTitle'
 import type { PagedListStatus } from '@/composables/usePagedList'
+import { useViewRoute } from '@/composables/useViewRoute'
 import { parseSort } from '@/library/sorting'
-import { usePageTitleStore } from '@/stores/pageTitle'
 
 /** The songs of a year, grouped by album and sortable. */
 const props = defineProps<{
@@ -17,18 +17,16 @@ const props = defineProps<{
 }>()
 
 const { t } = useI18n()
-const route = useRoute()
+const route = useViewRoute()
 const format = useFormat()
-const pageTitle = usePageTitleStore()
 const status = ref<PagedListStatus>('idle')
 
 const value = computed(() => Number(props.year))
 const title = computed(() => format.year(value.value))
 const filter = computed(() => ({ year: value.value }))
-const sortState = computed(() => parseSort('tracks', route.query, false))
+const sortState = computed(() => parseSort('tracks', route.value.query, false))
 
-watch(title, (text) => pageTitle.set(text), { immediate: true })
-onBeforeUnmount(() => pageTitle.clear())
+useDetailTitle(() => title.value)
 </script>
 
 <template>
@@ -37,7 +35,10 @@ onBeforeUnmount(() => pageTitle.clear())
         data-view="library-year"
         :aria-busy="status === 'loading' ? 'true' : undefined"
     >
-        <DetailHeader :title="title">
+        <DetailHeader
+            :title="title"
+            :back="{ name: 'library-section', params: { section: 'years' } }"
+        >
             <template #media>
                 <BaseCover :placeholder="false">
                     <BaseIcon name="year" />

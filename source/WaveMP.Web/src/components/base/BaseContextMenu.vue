@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { nextTick, ref } from 'vue'
+import { nextTick, onDeactivated, ref } from 'vue'
 import BaseIcon from './BaseIcon.vue'
 import { clampMenuPosition, firstEnabledIndex, lastEnabledIndex, nextEnabledIndex } from './menu'
 import type { IconSlotName } from '@/themes/iconSlots'
@@ -72,6 +72,12 @@ function close(): void {
     menu.value?.hidePopover?.()
     isOpen.value = false
 }
+
+// A page kept alive in the background takes its menus out of the document, which hides them.
+onDeactivated(() => {
+    isOpen.value = false
+    returnFocus = null
+})
 
 function onToggle(event: Event): void {
     const open = (event as ToggleEvent).newState === 'open'

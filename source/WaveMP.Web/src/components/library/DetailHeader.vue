@@ -1,14 +1,22 @@
 <script setup lang="ts">
+import type { RouteLocationRaw } from 'vue-router'
+import BackButton from './BackButton.vue'
+
 /**
- * Head of a detail page (album, artist, genre, year, track): a picture (slot media), the name,
- * the details (default slot, meta-items) and actions such as buttons for admins (slot actions).
+ * Head of a detail page (album, artist, genre, year, track, playlist): the back button to the
+ * previous page (or to the overview given as back, for pages opened directly), a picture (slot
+ * media), the name, the details (default slot, meta-items) and actions such as buttons for admins
+ * (slot actions).
  */
 defineProps<{
     title: string
+    /** The overview the page belongs to; shows the back button. */
+    back?: RouteLocationRaw
 }>()
 </script>
 
 <template>
+    <BackButton v-if="back" :fallback="back" />
     <div data-part="detail-header">
         <slot name="media" />
         <div data-part="detail-info">

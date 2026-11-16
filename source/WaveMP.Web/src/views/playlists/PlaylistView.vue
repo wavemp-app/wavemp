@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, ref, watch } from 'vue'
+import { computed, onActivated, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import {
@@ -22,6 +22,7 @@ import PlaylistEditDialog from '@/components/playlists/PlaylistEditDialog.vue'
 import PlaylistTrackList, {
     type PlaylistTrackRow,
 } from '@/components/playlists/PlaylistTrackList.vue'
+import { useDetailTitle } from '@/composables/useDetailTitle'
 import { useFormat } from '@/composables/useFormat'
 import { durationSeconds } from '@/library/presentation'
 import {
@@ -33,7 +34,6 @@ import {
     uploadPlaylistCover,
 } from '@/playlists/api'
 import { coverUploadProblem, coverUploadTypes, moveItem } from '@/playlists/presentation'
-import { usePageTitleStore } from '@/stores/pageTitle'
 import { usePlayerStore } from '@/stores/player'
 import { usePlaylistsStore } from '@/stores/playlists'
 
@@ -50,7 +50,6 @@ const props = defineProps<{
 const { t } = useI18n()
 const format = useFormat()
 const router = useRouter()
-const pageTitle = usePageTitleStore()
 const player = usePlayerStore()
 const playlists = usePlaylistsStore()
 
@@ -80,7 +79,6 @@ function setPlaylist(value: Playlist | undefined): void {
     if (value) {
         playlist.value = value
         playlists.apply(value)
-        pageTitle.set(value.name ?? null)
     }
 }
 
@@ -88,7 +86,6 @@ async function load(): Promise<void> {
     const current = ++generation
     status.value = 'loading'
     error.value = null
-    pageTitle.clear()
     try {
         const [loaded, loadedEntries] = await Promise.all([
             getPlaylist(props.id),
@@ -276,7 +273,18 @@ async function confirmDelete(): Promise<void> {
 }
 
 watch(() => props.id, load, { immediate: true })
-onBeforeUnmount(() => pageTitle.clear())
+useDetailTitle(() => (status.value === 'ready' ? playlist.value?.name : null))
+
+// Back and forward return to the page as it was left; a playlist deleted in the meantime is gone.
+onActivated(() => {
+    if (
+        status.value === 'ready' &&
+        playlists.status === 'ready' &&
+        playlists.find(props.id) === undefined
+    ) {
+        void load()
+    }
+})
 </script>
 
 <template>
@@ -294,7 +302,7 @@ onBeforeUnmount(() => pageTitle.clear())
             <BaseButton :label="t('library.retry')" @click="load" />
         </div>
         <template v-else-if="playlist">
-            <DetailHeader :title="playlist.name ?? ''">
+            <DetailHeader :title="playlist.name ?? ''" :back="{ name: 'playlists' }">
                 <template #media>
                     <PlaylistCover :id="playlist.id" :cover="playlist.cover" />
                 </template>

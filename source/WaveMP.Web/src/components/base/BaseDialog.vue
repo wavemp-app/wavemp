@@ -1,9 +1,12 @@
 <script setup lang="ts">
-import { onMounted, ref, useId, watch } from 'vue'
+import { onDeactivated, onMounted, ref, useId, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import BaseButton from './BaseButton.vue'
 
-/** Modal dialog on the native <dialog> element: focus handling and Escape come from the browser. */
+/**
+ * Modal dialog on the native <dialog> element: focus handling and Escape come from the browser.
+ * The slot header-start puts e.g. a back button in front of the title.
+ */
 defineProps<{
     title: string
 }>()
@@ -33,11 +36,15 @@ onMounted(sync)
 function close(): void {
     open.value = false
 }
+
+// A page kept alive in the background takes its dialogs out of the document: they close.
+onDeactivated(close)
 </script>
 
 <template>
     <dialog ref="dialog" data-part="dialog" :aria-labelledby="titleId" @close="close">
         <div data-part="dialog-header">
+            <slot name="header-start" />
             <h2 :id="titleId" data-part="dialog-title">{{ title }}</h2>
             <BaseButton
                 part="btn-close"

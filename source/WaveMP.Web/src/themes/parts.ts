@@ -102,6 +102,7 @@ export const parts = [
     'detail-info',
     'detail-title',
     'detail-actions',
+    'btn-detail-back',
     'load-more',
     'file-list',
     'file-item',

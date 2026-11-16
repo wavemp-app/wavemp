@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { Album, Track } from '@/api/generated/models'
 import { fetchAllPages } from '@/api/paging'
@@ -11,11 +11,11 @@ import DetailHeader from '@/components/library/DetailHeader.vue'
 import LibraryCover from '@/components/library/LibraryCover.vue'
 import MetaItem from '@/components/library/MetaItem.vue'
 import TrackGroupList from '@/components/library/TrackGroupList.vue'
+import { useDetailTitle } from '@/composables/useDetailTitle'
 import { useFormat } from '@/composables/useFormat'
 import { getAlbum, listAlbumTracks } from '@/library/api'
 import { groupTracksByDisc } from '@/library/grouping'
 import { artistLabelKey, durationSeconds } from '@/library/presentation'
-import { usePageTitleStore } from '@/stores/pageTitle'
 import { usePlayerStore } from '@/stores/player'
 
 /**
@@ -28,7 +28,6 @@ const props = defineProps<{
 
 const { t } = useI18n()
 const format = useFormat()
-const pageTitle = usePageTitleStore()
 const player = usePlayerStore()
 
 const album = ref<Album | null>(null)
@@ -56,7 +55,6 @@ function play(shuffle: boolean): void {
 async function load(): Promise<void> {
     const current = ++generation
     status.value = 'loading'
-    pageTitle.clear()
     try {
         const [loaded, loadedTracks] = await Promise.all([
             getAlbum(props.id),
@@ -69,7 +67,6 @@ async function load(): Promise<void> {
         album.value = loaded ?? null
         tracks.value = loadedTracks
         status.value = loaded ? 'ready' : 'notFound'
-        pageTitle.set(loaded?.title ?? null)
     } catch (error) {
         if (current === generation) {
             album.value = null
@@ -79,7 +76,7 @@ async function load(): Promise<void> {
 }
 
 watch(() => props.id, load, { immediate: true })
-onBeforeUnmount(() => pageTitle.clear())
+useDetailTitle(() => (status.value === 'ready' ? album.value?.title : null))
 </script>
 
 <template>
@@ -99,7 +96,10 @@ onBeforeUnmount(() => pageTitle.clear())
             <BaseButton :label="t('library.retry')" @click="load" />
         </div>
         <template v-else-if="album">
-            <DetailHeader :title="album.title ?? ''">
+            <DetailHeader
+                :title="album.title ?? ''"
+                :back="{ name: 'library-section', params: { section: 'albums' } }"
+            >
                 <template #media>
                     <LibraryCover
                         kind="album"

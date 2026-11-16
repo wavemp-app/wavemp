@@ -652,7 +652,10 @@ const sampleTranscodeJobs = computed<TranscodeJob[]>(() => {
                 <LoadMore loading />
             </div>
             <div data-part="view" data-view="library-album">
-                <DetailHeader :title="t('placeholders.album', { number: 1 })">
+                <DetailHeader
+                    :title="t('placeholders.album', { number: 1 })"
+                    :back="{ name: 'library-section', params: { section: 'albums' } }"
+                >
                     <template #media>
                         <BaseCover :src="sampleCover" />
                     </template>

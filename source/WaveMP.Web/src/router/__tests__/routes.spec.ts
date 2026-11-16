@@ -129,6 +129,36 @@ describe('createRoutes', () => {
         }
     })
 
+    it('keeps the pages with lists alive for back and forward', async () => {
+        for (const path of [
+            '/',
+            '/library/songs',
+            '/library/albums',
+            '/library/search?q=balad',
+            '/library/albums/a1',
+            '/library/artists/r1',
+            '/library/genres/Rock',
+            '/library/years/2026',
+            '/playlists',
+            '/playlists/recently-played',
+            '/playlists/p1',
+        ]) {
+            expect((await resolve(path)).meta.keepAlive, path).toBe(true)
+        }
+
+        // The song and the pages without lists are built anew every time.
+        for (const path of [
+            '/library/tracks/t1',
+            '/playlists/new',
+            '/now-playing',
+            '/settings',
+            '/admin/library',
+            '/unknown',
+        ]) {
+            expect((await resolve(path)).meta.keepAlive, path).toBeUndefined()
+        }
+    })
+
     it('shows unknown pages and sections as not found', async () => {
         expect((await resolve('/library/unknown')).name).toBe('not-found')
         expect((await resolve('/some/client/route')).name).toBe('not-found')

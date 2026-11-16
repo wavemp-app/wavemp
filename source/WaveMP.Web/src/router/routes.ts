@@ -37,6 +37,11 @@ declare module 'vue-router' {
         public?: boolean
         /** Only for profiles with the role admin. */
         admin?: boolean
+        /**
+         * Kept alive in the background per history entry: back and forward return to the page with
+         * its loaded data, its filters and its scroll position (pages with lists).
+         */
+        keepAlive?: boolean
     }
 }
 
@@ -63,7 +68,7 @@ const librarySongs = { name: 'library-section', params: { section: defaultLibrar
  */
 export function createRoutes(extra: readonly RouteRecordRaw[] = []): RouteRecordRaw[] {
     return [
-        { path: '/', name: 'home', component: HomeView, meta: { tab: 'home' } },
+        { path: '/', name: 'home', component: HomeView, meta: { tab: 'home', keepAlive: true } },
         {
             path: '/profiles',
             name: 'profiles',
@@ -88,41 +93,41 @@ export function createRoutes(extra: readonly RouteRecordRaw[] = []): RouteRecord
             name: 'library-section',
             component: LibraryView,
             props: true,
-            meta: { tab: 'library' },
+            meta: { tab: 'library', keepAlive: true },
         },
         {
             path: '/library/search',
             name: 'library-search',
             component: SearchView,
-            meta: { tab: 'library' },
+            meta: { tab: 'library', keepAlive: true },
         },
         {
             path: '/library/albums/:id',
             name: 'library-album',
             component: AlbumView,
             props: true,
-            meta: { tab: 'library' },
+            meta: { tab: 'library', keepAlive: true },
         },
         {
             path: '/library/artists/:id',
             name: 'library-artist',
             component: ArtistView,
             props: true,
-            meta: { tab: 'library' },
+            meta: { tab: 'library', keepAlive: true },
         },
         {
             path: '/library/genres/:genre',
             name: 'library-genre',
             component: GenreView,
             props: true,
-            meta: { tab: 'library' },
+            meta: { tab: 'library', keepAlive: true },
         },
         {
             path: '/library/years/:year(\\d{1,4})',
             name: 'library-year',
             component: YearView,
             props: true,
-            meta: { tab: 'library' },
+            meta: { tab: 'library', keepAlive: true },
         },
         {
             path: '/library/tracks/:id',
@@ -135,7 +140,7 @@ export function createRoutes(extra: readonly RouteRecordRaw[] = []): RouteRecord
             path: '/playlists',
             name: 'playlists',
             component: PlaylistsView,
-            meta: { tab: 'playlists' },
+            meta: { tab: 'playlists', keepAlive: true },
         },
         {
             path: '/playlists/new',
@@ -148,14 +153,14 @@ export function createRoutes(extra: readonly RouteRecordRaw[] = []): RouteRecord
             path: '/playlists/recently-played',
             name: 'playlists-recently-played',
             component: RecentlyPlayedView,
-            meta: { tab: 'playlists' },
+            meta: { tab: 'playlists', keepAlive: true },
         },
         {
             path: '/playlists/:id',
             name: 'playlist',
             component: PlaylistView,
             props: true,
-            meta: { tab: 'playlists' },
+            meta: { tab: 'playlists', keepAlive: true },
         },
         { path: '/settings', name: 'settings', component: SettingsView },
         { path: '/admin', name: 'admin', redirect: { name: 'admin-library' } },

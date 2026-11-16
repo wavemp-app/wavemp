@@ -371,6 +371,10 @@
         --_icon: var(--wmp-icon-view-cover);
     }
 
+    [data-icon='detail-back'] {
+        --_icon: var(--wmp-icon-detail-back);
+    }
+
     [data-icon='go-to-album'] {
         --_icon: var(--wmp-icon-go-to-album);
     }

@@ -1,14 +1,14 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, ref, watch } from 'vue'
+import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRoute } from 'vue-router'
 import BaseCover from '@/components/base/BaseCover.vue'
 import BaseIcon from '@/components/base/BaseIcon.vue'
 import DetailHeader from '@/components/library/DetailHeader.vue'
 import TrackCollection from '@/components/library/TrackCollection.vue'
+import { useDetailTitle } from '@/composables/useDetailTitle'
 import type { PagedListStatus } from '@/composables/usePagedList'
+import { useViewRoute } from '@/composables/useViewRoute'
 import { parseSort } from '@/library/sorting'
-import { usePageTitleStore } from '@/stores/pageTitle'
 
 /** The songs of a genre, grouped by album and sortable. */
 const props = defineProps<{
@@ -16,19 +16,13 @@ const props = defineProps<{
 }>()
 
 const { t } = useI18n()
-const route = useRoute()
-const pageTitle = usePageTitleStore()
+const route = useViewRoute()
 const status = ref<PagedListStatus>('idle')
 
 const filter = computed(() => ({ genre: props.genre }))
-const sortState = computed(() => parseSort('tracks', route.query, false))
+const sortState = computed(() => parseSort('tracks', route.value.query, false))
 
-watch(
-    () => props.genre,
-    (genre) => pageTitle.set(genre),
-    { immediate: true },
-)
-onBeforeUnmount(() => pageTitle.clear())
+useDetailTitle(() => props.genre)
 </script>
 
 <template>
@@ -37,7 +31,10 @@ onBeforeUnmount(() => pageTitle.clear())
         data-view="library-genre"
         :aria-busy="status === 'loading' ? 'true' : undefined"
     >
-        <DetailHeader :title="genre">
+        <DetailHeader
+            :title="genre"
+            :back="{ name: 'library-section', params: { section: 'genres' } }"
+        >
             <template #media>
                 <BaseCover :placeholder="false">
                     <BaseIcon name="genre" />

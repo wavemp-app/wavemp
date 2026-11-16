@@ -35,6 +35,7 @@
     "playlist": "Playlist"
   },
   "library": {
+    "back": "Back",
     "recentlyAdded": "Recently Added",
     "favorites": "Favorites",
     "artists": "Artist",
