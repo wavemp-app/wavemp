@@ -209,6 +209,54 @@ test.describe('with a profile of its own', () => {
         await expect(viewSegment(page, 'visualization')).toHaveAttribute('aria-checked', 'true')
         await expect(viewSegment(page, 'video')).toBeEnabled()
     })
+
+    test.describe('without the service worker', () => {
+        // Requests of the page must reach page.route, which does not see what the service worker
+        // fetches.
+        test.use({ serviceWorkers: 'block' })
+
+        test('keeps the last of two quick view switches after loading the app again', async ({
+            page,
+            request,
+        }) => {
+            const id = await findTrackId(request, 'Loose Song')
+            await playSong(page, id, 'Loose Song')
+            await openNowPlaying(page)
+            const stage = part(page, 'stage')
+            await expect(stage).toHaveAttribute('data-state', 'video', { timeout: 15_000 })
+
+            // The first save is held back, so a second save sent alongside it would be stored
+            // first and then overwritten with the older view.
+            const saved: string[] = []
+            let held = false
+            await page.route('**/api/v1/me/settings', async (route) => {
+                const body =
+                    route.request().method() === 'PATCH' ? route.request().postDataJSON() : null
+                if (body?.playerViewMode && !held) {
+                    held = true
+                    await new Promise((resolve) => setTimeout(resolve, 750))
+                }
+                const response = await route.fetch()
+                if (body?.playerViewMode) {
+                    saved.push(body.playerViewMode)
+                }
+                await route.fulfill({ response })
+            })
+
+            await viewSegment(page, 'cover').click()
+            await viewSegment(page, 'visualization').click()
+            await expect(stage).toHaveAttribute('data-state', 'visualization')
+            await expect.poll(() => saved).toEqual(['Cover', 'Visualization'])
+            expect(await storedViewMode(request, user.id)).toBe('Visualization')
+
+            await page.unroute('**/api/v1/me/settings')
+            await page.reload()
+            await playSong(page, id, 'Loose Song')
+            await openNowPlaying(page)
+            await expect(stage).toHaveAttribute('data-state', 'visualization')
+            await expect(viewSegment(page, 'visualization')).toHaveAttribute('aria-checked', 'true')
+        })
+    })
 })
 
 test.describe('video sync', () => {

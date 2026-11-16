@@ -58,6 +58,13 @@ function stored(id: string, language: 'en' | 'de' | null = 'de'): StoredSession 
     }
 }
 
+/** Lets pending promise callbacks run. */
+async function settle(): Promise<void> {
+    for (let index = 0; index < 5; index++) {
+        await Promise.resolve()
+    }
+}
+
 describe('session store', () => {
     beforeEach(() => {
         localStorage.clear()
@@ -288,6 +295,54 @@ describe('session store', () => {
         expect(session.playerViewMode).toBe('Cover')
     })
 
+    it('saves quick view changes one after the other and only the latest waiting one', async () => {
+        saveStoredSession(stored('a'))
+        const answers: ((value: unknown) => void)[] = []
+        api.updateSettings.mockImplementation(() => new Promise((resolve) => answers.push(resolve)))
+        const session = useSessionStore()
+        session.restore()
+
+        const cover = session.updatePlayerViewMode('Cover')
+        const video = session.updatePlayerViewMode('Video')
+        const visualization = session.updatePlayerViewMode('Visualization')
+        await settle()
+        expect(session.playerViewMode).toBe('Visualization')
+        expect(api.updateSettings).toHaveBeenCalledTimes(1)
+        expect(api.updateSettings).toHaveBeenLastCalledWith({ playerViewMode: 'Cover' })
+
+        // The answer to the older choice does not take the view back; the skipped one is not sent.
+        answers[0]!({ language: 'en', playerViewMode: 'Cover' })
+        await cover
+        await video
+        await settle()
+        expect(session.playerViewMode).toBe('Visualization')
+        expect(api.updateSettings).toHaveBeenCalledTimes(2)
+        expect(api.updateSettings).toHaveBeenLastCalledWith({ playerViewMode: 'Visualization' })
+
+        answers[1]!({ language: 'en', playerViewMode: 'Visualization' })
+        await visualization
+        expect(session.playerViewMode).toBe('Visualization')
+    })
+
+    it('does not save a waiting view mode for the next profile', async () => {
+        saveStoredSession(stored('a'))
+        const answers: ((value: unknown) => void)[] = []
+        api.updateSettings.mockImplementation(() => new Promise((resolve) => answers.push(resolve)))
+        const session = useSessionStore()
+        session.restore()
+
+        const cover = session.updatePlayerViewMode('Cover')
+        const waiting = session.updatePlayerViewMode('Visualization')
+        session.clear()
+        answers[0]!({ language: 'en', playerViewMode: 'Cover' })
+        await cover
+        await waiting
+        await settle()
+
+        expect(api.updateSettings).toHaveBeenCalledTimes(1)
+        expect(session.playerViewMode).toBe('Video')
+    })
+
     it('loads the collapsed sidebar with the settings and forgets it for another profile', async () => {
         api.createSession.mockResolvedValue(created('a'))
         api.getSettings.mockResolvedValue({ language: 'en', sidebarCollapsed: true })
@@ -323,6 +378,30 @@ describe('session store', () => {
 
         api.updateSettings.mockRejectedValueOnce(new TypeError('Failed to fetch'))
         await session.updateSidebarCollapsed(false)
+        expect(session.sidebarCollapsed).toBe(false)
+    })
+
+    it('saves quick sidebar changes one after the other so the server keeps the last one', async () => {
+        saveStoredSession(stored('a'))
+        const answers: ((value: unknown) => void)[] = []
+        api.updateSettings.mockImplementation(() => new Promise((resolve) => answers.push(resolve)))
+        const session = useSessionStore()
+        session.restore()
+
+        const collapsing = session.updateSidebarCollapsed(true)
+        const expanding = session.updateSidebarCollapsed(false)
+        await settle()
+        expect(api.updateSettings).toHaveBeenCalledTimes(1)
+
+        answers[0]!({ language: 'en', sidebarCollapsed: true })
+        await collapsing
+        await settle()
+        expect(session.sidebarCollapsed).toBe(false)
+        expect(api.updateSettings).toHaveBeenCalledTimes(2)
+        expect(api.updateSettings).toHaveBeenLastCalledWith({ sidebarCollapsed: false })
+
+        answers[1]!({ language: 'en', sidebarCollapsed: false })
+        await expanding
         expect(session.sidebarCollapsed).toBe(false)
     })
 

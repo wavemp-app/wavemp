@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { sessionTokens } from '@/api/auth'
 import { apiClient } from '@/api/client'
+import { createLatestValueSender } from '@/api/latestValue'
 import {
     PlayerViewModeObject,
     ReplayGainModeObject,
@@ -94,6 +95,16 @@ export const useSessionStore = defineStore('session', () => {
     const visualization = ref<VisualizationSettings>(defaultVisualizationSettings)
     /** Increase with every change of a group, so older answers do not overwrite newer changes. */
     const requests = { equalizer: 0, crossfade: 0, sleepTimer: 0, visualization: 0 }
+    /**
+     * Save view mode and sidebar one request after the other and only the latest choice, so quick
+     * changes cannot reach the server out of order and leave an older value stored.
+     */
+    const playerViewModeSender = createLatestValueSender((mode: PlayerViewMode) =>
+        apiClient.api.v1.me.settings.patch({ playerViewMode: mode }),
+    )
+    const sidebarCollapsedSender = createLatestValueSender((collapsed: boolean) =>
+        apiClient.api.v1.me.settings.patch({ sidebarCollapsed: collapsed }),
+    )
 
     const isAuthenticated = computed(
         () =>
@@ -113,11 +124,18 @@ export const useSessionStore = defineStore('session', () => {
         expiresAt.value = session?.expiresAt ?? null
         profile.value = session?.profile ?? null
         language.value = session?.language ?? null
+        resetProfileSettings()
+        resetPlaybackSettings()
+        sessionTokens.current = token.value
+    }
+
+    /** ReplayGain, view mode and sidebar back to their defaults; a waiting choice is dropped. */
+    function resetProfileSettings(): void {
         replayGain.value = ReplayGainModeObject.Off
         playerViewMode.value = PlayerViewModeObject.Video
         sidebarCollapsed.value = false
-        resetPlaybackSettings()
-        sessionTokens.current = token.value
+        playerViewModeSender.reset()
+        sidebarCollapsedSender.reset()
     }
 
     function resetPlaybackSettings(): void {
@@ -197,9 +215,7 @@ export const useSessionStore = defineStore('session', () => {
         token.value = created.token
         sessionTokens.current = created.token
         language.value = null
-        replayGain.value = ReplayGainModeObject.Off
-        playerViewMode.value = PlayerViewModeObject.Video
-        sidebarCollapsed.value = false
+        resetProfileSettings()
         resetPlaybackSettings()
         if (!applySession(created.session)) {
             clear()
@@ -264,16 +280,23 @@ export const useSessionStore = defineStore('session', () => {
     }
 
     /**
-     * Shows the view mode at once and saves it for the profile on the server. If saving fails (e.g.
-     * offline), the choice stays for this device until the next refresh.
+     * Shows the view mode at once and saves it for the profile on the server. Quick changes are
+     * saved one after the other, skipping all but the latest waiting one, so the server keeps the
+     * last choice. If saving fails (e.g. offline), the choice stays for this device until the next
+     * refresh.
      */
     async function updatePlayerViewMode(mode: PlayerViewMode): Promise<void> {
         const requestToken = token.value
         playerViewMode.value = mode
         try {
-            const settings = await apiClient.api.v1.me.settings.patch({ playerViewMode: mode })
-            if (token.value === requestToken && playerViewMode.value === mode) {
-                playerViewMode.value = toPlayerViewMode(settings) ?? mode
+            const outcome = await playerViewModeSender.send(mode)
+            if (
+                outcome.status === 'sent' &&
+                outcome.latest &&
+                token.value === requestToken &&
+                playerViewMode.value === mode
+            ) {
+                playerViewMode.value = toPlayerViewMode(outcome.result) ?? mode
             }
         } catch {
             // The local choice applies; the server keeps the previous one.
@@ -281,18 +304,22 @@ export const useSessionStore = defineStore('session', () => {
     }
 
     /**
-     * Collapses or expands the desktop sidebar at once and saves it for the profile on the server.
-     * If saving fails (e.g. offline), the choice stays for this device until the next refresh.
+     * Collapses or expands the desktop sidebar at once and saves it for the profile on the server,
+     * one change after the other like updatePlayerViewMode. If saving fails (e.g. offline), the
+     * choice stays for this device until the next refresh.
      */
     async function updateSidebarCollapsed(collapsed: boolean): Promise<void> {
         const requestToken = token.value
         sidebarCollapsed.value = collapsed
         try {
-            const settings = await apiClient.api.v1.me.settings.patch({
-                sidebarCollapsed: collapsed,
-            })
-            if (token.value === requestToken && sidebarCollapsed.value === collapsed) {
-                sidebarCollapsed.value = settings?.sidebarCollapsed ?? collapsed
+            const outcome = await sidebarCollapsedSender.send(collapsed)
+            if (
+                outcome.status === 'sent' &&
+                outcome.latest &&
+                token.value === requestToken &&
+                sidebarCollapsed.value === collapsed
+            ) {
+                sidebarCollapsed.value = outcome.result?.sidebarCollapsed ?? collapsed
             }
         } catch {
             // The local choice applies; the server keeps the previous one.
