@@ -15,7 +15,7 @@ test('shows the state, the exports and the settings of the backups without horiz
     const status = page.locator("[data-part='backup-status']")
     await expect(status).toBeVisible()
     await expect(status.locator("[data-item='schedule'] [data-part='stat-value']")).toHaveText(
-        'Daily at 03:00',
+        /^Daily at 03:00 \([^)]+\)$/,
     )
     await expect(status.locator("[data-item='next-run'] [data-part='stat-value']")).not.toHaveText(
         'None',
@@ -27,6 +27,26 @@ test('shows the state, the exports and the settings of the backups without horiz
         () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
     )
     expect(overflow).toBeLessThanOrEqual(0)
+})
+
+test.describe('in a browser in another time zone than the server', () => {
+    test.use({ timezoneId: 'Europe/Berlin' })
+
+    test('names the time zone of the schedule and of the next backup', async ({ page }) => {
+        await page.goto('/admin/backups')
+
+        const status = page.locator("[data-part='backup-status']")
+        // The schedule is in the time zone of the server, the next backup in that of the browser.
+        await expect(status.locator("[data-item='schedule'] [data-part='stat-value']")).toHaveText(
+            /^Daily at \d{2}:\d{2} \([^)]+\)$/,
+        )
+        await expect(status.locator("[data-item='next-run'] [data-part='stat-value']")).toHaveText(
+            / GMT\+[12]$/,
+        )
+        await expect(
+            page.locator("[data-field='backup-time'] [data-part='field-hint']"),
+        ).toHaveText(/^In the time zone of the server: [^ ]+ \(TZ\)\.$/)
+    })
 })
 
 test.describe('changes', () => {
@@ -106,7 +126,7 @@ test.describe('changes', () => {
                 page.locator(
                     "[data-part='backup-status'] [data-item='schedule'] [data-part='stat-value']",
                 ),
-            ).toHaveText('Daily at 22:15')
+            ).toHaveText(/^Daily at 22:15 \([^)]+\)$/)
             await page.reload()
             await expect(page.getByLabel('Time of the daily backup')).toHaveValue('22:15')
             await expect(page.getByLabel('Exports to keep')).toHaveValue('14')

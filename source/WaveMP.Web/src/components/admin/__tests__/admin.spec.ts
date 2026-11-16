@@ -212,6 +212,37 @@ describe('JobList', () => {
         expect(wrapper.emitted('run')).toEqual([['library-scan']])
     })
 
+    it('names the time zone of a daily schedule and of the runs', async () => {
+        const jobs: Job[] = [
+            {
+                id: 'database-backup',
+                state: 'Idle',
+                intervalMinutes: 1440,
+                dailyAt: '03:00',
+                timeZone: 'Europe/Berlin',
+                nextRunAt: time,
+                lastRun: null,
+            },
+            {
+                id: 'library-scan',
+                state: 'Idle',
+                intervalMinutes: 1440,
+                dailyAt: '04:30',
+                timeZone: null,
+                lastRun: null,
+            },
+        ]
+
+        const wrapper = await mountWithRouter(JobList, { jobs })
+
+        const items = wrapper.findAll('[data-part="job-meta"]')
+        expect(items[0]!.text()).toContain('Daily at 03:00 (Europe/Berlin)')
+        expect(items[0]!.text()).toMatch(
+            /Next run Nov 11, 2026, .+ (UTC|GMT([+-]\d{1,2}(:\d{2})?)?|[A-Z]{3,5})/,
+        )
+        expect(items[1]!.text()).toContain('Daily at 04:30 (server time)')
+    })
+
     it('says when a job without schedule runs', async () => {
         const jobs: Job[] = [
             { id: 'cover-cache', state: 'Idle', intervalMinutes: null, lastRun: null },

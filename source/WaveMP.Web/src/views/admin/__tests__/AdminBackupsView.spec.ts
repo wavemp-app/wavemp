@@ -16,6 +16,7 @@ const job: Job = {
     state: 'Idle',
     intervalMinutes: 1440,
     dailyAt: '03:00',
+    timeZone: 'UTC',
     nextRunAt: new Date('2026-11-17T03:00:00Z'),
     lastRun: {
         id: 'run',
@@ -93,7 +94,7 @@ describe('AdminBackupsView', () => {
             status.get('[data-item="status"] [data-part="badge"]').attributes('data-state'),
         ).toBe('succeeded')
         expect(status.get('[data-item="schedule"] [data-part="stat-value"]').text()).toBe(
-            'Daily at 03:00',
+            'Daily at 03:00 (UTC)',
         )
         expect(status.get('[data-item="backups"] [data-part="stat-value"]').text()).toBe('2')
         expect(status.get('[data-item="size"] [data-part="stat-value"]').text()).toBe('3 MB')
@@ -106,6 +107,34 @@ describe('AdminBackupsView', () => {
         expect((wrapper.get('input[type="time"]').element as HTMLInputElement).value).toBe('03:00')
         expect((wrapper.get('select').element as HTMLSelectElement).value).toBe('7')
         expect(wrapper.find('[data-part="alert"]').exists()).toBe(false)
+        wrapper.unmount()
+    })
+
+    it('names the time zone of the schedule and of the next backup', async () => {
+        const { wrapper } = await mountView()
+
+        const status = wrapper.get('[data-part="backup-status"]')
+        // The next backup is shown in the time zone of the browser, with the name of that zone.
+        expect(status.get('[data-item="next-run"] [data-part="stat-value"]').text()).toMatch(
+            /^Nov 1[67], 2026, .+ (UTC|GMT([+-]\d{1,2}(:\d{2})?)?|[A-Z]{3,5})$/,
+        )
+        expect(wrapper.get('[data-field="backup-time"] [data-part="field-hint"]').text()).toBe(
+            'In the time zone of the server: UTC (TZ).',
+        )
+        wrapper.unmount()
+    })
+
+    it('marks the schedule as server time when the server does not name its time zone', async () => {
+        const { wrapper } = await mountView({ job: { ...job, timeZone: null }, backups })
+
+        expect(
+            wrapper
+                .get('[data-part="backup-status"] [data-item="schedule"] [data-part="stat-value"]')
+                .text(),
+        ).toBe('Daily at 03:00 (server time)')
+        expect(wrapper.get('[data-field="backup-time"] [data-part="field-hint"]').text()).toBe(
+            'In the time zone of the server (TZ).',
+        )
         wrapper.unmount()
     })
 

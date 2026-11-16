@@ -3,10 +3,12 @@ import { useI18n } from 'vue-i18n'
 import type { Job } from '@/api/generated/models'
 import {
     activityOf,
+    dailyScheduleKey,
     durationSeconds,
     errorLabelKey,
     jobNameKey,
     jobScheduleKey,
+    runDateTimeFormat,
     statusPresentation,
 } from '@/admin/presentation'
 import BaseButton from '@/components/base/BaseButton.vue'
@@ -39,7 +41,7 @@ function state(job: Job): string {
 }
 
 function dateTime(date: Date): string {
-    return format.date(date, { dateStyle: 'medium', timeStyle: 'short' })
+    return format.date(date, runDateTimeFormat)
 }
 </script>
 
@@ -89,7 +91,10 @@ function dateTime(date: Date): string {
                         t('adminJobs.nextRun', { date: dateTime(job.nextRunAt) })
                     }}</span>
                     <span v-if="job.dailyAt" data-part="label">{{
-                        t('adminJobs.dailyAt', { time: job.dailyAt })
+                        t(dailyScheduleKey('adminJobs', job.timeZone), {
+                            time: job.dailyAt,
+                            timeZone: job.timeZone,
+                        })
                     }}</span>
                     <span v-else-if="job.intervalMinutes" data-part="label">{{
                         t('adminJobs.schedule', { minutes: format.number(job.intervalMinutes) })

@@ -226,6 +226,32 @@ export function jobScheduleKey(id: string | null | undefined): string {
     return jobNames[id ?? '']?.scheduleKey ?? 'adminJobs.manualOnly'
 }
 
+/**
+ * Date format of the runs of a job: the moment in the time zone of the browser together with the
+ * name of that zone, e.g. "Nov 17, 2026, 4:00 AM GMT+1". The zone is named because the time of
+ * day of a daily schedule is in the time zone of the server, which may be another one.
+ */
+export const runDateTimeFormat: Intl.DateTimeFormatOptions = {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    timeZoneName: 'short',
+}
+
+/**
+ * Message key of the time of day of a daily schedule ({time}, in the time zone of the server):
+ * with the IANA id of that zone ({timeZone}) when the API names it, otherwise marked as the time
+ * of the server.
+ */
+export function dailyScheduleKey(
+    namespace: 'adminJobs' | 'adminBackups',
+    timeZone: string | null | undefined,
+): string {
+    return timeZone ? `${namespace}.dailyAtZone` : `${namespace}.dailyAt`
+}
+
 /** Duration in seconds of a run that took the given milliseconds. */
 export function durationSeconds(milliseconds: number | null | undefined): number | null {
     return milliseconds === null || milliseconds === undefined

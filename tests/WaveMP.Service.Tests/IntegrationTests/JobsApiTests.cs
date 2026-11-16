@@ -79,6 +79,9 @@ public class JobsApiTests
         covers.NextRunAt.Should().BeNull();
         covers.DailyAt.Should().BeNull();
         scan.DailyAt.Should().BeNull();
+        covers.TimeZone.Should().BeNull();
+        scan.TimeZone.Should().BeNull();
+        backup.TimeZone.Should().NotBeNullOrWhiteSpace();
         backup.DailyAt.Should().Be("03:00");
         backup.IntervalMinutes.Should().Be(1440);
     }

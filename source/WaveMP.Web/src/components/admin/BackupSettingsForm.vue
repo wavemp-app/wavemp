@@ -13,6 +13,11 @@ import { validationMessagesByField } from '@/i18n/validation'
 import { useBackupSettingsStore } from '@/stores/backupSettings'
 
 /** Settings of the database backups: the time of the daily export and how many exports are kept. */
+const props = defineProps<{
+    /** IANA id of the time zone of the server, in which the time of the daily export is set. */
+    timeZone?: string | null
+}>()
+
 const emit = defineEmits<{
     saved: []
 }>()
@@ -126,7 +131,11 @@ onMounted(async () => {
             data-field="backup-time"
             type="time"
             :label="t('adminBackups.scheduleTime')"
-            :hint="t('adminBackups.scheduleTimeHint')"
+            :hint="
+                props.timeZone
+                    ? t('adminBackups.scheduleTimeHintZone', { timeZone: props.timeZone })
+                    : t('adminBackups.scheduleTimeHint')
+            "
             :error="invalid.scheduleTime"
             :disabled="saving"
             required

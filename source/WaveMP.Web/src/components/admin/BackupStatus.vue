@@ -2,7 +2,13 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { Backup, Job } from '@/api/generated/models'
-import { activityOf, errorLabelKey, statusPresentation } from '@/admin/presentation'
+import {
+    activityOf,
+    dailyScheduleKey,
+    errorLabelKey,
+    runDateTimeFormat,
+    statusPresentation,
+} from '@/admin/presentation'
 import BaseButton from '@/components/base/BaseButton.vue'
 import { useFormat } from '@/composables/useFormat'
 
@@ -41,9 +47,7 @@ const errorKey = computed(() =>
 )
 
 function dateTime(date: Date | null | undefined): string {
-    return date
-        ? format.date(date, { dateStyle: 'medium', timeStyle: 'short' })
-        : t('adminBackups.none')
+    return date ? format.date(date, runDateTimeFormat) : t('adminBackups.none')
 }
 
 const statistics = computed(() => [
@@ -59,7 +63,10 @@ const statistics = computed(() => [
         id: 'schedule',
         labelKey: 'adminBackups.stats.schedule',
         text: props.job.dailyAt
-            ? t('adminBackups.dailyAt', { time: props.job.dailyAt })
+            ? t(dailyScheduleKey('adminBackups', props.job.timeZone), {
+                  time: props.job.dailyAt,
+                  timeZone: props.job.timeZone,
+              })
             : t('adminBackups.none'),
     },
     {

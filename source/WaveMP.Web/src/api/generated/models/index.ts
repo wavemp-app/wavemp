@@ -1649,6 +1649,7 @@ export function deserializeIntoJob(job: Partial<Job> | undefined = {}) : Record<
         "lastRun": n => { job.lastRun = n.getObjectValue<JobRun>(createJobRunFromDiscriminatorValue); },
         "nextRunAt": n => { job.nextRunAt = n.getDateValue(); },
         "state": n => { job.state = n.getEnumValue<JobState>(JobStateObject); },
+        "timeZone": n => { job.timeZone = n.getStringValue(); },
     }
 }
 /**
@@ -2821,7 +2822,7 @@ export interface Home extends AdditionalDataHolder, Parsable {
  */
 export interface Job extends AdditionalDataHolder, Parsable {
     /**
-     * Time of day as `HH:mm` for jobs that run every day at a fixed time, in the time zone of the server; int? JobDto.IntervalMinutes is then 1440.
+     * Time of day as `HH:mm` for jobs that run every day at a fixed time, in the time zone of the server (`timeZone`); int? JobDto.IntervalMinutes is then 1440.
      */
     dailyAt?: string | null;
     /**
@@ -2844,6 +2845,10 @@ export interface Job extends AdditionalDataHolder, Parsable {
      * What a job is doing right now.
      */
     state?: JobState | null;
+    /**
+     * IANA id of the time zone of `dailyAt`, e.g. `UTC` or `Europe/Berlin`: the time zone of the server (`TZ`). Null for jobs without a daily schedule and when the server does not know the IANA id of its time zone.
+     */
+    timeZone?: string | null;
 }
 export type JobErrorCode = (typeof JobErrorCodeObject)[keyof typeof JobErrorCodeObject];
 export type JobId = (typeof JobIdObject)[keyof typeof JobIdObject];
@@ -4048,6 +4053,7 @@ export function serializeJob(writer: SerializationWriter, job: Partial<Job> | un
     writer.writeObjectValue<JobRun>("lastRun", job.lastRun, serializeJobRun);
     writer.writeDateValue("nextRunAt", job.nextRunAt);
     writer.writeEnumValue<JobState>("state", job.state);
+    writer.writeStringValue("timeZone", job.timeZone);
     writer.writeAdditionalData(job.additionalData);
 }
 /**
@@ -6061,7 +6067,7 @@ export const HealthStatusObject = {
     Unhealthy: "Unhealthy",
 } as const;
 /**
- * Video with sound or sound only.
+ * What an HLS stream of a track carries.
  */
 export const HlsMediaObject = {
     Audio: "Audio",

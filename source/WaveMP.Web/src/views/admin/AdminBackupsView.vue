@@ -129,7 +129,7 @@ onMounted(async () => {
             <h2 :id="settingsTitleId" data-part="section-title">
                 {{ t('adminBackups.settingsTitle') }}
             </h2>
-            <BackupSettingsForm @saved="store.load()" />
+            <BackupSettingsForm :time-zone="store.job?.timeZone" @saved="store.load()" />
         </section>
         <BackupDeleteDialog
             v-model:open="dialogOpen"

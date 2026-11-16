@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using AwesomeAssertions;
+using WaveMP.Core.Jobs.Extensions;
 using WaveMP.Service.Dtos;
 using WaveMP.Service.Tests.IntegrationTests.Extensions;
 using WaveMP.Service.Tests.IntegrationTests.Fakes;
@@ -96,6 +97,8 @@ public class BackupsApiTests
         job.NextRunAt!.Value.Should().BeAfter(DateTimeOffset.UtcNow);
         job.NextRunAt.Value.Should().BeOnOrBefore(DateTimeOffset.UtcNow.AddDays(1));
         LocalTimeOfDay(job.NextRunAt.Value).Should().Be(new TimeSpan(3, 0, 0), "the schedule uses the local time");
+        job.TimeZone.Should().Be(TimeZoneInfo.Local.ToIanaId(), "the schedule names the time zone of the server");
+        job.TimeZone.Should().NotBeNullOrWhiteSpace();
     }
 
     [Test]

@@ -1,5 +1,6 @@
 using System.Globalization;
 using WaveMP.Core.Jobs.Definitions;
+using WaveMP.Core.Jobs.Extensions;
 using WaveMP.Core.Jobs.Runs;
 using WaveMP.Core.Jobs.Services;
 using WaveMP.Data.Entities;
@@ -17,6 +18,7 @@ public static class JobMappingExtensions
             State = job.State.ToDto(),
             IntervalMinutes = job.Schedule is { } schedule ? (int)schedule.Interval.TotalMinutes : null,
             DailyAt = job.Schedule?.DailyAt?.ToString("HH:mm", CultureInfo.InvariantCulture),
+            TimeZone = job.Schedule is { DailyAt: not null, TimeZone: { } timeZone } ? timeZone.ToIanaId() : null,
             NextRunAt = job.NextRunAt,
             LastRun = job.LastRun?.ToDto(),
         };

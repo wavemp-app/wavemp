@@ -473,6 +473,7 @@ const sampleBackupJob: Job = {
     state: 'Idle',
     intervalMinutes: 1440,
     dailyAt: '03:00',
+    timeZone: 'UTC',
     nextRunAt: new Date(sampleTime.getTime() + 12 * 3_600_000),
     lastRun: {
         id: 'backup',

@@ -15,10 +15,17 @@ public sealed class JobDto
     public int? IntervalMinutes { get; init; }
 
     /// <summary>
-    /// Time of day as <c>HH:mm</c> for jobs that run every day at a fixed time, in the time zone of the server;
-    /// <see cref="IntervalMinutes"/> is then 1440.
+    /// Time of day as <c>HH:mm</c> for jobs that run every day at a fixed time, in the time zone of the server
+    /// (<c>timeZone</c>); <see cref="IntervalMinutes"/> is then 1440.
     /// </summary>
     public string? DailyAt { get; init; }
+
+    /// <summary>
+    /// IANA id of the time zone of <c>dailyAt</c>, e.g. <c>UTC</c> or <c>Europe/Berlin</c>: the time zone of
+    /// the server (<c>TZ</c>). Null for jobs without a daily schedule and when the server does not know the IANA id
+    /// of its time zone.
+    /// </summary>
+    public string? TimeZone { get; init; }
 
     /// <summary>
     /// When the schedule runs the job next.

@@ -8279,7 +8279,14 @@
               "null",
               "string"
             ],
-            "description": "Time of day as `HH:mm` for jobs that run every day at a fixed time, in the time zone of the server; int? JobDto.IntervalMinutes is then 1440."
+            "description": "Time of day as `HH:mm` for jobs that run every day at a fixed time, in the time zone of the server (`timeZone`); int? JobDto.IntervalMinutes is then 1440."
+          },
+          "timeZone": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "IANA id of the time zone of `dailyAt`, e.g. `UTC` or `Europe/Berlin`: the time zone of the server (`TZ`). Null for jobs without a daily schedule and when the server does not know the IANA id of its time zone."
           },
           "nextRunAt": {
             "type": [

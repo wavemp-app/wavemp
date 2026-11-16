@@ -4,6 +4,7 @@ import {
     backupRetentionOptions,
     backupTriggerPresentation,
     cacheLimitOptions,
+    dailyScheduleKey,
     durationSeconds,
     errorLabelKey,
     formatList,
@@ -16,10 +17,12 @@ import {
     parseList,
     phaseLabelKey,
     progressRatio,
+    runDateTimeFormat,
     statusPresentation,
     triggerLabelKey,
     usageRatio,
 } from '../presentation'
+import { formatDate } from '@/i18n/format'
 
 describe('presentation of the administration', () => {
     it('offers intervals the server accepts, in ascending order', () => {
@@ -117,6 +120,26 @@ describe('presentation of the administration', () => {
         expect(isTimeOfDay('3:00')).toBe(false)
         expect(isTimeOfDay('03:00:00')).toBe(false)
         expect(isTimeOfDay('')).toBe(false)
+    })
+
+    it('names the time zone of the server next to the time of a daily schedule', () => {
+        expect(dailyScheduleKey('adminBackups', 'Europe/Berlin')).toBe('adminBackups.dailyAtZone')
+        expect(dailyScheduleKey('adminJobs', 'UTC')).toBe('adminJobs.dailyAtZone')
+        expect(dailyScheduleKey('adminBackups', null)).toBe('adminBackups.dailyAt')
+        expect(dailyScheduleKey('adminJobs', undefined)).toBe('adminJobs.dailyAt')
+        expect(dailyScheduleKey('adminJobs', '')).toBe('adminJobs.dailyAt')
+    })
+
+    it('names the time zone of the browser in the date of a run', () => {
+        // 03:00 UTC, the default schedule of a server with TZ=UTC, seen in a browser in Berlin.
+        const nextRun = new Date('2026-11-17T03:00:00Z')
+        const berlin = { ...runDateTimeFormat, timeZone: 'Europe/Berlin' }
+
+        expect(formatDate(nextRun, 'en', berlin)).toBe('Nov 17, 2026, 4:00 AM GMT+1')
+        expect(formatDate(nextRun, 'de', berlin)).toBe('17. Nov. 2026, 04:00 MEZ')
+        expect(formatDate(nextRun, 'en', { ...runDateTimeFormat, timeZone: 'UTC' })).toBe(
+            'Nov 17, 2026, 3:00 AM UTC',
+        )
     })
 
     it('offers size limits of the cache the server accepts, in ascending order', () => {
