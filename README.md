@@ -297,6 +297,8 @@ This builds the image from source and starts WaveMP on `http://localhost:8080`. 
 | `assets/` | Graphics, icons, themes and license texts; `assets/web` is served unchanged by the web app |
 | `.github/` | GitHub Actions workflows, license check script and policy |
 | `THEMING.md` | Theme API for theme authors |
+| `THIRD-PARTY-NOTICES.md` | Third-party components and their licenses |
+| `docs/releases` | Release notes of the milestones |
 
 ### Local development
 
@@ -417,6 +419,8 @@ node --test .github/scripts/check-licenses.test.mjs   # tests of the check itsel
 
 It restores the .NET tools and npm packages it needs by itself and fails if a package has a license that is not allowed or no license information. It also fails if a .NET project is not part of `WaveMP.slnx` or a tool manifest or npm project is missing from the policy (`nuget.toolManifests`, `npm.projects`), so new projects cannot be skipped. Exceptions for single packages are only added to the policy after a manual license review, npm exceptions with their exact version.
 
+[THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md) lists every direct dependency of all projects with its license, plus the components of the Docker image; the image ships it under `/licenses`. The license check fails if a direct dependency (a package of `Directory.Packages.props`, a tool of `dotnet-tools.json` or a package in `dependencies` or `devDependencies` of an npm project) is missing there, or if it lists a package that no project uses any more: add a row with the name in backticks, its license and its use whenever you add a package, and remove the row when you remove one.
+
 ### Continuous integration
 
 GitHub Actions run `.github/workflows/test.yml` for every pull request (`pull-request.yml`) and every push to `main` (`main.yml`): the .NET build with unit and media tests (with ffmpeg) and integration tests against a PostgreSQL 18 service container, lint, type check, unit tests (Vitest) and build of the web app, the license check, and the E2E tests against the Docker image with synthetic test media. After the tests pass, `main.yml` publishes the image with the tags `1.0.N`, `1.0`, `latest`, `edge` and `sha-<commit>` and checks that both registries deliver it.
@@ -428,4 +432,4 @@ All foreign Docker images in the `Dockerfile`, in `docker-compose.dev.yml` and i
 ## License
 
 WaveMP is licensed under the [MIT License](LICENSE).
-It uses [ffmpeg](https://ffmpeg.org) as a separate process, [TagLib#](https://github.com/mono/taglib-sharp) (LGPL-2.1, used unchanged as a separate assembly) and, in the Docker image, [ICU](https://icu.unicode.org) (Unicode-3.0) for Unicode normalization and culture-aware text handling, which are licensed separately; see the notices shipped with the image under `/licenses`.
+It uses [ffmpeg](https://ffmpeg.org) and `pg_dump` of [PostgreSQL](https://www.postgresql.org) as separate processes, [TagLib#](https://github.com/mono/taglib-sharp) (LGPL-2.1, used unchanged as a separate assembly), [butterchurn](https://github.com/jberg/butterchurn) with its presets (MIT) for the Milkdrop visualization and, in the Docker image, [ICU](https://icu.unicode.org) (Unicode-3.0) for Unicode normalization and culture-aware text handling, which are licensed separately. [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md) lists all third-party components with their licenses; the image ships it and the license texts under `/licenses`.

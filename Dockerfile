@@ -95,6 +95,8 @@ RUN if [ "$TARGETARCH" = "amd64" ]; then \
     fi
 
 COPY LICENSE /licenses/wavemp/LICENSE
+# Overview of all third-party components and their licenses.
+COPY THIRD-PARTY-NOTICES.md /licenses/THIRD-PARTY-NOTICES.md
 COPY assets/licenses/ffmpeg/ /licenses/ffmpeg/
 COPY assets/licenses/icu/ /licenses/icu/
 COPY assets/licenses/postgresql/ /licenses/postgresql/

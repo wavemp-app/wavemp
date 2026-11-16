@@ -4,7 +4,7 @@
 // afterwards.
 
 import assert from 'node:assert/strict'
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { after, before, describe, test } from 'node:test'
@@ -13,9 +13,13 @@ import {
     checkNpmProject,
     defaultPolicyFile,
     ensureNpmPackages,
+    findNoticeProblems,
     findUncoveredProjects,
+    listDirectDependencies,
     listProjectFiles,
     loadPolicy,
+    noticesFile,
+    readNoticePackages,
     readSolutionProjects,
     scriptsDirectory,
 } from './check-licenses.mjs'
@@ -369,5 +373,91 @@ describe('.NET tool license check', () => {
                 checkDotnetTools(withToolManifest(loadPolicy(), manifest), emptyPackagesDirectory),
             /mit\.tool 1\.0\.0 is not restored/,
         )
+    })
+})
+
+describe('third-party notices', () => {
+    test('list every direct dependency of the repository and nothing else', () => {
+        const policy = loadPolicy()
+
+        const problems = findNoticeProblems(
+            listDirectDependencies(policy),
+            readNoticePackages(readFileSync(noticesFile, 'utf8')),
+        )
+
+        assert.deepEqual(problems, [])
+    })
+
+    test('finds the direct dependencies of NuGet, the .NET tools and npm', () => {
+        const root = path.join(temporaryDirectory, 'dependencies')
+        mkdirSync(root, { recursive: true })
+        writeFileSync(
+            path.join(root, 'Directory.Packages.props'),
+            [
+                '<Project>',
+                '  <ItemGroup>',
+                '    <PackageVersion Include="Quartz" Version="4.7.3" />',
+                '    <PackageVersion Version="4.6.1" Include="NUnit" />',
+                '  </ItemGroup>',
+                '</Project>',
+            ].join('\n'),
+        )
+        writeJson(path.join(root, 'dotnet-tools.json'), {
+            version: 1,
+            tools: { 'dotnet-ef': { version: '10.0.0', commands: ['dotnet-ef'] } },
+        })
+        writeJson(path.join(root, 'web', 'package.json'), {
+            dependencies: { vue: '^3.0.0' },
+            devDependencies: { vite: '^8.0.0' },
+        })
+        const policy = {
+            nuget: { toolManifests: ['dotnet-tools.json'] },
+            npm: { projects: ['web/'] },
+        }
+
+        const dependencies = listDirectDependencies(policy, root)
+
+        assert.deepEqual(dependencies, [
+            { kind: 'NuGet package', name: 'Quartz', source: 'Directory.Packages.props' },
+            { kind: 'NuGet package', name: 'NUnit', source: 'Directory.Packages.props' },
+            { kind: '.NET tool', name: 'dotnet-ef', source: 'dotnet-tools.json' },
+            { kind: 'npm package', name: 'vue', source: 'web/package.json' },
+            { kind: 'npm package', name: 'vite', source: 'web/package.json' },
+        ])
+    })
+
+    test('reads the packages from the first cell of table rows in backticks', () => {
+        const text = [
+            '| Component | License |',
+            '|---|---|',
+            '| FFmpeg (`ffmpeg`) | GPL-2.0-or-later |',
+            '| `Quartz` | Apache-2.0 |',
+            '|  `@vue/test-utils`  | MIT |',
+            'Text with `vue` in backticks.',
+        ].join('\n')
+
+        assert.deepEqual(readNoticePackages(text), ['Quartz', '@vue/test-utils'])
+    })
+
+    test('reports missing and outdated packages, NuGet names ignoring case', () => {
+        const dependencies = [
+            { kind: '.NET tool', name: 'microsoft.openapi.kiota', source: 'dotnet-tools.json' },
+            { kind: 'npm package', name: 'vue', source: 'web/package.json' },
+            { kind: 'npm package', name: '@types/node', source: 'web/package.json' },
+            { kind: 'npm package', name: '@types/node', source: 'e2e/package.json' },
+            { kind: 'NuGet package', name: 'Quartz', source: 'Directory.Packages.props' },
+        ]
+
+        const problems = findNoticeProblems(dependencies, [
+            'Microsoft.OpenApi.Kiota',
+            'vue',
+            'left-pad',
+        ])
+
+        assert.deepEqual(problems, [
+            'npm package @types/node (web/package.json) is missing in THIRD-PARTY-NOTICES.md',
+            'NuGet package Quartz (Directory.Packages.props) is missing in THIRD-PARTY-NOTICES.md',
+            'THIRD-PARTY-NOTICES.md lists left-pad, which no project uses any more',
+        ])
     })
 })

@@ -8,6 +8,8 @@
 // packages with licensee. Missing tools and packages are restored automatically. The check also
 // fails if the repository contains a .NET project outside the solution or a tool manifest or npm
 // project that the policy does not list, so that no dependency is missed.
+// THIRD-PARTY-NOTICES.md must list every direct dependency (a table row starting with its name in
+// backticks) and no package that is not used any more.
 // Exceptions for single packages are only added to the policy after a manual license review.
 // Exits with 0 if every dependency has an allowed license, otherwise with 1.
 
@@ -22,6 +24,7 @@ import { parseArgs } from 'node:util'
 export const scriptsDirectory = path.dirname(fileURLToPath(import.meta.url))
 export const repositoryRoot = path.resolve(scriptsDirectory, '..', '..')
 export const defaultPolicyFile = path.join(repositoryRoot, '.github', 'license-policy.json')
+export const noticesFile = path.join(repositoryRoot, 'THIRD-PARTY-NOTICES.md')
 
 // GPL, AGPL and LGPL must never be allowed globally (LGPL only as a reviewed package exception).
 const forbiddenLicensePattern = /GPL/i
@@ -180,6 +183,87 @@ export function findUncoveredProjects(policy, files, solutionProjects) {
             problems.push(`tool manifest ${file} is not listed in "nuget.toolManifests"`)
         } else if (name === 'package.json' && !npmProjects.has(path.posix.dirname(file))) {
             problems.push(`npm project ${path.posix.dirname(file)} is not listed in "npm.projects"`)
+        }
+    }
+
+    return problems
+}
+
+/**
+ * Lists the direct dependencies of all projects: the NuGet packages of the central package
+ * management (Directory.Packages.props), the local .NET tools of the tool manifests and the
+ * dependencies and devDependencies of the npm projects. Each entry has a kind, a name and the
+ * file that declares it, relative to the repository root.
+ */
+export function listDirectDependencies(policy, root = repositoryRoot) {
+    const dependencies = []
+    const packagesFile = path.join(root, 'Directory.Packages.props')
+    if (existsSync(packagesFile)) {
+        const content = readFileSync(packagesFile, 'utf8')
+        for (const match of content.matchAll(/<PackageVersion\b[^>]*\bInclude="([^"]+)"/g)) {
+            dependencies.push({
+                kind: 'NuGet package',
+                name: match[1],
+                source: 'Directory.Packages.props',
+            })
+        }
+    }
+    for (const manifest of policy.nuget.toolManifests) {
+        const tools = JSON.parse(readFileSync(path.join(root, manifest), 'utf8')).tools ?? {}
+        for (const name of Object.keys(tools)) {
+            dependencies.push({ kind: '.NET tool', name, source: normalizeRelativePath(manifest) })
+        }
+    }
+    for (const project of policy.npm.projects) {
+        const file = path.join(root, project, 'package.json')
+        const content = JSON.parse(readFileSync(file, 'utf8'))
+        const names = [
+            ...Object.keys(content.dependencies ?? {}),
+            ...Object.keys(content.devDependencies ?? {}),
+        ]
+        const source = path.posix.join(normalizeRelativePath(project), 'package.json')
+        for (const name of names) {
+            dependencies.push({ kind: 'npm package', name, source })
+        }
+    }
+
+    return dependencies
+}
+
+/**
+ * Returns the package names that THIRD-PARTY-NOTICES.md lists: the first cell of every table row
+ * that is a name in backticks. Rows of other tables (e.g. the components of the Docker image)
+ * start with plain text and are not packages.
+ */
+export function readNoticePackages(text) {
+    return [...text.matchAll(/^\|\s*`([^`]+)`\s*\|/gm)].map((match) => match[1])
+}
+
+/**
+ * Compares the direct dependencies with the packages of THIRD-PARTY-NOTICES.md and returns a
+ * message for every dependency that is missing there and for every listed package that no project
+ * uses any more. Names are compared ignoring case, like NuGet does.
+ */
+export function findNoticeProblems(
+    dependencies,
+    listedPackages,
+    noticesFile = 'THIRD-PARTY-NOTICES.md',
+) {
+    const listed = new Set(listedPackages.map((name) => name.toLowerCase()))
+    const used = new Set(dependencies.map((dependency) => dependency.name.toLowerCase()))
+    const problems = []
+    const reported = new Set()
+    for (const dependency of dependencies) {
+        const key = dependency.name.toLowerCase()
+        if (!listed.has(key) && !reported.has(key)) {
+            reported.add(key)
+            const { kind, name, source } = dependency
+            problems.push(`${kind} ${name} (${source}) is missing in ${noticesFile}`)
+        }
+    }
+    for (const name of new Set(listedPackages)) {
+        if (!used.has(name.toLowerCase())) {
+            problems.push(`${noticesFile} lists ${name}, which no project uses any more`)
         }
     }
 
@@ -490,6 +574,19 @@ export async function main(argv) {
         }
         console.log(`Projects: ${uncovered.length} not covered by the license check`)
 
+        const noticeProblems = findNoticeProblems(
+            listDirectDependencies(policy),
+            readNoticePackages(readFileSync(noticesFile, 'utf8')),
+            relativeToRoot(noticesFile),
+        )
+        for (const problem of noticeProblems) {
+            console.error(`  ${problem}`)
+        }
+        console.log(
+            `${relativeToRoot(noticesFile)}: ${noticeProblems.length} direct dependencies ` +
+                'missing or outdated',
+        )
+
         ensureNpmPackages(scriptsDirectory)
         let rejected = report(`NuGet ${policy.nuget.solution}`, checkNuGet(policy))
         rejected += report(
@@ -507,6 +604,13 @@ export async function main(argv) {
             console.error(
                 `${uncovered.length} projects are not covered: add .NET projects to the solution, ` +
                     `tool manifests and npm projects to ${relativeToRoot(policyFile)}.`,
+            )
+            failed = true
+        }
+        if (noticeProblems.length > 0) {
+            console.error(
+                `${relativeToRoot(noticesFile)} is not up to date: list every direct dependency ` +
+                    'with its license and remove packages that are no longer used.',
             )
             failed = true
         }
