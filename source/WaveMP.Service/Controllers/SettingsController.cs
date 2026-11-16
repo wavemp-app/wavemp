@@ -21,7 +21,8 @@ namespace WaveMP.Service.Controllers;
 public sealed class SettingsController(
     ILibrarySettingsService librarySettings,
     ICacheSettingsService cacheSettings,
-    ITranscodingSettingsService transcodingSettings) : ControllerBase
+    ITranscodingSettingsService transcodingSettings,
+    IBackupSettingsService backupSettings) : ControllerBase
 {
     /// <summary>
     /// Returns the settings of the media library.
@@ -157,6 +158,53 @@ public sealed class SettingsController(
         }
 
         foreach (TranscodingSettingsValidationError error in result.Errors)
+        {
+            ModelState.AddValidationError(
+                error.Field.ToJsonName(),
+                error.Reason.ToCode(),
+                error.Minimum,
+                error.Maximum);
+        }
+
+        return ValidationProblem();
+    }
+
+    /// <summary>
+    /// Returns the settings of the database backups.
+    /// </summary>
+    /// <param name="cancellationToken">Aborts the request.</param>
+    /// <response code="200">The backup settings.</response>
+    [HttpGet("backup", Name = "GetBackupSettings")]
+    [ProducesResponseType<BackupSettingsDto>(StatusCodes.Status200OK, "application/json")]
+    public async Task<ActionResult<BackupSettingsDto>> GetBackupSettingsAsync(CancellationToken cancellationToken)
+    {
+        BackupSettings settings = await backupSettings.GetAsync(cancellationToken);
+        return Ok(settings.ToDto());
+    }
+
+    /// <summary>
+    /// Changes the settings of the database backups. Missing or null values stay unchanged. A new time of day plans
+    /// the daily backup again at once; a lower number of kept exports applies with the next export.
+    /// </summary>
+    /// <param name="request">The changes.</param>
+    /// <param name="cancellationToken">Aborts the request.</param>
+    /// <response code="200">The changed settings.</response>
+    /// <response code="400">The request is invalid (code <c>request.invalid</c>, errors by field).</response>
+    [HttpPatch("backup", Name = "UpdateBackupSettings")]
+    [Consumes("application/json")]
+    [ProducesResponseType<BackupSettingsDto>(StatusCodes.Status200OK, "application/json")]
+    [ProducesResponseType<ValidationProblemDto>(StatusCodes.Status400BadRequest, "application/problem+json")]
+    public async Task<ActionResult<BackupSettingsDto>> UpdateBackupSettingsAsync(
+        UpdateBackupSettingsDto request,
+        CancellationToken cancellationToken)
+    {
+        BackupSettingsResult result = await backupSettings.UpdateAsync(request.ToCommand(), cancellationToken);
+        if (result.IsSuccess)
+        {
+            return Ok(result.Settings.ToDto());
+        }
+
+        foreach (BackupSettingsValidationError error in result.Errors)
         {
             ModelState.AddValidationError(
                 error.Field.ToJsonName(),

@@ -32,6 +32,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\WaveMP.Core.Backups\WaveMP.Core.Backups.csproj" />
     <ProjectReference Include="..\WaveMP.Core.Caching\WaveMP.Core.Caching.csproj" />
     <ProjectReference Include="..\WaveMP.Core.Collection\WaveMP.Core.Collection.csproj" />
     <ProjectReference Include="..\WaveMP.Core.Jobs\WaveMP.Core.Jobs.csproj" />

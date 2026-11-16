@@ -23,7 +23,7 @@ namespace WaveMP.Service.Controllers;
 [ProducesResponseType<ProblemDetails>(StatusCodes.Status403Forbidden, "application/problem+json")]
 public sealed class JobsController(IJobService jobs) : ControllerBase
 {
-    private const string GetJobRunRoute = "GetJobRun";
+    internal const string GetJobRunRoute = "GetJobRun";
 
     /// <summary>
     /// Lists the jobs with their state, schedule, next and last run.
@@ -43,6 +43,24 @@ public sealed class JobsController(IJobService jobs) : ControllerBase
     {
         Page<JobOverview> page = await jobs.ListAsync(offset, limit, cancellationToken);
         return Ok(page.ToDto(job => job.ToDto()));
+    }
+
+    /// <summary>
+    /// Returns a job with its state, schedule, next and last run.
+    /// </summary>
+    /// <param name="id">Id of the job, e.g. <c>database-backup</c>.</param>
+    /// <param name="cancellationToken">Aborts the request.</param>
+    /// <response code="200">The job.</response>
+    /// <response code="404">The job does not exist (code <c>job.not_found</c>).</response>
+    [HttpGet("{id}", Name = "GetJob")]
+    [ProducesResponseType<JobDto>(StatusCodes.Status200OK, "application/json")]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound, "application/problem+json")]
+    public async Task<ActionResult<JobDto>> GetJobAsync(string id, CancellationToken cancellationToken)
+    {
+        JobOverview? job = await jobs.GetAsync(id, cancellationToken);
+        return job is null
+            ? this.Problem(ProblemCodeDto.JobNotFound, StatusCodes.Status404NotFound)
+            : Ok(job.ToDto());
     }
 
     /// <summary>

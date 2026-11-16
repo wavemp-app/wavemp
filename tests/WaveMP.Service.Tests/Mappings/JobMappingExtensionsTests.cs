@@ -12,6 +12,7 @@ public class JobMappingExtensionsTests
 {
     [TestCase(JobIds.LibraryScan, JobIdDto.LibraryScan, "library-scan")]
     [TestCase(JobIds.CoverCache, JobIdDto.CoverCache, "cover-cache")]
+    [TestCase(JobIds.DatabaseBackup, JobIdDto.DatabaseBackup, "database-backup")]
     public void ToJobIdDto_EveryJob_HasItsIdInTheApi(string jobId, JobIdDto expected, string json)
     {
         jobId.ToJobIdDto().Should().Be(expected);
@@ -36,5 +37,7 @@ public class JobMappingExtensionsTests
         JsonSerializer.Serialize(JobErrorCode.FfmpegUnavailable.ToDto()).Should().Be("\"cache.ffmpeg_unavailable\"");
         JsonSerializer.Serialize(JobErrorCode.CacheFolderUnwritable.ToDto())
             .Should().Be("\"cache.folder_unwritable\"");
+        JsonSerializer.Serialize(JobErrorCode.PgDumpUnavailable.ToDto())
+            .Should().Be("\"backup.pg_dump_unavailable\"");
     }
 }

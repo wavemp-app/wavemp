@@ -64,18 +64,23 @@ public class JobsApiTests
     }
 
     [Test]
-    public async Task ListJobs_Always_ContainsTheLibraryScanWithItsScheduleAndTheCoversWithout()
+    public async Task ListJobs_Always_ContainsTheJobsWithTheirSchedules()
     {
         PageDto<JobDto> jobs = await _admin.GetJsonAsync<PageDto<JobDto>>("/api/v1/jobs");
 
         JobDto scan = jobs.Items.Should().ContainSingle(job => job.Id == JobIdDto.LibraryScan).Subject;
         JobDto covers = jobs.Items.Should().ContainSingle(job => job.Id == JobIdDto.CoverCache).Subject;
-        jobs.Total.Should().Be(2);
+        JobDto backup = jobs.Items.Should().ContainSingle(job => job.Id == JobIdDto.DatabaseBackup).Subject;
+        jobs.Total.Should().Be(3);
         scan.State.Should().Be(JobStateDto.Idle);
         scan.IntervalMinutes.Should().Be(360);
         scan.NextRunAt.Should().BeAfter(DateTimeOffset.UtcNow);
         covers.IntervalMinutes.Should().BeNull();
         covers.NextRunAt.Should().BeNull();
+        covers.DailyAt.Should().BeNull();
+        scan.DailyAt.Should().BeNull();
+        backup.DailyAt.Should().Be("03:00");
+        backup.IntervalMinutes.Should().Be(1440);
     }
 
     [Test]

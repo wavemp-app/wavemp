@@ -15,6 +15,12 @@ public sealed class JobDto
     public int? IntervalMinutes { get; init; }
 
     /// <summary>
+    /// Time of day as <c>HH:mm</c> for jobs that run every day at a fixed time, in the time zone of the server;
+    /// <see cref="IntervalMinutes"/> is then 1440.
+    /// </summary>
+    public string? DailyAt { get; init; }
+
+    /// <summary>
     /// When the schedule runs the job next.
     /// </summary>
     public DateTimeOffset? NextRunAt { get; init; }

@@ -20,4 +20,10 @@ public enum JobIdDto
     /// </summary>
     [JsonStringEnumMemberName("cover-cache")]
     CoverCache,
+
+    /// <summary>
+    /// Exports the database into the backup folder, every day and when an admin starts it.
+    /// </summary>
+    [JsonStringEnumMemberName("database-backup")]
+    DatabaseBackup,
 }

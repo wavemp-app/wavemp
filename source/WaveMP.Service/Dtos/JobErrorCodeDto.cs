@@ -56,4 +56,22 @@ public enum JobErrorCodeDto
     /// </summary>
     [JsonStringEnumMemberName("cache.folder_unwritable")]
     CacheFolderUnwritable,
+
+    /// <summary>
+    /// The backup folder under the data folder cannot be written.
+    /// </summary>
+    [JsonStringEnumMemberName("backup.folder_unwritable")]
+    BackupFolderUnwritable,
+
+    /// <summary>
+    /// pg_dump cannot be started, so the database cannot be exported.
+    /// </summary>
+    [JsonStringEnumMemberName("backup.pg_dump_unavailable")]
+    BackupPgDumpUnavailable,
+
+    /// <summary>
+    /// pg_dump failed or took too long; details are in the server log.
+    /// </summary>
+    [JsonStringEnumMemberName("backup.failed")]
+    BackupFailed,
 }

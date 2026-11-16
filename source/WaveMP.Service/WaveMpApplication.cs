@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Options;
+using WaveMP.Core.Backups.Extensions;
 using WaveMP.Core.Caching.Extensions;
 using WaveMP.Core.Collection.Extensions;
 using WaveMP.Core.Jobs.Extensions;
@@ -56,6 +57,7 @@ public static class WaveMpApplication
         builder.Services.AddWaveMpCollection();
         builder.Services.AddWaveMpStreaming();
         builder.Services.AddWaveMpTranscoding();
+        builder.Services.AddWaveMpBackups();
         builder.Services.AddWaveMpAuthentication();
         builder.Services.AddHealthChecks()
             .AddDbContextCheck<WaveMpDbContext>("database");
@@ -84,10 +86,11 @@ public static class WaveMpApplication
     }
 
     /// <summary>
-    /// Validates the database configuration, applies pending migrations, creates the built-in admin profile on the
-    /// first start, loads the keys that sign the session tokens and the media URLs and the server settings, prepares
-    /// the cache folder, and plans the background jobs (they start to run once the application has started).
-    /// Returns <c>false</c> if the configuration is invalid; the reason is logged.
+    /// Validates the database configuration, exports the database and applies pending migrations, creates the
+    /// built-in admin profile on the first start, loads the keys that sign the session tokens and the media URLs and
+    /// the server settings, prepares the cache folder, and plans the background jobs (they start to run once the
+    /// application has started). Returns <c>false</c> if the configuration is invalid or the export before the
+    /// migrations failed; the reason is logged.
     /// </summary>
     public static async Task<bool> InitializeAsync(WebApplication app, CancellationToken cancellationToken = default)
     {
@@ -101,7 +104,12 @@ public static class WaveMpApplication
             return false;
         }
 
-        await app.Services.MigrateWaveMpDatabaseAsync(cancellationToken);
+        // Before every migration of a database with data, the database is exported; without an export, no migration.
+        if (!await app.Services.MigrateWaveMpDatabaseWithBackupAsync(cancellationToken))
+        {
+            return false;
+        }
+
         await app.Services.InitializeWaveMpUsersAsync(cancellationToken);
         await app.Services.GetRequiredService<SigningKeyStore>().InitializeAsync(cancellationToken);
         await app.Services.InitializeWaveMpStreamingAsync(cancellationToken);

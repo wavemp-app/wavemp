@@ -118,6 +118,12 @@ public enum ProblemCodeDto
     JobRunNotFound,
 
     /// <summary>
+    /// There is no export of the database with this id (404).
+    /// </summary>
+    [JsonStringEnumMemberName("backup.not_found")]
+    BackupNotFound,
+
+    /// <summary>
     /// The artist does not exist (404).
     /// </summary>
     [JsonStringEnumMemberName("artist.not_found")]

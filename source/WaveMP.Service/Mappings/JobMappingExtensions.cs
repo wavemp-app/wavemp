@@ -1,3 +1,4 @@
+using System.Globalization;
 using WaveMP.Core.Jobs.Definitions;
 using WaveMP.Core.Jobs.Runs;
 using WaveMP.Core.Jobs.Services;
@@ -15,6 +16,7 @@ public static class JobMappingExtensions
             Id = job.JobId.ToJobIdDto(),
             State = job.State.ToDto(),
             IntervalMinutes = job.Schedule is { } schedule ? (int)schedule.Interval.TotalMinutes : null,
+            DailyAt = job.Schedule?.DailyAt?.ToString("HH:mm", CultureInfo.InvariantCulture),
             NextRunAt = job.NextRunAt,
             LastRun = job.LastRun?.ToDto(),
         };
@@ -52,6 +54,7 @@ public static class JobMappingExtensions
         {
             JobIds.LibraryScan => JobIdDto.LibraryScan,
             JobIds.CoverCache => JobIdDto.CoverCache,
+            JobIds.DatabaseBackup => JobIdDto.DatabaseBackup,
             _ => throw new ArgumentOutOfRangeException(nameof(jobId), jobId, "Unknown job."),
         };
     }
@@ -131,6 +134,9 @@ public static class JobMappingExtensions
             JobErrorCode.ProbeUnavailable => JobErrorCodeDto.ScanProbeUnavailable,
             JobErrorCode.FfmpegUnavailable => JobErrorCodeDto.CacheFfmpegUnavailable,
             JobErrorCode.CacheFolderUnwritable => JobErrorCodeDto.CacheFolderUnwritable,
+            JobErrorCode.BackupFolderUnwritable => JobErrorCodeDto.BackupFolderUnwritable,
+            JobErrorCode.PgDumpUnavailable => JobErrorCodeDto.BackupPgDumpUnavailable,
+            JobErrorCode.BackupFailed => JobErrorCodeDto.BackupFailed,
             _ => throw new ArgumentOutOfRangeException(nameof(code), code, "Unknown error code."),
         };
     }

@@ -1,9 +1,13 @@
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
+using WaveMP.Core.Backups.Exports;
 using WaveMP.Data;
+using WaveMP.Service.Tests.IntegrationTests.Fakes;
 using WaveMP.Testing.Databases;
 using WaveMP.Testing.Files;
 
@@ -27,10 +31,14 @@ namespace WaveMP.Service.Tests.IntegrationTests;
 /// <param name="mediaPath">
 /// The media folder (<c>MEDIA_PATH</c>); if <c>null</c>, an empty temporary folder that is deleted afterwards.
 /// </param>
+/// <param name="exporter">
+/// Replaces pg_dump for the database backups; if <c>null</c>, a <see cref="FakeDatabaseExporter"/> that succeeds.
+/// </param>
 public sealed class WaveMpWebApplicationFactory(
     string? databaseName = null,
     bool freshDatabase = false,
-    string? mediaPath = null) : WebApplicationFactory<Program>
+    string? mediaPath = null,
+    FakeDatabaseExporter? exporter = null) : WebApplicationFactory<Program>
 {
     public const string TestDatabaseName = "wavemp_tests";
 
@@ -40,9 +48,15 @@ public sealed class WaveMpWebApplicationFactory(
     private readonly TemporaryDirectory _data = new();
 
     /// <summary>
-    /// The data folder (<c>DATA_PATH</c>) of the service; the cache lies in its folder <c>cache</c>.
+    /// The data folder (<c>DATA_PATH</c>) of the service; the cache lies in its folder <c>cache</c>, the exports of the
+    /// database in its folder <c>backups</c>.
     /// </summary>
     public string DataPath => _data.Path;
+
+    /// <summary>
+    /// The export of the database that replaces pg_dump.
+    /// </summary>
+    public FakeDatabaseExporter Exporter { get; } = exporter ?? new FakeDatabaseExporter();
 
     private string DatabaseName => databaseName ?? Environment.GetEnvironmentVariable("DB_NAME") ?? TestDatabaseName;
 
@@ -75,6 +89,11 @@ public sealed class WaveMpWebApplicationFactory(
         }
 
         builder.ConfigureAppConfiguration(configuration => configuration.AddInMemoryCollection(settings));
+        builder.ConfigureTestServices(services =>
+        {
+            services.RemoveAll<IDatabaseExporter>();
+            services.AddSingleton<IDatabaseExporter>(Exporter);
+        });
     }
 
     protected override IHost CreateHost(IHostBuilder builder)
@@ -86,13 +105,14 @@ public sealed class WaveMpWebApplicationFactory(
 
         IHost host = base.CreateHost(builder);
 
-        // Program.cs exits without starting the service if the database configuration is invalid.
+        // Program.cs exits without starting the service if the database configuration is invalid or the backup before
+        // the migrations failed.
         if (!host.Services.GetRequiredService<IHostApplicationLifetime>().ApplicationStarted.IsCancellationRequested)
         {
             host.Dispose();
             throw new InvalidOperationException(
-                "WaveMP did not start because the database configuration is invalid. "
-                + "Check DB_PASSWORD and DB_PORT in .env or in the environment.");
+                "WaveMP did not start because the database configuration is invalid or the backup before the "
+                + "migrations failed. Check DB_PASSWORD and DB_PORT in .env or in the environment.");
         }
 
         return host;

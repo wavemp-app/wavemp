@@ -743,6 +743,202 @@
         ]
       }
     },
+    "/api/v1/backups": {
+      "get": {
+        "tags": [
+          "Backups"
+        ],
+        "summary": "Lists the exports of the database, newest first.",
+        "operationId": "ListBackups",
+        "parameters": [
+          {
+            "name": "offset",
+            "in": "query",
+            "description": "Number of exports to skip.",
+            "schema": {
+              "maximum": 2147483647,
+              "minimum": 0,
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Maximum number of exports of the page.",
+            "schema": {
+              "maximum": 100,
+              "minimum": 1,
+              "type": "integer",
+              "format": "int32",
+              "default": 50
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "One page of exports.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BackupPage"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid paging parameters (code `request.invalid`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblem"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "Backups"
+        ],
+        "summary": "Exports the database now. The export runs in the background as a run of the job `database-backup`; when it has succeeded, the new export is listed and the oldest ones beyond the number of the settings are deleted.",
+        "operationId": "CreateBackup",
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "The run is queued; Location points to it.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobRun"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "A backup is already queued or running (code `job.already_running`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/api/v1/backups/{id}": {
+      "delete": {
+        "tags": [
+          "Backups"
+        ],
+        "summary": "Deletes an export of the database.",
+        "operationId": "DeleteBackup",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Id of the export, e.g. `wavemp-20261116T030000Z-schedule`.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "The export is deleted."
+          },
+          "404": {
+            "description": "There is no export with this id (code `backup.not_found`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
     "/api/v1/cache": {
       "get": {
         "tags": [
@@ -1680,6 +1876,73 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ValidationProblem"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/api/v1/jobs/{id}": {
+      "get": {
+        "tags": [
+          "Jobs"
+        ],
+        "summary": "Returns a job with its state, schedule, next and last run.",
+        "operationId": "GetJob",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Id of the job, e.g. `database-backup`.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "The job.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Job"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The job does not exist (code `job.not_found`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
                 }
               }
             }
@@ -4049,6 +4312,122 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/TranscodingSettings"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is invalid (code `request.invalid`, errors by field).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblem"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/api/v1/settings/backup": {
+      "get": {
+        "tags": [
+          "Settings"
+        ],
+        "summary": "Returns the settings of the database backups.",
+        "operationId": "GetBackupSettings",
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "The backup settings.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BackupSettings"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      },
+      "patch": {
+        "tags": [
+          "Settings"
+        ],
+        "summary": "Changes the settings of the database backups. Missing or null values stay unchanged. A new time of day plans the daily backup again at once; a lower number of kept exports applies with the next export.",
+        "operationId": "UpdateBackupSettings",
+        "requestBody": {
+          "description": "Aborts the request.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateBackupSettings"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateBackupSettings"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "The changed settings.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BackupSettings"
                 }
               }
             }
@@ -7013,6 +7392,101 @@
         ],
         "type": "string"
       },
+      "Backup": {
+        "required": [
+          "id",
+          "fileName",
+          "createdAt",
+          "sizeBytes",
+          "trigger"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Stable id: the file name without its extension, e.g. `wavemp-20261116T030000Z-schedule`."
+          },
+          "fileName": {
+            "type": "string",
+            "description": "Name of the file in the backup folder, a compressed dump for pg_restore."
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "When the export was started.",
+            "format": "date-time"
+          },
+          "sizeBytes": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "trigger": {
+            "$ref": "#/components/schemas/BackupTrigger"
+          }
+        },
+        "description": "An export of the database in the backup folder (`/data/backups`)."
+      },
+      "BackupPage": {
+        "required": [
+          "items",
+          "offset",
+          "limit",
+          "total"
+        ],
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Backup"
+            },
+            "description": "Items of the page, at most limit."
+          },
+          "offset": {
+            "type": "integer",
+            "description": "Number of items skipped before this page.",
+            "format": "int32"
+          },
+          "limit": {
+            "type": "integer",
+            "description": "Maximum number of items of the page, as requested.",
+            "format": "int32"
+          },
+          "total": {
+            "type": "integer",
+            "description": "Number of items of the whole collection.",
+            "format": "int32"
+          }
+        },
+        "description": "One page of a collection."
+      },
+      "BackupSettings": {
+        "required": [
+          "scheduleTime",
+          "retentionCount"
+        ],
+        "type": "object",
+        "properties": {
+          "scheduleTime": {
+            "type": "string",
+            "description": "Time of day of the daily backup as `HH:mm` (24 hours), in the time zone of the server (`TZ`, by default UTC)."
+          },
+          "retentionCount": {
+            "type": "integer",
+            "description": "How many exports are kept (1 to 100); after every daily or manual export the oldest ones beyond this number are deleted.",
+            "format": "int32"
+          }
+        },
+        "description": "Settings of the database backups."
+      },
+      "BackupTrigger": {
+        "enum": [
+          "Schedule",
+          "Manual",
+          "Migration"
+        ],
+        "type": "string",
+        "description": "What created an export of the database."
+      },
       "CacheAreaUsage": {
         "required": [
           "sizeBytes",
@@ -7720,6 +8194,13 @@
             "description": "Minutes between two scheduled runs; null for jobs that only run when started.",
             "format": "int32"
           },
+          "dailyAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Time of day as `HH:mm` for jobs that run every day at a fixed time, in the time zone of the server; int? JobDto.IntervalMinutes is then 1440."
+          },
           "nextRunAt": {
             "type": [
               "null",
@@ -7751,14 +8232,18 @@
           "scan.media_folder_empty",
           "scan.probe_unavailable",
           "cache.ffmpeg_unavailable",
-          "cache.folder_unwritable"
+          "cache.folder_unwritable",
+          "backup.folder_unwritable",
+          "backup.pg_dump_unavailable",
+          "backup.failed"
         ],
         "type": "string"
       },
       "JobId": {
         "enum": [
           "library-scan",
-          "cover-cache"
+          "cover-cache",
+          "database-backup"
         ],
         "type": "string",
         "description": "Id of a background job."
@@ -8486,6 +8971,7 @@
           "job.not_found",
           "job.already_running",
           "job.run_not_found",
+          "backup.not_found",
           "artist.not_found",
           "album.not_found",
           "track.not_found",
@@ -9763,6 +10249,30 @@
         },
         "description": "State of the transcoding."
       },
+      "UpdateBackupSettings": {
+        "type": "object",
+        "properties": {
+          "scheduleTime": {
+            "pattern": "^([01][0-9]|2[0-3]):[0-5][0-9]$",
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Time of day of the daily backup as `HH:mm` (24 hours, e.g. `03:00`); the backup is planned again at once."
+          },
+          "retentionCount": {
+            "maximum": 100,
+            "minimum": 1,
+            "type": [
+              "null",
+              "integer"
+            ],
+            "description": "How many exports are kept; a lower number applies with the next export.",
+            "format": "int32"
+          }
+        },
+        "description": "Changes the settings of the database backups. Missing or null values stay unchanged."
+      },
       "UpdateCacheSettings": {
         "type": "object",
         "properties": {
@@ -10709,6 +11219,9 @@
     },
     {
       "name": "Artists"
+    },
+    {
+      "name": "Backups"
     },
     {
       "name": "Cache"
