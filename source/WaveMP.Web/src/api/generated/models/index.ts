@@ -5665,7 +5665,7 @@ export interface VisualizationSettings extends AdditionalDataHolder, Parsable {
      */
     autoChangeSeconds?: number | null;
     /**
-     * The visualization; Milkdrop by default. The presets of A-Force are its style variants.
+     * The visualization; Milkdrop by default. The presets of A-Force are its style variants, the presets of BlackCap its scenes.
      */
     module?: VisualizationModule | null;
     /**
@@ -5828,7 +5828,7 @@ export const HealthStatusObject = {
     Unhealthy: "Unhealthy",
 } as const;
 /**
- * What an HLS stream of a track carries.
+ * Video with sound or sound only.
  */
 export const HlsMediaObject = {
     Audio: "Audio",
@@ -6016,7 +6016,7 @@ export const SortDirectionObject = {
     Desc: "Desc",
 } as const;
 /**
- * The file as it is (direct play) or an HLS stream of the sound (transcoding).
+ * The file as it is (direct play) or an HLS stream (transcoding).
  */
 export const StreamProtocolObject = {
     File: "File",
@@ -6043,7 +6043,7 @@ export const TrackSortObject = {
     Rating: "Rating",
 } as const;
 /**
- * Why the track has to be transcoded; null for direct play.
+ * Why the video has to be transcoded; null for direct play.
  */
 export const TranscodeReasonObject = {
     Format_unsupported: "format_unsupported",
@@ -6088,11 +6088,12 @@ export const VideoContainerObject = {
     Matroska: "Matroska",
 } as const;
 /**
- * The visualization; Milkdrop by default. The presets of A-Force are its style variants.
+ * The visualization; Milkdrop by default. The presets of A-Force are its style variants, the presets of BlackCap its scenes.
  */
 export const VisualizationModuleObject = {
     Milkdrop: "Milkdrop",
     AForce: "AForce",
+    BlackCap: "BlackCap",
 } as const;
 /**
  * How much detail the visualization draws; Auto by default, which lets the player choose the level by the frame rate of the device.
