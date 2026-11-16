@@ -124,6 +124,22 @@ public class ApiIntegrationTests
     }
 
     [Test]
+    public async Task GetOpenApiDocument_Always_DescribesRequestBodiesWithTheCommentOfTheBodyParameter()
+    {
+        JsonNode document = await GetOpenApiDocumentAsync();
+
+        var descriptions = FindOperations(document)
+            .Where(operation => operation["requestBody"] is not null)
+            .ToDictionary(
+                operation => operation["operationId"]!.GetValue<string>(),
+                operation => operation["requestBody"]!["description"]?.GetValue<string>());
+
+        descriptions["CreateUser"].Should().Be("The new user.");
+        descriptions["AddMyPlaylistEntries"].Should().Be("The tracks and where to add them.");
+        descriptions.Values.Should().NotContain("Aborts the request.");
+    }
+
+    [Test]
     public async Task GetOpenApiDocument_Always_DescribesTheLocationOfCreatedAndAcceptedResources()
     {
         JsonNode document = await GetOpenApiDocumentAsync();

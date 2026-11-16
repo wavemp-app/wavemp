@@ -161,6 +161,9 @@ public static class ServiceCollectionExtensions
             // Clients see "Health" instead of "HealthDto" and "ProfilePage" for a PageDto of profiles.
             options.CreateSchemaReferenceId = CreateSchemaReferenceId;
 
+            // Corrects the request bodies, which the XML comment generator describes with the last parameter.
+            options.AddOperationTransformer(
+                new RequestBodyDescriptionTransformer(XmlDocumentation.Load(typeof(Program).Assembly)));
             // Wrapped XML comment lines become spaces, so the document is the same on every build platform.
             options.AddOperationTransformer<XmlCommentLineBreakTransformer>();
             options.AddSchemaTransformer<XmlCommentLineBreakTransformer>();

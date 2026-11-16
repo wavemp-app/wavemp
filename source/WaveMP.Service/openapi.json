@@ -1564,7 +1564,7 @@
         "summary": "Records a play of a track. Clients send it once the track has played for half its duration or four minutes, whichever comes first, and may send it later (up to seven days) with the time the play started.",
         "operationId": "CreateMyHistoryEntry",
         "requestBody": {
-          "description": "Aborts the request.",
+          "description": "The play.",
           "content": {
             "application/json": {
               "schema": {
@@ -2315,7 +2315,7 @@
         "summary": "Changes the settings of the current profile. Missing or null values stay unchanged.",
         "operationId": "UpdateMySettings",
         "requestBody": {
-          "description": "Aborts the request.",
+          "description": "The changes.",
           "content": {
             "application/json": {
               "schema": {
@@ -2737,7 +2737,7 @@
           }
         ],
         "requestBody": {
-          "description": "Aborts the request.",
+          "description": "The tracks and where to add them.",
           "content": {
             "application/json": {
               "schema": {
@@ -2917,7 +2917,7 @@
           }
         ],
         "requestBody": {
-          "description": "Aborts the request.",
+          "description": "The new position.",
           "content": {
             "application/json": {
               "schema": {
@@ -3146,7 +3146,7 @@
         "summary": "Creates a playlist of the current profile, optionally with its first tracks.",
         "operationId": "CreateMyPlaylist",
         "requestBody": {
-          "description": "Aborts the request.",
+          "description": "The playlist.",
           "content": {
             "application/json": {
               "schema": {
@@ -3306,7 +3306,7 @@
           }
         ],
         "requestBody": {
-          "description": "Aborts the request.",
+          "description": "The changes.",
           "content": {
             "application/json": {
               "schema": {
@@ -3934,7 +3934,7 @@
         "summary": "Selects a profile: creates a session and returns its token.",
         "operationId": "CreateSession",
         "requestBody": {
-          "description": "Aborts the request.",
+          "description": "The profile to select.",
           "content": {
             "application/json": {
               "schema": {
@@ -4108,7 +4108,7 @@
         "summary": "Changes the settings of the media library. Missing or null values stay unchanged. A new scan interval and the file watcher apply at once, the lists with the next scan.",
         "operationId": "UpdateLibrarySettings",
         "requestBody": {
-          "description": "Aborts the request.",
+          "description": "The changes.",
           "content": {
             "application/json": {
               "schema": {
@@ -4224,7 +4224,7 @@
         "summary": "Changes the settings of the cache. Missing or null values stay unchanged. A lower size limit cleans up the cache in the background at once.",
         "operationId": "UpdateCacheSettings",
         "requestBody": {
-          "description": "Aborts the request.",
+          "description": "The changes.",
           "content": {
             "application/json": {
               "schema": {
@@ -4340,7 +4340,7 @@
         "summary": "Changes the settings of the transcoding. Missing or null values stay unchanged. New transcodes use the new values at once, running ones keep theirs; a change of the hardware acceleration starts a new detection of the graphics hardware in the background.",
         "operationId": "UpdateTranscodingSettings",
         "requestBody": {
-          "description": "Aborts the request.",
+          "description": "The changes.",
           "content": {
             "application/json": {
               "schema": {
@@ -4456,7 +4456,7 @@
         "summary": "Changes the settings of the database backups. Missing or null values stay unchanged. A new time of day plans the daily backup again at once; a lower number of kept exports applies with the next export.",
         "operationId": "UpdateBackupSettings",
         "requestBody": {
-          "description": "Aborts the request.",
+          "description": "The changes.",
           "content": {
             "application/json": {
               "schema": {
@@ -5197,7 +5197,7 @@
           }
         ],
         "requestBody": {
-          "description": "Aborts the request.",
+          "description": "The rating.",
           "content": {
             "application/json": {
               "schema": {
@@ -5570,7 +5570,7 @@
           }
         ],
         "requestBody": {
-          "description": "Aborts the request.",
+          "description": "The changed values.",
           "content": {
             "application/json": {
               "schema": {
@@ -6351,7 +6351,7 @@
           }
         ],
         "requestBody": {
-          "description": "Aborts the request.",
+          "description": "The offset.",
           "content": {
             "application/json": {
               "schema": {
@@ -6728,7 +6728,7 @@
         "summary": "Creates a user. Missing initials are derived from the name, a missing color is the least used one.",
         "operationId": "CreateUser",
         "requestBody": {
-          "description": "Aborts the request.",
+          "description": "The new user.",
           "content": {
             "application/json": {
               "schema": {
@@ -6898,7 +6898,7 @@
           }
         ],
         "requestBody": {
-          "description": "Aborts the request.",
+          "description": "The changes.",
           "content": {
             "application/json": {
               "schema": {
