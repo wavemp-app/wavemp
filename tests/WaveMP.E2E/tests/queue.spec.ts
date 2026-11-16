@@ -47,6 +47,20 @@ async function buildQueue(page: Page): Promise<number> {
     return songs + 3
 }
 
+function contentArea(page: Page): Locator {
+    return page.locator("[data-part='app'] > [data-part='content']")
+}
+
+/** The content area is not scrolled: the stage starts below its top and is fully visible. */
+async function expectAtTop(page: Page): Promise<void> {
+    const content = contentArea(page)
+    await expect.poll(() => content.evaluate((element) => element.scrollTop)).toBe(0)
+    const stage = part(page, 'stage')
+    await expect(stage).toBeInViewport({ ratio: 1 })
+    const [contentBox, stageBox] = await Promise.all([content.boundingBox(), stage.boundingBox()])
+    expect(stageBox!.y).toBeGreaterThanOrEqual(contentBox!.y)
+}
+
 async function openNowPlaying(page: Page): Promise<void> {
     await page.locator("[data-part='app'] a[href='/now-playing']").filter({ visible: true }).click()
     await expect(page).toHaveURL(/\/now-playing$/)
@@ -102,13 +116,23 @@ test('shows the queue on an iPhone below the stage without scrolling the page', 
 }) => {
     const total = await buildQueue(page)
     await page.setViewportSize(iPhone)
-    // The content area keeps its scroll position across pages; the queue must not change it.
-    const content = page.locator("[data-part='app'] > [data-part='content']")
-    const scrolled = await content.evaluate((element) => element.scrollTop)
     await openNowPlaying(page)
 
     await expectWindow(page, total)
     await expect(part(page, 'queue')).toHaveCSS('overflow-y', 'visible')
-    expect(await content.evaluate((element) => element.scrollTop)).toBe(scrolled)
-    await expect(part(page, 'stage')).toBeInViewport()
+    await expectAtTop(page)
+
+    // Scrolled down to the queue, the next page starts at its top, and so does Now Playing when
+    // it is opened again: the content area keeps no offset of the previous page.
+    const content = contentArea(page)
+    const scrolled = await content.evaluate((element) => {
+        element.scrollTop = element.scrollHeight
+        return element.scrollTop
+    })
+    expect(scrolled).toBeGreaterThan(0)
+    await page.locator("[data-part='app'] a[href='/library']").filter({ visible: true }).click()
+    await expect(page).toHaveURL(/\/library\/songs$/)
+    await expect.poll(() => content.evaluate((element) => element.scrollTop)).toBe(0)
+    await openNowPlaying(page)
+    await expectAtTop(page)
 })
