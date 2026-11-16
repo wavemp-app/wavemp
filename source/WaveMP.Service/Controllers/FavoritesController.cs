@@ -57,7 +57,8 @@ public sealed class FavoritesController(IFavoriteService favorites) : Controller
     /// <param name="id">Id of the track.</param>
     /// <param name="cancellationToken">Aborts the request.</param>
     /// <response code="204">The track is a favorite.</response>
-    /// <response code="404">The track does not exist (code <c>track.not_found</c>).</response>
+    /// <response code="404">The track does not exist (code <c>track.not_found</c>) or the profile was deleted in the
+    /// meantime (code <c>user.not_found</c>).</response>
     [HttpPut("tracks/{id:guid}", Name = "AddMyFavoriteTrack")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound, "application/problem+json")]
@@ -85,7 +86,8 @@ public sealed class FavoritesController(IFavoriteService favorites) : Controller
     /// <param name="id">Id of the album.</param>
     /// <param name="cancellationToken">Aborts the request.</param>
     /// <response code="204">The album is a favorite.</response>
-    /// <response code="404">The album does not exist (code <c>album.not_found</c>).</response>
+    /// <response code="404">The album does not exist (code <c>album.not_found</c>) or the profile was deleted in the
+    /// meantime (code <c>user.not_found</c>).</response>
     [HttpPut("albums/{id:guid}", Name = "AddMyFavoriteAlbum")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound, "application/problem+json")]
@@ -113,7 +115,8 @@ public sealed class FavoritesController(IFavoriteService favorites) : Controller
     /// <param name="id">Id of the artist.</param>
     /// <param name="cancellationToken">Aborts the request.</param>
     /// <response code="204">The artist is a favorite.</response>
-    /// <response code="404">The artist does not exist (code <c>artist.not_found</c>).</response>
+    /// <response code="404">The artist does not exist (code <c>artist.not_found</c>) or the profile was deleted in the
+    /// meantime (code <c>user.not_found</c>).</response>
     [HttpPut("artists/{id:guid}", Name = "AddMyFavoriteArtist")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound, "application/problem+json")]

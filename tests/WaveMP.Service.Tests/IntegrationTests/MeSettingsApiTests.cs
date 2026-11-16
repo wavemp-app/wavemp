@@ -4,6 +4,7 @@ using System.Text;
 using AwesomeAssertions;
 using WaveMP.Service.Dtos;
 using WaveMP.Service.Tests.IntegrationTests.Extensions;
+using WaveMP.Testing.Databases;
 
 namespace WaveMP.Service.Tests.IntegrationTests;
 
@@ -614,6 +615,28 @@ public class MeSettingsApiTests
         HttpResponseMessage response = await _anonymous.SendAsync(request);
 
         await response.ShouldBeProblemAsync(HttpStatusCode.Unauthorized, "auth.unauthorized");
+    }
+
+    [Test]
+    public async Task UpdateMySettings_ProfileDeletedDuringTheRequest_ReturnsUserNotFound()
+    {
+        (Guid profileId, HttpClient client) = await CreateProfileAsync();
+        using (client)
+        {
+            await using PendingUserDeletion deletion =
+                await PendingUserDeletion.StartAsync(_factory.ConnectionString, profileId);
+
+            _factory.ErrorLog.Clear();
+
+            // The profile is still visible when the request starts; saving its settings waits for the deletion.
+            Task<HttpResponseMessage> request = PatchAsync(client, new { sidebarCollapsed = true });
+            bool waited = await deletion.CommitWhileWaitingAsync(request, TimeSpan.FromSeconds(10));
+            using HttpResponseMessage response = await request;
+
+            waited.Should().BeTrue();
+            await response.ShouldBeProblemAsync(HttpStatusCode.NotFound, "user.not_found");
+            _factory.ErrorLog.Errors.Should().BeEmpty();
+        }
     }
 
     private static Task<HttpResponseMessage> PatchAsync(HttpClient client, object request)

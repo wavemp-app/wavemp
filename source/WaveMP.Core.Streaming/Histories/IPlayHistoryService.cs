@@ -11,6 +11,7 @@ public interface IPlayHistoryService
     /// Records a play of a track. <paramref name="playedAt"/> is the start of the play, by default now; it must not
     /// lie in the future (beyond the allowed clock skew) or be older than the configured maximum age.
     /// </summary>
+    /// <exception cref="WaveMP.Data.Repositories.UserNotFoundException">The user does not exist (any more).</exception>
     Task<PlayHistoryResult> RecordAsync(
         Guid userId,
         Guid trackId,

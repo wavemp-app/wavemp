@@ -48,10 +48,12 @@ public interface IUserRepository
     /// Saves the changes of a user loaded with <see cref="FindAsync"/>.
     /// </summary>
     /// <exception cref="UserNameConflictException">Another user has the same name.</exception>
+    /// <exception cref="UserNotFoundException">The user was deleted since it was loaded.</exception>
     Task UpdateAsync(User user, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Deletes a user loaded with <see cref="FindAsync"/>, together with its settings and sessions.
     /// </summary>
+    /// <exception cref="UserNotFoundException">The user was deleted since it was loaded.</exception>
     Task DeleteAsync(User user, CancellationToken cancellationToken = default);
 }

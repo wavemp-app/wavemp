@@ -1,41 +1,40 @@
 using Microsoft.EntityFrameworkCore;
-using Npgsql;
+using WaveMP.Data.Extensions;
 
 namespace WaveMP.Data.Repositories;
 
 internal sealed class TrackRatingRepository(WaveMpDbContext dbContext) : ITrackRatingRepository
 {
-    public async Task<bool> SetAsync(
+    public Task<bool> SetAsync(
         Guid userId,
         Guid trackId,
         int rating,
         DateTimeOffset now,
         CancellationToken cancellationToken = default)
     {
-        if (!await TrackExistsAsync(trackId, cancellationToken))
-        {
-            return false;
-        }
-
         DateTimeOffset updatedAt = now.ToUniversalTime();
-        try
-        {
-            await dbContext.Database.ExecuteSqlAsync(
-                $"""
-                INSERT INTO track_ratings (user_id, track_id, rating, updated_at)
-                VALUES ({userId}, {trackId}, {rating}, {updatedAt})
-                ON CONFLICT (user_id, track_id) DO UPDATE
-                SET rating = EXCLUDED.rating, updated_at = EXCLUDED.updated_at
-                WHERE track_ratings.rating <> EXCLUDED.rating
-                """,
-                cancellationToken);
-            return true;
-        }
-        catch (PostgresException exception) when (exception.SqlState == PostgresErrorCodes.ForeignKeyViolation)
-        {
-            // A scan removed the track in the meantime.
-            return false;
-        }
+        return dbContext.InUserTransactionAsync(
+            userId,
+            async token =>
+            {
+                // The lock keeps a scan from removing the track until the rating is saved.
+                if (!await dbContext.LockTrackAsync(trackId, token))
+                {
+                    return false;
+                }
+
+                await dbContext.Database.ExecuteSqlAsync(
+                    $"""
+                    INSERT INTO track_ratings (user_id, track_id, rating, updated_at)
+                    VALUES ({userId}, {trackId}, {rating}, {updatedAt})
+                    ON CONFLICT (user_id, track_id) DO UPDATE
+                    SET rating = EXCLUDED.rating, updated_at = EXCLUDED.updated_at
+                    WHERE track_ratings.rating <> EXCLUDED.rating
+                    """,
+                    token);
+                return true;
+            },
+            cancellationToken);
     }
 
     public async Task<bool> RemoveAsync(Guid userId, Guid trackId, CancellationToken cancellationToken = default)

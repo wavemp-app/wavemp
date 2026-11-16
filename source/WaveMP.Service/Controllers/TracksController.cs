@@ -123,7 +123,8 @@ public sealed class TracksController(
     /// <response code="204">The rating is set.</response>
     /// <response code="400">The rating is missing or not between 0 and 5 (code <c>request.invalid</c>, field
     /// <c>rating</c> with <c>required</c> or <c>out_of_range</c> with min and max).</response>
-    /// <response code="404">The track does not exist (code <c>track.not_found</c>).</response>
+    /// <response code="404">The track does not exist (code <c>track.not_found</c>) or the profile was deleted in the
+    /// meantime (code <c>user.not_found</c>).</response>
     [HttpPut("{id:guid}/rating", Name = "SetMyTrackRating")]
     [Consumes("application/json")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]

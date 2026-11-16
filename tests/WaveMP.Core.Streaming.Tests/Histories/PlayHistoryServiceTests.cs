@@ -24,6 +24,7 @@ public class PlayHistoryServiceTests
     public void SetUp()
     {
         _history = Substitute.For<IPlayHistoryRepository>();
+        _history.AddAsync(Arg.Any<PlayHistoryEntry>(), Arg.Any<CancellationToken>()).Returns(true);
         _tracks = Substitute.For<ITrackRepository>();
         _tracks.FindAsync(Arg.Any<Guid>(), Arg.Any<Guid?>(), Arg.Any<CancellationToken>()).Returns((TrackRow?)null);
         TimeProvider timeProvider = Substitute.For<TimeProvider>();
@@ -111,6 +112,30 @@ public class PlayHistoryServiceTests
 
         result.Status.Should().Be(PlayHistoryStatus.TrackNotFound);
         await _history.DidNotReceive().AddAsync(Arg.Any<PlayHistoryEntry>(), Arg.Any<CancellationToken>());
+    }
+
+    [Test]
+    public async Task RecordAsync_TrackRemovedBeforeTheEntryIsSaved_IsRejected()
+    {
+        TrackRow track = Track("Song");
+        _history.AddAsync(Arg.Any<PlayHistoryEntry>(), Arg.Any<CancellationToken>()).Returns(false);
+
+        PlayHistoryResult result = await _service.RecordAsync(_userId, track.Id, null);
+
+        result.Status.Should().Be(PlayHistoryStatus.TrackNotFound);
+        result.Item.Should().BeNull();
+    }
+
+    [Test]
+    public async Task RecordAsync_UserDeletedBeforeTheEntryIsSaved_PassesTheErrorOn()
+    {
+        TrackRow track = Track("Song");
+        _history.AddAsync(Arg.Any<PlayHistoryEntry>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromException<bool>(new UserNotFoundException(_userId)));
+
+        Func<Task> record = () => _service.RecordAsync(_userId, track.Id, null);
+
+        (await record.Should().ThrowAsync<UserNotFoundException>()).Which.UserId.Should().Be(_userId);
     }
 
     [Test]

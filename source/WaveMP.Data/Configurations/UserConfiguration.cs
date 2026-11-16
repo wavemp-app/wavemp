@@ -11,6 +11,11 @@ internal sealed class UserConfiguration : IEntityTypeConfiguration<User>
     /// </summary>
     public const string NormalizedNameIndex = "ix_users_normalized_name";
 
+    /// <summary>
+    /// Name of the foreign key from the settings to their user; a violation means the user was deleted.
+    /// </summary>
+    public const string SettingsUserForeignKey = "fk_user_settings_users_user_id";
+
     public const int NameMaxLength = 50;
     public const int InitialsMaxLength = 16;
     public const int ColorLength = 7;
@@ -42,6 +47,7 @@ internal sealed class UserConfiguration : IEntityTypeConfiguration<User>
         builder.HasOne(user => user.Settings)
             .WithOne(settings => settings.User)
             .HasForeignKey<UserSettings>(settings => settings.UserId)
+            .HasConstraintName(SettingsUserForeignKey)
             .OnDelete(DeleteBehavior.Cascade);
 
         builder.HasMany(user => user.Sessions)

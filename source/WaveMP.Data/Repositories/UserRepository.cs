@@ -64,25 +64,42 @@ internal sealed class UserRepository(WaveMpDbContext dbContext) : IUserRepositor
     public async Task AddAsync(User user, CancellationToken cancellationToken = default)
     {
         dbContext.Users.Add(user);
-        await SaveChangesAsync(cancellationToken);
+        await SaveChangesAsync(user, cancellationToken);
     }
 
     public Task UpdateAsync(User user, CancellationToken cancellationToken = default)
     {
-        return SaveChangesAsync(cancellationToken);
+        return SaveChangesAsync(user, cancellationToken);
     }
 
     public async Task DeleteAsync(User user, CancellationToken cancellationToken = default)
     {
         dbContext.Users.Remove(user);
-        await dbContext.SaveChangesAsync(cancellationToken);
+        await SaveChangesAsync(user, cancellationToken);
     }
 
-    private async Task SaveChangesAsync(CancellationToken cancellationToken)
+    private async Task SaveChangesAsync(User user, CancellationToken cancellationToken)
     {
         try
         {
             await dbContext.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateConcurrencyException exception)
+        {
+            // Users have no concurrency token: an update or deletion that changed no row means the user (with its
+            // settings) was deleted since it was loaded, e.g. while the request ran.
+            dbContext.ChangeTracker.Clear();
+            throw new UserNotFoundException(user.Id, exception);
+        }
+        catch (DbUpdateException exception) when (exception.InnerException is PostgresException
+        {
+            SqlState: PostgresErrorCodes.ForeignKeyViolation,
+            ConstraintName: UserConfiguration.SettingsUserForeignKey,
+        })
+        {
+            // The first settings of a user that was deleted since it was loaded.
+            dbContext.ChangeTracker.Clear();
+            throw new UserNotFoundException(user.Id, exception);
         }
         catch (DbUpdateException exception) when (exception.InnerException is PostgresException
         {

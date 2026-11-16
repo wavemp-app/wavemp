@@ -9,6 +9,7 @@ public interface ITrackRatingRepository
     /// Sets the rating (1 to 5 stars) of the user for the track; an unchanged rating keeps its time. Returns
     /// <c>false</c> if the track does not exist.
     /// </summary>
+    /// <exception cref="UserNotFoundException">The user does not exist.</exception>
     Task<bool> SetAsync(
         Guid userId,
         Guid trackId,

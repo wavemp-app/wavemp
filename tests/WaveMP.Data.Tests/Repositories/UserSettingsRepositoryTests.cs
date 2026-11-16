@@ -106,6 +106,55 @@ public class UserSettingsRepositoryTests : LibraryDatabaseTests
         });
     }
 
+    [Test]
+    public async Task UpdateAsync_ExistingSettingsOfADeletedUser_ThrowsUserNotFound()
+    {
+        User user = await AddUserAsync();
+        IUserRepository repository = CreateRepository();
+        User loaded = (await repository.FindAsync(user.Id))!;
+        loaded.Settings = new UserSettings { UserId = user.Id };
+        await repository.UpdateAsync(loaded);
+        await DeleteUserAsync(user);
+
+        loaded.Settings.SidebarCollapsed = true;
+        Func<Task> update = () => repository.UpdateAsync(loaded);
+
+        (await update.Should().ThrowAsync<UserNotFoundException>()).Which.UserId.Should().Be(user.Id);
+    }
+
+    [Test]
+    public async Task UpdateAsync_FirstSettingsOfADeletedUser_ThrowsUserNotFound()
+    {
+        User user = await AddUserAsync();
+        IUserRepository repository = CreateRepository();
+        User loaded = (await repository.FindAsync(user.Id))!;
+        await DeleteUserAsync(user);
+
+        loaded.Settings = new UserSettings { UserId = user.Id };
+        Func<Task> update = () => repository.UpdateAsync(loaded);
+
+        (await update.Should().ThrowAsync<UserNotFoundException>()).Which.UserId.Should().Be(user.Id);
+    }
+
+    [Test]
+    public async Task DeleteAsync_UserDeletedSinceItWasLoaded_ThrowsUserNotFound()
+    {
+        User user = await AddUserAsync();
+        IUserRepository repository = CreateRepository();
+        User loaded = (await repository.FindAsync(user.Id))!;
+        await DeleteUserAsync(user);
+
+        Func<Task> delete = () => repository.DeleteAsync(loaded);
+
+        (await delete.Should().ThrowAsync<UserNotFoundException>()).Which.UserId.Should().Be(user.Id);
+    }
+
+    private async Task DeleteUserAsync(User user)
+    {
+        await using WaveMpDbContext dbContext = CreateDbContext();
+        await dbContext.Users.Where(candidate => candidate.Id == user.Id).ExecuteDeleteAsync();
+    }
+
     private UserRepository CreateRepository()
     {
         return new UserRepository(CreateDbContext());

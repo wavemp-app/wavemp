@@ -1182,7 +1182,7 @@
             "description": "The track is a favorite."
           },
           "404": {
-            "description": "The track does not exist (code `track.not_found`).",
+            "description": "The track does not exist (code `track.not_found`) or the profile was deleted in the meantime (code `user.not_found`).",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -1272,7 +1272,7 @@
             "description": "The album is a favorite."
           },
           "404": {
-            "description": "The album does not exist (code `album.not_found`).",
+            "description": "The album does not exist (code `album.not_found`) or the profile was deleted in the meantime (code `user.not_found`).",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -1362,7 +1362,7 @@
             "description": "The artist is a favorite."
           },
           "404": {
-            "description": "The artist does not exist (code `artist.not_found`).",
+            "description": "The artist does not exist (code `artist.not_found`) or the profile was deleted in the meantime (code `user.not_found`).",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -1621,7 +1621,7 @@
             }
           },
           "404": {
-            "description": "The track does not exist (code `track.not_found`).",
+            "description": "The track does not exist (code `track.not_found`) or the profile was deleted in the meantime (code `user.not_found`).",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -3203,7 +3203,7 @@
             }
           },
           "404": {
-            "description": "A track does not exist (code `track.not_found`).",
+            "description": "A track does not exist (code `track.not_found`) or the profile was deleted in the meantime (code `user.not_found`).",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -5237,7 +5237,7 @@
             }
           },
           "404": {
-            "description": "The track does not exist (code `track.not_found`).",
+            "description": "The track does not exist (code `track.not_found`) or the profile was deleted in the meantime (code `user.not_found`).",
             "content": {
               "application/problem+json": {
                 "schema": {

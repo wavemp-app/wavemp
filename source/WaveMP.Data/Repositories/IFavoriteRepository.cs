@@ -13,6 +13,7 @@ public interface IFavoriteRepository
     /// Marks the target of the favorite (its type and the id of the type) for its user; a target the user already
     /// marked keeps its favorite.
     /// </summary>
+    /// <exception cref="UserNotFoundException">The user of the favorite does not exist.</exception>
     Task<FavoriteChangeStatus> AddAsync(Favorite favorite, CancellationToken cancellationToken = default);
 
     /// <summary>

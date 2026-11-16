@@ -90,7 +90,8 @@ public sealed class PlaylistsController(IPlaylistService playlists) : Controller
     /// <response code="201">The new playlist; Location points to it.</response>
     /// <response code="400">The request is invalid, e.g. a name of spaces only (code
     /// <c>request.invalid</c>).</response>
-    /// <response code="404">A track does not exist (code <c>track.not_found</c>).</response>
+    /// <response code="404">A track does not exist (code <c>track.not_found</c>) or the profile was deleted in the
+    /// meantime (code <c>user.not_found</c>).</response>
     /// <response code="409">More tracks than a playlist may have (code <c>playlist.full</c>).</response>
     [HttpPost(Name = "CreateMyPlaylist")]
     [Consumes("application/json")]

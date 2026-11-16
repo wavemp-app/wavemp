@@ -81,6 +81,22 @@ public class TrackRatingRepositoryTests : LibraryDatabaseTests
     }
 
     [Test]
+    public async Task SetAsync_DeletedUser_ThrowsUserNotFound()
+    {
+        StandardLibrary library = await SeedStandardLibraryAsync();
+        User user = await AddUserAsync();
+        await using (WaveMpDbContext dbContext = CreateDbContext())
+        {
+            await dbContext.Users.Where(candidate => candidate.Id == user.Id).ExecuteDeleteAsync();
+        }
+
+        Func<Task> set = () => CreateRepository().SetAsync(user.Id, library.Ballad.Id, 4, _start);
+
+        (await set.Should().ThrowAsync<UserNotFoundException>()).Which.UserId.Should().Be(user.Id);
+        (await RatingsAsync(user)).Should().BeEmpty();
+    }
+
+    [Test]
     public async Task RemoveAsync_Rating_RemovesOnlyTheRatingOfTheUser()
     {
         StandardLibrary library = await SeedStandardLibraryAsync();

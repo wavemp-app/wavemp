@@ -7,6 +7,11 @@ namespace WaveMP.Data.Repositories;
 /// </summary>
 public interface ISessionRepository
 {
+    /// <summary>
+    /// Adds a session. A deletion of its user at the same time waits until the session is saved and then removes it
+    /// as well.
+    /// </summary>
+    /// <exception cref="UserNotFoundException">The user of the session does not exist.</exception>
     Task AddAsync(Session session, CancellationToken cancellationToken = default);
 
     /// <summary>

@@ -77,10 +77,12 @@ public static class ServiceCollectionExtensions
 
     /// <summary>
     /// Registers Problem Details (RFC 9457). Every Problem Details response carries a machine-readable
-    /// <see cref="ProblemCodeDto"/> in its member <c>code</c>, by default derived from the status code.
+    /// <see cref="ProblemCodeDto"/> in its member <c>code</c>, by default derived from the status code. Expected
+    /// exceptions are answered by their handlers (see <see cref="UserNotFoundExceptionHandler"/>), all others with 500.
     /// </summary>
     public static IServiceCollection AddWaveMpProblemDetails(this IServiceCollection services)
     {
+        services.AddExceptionHandler<UserNotFoundExceptionHandler>();
         services.AddProblemDetails(options => options.CustomizeProblemDetails = context =>
         {
             IDictionary<string, object?> extensions = context.ProblemDetails.Extensions;

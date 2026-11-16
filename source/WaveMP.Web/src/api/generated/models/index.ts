@@ -6061,7 +6061,7 @@ export const HealthStatusObject = {
     Unhealthy: "Unhealthy",
 } as const;
 /**
- * What an HLS stream of a track carries.
+ * Video with sound or sound only.
  */
 export const HlsMediaObject = {
     Audio: "Audio",

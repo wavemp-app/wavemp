@@ -5,6 +5,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using WaveMP.Core.Backups.Exports;
 using WaveMP.Data;
 using WaveMP.Service.Tests.IntegrationTests.Fakes;
@@ -58,6 +59,16 @@ public sealed class WaveMpWebApplicationFactory(
     /// </summary>
     public FakeDatabaseExporter Exporter { get; } = exporter ?? new FakeDatabaseExporter();
 
+    /// <summary>
+    /// The errors the service logged.
+    /// </summary>
+    public ErrorLogCollector ErrorLog { get; } = new();
+
+    /// <summary>
+    /// Connection string of the database of the service, for tests that change the database next to the service.
+    /// </summary>
+    public string ConnectionString => TestDatabaseSettings.BuildConnectionString(DatabaseName);
+
     private string DatabaseName => databaseName ?? Environment.GetEnvironmentVariable("DB_NAME") ?? TestDatabaseName;
 
     /// <summary>
@@ -89,6 +100,7 @@ public sealed class WaveMpWebApplicationFactory(
         }
 
         builder.ConfigureAppConfiguration(configuration => configuration.AddInMemoryCollection(settings));
+        builder.ConfigureLogging(logging => logging.AddProvider(ErrorLog));
         builder.ConfigureTestServices(services =>
         {
             services.RemoveAll<IDatabaseExporter>();

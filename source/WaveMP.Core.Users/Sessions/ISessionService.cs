@@ -6,7 +6,8 @@ namespace WaveMP.Core.Users.Sessions;
 public interface ISessionService
 {
     /// <summary>
-    /// Selects a profile: creates a session for it. Returns <c>null</c> if the profile does not exist.
+    /// Selects a profile: creates a session for it. Returns <c>null</c> if the profile does not exist, also if it was
+    /// deleted while the session was created.
     /// Expired sessions of all profiles are removed on the way.
     /// </summary>
     Task<ActiveSession?> CreateAsync(Guid profileId, CancellationToken cancellationToken = default);

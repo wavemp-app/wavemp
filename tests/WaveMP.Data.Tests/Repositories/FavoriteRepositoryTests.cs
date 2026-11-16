@@ -82,6 +82,21 @@ public class FavoriteRepositoryTests : LibraryDatabaseTests
     }
 
     [Test]
+    public async Task AddAsync_DeletedUser_ThrowsUserNotFoundAndAddsNothing()
+    {
+        StandardLibrary library = await SeedStandardLibraryAsync();
+        User user = await AddUserAsync();
+        await DeleteUserAsync(user);
+
+        Func<Task> add = () => CreateRepository().AddAsync(
+            NewFavorite(user, FavoriteType.Track, library.Ballad.Id, _start));
+
+        (await add.Should().ThrowAsync<UserNotFoundException>()).Which.UserId.Should().Be(user.Id);
+        await using WaveMpDbContext dbContext = CreateDbContext();
+        (await dbContext.Favorites.AnyAsync(favorite => favorite.UserId == user.Id)).Should().BeFalse();
+    }
+
+    [Test]
     public async Task AddAsync_IdOfAnotherType_Throws()
     {
         StandardLibrary library = await SeedStandardLibraryAsync();
@@ -252,6 +267,12 @@ public class FavoriteRepositoryTests : LibraryDatabaseTests
             ArtistId = type == FavoriteType.Artist ? itemId : null,
             CreatedAt = createdAt,
         };
+    }
+
+    private async Task DeleteUserAsync(User user)
+    {
+        await using WaveMpDbContext dbContext = CreateDbContext();
+        await dbContext.Users.Where(candidate => candidate.Id == user.Id).ExecuteDeleteAsync();
     }
 
     private async Task<User> AddUserAsync()

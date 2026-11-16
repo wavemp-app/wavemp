@@ -50,6 +50,24 @@ public class PlaylistRepositoryTests : LibraryDatabaseTests
     }
 
     [Test]
+    public async Task CreateAsync_DeletedUser_ThrowsUserNotFoundAndCreatesNothing()
+    {
+        StandardLibrary library = await SeedStandardLibraryAsync();
+        User user = await AddUserAsync();
+        await using (WaveMpDbContext dbContext = CreateDbContext())
+        {
+            await dbContext.Users.Where(candidate => candidate.Id == user.Id).ExecuteDeleteAsync();
+        }
+
+        Playlist playlist = NewPlaylist(user, "Orphan");
+        Func<Task> create = () => CreateRepository().CreateAsync(playlist, [library.Opening.Id]);
+
+        (await create.Should().ThrowAsync<UserNotFoundException>()).Which.UserId.Should().Be(user.Id);
+        await using WaveMpDbContext check = CreateDbContext();
+        (await check.Playlists.AnyAsync(candidate => candidate.Id == playlist.Id)).Should().BeFalse();
+    }
+
+    [Test]
     public async Task FindAsync_Always_SummarizesTheEntries()
     {
         StandardLibrary library = await SeedStandardLibraryAsync();

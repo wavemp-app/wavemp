@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using WaveMP.Data.Entities;
+using WaveMP.Data.Extensions;
 using WaveMP.Data.Projections;
 using WaveMP.Data.Queries;
 
@@ -7,11 +8,31 @@ namespace WaveMP.Data.Repositories;
 
 internal sealed class PlayHistoryRepository(WaveMpDbContext dbContext) : IPlayHistoryRepository
 {
-    public async Task AddAsync(PlayHistoryEntry entry, CancellationToken cancellationToken = default)
+    public Task<bool> AddAsync(PlayHistoryEntry entry, CancellationToken cancellationToken = default)
     {
-        dbContext.PlayHistory.Add(entry);
-        await dbContext.SaveChangesAsync(cancellationToken);
-        dbContext.Entry(entry).State = EntityState.Detached;
+        return dbContext.InUserTransactionAsync(
+            entry.UserId,
+            async token =>
+            {
+                if (!await dbContext.LockTrackAsync(entry.TrackId, token))
+                {
+                    // A scan removed the track in the meantime.
+                    return false;
+                }
+
+                dbContext.PlayHistory.Add(entry);
+                try
+                {
+                    await dbContext.SaveChangesAsync(token);
+                }
+                finally
+                {
+                    dbContext.Entry(entry).State = EntityState.Detached;
+                }
+
+                return true;
+            },
+            cancellationToken);
     }
 
     public Task<Page<PlayHistoryEntry>> ListAsync(

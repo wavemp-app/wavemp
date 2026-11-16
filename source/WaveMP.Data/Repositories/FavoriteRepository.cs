@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
-using Npgsql;
 using WaveMP.Data.Entities;
+using WaveMP.Data.Extensions;
 using WaveMP.Data.Projections;
 using WaveMP.Data.Queries;
 
@@ -8,36 +8,35 @@ namespace WaveMP.Data.Repositories;
 
 internal sealed class FavoriteRepository(WaveMpDbContext dbContext) : IFavoriteRepository
 {
-    public async Task<FavoriteChangeStatus> AddAsync(
+    public Task<FavoriteChangeStatus> AddAsync(
         Favorite favorite,
         CancellationToken cancellationToken = default)
     {
         Guid itemId = ItemIdOf(favorite);
-        if (!await TargetExistsAsync(favorite.Type, itemId, cancellationToken))
-        {
-            return FavoriteChangeStatus.TargetNotFound;
-        }
-
         string type = favorite.Type.ToString();
         DateTimeOffset createdAt = favorite.CreatedAt.ToUniversalTime();
-        try
-        {
-            // The unique indexes of user and target keep an existing favorite with its time.
-            int added = await dbContext.Database.ExecuteSqlAsync(
-                $"""
-                INSERT INTO favorites (id, user_id, type, track_id, album_id, artist_id, created_at)
-                VALUES ({favorite.Id}, {favorite.UserId}, {type}, {favorite.TrackId}, {favorite.AlbumId},
-                    {favorite.ArtistId}, {createdAt})
-                ON CONFLICT DO NOTHING
-                """,
-                cancellationToken);
-            return added > 0 ? FavoriteChangeStatus.Added : FavoriteChangeStatus.Existing;
-        }
-        catch (PostgresException exception) when (exception.SqlState == PostgresErrorCodes.ForeignKeyViolation)
-        {
-            // A scan removed the target in the meantime.
-            return FavoriteChangeStatus.TargetNotFound;
-        }
+        return dbContext.InUserTransactionAsync(
+            favorite.UserId,
+            async token =>
+            {
+                // The lock keeps a scan from removing the target until the favorite is saved.
+                if (!await LockTargetAsync(favorite.Type, itemId, token))
+                {
+                    return FavoriteChangeStatus.TargetNotFound;
+                }
+
+                // The unique indexes of user and target keep an existing favorite with its time.
+                int added = await dbContext.Database.ExecuteSqlAsync(
+                    $"""
+                    INSERT INTO favorites (id, user_id, type, track_id, album_id, artist_id, created_at)
+                    VALUES ({favorite.Id}, {favorite.UserId}, {type}, {favorite.TrackId}, {favorite.AlbumId},
+                        {favorite.ArtistId}, {createdAt})
+                    ON CONFLICT DO NOTHING
+                    """,
+                    token);
+                return added > 0 ? FavoriteChangeStatus.Added : FavoriteChangeStatus.Existing;
+            },
+            cancellationToken);
     }
 
     public async Task<bool> RemoveAsync(
@@ -78,13 +77,13 @@ internal sealed class FavoriteRepository(WaveMpDbContext dbContext) : IFavoriteR
             .ToPageAsync(query.Offset, query.Limit, cancellationToken);
     }
 
-    private Task<bool> TargetExistsAsync(FavoriteType type, Guid itemId, CancellationToken cancellationToken)
+    private Task<bool> LockTargetAsync(FavoriteType type, Guid itemId, CancellationToken cancellationToken)
     {
         return type switch
         {
-            FavoriteType.Track => dbContext.Tracks.AnyAsync(track => track.Id == itemId, cancellationToken),
-            FavoriteType.Album => dbContext.Albums.AnyAsync(album => album.Id == itemId, cancellationToken),
-            FavoriteType.Artist => dbContext.Artists.AnyAsync(artist => artist.Id == itemId, cancellationToken),
+            FavoriteType.Track => dbContext.LockTrackAsync(itemId, cancellationToken),
+            FavoriteType.Album => dbContext.LockAlbumAsync(itemId, cancellationToken),
+            FavoriteType.Artist => dbContext.LockArtistAsync(itemId, cancellationToken),
             _ => throw new ArgumentOutOfRangeException(nameof(type), type, "Unknown favorite type."),
         };
     }

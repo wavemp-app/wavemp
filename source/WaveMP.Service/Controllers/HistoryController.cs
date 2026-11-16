@@ -30,7 +30,8 @@ public sealed class HistoryController(IPlayHistoryService history) : ControllerB
     /// <response code="201">The new entry; Location points to it.</response>
     /// <response code="400">The request is invalid, for example playedAt in the future or older than seven days
     /// (code <c>request.invalid</c>).</response>
-    /// <response code="404">The track does not exist (code <c>track.not_found</c>).</response>
+    /// <response code="404">The track does not exist (code <c>track.not_found</c>) or the profile was deleted in the
+    /// meantime (code <c>user.not_found</c>).</response>
     [HttpPost(Name = "CreateMyHistoryEntry")]
     [Consumes("application/json")]
     [ProducesResponseType<PlayHistoryEntryDto>(StatusCodes.Status201Created, "application/json")]

@@ -4,6 +4,7 @@ using WaveMP.Data.Entities;
 using WaveMP.Data.Projections;
 using WaveMP.Data.Queries;
 using WaveMP.Data.Repositories;
+using WaveMP.Testing.Databases;
 
 namespace WaveMP.Data.Tests.Repositories;
 
@@ -79,6 +80,46 @@ public class PlayHistoryRepositoryTests : LibraryDatabaseTests
         own!.TrackId.Should().Be(library.Opening.Id);
         own.PlayedAt.Should().Be(_start);
         foreign.Should().BeNull();
+    }
+
+    [Test]
+    public async Task AddAsync_UnknownTrack_ReturnsFalseAndAddsNothing()
+    {
+        await SeedStandardLibraryAsync();
+        User user = await AddUserAsync();
+
+        bool added = await CreateRepository().AddAsync(NewEntry(user.Id, Guid.NewGuid()));
+
+        added.Should().BeFalse();
+        (await CreateRepository().ListAsync(new PlayHistoryListQuery(user.Id, 0, 10))).Items.Should().BeEmpty();
+    }
+
+    [Test]
+    public async Task AddAsync_UnknownUser_ThrowsUserNotFound()
+    {
+        StandardLibrary library = await SeedStandardLibraryAsync();
+        var userId = Guid.NewGuid();
+
+        Func<Task> add = () => CreateRepository().AddAsync(NewEntry(userId, library.Opening.Id));
+
+        (await add.Should().ThrowAsync<UserNotFoundException>()).Which.UserId.Should().Be(userId);
+    }
+
+    [Test]
+    public async Task AddAsync_UserDeletedWhileAdding_ThrowsUserNotFoundAndAddsNothing()
+    {
+        StandardLibrary library = await SeedStandardLibraryAsync();
+        User user = await AddUserAsync();
+        await using PendingUserDeletion deletion =
+            await PendingUserDeletion.StartAsync(CreateDbContext().Database.GetConnectionString()!, user.Id);
+
+        Task<bool> add = CreateRepository().AddAsync(NewEntry(user.Id, library.Opening.Id));
+        bool waited = await deletion.CommitWhileWaitingAsync(add, TimeSpan.FromSeconds(10));
+
+        waited.Should().BeTrue();
+        await FluentActions.Awaiting(() => add).Should().ThrowAsync<UserNotFoundException>();
+        await using WaveMpDbContext dbContext = CreateDbContext();
+        (await dbContext.PlayHistory.AnyAsync(entry => entry.UserId == user.Id)).Should().BeFalse();
     }
 
     [Test]
@@ -184,14 +225,19 @@ public class PlayHistoryRepositoryTests : LibraryDatabaseTests
 
     private async Task<PlayHistoryEntry> AddEntryAsync(User user, Track track, DateTimeOffset playedAt)
     {
-        PlayHistoryEntry entry = new()
+        PlayHistoryEntry entry = NewEntry(user.Id, track.Id, playedAt);
+        (await CreateRepository().AddAsync(entry)).Should().BeTrue();
+        return entry;
+    }
+
+    private static PlayHistoryEntry NewEntry(Guid userId, Guid trackId, DateTimeOffset? playedAt = null)
+    {
+        return new PlayHistoryEntry
         {
             Id = Guid.CreateVersion7(),
-            UserId = user.Id,
-            TrackId = track.Id,
-            PlayedAt = playedAt,
+            UserId = userId,
+            TrackId = trackId,
+            PlayedAt = playedAt ?? _start,
         };
-        await CreateRepository().AddAsync(entry);
-        return entry;
     }
 }

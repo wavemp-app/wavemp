@@ -9,7 +9,12 @@ namespace WaveMP.Data.Repositories;
 /// </summary>
 public interface IPlayHistoryRepository
 {
-    Task AddAsync(PlayHistoryEntry entry, CancellationToken cancellationToken = default);
+    /// <summary>
+    /// Adds an entry. Returns <c>false</c> (and adds nothing) if its track does not exist. A deletion of the user or
+    /// the track at the same time waits until the entry is saved and then removes it as well.
+    /// </summary>
+    /// <exception cref="UserNotFoundException">The user of the entry does not exist.</exception>
+    Task<bool> AddAsync(PlayHistoryEntry entry, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Lists the entries of a user, the newest play first.

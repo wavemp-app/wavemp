@@ -29,7 +29,15 @@ internal sealed class SessionService(
             CreatedAt = now,
             ExpiresAt = now + options.Value.Lifetime,
         };
-        await sessions.AddAsync(session, cancellationToken);
+        try
+        {
+            await sessions.AddAsync(session, cancellationToken);
+        }
+        catch (UserNotFoundException)
+        {
+            // The profile was deleted in the meantime.
+            return null;
+        }
 
         return new ActiveSession(session, user);
     }

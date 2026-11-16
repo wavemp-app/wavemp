@@ -20,6 +20,7 @@ public interface IPlaylistRepository
     /// </summary>
     /// <returns><see cref="PlaylistEntryChangeStatus.Done"/>, or
     /// <see cref="PlaylistEntryChangeStatus.TrackNotFound"/> if a track does not exist (nothing is created).</returns>
+    /// <exception cref="UserNotFoundException">The user of the playlist does not exist.</exception>
     Task<PlaylistEntryChange> CreateAsync(
         Playlist playlist,
         IReadOnlyList<Guid> trackIds,

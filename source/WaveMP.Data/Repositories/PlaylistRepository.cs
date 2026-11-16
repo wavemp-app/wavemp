@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using WaveMP.Data.Entities;
+using WaveMP.Data.Extensions;
 using WaveMP.Data.Projections;
 using WaveMP.Data.Queries;
 
@@ -46,6 +47,7 @@ internal sealed class PlaylistRepository(WaveMpDbContext dbContext) : IPlaylistR
         return InTransactionAsync(
             async token =>
             {
+                await dbContext.LockUserAsync(playlist.UserId, token);
                 if (!await TracksExistAsync(trackIds, token))
                 {
                     return PlaylistEntryChange.Of(PlaylistEntryChangeStatus.TrackNotFound);

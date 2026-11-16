@@ -3,6 +3,7 @@ using System.Net.Http.Json;
 using AwesomeAssertions;
 using WaveMP.Service.Dtos;
 using WaveMP.Service.Tests.IntegrationTests.Extensions;
+using WaveMP.Testing.Databases;
 using WaveMP.Testing.Files;
 using WaveMP.Testing.Media;
 
@@ -138,6 +139,29 @@ public class HistoryApiTests
         HttpResponseMessage response = await client.PostAsJsonAsync(Path, new { trackId = Guid.NewGuid() });
 
         await response.ShouldBeProblemAsync(HttpStatusCode.NotFound, "track.not_found");
+    }
+
+    [Test]
+    public async Task CreateMyHistoryEntry_ProfileDeletedDuringTheRequest_ReturnsUserNotFound()
+    {
+        UserDto user = await _admin.CreateUserAsync(new { name = $"History {HttpClientExtensions.Unique()}" });
+        CreatedSessionDto session = await _anonymous.CreateSessionAsync(user.Id);
+        using HttpClient client = _factory.CreateAuthorizedClient(session.Token);
+        await using PendingUserDeletion deletion =
+            await PendingUserDeletion.StartAsync(_factory.ConnectionString, user.Id);
+
+        _factory.ErrorLog.Clear();
+
+        // The session is still visible to the authentication; the write waits for the deletion.
+        Task<HttpResponseMessage> request = client.PostAsJsonAsync(Path, new { trackId = Track("First") });
+        bool waited = await deletion.CommitWhileWaitingAsync(request, TimeSpan.FromSeconds(10));
+        using HttpResponseMessage response = await request;
+
+        waited.Should().BeTrue();
+        await response.ShouldBeProblemAsync(HttpStatusCode.NotFound, "user.not_found");
+        _factory.ErrorLog.Errors.Should().BeEmpty();
+        HttpResponseMessage afterwards = await client.PostAsJsonAsync(Path, new { trackId = Track("First") });
+        await afterwards.ShouldBeProblemAsync(HttpStatusCode.Unauthorized, "auth.unauthorized");
     }
 
     [Test]

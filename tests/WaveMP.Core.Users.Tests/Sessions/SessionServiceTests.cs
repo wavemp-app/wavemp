@@ -76,6 +76,19 @@ public class SessionServiceTests
     }
 
     [Test]
+    public async Task CreateAsync_ProfileDeletedBeforeTheSessionIsSaved_ReturnsNull()
+    {
+        User user = CreateUser();
+        _users.FindAsync(user.Id, Arg.Any<CancellationToken>()).Returns(user);
+        _sessions.AddAsync(Arg.Any<Session>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromException(new UserNotFoundException(user.Id)));
+
+        ActiveSession? result = await _service.CreateAsync(user.Id);
+
+        result.Should().BeNull();
+    }
+
+    [Test]
     public async Task GetActiveAsync_WithActiveSession_ReturnsSessionAndUser()
     {
         User user = CreateUser();

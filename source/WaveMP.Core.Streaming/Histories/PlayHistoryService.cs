@@ -40,7 +40,12 @@ internal sealed class PlayHistoryService(
             TrackId = trackId,
             PlayedAt = TruncateToMicroseconds(start),
         };
-        await history.AddAsync(entry, cancellationToken);
+        if (!await history.AddAsync(entry, cancellationToken))
+        {
+            // A scan removed the track in the meantime.
+            return new PlayHistoryResult(PlayHistoryStatus.TrackNotFound, null);
+        }
+
         return new PlayHistoryResult(PlayHistoryStatus.Created, new PlayHistoryItem(entry, track));
     }
 

@@ -1,14 +1,21 @@
 using Microsoft.EntityFrameworkCore;
 using WaveMP.Data.Entities;
+using WaveMP.Data.Extensions;
 
 namespace WaveMP.Data.Repositories;
 
 internal sealed class SessionRepository(WaveMpDbContext dbContext) : ISessionRepository
 {
-    public async Task AddAsync(Session session, CancellationToken cancellationToken = default)
+    public Task AddAsync(Session session, CancellationToken cancellationToken = default)
     {
-        dbContext.Sessions.Add(session);
-        await dbContext.SaveChangesAsync(cancellationToken);
+        return dbContext.InUserTransactionAsync(
+            session.UserId,
+            async token =>
+            {
+                dbContext.Sessions.Add(session);
+                return await dbContext.SaveChangesAsync(token);
+            },
+            cancellationToken);
     }
 
     public Task<Session?> FindActiveAsync(
