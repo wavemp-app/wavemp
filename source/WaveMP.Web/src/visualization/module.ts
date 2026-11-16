@@ -1,5 +1,5 @@
 // The interface of the visualization modules. A module draws the music of the player into a canvas
-// with presets of its own: Milkdrop presets, the style variants of A-Force or later the scenes of
+// with presets of its own: Milkdrop presets, the style variants of A-Force or the scenes of
 // BlackCap. The stage knows modules only through this interface, so further modules plug in
 // without changes to the stage, the controller or the settings (besides a value of the API enum
 // VisualizationModule).
@@ -15,7 +15,10 @@ export interface VisualizationPreset {
     readonly id: string
     /** Name to show for presets that carry their own names (Milkdrop); these are not translated. */
     readonly name: string
-    /** Message key of the name for presets of the app itself (A-Force); shown instead of name. */
+    /**
+     * Message key of the name for presets of the app itself (A-Force, BlackCap); shown instead of
+     * name.
+     */
     readonly labelKey?: string
 }
 

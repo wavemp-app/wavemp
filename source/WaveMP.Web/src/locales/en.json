@@ -161,7 +161,8 @@
     "visualizationModule": "Visualization",
     "visualizationModules": {
       "milkdrop": "Milkdrop",
-      "aforce": "A-Force"
+      "aforce": "A-Force",
+      "blackcap": "BlackCap"
     },
     "aforceStyles": {
       "aurora": "Aurora",
@@ -170,6 +171,14 @@
       "lagoon": "Lagoon",
       "prism": "Prism",
       "eclipse": "Eclipse"
+    },
+    "blackcapScenes": {
+      "lumen": "Lumen",
+      "tide": "Tide",
+      "orchid": "Orchid",
+      "mercury": "Mercury",
+      "halo": "Halo",
+      "dusk": "Dusk"
     },
     "visualizationPreset": "Preset",
     "previousPreset": "Previous preset",

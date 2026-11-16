@@ -279,14 +279,23 @@ describe('StageVisualization', () => {
         expect(segments.map((segment) => segment.attributes('data-item'))).toEqual([
             'milkdrop',
             'aforce',
+            'blackcap',
         ])
-        expect(segments.map((segment) => segment.text())).toEqual(['Milkdrop', 'A-Force'])
+        expect(segments.map((segment) => segment.text())).toEqual([
+            'Milkdrop',
+            'A-Force',
+            'BlackCap',
+        ])
         expect(segments[0]!.attributes('aria-checked')).toBe('true')
 
         await segments[0]!.trigger('click')
         expect(wrapper.emitted('update')).toBeUndefined()
         await segments[1]!.trigger('click')
-        expect(wrapper.emitted('update')).toEqual([[{ module: 'AForce' }]])
+        await segments[2]!.trigger('click')
+        expect(wrapper.emitted('update')).toEqual([
+            [{ module: 'AForce' }],
+            [{ module: 'BlackCap' }],
+        ])
         wrapper.unmount()
     })
 
@@ -319,7 +328,36 @@ describe('StageVisualization', () => {
             wrapper
                 .findAll('[data-part="segment"]')
                 .map((segment) => segment.attributes('aria-checked')),
-        ).toEqual(['false', 'true'])
+        ).toEqual(['false', 'true', 'false'])
+        wrapper.unmount()
+    })
+
+    it('starts BlackCap with the stored scene and shows the scenes in the language of the app', async () => {
+        const wrapper = await loaded()
+        const other = new FakeModule()
+        other.presets = [
+            { id: 'lumen', name: 'Lumen', labelKey: 'nowPlaying.blackcapScenes.lumen' },
+            { id: 'tide', name: 'Tide', labelKey: 'nowPlaying.blackcapScenes.tide' },
+        ]
+        visualizationDependencies.module = () => other
+
+        await wrapper.setProps({
+            settings: { ...defaultVisualizationSettings, module: 'BlackCap', preset: 'tide' },
+        })
+        await other.finishLoad()
+        await flushPromises()
+
+        expect(wrapper.get('[data-part="visualization"]').attributes('data-module')).toBe(
+            'blackcap',
+        )
+        expect(state(wrapper)).toBe('running')
+        expect(other.renderer?.showPreset).toHaveBeenCalledWith('tide', 0)
+        expect(wrapper.findAll('option').map((option) => option.text())).toEqual(['Lumen', 'Tide'])
+        expect(
+            wrapper
+                .findAll('[data-part="segment"]')
+                .map((segment) => segment.attributes('aria-checked')),
+        ).toEqual(['false', 'false', 'true'])
         wrapper.unmount()
     })
 

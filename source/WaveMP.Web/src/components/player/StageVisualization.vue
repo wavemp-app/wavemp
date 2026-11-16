@@ -25,13 +25,13 @@ import {
 } from '@/visualization/settings'
 
 /**
- * The visualization of the Now Playing stage: the module of the profile (Milkdrop presets or the
- * style variants of A-Force) draws the output of the player into a canvas, in sync with the music,
- * at the quality of the profile. Its controls choose the module and the preset, turn the automatic
- * change on and off and show the visualization in full screen (also with a double click). The
- * module loads when the view is shown the first time; nothing is drawn while the view is hidden,
- * the page is in the background or the stage is out of the viewport. Choices are handed to the
- * profile with update.
+ * The visualization of the Now Playing stage: the module of the profile (Milkdrop presets, the
+ * style variants of A-Force or the scenes of BlackCap) draws the output of the player into a canvas,
+ * in sync with the music, at the quality of the profile. Its controls choose the module and the
+ * preset, turn the automatic change on and off and show the visualization in full screen (also with
+ * a double click). The module loads when the view is shown the first time; nothing is drawn while
+ * the view is hidden, the page is in the background or the stage is out of the viewport. Choices
+ * are handed to the profile with update.
  */
 const props = withDefaults(
     defineProps<{
