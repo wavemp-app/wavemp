@@ -44,4 +44,19 @@ public enum JobErrorCode
     /// The cache folder under the data folder cannot be written.
     /// </summary>
     CacheFolderUnwritable,
+
+    /// <summary>
+    /// The backup folder under the data folder cannot be written.
+    /// </summary>
+    BackupFolderUnwritable,
+
+    /// <summary>
+    /// pg_dump cannot be started, so the database cannot be exported.
+    /// </summary>
+    PgDumpUnavailable,
+
+    /// <summary>
+    /// pg_dump failed or took too long; details are in the log.
+    /// </summary>
+    BackupFailed,
 }

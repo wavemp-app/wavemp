@@ -2,6 +2,7 @@ using System.Globalization;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using WaveMP.Data.Migrators;
 using WaveMP.Data.Options;
 using WaveMP.Data.Repositories;
 
@@ -28,6 +29,7 @@ public static class ServiceCollectionExtensions
                 npgsql => npgsql.EnableRetryOnFailure());
         });
 
+        services.AddScoped<IDatabaseMigrator, DatabaseMigrator>();
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<ISessionRepository, SessionRepository>();
         services.AddScoped<IServerSecretRepository, ServerSecretRepository>();

@@ -1,5 +1,6 @@
 <Solution>
   <Folder Name="/source/">
+    <Project Path="source/WaveMP.Core.Backups/WaveMP.Core.Backups.csproj" />
     <Project Path="source/WaveMP.Core.Caching/WaveMP.Core.Caching.csproj" />
     <Project Path="source/WaveMP.Core.Collection/WaveMP.Core.Collection.csproj" />
     <Project Path="source/WaveMP.Core.Jobs/WaveMP.Core.Jobs.csproj" />
@@ -15,6 +16,7 @@
     <Project Path="source/WaveMP.Service/WaveMP.Service.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/WaveMP.Core.Backups.Tests/WaveMP.Core.Backups.Tests.csproj" />
     <Project Path="tests/WaveMP.Core.Caching.Tests/WaveMP.Core.Caching.Tests.csproj" />
     <Project Path="tests/WaveMP.Core.Collection.Tests/WaveMP.Core.Collection.Tests.csproj" />
     <Project Path="tests/WaveMP.Core.Jobs.Tests/WaveMP.Core.Jobs.Tests.csproj" />
