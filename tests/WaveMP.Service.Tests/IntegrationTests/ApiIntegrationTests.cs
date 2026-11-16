@@ -124,6 +124,26 @@ public class ApiIntegrationTests
     }
 
     [Test]
+    public async Task GetOpenApiDocument_Always_DescribesTheLocationOfCreatedAndAcceptedResources()
+    {
+        JsonNode document = await GetOpenApiDocumentAsync();
+
+        List<JsonNode> responses = [.. FindOperations(document)
+            .SelectMany(operation => operation["responses"]!.AsObject())
+            .Where(response => response.Key is "201" or "202")
+            .Select(response => response.Value!)];
+
+        // Users, sessions, playlists, playlist entries and history entries; scans, job runs and backups.
+        responses.Should().HaveCount(8);
+        responses.Should().AllSatisfy(response =>
+        {
+            JsonNode location = response["headers"]!["Location"]!;
+            location["required"]!.GetValue<bool>().Should().BeTrue();
+            location["schema"]!["type"]!.GetValue<string>().Should().Be("string");
+        });
+    }
+
+    [Test]
     public async Task GetOpenApiDocument_Always_DescribesProblemCodeAsRequiredNamedEnum()
     {
         string[] expectedCodes = [.. Enum.GetValues<ProblemCodeDto>()

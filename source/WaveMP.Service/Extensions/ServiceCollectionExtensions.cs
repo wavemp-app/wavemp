@@ -173,6 +173,7 @@ public static class ServiceCollectionExtensions
             options.AddDocumentTransformer<MediaSignatureSecuritySchemeTransformer>();
             // After the bearer requirement, which it replaces with the alternatives of media endpoints.
             options.AddOperationTransformer<SignedMediaUrlTransformer>();
+            options.AddOperationTransformer<LocationHeaderTransformer>();
 
             options.AddDocumentTransformer((document, _, _) =>
             {
