@@ -14,4 +14,9 @@ public static class JobIds
     /// Prepares the scaled covers after a scan and removes those of changed or removed pictures from the cache.
     /// </summary>
     public const string CoverCache = "cover-cache";
+
+    /// <summary>
+    /// Exports the database into the backup folder, every day and when an admin starts it.
+    /// </summary>
+    public const string DatabaseBackup = "database-backup";
 }

@@ -107,6 +107,29 @@ public class QuartzHostTests
     }
 
     [Test]
+    public async Task DailySchedule_FromProvider_RunsNextAtTheTimeOfDayInItsTimeZone()
+    {
+        var zone = TimeZoneInfo.CreateCustomTimeZone("Test+02", TimeSpan.FromHours(2), "Test+02", "Test+02");
+        TestScheduleProvider provider = new() { Daily = JobSchedule.Daily(new TimeOnly(3, 30), zone) };
+        await using TestHost host = await TestHost.StartAsync(provider);
+        IJobScheduler scheduler = host.Services.GetRequiredService<IJobScheduler>();
+
+        DateTimeOffset next = (await scheduler.GetNextRunAsync(GatedJobId))!.Value;
+
+        DateTimeOffset local = TimeZoneInfo.ConvertTime(next, zone);
+        local.TimeOfDay.Should().Be(new TimeSpan(3, 30, 0));
+        next.Should().BeAfter(DateTimeOffset.UtcNow);
+        next.Should().BeOnOrBefore(DateTimeOffset.UtcNow.AddDays(1));
+    }
+
+    [Test]
+    public void DailyCronExpression_Always_FiresAtSecondZeroOfTheMinuteEveryDay()
+    {
+        JobScheduler.DailyCronExpression(new TimeOnly(3, 5)).Should().Be("0 5 3 * * ?");
+        JobScheduler.DailyCronExpression(new TimeOnly(23, 59, 30)).Should().Be("0 59 23 * * ?");
+    }
+
+    [Test]
     public async Task ScheduledRun_DueWhileAnotherRunHoldsTheJob_IsSkipped()
     {
         TestScheduleProvider provider = new() { Interval = TimeSpan.FromHours(1), StartupDelay = TimeSpan.FromSeconds(3) };
@@ -258,11 +281,16 @@ public class QuartzHostTests
 
         public TimeSpan StartupDelay { get; init; } = TimeSpan.FromHours(1);
 
+        /// <summary>
+        /// A daily schedule that replaces the interval, if set.
+        /// </summary>
+        public JobSchedule? Daily { get; init; }
+
         public string JobId => GatedJobId;
 
         public JobSchedule? GetSchedule(JobScheduleReason reason)
         {
-            return new JobSchedule(Interval, reason == JobScheduleReason.Startup ? StartupDelay : Interval);
+            return Daily ?? new JobSchedule(Interval, reason == JobScheduleReason.Startup ? StartupDelay : Interval);
         }
     }
 

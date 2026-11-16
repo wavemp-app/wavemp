@@ -35,16 +35,21 @@ internal sealed class JobService(
         List<JobOverview> items = [];
         foreach (string jobId in jobIds)
         {
-            JobSchedule? schedule = scheduler.FindScheduleProvider(jobId)?.GetSchedule(JobScheduleReason.SettingsChanged);
-            items.Add(new JobOverview(
-                jobId,
-                tracker.GetState(jobId),
-                schedule,
-                await scheduler.GetNextRunAsync(jobId, cancellationToken),
-                lastRuns.GetValueOrDefault(jobId)));
+            items.Add(await OverviewAsync(jobId, lastRuns.GetValueOrDefault(jobId), cancellationToken));
         }
 
         return new Page<JobOverview>(items, offset, limit, _jobIds.Length);
+    }
+
+    public async Task<JobOverview?> GetAsync(string jobId, CancellationToken cancellationToken = default)
+    {
+        if (!Exists(jobId))
+        {
+            return null;
+        }
+
+        IReadOnlyDictionary<string, JobRun> lastRuns = await runs.FindLatestAsync([jobId], cancellationToken);
+        return await OverviewAsync(jobId, lastRuns.GetValueOrDefault(jobId), cancellationToken);
     }
 
     public async Task<JobRun?> GetRunAsync(string jobId, Guid runId, CancellationToken cancellationToken = default)
@@ -107,6 +112,20 @@ internal sealed class JobService(
         }
 
         return JobRunStartResult.Success(run);
+    }
+
+    private async Task<JobOverview> OverviewAsync(
+        string jobId,
+        JobRun? lastRun,
+        CancellationToken cancellationToken)
+    {
+        JobSchedule? schedule = scheduler.FindScheduleProvider(jobId)?.GetSchedule(JobScheduleReason.SettingsChanged);
+        return new JobOverview(
+            jobId,
+            tracker.GetState(jobId),
+            schedule,
+            await scheduler.GetNextRunAsync(jobId, cancellationToken),
+            lastRun);
     }
 
     private async Task TryMarkFailedAsync(Guid runId, Exception exception)

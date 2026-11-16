@@ -20,6 +20,11 @@ public interface IJobService
     Task<Page<JobOverview>> ListAsync(int offset, int limit, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// The job with its state, schedule, next and last run, or <c>null</c> if it does not exist.
+    /// </summary>
+    Task<JobOverview?> GetAsync(string jobId, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// A run of the job, or <c>null</c> if it does not exist or belongs to another job.
     /// </summary>
     Task<JobRun?> GetRunAsync(string jobId, Guid runId, CancellationToken cancellationToken = default);

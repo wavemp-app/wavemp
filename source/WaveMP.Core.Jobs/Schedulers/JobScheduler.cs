@@ -1,3 +1,4 @@
+using System.Globalization;
 using Microsoft.Extensions.Logging;
 using Quartz;
 using WaveMP.Core.Jobs.Definitions;
@@ -87,6 +88,15 @@ internal sealed class JobScheduler(
         return new TriggerKey(jobId + ".schedule");
     }
 
+    /// <summary>
+    /// The Quartz cron expression of every day at the hour and minute of <paramref name="time"/>, e.g.
+    /// <c>0 30 3 * * ?</c> for 03:30.
+    /// </summary>
+    internal static string DailyCronExpression(TimeOnly time)
+    {
+        return string.Create(CultureInfo.InvariantCulture, $"0 {time.Minute} {time.Hour} * * ?");
+    }
+
     private async Task ScheduleAsync(
         IScheduler scheduler,
         IJobScheduleProvider provider,
@@ -103,22 +113,46 @@ internal sealed class JobScheduler(
         // A run that was missed, e.g. while a manual run of the same job was running, is skipped instead of being
         // made up right after: once the job is free again more than the threshold after the scheduled time, the
         // trigger moves on to its next scheduled time.
-        ITrigger trigger = TriggerBuilder.Create(timeProvider)
+        TriggerBuilder<IJob> builder = TriggerBuilder.Create(timeProvider)
             .WithIdentity(key)
             .ForJob(JobKeyOf(provider.JobId))
-            .StartAt(timeProvider.GetUtcNow() + schedule.FirstRunDelay)
-            .WithMisfireThreshold(ScheduledMisfireThreshold)
-            .WithSchedule(SimpleScheduleBuilder.Create()
-                .WithInterval(schedule.Interval)
-                .RepeatForever()
-                .WithMisfireInstruction(SimpleTriggerMisfireInstruction.NextWithRemainingCount))
-            .Build();
+            .WithMisfireThreshold(ScheduledMisfireThreshold);
+        if (schedule.DailyAt is { } time)
+        {
+            TimeZoneInfo timeZone = schedule.TimeZone ?? timeProvider.LocalTimeZone;
+            builder = builder
+                .StartAt(timeProvider.GetUtcNow())
+                .WithSchedule(CronScheduleBuilder.Create(DailyCronExpression(time))
+                    .InTimeZone(timeZone)
+                    .WithMisfireInstruction(CronTriggerMisfireInstruction.DoNothing));
+        }
+        else
+        {
+            builder = builder
+                .StartAt(timeProvider.GetUtcNow() + schedule.FirstRunDelay)
+                .WithSchedule(SimpleScheduleBuilder.Create()
+                    .WithInterval(schedule.Interval)
+                    .RepeatForever()
+                    .WithMisfireInstruction(SimpleTriggerMisfireInstruction.NextWithRemainingCount));
+        }
 
-        await scheduler.ScheduleJob(trigger, ScheduleJobOptions.Replacing, cancellationToken);
-        logger.LogInformation(
-            "Scheduled job {JobId} every {Interval}, next run at {NextRun}",
-            provider.JobId,
-            schedule.Interval,
-            trigger.StartTimeUtc);
+        ITrigger trigger = builder.Build();
+        DateTimeOffset nextRun = await scheduler.ScheduleJob(trigger, ScheduleJobOptions.Replacing, cancellationToken);
+        if (schedule.DailyAt is { } dailyAt)
+        {
+            logger.LogInformation(
+                "Scheduled job {JobId} daily at {Time}, next run at {NextRun}",
+                provider.JobId,
+                dailyAt,
+                nextRun);
+        }
+        else
+        {
+            logger.LogInformation(
+                "Scheduled job {JobId} every {Interval}, next run at {NextRun}",
+                provider.JobId,
+                schedule.Interval,
+                nextRun);
+        }
     }
 }

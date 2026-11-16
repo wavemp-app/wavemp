@@ -148,6 +148,38 @@ public class JobServiceTests
     }
 
     [Test]
+    public async Task GetAsync_WithUnknownJob_ReturnsNull()
+    {
+        (await _service.GetAsync("unknown")).Should().BeNull();
+    }
+
+    [Test]
+    public async Task GetAsync_WithKnownJob_ReturnsItsStateScheduleAndRuns()
+    {
+        var daily = JobSchedule.Daily(new TimeOnly(3, 0), TimeZoneInfo.Utc);
+        IJobScheduleProvider provider = Substitute.For<IJobScheduleProvider>();
+        provider.GetSchedule(JobScheduleReason.SettingsChanged).Returns(daily);
+        _scheduler.FindScheduleProvider("a-job").Returns(provider);
+        _scheduler.GetNextRunAsync("a-job", Arg.Any<CancellationToken>()).Returns(_now.AddHours(17));
+        JobRun last = new()
+        {
+            Id = Guid.NewGuid(),
+            JobId = "a-job",
+            Trigger = JobRunTrigger.Manual,
+            Status = JobRunStatus.Failed,
+            QueuedAt = _now.AddHours(-1),
+        };
+        _runs.FindLatestAsync(
+                Arg.Is<IReadOnlyCollection<string>>(ids => ids.SequenceEqual(new[] { "a-job" })),
+                Arg.Any<CancellationToken>())
+            .Returns(new Dictionary<string, JobRun> { ["a-job"] = last });
+
+        JobOverview? job = await _service.GetAsync("a-job");
+
+        job.Should().Be(new JobOverview("a-job", JobActivityState.Idle, daily, _now.AddHours(17), last));
+    }
+
+    [Test]
     public async Task GetRunAsync_WithRunOfOtherJob_ReturnsNull()
     {
         JobRun run = new()
