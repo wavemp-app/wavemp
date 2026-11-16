@@ -999,6 +999,15 @@ export function createUpdateUserSettingsFromDiscriminatorValue(parseNode: ParseN
     return deserializeIntoUpdateUserSettings;
 }
 /**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {UpdateVisualizationSettings}
+ */
+// @ts-ignore
+export function createUpdateVisualizationSettingsFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoUpdateVisualizationSettings;
+}
+/**
  * Creates a user (profile).
  */
 export interface CreateUser extends AdditionalDataHolder, Parsable {
@@ -1063,6 +1072,15 @@ export function createValidationErrorFromDiscriminatorValue(parseNode: ParseNode
 // @ts-ignore
 export function createValidationProblemFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
     return deserializeIntoValidationProblem;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {VisualizationSettings}
+ */
+// @ts-ignore
+export function createVisualizationSettingsFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoVisualizationSettings;
 }
 /**
  * Creates a new instance of the appropriate class based on discriminator value
@@ -2271,6 +2289,21 @@ export function deserializeIntoUpdateUserSettings(updateUserSettings: Partial<Up
         "replayGain": n => { updateUserSettings.replayGain = n.getEnumValue<ReplayGainMode>(ReplayGainModeObject); },
         "sidebarCollapsed": n => { updateUserSettings.sidebarCollapsed = n.getBooleanValue(); },
         "sleepTimer": n => { updateUserSettings.sleepTimer = n.getObjectValue<UpdateSleepTimerSettings>(createUpdateSleepTimerSettingsFromDiscriminatorValue); },
+        "visualization": n => { updateUserSettings.visualization = n.getObjectValue<UpdateVisualizationSettings>(createUpdateVisualizationSettingsFromDiscriminatorValue); },
+    }
+}
+/**
+ * The deserialization information for the current model
+ * @param UpdateVisualizationSettings The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoUpdateVisualizationSettings(updateVisualizationSettings: Partial<UpdateVisualizationSettings> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "autoChange": n => { updateVisualizationSettings.autoChange = n.getBooleanValue(); },
+        "autoChangeSeconds": n => { updateVisualizationSettings.autoChangeSeconds = n.getNumberValue(); },
+        "module": n => { updateVisualizationSettings.module = n.getEnumValue<VisualizationModule>(VisualizationModuleObject); },
+        "preset": n => { updateVisualizationSettings.preset = n.getStringValue(); },
     }
 }
 /**
@@ -2319,6 +2352,7 @@ export function deserializeIntoUserSettings(userSettings: Partial<UserSettings> 
         "replayGain": n => { userSettings.replayGain = n.getEnumValue<ReplayGainMode>(ReplayGainModeObject); },
         "sidebarCollapsed": n => { userSettings.sidebarCollapsed = n.getBooleanValue(); },
         "sleepTimer": n => { userSettings.sleepTimer = n.getObjectValue<SleepTimerSettings>(createSleepTimerSettingsFromDiscriminatorValue); },
+        "visualization": n => { userSettings.visualization = n.getObjectValue<VisualizationSettings>(createVisualizationSettingsFromDiscriminatorValue); },
     }
 }
 /**
@@ -2350,6 +2384,20 @@ export function deserializeIntoValidationProblem(validationProblem: Partial<Vali
         "status": n => { validationProblem.status = n.getNumberValue(); },
         "title": n => { validationProblem.title = n.getStringValue(); },
         "type": n => { validationProblem.type = n.getStringValue(); },
+    }
+}
+/**
+ * The deserialization information for the current model
+ * @param VisualizationSettings The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoVisualizationSettings(visualizationSettings: Partial<VisualizationSettings> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "autoChange": n => { visualizationSettings.autoChange = n.getBooleanValue(); },
+        "autoChangeSeconds": n => { visualizationSettings.autoChangeSeconds = n.getNumberValue(); },
+        "module": n => { visualizationSettings.module = n.getEnumValue<VisualizationModule>(VisualizationModuleObject); },
+        "preset": n => { visualizationSettings.preset = n.getStringValue(); },
     }
 }
 /**
@@ -4627,7 +4675,23 @@ export function serializeUpdateUserSettings(writer: SerializationWriter, updateU
     writer.writeEnumValue<ReplayGainMode>("replayGain", updateUserSettings.replayGain);
     writer.writeBooleanValue("sidebarCollapsed", updateUserSettings.sidebarCollapsed);
     writer.writeObjectValue<UpdateSleepTimerSettings>("sleepTimer", updateUserSettings.sleepTimer, serializeUpdateSleepTimerSettings);
+    writer.writeObjectValue<UpdateVisualizationSettings>("visualization", updateUserSettings.visualization, serializeUpdateVisualizationSettings);
     writer.writeAdditionalData(updateUserSettings.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param UpdateVisualizationSettings The instance to serialize from.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeUpdateVisualizationSettings(writer: SerializationWriter, updateVisualizationSettings: Partial<UpdateVisualizationSettings> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!updateVisualizationSettings || isSerializingDerivedType) { return; }
+    writer.writeBooleanValue("autoChange", updateVisualizationSettings.autoChange);
+    writer.writeNumberValue("autoChangeSeconds", updateVisualizationSettings.autoChangeSeconds);
+    writer.writeEnumValue<VisualizationModule>("module", updateVisualizationSettings.module);
+    writer.writeStringValue("preset", updateVisualizationSettings.preset);
+    writer.writeAdditionalData(updateVisualizationSettings.additionalData);
 }
 /**
  * Serializes information the current object
@@ -4678,6 +4742,7 @@ export function serializeUserSettings(writer: SerializationWriter, userSettings:
     writer.writeEnumValue<ReplayGainMode>("replayGain", userSettings.replayGain);
     writer.writeBooleanValue("sidebarCollapsed", userSettings.sidebarCollapsed);
     writer.writeObjectValue<SleepTimerSettings>("sleepTimer", userSettings.sleepTimer, serializeSleepTimerSettings);
+    writer.writeObjectValue<VisualizationSettings>("visualization", userSettings.visualization, serializeVisualizationSettings);
     writer.writeAdditionalData(userSettings.additionalData);
 }
 /**
@@ -4712,6 +4777,21 @@ export function serializeValidationProblem(writer: SerializationWriter, validati
     writer.writeStringValue("title", validationProblem.title);
     writer.writeStringValue("type", validationProblem.type);
     writer.writeAdditionalData(validationProblem.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param VisualizationSettings The instance to serialize from.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeVisualizationSettings(writer: SerializationWriter, visualizationSettings: Partial<VisualizationSettings> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!visualizationSettings || isSerializingDerivedType) { return; }
+    writer.writeBooleanValue("autoChange", visualizationSettings.autoChange);
+    writer.writeNumberValue("autoChangeSeconds", visualizationSettings.autoChangeSeconds);
+    writer.writeEnumValue<VisualizationModule>("module", visualizationSettings.module);
+    writer.writeStringValue("preset", visualizationSettings.preset);
+    writer.writeAdditionalData(visualizationSettings.additionalData);
 }
 /**
  * Serializes information the current object
@@ -5387,6 +5467,31 @@ export interface UpdateUserSettings extends AdditionalDataHolder, Parsable {
      * The sleepTimer property
      */
     sleepTimer?: UpdateSleepTimerSettings | null;
+    /**
+     * The visualization property
+     */
+    visualization?: UpdateVisualizationSettings | null;
+}
+/**
+ * Changes the visualization of the current profile. Missing or null values stay unchanged.
+ */
+export interface UpdateVisualizationSettings extends AdditionalDataHolder, Parsable {
+    /**
+     * Whether the visualization changes its preset automatically; the seconds stay when it is turned off.
+     */
+    autoChange?: boolean | null;
+    /**
+     * Seconds after which the visualization changes its preset, from 5 to 600.
+     */
+    autoChangeSeconds?: number | null;
+    /**
+     * The module property
+     */
+    module?: VisualizationModule | null;
+    /**
+     * Name of the chosen preset of the module, up to 200 characters; an empty string forgets it, so the player picks one.
+     */
+    preset?: string | null;
 }
 /**
  * A user (profile) as managed by admins.
@@ -5474,6 +5579,10 @@ export interface UserSettings extends AdditionalDataHolder, Parsable {
      * Sleep timer of the players.
      */
     sleepTimer?: SleepTimerSettings | null;
+    /**
+     * Visualization of the Now Playing view.
+     */
+    visualization?: VisualizationSettings | null;
 }
 export type UserSort = (typeof UserSortObject)[keyof typeof UserSortObject];
 /**
@@ -5533,6 +5642,28 @@ export interface ValidationProblem extends AdditionalDataHolder, ApiError, Parsa
 }
 export type VideoCodec = (typeof VideoCodecObject)[keyof typeof VideoCodecObject];
 export type VideoContainer = (typeof VideoContainerObject)[keyof typeof VideoContainerObject];
+export type VisualizationModule = (typeof VisualizationModuleObject)[keyof typeof VisualizationModuleObject];
+/**
+ * Visualization of the Now Playing view of the current profile.
+ */
+export interface VisualizationSettings extends AdditionalDataHolder, Parsable {
+    /**
+     * Whether the visualization changes its preset automatically; true by default. Turning it off keeps the seconds.
+     */
+    autoChange?: boolean | null;
+    /**
+     * Seconds after which the visualization changes its preset while the automatic change is on, from 5 to 600; 30 by default.
+     */
+    autoChangeSeconds?: number | null;
+    /**
+     * The visualization; Milkdrop by default.
+     */
+    module?: VisualizationModule | null;
+    /**
+     * Name of the preset of the module the profile chose last, or null to let the player pick one. The players know the presets of their modules; a name a player does not know is treated like null.
+     */
+    preset?: string | null;
+}
 /**
  * A year of the tracks.
  */
@@ -5691,7 +5822,7 @@ export const HlsMediaObject = {
     Video: "Video",
 } as const;
 /**
- * Why the run failed or was interrupted.
+ * Why the scan failed or was interrupted.
  */
 export const JobErrorCodeObject = {
     JobFailed: "job.failed",
@@ -5942,6 +6073,12 @@ export const VideoContainerObject = {
     Mov: "Mov",
     Webm: "Webm",
     Matroska: "Matroska",
+} as const;
+/**
+ * The visualization; Milkdrop by default.
+ */
+export const VisualizationModuleObject = {
+    Milkdrop: "Milkdrop",
 } as const;
 /* tslint:enable */
 /* eslint-enable */
