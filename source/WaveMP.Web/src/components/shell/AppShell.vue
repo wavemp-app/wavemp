@@ -8,6 +8,7 @@ import AppSidebar from './AppSidebar.vue'
 import AppToolbar from './AppToolbar.vue'
 import AppTransport from './AppTransport.vue'
 import type { SleepTimerChoice } from './transport'
+import { contentAreaId } from '@/router/scroll'
 import BaseAlert from '@/components/base/BaseAlert.vue'
 import { pageTitleKey } from '@/navigation/breadcrumb'
 import { useMediaQuery } from '@/composables/useMediaQuery'
@@ -137,7 +138,7 @@ onUnmounted(() => {
             @close="closeSidebar"
             @toggle-collapsed="toggleSidebarCollapsed"
         />
-        <main id="wavemp-content" data-part="content">
+        <main :id="contentAreaId" data-part="content">
             <h1 data-part="content-title">{{ title }}</h1>
             <BaseAlert
                 v-if="collection.error"
