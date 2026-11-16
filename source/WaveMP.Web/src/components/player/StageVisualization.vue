@@ -3,6 +3,9 @@ import { computed, onBeforeUnmount, onMounted, ref, shallowRef, toRaw, watch } f
 import { useI18n } from 'vue-i18n'
 import BaseButton from '@/components/base/BaseButton.vue'
 import BaseIcon from '@/components/base/BaseIcon.vue'
+import BaseSegmentedControl, {
+    type SegmentOption,
+} from '@/components/base/BaseSegmentedControl.vue'
 import BaseSelect, { type SelectOption } from '@/components/base/BaseSelect.vue'
 import { useInView } from '@/composables/useInView'
 import { canFullscreen, enterFullscreen, exitFullscreen, isFullscreen } from '@/player/fullscreen'
@@ -12,7 +15,9 @@ import {
     type VisualizationState,
 } from '@/visualization/controller'
 import type { VisualizationPreset } from '@/visualization/module'
-import { visualizationDependencies } from '@/visualization/modules'
+import { adjacentPreset } from '@/visualization/presets'
+import { visualizationDependencies, visualizationModuleChoices } from '@/visualization/modules'
+import type { QualityLevel } from '@/visualization/quality'
 import {
     defaultVisualizationSettings,
     type VisualizationSettings,
@@ -20,12 +25,13 @@ import {
 } from '@/visualization/settings'
 
 /**
- * The visualization of the Now Playing stage: the module of the profile (Milkdrop presets for now)
- * draws the output of the player into a canvas, in sync with the music. Its controls choose the
- * preset, turn the automatic change on and off and show the visualization in full screen (also
- * with a double click). The module loads when the view is shown the first time; nothing is drawn
- * while the view is hidden, the page is in the background or the stage is out of the viewport.
- * Choices are handed to the profile with update.
+ * The visualization of the Now Playing stage: the module of the profile (Milkdrop presets or the
+ * style variants of A-Force) draws the output of the player into a canvas, in sync with the music,
+ * at the quality of the profile. Its controls choose the module and the preset, turn the automatic
+ * change on and off and show the visualization in full screen (also with a double click). The
+ * module loads when the view is shown the first time; nothing is drawn while the view is hidden,
+ * the page is in the background or the stage is out of the viewport. Choices are handed to the
+ * profile with update.
  */
 const props = withDefaults(
     defineProps<{
@@ -52,6 +58,7 @@ const canvasKey = ref(0)
 const state = ref<VisualizationState>('idle')
 const presets = shallowRef<readonly VisualizationPreset[]>([])
 const preset = ref('')
+const quality = ref<QualityLevel>('high')
 const fullscreen = ref(false)
 const fullscreenAvailable = ref(false)
 const pageVisible = ref(typeof document === 'undefined' || document.visibilityState !== 'hidden')
@@ -84,7 +91,18 @@ const message = computed(() => {
 })
 
 const presetOptions = computed<SelectOption[]>(() =>
-    presets.value.map((item) => ({ value: item.id, label: item.name })),
+    presets.value.map((item) => ({
+        value: item.id,
+        label: item.labelKey ? t(item.labelKey) : item.name,
+    })),
+)
+
+const moduleOptions = computed<SegmentOption[]>(() =>
+    visualizationModuleChoices.map((choice) => ({
+        value: choice.id,
+        item: choice.id.toLowerCase(),
+        label: t(choice.labelKey),
+    })),
 )
 
 let controller: VisualizationController | null = null
@@ -105,12 +123,15 @@ function createController(): VisualizationController {
             presets: (value) => (presets.value = value),
             preset: (value) => (preset.value = value ?? ''),
             canvasReleased: () => canvasKey.value++,
+            quality: (value) => (quality.value = value),
         },
         visualizationDependencies.clock,
     )
+    created.setQuality(props.settings.quality)
     state.value = created.currentState
     presets.value = created.presets
     preset.value = created.preset ?? ''
+    quality.value = created.quality
     return created
 }
 
@@ -147,14 +168,22 @@ function selectPreset(value: string): void {
         return
     }
 
-    controller.selectPreset(value)
+    // The choice goes to the profile first: showing a preset may take a moment (its shaders compile).
     emit('update', { preset: value })
+    controller.selectPreset(value)
 }
 
 function step(offset: -1 | 1): void {
-    const id = controller?.step(offset)
-    if (id) {
-        emit('update', { preset: id })
+    const next = adjacentPreset(presets.value, preset.value || null, offset)
+    if (next) {
+        selectPreset(next.id)
+    }
+}
+
+function selectModule(value: string): void {
+    const choice = visualizationModuleChoices.find((item) => item.id === value)
+    if (choice && choice.id !== props.settings.module) {
+        emit('update', { module: choice.id })
     }
 }
 
@@ -201,6 +230,10 @@ watch(
 watch(
     () => props.settings.preset,
     (value) => controller?.setStoredPreset(value),
+)
+watch(
+    () => props.settings.quality,
+    (value) => controller?.setQuality(value),
 )
 // Another module: the visualization starts again with it.
 watch(
@@ -249,6 +282,7 @@ onBeforeUnmount(() => {
         data-part="visualization"
         :data-state="stateTokens"
         :data-module="settings.module.toLowerCase()"
+        :data-quality="state === 'running' || state === 'paused' ? quality : undefined"
         @dblclick="toggleFullscreen"
     >
         <canvas
@@ -307,6 +341,13 @@ onBeforeUnmount(() => {
                 :label="fullscreen ? t('nowPlaying.exitFullscreen') : t('nowPlaying.fullscreen')"
                 :disabled="!fullscreenAvailable || (!active && !fullscreen)"
                 @click="toggleFullscreen"
+            />
+            <BaseSegmentedControl
+                item="visualization-module"
+                :label="t('nowPlaying.visualizationModule')"
+                :options="moduleOptions"
+                :model-value="settings.module"
+                @update:model-value="selectModule"
             />
         </div>
     </div>

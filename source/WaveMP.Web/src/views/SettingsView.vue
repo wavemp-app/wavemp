@@ -8,7 +8,12 @@ import BaseSegmentedField from '@/components/base/BaseSegmentedField.vue'
 import type { SegmentOption } from '@/components/base/BaseSegmentedControl.vue'
 import BaseSelect, { type SelectOption } from '@/components/base/BaseSelect.vue'
 import ProfileSummary from '@/components/profiles/ProfileSummary.vue'
-import { ReplayGainModeObject, type ReplayGainMode } from '@/api/generated/models'
+import {
+    ReplayGainModeObject,
+    VisualizationQualityObject,
+    type ReplayGainMode,
+    type VisualizationQuality,
+} from '@/api/generated/models'
 import { useFormat } from '@/composables/useFormat'
 import { isSupportedLocale, type SupportedLocale } from '@/i18n/locales'
 import { maxCrossfadeSeconds, type CrossfadeSettings } from '@/player/crossfade'
@@ -188,11 +193,38 @@ const autoChangeOptions = computed<SelectOption[]>(() => [
 
 const autoChange = ref(autoChangeValue(session.visualization))
 
+const qualityOptions = computed<SegmentOption[]>(() => [
+    {
+        value: VisualizationQualityObject.Auto,
+        item: 'auto',
+        label: t('settings.visualizationQualities.auto'),
+    },
+    {
+        value: VisualizationQualityObject.Low,
+        item: 'low',
+        label: t('settings.visualizationQualities.low'),
+    },
+    {
+        value: VisualizationQualityObject.Medium,
+        item: 'medium',
+        label: t('settings.visualizationQualities.medium'),
+    },
+    {
+        value: VisualizationQualityObject.High,
+        item: 'high',
+        label: t('settings.visualizationQualities.high'),
+    },
+])
+const qualities = new Set<string>(Object.values(VisualizationQualityObject))
+
+const quality = ref<string>(session.visualization.quality)
+
 watch(
     () => session.visualization,
     (value) => {
         if (!saving.value) {
             autoChange.value = autoChangeValue(value)
+            quality.value = value.quality
         }
     },
 )
@@ -279,6 +311,20 @@ async function changeAutoChange(value: string): Promise<void> {
             ),
         () => {
             autoChange.value = previous
+        },
+    )
+}
+
+async function changeQuality(value: string): Promise<void> {
+    if (!qualities.has(value) || value === session.visualization.quality) {
+        return
+    }
+
+    const previous = session.visualization.quality
+    await save(
+        () => session.updateVisualization({ quality: value as VisualizationQuality }),
+        () => {
+            quality.value = previous
         },
     )
 }
@@ -374,6 +420,16 @@ async function changeSleepTimerFade(value: string): Promise<void> {
                 :hint="t('settings.visualizationAutoChangeHint')"
                 :disabled="saving"
                 @update:model-value="changeAutoChange"
+            />
+            <BaseSegmentedField
+                v-model="quality"
+                data-field="visualization-quality"
+                item="visualization-quality"
+                :label="t('settings.visualizationQuality')"
+                :options="qualityOptions"
+                :hint="t('settings.visualizationQualityHint')"
+                :disabled="saving"
+                @update:model-value="changeQuality"
             />
         </form>
         <section data-part="section" data-item="about" :aria-labelledby="aboutTitleId">

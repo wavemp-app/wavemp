@@ -1,15 +1,32 @@
-// The visualization modules of the web app, by their id in the API. A new module (A-Force,
-// BlackCap) implements VisualizationModule in a file of its own and is added here.
+// The visualization modules of the web app, by their id in the API. A new module (BlackCap)
+// implements VisualizationModule in a file of its own and is added here.
 
 import { VisualizationModuleObject } from '@/api/generated/models'
 import { browserVisualizationClock, type VisualizationClock } from '../controller'
 import type { VisualizationModule, VisualizationModuleId } from '../module'
 import { defaultVisualizationSettings } from '../settings'
+import { aforceModule } from './aforce'
 import { milkdropModule } from './milkdrop'
 
 export const visualizationModules: Readonly<Record<VisualizationModuleId, VisualizationModule>> = {
     [VisualizationModuleObject.Milkdrop]: milkdropModule,
+    [VisualizationModuleObject.AForce]: aforceModule,
 }
+
+/** A module the visualization offers, with the message key of its name. */
+export interface VisualizationModuleChoice {
+    readonly id: VisualizationModuleId
+    readonly labelKey: string
+}
+
+/** The modules in the order the visualization offers them. */
+export const visualizationModuleChoices: readonly VisualizationModuleChoice[] = [
+    {
+        id: VisualizationModuleObject.Milkdrop,
+        labelKey: 'nowPlaying.visualizationModules.milkdrop',
+    },
+    { id: VisualizationModuleObject.AForce, labelKey: 'nowPlaying.visualizationModules.aforce' },
+]
 
 /** The module with the id, or the default module for an id this app does not know. */
 export function visualizationModule(

@@ -152,6 +152,19 @@ describe('StageVisualization', () => {
         wrapper.unmount()
     })
 
+    it('hands a chosen preset to the profile before it shows the preset', async () => {
+        const wrapper = await loaded({ settings: { ...defaultVisualizationSettings, preset: 'A' } })
+        let emittedBefore: unknown[] | undefined
+        module.renderer?.showPreset.mockImplementation(() => {
+            emittedBefore = wrapper.emitted('update')?.slice()
+        })
+
+        await wrapper.get('[data-part="btn-preset-next"]').trigger('click')
+
+        expect(emittedBefore).toEqual([[{ preset: 'B' }]])
+        wrapper.unmount()
+    })
+
     it('steps to the previous and the next preset', async () => {
         const wrapper = await loaded({ settings: { ...defaultVisualizationSettings, preset: 'A' } })
 
@@ -251,6 +264,88 @@ describe('StageVisualization', () => {
         expect(module.renderers).toHaveLength(2)
         expect(module.renderer?.options.canvas).toBe(second)
         expect(state(wrapper)).toBe('running')
+        wrapper.unmount()
+    })
+
+    it('offers the modules as a segmented control and hands a choice to the profile', async () => {
+        const wrapper = await loaded()
+        const group = wrapper.get(
+            '[data-part="visualization-controls"] [data-part="segmented-control"]',
+        )
+        const segments = group.findAll('[data-part="segment"]')
+
+        expect(group.attributes('role')).toBe('radiogroup')
+        expect(group.attributes('data-item')).toBe('visualization-module')
+        expect(segments.map((segment) => segment.attributes('data-item'))).toEqual([
+            'milkdrop',
+            'aforce',
+        ])
+        expect(segments.map((segment) => segment.text())).toEqual(['Milkdrop', 'A-Force'])
+        expect(segments[0]!.attributes('aria-checked')).toBe('true')
+
+        await segments[0]!.trigger('click')
+        expect(wrapper.emitted('update')).toBeUndefined()
+        await segments[1]!.trigger('click')
+        expect(wrapper.emitted('update')).toEqual([[{ module: 'AForce' }]])
+        wrapper.unmount()
+    })
+
+    it('starts again with another module of the profile', async () => {
+        const wrapper = await loaded()
+        const first = module.renderer
+        const other = new FakeModule()
+        other.presets = [
+            { id: 'aurora', name: 'Aurora', labelKey: 'nowPlaying.aforceStyles.aurora' },
+            { id: 'ember', name: 'Ember', labelKey: 'nowPlaying.aforceStyles.ember' },
+        ]
+        visualizationDependencies.module = () => other
+
+        await wrapper.setProps({
+            settings: { ...defaultVisualizationSettings, module: 'AForce', preset: 'ember' },
+        })
+        await other.finishLoad()
+        await flushPromises()
+
+        expect(first?.dispose).toHaveBeenCalled()
+        expect(wrapper.get('[data-part="visualization"]').attributes('data-module')).toBe('aforce')
+        expect(state(wrapper)).toBe('running')
+        expect(other.renderer?.showPreset).toHaveBeenCalledWith('ember', 0)
+        // The styles of A-Force carry message keys and show in the language of the app.
+        expect(wrapper.findAll('option').map((option) => option.text())).toEqual([
+            'Aurora',
+            'Ember',
+        ])
+        expect(
+            wrapper
+                .findAll('[data-part="segment"]')
+                .map((segment) => segment.attributes('aria-checked')),
+        ).toEqual(['false', 'true'])
+        wrapper.unmount()
+    })
+
+    it('draws at the quality of the profile and tells it the theme', async () => {
+        const wrapper = await loaded({
+            settings: { ...defaultVisualizationSettings, quality: 'Low' },
+        })
+
+        expect(module.renderer?.options.quality).toBe('low')
+        expect(wrapper.get('[data-part="visualization"]').attributes('data-quality')).toBe('low')
+
+        await wrapper.setProps({
+            settings: { ...defaultVisualizationSettings, quality: 'High' },
+        })
+        expect(module.renderer?.setQuality).toHaveBeenCalledWith('high')
+        expect(wrapper.get('[data-part="visualization"]').attributes('data-quality')).toBe('high')
+        wrapper.unmount()
+    })
+
+    it('has no quality before it draws', async () => {
+        const wrapper = mountVisualization()
+        await flushPromises()
+
+        expect(
+            wrapper.get('[data-part="visualization"]').attributes('data-quality'),
+        ).toBeUndefined()
         wrapper.unmount()
     })
 

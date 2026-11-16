@@ -158,6 +158,19 @@
     "visualizationUnsupported": "Dieser Browser kann die Visualisierung nicht anzeigen.",
     "visualizationFailed": "Die Visualisierung konnte nicht geladen werden.",
     "visualizationControls": "Visualisierung",
+    "visualizationModule": "Visualisierung",
+    "visualizationModules": {
+      "milkdrop": "Milkdrop",
+      "aforce": "A-Force"
+    },
+    "aforceStyles": {
+      "aurora": "Polarlicht",
+      "nebula": "Sternennebel",
+      "ember": "Glut",
+      "lagoon": "Lagune",
+      "prism": "Prisma",
+      "eclipse": "Finsternis"
+    },
     "visualizationPreset": "Preset",
     "previousPreset": "Vorheriges Preset",
     "nextPreset": "Nächstes Preset",
@@ -421,6 +434,14 @@
     "visualizationAutoChangeOff": "Aus (Preset behalten)",
     "visualizationAutoChangeSeconds": "Alle {seconds} Sekunden",
     "visualizationAutoChangeMinutes": "Alle {minutes} Minuten",
+    "visualizationQuality": "Qualität der Visualisierung",
+    "visualizationQualityHint": "Wie viele Details die Visualisierung unter „Aktuelle Wiedergabe“ zeichnet. Automatisch verringert sie, solange das Gerät nicht flüssig zeichnet, und erhöht sie später wieder. Gilt für dieses Profil auf allen Geräten.",
+    "visualizationQualities": {
+      "auto": "Automatisch",
+      "low": "Niedrig",
+      "medium": "Mittel",
+      "high": "Hoch"
+    },
     "about": "Über WaveMP",
     "appVersion": "App-Version",
     "serverVersion": "Server-Version",

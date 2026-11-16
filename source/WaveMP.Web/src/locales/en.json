@@ -158,6 +158,19 @@
     "visualizationUnsupported": "This browser cannot show the visualization.",
     "visualizationFailed": "The visualization could not be loaded.",
     "visualizationControls": "Visualization",
+    "visualizationModule": "Visualization",
+    "visualizationModules": {
+      "milkdrop": "Milkdrop",
+      "aforce": "A-Force"
+    },
+    "aforceStyles": {
+      "aurora": "Aurora",
+      "nebula": "Nebula",
+      "ember": "Ember",
+      "lagoon": "Lagoon",
+      "prism": "Prism",
+      "eclipse": "Eclipse"
+    },
     "visualizationPreset": "Preset",
     "previousPreset": "Previous preset",
     "nextPreset": "Next preset",
@@ -421,6 +434,14 @@
     "visualizationAutoChangeOff": "Off (keep the preset)",
     "visualizationAutoChangeSeconds": "Every {seconds} seconds",
     "visualizationAutoChangeMinutes": "Every {minutes} minutes",
+    "visualizationQuality": "Visualization quality",
+    "visualizationQualityHint": "How much detail the visualization of Now Playing draws. Auto lowers it while the device cannot draw smoothly and raises it again later. Applies to this profile on all devices.",
+    "visualizationQualities": {
+      "auto": "Auto",
+      "low": "Low",
+      "medium": "Medium",
+      "high": "High"
+    },
     "about": "About WaveMP",
     "appVersion": "App version",
     "serverVersion": "Server version",

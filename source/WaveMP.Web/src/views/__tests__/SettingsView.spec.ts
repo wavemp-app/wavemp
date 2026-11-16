@@ -261,6 +261,45 @@ describe('SettingsView playback', () => {
         ).toBe('off')
     })
 
+    it('saves the quality of the visualization and restores it when saving fails', async () => {
+        const { wrapper, session } = mountView()
+        const update = vi
+            .spyOn(session, 'updateVisualization')
+            .mockImplementationOnce(async (change) => {
+                session.visualization = {
+                    ...session.visualization,
+                    quality: change.quality ?? session.visualization.quality,
+                }
+            })
+            .mockRejectedValueOnce(new TypeError('Failed to fetch'))
+        const group = wrapper.get(
+            '[data-field="visualization-quality"] [data-part="segmented-control"]',
+        )
+        const segment = (item: string) =>
+            wrapper.get(
+                `[data-field="visualization-quality"] [data-part="segment"][data-item="${item}"]`,
+            )
+
+        expect(group.attributes('role')).toBe('radiogroup')
+        expect(group.findAll('[data-part="segment"]').map((item) => item.text())).toEqual([
+            'Auto',
+            'Low',
+            'Medium',
+            'High',
+        ])
+        expect(segment('auto').attributes('aria-checked')).toBe('true')
+
+        await segment('low').trigger('click')
+        await flushPromises()
+        expect(update).toHaveBeenCalledWith({ quality: 'Low' })
+        expect(segment('low').attributes('aria-checked')).toBe('true')
+
+        await segment('high').trigger('click')
+        await flushPromises()
+        expect(wrapper.get('[data-part="alert"]').text()).toBe('The setting could not be saved.')
+        expect(segment('low').attributes('aria-checked')).toBe('true')
+    })
+
     it('shows an interval of the profile that the menu does not offer', async () => {
         const { wrapper, session } = mountView()
         session.visualization = { ...session.visualization, autoChangeSeconds: 7 }

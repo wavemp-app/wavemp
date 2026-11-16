@@ -2104,6 +2104,11 @@
         opacity: 1;
     }
 
+    /* The choice of the module keeps its size; on narrow stages it wraps into a row of its own. */
+    [data-part='visualization-controls'] > [data-part='segmented-control'] {
+        flex: none;
+    }
+
     /*
      * The video: always whole and undistorted in the middle of the stage, also in full screen and
      * for portrait videos, whose size would otherwise stretch the box. The free areas beside or
