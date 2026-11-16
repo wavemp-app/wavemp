@@ -72,6 +72,7 @@ public static class SettingsMappingExtensions
         {
             VisualizationModule.Milkdrop => VisualizationModuleDto.Milkdrop,
             VisualizationModule.AForce => VisualizationModuleDto.AForce,
+            VisualizationModule.BlackCap => VisualizationModuleDto.BlackCap,
             _ => throw new ArgumentOutOfRangeException(nameof(module), module, "Unknown visualization module."),
         };
     }
@@ -82,6 +83,7 @@ public static class SettingsMappingExtensions
         {
             VisualizationModuleDto.Milkdrop => VisualizationModule.Milkdrop,
             VisualizationModuleDto.AForce => VisualizationModule.AForce,
+            VisualizationModuleDto.BlackCap => VisualizationModule.BlackCap,
             _ => throw new ArgumentOutOfRangeException(nameof(module), module, "Unknown visualization module."),
         };
     }

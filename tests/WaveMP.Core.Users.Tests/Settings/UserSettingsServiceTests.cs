@@ -313,18 +313,34 @@ public class UserSettingsServiceTests
         result.VisualizationQuality.Should().Be(VisualizationQuality.Auto);
     }
 
-    [Test]
-    public async Task UpdateAsync_WithAnotherModule_ForgetsThePresetOfThePreviousOne()
+    [TestCase(VisualizationModule.AForce)]
+    [TestCase(VisualizationModule.BlackCap)]
+    public async Task UpdateAsync_WithAnotherModule_ForgetsThePresetOfThePreviousOne(VisualizationModule module)
     {
         User user = Given(Language.En);
         user.Settings!.VisualizationPreset = "Waves";
 
         UserSettings? result = await _service.UpdateAsync(
             user.Id,
-            new UpdateUserSettingsCommand(VisualizationModule: VisualizationModule.AForce));
+            new UpdateUserSettingsCommand(VisualizationModule: module));
 
-        result!.VisualizationModule.Should().Be(VisualizationModule.AForce);
+        result!.VisualizationModule.Should().Be(module);
         result.VisualizationPreset.Should().BeNull();
+    }
+
+    [Test]
+    public async Task UpdateAsync_FromAForceToBlackCap_ForgetsTheStyleOfAForce()
+    {
+        User user = Given(Language.En);
+        user.Settings!.VisualizationModule = VisualizationModule.AForce;
+        user.Settings.VisualizationPreset = "aurora";
+
+        UserSettings? result = await _service.UpdateAsync(
+            user.Id,
+            new UpdateUserSettingsCommand(VisualizationModule: VisualizationModule.BlackCap, VisualizationPreset: "lumen"));
+
+        result!.VisualizationModule.Should().Be(VisualizationModule.BlackCap);
+        result.VisualizationPreset.Should().Be("lumen");
     }
 
     [Test]

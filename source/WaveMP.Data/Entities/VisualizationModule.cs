@@ -14,4 +14,9 @@ public enum VisualizationModule
     /// A-Force, the own visualization with flowing waveforms and particles; its presets are style variants.
     /// </summary>
     AForce,
+
+    /// <summary>
+    /// BlackCap, the own visualization with organic, floating 3D shapes and light effects; its presets are scenes.
+    /// </summary>
+    BlackCap,
 }

@@ -390,6 +390,30 @@ public class MeSettingsApiTests
     }
 
     [Test]
+    public async Task UpdateMySettings_WithBlackCap_KeepsTheModuleAndItsScene()
+    {
+        (Guid _, HttpClient client) = await CreateProfileAsync();
+        using (client)
+        {
+            await PatchAsync(client, new { visualization = new { module = "AForce", preset = "ember" } });
+
+            HttpResponseMessage response = await PatchAsync(
+                client,
+                new { visualization = new { module = "BlackCap", preset = "lumen" } });
+            UserSettingsDto read = await client.GetJsonAsync<UserSettingsDto>("/api/v1/me/settings");
+            await PatchAsync(client, new { visualization = new { module = "Milkdrop" } });
+            UserSettingsDto switched = await client.GetJsonAsync<UserSettingsDto>("/api/v1/me/settings");
+
+            response.StatusCode.Should().Be(HttpStatusCode.OK);
+            (await response.Content.ReadAsStringAsync()).Should().Contain("\"module\":\"BlackCap\",\"preset\":\"lumen\"");
+            read.Visualization.Module.Should().Be(VisualizationModuleDto.BlackCap);
+            read.Visualization.Preset.Should().Be("lumen");
+            switched.Visualization.Module.Should().Be(VisualizationModuleDto.Milkdrop);
+            switched.Visualization.Preset.Should().BeNull();
+        }
+    }
+
+    [Test]
     public async Task UpdateMySettings_WithVisualization_KeepsItForTheProfileAndTheOtherSettings()
     {
         (Guid profileId, HttpClient client) = await CreateProfileAsync();

@@ -6,7 +6,8 @@ namespace WaveMP.Service.Dtos;
 public sealed class VisualizationSettingsDto
 {
     /// <summary>
-    /// The visualization; Milkdrop by default. The presets of A-Force are its style variants.
+    /// The visualization; Milkdrop by default. The presets of A-Force are its style variants, the
+    /// presets of BlackCap its scenes.
     /// </summary>
     public required VisualizationModuleDto Module { get; init; }
 

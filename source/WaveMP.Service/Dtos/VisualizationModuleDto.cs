@@ -19,4 +19,9 @@ public enum VisualizationModuleDto
     /// A-Force: flowing waveforms and particles; its presets are style variants.
     /// </summary>
     AForce,
+
+    /// <summary>
+    /// BlackCap: organic, floating 3D shapes and light effects; its presets are scenes.
+    /// </summary>
+    BlackCap,
 }

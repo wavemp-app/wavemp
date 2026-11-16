@@ -10576,7 +10576,8 @@
       "VisualizationModule": {
         "enum": [
           "Milkdrop",
-          "AForce"
+          "AForce",
+          "BlackCap"
         ],
         "type": "string",
         "description": "A visualization of the players: an engine that draws the music, with its own presets. Further modules may be added in later versions; clients fall back to their default for a module they do not know."
@@ -10602,7 +10603,7 @@
         "type": "object",
         "properties": {
           "module": {
-            "description": "The visualization; Milkdrop by default. The presets of A-Force are its style variants.",
+            "description": "The visualization; Milkdrop by default. The presets of A-Force are its style variants, the presets of BlackCap its scenes.",
             "$ref": "#/components/schemas/VisualizationModule"
           },
           "preset": {
