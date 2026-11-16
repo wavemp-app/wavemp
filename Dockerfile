@@ -29,6 +29,7 @@ FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:10.0-alpine@sha256:0
 ARG TARGETARCH
 WORKDIR /src
 COPY .editorconfig global.json Directory.Build.props Directory.Packages.props ./
+COPY source/WaveMP.Core.Backups/WaveMP.Core.Backups.csproj source/WaveMP.Core.Backups/
 COPY source/WaveMP.Core.Caching/WaveMP.Core.Caching.csproj source/WaveMP.Core.Caching/
 COPY source/WaveMP.Core.Collection/WaveMP.Core.Collection.csproj source/WaveMP.Core.Collection/
 COPY source/WaveMP.Core.Jobs/WaveMP.Core.Jobs.csproj source/WaveMP.Core.Jobs/
@@ -43,6 +44,7 @@ COPY source/WaveMP.Core.Users/WaveMP.Core.Users.csproj source/WaveMP.Core.Users/
 COPY source/WaveMP.Data/WaveMP.Data.csproj source/WaveMP.Data/
 COPY source/WaveMP.Service/WaveMP.Service.csproj source/WaveMP.Service/
 RUN dotnet restore source/WaveMP.Service/WaveMP.Service.csproj -a "$TARGETARCH"
+COPY source/WaveMP.Core.Backups/ source/WaveMP.Core.Backups/
 COPY source/WaveMP.Core.Caching/ source/WaveMP.Core.Caching/
 COPY source/WaveMP.Core.Collection/ source/WaveMP.Core.Collection/
 COPY source/WaveMP.Core.Jobs/ source/WaveMP.Core.Jobs/
@@ -74,9 +76,14 @@ ENV DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=false
 
 # ffmpeg and ffprobe are used as external processes only (never linked); the cache scales covers
 # to WebP with the libwebp encoder of the Alpine ffmpeg package.
-RUN apk add --no-cache ffmpeg icu-data-full icu-libs \
-    && mkdir -p /licenses/ffmpeg /licenses/icu /licenses/phosphor-icons /licenses/taglibsharp /licenses/wavemp /data /media \
+# pg_dump exports the database into /data/backups, every day and before migrations. Its major
+# version must match the PostgreSQL server of docker-compose.yml (postgres:18); the build fails if
+# the package delivers another one. tzdata lets TZ set the time zone of the daily backup.
+RUN apk add --no-cache ffmpeg icu-data-full icu-libs postgresql18-client tzdata \
+    && pg_dump --version | grep -q '^pg_dump (PostgreSQL) 18\.' \
+    && mkdir -p /licenses/ffmpeg /licenses/icu /licenses/phosphor-icons /licenses/postgresql /licenses/taglibsharp /licenses/wavemp /data /media \
     && ffmpeg -hide_banner -version > /licenses/ffmpeg/VERSION \
+    && pg_dump --version > /licenses/postgresql/VERSION \
     && chown "$APP_UID" /data
 
 # Hardware transcoding with Intel Quick Sync (amd64 only): the VA-API drivers (iHD for current
@@ -90,6 +97,7 @@ RUN if [ "$TARGETARCH" = "amd64" ]; then \
 COPY LICENSE /licenses/wavemp/LICENSE
 COPY assets/licenses/ffmpeg/ /licenses/ffmpeg/
 COPY assets/licenses/icu/ /licenses/icu/
+COPY assets/licenses/postgresql/ /licenses/postgresql/
 COPY assets/licenses/taglibsharp/ /licenses/taglibsharp/
 COPY assets/licenses/intel-media-driver/ /licenses/intel-media-driver/
 COPY assets/licenses/libva-intel-driver/ /licenses/libva-intel-driver/
