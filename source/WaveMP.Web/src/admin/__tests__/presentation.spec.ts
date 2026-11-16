@@ -1,12 +1,15 @@
 import { describe, expect, it } from 'vitest'
 import {
     activityOf,
+    backupRetentionOptions,
+    backupTriggerPresentation,
     cacheLimitOptions,
     durationSeconds,
     errorLabelKey,
     formatList,
     intervalOptions,
     isActive,
+    isTimeOfDay,
     issueLabelKey,
     jobNameKey,
     jobScheduleKey,
@@ -84,6 +87,36 @@ describe('presentation of the administration', () => {
         expect(jobScheduleKey('cover-cache')).toBe('adminJobs.afterScan')
         expect(jobScheduleKey('library-scan')).toBe('adminJobs.manualOnly')
         expect(jobScheduleKey(null)).toBe('adminJobs.manualOnly')
+    })
+
+    it('translates the codes of the database backups', () => {
+        expect(jobNameKey('database-backup')).toBe('adminJobs.names.databaseBackup')
+        expect(errorLabelKey('backup.folder_unwritable')).toBe(
+            'jobRuns.errors.backupFolderUnwritable',
+        )
+        expect(errorLabelKey('backup.pg_dump_unavailable')).toBe('jobRuns.errors.pgDumpUnavailable')
+        expect(errorLabelKey('backup.failed')).toBe('jobRuns.errors.backupFailed')
+        expect(backupTriggerPresentation('Migration')).toEqual({
+            labelKey: 'adminBackups.triggers.migration',
+            token: 'migration',
+        })
+        expect(backupTriggerPresentation('Schedule').token).toBe('schedule')
+        expect(backupTriggerPresentation(undefined).token).toBe('manual')
+    })
+
+    it('offers numbers of kept exports the server accepts, in ascending order', () => {
+        expect(backupRetentionOptions).toEqual([...backupRetentionOptions].sort((a, b) => a - b))
+        expect(backupRetentionOptions.every((value) => value >= 1 && value <= 100)).toBe(true)
+        expect(backupRetentionOptions).toContain(7)
+    })
+
+    it('accepts times of day as the server expects them', () => {
+        expect(isTimeOfDay('03:00')).toBe(true)
+        expect(isTimeOfDay('23:59')).toBe(true)
+        expect(isTimeOfDay('24:00')).toBe(false)
+        expect(isTimeOfDay('3:00')).toBe(false)
+        expect(isTimeOfDay('03:00:00')).toBe(false)
+        expect(isTimeOfDay('')).toBe(false)
     })
 
     it('offers size limits of the cache the server accepts, in ascending order', () => {

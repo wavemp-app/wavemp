@@ -514,6 +514,7 @@
       "jobs": "Jobs",
       "cache": "Cache",
       "transcoding": "Transcoding",
+      "backups": "Backups",
       "profiles": "Profiles"
     }
   },
@@ -609,13 +610,15 @@
     "runNowNamed": "Run {name} now",
     "names": {
       "libraryScan": "Library scan",
-      "coverCache": "Prepare covers"
+      "coverCache": "Prepare covers",
+      "databaseBackup": "Database backup"
     },
     "lastRun": "Last run {date}",
     "duration": "took {duration}",
     "nextRun": "Next run {date}",
     "never": "Not run yet",
     "schedule": "Every {minutes} minutes",
+    "dailyAt": "Daily at {time}",
     "manualOnly": "Runs only when started",
     "afterScan": "Runs after scans",
     "alreadyRunning": "This job is already running.",
@@ -725,6 +728,56 @@
     "saveError": "The settings could not be saved.",
     "settingsLoadError": "The settings could not be loaded."
   },
+  "adminBackups": {
+    "title": "Backups",
+    "statusTitle": "Status",
+    "backupsTitle": "Exports",
+    "settingsTitle": "Settings",
+    "stats": {
+      "label": "State of the backups",
+      "status": "Last run",
+      "lastRun": "Last backup",
+      "nextRun": "Next backup",
+      "schedule": "Schedule",
+      "backups": "Exports",
+      "size": "Total size"
+    },
+    "dailyAt": "Daily at {time}",
+    "never": "Not run yet",
+    "none": "None",
+    "hint": "The exports are kept in the folder backups of the volume /data. Back up this volume outside the server; the README explains how to restore an export.",
+    "createNow": "Back up now",
+    "alreadyRunning": "A backup is already running.",
+    "createError": "The backup could not be started.",
+    "loadError": "The backups could not be loaded.",
+    "list": "Exports of the database",
+    "empty": "There are no exports yet.",
+    "triggers": {
+      "schedule": "Daily",
+      "manual": "Manual",
+      "migration": "Before an update"
+    },
+    "delete": "Delete {name}",
+    "deleteDialog": {
+      "title": "Delete export",
+      "text": "Delete the export {name}? It cannot be restored afterwards.",
+      "confirm": "Delete"
+    },
+    "deleted": "The export is deleted.",
+    "deleteError": "The export could not be deleted.",
+    "scheduleTime": "Time of the daily backup",
+    "scheduleTimeHint": "In the time zone of the server (TZ).",
+    "retention": "Exports to keep",
+    "retentionHint": "After every daily or manual backup, older exports beyond this number are deleted.",
+    "save": "Save",
+    "saved": "The settings are saved.",
+    "saveError": "The settings could not be saved.",
+    "settingsLoadError": "The settings could not be loaded.",
+    "errors": {
+      "scheduleTime": "Enter a time between 00:00 and 23:59.",
+      "retention": "Choose a number between {min} and {max}."
+    }
+  },
   "jobRuns": {
     "statuses": {
       "queued": "Queued",
@@ -748,7 +801,10 @@
       "mediaFolderEmpty": "The media folder is empty, so nothing was removed. Check that it is mounted.",
       "probeUnavailable": "ffprobe is not available on the server.",
       "ffmpegUnavailable": "ffmpeg is not available on the server.",
-      "cacheFolderUnwritable": "The cache folder cannot be written. Check the volume /data."
+      "cacheFolderUnwritable": "The cache folder cannot be written. Check the volume /data.",
+      "backupFolderUnwritable": "The backup folder cannot be written. Check the volume /data.",
+      "pgDumpUnavailable": "pg_dump is not available on the server.",
+      "backupFailed": "The export of the database failed. Details are in the server log."
     }
   },
   "track": {

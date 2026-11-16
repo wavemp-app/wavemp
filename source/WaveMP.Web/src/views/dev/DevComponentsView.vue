@@ -6,6 +6,7 @@ import '@/styles/dev.css'
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type {
+    Backup,
     CacheUsage,
     Job,
     PlayerViewMode,
@@ -15,6 +16,8 @@ import type {
     TranscodingStatus,
 } from '@/api/generated/models'
 import AdminNav from '@/components/admin/AdminNav.vue'
+import BackupList from '@/components/admin/BackupList.vue'
+import BackupStatusPanel from '@/components/admin/BackupStatus.vue'
 import CacheUsagePanel from '@/components/admin/CacheUsage.vue'
 import JobList from '@/components/admin/JobList.vue'
 import ScanHistory from '@/components/admin/ScanHistory.vue'
@@ -463,6 +466,46 @@ const sampleCoverJob: Job[] = [
             durationMilliseconds: 1_200,
             errorCode: 'cache.ffmpeg_unavailable',
         },
+    },
+]
+const sampleBackupJob: Job = {
+    id: 'database-backup',
+    state: 'Idle',
+    intervalMinutes: 1440,
+    dailyAt: '03:00',
+    nextRunAt: new Date(sampleTime.getTime() + 12 * 3_600_000),
+    lastRun: {
+        id: 'backup',
+        jobId: 'database-backup',
+        status: 'Failed',
+        trigger: 'Schedule',
+        queuedAt: sampleTime,
+        startedAt: sampleTime,
+        durationMilliseconds: 4_000,
+        errorCode: 'backup.pg_dump_unavailable',
+    },
+}
+const sampleBackups: Backup[] = [
+    {
+        id: 'wavemp-20261116T030000Z-schedule',
+        fileName: 'wavemp-20261116T030000Z-schedule.dump',
+        createdAt: sampleTime,
+        sizeBytes: 4_200_000,
+        trigger: 'Schedule',
+    },
+    {
+        id: 'wavemp-20261115T193000Z-manual',
+        fileName: 'wavemp-20261115T193000Z-manual.dump',
+        createdAt: sampleTime,
+        sizeBytes: 4_150_000,
+        trigger: 'Manual',
+    },
+    {
+        id: 'wavemp-20261114T080000Z-migration',
+        fileName: 'wavemp-20261114T080000Z-migration.dump',
+        createdAt: sampleTime,
+        sizeBytes: 4_100_000,
+        trigger: 'Migration',
     },
 ]
 const sampleCacheUsage: CacheUsage = {
@@ -945,6 +988,20 @@ const sampleTranscodeJobs = computed<TranscodeJob[]>(() => {
                     <h2 data-part="section-title">{{ t('adminCache.usageTitle') }}</h2>
                     <CacheUsagePanel :usage="sampleCacheUsage" />
                     <BaseMeter :label="t('adminCache.usageLabel')" :value="0.95" />
+                </section>
+            </div>
+            <div data-part="view" data-view="admin-backups">
+                <section data-part="section" data-item="status">
+                    <h2 data-part="section-title">{{ t('adminBackups.statusTitle') }}</h2>
+                    <BackupStatusPanel :job="sampleBackupJob" :backups="sampleBackups" />
+                </section>
+                <section data-part="section" data-item="backups">
+                    <h2 data-part="section-title">{{ t('adminBackups.backupsTitle') }}</h2>
+                    <BackupList
+                        :backups="sampleBackups"
+                        deleting="wavemp-20261115T193000Z-manual"
+                    />
+                    <BackupList :backups="[]" />
                 </section>
             </div>
             <div data-part="view" data-view="admin-transcoding">

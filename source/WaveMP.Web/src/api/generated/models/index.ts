@@ -189,6 +189,66 @@ export type ArtistSort = (typeof ArtistSortObject)[keyof typeof ArtistSortObject
 export type AudioCodec = (typeof AudioCodecObject)[keyof typeof AudioCodecObject];
 export type AudioFormat = (typeof AudioFormatObject)[keyof typeof AudioFormatObject];
 /**
+ * An export of the database in the backup folder (`/data/backups`).
+ */
+export interface Backup extends AdditionalDataHolder, Parsable {
+    /**
+     * When the export was started.
+     */
+    createdAt?: Date | null;
+    /**
+     * Name of the file in the backup folder, a compressed dump for pg_restore.
+     */
+    fileName?: string | null;
+    /**
+     * Stable id: the file name without its extension, e.g. `wavemp-20261116T030000Z-schedule`.
+     */
+    id?: string | null;
+    /**
+     * The sizeBytes property
+     */
+    sizeBytes?: number | null;
+    /**
+     * What created an export of the database.
+     */
+    trigger?: BackupTrigger | null;
+}
+/**
+ * One page of a collection.
+ */
+export interface BackupPage extends AdditionalDataHolder, Parsable {
+    /**
+     * Items of the page, at most limit.
+     */
+    items?: Backup[] | null;
+    /**
+     * Maximum number of items of the page, as requested.
+     */
+    limit?: number | null;
+    /**
+     * Number of items skipped before this page.
+     */
+    offset?: number | null;
+    /**
+     * Number of items of the whole collection.
+     */
+    total?: number | null;
+}
+/**
+ * Settings of the database backups.
+ */
+export interface BackupSettings extends AdditionalDataHolder, Parsable {
+    /**
+     * How many exports are kept (1 to 100); after every daily or manual export the oldest ones beyond this number are deleted.
+     */
+    retentionCount?: number | null;
+    /**
+     * Time of day of the daily backup as `HH:mm` (24 hours), in the time zone of the server (`TZ`, by default UTC).
+     */
+    scheduleTime?: string | null;
+}
+export type BackupTrigger = (typeof BackupTriggerObject)[keyof typeof BackupTriggerObject];
+/**
  * The space an area of the cache uses.
  */
 export interface CacheAreaUsage extends AdditionalDataHolder, Parsable {
@@ -310,6 +370,33 @@ export function createArtistPageFromDiscriminatorValue(parseNode: ParseNode | un
 // @ts-ignore
 export function createArtistReferenceFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
     return deserializeIntoArtistReference;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {Backup}
+ */
+// @ts-ignore
+export function createBackupFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoBackup;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {BackupPage}
+ */
+// @ts-ignore
+export function createBackupPageFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoBackupPage;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {BackupSettings}
+ */
+// @ts-ignore
+export function createBackupSettingsFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoBackupSettings;
 }
 /**
  * Creates a new instance of the appropriate class based on discriminator value
@@ -884,6 +971,15 @@ export function createTranscodingStatusFromDiscriminatorValue(parseNode: ParseNo
 /**
  * Creates a new instance of the appropriate class based on discriminator value
  * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {UpdateBackupSettings}
+ */
+// @ts-ignore
+export function createUpdateBackupSettingsFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoUpdateBackupSettings;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
  * @returns {UpdateCacheSettings}
  */
 // @ts-ignore
@@ -1234,6 +1330,47 @@ export function deserializeIntoArtistReference(artistReference: Partial<ArtistRe
 }
 /**
  * The deserialization information for the current model
+ * @param Backup The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoBackup(backup: Partial<Backup> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "createdAt": n => { backup.createdAt = n.getDateValue(); },
+        "fileName": n => { backup.fileName = n.getStringValue(); },
+        "id": n => { backup.id = n.getStringValue(); },
+        "sizeBytes": n => { backup.sizeBytes = n.getNumberValue(); },
+        "trigger": n => { backup.trigger = n.getEnumValue<BackupTrigger>(BackupTriggerObject); },
+    }
+}
+/**
+ * The deserialization information for the current model
+ * @param BackupPage The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoBackupPage(backupPage: Partial<BackupPage> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "items": n => { backupPage.items = n.getCollectionOfObjectValues<Backup>(createBackupFromDiscriminatorValue); },
+        "limit": n => { backupPage.limit = n.getNumberValue(); },
+        "offset": n => { backupPage.offset = n.getNumberValue(); },
+        "total": n => { backupPage.total = n.getNumberValue(); },
+    }
+}
+/**
+ * The deserialization information for the current model
+ * @param BackupSettings The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoBackupSettings(backupSettings: Partial<BackupSettings> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "retentionCount": n => { backupSettings.retentionCount = n.getNumberValue(); },
+        "scheduleTime": n => { backupSettings.scheduleTime = n.getStringValue(); },
+    }
+}
+/**
+ * The deserialization information for the current model
  * @param CacheAreaUsage The instance to deserialize into.
  * @returns {Record<string, (node: ParseNode) => void>}
  */
@@ -1506,6 +1643,7 @@ export function deserializeIntoHome(home: Partial<Home> | undefined = {}) : Reco
 // @ts-ignore
 export function deserializeIntoJob(job: Partial<Job> | undefined = {}) : Record<string, (node: ParseNode) => void> {
     return {
+        "dailyAt": n => { job.dailyAt = n.getStringValue(); },
         "id": n => { job.id = n.getEnumValue<JobId>(JobIdObject); },
         "intervalMinutes": n => { job.intervalMinutes = n.getNumberValue(); },
         "lastRun": n => { job.lastRun = n.getObjectValue<JobRun>(createJobRunFromDiscriminatorValue); },
@@ -2121,6 +2259,18 @@ export function deserializeIntoTranscodingStatus(transcodingStatus: Partial<Tran
 }
 /**
  * The deserialization information for the current model
+ * @param UpdateBackupSettings The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoUpdateBackupSettings(updateBackupSettings: Partial<UpdateBackupSettings> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "retentionCount": n => { updateBackupSettings.retentionCount = n.getNumberValue(); },
+        "scheduleTime": n => { updateBackupSettings.scheduleTime = n.getStringValue(); },
+    }
+}
+/**
+ * The deserialization information for the current model
  * @param UpdateCacheSettings The instance to deserialize into.
  * @returns {Record<string, (node: ParseNode) => void>}
  */
@@ -2670,6 +2820,10 @@ export interface Home extends AdditionalDataHolder, Parsable {
  * A background job with its schedule, its next and its last run.
  */
 export interface Job extends AdditionalDataHolder, Parsable {
+    /**
+     * Time of day as `HH:mm` for jobs that run every day at a fixed time, in the time zone of the server; int? JobDto.IntervalMinutes is then 1440.
+     */
+    dailyAt?: string | null;
     /**
      * Id of a background job.
      */
@@ -3551,6 +3705,50 @@ export function serializeArtistReference(writer: SerializationWriter, artistRefe
 }
 /**
  * Serializes information the current object
+ * @param Backup The instance to serialize from.
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeBackup(writer: SerializationWriter, backup: Partial<Backup> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!backup || isSerializingDerivedType) { return; }
+    writer.writeDateValue("createdAt", backup.createdAt);
+    writer.writeStringValue("fileName", backup.fileName);
+    writer.writeStringValue("id", backup.id);
+    writer.writeNumberValue("sizeBytes", backup.sizeBytes);
+    writer.writeEnumValue<BackupTrigger>("trigger", backup.trigger);
+    writer.writeAdditionalData(backup.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param BackupPage The instance to serialize from.
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeBackupPage(writer: SerializationWriter, backupPage: Partial<BackupPage> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!backupPage || isSerializingDerivedType) { return; }
+    writer.writeCollectionOfObjectValues<Backup>("items", backupPage.items, serializeBackup);
+    writer.writeNumberValue("limit", backupPage.limit);
+    writer.writeNumberValue("offset", backupPage.offset);
+    writer.writeNumberValue("total", backupPage.total);
+    writer.writeAdditionalData(backupPage.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param BackupSettings The instance to serialize from.
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeBackupSettings(writer: SerializationWriter, backupSettings: Partial<BackupSettings> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!backupSettings || isSerializingDerivedType) { return; }
+    writer.writeNumberValue("retentionCount", backupSettings.retentionCount);
+    writer.writeStringValue("scheduleTime", backupSettings.scheduleTime);
+    writer.writeAdditionalData(backupSettings.additionalData);
+}
+/**
+ * Serializes information the current object
  * @param CacheAreaUsage The instance to serialize from.
  * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
  * @param writer Serialization writer to use to serialize this model
@@ -3844,6 +4042,7 @@ export function serializeHome(writer: SerializationWriter, home: Partial<Home> |
 // @ts-ignore
 export function serializeJob(writer: SerializationWriter, job: Partial<Job> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
     if (!job || isSerializingDerivedType) { return; }
+    writer.writeStringValue("dailyAt", job.dailyAt);
     writer.writeEnumValue<JobId>("id", job.id);
     writer.writeNumberValue("intervalMinutes", job.intervalMinutes);
     writer.writeObjectValue<JobRun>("lastRun", job.lastRun, serializeJobRun);
@@ -4493,6 +4692,19 @@ export function serializeTranscodingStatus(writer: SerializationWriter, transcod
     writer.writeNumberValue("maxParallelJobs", transcodingStatus.maxParallelJobs);
     writer.writeNumberValue("runningJobs", transcodingStatus.runningJobs);
     writer.writeAdditionalData(transcodingStatus.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param UpdateBackupSettings The instance to serialize from.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeUpdateBackupSettings(writer: SerializationWriter, updateBackupSettings: Partial<UpdateBackupSettings> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!updateBackupSettings || isSerializingDerivedType) { return; }
+    writer.writeNumberValue("retentionCount", updateBackupSettings.retentionCount);
+    writer.writeStringValue("scheduleTime", updateBackupSettings.scheduleTime);
+    writer.writeAdditionalData(updateBackupSettings.additionalData);
 }
 /**
  * Serializes information the current object
@@ -5240,6 +5452,19 @@ export interface TranscodingStatus extends AdditionalDataHolder, Parsable {
     runningJobs?: number | null;
 }
 /**
+ * Changes the settings of the database backups. Missing or null values stay unchanged.
+ */
+export interface UpdateBackupSettings extends AdditionalDataHolder, Parsable {
+    /**
+     * How many exports are kept; a lower number applies with the next export.
+     */
+    retentionCount?: number | null;
+    /**
+     * Time of day of the daily backup as `HH:mm` (24 hours, e.g. `03:00`); the backup is planned again at once.
+     */
+    scheduleTime?: string | null;
+}
+/**
  * Changes the settings of the cache. Missing or null values stay unchanged.
  */
 export interface UpdateCacheSettings extends AdditionalDataHolder, Parsable {
@@ -5751,6 +5976,14 @@ export const AudioFormatObject = {
     AiffPcm: "AiffPcm",
 } as const;
 /**
+ * What created an export of the database.
+ */
+export const BackupTriggerObject = {
+    Schedule: "Schedule",
+    Manual: "Manual",
+    Migration: "Migration",
+} as const;
+/**
  * Filter of the band.
  */
 export const EqualizerFilterTypeObject = {
@@ -5835,7 +6068,7 @@ export const HlsMediaObject = {
     Video: "Video",
 } as const;
 /**
- * Why the scan failed or was interrupted.
+ * Why the run failed or was interrupted.
  */
 export const JobErrorCodeObject = {
     JobFailed: "job.failed",
@@ -5846,6 +6079,9 @@ export const JobErrorCodeObject = {
     ScanProbe_unavailable: "scan.probe_unavailable",
     CacheFfmpeg_unavailable: "cache.ffmpeg_unavailable",
     CacheFolder_unwritable: "cache.folder_unwritable",
+    BackupFolder_unwritable: "backup.folder_unwritable",
+    BackupPg_dump_unavailable: "backup.pg_dump_unavailable",
+    BackupFailed: "backup.failed",
 } as const;
 /**
  * Id of a background job.
@@ -5853,6 +6089,7 @@ export const JobErrorCodeObject = {
 export const JobIdObject = {
     LibraryScan: "library-scan",
     CoverCache: "cover-cache",
+    DatabaseBackup: "database-backup",
 } as const;
 /**
  * State of a job run.
@@ -5955,6 +6192,7 @@ export const ProblemCodeObject = {
     JobNot_found: "job.not_found",
     JobAlready_running: "job.already_running",
     JobRun_not_found: "job.run_not_found",
+    BackupNot_found: "backup.not_found",
     ArtistNot_found: "artist.not_found",
     AlbumNot_found: "album.not_found",
     TrackNot_found: "track.not_found",
@@ -6016,7 +6254,7 @@ export const SortDirectionObject = {
     Desc: "Desc",
 } as const;
 /**
- * The file as it is (direct play) or an HLS stream (transcoding).
+ * The file as it is (direct play) or an HLS stream of the sound (transcoding).
  */
 export const StreamProtocolObject = {
     File: "File",
@@ -6043,7 +6281,7 @@ export const TrackSortObject = {
     Rating: "Rating",
 } as const;
 /**
- * Why the video has to be transcoded; null for direct play.
+ * Why the track has to be transcoded; null for direct play.
  */
 export const TranscodeReasonObject = {
     Format_unsupported: "format_unsupported",

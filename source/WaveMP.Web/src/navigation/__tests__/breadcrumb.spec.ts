@@ -46,6 +46,7 @@ describe('buildBreadcrumb', () => {
             'admin-jobs',
             'admin-cache',
             'admin-transcoding',
+            'admin-backups',
             'admin-users',
         ]) {
             const crumbs = buildBreadcrumb({ name: page, params: {} })

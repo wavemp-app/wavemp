@@ -108,6 +108,7 @@ describe('createRoutes', () => {
             ['/admin/jobs', 'admin-jobs'],
             ['/admin/cache', 'admin-cache'],
             ['/admin/transcoding', 'admin-transcoding'],
+            ['/admin/backups', 'admin-backups'],
             ['/admin/users', 'admin-users'],
         ]) {
             const route = await resolve(path!)

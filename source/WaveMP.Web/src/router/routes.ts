@@ -6,6 +6,7 @@ import NowPlayingView from '@/views/NowPlayingView.vue'
 import PlaylistsView from '@/views/PlaylistsView.vue'
 import ProfileSelectView from '@/views/ProfileSelectView.vue'
 import SettingsView from '@/views/SettingsView.vue'
+import AdminBackupsView from '@/views/admin/AdminBackupsView.vue'
 import AdminCacheView from '@/views/admin/AdminCacheView.vue'
 import AdminJobsView from '@/views/admin/AdminJobsView.vue'
 import AdminLibraryView from '@/views/admin/AdminLibraryView.vue'
@@ -180,6 +181,12 @@ export function createRoutes(extra: readonly RouteRecordRaw[] = []): RouteRecord
             path: '/admin/transcoding',
             name: 'admin-transcoding',
             component: AdminTranscodingView,
+            meta: { admin: true },
+        },
+        {
+            path: '/admin/backups',
+            name: 'admin-backups',
+            component: AdminBackupsView,
             meta: { admin: true },
         },
         {

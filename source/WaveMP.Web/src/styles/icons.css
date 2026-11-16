@@ -183,6 +183,10 @@
         --_icon: var(--wmp-icon-admin-transcoding);
     }
 
+    [data-icon='admin-backups'] {
+        --_icon: var(--wmp-icon-admin-backups);
+    }
+
     [data-icon='album'] {
         --_icon: var(--wmp-icon-album);
     }
@@ -337,6 +341,10 @@
 
     [data-icon='run-job'] {
         --_icon: var(--wmp-icon-run-job);
+    }
+
+    [data-icon='backup'] {
+        --_icon: var(--wmp-icon-backup);
     }
 
     [data-icon='edit'] {

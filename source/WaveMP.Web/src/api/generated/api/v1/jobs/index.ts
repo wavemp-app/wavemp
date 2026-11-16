@@ -4,7 +4,7 @@
 // @ts-ignore
 import { createJobPageFromDiscriminatorValue, createProblemDetailsFromDiscriminatorValue, createValidationProblemFromDiscriminatorValue, type JobPage, type ProblemDetails, type ValidationProblem } from '../../../models/index.js';
 // @ts-ignore
-import { JobsItemRequestBuilderNavigationMetadata, type JobsItemRequestBuilder } from './item/index.js';
+import { JobsItemRequestBuilderNavigationMetadata, JobsItemRequestBuilderRequestsMetadata, type JobsItemRequestBuilder } from './item/index.js';
 // @ts-ignore
 import { type BaseRequestBuilder, type KeysToExcludeForNavigationMetadata, type NavigationMetadata, type Parsable, type ParsableFactory, type RequestConfiguration, type RequestInformation, type RequestsMetadata } from '@microsoft/kiota-abstractions';
 
@@ -14,7 +14,7 @@ import { type BaseRequestBuilder, type KeysToExcludeForNavigationMetadata, type 
 export interface JobsRequestBuilder extends BaseRequestBuilder<JobsRequestBuilder> {
     /**
      * Gets an item from the ApiSdk.api.v1.jobs.item collection
-     * @param id Id of the job, e.g. `library-scan`.
+     * @param id Id of the job, e.g. `database-backup`.
      * @returns {JobsItemRequestBuilder}
      */
      byId(id: string) : JobsItemRequestBuilder;
@@ -56,6 +56,7 @@ export const JobsRequestBuilderUriTemplate = "{+baseurl}/api/v1/jobs{?limit*,off
  */
 export const JobsRequestBuilderNavigationMetadata: Record<Exclude<keyof JobsRequestBuilder, KeysToExcludeForNavigationMetadata>, NavigationMetadata> = {
     byId: {
+        requestsMetadata: JobsItemRequestBuilderRequestsMetadata,
         navigationMetadata: JobsItemRequestBuilderNavigationMetadata,
         pathParametersMappings: ["id"],
     },

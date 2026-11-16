@@ -1,6 +1,6 @@
 // Presentation of the administration: message keys of the codes of the API, the tokens of badges and
 // states, the intervals of the library scan, the lists of the settings form and the size limits of
-// the cache. Pure functions only.
+// the cache, and the exports of the database. Pure functions only.
 
 import type { ScanProgress } from '@/api/generated/models'
 
@@ -151,6 +151,9 @@ const errors: Record<string, Labeled> = {
     'scan.probe_unavailable': { labelKey: 'jobRuns.errors.probeUnavailable' },
     'cache.ffmpeg_unavailable': { labelKey: 'jobRuns.errors.ffmpegUnavailable' },
     'cache.folder_unwritable': { labelKey: 'jobRuns.errors.cacheFolderUnwritable' },
+    'backup.folder_unwritable': { labelKey: 'jobRuns.errors.backupFolderUnwritable' },
+    'backup.pg_dump_unavailable': { labelKey: 'jobRuns.errors.pgDumpUnavailable' },
+    'backup.failed': { labelKey: 'jobRuns.errors.backupFailed' },
 }
 
 /** Message key of the error code of a run; unknown codes are shown as a general failure. */
@@ -207,6 +210,10 @@ const jobNames: Record<string, JobPresentation> = {
         scheduleKey: 'adminJobs.manualOnly',
     },
     'cover-cache': { labelKey: 'adminJobs.names.coverCache', scheduleKey: 'adminJobs.afterScan' },
+    'database-backup': {
+        labelKey: 'adminJobs.names.databaseBackup',
+        scheduleKey: 'adminJobs.manualOnly',
+    },
 }
 
 /** Message key of the name of a job; unknown jobs are shown with their id. */
@@ -224,4 +231,35 @@ export function durationSeconds(milliseconds: number | null | undefined): number
     return milliseconds === null || milliseconds === undefined
         ? null
         : Math.max(0, milliseconds / 1000)
+}
+
+/** Numbers of kept exports of the database offered in the settings; the server accepts 1 to 100. */
+export const backupRetentionOptions: readonly number[] = [1, 3, 5, 7, 14, 30, 60, 100]
+
+interface BackupTriggerPresentation extends Labeled {
+    /** data-kind of the export and data-state token of its badge. */
+    readonly token: string
+}
+
+const manualBackup: BackupTriggerPresentation = {
+    labelKey: 'adminBackups.triggers.manual',
+    token: 'manual',
+}
+
+const backupTriggers: Record<string, BackupTriggerPresentation> = {
+    Schedule: { labelKey: 'adminBackups.triggers.schedule', token: 'schedule' },
+    Manual: manualBackup,
+    Migration: { labelKey: 'adminBackups.triggers.migration', token: 'migration' },
+}
+
+/** Label and token of what created an export of the database. */
+export function backupTriggerPresentation(
+    trigger: string | null | undefined,
+): BackupTriggerPresentation {
+    return backupTriggers[trigger ?? ''] ?? manualBackup
+}
+
+/** Whether a text is a time of day as the server expects it (HH:mm, 24 hours). */
+export function isTimeOfDay(text: string): boolean {
+    return /^([01][0-9]|2[0-3]):[0-5][0-9]$/.test(text)
 }

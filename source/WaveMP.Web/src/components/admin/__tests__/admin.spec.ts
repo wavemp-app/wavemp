@@ -35,6 +35,7 @@ describe('AdminNav', () => {
             'Jobs',
             'Cache',
             'Transcoding',
+            'Backups',
             'Profiles',
         ])
         expect(items.map((item) => item.attributes('href'))).toEqual([
@@ -42,6 +43,7 @@ describe('AdminNav', () => {
             '/admin/jobs',
             '/admin/cache',
             '/admin/transcoding',
+            '/admin/backups',
             '/admin/users',
         ])
         expect(items.map((item) => item.attributes('data-item'))).toContain('admin-cache')

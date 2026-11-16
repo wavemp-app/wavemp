@@ -6,6 +6,8 @@ import { AlbumsRequestBuilderNavigationMetadata, AlbumsRequestBuilderRequestsMet
 // @ts-ignore
 import { ArtistsRequestBuilderNavigationMetadata, ArtistsRequestBuilderRequestsMetadata, type ArtistsRequestBuilder } from './artists/index.js';
 // @ts-ignore
+import { BackupsRequestBuilderNavigationMetadata, BackupsRequestBuilderRequestsMetadata, type BackupsRequestBuilder } from './backups/index.js';
+// @ts-ignore
 import { CacheRequestBuilderRequestsMetadata, type CacheRequestBuilder } from './cache/index.js';
 // @ts-ignore
 import { EqualizerRequestBuilderRequestsMetadata, type EqualizerRequestBuilder } from './equalizer/index.js';
@@ -50,6 +52,10 @@ export interface V1RequestBuilder extends BaseRequestBuilder<V1RequestBuilder> {
      * The artists property
      */
     get artists(): ArtistsRequestBuilder;
+    /**
+     * The backups property
+     */
+    get backups(): BackupsRequestBuilder;
     /**
      * The cache property
      */
@@ -126,6 +132,10 @@ export const V1RequestBuilderNavigationMetadata: Record<Exclude<keyof V1RequestB
     artists: {
         requestsMetadata: ArtistsRequestBuilderRequestsMetadata,
         navigationMetadata: ArtistsRequestBuilderNavigationMetadata,
+    },
+    backups: {
+        requestsMetadata: BackupsRequestBuilderRequestsMetadata,
+        navigationMetadata: BackupsRequestBuilderNavigationMetadata,
     },
     cache: {
         requestsMetadata: CacheRequestBuilderRequestsMetadata,

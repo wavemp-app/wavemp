@@ -239,6 +239,13 @@ export const parts = [
     'meter',
     'meter-track',
     'meter-fill',
+    'backup-status',
+    'backup-list',
+    'backup-item',
+    'backup-info',
+    'backup-name',
+    'backup-meta',
+    'backup-actions',
 
     // Base components
     'button',

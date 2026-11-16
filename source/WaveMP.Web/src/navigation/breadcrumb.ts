@@ -23,6 +23,7 @@ const adminPageTitles = {
     'admin-jobs': 'adminJobs.title',
     'admin-cache': 'adminCache.title',
     'admin-transcoding': 'adminTranscoding.title',
+    'admin-backups': 'adminBackups.title',
     'admin-users': 'adminUsers.title',
 } as const
 
@@ -115,6 +116,7 @@ export function buildBreadcrumb(route: RouteInfo, detailTitle?: string | null): 
         case 'admin-jobs':
         case 'admin-cache':
         case 'admin-transcoding':
+        case 'admin-backups':
         case 'admin-users':
             crumbs.push({ id: 'admin', labelKey: 'admin.title', to: { name: 'admin' } })
             crumbs.push({ id: route.name, labelKey: adminPageTitles[route.name] })

@@ -514,6 +514,7 @@
       "jobs": "Jobs",
       "cache": "Cache",
       "transcoding": "Transcodierung",
+      "backups": "Sicherungen",
       "profiles": "Profile"
     }
   },
@@ -609,13 +610,15 @@
     "runNowNamed": "{name} jetzt ausführen",
     "names": {
       "libraryScan": "Bibliotheks-Scan",
-      "coverCache": "Cover vorbereiten"
+      "coverCache": "Cover vorbereiten",
+      "databaseBackup": "Datenbanksicherung"
     },
     "lastRun": "Zuletzt {date}",
     "duration": "Dauer {duration}",
     "nextRun": "Nächster Lauf {date}",
     "never": "Noch nicht gelaufen",
     "schedule": "Alle {minutes} Minuten",
+    "dailyAt": "Täglich um {time}",
     "manualOnly": "Läuft nur auf Anforderung",
     "afterScan": "Läuft nach Scans",
     "alreadyRunning": "Dieser Job läuft bereits.",
@@ -725,6 +728,56 @@
     "saveError": "Die Einstellungen konnten nicht gespeichert werden.",
     "settingsLoadError": "Die Einstellungen konnten nicht geladen werden."
   },
+  "adminBackups": {
+    "title": "Sicherungen",
+    "statusTitle": "Status",
+    "backupsTitle": "Exporte",
+    "settingsTitle": "Einstellungen",
+    "stats": {
+      "label": "Stand der Sicherungen",
+      "status": "Letzter Lauf",
+      "lastRun": "Letzte Sicherung",
+      "nextRun": "Nächste Sicherung",
+      "schedule": "Zeitplan",
+      "backups": "Exporte",
+      "size": "Gesamtgröße"
+    },
+    "dailyAt": "Täglich um {time}",
+    "never": "Noch nicht gelaufen",
+    "none": "Keine",
+    "hint": "Die Exporte liegen im Ordner backups des Volumes /data. Sichere dieses Volume außerhalb des Servers; wie ein Export zurückgespielt wird, steht in der README.",
+    "createNow": "Jetzt sichern",
+    "alreadyRunning": "Es läuft bereits eine Sicherung.",
+    "createError": "Die Sicherung konnte nicht gestartet werden.",
+    "loadError": "Die Sicherungen konnten nicht geladen werden.",
+    "list": "Exporte der Datenbank",
+    "empty": "Es gibt noch keine Exporte.",
+    "triggers": {
+      "schedule": "Täglich",
+      "manual": "Manuell",
+      "migration": "Vor einem Update"
+    },
+    "delete": "{name} löschen",
+    "deleteDialog": {
+      "title": "Export löschen",
+      "text": "Den Export {name} löschen? Er kann danach nicht mehr zurückgespielt werden.",
+      "confirm": "Löschen"
+    },
+    "deleted": "Der Export ist gelöscht.",
+    "deleteError": "Der Export konnte nicht gelöscht werden.",
+    "scheduleTime": "Uhrzeit der täglichen Sicherung",
+    "scheduleTimeHint": "In der Zeitzone des Servers (TZ).",
+    "retention": "Aufbewahrte Exporte",
+    "retentionHint": "Nach jeder täglichen oder manuellen Sicherung werden ältere Exporte über diese Anzahl hinaus gelöscht.",
+    "save": "Speichern",
+    "saved": "Die Einstellungen sind gespeichert.",
+    "saveError": "Die Einstellungen konnten nicht gespeichert werden.",
+    "settingsLoadError": "Die Einstellungen konnten nicht geladen werden.",
+    "errors": {
+      "scheduleTime": "Gib eine Uhrzeit zwischen 00:00 und 23:59 ein.",
+      "retention": "Wähle eine Zahl zwischen {min} und {max}."
+    }
+  },
   "jobRuns": {
     "statuses": {
       "queued": "Wartet",
@@ -748,7 +801,10 @@
       "mediaFolderEmpty": "Der Medienordner ist leer, deshalb wurde nichts entfernt. Prüfe, ob er eingebunden ist.",
       "probeUnavailable": "ffprobe ist auf dem Server nicht verfügbar.",
       "ffmpegUnavailable": "ffmpeg ist auf dem Server nicht verfügbar.",
-      "cacheFolderUnwritable": "In den Cache-Ordner kann nicht geschrieben werden. Prüfe das Volume /data."
+      "cacheFolderUnwritable": "In den Cache-Ordner kann nicht geschrieben werden. Prüfe das Volume /data.",
+      "backupFolderUnwritable": "In den Sicherungsordner kann nicht geschrieben werden. Prüfe das Volume /data.",
+      "pgDumpUnavailable": "pg_dump ist auf dem Server nicht verfügbar.",
+      "backupFailed": "Der Export der Datenbank ist fehlgeschlagen. Details stehen im Server-Log."
     }
   },
   "track": {

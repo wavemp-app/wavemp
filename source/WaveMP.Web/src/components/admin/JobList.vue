@@ -88,7 +88,10 @@ function dateTime(date: Date): string {
                     <span v-if="job.nextRunAt" data-part="label">{{
                         t('adminJobs.nextRun', { date: dateTime(job.nextRunAt) })
                     }}</span>
-                    <span v-if="job.intervalMinutes" data-part="label">{{
+                    <span v-if="job.dailyAt" data-part="label">{{
+                        t('adminJobs.dailyAt', { time: job.dailyAt })
+                    }}</span>
+                    <span v-else-if="job.intervalMinutes" data-part="label">{{
                         t('adminJobs.schedule', { minutes: format.number(job.intervalMinutes) })
                     }}</span>
                     <span v-else data-part="label">{{ t(jobScheduleKey(job.id)) }}</span>
