@@ -144,12 +144,22 @@ onMounted(async () => {
 </script>
 
 <template>
-    <BaseAlert
-        v-if="store.settingsStatus === 'error' && !store.settings"
-        tone="error"
-        :message="t('adminTranscoding.settingsLoadError')"
-    />
-    <form v-else data-part="form" @submit.prevent="save">
+    <template v-if="store.settingsStatus === 'error' && !store.settings">
+        <BaseAlert tone="error" :message="t('adminTranscoding.settingsLoadError')" />
+        <div data-part="view-actions">
+            <BaseButton
+                data-item="retry"
+                :label="t('library.retry')"
+                @click="store.loadSettings()"
+            />
+        </div>
+    </template>
+    <form
+        v-else
+        data-part="form"
+        :aria-busy="store.settingsStatus === 'loading' && !store.settings ? 'true' : undefined"
+        @submit.prevent="save"
+    >
         <BaseSegmentedField
             v-model="hardware"
             data-field="hardware-acceleration"

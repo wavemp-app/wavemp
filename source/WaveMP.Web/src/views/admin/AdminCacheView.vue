@@ -6,6 +6,7 @@ import CacheClearDialog from '@/components/admin/CacheClearDialog.vue'
 import CacheSettingsForm from '@/components/admin/CacheSettingsForm.vue'
 import CacheUsage from '@/components/admin/CacheUsage.vue'
 import BaseAlert, { type AlertTone } from '@/components/base/BaseAlert.vue'
+import BaseButton from '@/components/base/BaseButton.vue'
 import { useCacheStore } from '@/stores/cache'
 
 /** Admin page of the cache: its used space, clearing it and its size limit. */
@@ -44,11 +45,16 @@ onMounted(() => cache.load())
         <AdminNav />
         <section data-part="section" data-item="usage" :aria-labelledby="usageTitleId">
             <h2 :id="usageTitleId" data-part="section-title">{{ t('adminCache.usageTitle') }}</h2>
-            <BaseAlert
-                v-if="cache.status === 'error' && !cache.usage"
-                tone="error"
-                :message="t('adminCache.loadError')"
-            />
+            <template v-if="cache.status === 'error' && !cache.usage">
+                <BaseAlert tone="error" :message="t('adminCache.loadError')" />
+                <div data-part="view-actions">
+                    <BaseButton
+                        data-item="retry"
+                        :label="t('library.retry')"
+                        @click="cache.load()"
+                    />
+                </div>
+            </template>
             <BaseAlert
                 v-if="cache.usage && !cache.usage.isAvailable"
                 tone="error"

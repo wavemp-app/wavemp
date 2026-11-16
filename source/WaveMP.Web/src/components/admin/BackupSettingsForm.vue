@@ -109,12 +109,18 @@ onMounted(async () => {
 </script>
 
 <template>
-    <BaseAlert
-        v-if="store.status === 'error' && !store.settings"
-        tone="error"
-        :message="t('adminBackups.settingsLoadError')"
-    />
-    <form v-else data-part="form" @submit.prevent="save">
+    <template v-if="store.status === 'error' && !store.settings">
+        <BaseAlert tone="error" :message="t('adminBackups.settingsLoadError')" />
+        <div data-part="view-actions">
+            <BaseButton data-item="retry" :label="t('library.retry')" @click="store.load()" />
+        </div>
+    </template>
+    <form
+        v-else
+        data-part="form"
+        :aria-busy="store.status === 'loading' && !store.settings ? 'true' : undefined"
+        @submit.prevent="save"
+    >
         <BaseTextField
             v-model="scheduleTime"
             data-field="backup-time"

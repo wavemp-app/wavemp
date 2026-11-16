@@ -7,6 +7,7 @@ import ScanHistory from '@/components/admin/ScanHistory.vue'
 import ScanPanel from '@/components/admin/ScanPanel.vue'
 import ScanSummary from '@/components/admin/ScanSummary.vue'
 import BaseAlert from '@/components/base/BaseAlert.vue'
+import BaseButton from '@/components/base/BaseButton.vue'
 import { usePolling } from '@/composables/usePolling'
 import { useScansStore } from '@/stores/scans'
 
@@ -58,7 +59,11 @@ onMounted(async () => {
 </script>
 
 <template>
-    <div data-part="view" data-view="admin-library">
+    <div
+        data-part="view"
+        data-view="admin-library"
+        :aria-busy="scans.status === 'loading' && scans.history.length === 0 ? 'true' : undefined"
+    >
         <AdminNav />
         <section data-part="section" :aria-labelledby="scanTitleId">
             <h2 :id="scanTitleId" data-part="section-title">{{ t('adminLibrary.scanTitle') }}</h2>
@@ -80,11 +85,16 @@ onMounted(async () => {
             <h2 :id="historyTitleId" data-part="section-title">
                 {{ t('adminLibrary.historyTitle') }}
             </h2>
-            <BaseAlert
-                v-if="scans.status === 'error'"
-                tone="error"
-                :message="t('adminLibrary.loadError')"
-            />
+            <template v-if="scans.status === 'error'">
+                <BaseAlert tone="error" :message="t('adminLibrary.loadError')" />
+                <div data-part="view-actions">
+                    <BaseButton
+                        data-item="retry"
+                        :label="t('library.retry')"
+                        @click="scans.loadHistory()"
+                    />
+                </div>
+            </template>
             <ScanHistory
                 v-if="scans.history.length > 0"
                 :scans="scans.history"

@@ -6,6 +6,7 @@ import TranscodeJobList from '@/components/admin/TranscodeJobList.vue'
 import TranscodingSettingsForm from '@/components/admin/TranscodingSettingsForm.vue'
 import TranscodingStatus from '@/components/admin/TranscodingStatus.vue'
 import BaseAlert from '@/components/base/BaseAlert.vue'
+import BaseButton from '@/components/base/BaseButton.vue'
 import { usePolling } from '@/composables/usePolling'
 import { useTranscodingStore } from '@/stores/transcoding'
 
@@ -54,11 +55,16 @@ onMounted(async () => {
             <h2 :id="statusTitleId" data-part="section-title">
                 {{ t('adminTranscoding.statusTitle') }}
             </h2>
-            <BaseAlert
-                v-if="transcoding.loadStatus === 'error' && !transcoding.status"
-                tone="error"
-                :message="t('adminTranscoding.loadError')"
-            />
+            <template v-if="transcoding.loadStatus === 'error' && !transcoding.status">
+                <BaseAlert tone="error" :message="t('adminTranscoding.loadError')" />
+                <div data-part="view-actions">
+                    <BaseButton
+                        data-item="retry"
+                        :label="t('library.retry')"
+                        @click="transcoding.load()"
+                    />
+                </div>
+            </template>
             <TranscodingStatus v-if="transcoding.status" :status="transcoding.status" />
         </section>
         <section data-part="section" data-item="jobs" :aria-labelledby="jobsTitleId">

@@ -24,7 +24,11 @@ onUnmounted(() => {
 </script>
 
 <template>
-    <div data-part="view" data-view="equalizer">
+    <div
+        data-part="view"
+        data-view="equalizer"
+        :aria-busy="equalizer.loadState === 'loading' ? 'true' : undefined"
+    >
         <BaseAlert
             v-if="equalizer.loadState === 'failed'"
             tone="info"

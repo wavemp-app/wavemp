@@ -114,7 +114,11 @@ onMounted(() => {
 </script>
 
 <template>
-    <div data-part="view" data-view="admin-users">
+    <div
+        data-part="view"
+        data-view="admin-users"
+        :aria-busy="usersStore.status === 'loading' ? 'true' : undefined"
+    >
         <AdminNav />
         <div data-part="view-actions">
             <BaseButton
@@ -124,11 +128,16 @@ onMounted(() => {
                 @click="openCreate"
             />
         </div>
-        <BaseAlert
-            v-if="usersStore.status === 'error'"
-            tone="error"
-            :message="t('adminUsers.loadError')"
-        />
+        <template v-if="usersStore.status === 'error'">
+            <BaseAlert tone="error" :message="t('adminUsers.loadError')" />
+            <div data-part="view-actions">
+                <BaseButton
+                    data-item="retry"
+                    :label="t('library.retry')"
+                    @click="usersStore.load()"
+                />
+            </div>
+        </template>
         <BaseAlert v-if="message" tone="error" :message="message" />
         <UserList :users="items" @edit="openEdit" @delete="openDelete" />
         <UserEditDialog v-model:open="editOpen" :user="editing" @saved="onSaved" />

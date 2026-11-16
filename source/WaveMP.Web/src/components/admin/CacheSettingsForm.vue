@@ -90,12 +90,18 @@ onMounted(async () => {
 </script>
 
 <template>
-    <BaseAlert
-        v-if="store.status === 'error' && !store.settings"
-        tone="error"
-        :message="t('adminCache.settingsLoadError')"
-    />
-    <form v-else data-part="form" @submit.prevent="save">
+    <template v-if="store.status === 'error' && !store.settings">
+        <BaseAlert tone="error" :message="t('adminCache.settingsLoadError')" />
+        <div data-part="view-actions">
+            <BaseButton data-item="retry" :label="t('library.retry')" @click="store.load()" />
+        </div>
+    </template>
+    <form
+        v-else
+        data-part="form"
+        :aria-busy="store.status === 'loading' && !store.settings ? 'true' : undefined"
+        @submit.prevent="save"
+    >
         <BaseSelect
             v-model="maxSize"
             :label="t('adminCache.maxSize')"

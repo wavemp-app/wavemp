@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n'
 import AdminNav from '@/components/admin/AdminNav.vue'
 import JobList from '@/components/admin/JobList.vue'
 import BaseAlert from '@/components/base/BaseAlert.vue'
+import BaseButton from '@/components/base/BaseButton.vue'
 import { usePolling } from '@/composables/usePolling'
 import { useJobsStore } from '@/stores/jobs'
 
@@ -47,13 +48,18 @@ onMounted(async () => {
 </script>
 
 <template>
-    <div data-part="view" data-view="admin-jobs">
+    <div
+        data-part="view"
+        data-view="admin-jobs"
+        :aria-busy="jobs.status === 'loading' ? 'true' : undefined"
+    >
         <AdminNav />
-        <BaseAlert
-            v-if="jobs.status === 'error'"
-            tone="error"
-            :message="t('adminJobs.loadError')"
-        />
+        <template v-if="jobs.status === 'error'">
+            <BaseAlert tone="error" :message="t('adminJobs.loadError')" />
+            <div data-part="view-actions">
+                <BaseButton data-item="retry" :label="t('library.retry')" @click="jobs.load()" />
+            </div>
+        </template>
         <BaseAlert v-if="message" tone="error" :message="message" />
         <JobList :jobs="jobs.jobs" :starting="starting" @run="run" />
     </div>

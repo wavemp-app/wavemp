@@ -8,6 +8,7 @@ import BackupList from '@/components/admin/BackupList.vue'
 import BackupSettingsForm from '@/components/admin/BackupSettingsForm.vue'
 import BackupStatus from '@/components/admin/BackupStatus.vue'
 import BaseAlert, { type AlertTone } from '@/components/base/BaseAlert.vue'
+import BaseButton from '@/components/base/BaseButton.vue'
 import { usePolling } from '@/composables/usePolling'
 import { useBackupsStore } from '@/stores/backups'
 
@@ -94,11 +95,16 @@ onMounted(async () => {
             <h2 :id="statusTitleId" data-part="section-title">
                 {{ t('adminBackups.statusTitle') }}
             </h2>
-            <BaseAlert
-                v-if="store.status === 'error'"
-                tone="error"
-                :message="t('adminBackups.loadError')"
-            />
+            <template v-if="store.status === 'error'">
+                <BaseAlert tone="error" :message="t('adminBackups.loadError')" />
+                <div data-part="view-actions">
+                    <BaseButton
+                        data-item="retry"
+                        :label="t('library.retry')"
+                        @click="store.load()"
+                    />
+                </div>
+            </template>
             <BackupStatus
                 v-if="store.job"
                 :job="store.job"
