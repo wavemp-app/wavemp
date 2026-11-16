@@ -61,3 +61,53 @@ export function bandLevels(spectrum: ArrayLike<number>, sampleRate: number): Ban
         treble: bandLevel(spectrum, sampleRate, trebleBand),
     }
 }
+
+/** Lowest and highest frequency of the bands of bandSpectrum, in Hz. */
+export const spectrumLow = 40
+export const spectrumHigh = 14000
+
+/**
+ * The levels (0 to 1) of out.length bands from spectrumLow to spectrumHigh into out, spaced evenly
+ * on a logarithmic scale as the ear hears pitch: the first band is the deep bass, the last the air
+ * of the mix. A coarse spectrum a visualization can lay over a surface.
+ */
+export function bandSpectrum(
+    spectrum: ArrayLike<number>,
+    sampleRate: number,
+    out: Float32Array,
+): Float32Array {
+    const count = out.length
+    const ratio = spectrumHigh / spectrumLow
+    for (let index = 0; index < count; index++) {
+        out[index] = bandLevel(spectrum, sampleRate, {
+            low: spectrumLow * Math.pow(ratio, index / count),
+            high: spectrumLow * Math.pow(ratio, (index + 1) / count),
+        })
+    }
+
+    return out
+}
+
+/**
+ * Moves every level of current towards target over the seconds of a frame: rises within about
+ * attackSeconds, falls within about releaseSeconds (to two thirds each). Slow times make the levels
+ * calm.
+ */
+export function followLevels(
+    current: Float32Array,
+    target: ArrayLike<number>,
+    seconds: number,
+    attackSeconds: number,
+    releaseSeconds: number,
+): Float32Array {
+    const rise = seconds > 0 ? 1 - Math.exp(-seconds / Math.max(attackSeconds, 1e-6)) : 0
+    const fall = seconds > 0 ? 1 - Math.exp(-seconds / Math.max(releaseSeconds, 1e-6)) : 0
+    const count = Math.min(current.length, target.length)
+    for (let index = 0; index < count; index++) {
+        const value = current[index] ?? 0
+        const goal = Number.isFinite(target[index]) ? (target[index] ?? 0) : 0
+        current[index] = value + (goal - value) * (goal > value ? rise : fall)
+    }
+
+    return current
+}

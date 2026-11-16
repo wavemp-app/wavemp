@@ -1,5 +1,15 @@
 import { describe, expect, it } from 'vitest'
-import { bandLevel, bandLevels, bassBand, midBand, trebleBand } from '../bands'
+import {
+    bandLevel,
+    bandLevels,
+    bandSpectrum,
+    bassBand,
+    followLevels,
+    midBand,
+    spectrumHigh,
+    spectrumLow,
+    trebleBand,
+} from '../bands'
 
 /** A spectrum of 1024 bins at 48 kHz (23.4 Hz per bin) with the given byte in a range of Hz. */
 function spectrum(from: number, to: number, value = 255): Uint8Array {
@@ -50,5 +60,59 @@ describe('bandLevels', () => {
         expect(levels.bass).toBe(0)
         expect(levels.mid).toBe(0)
         expect(levels.treble).toBeGreaterThan(0.5)
+    })
+})
+
+describe('bandSpectrum', () => {
+    it('lays the bands from the deep bass to the highs', () => {
+        const bass = bandSpectrum(spectrum(0, 120), 48000, new Float32Array(16))
+        const highs = bandSpectrum(spectrum(8000, spectrumHigh), 48000, new Float32Array(16))
+
+        expect(bass[0]).toBeGreaterThan(0.9)
+        expect(bass[15]).toBe(0)
+        expect(highs[0]).toBe(0)
+        expect(highs[15]).toBeGreaterThan(0.9)
+    })
+
+    it('fills every band from 0 to 1 and gives silence as 0', () => {
+        const full = bandSpectrum(spectrum(0, 24000), 48000, new Float32Array(16))
+        const silent = bandSpectrum(new Uint8Array(1024), 48000, new Float32Array(16))
+
+        expect([...full].every((level) => level > 0.99 && level <= 1)).toBe(true)
+        expect([...silent].every((level) => level === 0)).toBe(true)
+    })
+
+    it('spaces the bands evenly on a logarithmic scale', () => {
+        // The fifth of eight bands: from the middle of the range one eighth of it upwards.
+        const ratio = spectrumHigh / spectrumLow
+        const from = spectrumLow * Math.sqrt(ratio)
+        const levels = bandSpectrum(
+            spectrum(from, from * Math.pow(ratio, 1 / 8)),
+            48000,
+            new Float32Array(8),
+        )
+
+        expect(levels[4]).toBeGreaterThan(0.9)
+        expect(levels[2]).toBe(0)
+        expect(levels[6]).toBe(0)
+    })
+})
+
+describe('followLevels', () => {
+    it('rises faster than it falls', () => {
+        const rising = followLevels(new Float32Array([0]), [1], 0.1, 0.1, 0.5)
+        const falling = followLevels(new Float32Array([1]), [0], 0.1, 0.1, 0.5)
+
+        expect(rising[0]).toBeCloseTo(1 - Math.exp(-1))
+        expect(falling[0]).toBeCloseTo(Math.exp(-0.2))
+    })
+
+    it('stays put without time and ignores values that are not finite', () => {
+        const levels = followLevels(new Float32Array([0.4, 0.4]), [1, Number.NaN], 0, 0.1, 0.5)
+
+        expect([...levels]).toEqual([expect.closeTo(0.4), expect.closeTo(0.4)])
+        followLevels(levels, [1, Number.NaN], 10, 0.1, 0.5)
+        expect(levels[0]).toBeCloseTo(1)
+        expect(levels[1]).toBeCloseTo(0)
     })
 })
