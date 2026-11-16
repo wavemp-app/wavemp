@@ -83,6 +83,18 @@ async function drawAtLowQuality(request: APIRequestContext, profileId: string): 
     expect(response.status()).toBe(200)
 }
 
+/**
+ * Turns the automatic change of the profile off, so the shown preset changes only when the test
+ * chooses one.
+ */
+async function turnOffAutoChange(request: APIRequestContext, profileId: string): Promise<void> {
+    const response = await request.patch('/api/v1/me/settings', {
+        headers: await sessionHeaders(request, profileId),
+        data: { visualization: { autoChange: false } },
+    })
+    expect(response.status()).toBe(200)
+}
+
 let user: TestUser
 
 test.beforeEach(async ({ page, request }) => {
@@ -230,6 +242,7 @@ test('draws A-Force, which moves with the music and blends its styles', async ({
     // Both modules load and draw in software, A-Force twice.
     test.slow()
     await drawAtLowQuality(request, user.id)
+    await turnOffAutoChange(request, user.id)
     const visualization = await showVisualization(page, request)
     await expect(visualization).toHaveAttribute('data-state', /\b(running|unsupported)\b/, {
         timeout: 20_000,
@@ -269,26 +282,30 @@ test('draws A-Force, which moves with the music and blends its styles', async ({
     const second = await canvas.screenshot()
     expect(first.equals(second)).toBe(false)
 
-    // A chosen style is kept with the profile; the next button follows the list.
-    await preset.selectOption('ember')
+    // A chosen style is kept with the profile; the next button follows the list. A-Force starts
+    // with a random style, and choosing the shown one changes nothing, so the test chooses Ember,
+    // or Prism if it already shows Ember.
+    const chosen = (await preset.inputValue()) === 'ember' ? 'prism' : 'ember'
+    const following = chosen === 'ember' ? 'lagoon' : 'eclipse'
+    await preset.selectOption(chosen)
     await settled
         .poll(async () => (await storedVisualization(request, user.id)).preset)
-        .toBe('ember')
+        .toBe(chosen)
     await part(page, 'btn-preset-next').click()
-    await expect(preset).toHaveValue('lagoon')
+    await expect(preset).toHaveValue(following)
     await expect(visualization).toHaveAttribute('data-state', /\brunning\b/)
 
     // After loading the app again, A-Force starts with the stored style.
     await settled
         .poll(async () => (await storedVisualization(request, user.id)).preset)
-        .toBe('lagoon')
+        .toBe(following)
     await page.reload()
     await showVisualization(page, request)
     await expect(visualization).toHaveAttribute('data-module', 'aforce')
     await expect(visualization).toHaveAttribute('data-state', /\brunning\b/, {
         timeout: 20_000,
     })
-    await expect(preset).toHaveValue('lagoon')
+    await expect(preset).toHaveValue(following)
 
     // Back to Milkdrop.
     await moduleSegment(page, 'milkdrop').click()
