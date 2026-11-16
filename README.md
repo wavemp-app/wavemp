@@ -422,7 +422,7 @@ The integration tests host the service in memory with `WebApplicationFactory` an
 
 The E2E tests first select the built-in admin profile once (project `setup`) and store the browser state in `tests/WaveMP.E2E/playwright/.auth/` (not committed); most tests start with this session. Tests that switch profiles create their own profiles through the API and delete them afterwards.
 
-The projects `chromium` (desktop) and `mobile` (phone) run all specs except `tests/devices`; the projects `iphone`, `ipad` and `ipad-landscape` run the specs in `tests/devices` with the viewport, touch and mobile emulation of an iPhone and an iPad in portrait and landscape (in Chromium, the only browser the setup installs). `npx playwright test --project=ipad` runs one of them.
+The projects `chromium` (desktop) and `mobile` (phone) run all specs except `tests/devices` and `tests/visualization.spec.ts`; the project `visualization` runs the visualization tests on the desktop and on a phone one after another in a single worker, because two visualizations drawn in software at the same time take too much of the CPU; the projects `iphone`, `ipad` and `ipad-landscape` run the specs in `tests/devices` with the viewport, touch and mobile emulation of an iPhone and an iPad in portrait and landscape (in Chromium, the only browser the setup installs). `npx playwright test --project=ipad` runs one of them.
 
 If you set `WAVEMP_PORT` in `.env`, point the E2E tests at it, for example `E2E_BASE_URL=http://localhost:8081 npm test`.
 

@@ -5,6 +5,13 @@ import { adminStorageState } from './tests/helpers/storage'
 const deviceSpecs = /[\\/]devices[\\/].*\.spec\.ts$/
 
 /**
+ * The visualization spec draws WebGL 2 in software (SwiftShader), and two drawings at once take too
+ * much of the CPU. So it runs in a project of its own with one worker, which draws on the desktop
+ * and on a phone one after another (see the spec), instead of in "chromium" and "mobile" at once.
+ */
+const visualizationSpec = /[\\/]visualization\.spec\.ts$/
+
+/**
  * A phone or tablet of the test matrix: its viewport, touch and mobile emulation, in Chromium (the
  * only browser the E2E setup installs), with the session of the built-in admin.
  */
@@ -26,7 +33,9 @@ function device(name: string, descriptor: string) {
  * `docker compose -f docker-compose.dev.yml up --build`.
  * The project "setup" selects the built-in admin profile once; the other projects start with its
  * session (see tests/helpers/storage.ts). "chromium" (desktop) and "mobile" (phone) run all specs
- * except tests/devices; "iphone", "ipad" and "ipad-landscape" run tests/devices.
+ * except tests/devices and the visualization spec; "visualization" runs the visualization spec on
+ * the desktop and on a phone in one worker; "iphone", "ipad" and "ipad-landscape" run
+ * tests/devices.
  */
 export default defineConfig({
     testDir: './tests',
@@ -42,14 +51,22 @@ export default defineConfig({
         { name: 'setup', testMatch: /.*\.setup\.ts/, use: { ...devices['Desktop Chrome'] } },
         {
             name: 'chromium',
-            testIgnore: deviceSpecs,
+            testIgnore: [deviceSpecs, visualizationSpec],
             use: { ...devices['Desktop Chrome'], storageState: adminStorageState },
             dependencies: ['setup'],
         },
         {
             name: 'mobile',
-            testIgnore: deviceSpecs,
+            testIgnore: [deviceSpecs, visualizationSpec],
             use: { ...devices['Pixel 7'], storageState: adminStorageState },
+            dependencies: ['setup'],
+        },
+        {
+            name: 'visualization',
+            testMatch: visualizationSpec,
+            fullyParallel: false,
+            workers: 1,
+            use: { ...devices['Desktop Chrome'], storageState: adminStorageState },
             dependencies: ['setup'],
         },
         device('iphone', 'iPhone 13'),
