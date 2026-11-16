@@ -103,6 +103,11 @@ export default defineConfig({
             devOptions: { enabled: false },
         }),
     ],
+    build: {
+        // The preset pack of the visualization (butterchurn-presets, about 650 kB) is one chunk of
+        // data that only loads when the visualization is shown; everything else stays far below.
+        chunkSizeWarningLimit: 700,
+    },
     resolve: {
         alias: {
             '@': fileURLToPath(new URL('./src', import.meta.url)),
