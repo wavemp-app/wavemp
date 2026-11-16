@@ -2,12 +2,23 @@
 import NowPlayingStage from '@/components/player/NowPlayingStage.vue'
 import PlayQueue from '@/components/player/PlayQueue.vue'
 import { usePlayerStore } from '@/stores/player'
+import { useSessionStore } from '@/stores/session'
+import type { VisualizationSettingsChange } from '@/visualization/settings'
 
 /**
  * Now Playing: the stage with the current track (cover, video or visualization) and the queue of
  * the player.
  */
 const player = usePlayerStore()
+const session = useSessionStore()
+
+/**
+ * Applies a change of the visualization at once and saves it for the profile. If saving fails
+ * (e.g. offline), the previous settings come back; the visualization goes on.
+ */
+function updateVisualization(change: VisualizationSettingsChange): void {
+    session.updateVisualization(change).catch(() => undefined)
+}
 </script>
 
 <template>
@@ -17,9 +28,12 @@ const player = usePlayerStore()
             :mode="player.viewMode"
             :view="player.stageView"
             :video-state="player.videoState"
+            :audio="player.analyser"
+            :visualization="session.visualization"
             @select-mode="player.selectViewMode"
             @attach-video="player.attachVideo"
             @detach-video="player.detachVideo"
+            @update-visualization="updateVisualization"
         />
         <PlayQueue
             v-if="player.queue.items.length > 0"

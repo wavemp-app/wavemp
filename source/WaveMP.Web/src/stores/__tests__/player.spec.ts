@@ -44,6 +44,7 @@ class FakeEngine implements PlayerEngine {
     readonly fadeOut = vi.fn()
     readonly restoreOutput = vi.fn()
     equalizerAvailable = true
+    analyser: AnalyserNode | null = null
 
     constructor(readonly events: EngineEvents) {}
 
@@ -825,6 +826,21 @@ describe('player store', () => {
                 expect.any(Array),
             )
             expect(player.state.equalizer).toBe(false)
+        })
+
+        it('hands the output of the engine to the visualizations once it played', async () => {
+            const player = usePlayerStore()
+            const analyser = {} as AnalyserNode
+            player.playTracks(abc, 0)
+            await flushPromises()
+            expect(player.analyser).toBeNull()
+            engine.analyser = analyser
+
+            player.pause()
+            player.play()
+            await flushPromises()
+
+            expect(player.analyser).toBe(analyser)
         })
 
         it('knows whether the equalizer works once the engine played', async () => {

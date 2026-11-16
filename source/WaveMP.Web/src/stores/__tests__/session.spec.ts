@@ -508,4 +508,78 @@ describe('session store', () => {
             expect(session.sleepTimer.fadeSeconds).toBe(60)
         })
     })
+
+    describe('visualization settings', () => {
+        const visualization = {
+            module: 'Milkdrop',
+            preset: 'Waves',
+            autoChange: false,
+            autoChangeSeconds: 120,
+        }
+
+        it('loads the visualization with the profile and resets it for another profile', async () => {
+            api.createSession.mockResolvedValue(created('a'))
+            api.getSettings.mockResolvedValue({ language: 'en', visualization })
+            const session = useSessionStore()
+
+            await session.select('a')
+            expect(session.visualization).toEqual(visualization)
+
+            session.clear()
+            expect(session.visualization).toEqual({
+                module: 'Milkdrop',
+                preset: null,
+                autoChange: true,
+                autoChangeSeconds: 30,
+            })
+        })
+
+        it('keeps the defaults for incomplete visualization settings', async () => {
+            api.createSession.mockResolvedValue(created('a'))
+            api.getSettings.mockResolvedValue({
+                language: 'en',
+                visualization: { ...visualization, autoChangeSeconds: 2 },
+            })
+            const session = useSessionStore()
+
+            await session.select('a')
+
+            expect(session.visualization.autoChangeSeconds).toBe(30)
+            expect(session.visualization.preset).toBeNull()
+        })
+
+        it('changes the visualization at once and takes over the answer', async () => {
+            saveStoredSession(stored('a'))
+            let answer: (value: unknown) => void = () => undefined
+            api.updateSettings.mockImplementationOnce(
+                () =>
+                    new Promise((resolve) => {
+                        answer = resolve
+                    }),
+            )
+            const session = useSessionStore()
+            session.restore()
+
+            const saving = session.updateVisualization({ preset: 'Waves' })
+            expect(session.visualization.preset).toBe('Waves')
+            answer({ visualization: { ...visualization, autoChange: true } })
+            await saving
+
+            expect(api.updateSettings).toHaveBeenCalledWith({ visualization: { preset: 'Waves' } })
+            expect(session.visualization).toEqual({ ...visualization, autoChange: true })
+        })
+
+        it('restores the visualization when saving fails and passes the error on', async () => {
+            saveStoredSession(stored('a'))
+            api.updateSettings.mockRejectedValueOnce(new Error('offline'))
+            const session = useSessionStore()
+            session.restore()
+
+            await expect(session.updateVisualization({ autoChange: false })).rejects.toThrow(
+                'offline',
+            )
+
+            expect(session.visualization.autoChange).toBe(true)
+        })
+    })
 })

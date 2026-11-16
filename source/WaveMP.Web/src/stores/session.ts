@@ -40,6 +40,13 @@ import {
     type StoredProfile,
     type StoredSession,
 } from '@/session/storage'
+import {
+    applyVisualizationChange,
+    defaultVisualizationSettings,
+    toVisualizationSettings,
+    type VisualizationSettings,
+    type VisualizationSettingsChange,
+} from '@/visualization/settings'
 
 const replayGainModes = new Set<string>(Object.values(ReplayGainModeObject))
 
@@ -83,8 +90,10 @@ export const useSessionStore = defineStore('session', () => {
     const crossfade = ref<CrossfadeSettings>(defaultCrossfadeSettings)
     /** Sleep timer settings of the profile. */
     const sleepTimer = ref<SleepTimerSettings>(defaultSleepTimerSettings)
+    /** Visualization of Now Playing of the profile. */
+    const visualization = ref<VisualizationSettings>(defaultVisualizationSettings)
     /** Increase with every change of a group, so older answers do not overwrite newer changes. */
-    const requests = { equalizer: 0, crossfade: 0, sleepTimer: 0 }
+    const requests = { equalizer: 0, crossfade: 0, sleepTimer: 0, visualization: 0 }
 
     const isAuthenticated = computed(
         () =>
@@ -115,9 +124,11 @@ export const useSessionStore = defineStore('session', () => {
         equalizer.value = defaultEqualizerSettings
         crossfade.value = defaultCrossfadeSettings
         sleepTimer.value = defaultSleepTimerSettings
+        visualization.value = defaultVisualizationSettings
         requests.equalizer++
         requests.crossfade++
         requests.sleepTimer++
+        requests.visualization++
     }
 
     /** Takes over the playback settings of an answer; incomplete groups keep their values. */
@@ -125,6 +136,8 @@ export const useSessionStore = defineStore('session', () => {
         equalizer.value = toEqualizerSettings(settings?.equalizer) ?? equalizer.value
         crossfade.value = toCrossfadeSettings(settings?.crossfade) ?? crossfade.value
         sleepTimer.value = toSleepTimerSettings(settings?.sleepTimer) ?? sleepTimer.value
+        visualization.value =
+            toVisualizationSettings(settings?.visualization) ?? visualization.value
     }
 
     function persist(): void {
@@ -342,6 +355,31 @@ export const useSessionStore = defineStore('session', () => {
         }
     }
 
+    /**
+     * Changes the visualization of the profile at once and saves it. If saving fails, the previous
+     * settings come back, unless a newer change was made meanwhile. Errors are passed on.
+     */
+    async function updateVisualization(change: VisualizationSettingsChange): Promise<void> {
+        const requestToken = token.value
+        const request = ++requests.visualization
+        const previous = visualization.value
+        visualization.value = applyVisualizationChange(previous, change)
+        try {
+            const settings = await apiClient.api.v1.me.settings.patch({
+                visualization: { ...change },
+            })
+            if (token.value === requestToken && request === requests.visualization) {
+                visualization.value =
+                    toVisualizationSettings(settings?.visualization) ?? visualization.value
+            }
+        } catch (error) {
+            if (token.value === requestToken && request === requests.visualization) {
+                visualization.value = previous
+            }
+            throw error
+        }
+    }
+
     /** Ends the session on the server (if reachable) and forgets it. */
     async function signOut(): Promise<void> {
         if (token.value) {
@@ -367,6 +405,7 @@ export const useSessionStore = defineStore('session', () => {
         equalizer,
         crossfade,
         sleepTimer,
+        visualization,
         isAuthenticated,
         isAdmin,
         isBuiltInAdmin,
@@ -381,6 +420,7 @@ export const useSessionStore = defineStore('session', () => {
         updateCrossfade,
         setCrossfadeEnabled,
         updateSleepTimer,
+        updateVisualization,
         signOut,
         clear,
     }

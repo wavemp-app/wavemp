@@ -1998,26 +1998,110 @@
         text-align: center;
     }
 
-    /* The placeholder of the visualization: its icon in the middle, a short hint below. */
+    /*
+     * The visualization: its canvas fills the view, also in full screen. Until it draws, a message
+     * (loading, waiting for the music, unsupported, failed) shows an icon in the middle with a short
+     * hint below. The controls lie at the bottom edge; with a mouse they show on hover and focus, on
+     * touch screens always.
+     */
     [data-part='visualization'] {
+        position: relative;
+        display: block;
+        inline-size: 100%;
+        block-size: 100%;
+        overflow: hidden;
+        background: var(--wmp-stage-view-background);
+        color: #ffffff;
+    }
+
+    [data-part='visualization'][data-state~='fullscreen'] {
+        border-radius: 0;
+    }
+
+    [data-part='visualization-canvas'] {
+        position: absolute;
+        inset: 0;
+        display: block;
+        inline-size: 100%;
+        block-size: 100%;
+    }
+
+    [data-part='visualization']:not([data-state~='running'], [data-state~='paused'])
+        > [data-part='visualization-canvas'] {
+        visibility: hidden;
+    }
+
+    [data-part='visualization-message'] {
+        position: absolute;
+        inset: 0;
         display: grid;
         place-content: center;
         justify-items: center;
         gap: var(--wmp-space-m);
-        inline-size: 100%;
-        block-size: 100%;
+        margin: 0;
         padding: var(--wmp-space-l);
-        color: #ffffff;
         text-align: center;
     }
 
-    [data-part='visualization'] > [data-part='icon'] {
+    [data-part='visualization-message'] > [data-part='icon'] {
         --wmp-icon-size: 4rem;
     }
 
-    [data-part='visualization'] > [data-part='label'] {
+    [data-part='visualization-message'] > [data-part='label'] {
         opacity: 0.7;
         font-size: var(--wmp-font-size-s);
+    }
+
+    [data-part='visualization-controls'] {
+        position: absolute;
+        inset-inline: 0;
+        inset-block-end: 0;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: center;
+        gap: var(--wmp-space-xs);
+        padding: var(--wmp-space-s);
+        opacity: 0;
+    }
+
+    [data-part='visualization']:hover > [data-part='visualization-controls'],
+    [data-part='visualization-controls']:focus-within {
+        opacity: 1;
+    }
+
+    @media (hover: none) {
+        [data-part='visualization-controls'] {
+            opacity: 1;
+        }
+    }
+
+    [data-part='visualization-controls'] > [data-part='field'] {
+        flex: 0 1 16rem;
+        min-inline-size: 0;
+    }
+
+    /* The menu of the presets names itself through its label, which stays for assistive technology. */
+    [data-part='visualization-controls'] > [data-part='field'] > [data-part='label'] {
+        position: absolute;
+        inline-size: 1px;
+        block-size: 1px;
+        overflow: hidden;
+        clip-path: inset(50%);
+        white-space: nowrap;
+    }
+
+    [data-part='visualization-controls'] [data-part='select'] {
+        inline-size: 100%;
+    }
+
+    [data-part='visualization-controls'] > [data-variant='icon'] {
+        color: #ffffff;
+    }
+
+    [data-part='visualization-controls'] > [data-part='btn-fullscreen'] {
+        position: static;
+        opacity: 1;
     }
 
     /*

@@ -164,6 +164,9 @@
         --wmp-icon-sleep-timer: url('/icons/phosphor/fill/moon-fill.svg');
         --wmp-icon-fullscreen: url('/icons/phosphor/fill/corners-out-fill.svg');
         --wmp-icon-exit-fullscreen: url('/icons/phosphor/fill/corners-in-fill.svg');
+        --wmp-icon-preset-previous: url('/icons/phosphor/fill/caret-left-fill.svg');
+        --wmp-icon-preset-next: url('/icons/phosphor/fill/caret-right-fill.svg');
+        --wmp-icon-auto-change: url('/icons/phosphor/fill/timer-fill.svg');
         --wmp-icon-collapse-player: url('/icons/phosphor/fill/caret-down-fill.svg');
         --wmp-icon-settings: url('/icons/phosphor/regular/gear-six.svg');
         --wmp-icon-profile: url('/icons/phosphor/regular/user-circle.svg');

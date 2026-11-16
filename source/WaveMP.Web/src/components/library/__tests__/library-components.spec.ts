@@ -83,6 +83,7 @@ describe('TrackGroupList', () => {
         fadeOut: vi.fn(),
         restoreOutput: vi.fn(),
         equalizerAvailable: true,
+        analyser: null,
     }
 
     beforeEach(() => {

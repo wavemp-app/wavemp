@@ -11,6 +11,11 @@ import VideoStage from './VideoStage.vue'
 import { artistLabelKey } from '@/library/presentation'
 import { PlayerViewModeObject, type PlayerViewMode, type Track } from '@/api/generated/models'
 import type { StageView, VideoState } from '@/player/videoSync'
+import {
+    defaultVisualizationSettings,
+    type VisualizationSettings,
+    type VisualizationSettingsChange,
+} from '@/visualization/settings'
 
 /**
  * The stage of Now Playing: the cover, the video or the visualization of the current track, with
@@ -27,12 +32,18 @@ const props = withDefaults(
         view?: StageView
         /** State of the video of the track. */
         videoState?: VideoState
+        /** The output of the player for the visualization. */
+        audio?: AnalyserNode | null
+        /** The visualization settings of the profile. */
+        visualization?: VisualizationSettings
     }>(),
     {
         track: undefined,
         mode: PlayerViewModeObject.Video,
         view: 'cover',
         videoState: 'idle',
+        audio: null,
+        visualization: () => defaultVisualizationSettings,
     },
 )
 
@@ -42,6 +53,8 @@ const emit = defineEmits<{
     attachVideo: [element: HTMLVideoElement]
     /** The video element closes. */
     detachVideo: [element: HTMLVideoElement]
+    /** A change of the visualization settings (preset, automatic change). */
+    updateVisualization: [change: VisualizationSettingsChange]
 }>()
 
 const { t } = useI18n()
@@ -148,7 +161,12 @@ const subtitle = computed(() => {
                 :data-state="view === 'visualization' ? 'active' : undefined"
                 :aria-hidden="view === 'visualization' ? undefined : 'true'"
             >
-                <StageVisualization />
+                <StageVisualization
+                    :active="view === 'visualization'"
+                    :audio="audio"
+                    :settings="visualization"
+                    @update="emit('updateVisualization', $event)"
+                />
             </div>
         </div>
         <p v-if="videoFailed" data-part="stage-notice" role="status">

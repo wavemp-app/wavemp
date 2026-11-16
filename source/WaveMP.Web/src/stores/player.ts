@@ -86,6 +86,7 @@ export type PlayerEngine = Pick<
     | 'equalizerAvailable'
     | 'hasPrepared'
     | 'position'
+    | 'analyser'
 >
 
 /** What the store needs from the video follower; tests replace it. */
@@ -175,6 +176,11 @@ export const usePlayerStore = defineStore('player', () => {
     )
     /** Whether the equalizer can shape the sound in this browser. */
     const equalizerAvailable = ref(playerDependencies.webAudio())
+    /**
+     * The output of the player (after volume and equalizer) for the visualizations; null without Web
+     * Audio and before the first playback, which builds the audio graph.
+     */
+    const analyser = shallowRef<AnalyserNode | null>(null)
     /** The sleep timer and the seconds until a timer with a duration ends. */
     const sleepTimer = ref<SleepTimerState>(sleepTimerOff)
     const sleepRemaining = ref(0)
@@ -222,6 +228,7 @@ export const usePlayerStore = defineStore('player', () => {
     const engineEvents: EngineEvents = {
         timeupdate: onTimeUpdate,
         playing: () => {
+            analyser.value = engine?.analyser ?? null
             playback.value = 'playing'
             loading.value = false
             skipped = 0
@@ -1018,6 +1025,7 @@ export const usePlayerStore = defineStore('player', () => {
         videoState,
         hasVideo,
         equalizerAvailable,
+        analyser,
         sleepTimer,
         sleepRemaining,
         playTracks: playTrackList,

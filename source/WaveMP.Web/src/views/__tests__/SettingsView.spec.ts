@@ -217,6 +217,60 @@ describe('SettingsView playback', () => {
         )
     })
 
+    it('offers the intervals of the automatic change of the visualization', () => {
+        const { wrapper } = mountView()
+
+        const select = field<HTMLSelectElement>(wrapper, 'visualization-auto-change', 'select')
+        expect(select.element.value).toBe('30')
+        expect(select.findAll('option').map((option) => option.text())).toEqual([
+            'Off (keep the preset)',
+            'Every 10 seconds',
+            'Every 15 seconds',
+            'Every 20 seconds',
+            'Every 30 seconds',
+            'Every 45 seconds',
+            'Every 60 seconds',
+            'Every 2 minutes',
+            'Every 5 minutes',
+        ])
+    })
+
+    it('saves the automatic change of the visualization and keeps its interval when off', async () => {
+        const { wrapper, session } = mountView()
+        const update = vi
+            .spyOn(session, 'updateVisualization')
+            .mockImplementation(async (change) => {
+                session.visualization = {
+                    ...session.visualization,
+                    autoChange: change.autoChange ?? session.visualization.autoChange,
+                    autoChangeSeconds:
+                        change.autoChangeSeconds ?? session.visualization.autoChangeSeconds,
+                }
+            })
+
+        await field(wrapper, 'visualization-auto-change', 'select').setValue('120')
+        await flushPromises()
+        expect(update).toHaveBeenCalledWith({ autoChange: true, autoChangeSeconds: 120 })
+
+        await field(wrapper, 'visualization-auto-change', 'select').setValue('off')
+        await flushPromises()
+        expect(update).toHaveBeenLastCalledWith({ autoChange: false })
+        expect(session.visualization.autoChangeSeconds).toBe(120)
+        expect(
+            field<HTMLSelectElement>(wrapper, 'visualization-auto-change', 'select').element.value,
+        ).toBe('off')
+    })
+
+    it('shows an interval of the profile that the menu does not offer', async () => {
+        const { wrapper, session } = mountView()
+        session.visualization = { ...session.visualization, autoChangeSeconds: 7 }
+        await flushPromises()
+
+        const select = field<HTMLSelectElement>(wrapper, 'visualization-auto-change', 'select')
+        expect(select.element.value).toBe('7')
+        expect(select.findAll('option')[1]?.text()).toBe('Every 7 seconds')
+    })
+
     it('turns the equalizer on for the profile', async () => {
         const { wrapper, session } = mountView()
         const update = vi.spyOn(session, 'updateEqualizer').mockImplementation(async (change) => {

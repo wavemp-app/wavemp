@@ -1,6 +1,6 @@
 # WaveMP Theme API
 
-Version 4
+Version 5
 
 This document describes how themes change the look of the WaveMP web app: the parts of the DOM a theme can address, their states, the CSS variables and the icons. It is meant for theme authors.
 
@@ -13,7 +13,7 @@ The DOM is the same for every theme. Every element a theme can address has a sta
 The root element carries the active theme and the version of this API:
 
 ```html
-<html lang="en" data-theme="midnight" data-theme-api="4">
+<html lang="en" data-theme="midnight" data-theme-api="5">
 ```
 
 A theme can change everything: colors, graphics, fonts, sizes and the desktop layout. Only the mobile layout is fixed (see [Responsive layout](#responsive-layout)).
@@ -130,11 +130,17 @@ Example of a desktop layout with the sidebar on the right:
 | `stage-title` | `p` | `stage-info` | Title of the current song |
 | `stage-subtitle` | `p` | `stage-info` | Artist and album of the current song |
 | `stage-actions` | `div` | `stage` | Chooses the view of the stage with a `segmented-control` (`data-item="stage-view"`) of the `segment`s `cover`, `video` and `visualization` (with the icons `view-cover`, `view-video` and `view-visualization`); while a song is current. The choice is kept per profile; switching never interrupts the music. `cover` is checked for songs without a video while the video is chosen, `video` while the video still loads; `video` is disabled for songs without a video |
-| `visualization` | `div` | `stage-view` | The visualization of the music; for now a placeholder (`data-state="placeholder"`) with an `icon` (`view-visualization`) and a `label` |
+| `visualization` | `div` (`data-module`) | `stage-view` | The visualization of the music, drawn by a module (`data-module`, for now `milkdrop` with Milkdrop presets) in sync with what is heard: `visualization-canvas`, `visualization-message` until it draws and `visualization-controls`. Its state (see [States](#states)) tells whether it loads, waits for the music, draws or pauses; nothing is drawn while the view is hidden, the page is in the background or the stage is out of the viewport. Shown in full screen as a whole (`fullscreen`; a double click outside the controls switches as well, only while the visualization view is shown) |
+| `visualization-canvas` | `canvas` (`aria-hidden`) | `visualization` | The drawing of the module; the base lays it over the whole `visualization` and hides it until the module draws. A new canvas element may replace it while the visualization runs |
+| `visualization-message` | `p` (`role="status"`) | `visualization` | Hint while the visualization does not draw, with an `icon` (`view-visualization`) and a `label`: while it loads, waits for the music (the player has no output before its first song), cannot be shown by the browser or failed; the state of `visualization` tells which |
+| `visualization-controls` | `div` (`role="group"`) | `visualization` | Controls of the visualization: `btn-preset-previous`, the `field` `visualization-preset` (a `select` of the presets of the module, its `label` hidden visually by the base), `btn-preset-next`, `btn-auto-change` and `btn-fullscreen`. The base lays them over the bottom edge and shows them on hover and focus, on touch screens always |
+| `btn-preset-previous` | `button` | `visualization-controls` | Shows the preset before the current one in the list (icon `preset-previous`); disabled until the presets are loaded. A chosen preset is kept per profile |
+| `btn-preset-next` | `button` | `visualization-controls` | Shows the preset after the current one in the list (icon `preset-next`); disabled until the presets are loaded |
+| `btn-auto-change` | `button` (`aria-pressed`) | `visualization-controls` | Turns the automatic change of the preset on and off (icon `auto-change`, states `on` and `off`); the interval is set on the settings page, both are kept per profile. The automatic change picks a random preset and waits while nothing is drawn |
 | `video-stage` | `div` (`data-orientation`) | `stage-view` | The video of the current song with `video-backdrop`, `video` and `btn-fullscreen`; shown in full screen as a whole (a double click switches as well, only while the video view is shown). When it closes, the song simply goes on. `data-orientation` and `--wmp-video-aspect-ratio` describe the picture of the video, so the theme can design the free areas beside a portrait video or above and below a wide one |
 | `video-backdrop` | `span` (`aria-hidden`) | `video-stage` | Decorative layer behind the `video` that fills the whole `video-stage`; it shows in the free areas around the picture. Without a theme rule it is transparent and the background of the stage (`--wmp-stage-view-background`) shows |
 | `video` | `video` (`aria-label`) | `video-stage` | The video element, always muted and without native controls: the sound comes from the player, the video follows its position plus the offset of the song; the transport bar controls both. The base lays it over the whole `video-stage` with a transparent background and shows the picture whole, undistorted and centered (`object-fit: contain`), also in full screen and for portrait videos |
-| `btn-fullscreen` | `button` | `video-stage` | Shows the `video-stage` in full screen (icon `fullscreen`) or leaves it (icon `exit-fullscreen`); disabled where the browser has no full screen and while the video view is not shown. On the iPhone the video element itself goes full screen with the controls of the system |
+| `btn-fullscreen` | `button` | `video-stage`, `visualization-controls` | Shows the `video-stage` or the `visualization` in full screen (icon `fullscreen`) or leaves it (icon `exit-fullscreen`); disabled where the browser has no full screen and while its view is not shown. On the iPhone the video element itself goes full screen with the controls of the system; the visualization has no full screen there. In `visualization-controls` the base places it in the row of the controls |
 | `cover` | `span` | `stage-view`, `list-group-info`, `now-playing-mini`, `queue-item-info`, `tile`, `detail-header` | Cover: `cover-image`, or the placeholder icon (`data-state="placeholder"`); on tiles and detail pages of artists, genres and years the `icon` of their kind |
 | `cover-image` | `img` (`alt=""`) | `cover` | Picture of the cover, loaded from the server |
 | `list` | `div` (`role="grid"`) | `view` | Table of tracks grouped by album |
@@ -341,7 +347,8 @@ The internal component overview (`/dev/components`) uses its own parts starting 
 | `now-playing-actions` | `empty` while nothing plays |
 | `stage` | the shown view: `cover`, `video` or `visualization` |
 | `stage-view` | `active` for the shown view; `loading` for the video view while the video loads or moves to the position of the music (the base keeps it invisible but rendered); `failed` for the video view while its video cannot be played |
-| `visualization` | `placeholder` |
+| `visualization` | `idle` (not shown yet), `loading` (the module loads), `waiting` (waits for the music), `running` (draws), `paused` (hidden, nothing is drawn), `unsupported` (the browser cannot show it) or `failed`; additionally `fullscreen` while it is shown in full screen |
+| `btn-auto-change` | `on` while the preset changes automatically, otherwise `off` |
 | `video-stage` | `fullscreen` while it is shown in full screen |
 | `queue-item` | `current` for the current song, `played` for the songs before it |
 | `placeholder-notice`, `cover` | `placeholder` |
@@ -409,7 +416,7 @@ Example of a line that slides below the active tab:
 | `aria-invalid="true"` | `input`, `select` and `segmented-control` of a field with an error |
 | `aria-checked` | `color-swatch`, `segment`; `menu-item` with `role="menuitemradio"`, for example the chosen sort key and direction |
 | `aria-selected` | `list-row` |
-| `aria-pressed` | `btn-shuffle`, `btn-repeat`, `btn-crossfade`, `btn-mute`, `btn-favorite`, `rating-star`, `btn-sleep-timer`, the `button` `power` of `equalizer-controls` and other toggle buttons |
+| `aria-pressed` | `btn-shuffle`, `btn-repeat`, `btn-crossfade`, `btn-auto-change`, `btn-mute`, `btn-favorite`, `rating-star`, `btn-sleep-timer`, the `button` `power` of `equalizer-controls` and other toggle buttons |
 | `aria-disabled="true"` | `tree-item`, `slider-thumb`; `segmented-control` and its `segment`s while the whole group is disabled, for example while its value is saved (the segments stay focusable; a single option that cannot be chosen is a disabled `button` instead) |
 | `aria-valuemin`, `aria-valuemax`, `aria-valuenow`, `aria-valuetext` | `slider-thumb`, `progress` (`aria-valuenow` from 0 to 100, missing while indeterminate), `meter` (`aria-valuenow` from 0 to 100) |
 | `:disabled` | buttons and inputs |
@@ -431,6 +438,7 @@ The base links states to graphics: buttons use the variables `--wmp-image-<varia
 | `data-view` | `view` | `library`, `library-search`, `library-album`, `library-artist`, `library-genre`, `library-year`, `library-track`, `home`, `now-playing`, `playlists`, `playlist`, `recently-played`, `settings`, `equalizer`, `admin-library`, `admin-jobs`, `admin-cache`, `admin-transcoding`, `admin-users`, `not-found` |
 | `data-kind` | `tile` | `album`, `artist`, `track`, `genre`, `year`, `playlist`, `recently-played` |
 | `data-kind` | `stage-view` | `cover`, `video`, `visualization` |
+| `data-module` | `visualization` | The module that draws: `milkdrop` |
 | `data-kind` | `equalizer-band` | `preamp` or `band` |
 | `data-frequency` | `equalizer-band` with `data-kind="band"` | Center frequency of the band in Hz, `31`, `62`, `125`, `250`, `500`, `1000`, `2000`, `4000`, `8000`, `16000` |
 | `data-section` | `view` (library) | `recently-added`, `favorites`, `artists`, `albums`, `songs`, `genres`, `years` |
@@ -439,7 +447,8 @@ The base links states to graphics: buttons use the variables `--wmp-image-<varia
 | `data-count` | `playlist-cover` | Number of song covers (1 to 4) |
 | `data-field` | `meta-item` | `album`, `artist`, `genre`, `year`, `tracks`, `albums`, `duration`, `number`, `disc`, `media`, `rating` |
 | `data-field` | `field` (metadata editor) | `title`, `artist`, `album`, `album-artist`, `year`, `number`, `disc`, `genre` |
-| `data-field` | `field` (settings) | `language`, `replay-gain` (segmented control), `equalizer` (checkbox), `crossfade`, `crossfade-albums` (checkbox), `sleep-timer-fade` |
+| `data-field` | `field` (settings) | `language`, `replay-gain` (segmented control), `equalizer` (checkbox), `crossfade`, `crossfade-albums` (checkbox), `sleep-timer-fade`, `visualization-auto-change` |
+| `data-field` | `field` (visualization) | `visualization-preset` |
 | `data-field` | `field` (administration) | `role` in the dialog of a profile, `hardware-acceleration` on the transcoding page (segmented controls) |
 | `data-item` | `segmented-control` | The choice: `scope` (`segment`s `all-music`, `my-music`), `stage-view` (`cover`, `video`, `visualization`), `replay-gain` (`off`, `track`, `album`), `role` (`user`, `admin`), `hardware-acceleration` (`auto`, `off`) |
 | `data-item` | `segment` | The option, see `segmented-control` |
@@ -627,7 +636,7 @@ The graphic of each icon slot is a variable as well, see [Icons](#icons).
 | Variable | Default | Used for |
 |---|---|---|
 | `--wmp-stage-transition-duration` | `0.6s` | Duration of the fade between the views of the stage (`stage-view`); the base leaves it out for `prefers-reduced-motion: reduce` |
-| `--wmp-stage-view-background` | `#000000` | Background of the video and visualization views and of the `video-stage`, so also of the free areas around the picture of the `video` (the `video-backdrop` lies above it) |
+| `--wmp-stage-view-background` | `#000000` | Background of the video and visualization views, of the `video-stage` and of the `visualization`, so also of the free areas around the picture of the `video` (the `video-backdrop` lies above it) |
 
 On mobile, the base sets touch-friendly values for `--wmp-button-height`, `--wmp-round-button-size`, `--wmp-field-height` and `--wmp-swatch-size` on `app`, and its own `--wmp-list-columns` on `list` (in playlists with the handle); the columns `artist`, `album`, `detail` and `rating` are left out there.
 
@@ -723,8 +732,11 @@ The defaults are icons of [Phosphor Icons](https://phosphoricons.com) (MIT) unde
 | `favorite-off` | `--wmp-icon-favorite-off` | `/icons/phosphor/regular/heart.svg` | Content (`btn-favorite` of anything else) |
 | `rating-star` | `--wmp-icon-rating-star` | `/icons/phosphor/fill/star-fill.svg` | Content (`rating-star` up to the rating) |
 | `rating-star-off` | `--wmp-icon-rating-star-off` | `/icons/phosphor/regular/star.svg` | Content (the other `rating-star`s) |
-| `fullscreen` | `--wmp-icon-fullscreen` | `/icons/phosphor/fill/corners-out-fill.svg` | Content (`btn-fullscreen` of the video) |
+| `fullscreen` | `--wmp-icon-fullscreen` | `/icons/phosphor/fill/corners-out-fill.svg` | Content (`btn-fullscreen` of the video and the visualization) |
 | `exit-fullscreen` | `--wmp-icon-exit-fullscreen` | `/icons/phosphor/fill/corners-in-fill.svg` | Content (`btn-fullscreen` in full screen) |
+| `preset-previous` | `--wmp-icon-preset-previous` | `/icons/phosphor/fill/caret-left-fill.svg` | Content (`btn-preset-previous` of the visualization) |
+| `preset-next` | `--wmp-icon-preset-next` | `/icons/phosphor/fill/caret-right-fill.svg` | Content (`btn-preset-next` of the visualization) |
+| `auto-change` | `--wmp-icon-auto-change` | `/icons/phosphor/fill/timer-fill.svg` | Content (`btn-auto-change` of the visualization) |
 | `shuffle` | `--wmp-icon-shuffle` | `/icons/phosphor/fill/shuffle-fill.svg` | Transport |
 | `repeat` | `--wmp-icon-repeat` | `/icons/phosphor/fill/repeat-fill.svg` | Transport |
 | `repeat-one` | `--wmp-icon-repeat-one` | `/icons/phosphor/fill/repeat-once-fill.svg` | Transport |
@@ -810,6 +822,7 @@ The version of the theme API is in `data-theme-api` on the root element and at t
 
 ### Changelog
 
+- **Version 5:** visualizations. Changed: the `visualization` is no longer a placeholder: the state `placeholder` is gone, its `icon` and `label` moved into the new `visualization-message`, and the base lays out the `visualization` as a positioned box (no longer a grid) with the background `--wmp-stage-view-background`; themes that styled `visualization > icon` or `visualization > label` have to style `visualization-message > icon` and `visualization-message > label`; `btn-fullscreen` also lies in `visualization-controls`, so theme rules for `btn-fullscreen` that should only apply to the video need `video-stage > btn-fullscreen`. Added: the states `idle`, `loading`, `waiting`, `running`, `paused`, `unsupported`, `failed` and `fullscreen` of `visualization` and its attribute `data-module`; the parts `visualization-canvas`, `visualization-message`, `visualization-controls`, `btn-preset-previous`, `btn-preset-next` and `btn-auto-change` (states `on` and `off`, `aria-pressed`); the values `visualization-preset` and `visualization-auto-change` of `data-field`; the icon slots `preset-previous`, `preset-next` and `auto-change`.
 - **Version 4:** fixes from the first test on phones and tablets. Changed: the `video` lies over the whole `video-stage` with a transparent background and always shows its picture whole and centered, also for portrait videos and in full screen; the free areas around it show the background of the `video-stage` and the new `video-backdrop`, so themes that styled the background of the `video` have to style the `video-stage` or the `video-backdrop` instead; `app` pads the safe areas at the top and at the sides (showing `--wmp-theme-color`) instead of the mobile `header`, and the transport bar on the desktop pads the safe area at the bottom; the page never scrolls, `sidebar` and `content` are containing blocks and contain their overscroll; the `list` is one grid whose `list-header`, `list-group`, `list-group-rows` and `list-row` are subgrids, so `list-group` no longer has grid areas and `list-header` no longer has a margin at its start, and the padding at the start and end of rows moved to their first and last `list-column` and `list-cell`; the `label` of the column header `favorite` is visually hidden; icons in buttons (`data-variant`) no longer inherit `--wmp-icon-fill` from their area but take the text color of the button, unless the theme sets `--wmp-icon-fill` on the button or its `icon`; mutually exclusive options are segmented controls: the buttons `btn-view-cover`, `btn-view-video` and `btn-view-visualization` are replaced by the `segment`s `cover`, `video` and `visualization` of the `segmented-control` `stage-view` in `stage-actions`, and the `button`s of `scope-switch` by the `segment`s `all-music` and `my-music` of the `segmented-control` `scope`, both checked with `aria-checked` instead of `aria-pressed`; `stage-actions` and `scope-switch` lost their `role="group"`; the ReplayGain mode on the settings page, the role in the dialog of a profile and the hardware acceleration on the transcoding page are segmented controls instead of `select`s; the `queue-list` shows only the last three played entries before the current one, and `queue-item-info` is a grid with the `cover` of the song in its first column, spanning title and artist. Added: the part `video-backdrop`, the attribute `data-orientation` on `video-stage`, the runtime variable `--wmp-video-aspect-ratio` and the variable `--wmp-theme-color`, which the app also hands to the browser as theme color; the toggle button `btn-crossfade` (states `on` and `off`, `aria-pressed`) between `btn-repeat` and `btn-stop` with the icon slot `crossfade`, in the mobile full-screen player in the second row between the volume and `btn-stop`; the parts `segmented-control` (`role="radiogroup"`, `data-item`, `aria-disabled`, `aria-invalid`, the runtime variables `--wmp-item-count`, `--wmp-active-index`, `--wmp-indicator-x` and `--wmp-indicator-width`) and `segment` (`role="radio"`, `aria-checked`) with an `indicator`, and the values `role` and `hardware-acceleration` of `data-field`; the collapsible sidebar on the desktop with the button `btn-sidebar-toggle`, the states `collapsed` and `expanded` of `sidebar`, the variable `--wmp-sidebar-collapsed-width` and the icon slots `sidebar-collapse` and `sidebar-expand`; the `cover` in `queue-item-info` with the variable `--wmp-cover-size-queue` and the attribute `start` of `queue-list`.
     - Theme-capable groups: every group with one active entry (`tabs`, `bottom-nav`, `admin-nav`, `tree`, `color-picker` and `segmented-control`) has an `indicator` as first child and carries the runtime variables of its active entry, see [Active element of a group](#active-element-of-a-group). Changed: `tabs`, `bottom-nav`, `admin-nav`, `tree` and `color-picker` are containing blocks (`position: relative`) with a new first child; the `indicator` of a `tab` is `aria-hidden`. Added: the `indicator` of these groups, the runtime variables `--wmp-item-count`, `--wmp-active-index`, `--wmp-indicator-x` and `--wmp-indicator-width` on them and the new runtime variables `--wmp-indicator-y` and `--wmp-indicator-height` (also on `segmented-control`), `--wmp-item-count` and `--wmp-active-index` on `rating` and `playlist-cover`, and the documented states `on` and `off` of the `button` `power` of `equalizer-controls`.
 - **Version 3:** cover, video and visualization on the stage, with a fade. Changed: `btn-video` is replaced by `btn-view-video`, one of the three buttons `btn-view-cover`, `btn-view-video` and `btn-view-visualization`, of which the chosen view is pressed; `stage-actions` is shown for every current song, not only for songs with a video; the `cover` and the `video-stage` of the stage no longer lie directly in `stage` but each in a `stage-view` inside `stage-views`, so themes that address `stage > cover`, `stage cover` or `stage > video-stage` have to use `stage-view > cover` and `stage-view > video-stage`; the `video` is muted and follows the music. Added: the state `visualization` of `stage`, the parts `stage-views`, `stage-view` (with `data-kind` and the states `active`, `loading` and `failed`), `stage-notice`, `visualization` (state `placeholder`) and the `btn-view-*` buttons, the variables `--wmp-stage-transition-duration` and `--wmp-stage-view-background`, and for admins the `section` `video-sync` on the page of a song with a video (`field` `video-offset`, `button` `save-video-offset`). The icon slots `view-cover`, `view-video` and `view-visualization` now belong to the content.

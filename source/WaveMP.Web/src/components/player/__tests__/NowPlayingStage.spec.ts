@@ -1,9 +1,11 @@
-import { describe, expect, it, vi } from 'vitest'
-import { mount } from '@vue/test-utils'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { flushPromises, mount } from '@vue/test-utils'
 import { createPinia } from 'pinia'
 import type { PlayerViewMode, Track } from '@/api/generated/models'
 import { createWaveMpI18n } from '@/i18n'
 import type { StageView, VideoState } from '@/player/videoSync'
+import { visualizationDependencies } from '@/visualization/modules'
+import { FakeClock, FakeModule, fakeAnalyser } from '@/visualization/__tests__/fakes'
 import NowPlayingStage from '../NowPlayingStage.vue'
 
 vi.mock('@/library/api', () => ({ fetchAlbumCover: vi.fn(), fetchTrackCover: vi.fn() }))
@@ -24,6 +26,7 @@ function mountStage(props: {
     mode?: PlayerViewMode
     view?: StageView
     videoState?: VideoState
+    audio?: AnalyserNode | null
 }) {
     return mount(NowPlayingStage, {
         props,
@@ -52,6 +55,19 @@ function viewState(wrapper: Wrapper, kind: string): string | undefined {
 }
 
 describe('NowPlayingStage', () => {
+    const original = { ...visualizationDependencies }
+    let module: FakeModule
+
+    beforeEach(() => {
+        module = new FakeModule()
+        visualizationDependencies.module = () => module
+        visualizationDependencies.clock = new FakeClock()
+    })
+
+    afterEach(() => {
+        Object.assign(visualizationDependencies, original)
+    })
+
     it('shows the cover of a song without a video and offers no video', () => {
         const wrapper = mountStage({ track: track(false), mode: 'Video', view: 'cover' })
 
@@ -139,19 +155,31 @@ describe('NowPlayingStage', () => {
         wrapper.unmount()
     })
 
-    it('shows the placeholder of the visualization', () => {
+    it('draws the music in the visualization view and hands changes on', async () => {
         const wrapper = mountStage({
             track: track(false),
             mode: 'Visualization',
             view: 'visualization',
+            audio: fakeAnalyser(),
         })
+        await module.finishLoad()
+        await flushPromises()
 
         const visualization = wrapper.get('[data-part="visualization"]')
-        expect(visualization.attributes('data-state')).toBe('placeholder')
-        expect(visualization.get('[data-part="label"]').text()).toBe(
-            'Visualizations are not available yet.',
-        )
+        expect(visualization.attributes('data-state')).toBe('running')
         expect(checked(wrapper).visualization).toBe('true')
+
+        await wrapper.get('[data-part="btn-auto-change"]').trigger('click')
+        expect(wrapper.emitted('updateVisualization')).toEqual([[{ autoChange: false }]])
+        wrapper.unmount()
+    })
+
+    it('loads no visualization while another view is shown', async () => {
+        const wrapper = mountStage({ track: track(false), mode: 'Cover', view: 'cover' })
+        await flushPromises()
+
+        expect(wrapper.get('[data-part="visualization"]').attributes('data-state')).toBe('idle')
+        expect(module.loads).toBe(0)
         wrapper.unmount()
     })
 

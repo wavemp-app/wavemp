@@ -295,6 +295,18 @@
         --_icon: var(--wmp-icon-exit-fullscreen);
     }
 
+    [data-icon='preset-previous'] {
+        --_icon: var(--wmp-icon-preset-previous);
+    }
+
+    [data-icon='preset-next'] {
+        --_icon: var(--wmp-icon-preset-next);
+    }
+
+    [data-icon='auto-change'] {
+        --_icon: var(--wmp-icon-auto-change);
+    }
+
     [data-icon='collapse-player'] {
         --_icon: var(--wmp-icon-collapse-player);
     }

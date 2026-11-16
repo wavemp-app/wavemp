@@ -77,6 +77,9 @@ export const iconSlots = {
     'rating-star-off': { file: regular('star'), area: 'content' },
     fullscreen: { file: fill('corners-out'), area: 'content' },
     'exit-fullscreen': { file: fill('corners-in'), area: 'content' },
+    'preset-previous': { file: fill('caret-left'), area: 'content' },
+    'preset-next': { file: fill('caret-right'), area: 'content' },
+    'auto-change': { file: fill('timer'), area: 'content' },
 
     // Transport
     shuffle: { file: fill('shuffle'), area: 'transport' },

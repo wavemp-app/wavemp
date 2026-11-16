@@ -490,7 +490,10 @@ a[data-part="breadcrumb-link"]:hover {
         linear-gradient(90deg, #04070c, #0b1a2c 50%, #04070c);
 }
 
-/* The placeholder of the visualization: a deep blue glow with a light blue glowing waveform. */
+/*
+ * Until the visualization draws: a deep blue glow with a light blue glowing waveform. While it draws,
+ * the canvas covers the glow.
+ */
 [data-part="visualization"] {
     background:
         radial-gradient(ellipse at 50% 120%, rgb(74 168 255 / 28%), transparent 65%),
@@ -498,10 +501,56 @@ a[data-part="breadcrumb-link"]:hover {
     color: #c8e6ff;
 }
 
-[data-part="visualization"] > [data-part="icon"] {
+[data-part="visualization-message"] > [data-part="icon"] {
     --wmp-icon-fill: linear-gradient(#ffffff, #8fd2ff);
 
     filter: drop-shadow(0 0 6px #4aa8ff);
+}
+
+/*
+ * The controls of the visualization float as a dark glass capsule above its bottom edge, like the
+ * view switch below the stage; the automatic change glows light blue while it is on.
+ */
+[data-part="visualization-controls"] {
+    inset-inline: 50% auto;
+    inset-block-end: 0.75rem;
+    inline-size: max-content;
+    max-inline-size: calc(100% - 1.5rem);
+    padding: 0.25rem 0.5rem;
+    border-radius: 999px;
+    background: linear-gradient(rgb(74 79 87 / 85%) 0%, rgb(36 39 44 / 85%) 46%, rgb(8 9 11 / 85%) 54%, rgb(28 31 35 / 85%) 100%);
+    box-shadow:
+        inset 0 1px rgb(255 255 255 / 28%),
+        0 0 0 1px #000000,
+        0 2px 6px rgb(0 0 0 / 50%);
+    translate: -50% 0;
+}
+
+[data-part="visualization-controls"] > [data-variant="icon"] {
+    --wmp-icon-fill: #c8ced6;
+
+    color: #c8ced6;
+}
+
+[data-part="visualization-controls"] > [data-variant="icon"]:hover:not(:disabled) {
+    --wmp-icon-fill: #ffffff;
+
+    color: #ffffff;
+}
+
+[data-part="btn-auto-change"][data-state~="on"] {
+    --wmp-icon-fill: linear-gradient(#ffffff, #8fd2ff);
+}
+
+[data-part="btn-auto-change"][data-state~="on"] > [data-part="icon"] {
+    filter: drop-shadow(0 0 3px #4aa8ff);
+}
+
+[data-part="visualization-controls"] [data-part="select"] {
+    border-color: rgb(143 210 255 / 35%);
+    border-radius: 999px;
+    background: rgb(0 0 0 / 45%);
+    color: #ffffff;
 }
 
 /*

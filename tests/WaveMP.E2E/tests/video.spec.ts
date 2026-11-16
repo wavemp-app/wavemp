@@ -62,7 +62,7 @@ test('shows the video of a song on the Now Playing stage', async ({ page, reques
         .poll(() => video.evaluate((element: HTMLVideoElement) => element.currentSrc))
         .toMatch(new RegExp(`/api/v1/tracks/${id}/video\\?.*sig=`))
     await expect.poll(() => readyState(video), { timeout: 15_000 }).toBeGreaterThanOrEqual(1)
-    await expect(part(page, 'btn-fullscreen')).toBeEnabled()
+    await expect(part(page, 'video-stage').locator("[data-part='btn-fullscreen']")).toBeEnabled()
 
     await expect(part(page, 'stage-title')).toHaveText('Loose Song')
 })
@@ -142,7 +142,7 @@ test('keeps the video whole in full screen', async ({ page, request }, testInfo)
     await expect(part(page, 'video-stage')).toHaveAttribute('data-orientation', 'landscape')
     await expectVideoInsideStage(page)
 
-    await part(page, 'btn-fullscreen').click()
+    await part(page, 'video-stage').locator("[data-part='btn-fullscreen']").click()
 
     await expect(part(page, 'video-stage')).toHaveAttribute('data-state', 'fullscreen')
     const viewport = page.viewportSize()!
@@ -151,7 +151,7 @@ test('keeps the video whole in full screen', async ({ page, request }, testInfo)
     expect(stage.height).toBeCloseTo(viewport.height, 0)
     await expectVideoInsideStage(page)
 
-    await part(page, 'btn-fullscreen').click()
+    await part(page, 'video-stage').locator("[data-part='btn-fullscreen']").click()
     await expect(part(page, 'video-stage')).not.toHaveAttribute('data-state', 'fullscreen')
 })
 

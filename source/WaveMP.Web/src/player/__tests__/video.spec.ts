@@ -433,4 +433,17 @@ describe('fullscreen', () => {
 
         expect(canFullscreen(container, video)).toBe(false)
     })
+
+    it('shows a container without a video only with the Fullscreen API', async () => {
+        const { container } = stage(false)
+        expect(canFullscreen(container)).toBe(false)
+        await expect(enterFullscreen(container)).resolves.toBeUndefined()
+        expect(isFullscreen(container)).toBe(false)
+
+        Object.defineProperty(document, 'fullscreenEnabled', { value: true, configurable: true })
+        container.requestFullscreen = vi.fn(() => Promise.resolve())
+        expect(canFullscreen(container)).toBe(true)
+        await enterFullscreen(container)
+        expect(container.requestFullscreen).toHaveBeenCalled()
+    })
 })

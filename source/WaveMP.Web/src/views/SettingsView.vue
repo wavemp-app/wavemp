@@ -16,6 +16,7 @@ import { useEqualizerStore } from '@/stores/equalizer'
 import { useHealthStore } from '@/stores/health'
 import { useSessionStore } from '@/stores/session'
 import { appVersion } from '@/version'
+import { autoChangeChoices, type VisualizationSettings } from '@/visualization/settings'
 
 /** Settings of the current profile; changes are saved at once. */
 const { t, locale } = useI18n({ useScope: 'global' })
@@ -164,6 +165,38 @@ watch(
     },
 )
 
+/** Value of the menu of the automatic change: "off" while it is off, otherwise its seconds. */
+const autoChangeOff = 'off'
+
+function autoChangeValue(settings: VisualizationSettings): string {
+    return settings.autoChange ? String(settings.autoChangeSeconds) : autoChangeOff
+}
+
+function autoChangeLabel(seconds: number): string {
+    return seconds >= 120 && seconds % 60 === 0
+        ? t('settings.visualizationAutoChangeMinutes', { minutes: format.number(seconds / 60) })
+        : t('settings.visualizationAutoChangeSeconds', { seconds: format.number(seconds) })
+}
+
+/** Intervals the menu offers; another value of the profile is added. */
+const autoChangeOptions = computed<SelectOption[]>(() => [
+    { value: autoChangeOff, label: t('settings.visualizationAutoChangeOff') },
+    ...[...new Set([...autoChangeChoices, session.visualization.autoChangeSeconds])]
+        .sort((a, b) => a - b)
+        .map((seconds) => ({ value: String(seconds), label: autoChangeLabel(seconds) })),
+])
+
+const autoChange = ref(autoChangeValue(session.visualization))
+
+watch(
+    () => session.visualization,
+    (value) => {
+        if (!saving.value) {
+            autoChange.value = autoChangeValue(value)
+        }
+    },
+)
+
 const equalizerEnabled = computed(() => equalizer.settings.enabled)
 
 /** Saves a change of the profile and shows an error if it fails; reset restores the field. */
@@ -222,6 +255,30 @@ async function changeCrossfadeAlbums(value: boolean): Promise<void> {
         () => session.updateCrossfade({ albumsGapless: value }),
         () => {
             crossfadeAlbums.value = previous
+        },
+    )
+}
+
+/**
+ * "Off" turns the automatic change off and keeps its interval (the button of the visualization turns
+ * it on again); an interval turns it on with that interval.
+ */
+async function changeAutoChange(value: string): Promise<void> {
+    const previous = autoChangeValue(session.visualization)
+    const seconds = Number(value)
+    if (value === previous || (value !== autoChangeOff && !Number.isInteger(seconds))) {
+        return
+    }
+
+    await save(
+        () =>
+            session.updateVisualization(
+                value === autoChangeOff
+                    ? { autoChange: false }
+                    : { autoChange: true, autoChangeSeconds: seconds },
+            ),
+        () => {
+            autoChange.value = previous
         },
     )
 }
@@ -308,6 +365,15 @@ async function changeSleepTimerFade(value: string): Promise<void> {
                 :hint="t('settings.sleepTimerFadeHint')"
                 :disabled="saving"
                 @update:model-value="changeSleepTimerFade"
+            />
+            <BaseSelect
+                v-model="autoChange"
+                data-field="visualization-auto-change"
+                :label="t('settings.visualizationAutoChange')"
+                :options="autoChangeOptions"
+                :hint="t('settings.visualizationAutoChangeHint')"
+                :disabled="saving"
+                @update:model-value="changeAutoChange"
             />
         </form>
         <section data-part="section" data-item="about" :aria-labelledby="aboutTitleId">

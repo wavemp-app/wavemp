@@ -1,0 +1,266 @@
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { flushPromises, mount } from '@vue/test-utils'
+import { createWaveMpI18n } from '@/i18n'
+import { visualizationDependencies } from '@/visualization/modules'
+import { defaultVisualizationSettings, type VisualizationSettings } from '@/visualization/settings'
+import { FakeClock, FakeModule, fakeAnalyser } from '@/visualization/__tests__/fakes'
+import StageVisualization from '../StageVisualization.vue'
+
+describe('StageVisualization', () => {
+    const original = { ...visualizationDependencies }
+    let module: FakeModule
+    let clock: FakeClock
+
+    function mountVisualization(
+        props: {
+            active?: boolean
+            audio?: AnalyserNode | null
+            settings?: VisualizationSettings
+        } = {},
+    ) {
+        return mount(StageVisualization, {
+            props: { audio: fakeAnalyser(), ...props },
+            global: { plugins: [createWaveMpI18n('en')] },
+            attachTo: document.body,
+        })
+    }
+
+    type Wrapper = ReturnType<typeof mountVisualization>
+
+    function state(wrapper: Wrapper): string | undefined {
+        return wrapper.get('[data-part="visualization"]').attributes('data-state')
+    }
+
+    async function loaded(props: Parameters<typeof mountVisualization>[0] = {}) {
+        const wrapper = mountVisualization(props)
+        await module.finishLoad()
+        await flushPromises()
+        return wrapper
+    }
+
+    beforeEach(() => {
+        module = new FakeModule()
+        clock = new FakeClock()
+        visualizationDependencies.module = () => module
+        visualizationDependencies.clock = clock
+        visualizationDependencies.devicePixelRatio = () => 1
+    })
+
+    afterEach(() => {
+        Object.assign(visualizationDependencies, original)
+        document.body.innerHTML = ''
+    })
+
+    it('loads the module and shows a hint until it draws', async () => {
+        const wrapper = mountVisualization()
+        await flushPromises()
+
+        expect(state(wrapper)).toBe('loading')
+        expect(wrapper.get('[data-part="visualization"]').attributes('data-module')).toBe(
+            'milkdrop',
+        )
+        expect(wrapper.get('[data-part="visualization-message"]').text()).toBe(
+            'Loading the visualization…',
+        )
+        expect(wrapper.get('[data-part="visualization-message"]').attributes('role')).toBe('status')
+        wrapper.unmount()
+    })
+
+    it('draws the music with the preset of the profile', async () => {
+        const audio = fakeAnalyser()
+        const wrapper = await loaded({
+            audio,
+            settings: { ...defaultVisualizationSettings, preset: 'B' },
+        })
+
+        expect(state(wrapper)).toBe('running')
+        expect(wrapper.find('[data-part="visualization-message"]').exists()).toBe(false)
+        expect(module.renderer?.options.audio).toBe(audio)
+        expect(module.renderer?.options.canvas).toBe(
+            wrapper.get('[data-part="visualization-canvas"]').element,
+        )
+        expect(module.renderer?.showPreset).toHaveBeenCalledWith('B', 0)
+        const select = wrapper.get('[data-field="visualization-preset"] select')
+        expect((select.element as HTMLSelectElement).value).toBe('B')
+        expect(wrapper.findAll('option').map((option) => option.text())).toEqual(['A', 'B', 'C'])
+
+        clock.frame()
+        expect(module.renderer?.render).toHaveBeenCalledTimes(1)
+        wrapper.unmount()
+    })
+
+    it('waits for the music while the player has no output', async () => {
+        const wrapper = await loaded({ audio: null })
+
+        expect(state(wrapper)).toBe('waiting')
+        expect(wrapper.get('[data-part="visualization-message"]').text()).toBe(
+            'The visualization starts with the music.',
+        )
+
+        await wrapper.setProps({ audio: fakeAnalyser() })
+        expect(state(wrapper)).toBe('running')
+        wrapper.unmount()
+    })
+
+    it('stops drawing while another view is shown', async () => {
+        const wrapper = await loaded()
+
+        await wrapper.setProps({ active: false })
+
+        expect(state(wrapper)).toBe('paused')
+        expect(clock.frames.size).toBe(0)
+        expect(clock.timers.size).toBe(0)
+        expect(wrapper.get('[data-part="btn-fullscreen"]').attributes('disabled')).toBeDefined()
+
+        await wrapper.setProps({ active: true })
+        expect(state(wrapper)).toBe('running')
+        expect(clock.frames.size).toBe(1)
+        wrapper.unmount()
+    })
+
+    it('stops drawing while the page is hidden', async () => {
+        const wrapper = await loaded()
+
+        Object.defineProperty(document, 'visibilityState', {
+            configurable: true,
+            get: () => 'hidden',
+        })
+        document.dispatchEvent(new Event('visibilitychange'))
+        await flushPromises()
+        expect(state(wrapper)).toBe('paused')
+
+        Object.defineProperty(document, 'visibilityState', {
+            configurable: true,
+            get: () => 'visible',
+        })
+        document.dispatchEvent(new Event('visibilitychange'))
+        await flushPromises()
+        expect(state(wrapper)).toBe('running')
+
+        // Back to the getter of Document.prototype.
+        Reflect.deleteProperty(document, 'visibilityState')
+        wrapper.unmount()
+    })
+
+    it('shows a chosen preset and hands it to the profile', async () => {
+        const wrapper = await loaded({ settings: { ...defaultVisualizationSettings, preset: 'A' } })
+
+        await wrapper.get('[data-field="visualization-preset"] select').setValue('C')
+
+        expect(module.renderer?.showPreset).toHaveBeenLastCalledWith('C', 1)
+        expect(wrapper.emitted('update')).toEqual([[{ preset: 'C' }]])
+        wrapper.unmount()
+    })
+
+    it('steps to the previous and the next preset', async () => {
+        const wrapper = await loaded({ settings: { ...defaultVisualizationSettings, preset: 'A' } })
+
+        await wrapper.get('[data-part="btn-preset-next"]').trigger('click')
+        await wrapper.get('[data-part="btn-preset-previous"]').trigger('click')
+        await wrapper.get('[data-part="btn-preset-previous"]').trigger('click')
+
+        expect(wrapper.emitted('update')).toEqual([
+            [{ preset: 'B' }],
+            [{ preset: 'A' }],
+            [{ preset: 'C' }],
+        ])
+        expect(
+            (wrapper.get('[data-field="visualization-preset"] select').element as HTMLSelectElement)
+                .value,
+        ).toBe('C')
+        wrapper.unmount()
+    })
+
+    it('changes the preset automatically at the interval of the profile', async () => {
+        clock.randomValue = 0
+        const wrapper = await loaded({
+            settings: { ...defaultVisualizationSettings, preset: 'A', autoChangeSeconds: 15 },
+        })
+
+        expect(clock.elapse()).toEqual([15000])
+        await flushPromises()
+
+        expect(
+            (wrapper.get('[data-field="visualization-preset"] select').element as HTMLSelectElement)
+                .value,
+        ).toBe('B')
+        expect(wrapper.emitted('update')).toBeUndefined()
+        wrapper.unmount()
+    })
+
+    it('turns the automatic change on and off', async () => {
+        const wrapper = await loaded()
+        const button = wrapper.get('[data-part="btn-auto-change"]')
+
+        expect(button.attributes('aria-pressed')).toBe('true')
+        expect(button.attributes('data-state')).toBe('on')
+        await button.trigger('click')
+        expect(wrapper.emitted('update')).toEqual([[{ autoChange: false }]])
+
+        await wrapper.setProps({ settings: { ...defaultVisualizationSettings, autoChange: false } })
+        expect(button.attributes('aria-pressed')).toBe('false')
+        expect(button.attributes('data-state')).toBe('off')
+        expect(clock.timers.size).toBe(0)
+        wrapper.unmount()
+    })
+
+    it('disables the preset controls until the presets are loaded', async () => {
+        const wrapper = mountVisualization()
+        await flushPromises()
+
+        expect(wrapper.get('[data-part="btn-preset-next"]').attributes('disabled')).toBeDefined()
+        expect(
+            wrapper.get('[data-field="visualization-preset"] select').attributes('disabled'),
+        ).toBeDefined()
+        wrapper.unmount()
+    })
+
+    it('tells when the browser cannot show the visualization', async () => {
+        module.supported = false
+        const wrapper = mountVisualization()
+        await flushPromises()
+
+        expect(state(wrapper)).toBe('unsupported')
+        expect(wrapper.get('[data-part="visualization-message"]').text()).toBe(
+            'This browser cannot show the visualization.',
+        )
+        wrapper.unmount()
+    })
+
+    it('tells when the visualization cannot be loaded', async () => {
+        const wrapper = mountVisualization()
+        await module.failLoad()
+        await flushPromises()
+
+        expect(state(wrapper)).toBe('failed')
+        expect(wrapper.get('[data-part="visualization-message"]').text()).toBe(
+            'The visualization could not be loaded.',
+        )
+        wrapper.unmount()
+    })
+
+    it('gives the module a new canvas when the output of the player changes', async () => {
+        const wrapper = await loaded()
+        const first = wrapper.get('[data-part="visualization-canvas"]').element
+
+        await wrapper.setProps({ audio: fakeAnalyser() })
+        await flushPromises()
+
+        const second = wrapper.get('[data-part="visualization-canvas"]').element
+        expect(second).not.toBe(first)
+        expect(module.renderers).toHaveLength(2)
+        expect(module.renderer?.options.canvas).toBe(second)
+        expect(state(wrapper)).toBe('running')
+        wrapper.unmount()
+    })
+
+    it('releases the renderer when it closes', async () => {
+        const wrapper = await loaded()
+        const renderer = module.renderer
+
+        wrapper.unmount()
+
+        expect(renderer?.dispose).toHaveBeenCalled()
+        expect(clock.frames.size).toBe(0)
+    })
+})

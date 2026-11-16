@@ -42,6 +42,7 @@ const engine = {
     fadeOut: vi.fn(),
     restoreOutput: vi.fn(),
     equalizerAvailable: true,
+    analyser: null,
 }
 
 function mountView() {
