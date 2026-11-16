@@ -6,7 +6,7 @@
 [![Release](https://img.shields.io/github/v/release/wavemp-app/wavemp)](https://github.com/wavemp-app/wavemp/releases)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-> **Status:** WaveMP is in early development. Features listed below are planned and will be added step by step.
+> **Status:** WaveMP is in active development and already a complete player for your music and music videos. Everything listed under Features works today, except where it is marked as planned; the [releases](https://github.com/wavemp-app/wavemp/releases) describe what each milestone added. Profiles cannot be protected by a PIN yet, so do not expose WaveMP to the internet without protection.
 
 ## About
 
@@ -31,6 +31,26 @@ WaveMP brings back the glossy, glassy look of the classic desktop media players 
 - **Installable as an app (PWA)** on desktop and mobile devices.
 - **English and German.** More languages will follow through community translations.
 - **Themes.** The look is a theme: one CSS file plus graphics, from colors to the complete desktop layout. WaveMP ships with the dark glass theme *Midnight*; see [THEMING.md](THEMING.md) for writing your own.
+
+## Screenshots
+
+| | |
+|---|---|
+| ![Home with playlists, the songs played recently and new albums](assets/screenshots/home.png) | ![The visualization A-Force on Now Playing](assets/screenshots/visualization-a-force.png) |
+| **Home** with your playlists, the songs you played recently and new albums | **A-Force**, one of WaveMP's own visualizations |
+| ![The visualization BlackCap on Now Playing](assets/screenshots/visualization-blackcap.png) | ![A classic Milkdrop preset on Now Playing](assets/screenshots/visualization-milkdrop.png) |
+| **BlackCap**, the calm 3D visualization | Classic **Milkdrop** presets |
+| ![Now Playing with the cover and the queue](assets/screenshots/now-playing.png) | ![The page of an album](assets/screenshots/album.png) |
+| **Now Playing** with cover and queue | An **album** with its songs |
+| ![The profile selection](assets/screenshots/profiles.png) | ![The backups in the administration](assets/screenshots/admin-backups.png) |
+| **Profiles** instead of a login | **Administration** of the daily backups |
+
+<p>
+  <img src="assets/screenshots/phone-now-playing.png" alt="Now Playing with A-Force on a smartphone" width="260">
+  <img src="assets/screenshots/phone-library.png" alt="The albums of the library on a smartphone" width="260">
+</p>
+
+The screenshots show the synthetic test media of the end-to-end tests (sine tones and test pictures) in the theme *Midnight*.
 
 ## Quick Start
 
@@ -96,7 +116,7 @@ docker compose up -d
 
 Open `http://<your-server>:8080` and select the **Admin** profile to set up your library. WaveMP scans your media folder one minute after the start and then every six hours; changes are also picked up within seconds by watching the folder.
 
-WaveMP can be installed as an app (PWA). Browsers require HTTPS for that, except on `localhost`, for example behind a reverse proxy with TLS.
+WaveMP can be installed as an app (PWA). Browsers require HTTPS for that, except on `localhost`, for example behind a reverse proxy with TLS. Casting to Chromecast devices, which is planned, will need HTTPS as well.
 
 ### Image tags
 
@@ -404,7 +424,9 @@ The E2E tests first select the built-in admin profile once (project `setup`) and
 
 The projects `chromium` (desktop) and `mobile` (phone) run all specs except `tests/devices`; the projects `iphone`, `ipad` and `ipad-landscape` run the specs in `tests/devices` with the viewport, touch and mobile emulation of an iPhone and an iPad in portrait and landscape (in Chromium, the only browser the setup installs). `npx playwright test --project=ipad` runs one of them.
 
-If you set `WAVEMP_PORT` in `.env`, point the E2E tests at it, for example `E2E_BASE_URL=http://localhost:8081 npm test`. `npm run test:unit` runs the unit tests of the web app (Vitest), including checks that every text comes from the translation files and that `THEMING.md` matches the code.
+If you set `WAVEMP_PORT` in `.env`, point the E2E tests at it, for example `E2E_BASE_URL=http://localhost:8081 npm test`.
+
+The screenshots of this README in `assets/screenshots` are taken with Playwright from the same test media: `npm run screenshots` in `tests/WaveMP.E2E` (also with `E2E_BASE_URL`) scans the media, creates two profiles with playlists, favorites, ratings and plays, takes the pictures on the desktop and on a phone and removes the profiles again. Run it against a fresh instance, for example one started with `docker compose -f docker-compose.dev.yml up --build` after `docker compose -f docker-compose.dev.yml down --volumes`, and commit the changed pictures. `npm run test:unit` runs the unit tests of the web app (Vitest), including checks that every text comes from the translation files and that `THEMING.md` matches the code.
 
 `npm run lint:check` only reports problems, like the CI does; `npm run lint` fixes what it can. The E2E tests check the version that `/api/v1/health` and the settings page report: exactly if `E2E_EXPECTED_VERSION` is set (the CI sets it to the version of the image it built), otherwise any version of the form `1.0.N` or `1.0.0-dev`. They scan the media folder of the running instance before the tests (project `setup`) and need the test media of `tests/WaveMP.E2E/scripts/generate-media.sh` in it (see [Local development](#local-development)): the library tests browse and search exactly these songs. With `E2E_EXPECTED_TRACKS=4` they also check the number of songs, as the CI does. "Loose Song" lasts 20 seconds, so the tests can switch the view of Now Playing while it plays. The test of the metadata editor writes genre and year of "Loose Song" and removes them again afterwards, so the media folder must be writable for the container (`generate-media.sh` makes the files it creates writable for everyone).
 
