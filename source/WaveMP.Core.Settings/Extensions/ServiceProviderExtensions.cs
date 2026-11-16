@@ -17,5 +17,6 @@ public static class ServiceProviderExtensions
         await scope.ServiceProvider.GetRequiredService<ICacheSettingsService>().InitializeAsync(cancellationToken);
         await scope.ServiceProvider.GetRequiredService<ITranscodingSettingsService>()
             .InitializeAsync(cancellationToken);
+        await scope.ServiceProvider.GetRequiredService<IBackupSettingsService>().InitializeAsync(cancellationToken);
     }
 }

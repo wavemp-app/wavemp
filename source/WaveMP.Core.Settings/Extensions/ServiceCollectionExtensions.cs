@@ -11,7 +11,7 @@ public static class ServiceCollectionExtensions
 {
     /// <summary>
     /// Registers the server settings: the store, the snapshots of the groups, the library settings, the cache
-    /// settings and the transcoding settings. Needs the repositories of <c>AddWaveMpData</c>.
+    /// settings, the transcoding settings and the backup settings. Needs the repositories of <c>AddWaveMpData</c>.
     /// </summary>
     public static IServiceCollection AddWaveMpSettings(this IServiceCollection services)
     {
@@ -30,6 +30,10 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<ISettingsSnapshot<TranscodingSettings>>(provider =>
             provider.GetRequiredService<SettingsSnapshot<TranscodingSettings>>());
         services.AddScoped<ITranscodingSettingsService, TranscodingSettingsService>();
+        services.AddSingleton<SettingsSnapshot<BackupSettings>>();
+        services.AddSingleton<ISettingsSnapshot<BackupSettings>>(provider =>
+            provider.GetRequiredService<SettingsSnapshot<BackupSettings>>());
+        services.AddScoped<IBackupSettingsService, BackupSettingsService>();
 
         return services;
     }
