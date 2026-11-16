@@ -286,6 +286,107 @@ public class UserSettingsServiceTests
         yield return new TestCaseData(new UpdateUserSettingsCommand(CrossfadeSeconds: -1)).SetName("Crossfade -1");
         yield return new TestCaseData(new UpdateUserSettingsCommand(SleepTimerFadeSeconds: 0)).SetName("Fade 0");
         yield return new TestCaseData(new UpdateUserSettingsCommand(SleepTimerFadeSeconds: 61)).SetName("Fade 61");
+        yield return new TestCaseData(new UpdateUserSettingsCommand(VisualizationModule: (VisualizationModule)99))
+            .SetName("Unknown visualization module");
+        yield return new TestCaseData(new UpdateUserSettingsCommand(VisualizationPreset: new string('a', 201)))
+            .SetName("Preset name of 201 characters");
+        yield return new TestCaseData(new UpdateUserSettingsCommand(VisualizationAutoChangeSeconds: 4))
+            .SetName("Automatic change 4");
+        yield return new TestCaseData(new UpdateUserSettingsCommand(VisualizationAutoChangeSeconds: 601))
+            .SetName("Automatic change 601");
+    }
+
+    [Test]
+    public async Task GetAsync_UserWithoutSettings_ReturnsTheVisualizationDefaults()
+    {
+        User user = Given(Language.En);
+        user.Settings = null;
+
+        UserSettings? result = await _service.GetAsync(user.Id);
+
+        result!.VisualizationModule.Should().Be(VisualizationModule.Milkdrop);
+        result.VisualizationPreset.Should().BeNull();
+        result.VisualizationAutoChange.Should().BeTrue();
+        result.VisualizationAutoChangeSeconds.Should().Be(30);
+    }
+
+    [Test]
+    public async Task UpdateAsync_WithVisualization_SavesItAndKeepsTheOtherSettings()
+    {
+        User user = Given(Language.De);
+        user.Settings!.CrossfadeSeconds = 9;
+
+        UserSettings? result = await _service.UpdateAsync(
+            user.Id,
+            new UpdateUserSettingsCommand(
+                VisualizationModule: VisualizationModule.Milkdrop,
+                VisualizationPreset: "Waves",
+                VisualizationAutoChange: false,
+                VisualizationAutoChangeSeconds: 600));
+
+        result!.VisualizationPreset.Should().Be("Waves");
+        result.VisualizationAutoChange.Should().BeFalse();
+        result.VisualizationAutoChangeSeconds.Should().Be(600);
+        result.Language.Should().Be(Language.De);
+        result.CrossfadeSeconds.Should().Be(9);
+        await _users.Received(1).UpdateAsync(user, Arg.Any<CancellationToken>());
+    }
+
+    [Test]
+    public async Task UpdateAsync_WithoutVisualization_KeepsIt()
+    {
+        User user = Given(Language.En);
+        user.Settings!.VisualizationPreset = "Waves";
+        user.Settings.VisualizationAutoChange = false;
+        user.Settings.VisualizationAutoChangeSeconds = 45;
+
+        UserSettings? result = await _service.UpdateAsync(user.Id, new UpdateUserSettingsCommand(Language.De));
+
+        result!.VisualizationPreset.Should().Be("Waves");
+        result.VisualizationAutoChange.Should().BeFalse();
+        result.VisualizationAutoChangeSeconds.Should().Be(45);
+    }
+
+    [Test]
+    public async Task UpdateAsync_WithAutoChangeOff_KeepsItsSeconds()
+    {
+        User user = Given(Language.En);
+        user.Settings!.VisualizationAutoChangeSeconds = 120;
+
+        UserSettings? result = await _service.UpdateAsync(
+            user.Id,
+            new UpdateUserSettingsCommand(VisualizationAutoChange: false));
+
+        result!.VisualizationAutoChange.Should().BeFalse();
+        result.VisualizationAutoChangeSeconds.Should().Be(120);
+    }
+
+    [TestCase("")]
+    [TestCase("   ")]
+    public async Task UpdateAsync_WithBlankPreset_ForgetsThePreset(string preset)
+    {
+        User user = Given(Language.En);
+        user.Settings!.VisualizationPreset = "Waves";
+
+        UserSettings? result = await _service.UpdateAsync(
+            user.Id,
+            new UpdateUserSettingsCommand(VisualizationPreset: preset));
+
+        result!.VisualizationPreset.Should().BeNull();
+    }
+
+    [Test]
+    public async Task UpdateAsync_WithTheCurrentModuleOnly_KeepsThePreset()
+    {
+        User user = Given(Language.En);
+        user.Settings!.VisualizationPreset = "Waves";
+
+        UserSettings? result = await _service.UpdateAsync(
+            user.Id,
+            new UpdateUserSettingsCommand(VisualizationModule: VisualizationModule.Milkdrop));
+
+        result!.VisualizationModule.Should().Be(VisualizationModule.Milkdrop);
+        result.VisualizationPreset.Should().Be("Waves");
     }
 
     [TestCaseSource(nameof(InvalidCommands))]

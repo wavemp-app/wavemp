@@ -17,6 +17,14 @@ namespace WaveMP.Core.Users.Settings;
 /// <param name="CrossfadeAlbumsGapless">Whether consecutive tracks of the same album play without crossfade.</param>
 /// <param name="SleepTimerFadeSeconds">Seconds the sleep timer fades out the music.</param>
 /// <param name="SidebarCollapsed">Whether the sidebar of the desktop layout shows only its icons.</param>
+/// <param name="VisualizationModule">The visualization of the Now Playing stage.</param>
+/// <param name="VisualizationPreset">
+/// Name of the chosen preset of the visualization; an empty or blank name forgets it, so the player picks one.
+/// </param>
+/// <param name="VisualizationAutoChange">Whether the visualization changes its preset automatically.</param>
+/// <param name="VisualizationAutoChangeSeconds">
+/// Seconds after which the visualization changes its preset, see <see cref="VisualizationSettingsLimits"/>.
+/// </param>
 public sealed record UpdateUserSettingsCommand(
     Language? Language = null,
     ReplayGainMode? ReplayGain = null,
@@ -29,4 +37,8 @@ public sealed record UpdateUserSettingsCommand(
     int? CrossfadeSeconds = null,
     bool? CrossfadeAlbumsGapless = null,
     int? SleepTimerFadeSeconds = null,
-    bool? SidebarCollapsed = null);
+    bool? SidebarCollapsed = null,
+    VisualizationModule? VisualizationModule = null,
+    string? VisualizationPreset = null,
+    bool? VisualizationAutoChange = null,
+    int? VisualizationAutoChangeSeconds = null);

@@ -140,6 +140,64 @@ public class SettingsMappingExtensionsTests
     }
 
     [Test]
+    public void VisualizationModules_MapBothWays()
+    {
+        foreach (VisualizationModule module in Enum.GetValues<VisualizationModule>())
+        {
+            VisualizationModuleDto dto = module.ToDto();
+
+            dto.ToString().Should().Be(module.ToString());
+            dto.ToEntity().Should().Be(module);
+        }
+
+        Enum.GetValues<VisualizationModuleDto>().Should().HaveSameCount(Enum.GetValues<VisualizationModule>());
+    }
+
+    [Test]
+    public void ToDto_Settings_CarriesTheVisualization()
+    {
+        UserSettings settings = new()
+        {
+            VisualizationPreset = "Waves",
+            VisualizationAutoChange = false,
+            VisualizationAutoChangeSeconds = 120,
+        };
+
+        UserSettingsDto dto = settings.ToDto();
+
+        dto.Visualization.Should().BeEquivalentTo(new
+        {
+            Module = VisualizationModuleDto.Milkdrop,
+            Preset = "Waves",
+            AutoChange = false,
+            AutoChangeSeconds = 120,
+        });
+    }
+
+    [Test]
+    public void ToCommand_Visualization_FillsTheCommand()
+    {
+        UpdateUserSettingsDto request = new()
+        {
+            Visualization = new UpdateVisualizationSettingsDto
+            {
+                Module = VisualizationModuleDto.Milkdrop,
+                Preset = "Waves",
+                AutoChange = true,
+                AutoChangeSeconds = 15,
+            },
+        };
+
+        UpdateUserSettingsCommand command = request.ToCommand();
+
+        command.Should().Be(new UpdateUserSettingsCommand(
+            VisualizationModule: VisualizationModule.Milkdrop,
+            VisualizationPreset: "Waves",
+            VisualizationAutoChange: true,
+            VisualizationAutoChangeSeconds: 15));
+    }
+
+    [Test]
     public void ToCommand_MissingGroups_KeepEverything()
     {
         UpdateUserSettingsCommand command = new UpdateUserSettingsDto().ToCommand();

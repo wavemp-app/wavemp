@@ -10,6 +10,7 @@ internal sealed class UserSettingsConfiguration : IEntityTypeConfiguration<UserS
     public const int ReplayGainMaxLength = 16;
     public const int PlayerViewModeMaxLength = 16;
     public const int EqualizerPresetMaxLength = 16;
+    public const int VisualizationModuleMaxLength = 32;
 
     public void Configure(EntityTypeBuilder<UserSettings> builder)
     {
@@ -77,6 +78,26 @@ internal sealed class UserSettingsConfiguration : IEntityTypeConfiguration<UserS
 
         builder.Property(settings => settings.SleepTimerFadeSeconds)
             .HasDefaultValue(10)
+            .ValueGeneratedNever();
+
+        // Like the playback settings above: existing rows get the defaults of a new profile, and the entity always
+        // writes its values (VisualizationAutoChange and VisualizationAutoChangeSeconds differ from the defaults of
+        // their CLR types).
+        builder.Property(settings => settings.VisualizationModule)
+            .HasConversion<string>()
+            .HasMaxLength(VisualizationModuleMaxLength)
+            .HasDefaultValue(VisualizationModule.Milkdrop)
+            .ValueGeneratedNever();
+
+        builder.Property(settings => settings.VisualizationPreset)
+            .HasMaxLength(UserSettings.VisualizationPresetMaxLength);
+
+        builder.Property(settings => settings.VisualizationAutoChange)
+            .HasDefaultValue(true)
+            .ValueGeneratedNever();
+
+        builder.Property(settings => settings.VisualizationAutoChangeSeconds)
+            .HasDefaultValue(30)
             .ValueGeneratedNever();
     }
 }

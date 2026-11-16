@@ -48,9 +48,35 @@ internal sealed class UserSettingsService(IUserRepository users) : IUserSettings
         }
 
         ApplyPlayback(settings, command);
+        ApplyVisualization(settings, command);
 
         await users.UpdateAsync(user, cancellationToken);
         return settings;
+    }
+
+    private static void ApplyVisualization(UserSettings settings, UpdateUserSettingsCommand command)
+    {
+        if (command.VisualizationModule is { } module && module != settings.VisualizationModule)
+        {
+            // The preset belongs to the module; another module starts without one, unless the command names one.
+            settings.VisualizationModule = module;
+            settings.VisualizationPreset = null;
+        }
+
+        if (command.VisualizationPreset is { } preset)
+        {
+            settings.VisualizationPreset = string.IsNullOrWhiteSpace(preset) ? null : preset;
+        }
+
+        if (command.VisualizationAutoChange is { } autoChange)
+        {
+            settings.VisualizationAutoChange = autoChange;
+        }
+
+        if (command.VisualizationAutoChangeSeconds is { } seconds)
+        {
+            settings.VisualizationAutoChangeSeconds = seconds;
+        }
     }
 
     private static void ApplyPlayback(UserSettings settings, UpdateUserSettingsCommand command)
@@ -125,6 +151,25 @@ internal sealed class UserSettingsService(IUserRepository users) : IUserSettings
         if (command.SleepTimerFadeSeconds is { } fade && !PlaybackSettingsLimits.IsValidSleepTimerFade(fade))
         {
             throw new ArgumentOutOfRangeException(nameof(command), fade, "The fade-out is out of range.");
+        }
+
+        if (command.VisualizationModule is { } module && !Enum.IsDefined(module))
+        {
+            throw new ArgumentOutOfRangeException(nameof(command), module, "Unknown visualization module.");
+        }
+
+        if (command.VisualizationPreset is { } presetName && !VisualizationSettingsLimits.IsValidPreset(presetName))
+        {
+            throw new ArgumentOutOfRangeException(nameof(command), presetName, "The preset name is too long.");
+        }
+
+        if (command.VisualizationAutoChangeSeconds is { } seconds &&
+            !VisualizationSettingsLimits.IsValidAutoChange(seconds))
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(command),
+                seconds,
+                "The interval of the automatic change is out of range.");
         }
     }
 }

@@ -1124,6 +1124,28 @@ namespace WaveMP.Data.Migrations
                         .HasDefaultValue(10)
                         .HasColumnName("sleep_timer_fade_seconds");
 
+                    b.Property<bool>("VisualizationAutoChange")
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true)
+                        .HasColumnName("visualization_auto_change");
+
+                    b.Property<int>("VisualizationAutoChangeSeconds")
+                        .HasColumnType("integer")
+                        .HasDefaultValue(30)
+                        .HasColumnName("visualization_auto_change_seconds");
+
+                    b.Property<string>("VisualizationModule")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasDefaultValue("Milkdrop")
+                        .HasColumnName("visualization_module");
+
+                    b.Property<string>("VisualizationPreset")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("visualization_preset");
+
                     b.HasKey("UserId")
                         .HasName("pk_user_settings");
 

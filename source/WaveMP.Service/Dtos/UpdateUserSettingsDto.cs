@@ -39,4 +39,9 @@ public sealed class UpdateUserSettingsDto
     /// Changes of the sleep timer.
     /// </summary>
     public UpdateSleepTimerSettingsDto? SleepTimer { get; init; }
+
+    /// <summary>
+    /// Changes of the visualization.
+    /// </summary>
+    public UpdateVisualizationSettingsDto? Visualization { get; init; }
 }

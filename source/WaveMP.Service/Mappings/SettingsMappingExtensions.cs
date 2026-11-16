@@ -30,6 +30,13 @@ public static class SettingsMappingExtensions
                 AlbumsGapless = settings.CrossfadeAlbumsGapless,
             },
             SleepTimer = new SleepTimerSettingsDto { FadeSeconds = settings.SleepTimerFadeSeconds },
+            Visualization = new VisualizationSettingsDto
+            {
+                Module = settings.VisualizationModule.ToDto(),
+                Preset = settings.VisualizationPreset,
+                AutoChange = settings.VisualizationAutoChange,
+                AutoChangeSeconds = settings.VisualizationAutoChangeSeconds,
+            },
         };
     }
 
@@ -50,7 +57,29 @@ public static class SettingsMappingExtensions
             request.Crossfade?.Seconds,
             request.Crossfade?.AlbumsGapless,
             request.SleepTimer?.FadeSeconds,
-            request.SidebarCollapsed);
+            request.SidebarCollapsed,
+            request.Visualization?.Module?.ToEntity(),
+            request.Visualization?.Preset,
+            request.Visualization?.AutoChange,
+            request.Visualization?.AutoChangeSeconds);
+    }
+
+    public static VisualizationModuleDto ToDto(this VisualizationModule module)
+    {
+        return module switch
+        {
+            VisualizationModule.Milkdrop => VisualizationModuleDto.Milkdrop,
+            _ => throw new ArgumentOutOfRangeException(nameof(module), module, "Unknown visualization module."),
+        };
+    }
+
+    public static VisualizationModule ToEntity(this VisualizationModuleDto module)
+    {
+        return module switch
+        {
+            VisualizationModuleDto.Milkdrop => VisualizationModule.Milkdrop,
+            _ => throw new ArgumentOutOfRangeException(nameof(module), module, "Unknown visualization module."),
+        };
     }
 
     public static EqualizerPresetDto ToDto(this EqualizerPreset preset)

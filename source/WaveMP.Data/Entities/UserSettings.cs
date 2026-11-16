@@ -10,6 +10,11 @@ public class UserSettings
     /// </summary>
     public const int EqualizerBandCount = 10;
 
+    /// <summary>
+    /// Longest name of a preset in <see cref="VisualizationPreset"/>.
+    /// </summary>
+    public const int VisualizationPresetMaxLength = 200;
+
     public Guid UserId { get; set; }
 
     public User? User { get; set; }
@@ -73,4 +78,27 @@ public class UserSettings
     /// Seconds the sleep timer fades out the music before it stops; 10 by default.
     /// </summary>
     public int SleepTimerFadeSeconds { get; set; } = 10;
+
+    /// <summary>
+    /// The visualization the Now Playing stage shows; <see cref="VisualizationModule.Milkdrop"/> by default.
+    /// </summary>
+    public VisualizationModule VisualizationModule { get; set; } = VisualizationModule.Milkdrop;
+
+    /// <summary>
+    /// Name of the preset of <see cref="VisualizationModule"/> the user chose last; <c>null</c> lets the player pick
+    /// one. The players know the presets of their modules, the server only keeps the name.
+    /// </summary>
+    public string? VisualizationPreset { get; set; }
+
+    /// <summary>
+    /// Whether the visualization changes its preset automatically; on by default. Turning it off keeps
+    /// <see cref="VisualizationAutoChangeSeconds"/>, so turning it on again changes as often as before.
+    /// </summary>
+    public bool VisualizationAutoChange { get; set; } = true;
+
+    /// <summary>
+    /// Seconds after which the visualization changes its preset while <see cref="VisualizationAutoChange"/> is on;
+    /// 30 by default.
+    /// </summary>
+    public int VisualizationAutoChangeSeconds { get; set; } = 30;
 }

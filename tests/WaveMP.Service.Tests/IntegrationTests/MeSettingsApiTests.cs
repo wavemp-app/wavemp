@@ -367,6 +367,117 @@ public class MeSettingsApiTests
         }
     }
 
+    [Test]
+    public async Task GetMySettings_ForNewProfile_ReturnsTheVisualizationDefaults()
+    {
+        (Guid _, HttpClient client) = await CreateProfileAsync();
+        using (client)
+        {
+            HttpResponseMessage response = await client.GetAsync("/api/v1/me/settings");
+            UserSettingsDto settings = await client.GetJsonAsync<UserSettingsDto>("/api/v1/me/settings");
+
+            (await response.Content.ReadAsStringAsync()).Should().Contain(
+                "\"visualization\":{\"module\":\"Milkdrop\",\"preset\":null,\"autoChange\":true,\"autoChangeSeconds\":30}");
+            settings.Visualization.Should().BeEquivalentTo(new
+            {
+                Module = VisualizationModuleDto.Milkdrop,
+                Preset = (string?)null,
+                AutoChange = true,
+                AutoChangeSeconds = 30,
+            });
+        }
+    }
+
+    [Test]
+    public async Task UpdateMySettings_WithVisualization_KeepsItForTheProfileAndTheOtherSettings()
+    {
+        (Guid profileId, HttpClient client) = await CreateProfileAsync();
+        using (client)
+        {
+            await PatchAsync(client, new { playerViewMode = "Visualization", crossfade = new { seconds = 7 } });
+
+            HttpResponseMessage response = await PatchAsync(
+                client,
+                new { visualization = new { module = "Milkdrop", preset = "Waves", autoChangeSeconds = 120 } });
+            await PatchAsync(client, new { visualization = new { autoChange = false } });
+            using HttpClient otherSession = _factory.CreateAuthorizedClient(
+                (await _anonymous.CreateSessionAsync(profileId)).Token);
+            UserSettingsDto read = await otherSession.GetJsonAsync<UserSettingsDto>("/api/v1/me/settings");
+            await PatchAsync(client, new { visualization = new { preset = "" } });
+            UserSettingsDto forgotten = await client.GetJsonAsync<UserSettingsDto>("/api/v1/me/settings");
+
+            response.StatusCode.Should().Be(HttpStatusCode.OK);
+            (await response.Content.ReadAsStringAsync()).Should().Contain("\"preset\":\"Waves\"");
+            read.Visualization.Should().BeEquivalentTo(new
+            {
+                Module = VisualizationModuleDto.Milkdrop,
+                Preset = "Waves",
+                AutoChange = false,
+                AutoChangeSeconds = 120,
+            });
+            read.PlayerViewMode.Should().Be(PlayerViewModeDto.Visualization);
+            read.Crossfade.Seconds.Should().Be(7);
+            forgotten.Visualization.Preset.Should().BeNull();
+            forgotten.Visualization.AutoChangeSeconds.Should().Be(120);
+        }
+    }
+
+    private static IEnumerable<TestCaseData> InvalidVisualizationSettings()
+    {
+        yield return new TestCaseData(
+                "{\"visualization\":{\"autoChangeSeconds\":4}}",
+                "visualization.autoChangeSeconds",
+                ValidationErrorCodeDto.OutOfRange,
+                5,
+                600)
+            .SetArgDisplayNames("AutoChangeTooShort");
+        yield return new TestCaseData(
+                "{\"visualization\":{\"autoChangeSeconds\":601}}",
+                "visualization.autoChangeSeconds",
+                ValidationErrorCodeDto.OutOfRange,
+                5,
+                600)
+            .SetArgDisplayNames("AutoChangeTooLong");
+        yield return new TestCaseData(
+                $"{{\"visualization\":{{\"preset\":\"{new string('a', 201)}\"}}}}",
+                "visualization.preset",
+                ValidationErrorCodeDto.MaxLength,
+                null,
+                200)
+            .SetArgDisplayNames("PresetTooLong");
+        yield return new TestCaseData(
+                "{\"visualization\":{\"module\":\"Spectrum\"}}",
+                "visualization.module",
+                ValidationErrorCodeDto.InvalidFormat,
+                null,
+                null)
+            .SetArgDisplayNames("UnknownModule");
+    }
+
+    [TestCaseSource(nameof(InvalidVisualizationSettings))]
+    public async Task UpdateMySettings_WithInvalidVisualizationSetting_ReturnsTheCodeAndKeepsTheSettings(
+        string json,
+        string field,
+        ValidationErrorCodeDto code,
+        int? min,
+        int? max)
+    {
+        (Guid _, HttpClient client) = await CreateProfileAsync();
+        using (client)
+        {
+            using StringContent body = new(json, Encoding.UTF8, "application/json");
+
+            HttpResponseMessage response = await client.PatchAsync("/api/v1/me/settings", body);
+
+            IReadOnlyList<ValidationErrorDto> errors = await response.ShouldBeValidationProblemAsync();
+            errors.Should().ContainSingle(error => error.Field == field)
+                .Which.Should().BeEquivalentTo(new { Code = code, Min = min, Max = max });
+            UserSettingsDto read = await client.GetJsonAsync<UserSettingsDto>("/api/v1/me/settings");
+            read.Visualization.Preset.Should().BeNull();
+            read.Visualization.AutoChangeSeconds.Should().Be(30);
+        }
+    }
+
     private static IEnumerable<TestCaseData> InvalidPlaybackSettings()
     {
         yield return new TestCaseData(

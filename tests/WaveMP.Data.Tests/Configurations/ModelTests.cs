@@ -134,6 +134,25 @@ public class ModelTests
     }
 
     [Test]
+    public void UserSettings_VisualizationModule_IsStoredAsNameWithMilkdropAsDefault()
+    {
+        IProperty module = GetEntity(typeof(UserSettings)).FindProperty(nameof(UserSettings.VisualizationModule))!;
+
+        module.GetProviderClrType().Should().Be<string>();
+        module.GetDefaultValue().Should().Be(VisualizationModule.Milkdrop);
+        module.ValueGenerated.Should().Be(ValueGenerated.Never);
+    }
+
+    [Test]
+    public void UserSettings_VisualizationPreset_IsAnOptionalNameOfLimitedLength()
+    {
+        IProperty preset = GetEntity(typeof(UserSettings)).FindProperty(nameof(UserSettings.VisualizationPreset))!;
+
+        preset.IsNullable.Should().BeTrue();
+        preset.GetMaxLength().Should().Be(UserSettings.VisualizationPresetMaxLength);
+    }
+
+    [Test]
     public void UserSettings_EqualizerCustomGainsDb_IsStoredAsArrayWithZerosAsDefault()
     {
         IProperty gains = GetEntity(typeof(UserSettings)).FindProperty(nameof(UserSettings.EqualizerCustomGainsDb))!;
@@ -151,6 +170,8 @@ public class ModelTests
     [TestCase(nameof(UserSettings.CrossfadeSeconds), 5)]
     [TestCase(nameof(UserSettings.CrossfadeAlbumsGapless), true)]
     [TestCase(nameof(UserSettings.SleepTimerFadeSeconds), 10)]
+    [TestCase(nameof(UserSettings.VisualizationAutoChange), true)]
+    [TestCase(nameof(UserSettings.VisualizationAutoChangeSeconds), 30)]
     public void UserSettings_PlaybackSettings_HaveTheDefaultsOfANewProfile(string property, object expected)
     {
         IProperty column = GetEntity(typeof(UserSettings)).FindProperty(property)!;
@@ -172,6 +193,10 @@ public class ModelTests
         settings.CrossfadeSeconds.Should().Be(5);
         settings.CrossfadeAlbumsGapless.Should().BeTrue();
         settings.SleepTimerFadeSeconds.Should().Be(10);
+        settings.VisualizationModule.Should().Be(VisualizationModule.Milkdrop);
+        settings.VisualizationPreset.Should().BeNull();
+        settings.VisualizationAutoChange.Should().BeTrue();
+        settings.VisualizationAutoChangeSeconds.Should().Be(30);
     }
 
     [Test]

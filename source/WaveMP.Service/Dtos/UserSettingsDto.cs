@@ -40,4 +40,9 @@ public sealed class UserSettingsDto
     /// Sleep timer of the players.
     /// </summary>
     public required SleepTimerSettingsDto SleepTimer { get; init; }
+
+    /// <summary>
+    /// Visualization of the Now Playing view.
+    /// </summary>
+    public required VisualizationSettingsDto Visualization { get; init; }
 }

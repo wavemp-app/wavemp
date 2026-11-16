@@ -10253,9 +10253,63 @@
                 "$ref": "#/components/schemas/UpdateSleepTimerSettings"
               }
             ]
+          },
+          "visualization": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "Changes of the visualization.",
+                "$ref": "#/components/schemas/UpdateVisualizationSettings"
+              }
+            ]
           }
         },
         "description": "Changes the settings of the current profile. Missing or null values stay unchanged, also within the groups."
+      },
+      "UpdateVisualizationSettings": {
+        "type": "object",
+        "properties": {
+          "module": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "The visualization. Another module than the current one forgets the preset, unless the request names one.",
+                "$ref": "#/components/schemas/VisualizationModule"
+              }
+            ]
+          },
+          "preset": {
+            "maxLength": 200,
+            "minLength": 0,
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Name of the chosen preset of the module, up to 200 characters; an empty string forgets it, so the player picks one."
+          },
+          "autoChange": {
+            "type": [
+              "null",
+              "boolean"
+            ],
+            "description": "Whether the visualization changes its preset automatically; the seconds stay when it is turned off."
+          },
+          "autoChangeSeconds": {
+            "maximum": 600,
+            "minimum": 5,
+            "type": [
+              "null",
+              "integer"
+            ],
+            "description": "Seconds after which the visualization changes its preset, from 5 to 600.",
+            "format": "int32"
+          }
+        },
+        "description": "Changes the visualization of the current profile. Missing or null values stay unchanged."
       },
       "User": {
         "required": [
@@ -10342,7 +10396,8 @@
           "sidebarCollapsed",
           "equalizer",
           "crossfade",
-          "sleepTimer"
+          "sleepTimer",
+          "visualization"
         ],
         "type": "object",
         "properties": {
@@ -10373,6 +10428,10 @@
           "sleepTimer": {
             "description": "Sleep timer of the players.",
             "$ref": "#/components/schemas/SleepTimerSettings"
+          },
+          "visualization": {
+            "description": "Visualization of the Now Playing view.",
+            "$ref": "#/components/schemas/VisualizationSettings"
           }
         },
         "description": "Settings of the current profile."
@@ -10502,6 +10561,45 @@
           "Matroska"
         ],
         "type": "string"
+      },
+      "VisualizationModule": {
+        "enum": [
+          "Milkdrop"
+        ],
+        "type": "string",
+        "description": "A visualization of the players: an engine that draws the music, with its own presets. Further modules may be added in later versions; clients fall back to their default for a module they do not know."
+      },
+      "VisualizationSettings": {
+        "required": [
+          "module",
+          "preset",
+          "autoChange",
+          "autoChangeSeconds"
+        ],
+        "type": "object",
+        "properties": {
+          "module": {
+            "description": "The visualization; Milkdrop by default.",
+            "$ref": "#/components/schemas/VisualizationModule"
+          },
+          "preset": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Name of the preset of the module the profile chose last, or null to let the player pick one. The players know the presets of their modules; a name a player does not know is treated like null."
+          },
+          "autoChange": {
+            "type": "boolean",
+            "description": "Whether the visualization changes its preset automatically; true by default. Turning it off keeps the seconds."
+          },
+          "autoChangeSeconds": {
+            "type": "integer",
+            "description": "Seconds after which the visualization changes its preset while the automatic change is on, from 5 to 600; 30 by default.",
+            "format": "int32"
+          }
+        },
+        "description": "Visualization of the Now Playing view of the current profile."
       },
       "Year": {
         "required": [

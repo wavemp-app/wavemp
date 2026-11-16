@@ -29,6 +29,10 @@ public class UserSettingsRepositoryTests : LibraryDatabaseTests
             CrossfadeSeconds = 7,
             CrossfadeAlbumsGapless = false,
             SleepTimerFadeSeconds = 30,
+            VisualizationModule = VisualizationModule.Milkdrop,
+            VisualizationPreset = "Waves",
+            VisualizationAutoChange = false,
+            VisualizationAutoChangeSeconds = 90,
         };
 
         await repository.UpdateAsync(loaded);
@@ -44,6 +48,10 @@ public class UserSettingsRepositoryTests : LibraryDatabaseTests
             CrossfadeSeconds = 7,
             CrossfadeAlbumsGapless = false,
             SleepTimerFadeSeconds = 30,
+            VisualizationModule = VisualizationModule.Milkdrop,
+            VisualizationPreset = "Waves",
+            VisualizationAutoChange = false,
+            VisualizationAutoChangeSeconds = 90,
         });
     }
 
@@ -88,6 +96,10 @@ public class UserSettingsRepositoryTests : LibraryDatabaseTests
             CrossfadeSeconds = 5,
             CrossfadeAlbumsGapless = true,
             SleepTimerFadeSeconds = 10,
+            VisualizationModule = VisualizationModule.Milkdrop,
+            VisualizationPreset = (string?)null,
+            VisualizationAutoChange = true,
+            VisualizationAutoChangeSeconds = 30,
         });
     }
 
