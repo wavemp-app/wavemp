@@ -34,6 +34,11 @@ public sealed class DatabaseOptions
     /// <summary>
     /// Builds the Npgsql connection string from the configured values.
     /// </summary>
+    /// <remarks>
+    /// WaveMP signs in to PostgreSQL with a password only, so GSS session encryption is turned off. Otherwise Npgsql
+    /// asks for GSS encryption on every new connection and loads the Kerberos library (libgssapi_krb5) for it, which
+    /// the runtime image does not contain; the native loader of .NET then prints an error into the log at every start.
+    /// </remarks>
     public string BuildConnectionString()
     {
         NpgsqlConnectionStringBuilder builder = new()
@@ -43,6 +48,7 @@ public sealed class DatabaseOptions
             Database = Name,
             Username = User,
             Password = Password,
+            GssEncryptionMode = GssEncryptionMode.Disable,
         };
 
         return builder.ConnectionString;

@@ -26,6 +26,16 @@ public class DatabaseOptionsTests
     }
 
     [Test]
+    public void BuildConnectionString_Always_DisablesGssEncryption()
+    {
+        DatabaseOptions options = new() { Password = "secret" };
+
+        NpgsqlConnectionStringBuilder result = new(options.BuildConnectionString());
+
+        result.GssEncryptionMode.Should().Be(GssEncryptionMode.Disable);
+    }
+
+    [Test]
     public void BindDatabaseOptions_WithEnvironmentValues_OverridesDefaults()
     {
         IConfiguration configuration = CreateConfiguration(new Dictionary<string, string?>
