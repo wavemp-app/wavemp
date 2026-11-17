@@ -5,12 +5,24 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- IHostEnvironment: a relative data folder is resolved against the content root. -->
+    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" />
     <PackageReference Include="Microsoft.Extensions.Identity.Core" />
     <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" />
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\WaveMP.Core.Caching\WaveMP.Core.Caching.csproj" />
+    <ProjectReference Include="..\WaveMP.Core.Settings\WaveMP.Core.Settings.csproj" />
     <ProjectReference Include="..\WaveMP.Data\WaveMP.Data.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!--
+      The built-in avatars, drawn for WaveMP (assets/avatars, created from their SVG sources with
+      npm run avatars:export in source/WaveMP.Web), embedded as avatars/<id>-<size>.webp.
+    -->
+    <EmbeddedResource Include="..\..\assets\avatars\*.webp" LogicalName="avatars/%(Filename)%(Extension)" Visible="false" />
   </ItemGroup>
 
 </Project>

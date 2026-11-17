@@ -128,6 +128,7 @@ public static class WaveMpApplication
         await app.Services.InitializeWaveMpSettingsAsync(cancellationToken);
         await app.Services.InitializeWaveMpCacheAsync(cancellationToken);
         await app.Services.InitializeWaveMpPlaylistsAsync(cancellationToken);
+        await app.Services.InitializeWaveMpAvatarsAsync(cancellationToken);
         await app.Services.InitializeWaveMpJobsAsync(cancellationToken);
 
         string mediaFolder = app.Services.GetRequiredService<IOptions<MediaLibraryOptions>>().Value.RootPath;

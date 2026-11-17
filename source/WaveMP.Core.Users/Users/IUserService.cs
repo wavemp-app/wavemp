@@ -23,7 +23,8 @@ public interface IUserService
     Task<UserResult> UpdateAsync(Guid id, UpdateUserCommand command, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Deletes a user with its settings and sessions. Returns <c>null</c> on success, otherwise the reason.
+    /// Deletes a user with its settings, sessions and uploaded avatar. Returns <c>null</c> on success, otherwise the
+    /// reason.
     /// </summary>
     Task<UserError?> DeleteAsync(Guid id, CancellationToken cancellationToken = default);
 }

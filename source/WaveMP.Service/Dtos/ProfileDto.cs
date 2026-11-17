@@ -33,4 +33,9 @@ public sealed class ProfileDto
     /// True if the profile is protected by a PIN, which selecting it needs.
     /// </summary>
     public required bool HasPin { get; init; }
+
+    /// <summary>
+    /// The avatar of the profile; null without one, then clients show the initials on the color of the profile.
+    /// </summary>
+    public AvatarDto? Avatar { get; init; }
 }

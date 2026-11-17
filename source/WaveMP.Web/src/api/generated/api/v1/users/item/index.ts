@@ -4,6 +4,8 @@
 // @ts-ignore
 import { createProblemDetailsFromDiscriminatorValue, createUserFromDiscriminatorValue, createValidationProblemFromDiscriminatorValue, serializeUpdateUser, serializeUser, type ProblemDetails, type UpdateUser, type User, type ValidationProblem } from '../../../../models/index.js';
 // @ts-ignore
+import { AvatarRequestBuilderRequestsMetadata, type AvatarRequestBuilder } from './avatar/index.js';
+// @ts-ignore
 import { PinRequestBuilderRequestsMetadata, type PinRequestBuilder } from './pin/index.js';
 // @ts-ignore
 import { type BaseRequestBuilder, type KeysToExcludeForNavigationMetadata, type NavigationMetadata, type Parsable, type ParsableFactory, type RequestConfiguration, type RequestInformation, type RequestsMetadata } from '@microsoft/kiota-abstractions';
@@ -12,6 +14,10 @@ import { type BaseRequestBuilder, type KeysToExcludeForNavigationMetadata, type 
  * Builds and executes requests for operations under /api/v1/users/{id}
  */
 export interface UsersItemRequestBuilder extends BaseRequestBuilder<UsersItemRequestBuilder> {
+    /**
+     * The avatar property
+     */
+    get avatar(): AvatarRequestBuilder;
     /**
      * The pin property
      */
@@ -74,6 +80,9 @@ export const UsersItemRequestBuilderUriTemplate = "{+baseurl}/api/v1/users/{id}"
  * Metadata for all the navigation properties in the request builder.
  */
 export const UsersItemRequestBuilderNavigationMetadata: Record<Exclude<keyof UsersItemRequestBuilder, KeysToExcludeForNavigationMetadata>, NavigationMetadata> = {
+    avatar: {
+        requestsMetadata: AvatarRequestBuilderRequestsMetadata,
+    },
     pin: {
         requestsMetadata: PinRequestBuilderRequestsMetadata,
     },

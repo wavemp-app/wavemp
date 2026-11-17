@@ -3,7 +3,9 @@ using Microsoft.Net.Http.Headers;
 using WaveMP.Core.Caching.Covers;
 using WaveMP.Core.Library.Covers;
 using WaveMP.Core.Playlists.Playlists;
+using WaveMP.Core.Users.Avatars;
 using WaveMP.Core.Users.Pins;
+using WaveMP.Data.Entities;
 using WaveMP.Service.Dtos;
 using WaveMP.Service.Problems;
 
@@ -35,13 +37,15 @@ public static class ControllerBaseExtensions
     /// <summary>
     /// The picture of a cover with its strong ETag, Last-Modified and <see cref="CoverCacheControl"/>; a matching
     /// If-None-Match (or If-Modified-Since) answers 304 without the picture. Otherwise 404 with
-    /// <paramref name="ownerNotFound"/> if the track or album does not exist and <c>cover.not_found</c> if it has no
-    /// cover. The stream of the picture is disposed after the response, also after 304.
+    /// <paramref name="ownerNotFound"/> if the owner (e.g. the track, album or profile) does not exist and
+    /// <paramref name="notFound"/> if it has no picture. The stream of the picture is disposed after the response, also
+    /// after 304.
     /// </summary>
     public static IActionResult Cover(
         this ControllerBase controller,
         CoverDeliveryResult result,
-        ProblemCodeDto ownerNotFound)
+        ProblemCodeDto ownerNotFound,
+        ProblemCodeDto notFound = ProblemCodeDto.CoverNotFound)
     {
         switch (result)
         {
@@ -55,7 +59,7 @@ public static class ControllerBaseExtensions
             case { Status: CoverStatus.OwnerNotFound }:
                 return controller.Problem(ownerNotFound, StatusCodes.Status404NotFound);
             default:
-                return controller.Problem(ProblemCodeDto.CoverNotFound, StatusCodes.Status404NotFound);
+                return controller.Problem(notFound, StatusCodes.Status404NotFound);
         }
     }
 
@@ -103,6 +107,72 @@ public static class ControllerBaseExtensions
                 return controller.ValidationProblem();
             default:
                 throw new ArgumentOutOfRangeException(nameof(status), status, "Not a failure.");
+        }
+    }
+
+    /// <summary>
+    /// Sets the avatar of a profile from a multipart form: an uploaded picture in <c>file</c> or a built-in avatar in
+    /// <c>presetId</c>. Answers 200 with the profile mapped by <paramref name="map"/>, 400 if neither or both are given
+    /// or the built-in avatar does not exist, 404 if the profile does not exist, and 413, 415, 422 or 503 if the
+    /// picture cannot be stored.
+    /// </summary>
+    public static async Task<ActionResult> SetAvatarAsync<TDto>(
+        this ControllerBase controller,
+        IAvatarService avatars,
+        long maxUploadBytes,
+        Guid userId,
+        SetAvatarDto request,
+        Func<User, TDto> map,
+        CancellationToken cancellationToken)
+    {
+        bool hasPreset = !string.IsNullOrEmpty(request.PresetId);
+        if (request.File is null && !hasPreset)
+        {
+            controller.ModelState.AddValidationError("file", ValidationErrorCodeDto.Required);
+            controller.ModelState.AddValidationError("presetId", ValidationErrorCodeDto.Required);
+            return controller.ValidationProblem();
+        }
+
+        if (request.File is not null && hasPreset)
+        {
+            // Exactly one of the two.
+            controller.ModelState.AddValidationError("presetId", ValidationErrorCodeDto.InvalidValue);
+            return controller.ValidationProblem();
+        }
+
+        AvatarResult result;
+        if (request.File is { } file)
+        {
+            if (file.Length > maxUploadBytes)
+            {
+                return controller.Problem(ProblemCodeDto.AvatarTooLarge, StatusCodes.Status413PayloadTooLarge);
+            }
+
+            await using Stream content = file.OpenReadStream();
+            result = await avatars.UploadAsync(userId, content, cancellationToken);
+        }
+        else
+        {
+            result = await avatars.ChoosePresetAsync(userId, request.PresetId!, cancellationToken);
+        }
+
+        switch (result)
+        {
+            case { Status: AvatarStatus.Saved, User: { } user }:
+                return controller.Ok(map(user));
+            case { Status: AvatarStatus.PresetNotFound }:
+                controller.ModelState.AddValidationError("presetId", ValidationErrorCodeDto.InvalidValue);
+                return controller.ValidationProblem();
+            case { Status: AvatarStatus.UnsupportedFormat }:
+                return controller.Problem(
+                    ProblemCodeDto.AvatarUnsupportedFormat,
+                    StatusCodes.Status415UnsupportedMediaType);
+            case { Status: AvatarStatus.Unreadable }:
+                return controller.Problem(ProblemCodeDto.AvatarUnreadable, StatusCodes.Status422UnprocessableEntity);
+            case { Status: AvatarStatus.Unavailable }:
+                return controller.Problem(ProblemCodeDto.ServiceUnavailable, StatusCodes.Status503ServiceUnavailable);
+            default:
+                return controller.Problem(ProblemCodeDto.UserNotFound, StatusCodes.Status404NotFound);
         }
     }
 

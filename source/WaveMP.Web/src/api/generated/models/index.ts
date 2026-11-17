@@ -189,6 +189,49 @@ export type ArtistSort = (typeof ArtistSortObject)[keyof typeof ArtistSortObject
 export type AudioCodec = (typeof AudioCodecObject)[keyof typeof AudioCodecObject];
 export type AudioFormat = (typeof AudioFormatObject)[keyof typeof AudioFormatObject];
 /**
+ * The avatar of a profile: an uploaded picture or a built-in avatar. Its picture comes from GET /api/v1/users/{id}/avatar; profiles without an avatar have none, and clients show their initials.
+ */
+export interface Avatar extends AdditionalDataHolder, Parsable {
+    /**
+     * Id of the built-in avatar (see GET /api/v1/avatar-presets); null for an uploaded picture.
+     */
+    presetId?: string | null;
+    /**
+     * Version of the avatar; it changes every time the avatar is set, so clients can use it as part of their cache key.
+     */
+    version?: string | null;
+}
+/**
+ * A built-in avatar that profiles can choose instead of uploading a picture. Its picture comes from GET /api/v1/avatar-presets/{id}/picture.
+ */
+export interface AvatarPreset extends AdditionalDataHolder, Parsable {
+    /**
+     * Stable id of the built-in avatar, e.g. "bubble"; clients may translate it into a name.
+     */
+    id?: string | null;
+}
+/**
+ * One page of a collection.
+ */
+export interface AvatarPresetPage extends AdditionalDataHolder, Parsable {
+    /**
+     * Items of the page, at most limit.
+     */
+    items?: AvatarPreset[] | null;
+    /**
+     * Maximum number of items of the page, as requested.
+     */
+    limit?: number | null;
+    /**
+     * Number of items skipped before this page.
+     */
+    offset?: number | null;
+    /**
+     * Number of items of the whole collection.
+     */
+    total?: number | null;
+}
+/**
  * An export of the database in the backup folder (`/data/backups`).
  */
 export interface Backup extends AdditionalDataHolder, Parsable {
@@ -370,6 +413,33 @@ export function createArtistPageFromDiscriminatorValue(parseNode: ParseNode | un
 // @ts-ignore
 export function createArtistReferenceFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
     return deserializeIntoArtistReference;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {Avatar}
+ */
+// @ts-ignore
+export function createAvatarFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoAvatar;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {AvatarPreset}
+ */
+// @ts-ignore
+export function createAvatarPresetFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoAvatarPreset;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {AvatarPresetPage}
+ */
+// @ts-ignore
+export function createAvatarPresetPageFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoAvatarPresetPage;
 }
 /**
  * Creates a new instance of the appropriate class based on discriminator value
@@ -1352,6 +1422,43 @@ export function deserializeIntoArtistReference(artistReference: Partial<ArtistRe
 }
 /**
  * The deserialization information for the current model
+ * @param Avatar The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoAvatar(avatar: Partial<Avatar> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "presetId": n => { avatar.presetId = n.getStringValue(); },
+        "version": n => { avatar.version = n.getStringValue(); },
+    }
+}
+/**
+ * The deserialization information for the current model
+ * @param AvatarPreset The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoAvatarPreset(avatarPreset: Partial<AvatarPreset> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "id": n => { avatarPreset.id = n.getStringValue(); },
+    }
+}
+/**
+ * The deserialization information for the current model
+ * @param AvatarPresetPage The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoAvatarPresetPage(avatarPresetPage: Partial<AvatarPresetPage> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "items": n => { avatarPresetPage.items = n.getCollectionOfObjectValues<AvatarPreset>(createAvatarPresetFromDiscriminatorValue); },
+        "limit": n => { avatarPresetPage.limit = n.getNumberValue(); },
+        "offset": n => { avatarPresetPage.offset = n.getNumberValue(); },
+        "total": n => { avatarPresetPage.total = n.getNumberValue(); },
+    }
+}
+/**
+ * The deserialization information for the current model
  * @param Backup The instance to deserialize into.
  * @returns {Record<string, (node: ParseNode) => void>}
  */
@@ -1922,6 +2029,7 @@ export function deserializeIntoProblemDetails(problemDetails: Partial<ProblemDet
 // @ts-ignore
 export function deserializeIntoProfile(profile: Partial<Profile> | undefined = {}) : Record<string, (node: ParseNode) => void> {
     return {
+        "avatar": n => { profile.avatar = n.getObjectValue<Avatar>(createAvatarFromDiscriminatorValue); },
         "color": n => { profile.color = n.getStringValue(); },
         "hasPin": n => { profile.hasPin = n.getBooleanValue(); },
         "id": n => { profile.id = n.getGuidValue(); },
@@ -2513,6 +2621,7 @@ export function deserializeIntoUpdateVisualizationSettings(updateVisualizationSe
 // @ts-ignore
 export function deserializeIntoUser(user: Partial<User> | undefined = {}) : Record<string, (node: ParseNode) => void> {
     return {
+        "avatar": n => { user.avatar = n.getObjectValue<Avatar>(createAvatarFromDiscriminatorValue); },
         "color": n => { user.color = n.getStringValue(); },
         "createdAt": n => { user.createdAt = n.getDateValue(); },
         "hasPin": n => { user.hasPin = n.getBooleanValue(); },
@@ -3344,6 +3453,10 @@ export interface ProblemDetails extends AdditionalDataHolder, ApiError, Parsable
  */
 export interface Profile extends AdditionalDataHolder, Parsable {
     /**
+     * The avatar property
+     */
+    avatar?: Avatar | null;
+    /**
      * Color of the profile as #rrggbb.
      */
     color?: string | null;
@@ -3772,6 +3885,46 @@ export function serializeArtistReference(writer: SerializationWriter, artistRefe
     writer.writeGuidValue("id", artistReference.id);
     writer.writeStringValue("name", artistReference.name);
     writer.writeAdditionalData(artistReference.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param Avatar The instance to serialize from.
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeAvatar(writer: SerializationWriter, avatar: Partial<Avatar> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!avatar || isSerializingDerivedType) { return; }
+    writer.writeStringValue("presetId", avatar.presetId);
+    writer.writeStringValue("version", avatar.version);
+    writer.writeAdditionalData(avatar.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param AvatarPreset The instance to serialize from.
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeAvatarPreset(writer: SerializationWriter, avatarPreset: Partial<AvatarPreset> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!avatarPreset || isSerializingDerivedType) { return; }
+    writer.writeStringValue("id", avatarPreset.id);
+    writer.writeAdditionalData(avatarPreset.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param AvatarPresetPage The instance to serialize from.
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeAvatarPresetPage(writer: SerializationWriter, avatarPresetPage: Partial<AvatarPresetPage> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!avatarPresetPage || isSerializingDerivedType) { return; }
+    writer.writeCollectionOfObjectValues<AvatarPreset>("items", avatarPresetPage.items, serializeAvatarPreset);
+    writer.writeNumberValue("limit", avatarPresetPage.limit);
+    writer.writeNumberValue("offset", avatarPresetPage.offset);
+    writer.writeNumberValue("total", avatarPresetPage.total);
+    writer.writeAdditionalData(avatarPresetPage.additionalData);
 }
 /**
  * Serializes information the current object
@@ -4385,6 +4538,7 @@ export function serializeProblemDetails(writer: SerializationWriter, problemDeta
 // @ts-ignore
 export function serializeProfile(writer: SerializationWriter, profile: Partial<Profile> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
     if (!profile || isSerializingDerivedType) { return; }
+    writer.writeObjectValue<Avatar>("avatar", profile.avatar, serializeAvatar);
     writer.writeStringValue("color", profile.color);
     writer.writeBooleanValue("hasPin", profile.hasPin);
     writer.writeGuidValue("id", profile.id);
@@ -5015,6 +5169,7 @@ export function serializeUpdateVisualizationSettings(writer: SerializationWriter
 // @ts-ignore
 export function serializeUser(writer: SerializationWriter, user: Partial<User> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
     if (!user || isSerializingDerivedType) { return; }
+    writer.writeObjectValue<Avatar>("avatar", user.avatar, serializeAvatar);
     writer.writeStringValue("color", user.color);
     writer.writeDateValue("createdAt", user.createdAt);
     writer.writeBooleanValue("hasPin", user.hasPin);
@@ -5839,6 +5994,10 @@ export interface UpdateVisualizationSettings extends AdditionalDataHolder, Parsa
  */
 export interface User extends AdditionalDataHolder, Parsable {
     /**
+     * The avatar property
+     */
+    avatar?: Avatar | null;
+    /**
      * Color of the profile as #rrggbb.
      */
     color?: string | null;
@@ -6332,6 +6491,10 @@ export const ProblemCodeObject = {
     CoverUnsupported_format: "cover.unsupported_format",
     CoverToo_large: "cover.too_large",
     CoverUnreadable: "cover.unreadable",
+    AvatarNot_found: "avatar.not_found",
+    AvatarUnsupported_format: "avatar.unsupported_format",
+    AvatarToo_large: "avatar.too_large",
+    AvatarUnreadable: "avatar.unreadable",
 } as const;
 /**
  * Whether the players even out the volume with the ReplayGain tags; Off by default.

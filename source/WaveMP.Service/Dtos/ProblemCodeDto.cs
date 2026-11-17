@@ -289,4 +289,28 @@ public enum ProblemCodeDto
     /// </summary>
     [JsonStringEnumMemberName("cover.unreadable")]
     CoverUnreadable,
+
+    /// <summary>
+    /// The profile has no avatar, or the built-in avatar does not exist (404).
+    /// </summary>
+    [JsonStringEnumMemberName("avatar.not_found")]
+    AvatarNotFound,
+
+    /// <summary>
+    /// The uploaded avatar is not a JPEG, PNG or WebP picture (415).
+    /// </summary>
+    [JsonStringEnumMemberName("avatar.unsupported_format")]
+    AvatarUnsupportedFormat,
+
+    /// <summary>
+    /// The uploaded avatar is larger than allowed (413).
+    /// </summary>
+    [JsonStringEnumMemberName("avatar.too_large")]
+    AvatarTooLarge,
+
+    /// <summary>
+    /// The uploaded avatar is damaged and cannot be read (422).
+    /// </summary>
+    [JsonStringEnumMemberName("avatar.unreadable")]
+    AvatarUnreadable,
 }

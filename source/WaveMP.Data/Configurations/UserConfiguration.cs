@@ -21,6 +21,7 @@ internal sealed class UserConfiguration : IEntityTypeConfiguration<User>
     public const int ColorLength = 7;
     public const int RoleMaxLength = 16;
     public const int PinHashMaxLength = 256;
+    public const int AvatarPresetIdMaxLength = 32;
 
     public void Configure(EntityTypeBuilder<User> builder)
     {
@@ -33,6 +34,7 @@ internal sealed class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(user => user.Color).HasMaxLength(ColorLength);
         builder.Property(user => user.Role).HasConversion<string>().HasMaxLength(RoleMaxLength);
         builder.Property(user => user.PinHash).HasMaxLength(PinHashMaxLength);
+        builder.Property(user => user.AvatarPresetId).HasMaxLength(AvatarPresetIdMaxLength);
 
         builder.HasIndex(user => user.NormalizedName)
             .IsUnique()

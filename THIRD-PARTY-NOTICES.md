@@ -12,7 +12,7 @@ WaveMP is licensed under the [MIT License](LICENSE). It is built on the open-sou
 |---|---|---|
 | .NET runtime and ASP.NET Core 10 (base image `mcr.microsoft.com/dotnet/aspnet:10.0-alpine`) | MIT | Runs the service |
 | Alpine Linux (packages of the base image) | Various open-source licenses, named per package (`apk info --license <package>`) | Operating system of the image |
-| FFmpeg (Alpine package `ffmpeg`) | GPL-2.0-or-later AND LGPL-2.1-or-later | `ffprobe` reads the technical details of media files, `ffmpeg` transcodes songs and videos to HLS and scales covers; both run as separate processes and are never linked. License texts, notice and build configuration under `/licenses/ffmpeg` |
+| FFmpeg (Alpine package `ffmpeg`) | GPL-2.0-or-later AND LGPL-2.1-or-later | `ffprobe` reads the technical details of media files, `ffmpeg` transcodes songs and videos to HLS and crops and scales covers and the pictures of the profiles; both run as separate processes and are never linked. License texts, notice and build configuration under `/licenses/ffmpeg` |
 | ICU (Alpine packages `icu-libs`, `icu-data-full`) | Unicode-3.0 | Unicode normalization and culture-aware text handling of .NET; `/licenses/icu` |
 | pg_dump (Alpine package `postgresql18-client`) | PostgreSQL | Exports the database (backups); runs as a separate process; `/licenses/postgresql` |
 | tzdata (Alpine package `tzdata`) | Public domain | Time zones for `TZ` |

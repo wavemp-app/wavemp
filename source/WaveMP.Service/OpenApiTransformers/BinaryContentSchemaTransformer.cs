@@ -4,9 +4,10 @@ using Microsoft.OpenApi;
 namespace WaveMP.Service.OpenApiTransformers;
 
 /// <summary>
-/// Describes binary content (the pictures of the cover endpoints) inline as <c>type: string, format: binary</c>. The
-/// framework describes streams with a reference to a component named after <c>IFormFile</c>, a name that means nothing
-/// to the clients; the component is removed. Runs on the finished document, after the references are created.
+/// Describes binary content (the pictures of the cover endpoints and the files of multipart forms) inline as
+/// <c>type: string, format: binary</c>. The framework describes streams and uploaded files with a reference to a
+/// component named after <c>IFormFile</c>, a name that means nothing to the clients; the component is removed. Runs on
+/// the finished document, after the references are created.
 /// </summary>
 internal sealed class BinaryContentSchemaTransformer : IOpenApiDocumentTransformer
 {
@@ -44,7 +45,19 @@ internal sealed class BinaryContentSchemaTransformer : IOpenApiDocumentTransform
             {
                 if (content.Schema is OpenApiSchemaReference { Reference.Id: { } id } && binary.Contains(id))
                 {
-                    content.Schema = new OpenApiSchema { Type = JsonSchemaType.String, Format = BinaryFormat };
+                    content.Schema = BinarySchema();
+                }
+                else if (content.Schema is OpenApiSchema { Properties: { Count: > 0 } properties })
+                {
+                    // The fields of a multipart form.
+                    foreach (KeyValuePair<string, IOpenApiSchema> property in properties.ToList())
+                    {
+                        if (property.Value is OpenApiSchemaReference { Reference.Id: { } fieldId }
+                            && binary.Contains(fieldId))
+                        {
+                            properties[property.Key] = BinarySchema();
+                        }
+                    }
                 }
             }
         }
@@ -55,6 +68,11 @@ internal sealed class BinaryContentSchemaTransformer : IOpenApiDocumentTransform
         }
 
         return Task.CompletedTask;
+    }
+
+    private static OpenApiSchema BinarySchema()
+    {
+        return new OpenApiSchema { Type = JsonSchemaType.String, Format = BinaryFormat };
     }
 
     private static bool IsBinary(IOpenApiSchema schema)

@@ -82,6 +82,14 @@ public interface IUserRepository
     Task<bool> SetPinHashAsync(Guid userId, string? pinHash, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// The users among <paramref name="ids"/> that exist and have an uploaded avatar (an avatar that is not one of the
+    /// built-in ones).
+    /// </summary>
+    Task<IReadOnlySet<Guid>> ListUploadedAvatarIdsAsync(
+        IReadOnlyCollection<Guid> ids,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Deletes a user loaded with <see cref="FindAsync"/>, together with its settings and sessions.
     /// </summary>
     /// <exception cref="UserNotFoundException">The user was deleted since it was loaded.</exception>

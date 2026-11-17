@@ -6,5 +6,6 @@ namespace WaveMP.Core.Caching.Covers;
 /// <param name="Content">The scaled picture, or the picture as stored.</param>
 /// <param name="ContentType">Type of the picture: <c>image/webp</c> for scaled pictures.</param>
 /// <param name="ETag">Strong entity tag (without quotes) of this version and size of the picture.</param>
-/// <param name="LastModified">Time of the last change of the file the picture comes from.</param>
-public sealed record CoverDelivery(Stream Content, string ContentType, string ETag, DateTimeOffset LastModified);
+/// <param name="LastModified">Time of the last change of the file the picture comes from; <c>null</c> for pictures
+/// that are part of WaveMP itself, which only the entity tag identifies.</param>
+public sealed record CoverDelivery(Stream Content, string ContentType, string ETag, DateTimeOffset? LastModified);

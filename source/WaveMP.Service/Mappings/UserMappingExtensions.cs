@@ -1,3 +1,4 @@
+using WaveMP.Core.Users.Avatars;
 using WaveMP.Core.Users.Pins;
 using WaveMP.Data.Entities;
 using WaveMP.Service.Dtos;
@@ -17,6 +18,7 @@ public static class UserMappingExtensions
             Role = user.Role.ToDto(),
             IsBuiltIn = user.IsBuiltIn,
             HasPin = user.PinHash is not null,
+            Avatar = user.ToAvatarDto(),
         };
     }
 
@@ -31,8 +33,16 @@ public static class UserMappingExtensions
             Role = user.Role.ToDto(),
             IsBuiltIn = user.IsBuiltIn,
             HasPin = user.PinHash is not null,
+            Avatar = user.ToAvatarDto(),
             CreatedAt = user.CreatedAt,
         };
+    }
+
+    public static AvatarDto? ToAvatarDto(this User user)
+    {
+        return user.AvatarUpdatedAt is { } updatedAt
+            ? new AvatarDto { Version = AvatarVersions.Of(updatedAt), PresetId = user.AvatarPresetId }
+            : null;
     }
 
     public static PinStatusDto ToDto(this PinStatus status)

@@ -6,6 +6,8 @@ import { AlbumsRequestBuilderNavigationMetadata, AlbumsRequestBuilderRequestsMet
 // @ts-ignore
 import { ArtistsRequestBuilderNavigationMetadata, ArtistsRequestBuilderRequestsMetadata, type ArtistsRequestBuilder } from './artists/index.js';
 // @ts-ignore
+import { AvatarPresetsRequestBuilderNavigationMetadata, AvatarPresetsRequestBuilderRequestsMetadata, type AvatarPresetsRequestBuilder } from './avatarPresets/index.js';
+// @ts-ignore
 import { BackupsRequestBuilderNavigationMetadata, BackupsRequestBuilderRequestsMetadata, type BackupsRequestBuilder } from './backups/index.js';
 // @ts-ignore
 import { CacheRequestBuilderRequestsMetadata, type CacheRequestBuilder } from './cache/index.js';
@@ -52,6 +54,10 @@ export interface V1RequestBuilder extends BaseRequestBuilder<V1RequestBuilder> {
      * The artists property
      */
     get artists(): ArtistsRequestBuilder;
+    /**
+     * The avatarPresets property
+     */
+    get avatarPresets(): AvatarPresetsRequestBuilder;
     /**
      * The backups property
      */
@@ -132,6 +138,10 @@ export const V1RequestBuilderNavigationMetadata: Record<Exclude<keyof V1RequestB
     artists: {
         requestsMetadata: ArtistsRequestBuilderRequestsMetadata,
         navigationMetadata: ArtistsRequestBuilderNavigationMetadata,
+    },
+    avatarPresets: {
+        requestsMetadata: AvatarPresetsRequestBuilderRequestsMetadata,
+        navigationMetadata: AvatarPresetsRequestBuilderNavigationMetadata,
     },
     backups: {
         requestsMetadata: BackupsRequestBuilderRequestsMetadata,

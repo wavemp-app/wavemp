@@ -134,6 +134,23 @@ internal sealed class UserRepository(WaveMpDbContext dbContext) : IUserRepositor
         return updated > 0;
     }
 
+    public async Task<IReadOnlySet<Guid>> ListUploadedAvatarIdsAsync(
+        IReadOnlyCollection<Guid> ids,
+        CancellationToken cancellationToken = default)
+    {
+        if (ids.Count == 0)
+        {
+            return new HashSet<Guid>();
+        }
+
+        Guid[] distinct = [.. ids.Distinct()];
+        List<Guid> uploaded = await dbContext.Users.AsNoTracking()
+            .Where(user => distinct.Contains(user.Id) && user.AvatarUpdatedAt != null && user.AvatarPresetId == null)
+            .Select(user => user.Id)
+            .ToListAsync(cancellationToken);
+        return uploaded.ToHashSet();
+    }
+
     public async Task DeleteAsync(User user, CancellationToken cancellationToken = default)
     {
         dbContext.Users.Remove(user);

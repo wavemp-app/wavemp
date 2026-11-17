@@ -992,6 +992,15 @@ namespace WaveMP.Data.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
+                    b.Property<string>("AvatarPresetId")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("avatar_preset_id");
+
+                    b.Property<DateTimeOffset?>("AvatarUpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("avatar_updated_at");
+
                     b.Property<string>("Color")
                         .IsRequired()
                         .HasMaxLength(7)

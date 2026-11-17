@@ -52,6 +52,18 @@ public class User
     /// </summary>
     public DateTimeOffset? PinLockoutEnd { get; set; }
 
+    /// <summary>
+    /// Time the avatar was last set (uploaded or chosen); its version. <c>null</c> without an avatar, then clients show
+    /// the initials.
+    /// </summary>
+    public DateTimeOffset? AvatarUpdatedAt { get; set; }
+
+    /// <summary>
+    /// Id of the built-in avatar the profile chose; <c>null</c> for an uploaded picture (stored in the folder
+    /// <c>avatars</c> of the data folder) or without an avatar.
+    /// </summary>
+    public string? AvatarPresetId { get; set; }
+
     public required DateTimeOffset CreatedAt { get; set; }
 
     public UserSettings? Settings { get; set; }

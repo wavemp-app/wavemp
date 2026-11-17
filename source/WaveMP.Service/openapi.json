@@ -743,6 +743,157 @@
         ]
       }
     },
+    "/api/v1/avatar-presets": {
+      "get": {
+        "tags": [
+          "AvatarPresets"
+        ],
+        "summary": "Lists the built-in avatars in the order clients offer them.",
+        "operationId": "ListAvatarPresets",
+        "parameters": [
+          {
+            "name": "offset",
+            "in": "query",
+            "description": "Number of avatars to skip.",
+            "schema": {
+              "maximum": 2147483647,
+              "minimum": 0,
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Maximum number of avatars of the page.",
+            "schema": {
+              "maximum": 100,
+              "minimum": 1,
+              "type": "integer",
+              "format": "int32",
+              "default": 50
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "One page of built-in avatars.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AvatarPresetPage"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid paging parameters (code `request.invalid`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblem"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/api/v1/avatar-presets/{id}/picture": {
+      "get": {
+        "tags": [
+          "AvatarPresets"
+        ],
+        "summary": "Returns the picture of a built-in avatar as square WebP picture of 96, 300 or 1000 pixels (the requested size rounded up, at most 1000). Every picture carries a strong ETag and Cache-Control: private, no-cache; a request with a matching If-None-Match returns 304.",
+        "operationId": "GetAvatarPresetPicture",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Id of the built-in avatar.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "description": "Largest width and height in pixels the client shows the picture with (1 to 4096); the server rounds it up to 96, 300 or 1000. The largest picture if missing.",
+            "schema": {
+              "maximum": 4096,
+              "minimum": 1,
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "The picture.",
+            "content": {
+              "image/webp": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid size (code `request.invalid`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "There is no built-in avatar with this id (code `avatar.not_found`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
     "/api/v1/backups": {
       "get": {
         "tags": [
@@ -2536,6 +2687,159 @@
           },
           "409": {
             "description": "The PIN is set by ADMIN_PIN (code `pin.managed_by_environment`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/api/v1/me/avatar": {
+      "put": {
+        "tags": [
+          "MyAvatar"
+        ],
+        "summary": "Sets the avatar of the current profile: an uploaded JPEG, PNG or WebP picture in `file` (10 MiB at most by default) or a built-in avatar in `presetId`, never both. The server cuts the largest square out of the middle of an uploaded picture, stores it as WebP in several sizes and discards the uploaded file. Replaces an earlier avatar.",
+        "operationId": "SetMyAvatar",
+        "requestBody": {
+          "description": "The picture or the built-in avatar.",
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  },
+                  "presetId": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "The profile with its new avatar.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Profile"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is invalid (code `request.invalid`): neither or both of `file` and `presetId` (`required`, `invalid_value`) or an unknown built-in avatar (`presetId`: `invalid_value`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The profile was deleted in the meantime (code `user.not_found`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "The picture is too large (code `avatar.too_large`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "The picture is not a JPEG, PNG or WebP (code `avatar.unsupported_format`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "The picture is damaged (code `avatar.unreadable`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Pictures cannot be processed, ffmpeg is missing (code `service.unavailable`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "MyAvatar"
+        ],
+        "summary": "Removes the avatar of the current profile; it shows its initials again. Succeeds also without an avatar.",
+        "operationId": "DeleteMyAvatar",
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "The profile has no avatar."
+          },
+          "404": {
+            "description": "The profile was deleted in the meantime (code `user.not_found`).",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -6807,6 +7111,266 @@
         ]
       }
     },
+    "/api/v1/users/{id}/avatar": {
+      "get": {
+        "tags": [
+          "UserAvatars"
+        ],
+        "summary": "Returns the avatar of a profile as square WebP picture of 96, 300 or 1000 pixels (the requested size rounded up, at most 1000; an uploaded picture is never enlarged). Every picture carries a strong ETag of its version and size and Cache-Control: private, no-cache; a request with a matching If-None-Match returns 304. Available without a session, like the profile selection.",
+        "operationId": "GetUserAvatar",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Id of the profile.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "description": "Largest width and height in pixels the client shows the picture with (1 to 4096); the server rounds it up to 96, 300 or 1000. The largest picture if missing.",
+            "schema": {
+              "maximum": 4096,
+              "minimum": 1,
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The picture.",
+            "content": {
+              "image/webp": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid size (code `request.invalid`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The profile does not exist (code `user.not_found`) or has no avatar (code `avatar.not_found`); clients then show its initials.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "UserAvatars"
+        ],
+        "summary": "Sets the avatar of a profile, for admins only: an uploaded JPEG, PNG or WebP picture in `file` (10 MiB at most by default) or a built-in avatar in `presetId`, never both. The server cuts the largest square out of the middle of an uploaded picture, stores it as WebP in several sizes and discards the uploaded file. Replaces an earlier avatar.",
+        "operationId": "SetUserAvatar",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Id of the profile.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "The picture or the built-in avatar.",
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  },
+                  "presetId": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "The profile with its new avatar.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is invalid (code `request.invalid`): neither or both of `file` and `presetId` (`required`, `invalid_value`) or an unknown built-in avatar (`presetId`: `invalid_value`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No valid session.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The profile of the session is not an admin.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The profile does not exist (code `user.not_found`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "The picture is too large (code `avatar.too_large`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "The picture is not a JPEG, PNG or WebP (code `avatar.unsupported_format`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "The picture is damaged (code `avatar.unreadable`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Pictures cannot be processed, ffmpeg is missing (code `service.unavailable`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "UserAvatars"
+        ],
+        "summary": "Removes the avatar of a profile, for admins only; it shows its initials again. Succeeds also without an avatar.",
+        "operationId": "DeleteUserAvatar",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Id of the profile.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "The profile has no avatar."
+          },
+          "401": {
+            "description": "No valid session.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The profile of the session is not an admin.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The profile does not exist (code `user.not_found`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
     "/api/v1/users": {
       "get": {
         "tags": [
@@ -7735,6 +8299,73 @@
           "AiffPcm"
         ],
         "type": "string"
+      },
+      "Avatar": {
+        "required": [
+          "version"
+        ],
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "string",
+            "description": "Version of the avatar; it changes every time the avatar is set, so clients can use it as part of their cache key."
+          },
+          "presetId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Id of the built-in avatar (see GET /api/v1/avatar-presets); null for an uploaded picture."
+          }
+        },
+        "description": "The avatar of a profile: an uploaded picture or a built-in avatar. Its picture comes from GET /api/v1/users/{id}/avatar; profiles without an avatar have none, and clients show their initials."
+      },
+      "AvatarPreset": {
+        "required": [
+          "id"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Stable id of the built-in avatar, e.g. \"bubble\"; clients may translate it into a name."
+          }
+        },
+        "description": "A built-in avatar that profiles can choose instead of uploading a picture. Its picture comes from GET /api/v1/avatar-presets/{id}/picture."
+      },
+      "AvatarPresetPage": {
+        "required": [
+          "items",
+          "offset",
+          "limit",
+          "total"
+        ],
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AvatarPreset"
+            },
+            "description": "Items of the page, at most limit."
+          },
+          "offset": {
+            "type": "integer",
+            "description": "Number of items skipped before this page.",
+            "format": "int32"
+          },
+          "limit": {
+            "type": "integer",
+            "description": "Maximum number of items of the page, as requested.",
+            "format": "int32"
+          },
+          "total": {
+            "type": "integer",
+            "description": "Number of items of the whole collection.",
+            "format": "int32"
+          }
+        },
+        "description": "One page of a collection."
       },
       "Backup": {
         "required": [
@@ -9375,7 +10006,11 @@
           "playlist.full",
           "cover.unsupported_format",
           "cover.too_large",
-          "cover.unreadable"
+          "cover.unreadable",
+          "avatar.not_found",
+          "avatar.unsupported_format",
+          "avatar.too_large",
+          "avatar.unreadable"
         ],
         "type": "string",
         "description": "Machine-readable code of a problem, part of every Problem Details response. Clients translate it."
@@ -9460,6 +10095,17 @@
           "hasPin": {
             "type": "boolean",
             "description": "True if the profile is protected by a PIN, which selecting it needs."
+          },
+          "avatar": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "The avatar of the profile; null without one, then clients show the initials on the color of the profile.",
+                "$ref": "#/components/schemas/Avatar"
+              }
+            ]
           }
         },
         "description": "A profile as shown in the profile selection."
@@ -11272,6 +11918,17 @@
             "type": "boolean",
             "description": "True if the profile is protected by a PIN, which selecting it needs."
           },
+          "avatar": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "The avatar of the profile; null without one, then clients show the initials on the color of the profile.",
+                "$ref": "#/components/schemas/Avatar"
+              }
+            ]
+          },
           "createdAt": {
             "type": "string",
             "description": "When the profile was created.",
@@ -11626,6 +12283,9 @@
       "name": "Artists"
     },
     {
+      "name": "AvatarPresets"
+    },
+    {
       "name": "Backups"
     },
     {
@@ -11654,6 +12314,9 @@
     },
     {
       "name": "Me"
+    },
+    {
+      "name": "MyAvatar"
     },
     {
       "name": "PlaylistCovers"
@@ -11696,6 +12359,9 @@
     },
     {
       "name": "Transcoding"
+    },
+    {
+      "name": "UserAvatars"
     },
     {
       "name": "Users"

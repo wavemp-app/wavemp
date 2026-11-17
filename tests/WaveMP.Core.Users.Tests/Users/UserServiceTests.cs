@@ -1,6 +1,7 @@
 using AwesomeAssertions;
 using NSubstitute;
 using NSubstitute.ExceptionExtensions;
+using WaveMP.Core.Users.Avatars;
 using WaveMP.Core.Users.Profiles;
 using WaveMP.Core.Users.Users;
 using WaveMP.Data.Entities;
@@ -20,6 +21,7 @@ public class UserServiceTests
         "\u00E1" + string.Concat(Enumerable.Range(0x0302, 17).Select(mark => (char)mark)) + " x";
 
     private IUserRepository _users = null!;
+    private IAvatarStore _avatars = null!;
     private UserService _service = null!;
 
     [SetUp]
@@ -29,7 +31,8 @@ public class UserServiceTests
         _users.ListColorsAsync(Arg.Any<CancellationToken>()).Returns([]);
         TimeProvider timeProvider = Substitute.For<TimeProvider>();
         timeProvider.GetUtcNow().Returns(_now);
-        _service = new UserService(_users, timeProvider);
+        _avatars = Substitute.For<IAvatarStore>();
+        _service = new UserService(_users, _avatars, timeProvider);
     }
 
     [Test]
@@ -340,6 +343,17 @@ public class UserServiceTests
 
         result.Should().BeNull();
         await _users.Received(1).DeleteAsync(user, Arg.Any<CancellationToken>());
+        _avatars.Received(1).Delete(user.Id);
+    }
+
+    [Test]
+    public async Task DeleteAsync_WithBuiltInAdmin_KeepsTheAvatar()
+    {
+        User admin = Given(CreateUser("Admin", isBuiltIn: true, role: UserRole.Admin));
+
+        await _service.DeleteAsync(admin.Id);
+
+        _avatars.DidNotReceive().Delete(Arg.Any<Guid>());
     }
 
     [Test]

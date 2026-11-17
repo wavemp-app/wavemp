@@ -1,3 +1,4 @@
+using WaveMP.Core.Users.Avatars;
 using WaveMP.Core.Users.Profiles;
 using WaveMP.Data.Entities;
 using WaveMP.Data.Queries;
@@ -5,7 +6,8 @@ using WaveMP.Data.Repositories;
 
 namespace WaveMP.Core.Users.Users;
 
-internal sealed class UserService(IUserRepository users, TimeProvider timeProvider) : IUserService
+internal sealed class UserService(IUserRepository users, IAvatarStore avatars, TimeProvider timeProvider)
+    : IUserService
 {
     public Task<Page<User>> ListAsync(UserListQuery query, CancellationToken cancellationToken = default)
     {
@@ -177,6 +179,7 @@ internal sealed class UserService(IUserRepository users, TimeProvider timeProvid
         }
 
         await users.DeleteAsync(user, cancellationToken);
+        avatars.Delete(id);
         return null;
     }
 }

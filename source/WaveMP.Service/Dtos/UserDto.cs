@@ -35,6 +35,11 @@ public sealed class UserDto
     public required bool HasPin { get; init; }
 
     /// <summary>
+    /// The avatar of the profile; null without one, then clients show the initials on the color of the profile.
+    /// </summary>
+    public AvatarDto? Avatar { get; init; }
+
+    /// <summary>
     /// When the profile was created.
     /// </summary>
     public required DateTimeOffset CreatedAt { get; init; }
