@@ -75,6 +75,19 @@ public class Track
     /// </summary>
     public CoverPriority? CoverPriority { get; set; }
 
+    /// <summary>
+    /// When an admin marked the metadata of the track as reviewed; <c>null</c> while the track is unreviewed. New
+    /// tracks start unreviewed; a scan never changes it.
+    /// </summary>
+    public DateTimeOffset? ReviewedAt { get; set; }
+
+    /// <summary>
+    /// The profile that marked the track as reviewed; <c>null</c> while unreviewed or after the profile was deleted.
+    /// </summary>
+    public Guid? ReviewedByUserId { get; set; }
+
+    public User? ReviewedBy { get; set; }
+
     public ICollection<MediaFile> Files { get; set; } = [];
 
     public ICollection<Cover> Covers { get; set; } = [];

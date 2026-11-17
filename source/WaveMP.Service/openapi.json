@@ -6501,6 +6501,408 @@
         ]
       }
     },
+    "/api/v1/track-reviews": {
+      "get": {
+        "tags": [
+          "TrackReviews"
+        ],
+        "summary": "Lists the tracks of a review status (unreviewed by default) with the fields their tags lack, sorted, filtered and searched.",
+        "operationId": "ListTrackReviews",
+        "parameters": [
+          {
+            "name": "offset",
+            "in": "query",
+            "description": "Number of tracks to skip.",
+            "schema": {
+              "maximum": 2147483647,
+              "minimum": 0,
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Maximum number of tracks of the page.",
+            "schema": {
+              "maximum": 100,
+              "minimum": 1,
+              "type": "integer",
+              "format": "int32",
+              "default": 50
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "description": "Sort key; FirstSeenAt by default.",
+            "schema": {
+              "$ref": "#/components/schemas/TrackReviewSort"
+            }
+          },
+          {
+            "name": "direction",
+            "in": "query",
+            "description": "Sort direction; descending (the newest first) by default for FirstSeenAt, otherwise ascending.",
+            "schema": {
+              "$ref": "#/components/schemas/SortDirection"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "description": "Review status of the tracks; Unreviewed by default.",
+            "schema": {
+              "$ref": "#/components/schemas/TrackReviewStatus"
+            }
+          },
+          {
+            "name": "missingTags",
+            "in": "query",
+            "description": "Only tracks whose tags lack a checked field (true) or have all of them (false).",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "description": "Only tracks whose title, artist, album, folder or file name contains the text, without regard to case.",
+            "schema": {
+              "maxLength": 200,
+              "minLength": 0,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "One page of tracks.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrackReviewPage"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid query parameters (code `request.invalid`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblem"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/api/v1/track-reviews/summary": {
+      "get": {
+        "tags": [
+          "TrackReviews"
+        ],
+        "summary": "Counts the tracks per review status, for example for the badge of the review inbox.",
+        "operationId": "GetTrackReviewSummary",
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "The number of unreviewed and reviewed tracks.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrackReviewSummary"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/api/v1/track-reviews/batch": {
+      "post": {
+        "tags": [
+          "TrackReviews"
+        ],
+        "summary": "Sets the review status of several tracks at once, for example marks the selected tracks of the inbox as reviewed by the current profile. Tracks that have the status already keep it unchanged (a reviewed track keeps its time and profile); unknown tracks and duplicates are skipped.",
+        "operationId": "UpdateTrackReviews",
+        "requestBody": {
+          "description": "The tracks and their new status.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateTrackReviews"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateTrackReviews"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "The number of tracks whose status changed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdatedTrackReviews"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The tracks or the status are missing, or there are more than 500 tracks (code `request.invalid`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblem"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/api/v1/tracks/{id}/review": {
+      "get": {
+        "tags": [
+          "TrackReviews"
+        ],
+        "summary": "Returns the review status of a track.",
+        "operationId": "GetTrackReview",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Id of the track.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "The review status of the track.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrackReviewState"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The track does not exist (code `track.not_found`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "TrackReviews"
+        ],
+        "summary": "Sets the review status of a track: Reviewed marks it as reviewed by the current profile now, Unreviewed puts it back into the review inbox. A track that has the status already keeps it unchanged (a reviewed track keeps its time and profile).",
+        "operationId": "SetTrackReview",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Id of the track.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "The new status.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateTrackReview"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateTrackReview"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "The review status of the track.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrackReviewState"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The status is missing (code `request.invalid`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The track does not exist (code `track.not_found`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
     "/api/v1/tracks": {
       "get": {
         "tags": [
@@ -10962,6 +11364,18 @@
         ],
         "type": "string"
       },
+      "MetadataTag": {
+        "enum": [
+          "Title",
+          "Artist",
+          "Album",
+          "Year",
+          "TrackNumber",
+          "Genre"
+        ],
+        "type": "string",
+        "description": "A field of the tags that the review inbox checks; a track lists those its file lacks."
+      },
       "PinStatus": {
         "required": [
           "isSet",
@@ -11436,6 +11850,23 @@
           }
         },
         "description": "One page of a collection."
+      },
+      "ProfileReference": {
+        "required": [
+          "id",
+          "name"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "description": "A profile referred to by another resource, for example the profile that reviewed a track."
       },
       "RecentlyPlayedTrack": {
         "required": [
@@ -12372,6 +12803,210 @@
         },
         "description": "How the client plays the audio of a track, and the signed URL of its stream."
       },
+      "TrackReview": {
+        "required": [
+          "trackId",
+          "title",
+          "directoryPath",
+          "baseName",
+          "hasAudio",
+          "hasVideo",
+          "hasCover",
+          "firstSeenAt",
+          "missingTags",
+          "status"
+        ],
+        "type": "object",
+        "properties": {
+          "trackId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string"
+          },
+          "artist": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "Artist of the track; null if unknown.",
+                "$ref": "#/components/schemas/ArtistReference"
+              }
+            ]
+          },
+          "album": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "Album of the track; null for tracks without album.",
+                "$ref": "#/components/schemas/AlbumReference"
+              }
+            ]
+          },
+          "directoryPath": {
+            "type": "string",
+            "description": "Folder of the track relative to the media folder with / as separator; empty for the media folder itself."
+          },
+          "baseName": {
+            "type": "string",
+            "description": "File name of the track without extension, shared by all its files."
+          },
+          "hasAudio": {
+            "type": "boolean"
+          },
+          "hasVideo": {
+            "type": "boolean"
+          },
+          "hasCover": {
+            "type": "boolean",
+            "description": "Whether GetTrackCover returns a picture."
+          },
+          "firstSeenAt": {
+            "type": "string",
+            "description": "When the track was found for the first time (date added).",
+            "format": "date-time"
+          },
+          "missingTags": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MetadataTag"
+            },
+            "description": "The checked fields the tags lack: of the audio file the track plays, for tracks with a video only of the video. Empty if the tags are complete."
+          },
+          "status": {
+            "$ref": "#/components/schemas/TrackReviewStatus"
+          },
+          "reviewedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "When the track was marked as reviewed; null while unreviewed.",
+            "format": "date-time"
+          },
+          "reviewedBy": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "The profile that marked the track as reviewed; null while unreviewed or after the profile was deleted.",
+                "$ref": "#/components/schemas/ProfileReference"
+              }
+            ]
+          }
+        },
+        "description": "A track in the review inbox: what identifies it, the fields its tags lack and its review status."
+      },
+      "TrackReviewPage": {
+        "required": [
+          "items",
+          "offset",
+          "limit",
+          "total"
+        ],
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TrackReview"
+            },
+            "description": "Items of the page, at most limit."
+          },
+          "offset": {
+            "type": "integer",
+            "description": "Number of items skipped before this page.",
+            "format": "int32"
+          },
+          "limit": {
+            "type": "integer",
+            "description": "Maximum number of items of the page, as requested.",
+            "format": "int32"
+          },
+          "total": {
+            "type": "integer",
+            "description": "Number of items of the whole collection.",
+            "format": "int32"
+          }
+        },
+        "description": "One page of a collection."
+      },
+      "TrackReviewSort": {
+        "enum": [
+          "FirstSeenAt",
+          "Artist",
+          "Album",
+          "Title"
+        ],
+        "type": "string"
+      },
+      "TrackReviewState": {
+        "required": [
+          "trackId",
+          "status"
+        ],
+        "type": "object",
+        "properties": {
+          "trackId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "$ref": "#/components/schemas/TrackReviewStatus"
+          },
+          "reviewedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "When the track was marked as reviewed; null while unreviewed.",
+            "format": "date-time"
+          },
+          "reviewedBy": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "The profile that marked the track as reviewed; null while unreviewed or after the profile was deleted.",
+                "$ref": "#/components/schemas/ProfileReference"
+              }
+            ]
+          }
+        },
+        "description": "The review status of a track."
+      },
+      "TrackReviewStatus": {
+        "enum": [
+          "Unreviewed",
+          "Reviewed"
+        ],
+        "type": "string",
+        "description": "Whether an admin checked the metadata of a track. Every track starts Unreviewed, also tracks found by a scan later."
+      },
+      "TrackReviewSummary": {
+        "required": [
+          "unreviewedCount",
+          "reviewedCount"
+        ],
+        "type": "object",
+        "properties": {
+          "unreviewedCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "reviewedCount": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "description": "Number of tracks per review status, for example for the badge of the review inbox."
+      },
       "TrackSort": {
         "enum": [
           "AlbumArtist",
@@ -12817,6 +13452,20 @@
         },
         "description": "Changes the crossfade of the current profile. Missing or null values stay unchanged."
       },
+      "UpdatedTrackReviews": {
+        "required": [
+          "changedCount"
+        ],
+        "type": "object",
+        "properties": {
+          "changedCount": {
+            "type": "integer",
+            "description": "Number of tracks whose status changed; tracks that had the status already and unknown tracks do not count.",
+            "format": "int32"
+          }
+        },
+        "description": "Result of setting the review status of several tracks."
+      },
       "UpdateEqualizerSettings": {
         "type": "object",
         "properties": {
@@ -13128,6 +13777,57 @@
           }
         },
         "description": "Rates a track for the current profile."
+      },
+      "UpdateTrackReview": {
+        "required": [
+          "status"
+        ],
+        "type": "object",
+        "properties": {
+          "status": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "Reviewed marks the track as reviewed by the current profile now; Unreviewed puts it back into the review inbox.",
+                "$ref": "#/components/schemas/TrackReviewStatus"
+              }
+            ]
+          }
+        },
+        "description": "Sets the review status of a track."
+      },
+      "UpdateTrackReviews": {
+        "required": [
+          "trackIds",
+          "status"
+        ],
+        "type": "object",
+        "properties": {
+          "trackIds": {
+            "maxItems": 500,
+            "minItems": 1,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "The tracks; unknown ids and duplicates are skipped."
+          },
+          "status": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "Reviewed marks the tracks as reviewed by the current profile now; Unreviewed puts them back into the review inbox.",
+                "$ref": "#/components/schemas/TrackReviewStatus"
+              }
+            ]
+          }
+        },
+        "description": "Sets the review status of several tracks at once."
       },
       "UpdateTrackVideoOffset": {
         "required": [
@@ -13858,6 +14558,9 @@
     },
     {
       "name": "TrackHls"
+    },
+    {
+      "name": "TrackReviews"
     },
     {
       "name": "Tracks"

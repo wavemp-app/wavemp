@@ -29,6 +29,9 @@ internal sealed class TrackConfiguration : IEntityTypeConfiguration<Track>
         // One track per base name and folder, without regard to the case of the base name.
         builder.HasIndex(track => new { track.DirectoryPath, track.NormalizedBaseName }).IsUnique();
         builder.HasIndex(track => track.FirstSeenAt);
+
+        // The review inbox counts and lists the unreviewed tracks (reviewed_at IS NULL).
+        builder.HasIndex(track => track.ReviewedAt);
         builder.HasIndex(track => track.Title)
             .HasDatabaseName(TitleTrigramIndex)
             .HasMethod(LibraryColumns.TrigramIndexMethod)
@@ -42,6 +45,12 @@ internal sealed class TrackConfiguration : IEntityTypeConfiguration<Track>
         builder.HasOne(track => track.Album)
             .WithMany(album => album.Tracks)
             .HasForeignKey(track => track.AlbumId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        // A deleted profile leaves its reviews with the time but without the profile.
+        builder.HasOne(track => track.ReviewedBy)
+            .WithMany()
+            .HasForeignKey(track => track.ReviewedByUserId)
             .OnDelete(DeleteBehavior.SetNull);
     }
 }

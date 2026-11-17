@@ -940,6 +940,14 @@ namespace WaveMP.Data.Migrations
                         .HasColumnType("text")
                         .HasColumnName("normalized_base_name");
 
+                    b.Property<DateTimeOffset?>("ReviewedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("reviewed_at");
+
+                    b.Property<Guid?>("ReviewedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("reviewed_by_user_id");
+
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasMaxLength(512)
@@ -973,6 +981,12 @@ namespace WaveMP.Data.Migrations
 
                     b.HasIndex("FirstSeenAt")
                         .HasDatabaseName("ix_tracks_first_seen_at");
+
+                    b.HasIndex("ReviewedAt")
+                        .HasDatabaseName("ix_tracks_reviewed_at");
+
+                    b.HasIndex("ReviewedByUserId")
+                        .HasDatabaseName("ix_tracks_reviewed_by_user_id");
 
                     b.HasIndex("Title")
                         .HasDatabaseName("ix_tracks_title_trgm");
@@ -1435,9 +1449,17 @@ namespace WaveMP.Data.Migrations
                         .OnDelete(DeleteBehavior.SetNull)
                         .HasConstraintName("fk_tracks_artists_artist_id");
 
+                    b.HasOne("WaveMP.Data.Entities.User", "ReviewedBy")
+                        .WithMany()
+                        .HasForeignKey("ReviewedByUserId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_tracks_users_reviewed_by_user_id");
+
                     b.Navigation("Album");
 
                     b.Navigation("Artist");
+
+                    b.Navigation("ReviewedBy");
                 });
 
             modelBuilder.Entity("WaveMP.Data.Entities.TrackFileSelection", b =>

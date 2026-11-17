@@ -47,6 +47,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IFavoriteRepository, FavoriteRepository>();
         services.AddScoped<ITrackRatingRepository, TrackRatingRepository>();
         services.AddScoped<ILyricsRepository, LyricsRepository>();
+        services.AddScoped<ITrackReviewRepository, TrackReviewRepository>();
 
         return services;
     }
