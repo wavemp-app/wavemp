@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="WaveMP">
+  <defs>
+    <!-- Alle Verlaeufe in dieselbe Richtung: oben links hell nach unten rechts dunkel -->
+    <linearGradient id="tile" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#46c3ef"/>
+      <stop offset="1" stop-color="#1373c4"/>
+    </linearGradient>
+    <linearGradient id="layer" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#8fe0ff"/>
+      <stop offset="1" stop-color="#3a9be0"/>
+    </linearGradient>
+    <linearGradient id="body" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ffbe5c"/>
+      <stop offset="1" stop-color="#f06714"/>
+    </linearGradient>
+    <linearGradient id="face" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#d9e5ee"/>
+    </linearGradient>
+
+    <!-- Tiefe nach Fluent: weicher Umgebungsschatten plus gerichteter Schatten -->
+    <filter id="depth" x="-25%" y="-25%" width="150%" height="160%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#062a4f" flood-opacity="0.22"/>
+      <feDropShadow dx="0" dy="14" stdDeviation="16" flood-color="#062a4f" flood-opacity="0.28"/>
+    </filter>
+    <filter id="depthSmall" x="-25%" y="-25%" width="150%" height="160%">
+      <feDropShadow dx="0" dy="3" stdDeviation="5" flood-color="#7a2c00" flood-opacity="0.25"/>
+    </filter>
+
+    <clipPath id="tileClip">
+      <rect x="16" y="16" width="480" height="480" rx="108"/>
+    </clipPath>
+  </defs>
+
+  <!-- Kachel -->
+  <rect x="16" y="16" width="480" height="480" rx="108" fill="url(#tile)"/>
+
+  <!-- Hintere Ebene: ruhige Wasserflaeche -->
+  <g clip-path="url(#tileClip)">
+    <path d="M 16 372 C 120 346, 240 366, 340 374 C 410 380, 460 370, 496 360 L 496 496 L 16 496 Z" fill="url(#layer)" opacity="0.45"/>
+  </g>
+
+  <!-- Welle als Ebenen -->
+  <g filter="url(#depth)">
+    <!-- Grundform, Aussenseite exakter Kreis r=145 um 256/256 -->
+    <path fill="url(#body)" d="
+      M 375 339
+      A 145 145 0 1 1 392 206
+      C 398 222, 390 246, 366 252
+      C 378 226, 362 186, 326 176
+      C 276 164, 232 204, 232 254
+      C 232 306, 280 338, 330 336
+      C 350 335, 364 338, 375 339 Z"/>
+  </g>
+
+
+  <!-- weisse Innenseite als oberste Ebene -->
+  <path fill="url(#face)" filter="url(#depthSmall)" d="
+    M 366 252
+    C 378 226, 362 186, 326 176
+    C 276 164, 232 204, 232 254
+    C 232 306, 280 338, 330 336
+    C 350 335, 364 338, 375 339
+    C 346 352, 312 356, 290 352
+    C 238 342, 210 300, 212 252
+    C 214 196, 264 152, 322 158
+    C 366 164, 392 204, 366 252 Z"/>
+</svg>

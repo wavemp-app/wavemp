@@ -5,3 +5,10 @@
 *.jpg binary
 *.ico binary
 *.woff2 binary
+
+# Original logo files of the maintainer, committed byte for byte as delivered (CRLF line endings);
+# files under /assets are never changed, so they are excluded from the line ending normalization.
+/assets/logo/wavemp-logo-teal-wave-round.svg -text
+/assets/logo/wavemp-logo-fluent.svg -text
+/assets/logo/wavemp-logo-fluent-dark.svg -text
+/assets/logo/wavemp-logo-mono-white.svg -text
