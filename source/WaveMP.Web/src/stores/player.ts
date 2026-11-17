@@ -18,6 +18,8 @@ import {
     type RepeatMode,
     type TransportState,
 } from '@/components/shell/transport'
+import { getLyrics } from '@/lyrics/api'
+import type { TrackLyrics } from '@/lyrics/timing'
 import { getPlayback, getVideoPlayback, recordPlay } from '@/player/api'
 import { crossfadeDuration } from '@/player/crossfade'
 import {
@@ -184,6 +186,8 @@ export const usePlayerStore = defineStore('player', () => {
     /** The sleep timer and the seconds until a timer with a duration ends. */
     const sleepTimer = ref<SleepTimerState>(sleepTimerOff)
     const sleepRemaining = ref(0)
+    /** The lyrics of the current track; null while they load and for tracks without lyrics. */
+    const lyrics = shallowRef<TrackLyrics | null>(null)
 
     const current = computed<QueueItem | undefined>(() => currentItem(queue.value))
     const shuffle = computed(() => queue.value.shuffle)
@@ -191,8 +195,15 @@ export const usePlayerStore = defineStore('player', () => {
     /** The view mode chosen by the profile. */
     const viewMode = computed<PlayerViewMode>(() => session.playerViewMode)
     /** What the stage shows: the video only once it is ready at the right position. */
+    /** Whether the current track has lyrics (loaded). */
+    const hasLyrics = computed(
+        () =>
+            lyrics.value !== null &&
+            current.value !== undefined &&
+            lyrics.value.trackId === current.value.track.id,
+    )
     const stageView = computed<StageView>(() =>
-        stageViewOf(viewMode.value, hasVideo.value, videoState.value),
+        stageViewOf(viewMode.value, hasVideo.value, videoState.value, hasLyrics.value),
     )
     /** Whether the video of the current track is to be shown. */
     const videoWanted = computed(
@@ -733,6 +744,50 @@ export const usePlayerStore = defineStore('player', () => {
         }
     }
 
+    /**
+     * The position of the music in seconds as the audio plays it right now, between the time
+     * updates of the engine; for views that follow the music closely, such as the lyrics.
+     */
+    function livePosition(): number {
+        return clock().position
+    }
+
+    /** Increases with every request of lyrics, so late answers are ignored. */
+    let lyricsGeneration = 0
+
+    /**
+     * Loads the lyrics of a track if it is the current one; tracks without lyrics or with failed
+     * requests have none. Also called after the lyrics of a track were downloaded.
+     */
+    async function loadLyrics(trackId: string | null): Promise<void> {
+        const request = ++lyricsGeneration
+        if (lyrics.value?.trackId !== trackId) {
+            lyrics.value = null
+        }
+
+        if (!trackId) {
+            return
+        }
+
+        let loadedLyrics: TrackLyrics | null = null
+        try {
+            loadedLyrics = await getLyrics(trackId)
+        } catch {
+            loadedLyrics = null
+        }
+
+        if (request === lyricsGeneration && current.value?.track.id === trackId) {
+            lyrics.value = loadedLyrics ?? null
+        }
+    }
+
+    /** Loads the lyrics of a track again if it is the current one, e.g. after a download. */
+    function refreshLyrics(trackId: string): void {
+        if (current.value?.track.id === trackId) {
+            void loadLyrics(trackId)
+        }
+    }
+
     /** Chooses what the stage shows; the audio is never touched. */
     function selectViewMode(mode: PlayerViewMode): void {
         void session.updatePlayerViewMode(mode)
@@ -919,6 +974,12 @@ export const usePlayerStore = defineStore('player', () => {
     // The audio starts, pauses or waits for data: the video does the same at once.
     watch([playback, loading], () => follower?.sync())
 
+    // A new current track: its lyrics load in the background, for the lyrics view of the stage.
+    watch(
+        () => current.value?.track.id ?? null,
+        (trackId) => void loadLyrics(trackId),
+    )
+
     if (typeof document !== 'undefined') {
         document.addEventListener('visibilitychange', () => {
             pageVisible.value = document.visibilityState !== 'hidden'
@@ -1029,6 +1090,10 @@ export const usePlayerStore = defineStore('player', () => {
         stageView,
         videoState,
         hasVideo,
+        lyrics,
+        hasLyrics,
+        livePosition,
+        refreshLyrics,
         equalizerAvailable,
         analyser,
         sleepTimer,

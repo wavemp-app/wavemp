@@ -6,9 +6,11 @@ import BaseSegmentedControl, {
     type SegmentOption,
 } from '@/components/base/BaseSegmentedControl.vue'
 import LibraryCover from '@/components/library/LibraryCover.vue'
+import LyricsStage from './LyricsStage.vue'
 import StageVisualization from './StageVisualization.vue'
 import VideoStage from './VideoStage.vue'
 import { artistLabelKey } from '@/library/presentation'
+import type { TrackLyrics } from '@/lyrics/timing'
 import { PlayerViewModeObject, type PlayerViewMode, type Track } from '@/api/generated/models'
 import type { StageView, VideoState } from '@/player/videoSync'
 import {
@@ -18,10 +20,11 @@ import {
 } from '@/visualization/settings'
 
 /**
- * The stage of Now Playing: the cover, the video or the visualization of the current track, with
- * title, artist and album, or a hint while nothing plays. The three views lie on top of each other
- * and fade into each other; the buttons choose the view, the music goes on. The video view stays in
- * the page as long as the track has a video, so switching back to it is quick.
+ * The stage of Now Playing: the cover, the video, the visualization or the lyrics of the current
+ * track, with title, artist and album, or a hint while nothing plays. The views lie on top of each
+ * other and fade into each other; the buttons choose the view, the music goes on. The video view
+ * stays in the page as long as the track has a video, the lyrics view as long as it has lyrics, so
+ * switching back to them is quick.
  */
 const props = withDefaults(
     defineProps<{
@@ -36,6 +39,16 @@ const props = withDefaults(
         audio?: AnalyserNode | null
         /** The visualization settings of the profile. */
         visualization?: VisualizationSettings
+        /** The lyrics of the track; null for tracks without lyrics. */
+        lyrics?: TrackLyrics | null
+        /** Whether the music plays. */
+        playing?: boolean
+        /** The position of the music in seconds. */
+        position?: number
+        /** Duration of the track in seconds. */
+        duration?: number
+        /** The exact position of the music right now, in seconds. */
+        clock?: () => number
     }>(),
     {
         track: undefined,
@@ -44,6 +57,11 @@ const props = withDefaults(
         videoState: 'idle',
         audio: null,
         visualization: () => defaultVisualizationSettings,
+        lyrics: null,
+        playing: false,
+        position: 0,
+        duration: 0,
+        clock: undefined,
     },
 )
 
@@ -55,11 +73,19 @@ const emit = defineEmits<{
     detachVideo: [element: HTMLVideoElement]
     /** A change of the visualization settings (preset, automatic change). */
     updateVisualization: [change: VisualizationSettingsChange]
+    /** A line of the lyrics was chosen: the music goes to its start, in seconds. */
+    seek: [seconds: number]
 }>()
 
 const { t } = useI18n()
 
 const hasVideo = computed(() => props.track?.hasVideo === true)
+const hasLyrics = computed(
+    () =>
+        props.lyrics !== null &&
+        props.track?.id !== undefined &&
+        props.lyrics.trackId === props.track.id,
+)
 
 /** data-state of the video view: shown, still loading or positioning, or failed. */
 const videoViewState = computed(() => {
@@ -81,13 +107,18 @@ const videoFailed = computed(
 
 /**
  * The pressed button: the chosen mode, but the cover for a track without a video or with a failed
- * one. While the video loads, its button is pressed and the cover stays until the video is ready.
+ * one and for a track without lyrics. While the video loads, its button is pressed and the cover
+ * stays until the video is ready.
  */
-const selected = computed<PlayerViewMode>(() =>
-    props.mode === PlayerViewModeObject.Video && (!hasVideo.value || videoFailed.value)
+const selected = computed<PlayerViewMode>(() => {
+    if (props.mode === PlayerViewModeObject.Video && (!hasVideo.value || videoFailed.value)) {
+        return PlayerViewModeObject.Cover
+    }
+
+    return props.mode === PlayerViewModeObject.Lyrics && !hasLyrics.value
         ? PlayerViewModeObject.Cover
-        : props.mode,
-)
+        : props.mode
+})
 
 const viewOptions = computed<SegmentOption[]>(() => [
     {
@@ -108,6 +139,13 @@ const viewOptions = computed<SegmentOption[]>(() => [
         item: 'visualization',
         icon: 'view-visualization',
         label: t('nowPlaying.viewVisualization'),
+    },
+    {
+        value: PlayerViewModeObject.Lyrics,
+        item: 'lyrics',
+        icon: 'view-lyrics',
+        label: t('nowPlaying.viewLyrics'),
+        disabled: !hasLyrics.value,
     },
 ])
 
@@ -166,6 +204,23 @@ const subtitle = computed(() => {
                     :audio="audio"
                     :settings="visualization"
                     @update="emit('updateVisualization', $event)"
+                />
+            </div>
+            <div
+                v-if="hasLyrics"
+                data-part="stage-view"
+                data-kind="lyrics"
+                :data-state="view === 'lyrics' ? 'active' : undefined"
+                :aria-hidden="view === 'lyrics' ? undefined : 'true'"
+            >
+                <LyricsStage
+                    :lyrics="lyrics"
+                    :active="view === 'lyrics'"
+                    :playing="playing"
+                    :position="position"
+                    :duration="duration"
+                    :clock="clock"
+                    @seek="emit('seek', $event)"
                 />
             </div>
         </div>

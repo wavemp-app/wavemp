@@ -746,6 +746,33 @@ export function createLibrarySettingsFromDiscriminatorValue(parseNode: ParseNode
 /**
  * Creates a new instance of the appropriate class based on discriminator value
  * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {Lyrics}
+ */
+// @ts-ignore
+export function createLyricsFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoLyrics;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {LyricsLine}
+ */
+// @ts-ignore
+export function createLyricsLineFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoLyricsLine;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {LyricsWord}
+ */
+// @ts-ignore
+export function createLyricsWordFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoLyricsWord;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
  * @returns {MediaFile}
  */
 // @ts-ignore
@@ -1951,10 +1978,51 @@ export function deserializeIntoLibrarySettings(librarySettings: Partial<LibraryS
         "albumCoverNames": n => { librarySettings.albumCoverNames = n.getCollectionOfPrimitiveValues<string>("string"); },
         "audioExtensions": n => { librarySettings.audioExtensions = n.getCollectionOfPrimitiveValues<string>("string"); },
         "coverPriority": n => { librarySettings.coverPriority = n.getEnumValue<CoverPriority>(CoverPriorityObject); },
+        "downloadLyrics": n => { librarySettings.downloadLyrics = n.getBooleanValue(); },
         "fileWatcherEnabled": n => { librarySettings.fileWatcherEnabled = n.getBooleanValue(); },
         "imageExtensions": n => { librarySettings.imageExtensions = n.getCollectionOfPrimitiveValues<string>("string"); },
         "scanIntervalMinutes": n => { librarySettings.scanIntervalMinutes = n.getNumberValue(); },
         "videoExtensions": n => { librarySettings.videoExtensions = n.getCollectionOfPrimitiveValues<string>("string"); },
+    }
+}
+/**
+ * The deserialization information for the current model
+ * @param Lyrics The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoLyrics(lyrics: Partial<Lyrics> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "lines": n => { lyrics.lines = n.getCollectionOfObjectValues<LyricsLine>(createLyricsLineFromDiscriminatorValue); },
+        "source": n => { lyrics.source = n.getEnumValue<LyricsSource>(LyricsSourceObject); },
+        "type": n => { lyrics.type = n.getEnumValue<LyricsType>(LyricsTypeObject); },
+    }
+}
+/**
+ * The deserialization information for the current model
+ * @param LyricsLine The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoLyricsLine(lyricsLine: Partial<LyricsLine> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "endMilliseconds": n => { lyricsLine.endMilliseconds = n.getNumberValue(); },
+        "startMilliseconds": n => { lyricsLine.startMilliseconds = n.getNumberValue(); },
+        "text": n => { lyricsLine.text = n.getStringValue(); },
+        "words": n => { lyricsLine.words = n.getCollectionOfObjectValues<LyricsWord>(createLyricsWordFromDiscriminatorValue); },
+    }
+}
+/**
+ * The deserialization information for the current model
+ * @param LyricsWord The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoLyricsWord(lyricsWord: Partial<LyricsWord> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "endMilliseconds": n => { lyricsWord.endMilliseconds = n.getNumberValue(); },
+        "startMilliseconds": n => { lyricsWord.startMilliseconds = n.getNumberValue(); },
+        "text": n => { lyricsWord.text = n.getStringValue(); },
     }
 }
 /**
@@ -2647,6 +2715,7 @@ export function deserializeIntoUpdateLibrarySettings(updateLibrarySettings: Part
         "albumCoverNames": n => { updateLibrarySettings.albumCoverNames = n.getCollectionOfPrimitiveValues<string>("string"); },
         "audioExtensions": n => { updateLibrarySettings.audioExtensions = n.getCollectionOfPrimitiveValues<string>("string"); },
         "coverPriority": n => { updateLibrarySettings.coverPriority = n.getEnumValue<CoverPriority>(CoverPriorityObject); },
+        "downloadLyrics": n => { updateLibrarySettings.downloadLyrics = n.getBooleanValue(); },
         "fileWatcherEnabled": n => { updateLibrarySettings.fileWatcherEnabled = n.getBooleanValue(); },
         "imageExtensions": n => { updateLibrarySettings.imageExtensions = n.getCollectionOfPrimitiveValues<string>("string"); },
         "scanIntervalMinutes": n => { updateLibrarySettings.scanIntervalMinutes = n.getNumberValue(); },
@@ -3332,6 +3401,10 @@ export interface LibrarySettings extends AdditionalDataHolder, Parsable {
      */
     coverPriority?: CoverPriority | null;
     /**
+     * Downloads the lyrics of tracks without lyrics from the online lyrics database LRCLIB (lrclib.net): new tracks after scans, all tracks when it is switched on, and single tracks on request (DownloadTrackLyrics). Off by default, because titles, artists and albums of the library are sent to the service.
+     */
+    downloadLyrics?: boolean | null;
+    /**
      * Watches the media folder for changes and scans changed folders shortly after.
      */
     fileWatcherEnabled?: boolean | null;
@@ -3347,6 +3420,63 @@ export interface LibrarySettings extends AdditionalDataHolder, Parsable {
      * Extensions of video files, lower case without dot.
      */
     videoExtensions?: string[] | null;
+}
+/**
+ * The lyrics of a track.
+ */
+export interface Lyrics extends AdditionalDataHolder, Parsable {
+    /**
+     * The lines; synchronized lines are sorted by the time they start.
+     */
+    lines?: LyricsLine[] | null;
+    /**
+     * Where the lyrics come from.
+     */
+    source?: LyricsSource | null;
+    /**
+     * How the lyrics follow the music.
+     */
+    type?: LyricsType | null;
+}
+/**
+ * A line of lyrics. An empty text marks a part without singing.
+ */
+export interface LyricsLine extends AdditionalDataHolder, Parsable {
+    /**
+     * When the next line starts, in milliseconds; null for the last line and for static lyrics.
+     */
+    endMilliseconds?: number | null;
+    /**
+     * When the line starts, in milliseconds from the start of the track; null for static lyrics.
+     */
+    startMilliseconds?: number | null;
+    /**
+     * The text property
+     */
+    text?: string | null;
+    /**
+     * The words with their times, for lines with word timestamps; otherwise empty.
+     */
+    words?: LyricsWord[] | null;
+}
+export type LyricsSource = (typeof LyricsSourceObject)[keyof typeof LyricsSourceObject];
+export type LyricsType = (typeof LyricsTypeObject)[keyof typeof LyricsTypeObject];
+/**
+ * A word or syllable of a word-synchronized line. Its text keeps the spaces around it, so the words of a line put together give the text of the line.
+ */
+export interface LyricsWord extends AdditionalDataHolder, Parsable {
+    /**
+     * When the next word or line starts, in milliseconds; null for the last word without an end.
+     */
+    endMilliseconds?: number | null;
+    /**
+     * When the word is sung, in milliseconds from the start of the track.
+     */
+    startMilliseconds?: number | null;
+    /**
+     * The text property
+     */
+    text?: string | null;
 }
 /**
  * A file of a track as found by the scan, with its technical details.
@@ -3421,7 +3551,7 @@ export interface MediaFile extends AdditionalDataHolder, Parsable {
      */
     isWritable?: boolean | null;
     /**
-     * Kind of a media file.
+     * Kind of a media file; Lyrics is a lyrics file (.lrc) with the base name of the track.
      */
     kind?: MediaFileKind | null;
     /**
@@ -4591,11 +4721,55 @@ export function serializeLibrarySettings(writer: SerializationWriter, librarySet
     writer.writeCollectionOfPrimitiveValues<string>("albumCoverNames", librarySettings.albumCoverNames);
     writer.writeCollectionOfPrimitiveValues<string>("audioExtensions", librarySettings.audioExtensions);
     writer.writeEnumValue<CoverPriority>("coverPriority", librarySettings.coverPriority);
+    writer.writeBooleanValue("downloadLyrics", librarySettings.downloadLyrics);
     writer.writeBooleanValue("fileWatcherEnabled", librarySettings.fileWatcherEnabled);
     writer.writeCollectionOfPrimitiveValues<string>("imageExtensions", librarySettings.imageExtensions);
     writer.writeNumberValue("scanIntervalMinutes", librarySettings.scanIntervalMinutes);
     writer.writeCollectionOfPrimitiveValues<string>("videoExtensions", librarySettings.videoExtensions);
     writer.writeAdditionalData(librarySettings.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param Lyrics The instance to serialize from.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeLyrics(writer: SerializationWriter, lyrics: Partial<Lyrics> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!lyrics || isSerializingDerivedType) { return; }
+    writer.writeCollectionOfObjectValues<LyricsLine>("lines", lyrics.lines, serializeLyricsLine);
+    writer.writeEnumValue<LyricsSource>("source", lyrics.source);
+    writer.writeEnumValue<LyricsType>("type", lyrics.type);
+    writer.writeAdditionalData(lyrics.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param LyricsLine The instance to serialize from.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeLyricsLine(writer: SerializationWriter, lyricsLine: Partial<LyricsLine> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!lyricsLine || isSerializingDerivedType) { return; }
+    writer.writeNumberValue("endMilliseconds", lyricsLine.endMilliseconds);
+    writer.writeNumberValue("startMilliseconds", lyricsLine.startMilliseconds);
+    writer.writeStringValue("text", lyricsLine.text);
+    writer.writeCollectionOfObjectValues<LyricsWord>("words", lyricsLine.words, serializeLyricsWord);
+    writer.writeAdditionalData(lyricsLine.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param LyricsWord The instance to serialize from.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeLyricsWord(writer: SerializationWriter, lyricsWord: Partial<LyricsWord> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!lyricsWord || isSerializingDerivedType) { return; }
+    writer.writeNumberValue("endMilliseconds", lyricsWord.endMilliseconds);
+    writer.writeNumberValue("startMilliseconds", lyricsWord.startMilliseconds);
+    writer.writeStringValue("text", lyricsWord.text);
+    writer.writeAdditionalData(lyricsWord.additionalData);
 }
 /**
  * Serializes information the current object
@@ -5331,6 +5505,7 @@ export function serializeUpdateLibrarySettings(writer: SerializationWriter, upda
     writer.writeCollectionOfPrimitiveValues<string>("albumCoverNames", updateLibrarySettings.albumCoverNames);
     writer.writeCollectionOfPrimitiveValues<string>("audioExtensions", updateLibrarySettings.audioExtensions);
     writer.writeEnumValue<CoverPriority>("coverPriority", updateLibrarySettings.coverPriority);
+    writer.writeBooleanValue("downloadLyrics", updateLibrarySettings.downloadLyrics);
     writer.writeBooleanValue("fileWatcherEnabled", updateLibrarySettings.fileWatcherEnabled);
     writer.writeCollectionOfPrimitiveValues<string>("imageExtensions", updateLibrarySettings.imageExtensions);
     writer.writeNumberValue("scanIntervalMinutes", updateLibrarySettings.scanIntervalMinutes);
@@ -6222,13 +6397,17 @@ export interface UpdateLibrarySettings extends AdditionalDataHolder, Parsable {
      */
     albumCoverNames?: string[] | null;
     /**
-     * Extensions of audio files (1 to 10 letters or digits; a leading dot is removed); applies to the next scan.
+     * Extensions of audio files (1 to 10 letters or digits; a leading dot is removed); applies to the next scan. The extension lrc belongs to lyrics files and is not allowed in any list.
      */
     audioExtensions?: string[] | null;
     /**
      * The coverPriority property
      */
     coverPriority?: CoverPriority | null;
+    /**
+     * Switches the download of lyrics from LRCLIB on or off; switching it on starts the job lyrics-download.
+     */
+    downloadLyrics?: boolean | null;
     /**
      * Switches the file watcher on or off at once.
      */
@@ -6850,6 +7029,8 @@ export const JobErrorCodeObject = {
     BackupFolder_unwritable: "backup.folder_unwritable",
     BackupPg_dump_unavailable: "backup.pg_dump_unavailable",
     BackupFailed: "backup.failed",
+    LyricsDownload_disabled: "lyrics.download_disabled",
+    LyricsService_unavailable: "lyrics.service_unavailable",
 } as const;
 /**
  * Id of a background job.
@@ -6858,6 +7039,7 @@ export const JobIdObject = {
     LibraryScan: "library-scan",
     CoverCache: "cover-cache",
     DatabaseBackup: "database-backup",
+    LyricsDownload: "lyrics-download",
 } as const;
 /**
  * State of a job run.
@@ -6887,6 +7069,7 @@ export const JobTriggerObject = {
     FileWatcher: "FileWatcher",
     LibraryScan: "LibraryScan",
     CoverRule: "CoverRule",
+    Settings: "Settings",
 } as const;
 /**
  * Language of the user interface.
@@ -6896,12 +7079,29 @@ export const LanguageObject = {
     De: "de",
 } as const;
 /**
- * Kind of a media file.
+ * Where the lyrics come from.
+ */
+export const LyricsSourceObject = {
+    File: "File",
+    Download: "Download",
+    Tags: "Tags",
+} as const;
+/**
+ * How the lyrics follow the music.
+ */
+export const LyricsTypeObject = {
+    LineSynchronized: "LineSynchronized",
+    WordSynchronized: "WordSynchronized",
+    Static: "Static",
+} as const;
+/**
+ * Kind of a media file; Lyrics is a lyrics file (.lrc) with the base name of the track.
  */
 export const MediaFileKindObject = {
     Audio: "Audio",
     Video: "Video",
     Image: "Image",
+    Lyrics: "Lyrics",
 } as const;
 export const MediaFileSortObject = {
     Kind: "Kind",
@@ -6922,6 +7122,7 @@ export const PlayerViewModeObject = {
     Cover: "Cover",
     Video: "Video",
     Visualization: "Visualization",
+    Lyrics: "Lyrics",
 } as const;
 /**
  * Where the cover of a playlist comes from.
@@ -6993,6 +7194,13 @@ export const ProblemCodeObject = {
     AvatarUnsupported_format: "avatar.unsupported_format",
     AvatarToo_large: "avatar.too_large",
     AvatarUnreadable: "avatar.unreadable",
+    LyricsNot_found: "lyrics.not_found",
+    LyricsDownload_disabled: "lyrics.download_disabled",
+    LyricsFile_exists: "lyrics.file_exists",
+    LyricsDownload_not_found: "lyrics.download_not_found",
+    LyricsInstrumental: "lyrics.instrumental",
+    LyricsService_unavailable: "lyrics.service_unavailable",
+    LyricsRate_limited: "lyrics.rate_limited",
 } as const;
 /**
  * Whether the players even out the volume with the ReplayGain tags; Off by default.

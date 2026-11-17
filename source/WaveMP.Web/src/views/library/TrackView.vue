@@ -14,6 +14,7 @@ import DetailHeader from '@/components/library/DetailHeader.vue'
 import LibraryCover from '@/components/library/LibraryCover.vue'
 import MetaItem from '@/components/library/MetaItem.vue'
 import TrackFileList from '@/components/library/TrackFileList.vue'
+import TrackLyricsPanel from '@/components/library/TrackLyricsPanel.vue'
 import TrackMetadataDialog from '@/components/library/TrackMetadataDialog.vue'
 import TrackVideoOffsetForm from '@/components/library/TrackVideoOffsetForm.vue'
 import { useDetailTitle } from '@/composables/useDetailTitle'
@@ -26,8 +27,8 @@ import { useSessionStore } from '@/stores/session'
 /**
  * The details of a track: its cover, artist, album, numbers, year, genre, length and media, its
  * rating and the heart that marks it as favorite. Admins also see all its files, edit its
- * metadata, choose its cover rule and set the offset of its video; the query edit=metadata opens
- * the editor at once (context menu of a track).
+ * metadata, choose its cover rule, download its lyrics and set the offset of its video; the query
+ * edit=metadata opens the editor at once (context menu of a track).
  */
 const props = defineProps<{
     id: string
@@ -42,6 +43,7 @@ const player = usePlayerStore()
 const filesTitleId = useId()
 const videoSyncTitleId = useId()
 const coverRuleTitleId = useId()
+const lyricsTitleId = useId()
 
 const track = ref<Track | null>(null)
 const status = ref<'loading' | 'ready' | 'notFound' | 'error'>('loading')
@@ -78,6 +80,12 @@ async function reload(): Promise<void> {
     if (status.value === 'ready' && session.isAdmin) {
         await loadFiles()
     }
+}
+
+/** New lyrics of the track: its files show the new lyrics file, the player shows the lyrics. */
+function onLyricsDownloaded(): void {
+    void loadFiles()
+    player.refreshLyrics(track.value?.id ?? props.id)
 }
 
 async function loadFiles(): Promise<void> {
@@ -267,6 +275,15 @@ useDetailTitle(() => (status.value === 'ready' ? track.value?.title : null))
                     :id="track.id ?? id"
                     :available="track.hasCover ?? false"
                 />
+            </section>
+            <section
+                v-if="session.isAdmin"
+                data-part="section"
+                data-item="lyrics"
+                :aria-labelledby="lyricsTitleId"
+            >
+                <h2 :id="lyricsTitleId" data-part="section-title">{{ t('trackLyrics.title') }}</h2>
+                <TrackLyricsPanel :track-id="track.id ?? id" @downloaded="onLyricsDownloaded" />
             </section>
             <section
                 v-if="session.isAdmin && track.hasVideo"

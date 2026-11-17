@@ -3,6 +3,7 @@ import { flushPromises, mount } from '@vue/test-utils'
 import { createPinia } from 'pinia'
 import type { PlayerViewMode, Track } from '@/api/generated/models'
 import { createWaveMpI18n } from '@/i18n'
+import type { TrackLyrics } from '@/lyrics/timing'
 import type { StageView, VideoState } from '@/player/videoSync'
 import { visualizationDependencies } from '@/visualization/modules'
 import { FakeClock, FakeModule, fakeAnalyser } from '@/visualization/__tests__/fakes'
@@ -27,6 +28,7 @@ function mountStage(props: {
     view?: StageView
     videoState?: VideoState
     audio?: AnalyserNode | null
+    lyrics?: TrackLyrics | null
 }) {
     return mount(NowPlayingStage, {
         props,
@@ -180,6 +182,53 @@ describe('NowPlayingStage', () => {
 
         expect(wrapper.get('[data-part="visualization"]').attributes('data-state')).toBe('idle')
         expect(module.loads).toBe(0)
+        wrapper.unmount()
+    })
+
+    it('offers the lyrics only for a song with lyrics', () => {
+        const wrapper = mountStage({ track: track(false), mode: 'Lyrics', view: 'cover' })
+
+        expect(segment(wrapper, 'lyrics').attributes('disabled')).toBeDefined()
+        expect(segment(wrapper, 'lyrics').attributes('aria-checked')).toBe('false')
+        expect(segment(wrapper, 'cover').attributes('aria-checked')).toBe('true')
+        expect(wrapper.find('[data-kind="lyrics"]').exists()).toBe(false)
+        wrapper.unmount()
+    })
+
+    it('shows the lyrics and seeks to a chosen line', async () => {
+        const lyrics: TrackLyrics = {
+            trackId: 'a',
+            type: 'LineSynchronized',
+            source: 'File',
+            lines: [
+                { start: 1, end: 3, text: 'One', words: [] },
+                { start: 3, end: null, text: 'Two', words: [] },
+            ],
+        }
+        const wrapper = mountStage({ track: track(false), mode: 'Lyrics', view: 'lyrics', lyrics })
+
+        expect(segment(wrapper, 'lyrics').attributes('disabled')).toBeUndefined()
+        expect(segment(wrapper, 'lyrics').attributes('aria-checked')).toBe('true')
+        expect(segment(wrapper, 'lyrics').text()).toBe('Lyrics')
+        expect(wrapper.get('[data-part="stage"]').attributes('data-state')).toBe('lyrics')
+        expect(viewState(wrapper, 'lyrics')).toBe('active')
+        await wrapper.findAll('[data-part="lyrics-line-button"]')[1]!.trigger('click')
+
+        expect(wrapper.emitted('seek')).toEqual([[3]])
+        wrapper.unmount()
+    })
+
+    it('ignores lyrics of another song', () => {
+        const lyrics: TrackLyrics = {
+            trackId: 'other',
+            type: 'Static',
+            source: 'Tags',
+            lines: [{ start: null, end: null, text: 'One', words: [] }],
+        }
+        const wrapper = mountStage({ track: track(false), mode: 'Lyrics', view: 'cover', lyrics })
+
+        expect(segment(wrapper, 'lyrics').attributes('disabled')).toBeDefined()
+        expect(wrapper.find('[data-kind="lyrics"]').exists()).toBe(false)
         wrapper.unmount()
     })
 

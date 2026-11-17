@@ -25,8 +25,9 @@ import { useLibrarySettingsStore } from '@/stores/librarySettings'
 type Field = 'interval' | 'audio' | 'video' | 'images' | 'coverNames' | 'coverPriority'
 
 /**
- * Settings of the library: scan interval, file watcher, extension lists, album cover names and the
- * global cover rule. A changed cover rule loads the covers of albums and songs again.
+ * Settings of the library: scan interval, file watcher, extension lists, album cover names, the
+ * global cover rule and the download of lyrics (off by default, because it sends the titles of the
+ * library to an online service). A changed cover rule loads the covers of albums and songs again.
  */
 const { t } = useI18n()
 const format = useFormat()
@@ -40,6 +41,7 @@ const video = ref('')
 const images = ref('')
 const coverNames = ref('')
 const coverPriority = ref<string>('AlbumFirst')
+const downloadLyrics = ref(false)
 const saving = ref(false)
 const saved = ref(false)
 const failed = ref(false)
@@ -82,6 +84,7 @@ function show(settings: LibrarySettings | null): void {
     images.value = formatList(settings.imageExtensions)
     coverNames.value = formatList(settings.albumCoverNames)
     coverPriority.value = coverPriorityOf(settings.coverPriority)
+    downloadLyrics.value = settings.downloadLyrics ?? false
 }
 
 const coverPriorityOptions = computed<SegmentOption[]>(() =>
@@ -126,6 +129,7 @@ async function save(): Promise<void> {
             imageExtensions: parseList(images.value),
             albumCoverNames: parseList(coverNames.value),
             coverPriority: coverPriorityOf(coverPriority.value as CoverPriority),
+            downloadLyrics: downloadLyrics.value,
         })
         if (result && result.coverPriority !== previousPriority) {
             // Albums and songs without a rule of their own may show another cover now.
@@ -225,6 +229,13 @@ onMounted(async () => {
             :options="coverPriorityOptions"
             :hint="t('adminLibrary.coverPriorityHint')"
             :error="errors.coverPriority"
+            :disabled="saving"
+        />
+        <BaseCheckbox
+            v-model="downloadLyrics"
+            data-field="download-lyrics"
+            :label="t('adminLibrary.downloadLyrics')"
+            :hint="t('adminLibrary.downloadLyricsHint')"
             :disabled="saving"
         />
         <BaseAlert v-if="saved" tone="success" :message="t('adminLibrary.saved')" />

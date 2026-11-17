@@ -270,7 +270,7 @@ describe('session store', () => {
         await session.refresh()
         expect(session.playerViewMode).toBe('Visualization')
 
-        api.getSettings.mockResolvedValue({ language: 'en', playerViewMode: 'Lyrics' })
+        api.getSettings.mockResolvedValue({ language: 'en', playerViewMode: 'Karaoke' })
         await session.refresh()
         expect(session.playerViewMode).toBe('Visualization')
 

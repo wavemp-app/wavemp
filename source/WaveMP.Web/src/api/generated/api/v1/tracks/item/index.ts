@@ -14,6 +14,8 @@ import { FileSelectionRequestBuilderRequestsMetadata, type FileSelectionRequestB
 // @ts-ignore
 import { HlsRequestBuilderNavigationMetadata, type HlsRequestBuilder } from './hls/index.js';
 // @ts-ignore
+import { LyricsRequestBuilderNavigationMetadata, LyricsRequestBuilderRequestsMetadata, type LyricsRequestBuilder } from './lyrics/index.js';
+// @ts-ignore
 import { MetadataRequestBuilderRequestsMetadata, type MetadataRequestBuilder } from './metadata/index.js';
 // @ts-ignore
 import { PlaybackRequestBuilderRequestsMetadata, type PlaybackRequestBuilder } from './playback/index.js';
@@ -50,6 +52,10 @@ export interface TracksItemRequestBuilder extends BaseRequestBuilder<TracksItemR
      * The hls property
      */
     get hls(): HlsRequestBuilder;
+    /**
+     * The lyrics property
+     */
+    get lyrics(): LyricsRequestBuilder;
     /**
      * The metadata property
      */
@@ -108,6 +114,10 @@ export const TracksItemRequestBuilderNavigationMetadata: Record<Exclude<keyof Tr
     },
     hls: {
         navigationMetadata: HlsRequestBuilderNavigationMetadata,
+    },
+    lyrics: {
+        requestsMetadata: LyricsRequestBuilderRequestsMetadata,
+        navigationMetadata: LyricsRequestBuilderNavigationMetadata,
     },
     metadata: {
         requestsMetadata: MetadataRequestBuilderRequestsMetadata,

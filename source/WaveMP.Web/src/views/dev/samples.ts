@@ -4,6 +4,7 @@
 
 import type { MediaFile, Track, TrackFileSelection, TrackFileSummary } from '@/api/generated/models'
 import type { Tile } from '@/components/library/TileList.vue'
+import type { LyricsLineTiming, TrackLyrics } from '@/lyrics/timing'
 
 type Translate = (key: string, values?: Record<string, unknown>) => string
 
@@ -220,6 +221,35 @@ export function sampleFileSummaries(t: Translate): TrackFileSummary[] {
         },
     ]
 }
+
+/**
+ * Word-synchronized lyrics of four seconds per line with a part without singing after the second
+ * line; at sampleLyricsPosition the third line is sung, in its second word.
+ */
+export function sampleLyrics(t: Translate, trackId: string): TrackLyrics {
+    const texts = [1, 2, null, 3, 4, 5].map((number) =>
+        number === null ? '' : t('placeholders.lyricsLine', { number }),
+    )
+    const lines: LyricsLineTiming[] = texts.map((text, index) => {
+        const start = index * 4
+        const parts = text === '' ? [] : text.split(' ')
+        const share = 4 / Math.max(1, parts.length)
+        return {
+            start,
+            end: index < texts.length - 1 ? start + 4 : null,
+            text,
+            words: parts.map((part, wordIndex) => ({
+                start: start + wordIndex * share,
+                end: wordIndex < parts.length - 1 ? start + (wordIndex + 1) * share : null,
+                text: wordIndex < parts.length - 1 ? `${part} ` : part,
+            })),
+        }
+    })
+    return { trackId, type: 'WordSynchronized', source: 'File', lines }
+}
+
+/** Position of the music in the lyrics sample, in seconds. */
+export const sampleLyricsPosition = 12.9
 
 /** The selection of the sample files: the mp3 selected, the video automatic, a cover missing. */
 export function sampleFileSelection(): TrackFileSelection {

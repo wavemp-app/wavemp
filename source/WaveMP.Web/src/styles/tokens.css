@@ -184,6 +184,8 @@
         --wmp-icon-view-video: url('/icons/phosphor/regular/film-strip.svg');
         --wmp-icon-view-visualization: url('/icons/phosphor/regular/waveform.svg');
         --wmp-icon-view-cover: url('/icons/phosphor/regular/image.svg');
+        --wmp-icon-view-lyrics: url('/icons/phosphor/regular/subtitles.svg');
+        --wmp-icon-download-lyrics: url('/icons/phosphor/regular/cloud-arrow-down.svg');
         --wmp-icon-detail-back: url('/icons/phosphor/regular/arrow-left.svg');
         --wmp-icon-go-to-album: url('/icons/phosphor/regular/vinyl-record.svg');
         --wmp-icon-go-to-artist: url('/icons/phosphor/regular/microphone-stage.svg');
@@ -252,6 +254,10 @@
         --wmp-cover-size-l: 12rem;
         --wmp-stage-transition-duration: 0.6s;
         --wmp-stage-view-background: #000000;
+        --wmp-lyrics-color: #ffffff;
+        --wmp-lyrics-muted-color: rgb(255 255 255 / 0.45);
+        --wmp-lyrics-active-scale: 1.12;
+        --wmp-lyrics-transition-duration: 0.35s;
         --wmp-tile-width: 9rem;
         --wmp-list-row-height: 2rem;
         --wmp-list-columns: 3rem minmax(0, 2fr) 4.5rem minmax(0, 1.5fr) 6.5rem 2rem;

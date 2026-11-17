@@ -6,7 +6,7 @@
 import { PlayerViewModeObject, type PlayerViewMode } from '@/api/generated/models'
 
 /** What the stage shows. */
-export type StageView = 'cover' | 'video' | 'visualization'
+export type StageView = 'cover' | 'video' | 'visualization' | 'lyrics'
 
 /** State of the video of the current track: not loaded, loading or positioning, ready, failed. */
 export type VideoState = 'idle' | 'loading' | 'ready' | 'failed'
@@ -95,11 +95,20 @@ export function syncAction(input: SyncInput): SyncAction {
 
 /**
  * The view the stage shows for the chosen mode: the video only when the track has one and it is
- * ready at the right position, otherwise the cover.
+ * ready at the right position, the lyrics only when the track has lyrics, otherwise the cover.
  */
-export function stageViewOf(mode: PlayerViewMode, hasVideo: boolean, video: VideoState): StageView {
+export function stageViewOf(
+    mode: PlayerViewMode,
+    hasVideo: boolean,
+    video: VideoState,
+    hasLyrics = false,
+): StageView {
     if (mode === PlayerViewModeObject.Visualization) {
         return 'visualization'
+    }
+
+    if (mode === PlayerViewModeObject.Lyrics) {
+        return hasLyrics ? 'lyrics' : 'cover'
     }
 
     return mode === PlayerViewModeObject.Video && hasVideo && video === 'ready' ? 'video' : 'cover'

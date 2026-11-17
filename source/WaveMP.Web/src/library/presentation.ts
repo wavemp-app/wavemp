@@ -50,9 +50,10 @@ const fileKinds: Record<string, string> = {
     Audio: 'audio',
     Video: 'video',
     Image: 'image',
+    Lyrics: 'lyrics',
 }
 
-/** data-state token of the kind of a file: audio, video or image. */
+/** data-state token of the kind of a file: audio, video, image or lyrics. */
 export function fileKindToken(kind: string | null | undefined): string {
     return fileKinds[kind ?? ''] ?? 'audio'
 }

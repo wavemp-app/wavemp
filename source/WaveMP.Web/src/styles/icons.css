@@ -375,6 +375,14 @@
         --_icon: var(--wmp-icon-view-cover);
     }
 
+    [data-icon='view-lyrics'] {
+        --_icon: var(--wmp-icon-view-lyrics);
+    }
+
+    [data-icon='download-lyrics'] {
+        --_icon: var(--wmp-icon-download-lyrics);
+    }
+
     [data-icon='detail-back'] {
         --_icon: var(--wmp-icon-detail-back);
     }

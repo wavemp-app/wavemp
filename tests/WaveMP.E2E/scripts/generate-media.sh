@@ -10,6 +10,8 @@
 #   E2E Artist/Video Only.mp4                          music video without audio file
 #   Loose Artist - Loose Song.mp3 + .webm              audio without tags in the root, with a
 #                                                      music video browsers play as it is (VP9, Opus)
+#   Loose Artist - Loose Song.lrc                      its lyrics with a time per word (enhanced
+#                                                      LRC) and a part without singing
 # All songs last 2 seconds, except Loose Song: it lasts 20 seconds, so the tests can switch the
 # view of Now Playing while it plays.
 # The files are made writable for everyone: the metadata editor test writes tags, and the container
@@ -61,6 +63,14 @@ audio 660 20 "$target/Loose Artist - Loose Song.mp3" -c:a libmp3lame -b:a 128k
 ff -f lavfi -i "testsrc=size=320x240:rate=10:duration=20" -f lavfi -i "sine=frequency=660:duration=20" \
     -c:v libvpx-vp9 -b:v 200k -deadline realtime -cpu-used 8 -pix_fmt yuv420p \
     -c:a libopus -b:a 64k -shortest "$target/Loose Artist - Loose Song.webm"
+printf '%s\n' \
+    '[ti:Loose Song]' \
+    '[00:00.50]<00:00.50>Loose <00:01.50>first <00:02.50>line<00:04.00>' \
+    '[00:05.00]<00:05.00>Loose <00:06.00>second <00:07.00>line<00:09.00>' \
+    '[00:10.00]' \
+    '[00:13.00]<00:13.00>Loose <00:14.00>last <00:15.00>line' \
+    >"$target/Loose Artist - Loose Song.lrc"
 
-chmod -R a+rwX "$artist" "$target/Loose Artist - Loose Song.mp3" "$target/Loose Artist - Loose Song.webm"
+chmod -R a+rwX "$artist" "$target/Loose Artist - Loose Song.mp3" "$target/Loose Artist - Loose Song.webm" \
+    "$target/Loose Artist - Loose Song.lrc"
 echo "Test media created in $target"

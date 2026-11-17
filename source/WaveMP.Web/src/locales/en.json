@@ -99,7 +99,8 @@
     "artist": "Placeholder Artist {number}",
     "track": "Placeholder Track {number}",
     "genre": "Placeholder Genre {number}",
-    "playlist": "Placeholder Playlist {number}"
+    "playlist": "Placeholder Playlist {number}",
+    "lyricsLine": "Placeholder line {number} of the lyrics"
   },
   "player": {
     "label": "Player",
@@ -188,7 +189,10 @@
     "videoFailed": "The video cannot be played. The song goes on.",
     "video": "Video of the current song",
     "fullscreen": "Full screen",
-    "exitFullscreen": "Exit full screen"
+    "exitFullscreen": "Exit full screen",
+    "viewLyrics": "Lyrics",
+    "lyricsLabel": "Lyrics of the song",
+    "lyricsBreak": "Instrumental part"
   },
   "equalizer": {
     "title": "Equalizer",
@@ -699,10 +703,12 @@
     "errors": {
       "interval": "Choose an interval between {min} and {max} minutes.",
       "extensionFormat": "Use 1 to 10 letters or digits per extension.",
-      "extensionDuplicate": "An extension may only be in one list.",
+      "extensionDuplicate": "An extension may only be in one list, and lrc is reserved for lyrics files.",
       "extensionsRequired": "Enter audio or video extensions.",
       "coverNames": "Use names without slashes, without a leading dot and with at most 50 characters."
-    }
+    },
+    "downloadLyrics": "Download lyrics from LRCLIB",
+    "downloadLyricsHint": "Looks up the lyrics of new songs without lyrics on lrclib.net after each scan and saves them next to the song as .lrc file (or in the database if the folder is not writable). Titles, artists and albums of your library are sent to the service."
   },
   "adminFiles": {
     "title": "File selection",
@@ -778,7 +784,8 @@
     "names": {
       "libraryScan": "Library scan",
       "coverCache": "Prepare covers",
-      "databaseBackup": "Database backup"
+      "databaseBackup": "Database backup",
+      "lyricsDownload": "Download lyrics"
     },
     "lastRun": "Last run {date}",
     "duration": "took {duration}",
@@ -791,7 +798,8 @@
     "afterScan": "Runs after scans",
     "alreadyRunning": "This job is already running.",
     "loadError": "The jobs could not be loaded.",
-    "runError": "The job could not be started."
+    "runError": "The job could not be started.",
+    "afterScanWhenLyricsOn": "Runs after scans while the download of lyrics is on"
   },
   "adminCache": {
     "title": "Cache",
@@ -962,7 +970,8 @@
       "manual": "Manual",
       "fileWatcher": "File watcher",
       "libraryScan": "After a scan",
-      "coverRule": "After a cover rule changed"
+      "coverRule": "After a cover rule changed",
+      "settings": "After the settings changed"
     },
     "errors": {
       "jobFailed": "The run failed. Details are in the server log.",
@@ -975,7 +984,9 @@
       "cacheFolderUnwritable": "The cache folder cannot be written. Check the volume /data.",
       "backupFolderUnwritable": "The backup folder cannot be written. Check the volume /data.",
       "pgDumpUnavailable": "pg_dump is not available on the server.",
-      "backupFailed": "The export of the database failed. Details are in the server log."
+      "backupFailed": "The export of the database failed. Details are in the server log.",
+      "lyricsDownloadDisabled": "The download of lyrics is switched off in the library settings.",
+      "lyricsServiceUnavailable": "The lyrics service cannot be reached. Check the internet connection of the server; the next run goes on where this one stopped."
     }
   },
   "track": {
@@ -1052,7 +1063,8 @@
     "kinds": {
       "audio": "Audio",
       "video": "Video",
-      "image": "Picture"
+      "image": "Picture",
+      "lyrics": "Lyrics"
     },
     "primary": "Used for playback",
     "lossless": "Lossless",
@@ -1146,5 +1158,35 @@
     "invalidFormat": "This value has an invalid format.",
     "invalidValue": "This value is not valid.",
     "duplicate": "This value is already used in another field."
+  },
+  "trackLyrics": {
+    "title": "Lyrics",
+    "loading": "Loading the lyrics",
+    "none": "This song has no lyrics.",
+    "summary": "{type}, {source}.",
+    "hint": "Lyrics come from a .lrc file with the name of the song, from the tags of the file or from LRCLIB. A download never replaces a .lrc file.",
+    "download": "Download lyrics",
+    "downloading": "Downloading lyrics",
+    "downloaded": "The lyrics are downloaded.",
+    "loadError": "The lyrics could not be loaded.",
+    "types": {
+      "lineSynchronized": "Synchronized line by line",
+      "wordSynchronized": "Synchronized word by word",
+      "static": "Not synchronized"
+    },
+    "sources": {
+      "file": "from the lyrics file",
+      "download": "downloaded and stored in the database",
+      "tags": "from the tags of the file"
+    },
+    "errors": {
+      "downloadDisabled": "The download of lyrics is switched off. Switch it on in the library settings of the administration.",
+      "fileExists": "The song already has a lyrics file, which is never replaced.",
+      "notFound": "LRCLIB has no lyrics for this song.",
+      "instrumental": "LRCLIB lists this song as instrumental.",
+      "serviceUnavailable": "LRCLIB cannot be reached. Check the internet connection of the server.",
+      "rateLimited": "LRCLIB refuses requests for a while. Try again later.",
+      "failed": "The lyrics could not be downloaded."
+    }
   }
 }

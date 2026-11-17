@@ -2061,6 +2061,10 @@
         font-weight: var(--wmp-font-weight-bold);
     }
 
+    /*
+     * The stage takes the width of its place and never widens the page; it is a container, so its
+     * parts can follow its width (wavemp-stage).
+     */
     [data-part='stage'] {
         display: grid;
         justify-items: center;
@@ -2068,6 +2072,7 @@
         gap: var(--wmp-space-l);
         min-block-size: 100%;
         padding: var(--wmp-space-xl);
+        container: wavemp-stage / inline-size;
     }
 
     [data-part='stage-info'] {
@@ -2095,6 +2100,22 @@
         flex-wrap: wrap;
         justify-content: center;
         gap: var(--wmp-space-s);
+        max-inline-size: 100%;
+    }
+
+    /*
+     * On a narrow stage (phones) the views are chosen by their icons; the labels stay for assistive
+     * technology.
+     */
+    @container wavemp-stage (width < 32rem) {
+        [data-part='stage-actions'] [data-part='segment'] > [data-part='label'] {
+            position: absolute;
+            inline-size: 1px;
+            block-size: 1px;
+            overflow: hidden;
+            clip-path: inset(50%);
+            white-space: nowrap;
+        }
     }
 
     /*
@@ -2138,7 +2159,11 @@
         transition-delay: 0s;
     }
 
-    [data-part='stage-view']:is([data-kind='video'], [data-kind='visualization']) {
+    [data-part='stage-view']:is(
+        [data-kind='video'],
+        [data-kind='visualization'],
+        [data-kind='lyrics']
+    ) {
         overflow: hidden;
         border-radius: var(--wmp-radius-m);
         background: var(--wmp-stage-view-background);
@@ -2146,6 +2171,98 @@
 
     @media (prefers-reduced-motion: reduce) {
         [data-part='stage-view'] {
+            transition: none;
+        }
+    }
+
+    /*
+     * The lyrics: the lines scroll in the view, the current one in the middle, larger and bright,
+     * the others dimmed. With word timestamps, the current word fills from the start to the end
+     * while it is sung (--wmp-word-progress). Static lyrics are shown bright and scroll calmly.
+     */
+    [data-part='lyrics'] {
+        position: relative;
+        inline-size: 100%;
+        block-size: 100%;
+        overflow: hidden;
+        background: var(--wmp-stage-view-background);
+        color: var(--wmp-lyrics-muted-color);
+    }
+
+    [data-part='lyrics-lines'] {
+        box-sizing: border-box;
+        position: relative;
+        block-size: 100%;
+        margin: 0;
+        padding: 30% var(--wmp-space-xl);
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        scrollbar-width: none;
+        list-style: none;
+        text-align: center;
+        mask-image: linear-gradient(to bottom, transparent, black 15%, black 85%, transparent);
+    }
+
+    [data-part='lyrics'][data-state~='static'] > [data-part='lyrics-lines'] {
+        padding-block: var(--wmp-space-xl);
+    }
+
+    [data-part='lyrics-line'] {
+        min-block-size: 1lh;
+        margin: 0;
+        padding-block: var(--wmp-space-xs);
+        font-size: var(--wmp-font-size-l);
+        font-weight: var(--wmp-font-weight-bold);
+        line-height: 1.35;
+        overflow-wrap: anywhere;
+        transform-origin: center;
+        transition:
+            color var(--wmp-lyrics-transition-duration) ease-out,
+            transform var(--wmp-lyrics-transition-duration) ease-out;
+    }
+
+    [data-part='lyrics'][data-state~='static'] [data-part='lyrics-line'],
+    [data-part='lyrics-line'][data-state~='active'] {
+        color: var(--wmp-lyrics-color);
+    }
+
+    [data-part='lyrics-line'][data-state~='active'] {
+        transform: scale(var(--wmp-lyrics-active-scale));
+    }
+
+    [data-part='lyrics-line-button'] {
+        display: inline;
+        margin: 0;
+        padding: 0;
+        border: 0;
+        background: none;
+        color: inherit;
+        font: inherit;
+        text-align: inherit;
+        cursor: pointer;
+    }
+
+    [data-part='lyrics-line'][data-state~='active'] [data-part='lyrics-word'] {
+        color: var(--wmp-lyrics-muted-color);
+    }
+
+    [data-part='lyrics-line'][data-state~='active'] [data-part='lyrics-word'][data-state~='past'] {
+        color: var(--wmp-lyrics-color);
+    }
+
+    [data-part='lyrics-line'][data-state~='active']
+        [data-part='lyrics-word'][data-state~='active'] {
+        background: linear-gradient(
+            to right,
+            var(--wmp-lyrics-color) calc(var(--wmp-word-progress, 0) * 100%),
+            var(--wmp-lyrics-muted-color) calc(var(--wmp-word-progress, 0) * 100%)
+        );
+        background-clip: text;
+        color: transparent;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        [data-part='lyrics-line'] {
             transition: none;
         }
     }

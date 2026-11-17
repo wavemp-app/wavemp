@@ -14,6 +14,7 @@ const settings = {
     imageExtensions: ['jpg'],
     albumCoverNames: ['cover', 'folder'],
     coverPriority: 'AlbumFirst' as const,
+    downloadLyrics: false,
 }
 
 async function mountForm(current = settings) {
@@ -83,6 +84,7 @@ describe('LibrarySettingsForm', () => {
             imageExtensions: ['jpg'],
             albumCoverNames: ['cover', 'folder'],
             coverPriority: 'AlbumFirst',
+            downloadLyrics: false,
         })
         expect(wrapper.get('[data-part="alert"][data-state="success"]').text()).toBe(
             'The settings are saved.',
@@ -113,6 +115,23 @@ describe('LibrarySettingsForm', () => {
             expect.objectContaining({ coverPriority: 'TrackFirst' }),
         )
         expect(invalidate).toHaveBeenCalledTimes(1)
+        wrapper.unmount()
+    })
+
+    it('switches the download of lyrics on', async () => {
+        const { wrapper, update } = await mountForm()
+        update.mockResolvedValue({ ...settings, downloadLyrics: true })
+
+        const field = wrapper.get('[data-field="download-lyrics"]')
+        expect(field.text()).toContain('Download lyrics from LRCLIB')
+        const checkbox = field.get('input[type="checkbox"]')
+        expect((checkbox.element as HTMLInputElement).checked).toBe(false)
+
+        await checkbox.setValue(true)
+        await wrapper.get('form').trigger('submit')
+        await flushPromises()
+
+        expect(update).toHaveBeenCalledWith(expect.objectContaining({ downloadLyrics: true }))
         wrapper.unmount()
     })
 
@@ -147,7 +166,7 @@ describe('LibrarySettingsForm', () => {
         const errors = wrapper.findAll('[data-part="field-error"]').map((error) => error.text())
         expect(errors).toEqual([
             'Choose an interval between 15 and 1,440 minutes.',
-            'An extension may only be in one list.',
+            'An extension may only be in one list, and lrc is reserved for lyrics files.',
             'This list has too many entries (maximum: 50).',
         ])
         expect(wrapper.find('[data-part="alert"]').exists()).toBe(false)

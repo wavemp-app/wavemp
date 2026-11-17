@@ -136,6 +136,7 @@ const triggers: Record<string, Labeled> = {
     FileWatcher: { labelKey: 'jobRuns.triggers.fileWatcher' },
     LibraryScan: { labelKey: 'jobRuns.triggers.libraryScan' },
     CoverRule: { labelKey: 'jobRuns.triggers.coverRule' },
+    Settings: { labelKey: 'jobRuns.triggers.settings' },
 }
 
 /** Message key of what started a run. */
@@ -155,6 +156,8 @@ const errors: Record<string, Labeled> = {
     'backup.folder_unwritable': { labelKey: 'jobRuns.errors.backupFolderUnwritable' },
     'backup.pg_dump_unavailable': { labelKey: 'jobRuns.errors.pgDumpUnavailable' },
     'backup.failed': { labelKey: 'jobRuns.errors.backupFailed' },
+    'lyrics.download_disabled': { labelKey: 'jobRuns.errors.lyricsDownloadDisabled' },
+    'lyrics.service_unavailable': { labelKey: 'jobRuns.errors.lyricsServiceUnavailable' },
 }
 
 /** Message key of the error code of a run; unknown codes are shown as a general failure. */
@@ -214,6 +217,10 @@ const jobNames: Record<string, JobPresentation> = {
     'database-backup': {
         labelKey: 'adminJobs.names.databaseBackup',
         scheduleKey: 'adminJobs.manualOnly',
+    },
+    'lyrics-download': {
+        labelKey: 'adminJobs.names.lyricsDownload',
+        scheduleKey: 'adminJobs.afterScanWhenLyricsOn',
     },
 }
 

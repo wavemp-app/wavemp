@@ -110,4 +110,11 @@ describe('stage view', () => {
         expect(stageViewOf('Visualization', false, 'idle')).toBe('visualization')
         expect(stageViewOf('Visualization', true, 'ready')).toBe('visualization')
     })
+
+    it('shows the lyrics only for tracks with lyrics', () => {
+        expect(stageViewOf('Lyrics', false, 'idle', true)).toBe('lyrics')
+        expect(stageViewOf('Lyrics', true, 'ready', false)).toBe('cover')
+        expect(stageViewOf('Lyrics', false, 'idle')).toBe('cover')
+        expect(stageViewOf('Cover', false, 'idle', true)).toBe('cover')
+    })
 })

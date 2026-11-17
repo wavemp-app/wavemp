@@ -99,7 +99,8 @@
     "artist": "Platzhalter-Interpret {number}",
     "track": "Platzhalter-Titel {number}",
     "genre": "Platzhalter-Genre {number}",
-    "playlist": "Platzhalter-Playlist {number}"
+    "playlist": "Platzhalter-Playlist {number}",
+    "lyricsLine": "Platzhalter-Zeile {number} des Songtexts"
   },
   "player": {
     "label": "Player",
@@ -188,7 +189,10 @@
     "videoFailed": "Das Video kann nicht abgespielt werden. Der Titel läuft weiter.",
     "video": "Video des aktuellen Titels",
     "fullscreen": "Vollbild",
-    "exitFullscreen": "Vollbild beenden"
+    "exitFullscreen": "Vollbild beenden",
+    "viewLyrics": "Songtext",
+    "lyricsLabel": "Songtext des Titels",
+    "lyricsBreak": "Instrumentaler Teil"
   },
   "equalizer": {
     "title": "Equalizer",
@@ -699,10 +703,12 @@
     "errors": {
       "interval": "Wähle ein Intervall zwischen {min} und {max} Minuten.",
       "extensionFormat": "Pro Endung 1 bis 10 Buchstaben oder Ziffern.",
-      "extensionDuplicate": "Eine Endung darf nur in einer Liste stehen.",
+      "extensionDuplicate": "Eine Endung darf nur in einer Liste stehen, und lrc ist für Songtext-Dateien reserviert.",
       "extensionsRequired": "Gib Audio- oder Videoendungen ein.",
       "coverNames": "Namen ohne Schrägstriche, ohne Punkt am Anfang und mit höchstens 50 Zeichen."
-    }
+    },
+    "downloadLyrics": "Songtexte von LRCLIB herunterladen",
+    "downloadLyricsHint": "Sucht nach jedem Scan die Songtexte neuer Titel ohne Songtext auf lrclib.net und speichert sie neben dem Titel als .lrc-Datei (oder in der Datenbank, wenn der Ordner nicht beschreibbar ist). Dabei werden Titel, Interpreten und Alben deiner Bibliothek an den Dienst gesendet."
   },
   "adminFiles": {
     "title": "Dateiauswahl",
@@ -778,7 +784,8 @@
     "names": {
       "libraryScan": "Bibliotheks-Scan",
       "coverCache": "Cover vorbereiten",
-      "databaseBackup": "Datenbanksicherung"
+      "databaseBackup": "Datenbanksicherung",
+      "lyricsDownload": "Songtexte herunterladen"
     },
     "lastRun": "Zuletzt {date}",
     "duration": "Dauer {duration}",
@@ -791,7 +798,8 @@
     "afterScan": "Läuft nach Scans",
     "alreadyRunning": "Dieser Job läuft bereits.",
     "loadError": "Die Jobs konnten nicht geladen werden.",
-    "runError": "Der Job konnte nicht gestartet werden."
+    "runError": "Der Job konnte nicht gestartet werden.",
+    "afterScanWhenLyricsOn": "Läuft nach Scans, solange das Herunterladen von Songtexten eingeschaltet ist"
   },
   "adminCache": {
     "title": "Cache",
@@ -962,7 +970,8 @@
       "manual": "Manuell",
       "fileWatcher": "Ordnerüberwachung",
       "libraryScan": "Nach einem Scan",
-      "coverRule": "Nach Änderung einer Cover-Regel"
+      "coverRule": "Nach Änderung einer Cover-Regel",
+      "settings": "Nach Änderung der Einstellungen"
     },
     "errors": {
       "jobFailed": "Der Lauf ist fehlgeschlagen. Details stehen im Server-Log.",
@@ -975,7 +984,9 @@
       "cacheFolderUnwritable": "In den Cache-Ordner kann nicht geschrieben werden. Prüfe das Volume /data.",
       "backupFolderUnwritable": "In den Sicherungsordner kann nicht geschrieben werden. Prüfe das Volume /data.",
       "pgDumpUnavailable": "pg_dump ist auf dem Server nicht verfügbar.",
-      "backupFailed": "Der Export der Datenbank ist fehlgeschlagen. Details stehen im Server-Log."
+      "backupFailed": "Der Export der Datenbank ist fehlgeschlagen. Details stehen im Server-Log.",
+      "lyricsDownloadDisabled": "Das Herunterladen von Songtexten ist in den Bibliothekseinstellungen ausgeschaltet.",
+      "lyricsServiceUnavailable": "Der Songtext-Dienst ist nicht erreichbar. Prüfe die Internetverbindung des Servers; der nächste Lauf macht dort weiter, wo dieser aufgehört hat."
     }
   },
   "track": {
@@ -1052,7 +1063,8 @@
     "kinds": {
       "audio": "Audio",
       "video": "Video",
-      "image": "Bild"
+      "image": "Bild",
+      "lyrics": "Songtext"
     },
     "primary": "Wird abgespielt",
     "lossless": "Verlustfrei",
@@ -1146,5 +1158,35 @@
     "invalidFormat": "Dieser Wert hat ein ungültiges Format.",
     "invalidValue": "Dieser Wert ist ungültig.",
     "duplicate": "Dieser Wert wird bereits in einem anderen Feld verwendet."
+  },
+  "trackLyrics": {
+    "title": "Songtext",
+    "loading": "Songtext wird geladen",
+    "none": "Dieser Titel hat keinen Songtext.",
+    "summary": "{type}, {source}.",
+    "hint": "Songtexte stammen aus einer .lrc-Datei mit dem Namen des Titels, aus den Tags der Datei oder von LRCLIB. Ein Download ersetzt nie eine .lrc-Datei.",
+    "download": "Songtext herunterladen",
+    "downloading": "Songtext wird heruntergeladen",
+    "downloaded": "Der Songtext ist heruntergeladen.",
+    "loadError": "Der Songtext konnte nicht geladen werden.",
+    "types": {
+      "lineSynchronized": "Zeilenweise synchronisiert",
+      "wordSynchronized": "Wortweise synchronisiert",
+      "static": "Nicht synchronisiert"
+    },
+    "sources": {
+      "file": "aus der Songtext-Datei",
+      "download": "heruntergeladen und in der Datenbank gespeichert",
+      "tags": "aus den Tags der Datei"
+    },
+    "errors": {
+      "downloadDisabled": "Das Herunterladen von Songtexten ist ausgeschaltet. Schalte es in den Bibliothekseinstellungen der Verwaltung ein.",
+      "fileExists": "Der Titel hat bereits eine Songtext-Datei, die nie ersetzt wird.",
+      "notFound": "LRCLIB hat keinen Songtext für diesen Titel.",
+      "instrumental": "LRCLIB führt diesen Titel als instrumental.",
+      "serviceUnavailable": "LRCLIB ist nicht erreichbar. Prüfe die Internetverbindung des Servers.",
+      "rateLimited": "LRCLIB lehnt Anfragen gerade ab. Versuche es später noch einmal.",
+      "failed": "Der Songtext konnte nicht heruntergeladen werden."
+    }
   }
 }

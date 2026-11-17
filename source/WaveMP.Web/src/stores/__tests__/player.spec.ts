@@ -3,6 +3,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
 import type { Track, TrackPlayback, TrackVideoPlayback } from '@/api/generated/models'
 import type { EngineEvents } from '@/player/engine'
+import { getLyrics } from '@/lyrics/api'
+import type { TrackLyrics } from '@/lyrics/timing'
 import { getPlayback, getVideoPlayback, recordPlay } from '@/player/api'
 import type { FollowerClock, VideoFollowerEvents } from '@/player/videoFollower'
 import {
@@ -12,6 +14,10 @@ import {
     type PlayerVideoFollower,
 } from '../player'
 import { useSessionStore } from '../session'
+
+vi.mock('@/lyrics/api', () => ({
+    getLyrics: vi.fn(),
+}))
 
 vi.mock('@/player/api', () => ({
     getPlayback: vi.fn(),
@@ -114,6 +120,7 @@ describe('player store', () => {
         vi.mocked(getPlayback).mockReset()
         vi.mocked(recordPlay).mockReset().mockResolvedValue(undefined)
         vi.mocked(getPlayback).mockImplementation((id) => Promise.resolve(direct(id)))
+        vi.mocked(getLyrics).mockReset().mockResolvedValue(null)
         playerDependencies.createEngine = (events) => (engine = new FakeEngine(events))
         playerDependencies.audioFormats = () => ['Mp3', 'Flac']
         playerDependencies.random = () => 0
@@ -122,6 +129,88 @@ describe('player store', () => {
 
     afterEach(() => {
         Object.assign(playerDependencies, original)
+    })
+
+    describe('lyrics', () => {
+        function lyricsOf(trackId: string): TrackLyrics {
+            return {
+                trackId,
+                type: 'LineSynchronized',
+                source: 'File',
+                lines: [{ start: 1, end: null, text: 'Line', words: [] }],
+            }
+        }
+
+        it('loads the lyrics of the current track and shows them when chosen', async () => {
+            vi.mocked(getLyrics).mockImplementation((id) =>
+                Promise.resolve(id === 'a' ? lyricsOf('a') : null),
+            )
+            const session = useSessionStore()
+            const player = usePlayerStore()
+            session.playerViewMode = 'Lyrics'
+
+            player.playTracks(abc, 0)
+            await flushPromises()
+
+            expect(getLyrics).toHaveBeenCalledWith('a')
+            expect(player.hasLyrics).toBe(true)
+            expect(player.lyrics?.lines[0]?.text).toBe('Line')
+            expect(player.stageView).toBe('lyrics')
+
+            player.next()
+            await flushPromises()
+            expect(player.hasLyrics).toBe(false)
+            expect(player.lyrics).toBeNull()
+            expect(player.stageView).toBe('cover')
+        })
+
+        it('treats failed requests as tracks without lyrics and ignores late answers', async () => {
+            let answer: (value: TrackLyrics | null) => void = () => undefined
+            vi.mocked(getLyrics)
+                .mockImplementationOnce(
+                    () =>
+                        new Promise<TrackLyrics | null>((resolve) => {
+                            answer = resolve
+                        }),
+                )
+                .mockRejectedValueOnce(new Error('offline'))
+            const player = usePlayerStore()
+
+            player.playTracks(abc, 0)
+            await flushPromises()
+            player.next()
+            await flushPromises()
+            answer(lyricsOf('a'))
+            await flushPromises()
+
+            expect(player.lyrics).toBeNull()
+            expect(player.hasLyrics).toBe(false)
+        })
+
+        it('loads the lyrics of the current track again on request', async () => {
+            const player = usePlayerStore()
+            player.playTracks(abc, 0)
+            await flushPromises()
+            vi.mocked(getLyrics).mockResolvedValue(lyricsOf('a'))
+
+            player.refreshLyrics('b')
+            await flushPromises()
+            expect(player.hasLyrics).toBe(false)
+
+            player.refreshLyrics('a')
+            await flushPromises()
+            expect(player.hasLyrics).toBe(true)
+        })
+
+        it('gives the live position of the engine', async () => {
+            const player = usePlayerStore()
+            player.playTracks(abc, 0)
+            await flushPromises()
+
+            engine.position = 12.5
+
+            expect(player.livePosition()).toBe(12.5)
+        })
     })
 
     it('starts idle without a track', () => {

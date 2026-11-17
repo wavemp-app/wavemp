@@ -6,7 +6,7 @@ import { useSessionStore } from '@/stores/session'
 import type { VisualizationSettingsChange } from '@/visualization/settings'
 
 /**
- * Now Playing: the stage with the current track (cover, video or visualization) and the queue of
+ * Now Playing: the stage with the current track (cover, video, visualization or lyrics) and the queue of
  * the player.
  */
 const player = usePlayerStore()
@@ -30,10 +30,16 @@ function updateVisualization(change: VisualizationSettingsChange): void {
             :video-state="player.videoState"
             :audio="player.analyser"
             :visualization="session.visualization"
+            :lyrics="player.lyrics"
+            :playing="player.playback === 'playing'"
+            :position="player.position"
+            :duration="player.duration"
+            :clock="player.livePosition"
             @select-mode="player.selectViewMode"
             @attach-video="player.attachVideo"
             @detach-video="player.detachVideo"
             @update-visualization="updateVisualization"
+            @seek="player.seek"
         />
         <PlayQueue
             v-if="player.queue.items.length > 0"

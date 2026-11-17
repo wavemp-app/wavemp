@@ -111,6 +111,8 @@ import {
     sampleFileSelection,
     sampleFileSummaries,
     sampleFiles,
+    sampleLyrics,
+    sampleLyricsPosition,
     sampleTiles,
     sampleTracks,
 } from './samples'
@@ -163,6 +165,11 @@ const sampleQueue = computed(() =>
 const sampleQueueIndex = ref(1)
 const sampleViewMode = ref<PlayerViewMode>('Video')
 const sampleVideoTrack = computed(() => sampleTracks(t).find((track) => track.hasVideo))
+const sampleLyricsTrack = computed(() => sampleTracks(t).find((track) => !track.hasVideo))
+const sampleLyricsMode = ref<PlayerViewMode>('Lyrics')
+const sampleTrackLyrics = computed(() =>
+    sampleLyricsTrack.value ? sampleLyrics(t, sampleLyricsTrack.value.id ?? '') : null,
+)
 const tiles = computed(() => sampleTiles(t))
 const playlistRows = computed<PlaylistTrackRow[]>(() =>
     sampleTracks(t).map((track, index) => ({ id: `sample-entry-${index}`, track })),
@@ -1309,6 +1316,19 @@ const sampleTranscodeJobs = computed<TranscodeJob[]>(() => {
                             :view="stageViewOf(sampleViewMode, true, 'failed')"
                             video-state="failed"
                             @select-mode="sampleViewMode = $event"
+                        />
+                    </div>
+                </div>
+                <div data-part="dev-sample">
+                    <div data-part="view" data-view="now-playing">
+                        <NowPlayingStage
+                            :track="sampleLyricsTrack"
+                            :mode="sampleLyricsMode"
+                            :view="stageViewOf(sampleLyricsMode, false, 'ready', true)"
+                            :lyrics="sampleTrackLyrics"
+                            :position="sampleLyricsPosition"
+                            :duration="24"
+                            @select-mode="sampleLyricsMode = $event"
                         />
                     </div>
                 </div>
