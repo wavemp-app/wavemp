@@ -42,6 +42,7 @@ WaveMP ist ein selbst gehosteter Media Player für Musik und Musikvideos, ausgel
   WaveMP.Web/                  Vue-3-Frontend
 /docs
   releases/                    Release-Notes pro Meilenstein (release-m1.md, release-m2.md ...)
+/deploy                        Vorlagen für die App-Kataloge von NAS-Systemen (TrueNAS, Unraid, CasaOS/ZimaOS)
 /.github
   ISSUE_TEMPLATE/              Issue-Formulare für Bugs und Feature-Wünsche
   workflows/                   CI
@@ -61,7 +62,9 @@ CLAUDE.md
 
 Neue Projekte und Ordner fügen sich in diese Struktur ein. Abweichungen nur, wenn es nicht anders geht, und dann in der Abschlussmeldung begründen. `/docs` enthält nur die Release-Notes (`/docs/releases`) und später die Website. Nutzerdokumentation steht in der README bzw. in den genannten Dateien im Root, Hinweise für den Maintainer kommen in die Abschlussmeldung und den Abschlusskommentar des Issues.
 
-**Dateien unter `/assets`** werden nie gelöscht, umbenannt oder überschrieben, außer der Maintainer erlaubt es ausdrücklich. Abgeleitete Dateien (optimierte Kopien, PNG-Exporte, neue Ordner) dürfen hinzugefügt werden. Wird eine Datei unter `/assets` nicht mehr gebraucht, wird sie nicht mehr verwendet und in der Abschlussmeldung zum Löschen vorgeschlagen.
+**Dateien unter `/assets`:**
+- **Geschützt** sind `/assets/logo/` und alle Dateien und Ordner, die der Maintainer selbst hinzufügt (z. B. per eigenem Commit oder im Issue als seine Dateien benannt); im Zweifel gilt eine Datei als geschützt. Sie werden nie gelöscht, umbenannt oder überschrieben, außer der Maintainer erlaubt es ausdrücklich. Abgeleitete Dateien (optimierte Kopien, PNG-Exporte, neue Ordner) dürfen daneben hinzugefügt werden. Wird eine geschützte Datei nicht mehr gebraucht, wird sie nicht mehr verwendet und in der Abschlussmeldung zum Löschen vorgeschlagen.
+- **Alles andere** unter `/assets`, das der Agent selbst angelegt hat (Themes, Icons, Screenshots, Web-Assets, `LICENSES.md`, `/assets/web/brand`), darf wie gewöhnlicher Code geändert und gelöscht werden.
 
 ## Konventionen
 
