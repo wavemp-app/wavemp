@@ -1,5 +1,6 @@
 # Builds and tests everything: .NET with unit, media and integration tests, the web app, the
-# license check and the Docker image with the E2E tests. Called by pull-request.yml and main.yml.
+# license check, the templates of the app catalogs (deploy/) and the Docker image with the E2E
+# tests. Called by pull-request.yml and main.yml.
 #
 # All Docker images are pinned by the digest of their multi-arch index (image:tag@sha256:...); the
 # tag only documents the version. Resolve a new digest with docker buildx imagetools inspect.
@@ -184,6 +185,36 @@ jobs:
 
       - name: Test the license check
         run: node --test .github/scripts/check-licenses.test.mjs
+
+  deploy:
+    name: App catalog templates
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Check out
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      # Fixed versions, the same version everywhere, well-formed XML, existing files and up to date
+      # copies of the icon and the screenshots (see deploy/README.md).
+      - name: Check the templates in deploy
+        run: node .github/scripts/check-deploy.mjs
+
+      - name: Test the template check
+        run: node --test .github/scripts/check-deploy.test.mjs
+
+      # AppID and TZ are set by CasaOS and ZimaOS when they install the app.
+      - name: Validate the compose file of ZimaOS and CasaOS
+        env:
+          AppID: wavemp
+          TZ: Etc/UTC
+        run: docker compose -f deploy/casaos/WaveMP/docker-compose.yml config --quiet
 
   e2e:
     name: Docker image and E2E tests

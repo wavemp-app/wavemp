@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+<Container version="2">
+  <Name>wavemp-db</Name>
+  <Repository>postgres:18.7</Repository>
+  <Registry>https://hub.docker.com/_/postgres</Registry>
+  <Network>wavemp</Network>
+  <MyIP/>
+  <Shell>bash</Shell>
+  <Privileged>false</Privileged>
+  <Support>https://github.com/wavemp-app/wavemp/issues</Support>
+  <Project>https://github.com/wavemp-app/wavemp</Project>
+  <ReadMe>https://github.com/wavemp-app/wavemp#readme</ReadMe>
+  <Overview>The PostgreSQL 18 database of WaveMP (official postgres image), set up for the template WaveMP. Install it first, in the same custom Docker network as WaveMP (wavemp by default, create it once with: docker network create wavemp). The database is only reachable inside this network; no port is published.</Overview>
+  <Category>Tools:Utilities</Category>
+  <WebUI/>
+  <TemplateURL>https://raw.githubusercontent.com/wavemp-app/wavemp/main/deploy/unraid/wavemp-db.xml</TemplateURL>
+  <Icon>https://raw.githubusercontent.com/wavemp-app/wavemp/main/assets/logo/wavemp-logo-512.png</Icon>
+  <ExtraParams>--restart unless-stopped --shm-size=256m</ExtraParams>
+  <PostArgs/>
+  <CPUset/>
+  <DateInstalled/>
+  <DonateText/>
+  <DonateLink/>
+  <Requires>A custom Docker network shared with WaveMP. Create it once in the terminal with: docker network create wavemp</Requires>
+  <Config Name="Database" Target="/var/lib/postgresql" Default="/mnt/user/appdata/wavemp-db" Mode="rw" Description="Files of the database. WaveMP exports the database every day into the folder backups of its data path, so this folder does not need to be backed up." Type="Path" Display="always" Required="true" Mask="false">/mnt/user/appdata/wavemp-db</Config>
+  <Config Name="Database password" Target="POSTGRES_PASSWORD" Default="" Mode="" Description="Password of the database. Use the same password in the template WaveMP. It is only set when the database is created on the first start." Type="Variable" Display="always" Required="true" Mask="true"/>
+  <Config Name="Database user" Target="POSTGRES_USER" Default="wavemp" Mode="" Description="User of the database; WaveMP expects wavemp." Type="Variable" Display="advanced" Required="true" Mask="false">wavemp</Config>
+  <Config Name="Database name" Target="POSTGRES_DB" Default="wavemp" Mode="" Description="Name of the database; WaveMP expects wavemp." Type="Variable" Display="advanced" Required="true" Mask="false">wavemp</Config>
+</Container>

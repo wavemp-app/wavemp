@@ -1,0 +1,37 @@
+<?xml version="1.0"?>
+<Container version="2">
+  <Name>WaveMP</Name>
+  <Repository>wavemp/wavemp:1.0.50</Repository>
+  <Registry>https://hub.docker.com/r/wavemp/wavemp</Registry>
+  <Network>wavemp</Network>
+  <MyIP/>
+  <Shell>sh</Shell>
+  <Privileged>false</Privileged>
+  <Support>https://github.com/wavemp-app/wavemp/issues</Support>
+  <Project>https://github.com/wavemp-app/wavemp</Project>
+  <ReadMe>https://github.com/wavemp-app/wavemp#readme</ReadMe>
+  <Overview>WaveMP is a nostalgic media player for your self-hosted music and music videos, in the style of the classic desktop media players: glass, gloss and soft gradients. It scans your media folder, plays music and music videos in the browser and on the phone (installable as an app), shows synchronized lyrics, has profiles for everyone in your household, visualizations, playlists, favorites and ratings, and transcodes what your browser cannot play.&#xD;
+&#xD;
+WaveMP needs a PostgreSQL 18 database: install the template wavemp-db first, and put both containers into the same custom Docker network (wavemp by default, create it once with: docker network create wavemp). Use the same database password in both templates.</Overview>
+  <Category>MediaApp:Music MediaApp:Video MediaServer:Music MediaServer:Video</Category>
+  <WebUI>http://[IP]:[PORT:8080]/</WebUI>
+  <TemplateURL>https://raw.githubusercontent.com/wavemp-app/wavemp/main/deploy/unraid/wavemp.xml</TemplateURL>
+  <Icon>https://raw.githubusercontent.com/wavemp-app/wavemp/main/assets/logo/wavemp-logo-512.png</Icon>
+  <ExtraParams>--user 0:0 --restart unless-stopped</ExtraParams>
+  <PostArgs/>
+  <CPUset/>
+  <DateInstalled/>
+  <DonateText/>
+  <DonateLink/>
+  <Requires>The database container wavemp-db (PostgreSQL 18) in the same custom Docker network. Create the network once in the terminal with: docker network create wavemp</Requires>
+  <Screenshot>https://raw.githubusercontent.com/wavemp-app/wavemp/main/assets/screenshots/catalogs/home.png</Screenshot>
+  <Screenshot>https://raw.githubusercontent.com/wavemp-app/wavemp/main/assets/screenshots/catalogs/now-playing.png</Screenshot>
+  <Screenshot>https://raw.githubusercontent.com/wavemp-app/wavemp/main/assets/screenshots/catalogs/album.png</Screenshot>
+  <Config Name="Web UI port" Target="8080" Default="8080" Mode="tcp" Description="Port of the web app." Type="Port" Display="always" Required="true" Mask="false">8080</Config>
+  <Config Name="Media" Target="/media" Default="/mnt/user/media/" Mode="rw" Description="Your music and music videos. Change the access mode to read only (ro) if WaveMP should never change your files; the metadata editor is then turned off." Type="Path" Display="always" Required="true" Mask="false">/mnt/user/media/</Config>
+  <Config Name="Data" Target="/data" Default="/mnt/user/appdata/wavemp" Mode="rw" Description="Data of WaveMP that is not in the database: the daily exports of the database (folder backups), uploaded pictures and the cache. Include it in your backup; the folder cache can be left out." Type="Path" Display="always" Required="true" Mask="false">/mnt/user/appdata/wavemp</Config>
+  <Config Name="Database password" Target="DB_PASSWORD" Default="" Mode="" Description="Password of the database. Use the same password as in the template wavemp-db." Type="Variable" Display="always" Required="true" Mask="true"/>
+  <Config Name="Admin PIN" Target="ADMIN_PIN" Default="" Mode="" Description="Optional: PIN of the built-in admin profile, 4 to 8 digits. While it is set, the PIN cannot be changed in WaveMP." Type="Variable" Display="always" Required="false" Mask="true"/>
+  <Config Name="Intel GPU" Target="/dev/dri" Default="/dev/dri" Mode="" Description="Optional: the render devices of an Intel CPU or GPU with Quick Sync for hardware transcoding of videos. Leave it empty to transcode in software." Type="Device" Display="advanced" Required="false" Mask="false"/>
+  <Config Name="Database host" Target="DB_HOST" Default="wavemp-db" Mode="" Description="Name of the database container in the custom Docker network." Type="Variable" Display="advanced" Required="true" Mask="false">wavemp-db</Config>
+</Container>

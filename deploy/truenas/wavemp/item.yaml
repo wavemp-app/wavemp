@@ -1,0 +1,13 @@
+categories:
+- media
+icon_url: https://raw.githubusercontent.com/wavemp-app/wavemp/main/assets/logo/wavemp-logo-512.png
+screenshots:
+- https://raw.githubusercontent.com/wavemp-app/wavemp/main/assets/screenshots/catalogs/home.png
+- https://raw.githubusercontent.com/wavemp-app/wavemp/main/assets/screenshots/catalogs/now-playing.png
+- https://raw.githubusercontent.com/wavemp-app/wavemp/main/assets/screenshots/catalogs/album.png
+tags:
+- music
+- music videos
+- media player
+- streaming
+- lyrics

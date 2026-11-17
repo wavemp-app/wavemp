@@ -1,0 +1,161 @@
+name: wavemp
+services:
+  wavemp:
+    container_name: wavemp
+    image: wavemp/wavemp:1.0.50
+    # CasaOS creates the folders of the bind mounts as root and has no step that hands them to
+    # another user, so WaveMP runs as root here (the image itself runs as user 1654).
+    user: "0:0"
+    restart: unless-stopped
+    depends_on:
+      wavemp-db:
+        condition: service_healthy
+    deploy:
+      resources:
+        reservations:
+          memory: 256M
+    environment:
+      DB_HOST: wavemp-db
+      DB_PASSWORD: casaos
+      ADMIN_PIN: ""
+      TZ: $TZ
+    ports:
+      - target: 8080
+        published: "8080"
+        protocol: tcp
+    volumes:
+      - type: bind
+        source: /DATA/AppData/$AppID/data
+        target: /data
+      - type: bind
+        source: /DATA/Media/Music
+        target: /media
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--spider", "http://127.0.0.1:8080/api/v1/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    x-casaos:
+      envs:
+        - container: DB_PASSWORD
+          description:
+            en_US: Password of the database. Set the same password as POSTGRES_PASSWORD of the container wavemp-db.
+            de_DE: Passwort der Datenbank. Dasselbe Passwort wie POSTGRES_PASSWORD des Containers wavemp-db eintragen.
+        - container: ADMIN_PIN
+          description:
+            en_US: "Optional: PIN of the built-in admin profile, 4 to 8 digits. While it is set, the PIN cannot be changed in WaveMP."
+            de_DE: "Optional: PIN des eingebauten Admin-Profils, 4 bis 8 Ziffern. Solange sie gesetzt ist, lässt sie sich in WaveMP nicht ändern."
+        - container: TZ
+          description:
+            en_US: Time zone; the daily backup of the database runs at its time of day.
+            de_DE: Zeitzone; die tägliche Sicherung der Datenbank läuft zu ihrer Uhrzeit.
+      ports:
+        - container: "8080"
+          description:
+            en_US: Port of the web app
+            de_DE: Port der Web-App
+      volumes:
+        - container: /data
+          description:
+            en_US: Data of WaveMP that is not in the database, with the daily exports of the database in the folder backups.
+            de_DE: Daten von WaveMP außerhalb der Datenbank, mit den täglichen Exporten der Datenbank im Ordner backups.
+        - container: /media
+          description:
+            en_US: Your music and music videos.
+            de_DE: Deine Musik und Musikvideos.
+
+  wavemp-db:
+    container_name: wavemp-db
+    image: postgres:18.7@sha256:2ea8630df176ad090ec92136dee850397c5af8781e4bcf2e4162593691c61bbc
+    restart: unless-stopped
+    shm_size: 256m
+    environment:
+      POSTGRES_USER: wavemp
+      POSTGRES_DB: wavemp
+      POSTGRES_PASSWORD: casaos
+    volumes:
+      - type: bind
+        source: /DATA/AppData/$AppID/db
+        target: /var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U wavemp -d wavemp"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    x-casaos:
+      envs:
+        - container: POSTGRES_PASSWORD
+          description:
+            en_US: Password of the database. Set the same password as DB_PASSWORD of the container wavemp. It is only used when the database is created on the first start.
+            de_DE: Passwort der Datenbank. Dasselbe Passwort wie DB_PASSWORD des Containers wavemp eintragen. Es wird nur beim Anlegen der Datenbank beim ersten Start verwendet.
+      volumes:
+        - container: /var/lib/postgresql
+          description:
+            en_US: Files of the database.
+            de_DE: Dateien der Datenbank.
+
+x-casaos:
+  id: io.github.wavemp-app.wavemp
+  main: wavemp
+  index: /
+  port_map: "8080"
+  scheme: http
+  store_app_id: wavemp
+  title:
+    en_US: WaveMP
+    de_DE: WaveMP
+  tagline:
+    en_US: A nostalgic media player for your music and music videos
+    de_DE: Ein nostalgischer Media Player für deine Musik und Musikvideos
+  description:
+    en_US: |
+      WaveMP is a nostalgic media player for your self-hosted music and music videos, in the style of the classic desktop media players: glass, gloss and soft gradients.
+
+      - Scans your media folder and keeps the library up to date
+      - Plays music and music videos in the browser and on the phone, installable as an app
+      - Synchronized lyrics, visualizations, playlists, favorites and ratings
+      - Profiles for everyone in your household, optionally protected with a PIN
+      - Transcodes what your browser cannot play, with Intel Quick Sync if available
+      - Exports its database every day
+    de_DE: |
+      WaveMP ist ein nostalgischer Media Player für deine selbst gehostete Musik und Musikvideos, im Stil der klassischen Desktop-Media-Player: Glas, Glanz und weiche Verläufe.
+
+      - Durchsucht deinen Medienordner und hält die Bibliothek aktuell
+      - Spielt Musik und Musikvideos im Browser und auf dem Smartphone ab, als App installierbar
+      - Synchronisierte Songtexte, Visualisierungen, Playlists, Favoriten und Bewertungen
+      - Profile für alle in deinem Haushalt, auf Wunsch mit PIN geschützt
+      - Wandelt um, was dein Browser nicht abspielen kann, mit Intel Quick Sync, falls vorhanden
+      - Exportiert seine Datenbank jeden Tag
+  tips:
+    before_install:
+      en_US: |
+        Change the database password before the first start: set the same value for DB_PASSWORD (container wavemp) and POSTGRES_PASSWORD (container wavemp-db).
+        WaveMP reads your music from /DATA/Media/Music; choose another folder under Volumes if needed.
+        For hardware transcoding of videos on an Intel CPU, add the device /dev/dri to the container wavemp.
+        After the start, open WaveMP and select the Admin profile to set up your library.
+      de_DE: |
+        Ändere das Datenbank-Passwort vor dem ersten Start: denselben Wert für DB_PASSWORD (Container wavemp) und POSTGRES_PASSWORD (Container wavemp-db) eintragen.
+        WaveMP liest deine Musik aus /DATA/Media/Music; wähle bei Bedarf unter Volumes einen anderen Ordner.
+        Für die Hardware-Umwandlung von Videos auf einer Intel-CPU füge dem Container wavemp das Gerät /dev/dri hinzu.
+        Öffne WaveMP nach dem Start und wähle das Admin-Profil, um deine Bibliothek einzurichten.
+  icon: https://cdn.jsdelivr.net/gh/IceWhaleTech/CasaOS-AppStore@main/Apps/WaveMP/icon.svg
+  screenshot_link:
+    - https://cdn.jsdelivr.net/gh/IceWhaleTech/CasaOS-AppStore@main/Apps/WaveMP/screenshot-1.png
+    - https://cdn.jsdelivr.net/gh/IceWhaleTech/CasaOS-AppStore@main/Apps/WaveMP/screenshot-2.png
+    - https://cdn.jsdelivr.net/gh/IceWhaleTech/CasaOS-AppStore@main/Apps/WaveMP/screenshot-3.png
+  author: WaveMP
+  developer: WaveMP
+  category: Media
+  architectures:
+    - amd64
+    - arm64
+  version: "1.0.50"
+  update_at: "2026-11-17"
+  release_notes:
+    en_US: First version of WaveMP in the app store.
+    de_DE: Erste Version von WaveMP im App Store.
+  website: https://wavemp-app.github.io
+  repo: https://github.com/wavemp-app/wavemp
+  support: https://github.com/wavemp-app/wavemp/issues
+  docs: https://github.com/wavemp-app/wavemp#readme

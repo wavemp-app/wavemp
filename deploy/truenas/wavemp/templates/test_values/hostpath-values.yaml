@@ -1,0 +1,44 @@
+resources:
+  limits:
+    cpus: 2.0
+    memory: 4096
+
+TZ: Europe/Berlin
+
+wavemp:
+  postgres_image_selector: postgres_18_image
+  db_password: "some:secret/pass@word"
+  admin_pin: "482913"
+  additional_envs:
+    - name: Streaming__HistoryMaxAge
+      value: "14.00:00:00"
+
+run_as:
+  user: 568
+  group: 568
+
+network:
+  web_port:
+    bind_mode: published
+    port_number: 8081
+
+storage:
+  data:
+    type: host_path
+    host_path_config:
+      path: /opt/tests/mnt/wavemp-hostpath/data
+      auto_permissions: true
+      create_host_path: true
+  media:
+    type: host_path
+    read_only: true
+    host_path_config:
+      path: /opt/tests/mnt/wavemp-hostpath/media
+      create_host_path: true
+  postgres_data:
+    type: host_path
+    host_path_config:
+      path: /opt/tests/mnt/wavemp-hostpath/postgres_data
+      auto_permissions: true
+      create_host_path: true
+  additional_storage: []

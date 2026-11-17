@@ -18,3 +18,4 @@ source/WaveMP.Service/wwwroot/
 docker-compose*.yml
 Dockerfile
 ROADMAP.md
+deploy/

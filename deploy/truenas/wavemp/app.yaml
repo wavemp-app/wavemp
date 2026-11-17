@@ -1,0 +1,45 @@
+app_version: 1.0.50
+capabilities: []
+categories:
+- media
+changelog_url: https://github.com/wavemp-app/wavemp/releases
+date_added: '2026-11-17'
+description: WaveMP is a nostalgic media player for your self-hosted music and music
+  videos.
+home: https://wavemp-app.github.io
+host_mounts: []
+icon: https://raw.githubusercontent.com/wavemp-app/wavemp/main/assets/logo/wavemp-logo-512.png
+keywords:
+- music
+- music videos
+- media player
+- streaming
+- lyrics
+lib_version: 2.3.20
+lib_version_hash: cb54aeb50c3d06a90e5d9e80a852317db8336b4c68456aaaa6ce61fc2f8ed1dd
+maintainers:
+- email: dev@truenas.com
+  name: truenas
+  url: https://www.truenas.com/
+name: wavemp
+run_as_context:
+- description: Container [postgres] runs as non-root user and group.
+  gid: 999
+  group_name: Host group is [docker]
+  uid: 999
+  user_name: Host user is [netdata]
+- description: Container [wavemp] can run as any non-root user and group.
+  gid: 568
+  group_name: Host group is [apps]
+  uid: 568
+  user_name: Host user is [apps]
+screenshots:
+- https://raw.githubusercontent.com/wavemp-app/wavemp/main/assets/screenshots/catalogs/home.png
+- https://raw.githubusercontent.com/wavemp-app/wavemp/main/assets/screenshots/catalogs/now-playing.png
+- https://raw.githubusercontent.com/wavemp-app/wavemp/main/assets/screenshots/catalogs/album.png
+sources:
+- https://github.com/wavemp-app/wavemp
+- https://hub.docker.com/r/wavemp/wavemp
+title: WaveMP
+train: community
+version: 1.0.0
