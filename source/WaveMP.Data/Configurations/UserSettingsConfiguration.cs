@@ -6,7 +6,6 @@ namespace WaveMP.Data.Configurations;
 
 internal sealed class UserSettingsConfiguration : IEntityTypeConfiguration<UserSettings>
 {
-    public const int LanguageMaxLength = 16;
     public const int ReplayGainMaxLength = 16;
     public const int PlayerViewModeMaxLength = 16;
     public const int EqualizerPresetMaxLength = 16;
@@ -18,9 +17,10 @@ internal sealed class UserSettingsConfiguration : IEntityTypeConfiguration<UserS
         builder.ToTable("user_settings");
         builder.HasKey(settings => settings.UserId);
 
+        // A BCP 47 language tag; rows from before kept the name of the former enum ("En"), the migration
+        // ChangeLanguageToTag turned them into tags.
         builder.Property(settings => settings.Language)
-            .HasConversion<string>()
-            .HasMaxLength(LanguageMaxLength);
+            .HasMaxLength(UserSettings.LanguageMaxLength);
 
         // The column default gives existing rows "Off". The entity always writes its value (ValueGeneratedNever),
         // so the default of the column never replaces a value set in the code.

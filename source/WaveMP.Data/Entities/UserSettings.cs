@@ -15,11 +15,25 @@ public class UserSettings
     /// </summary>
     public const int VisualizationPresetMaxLength = 200;
 
+    /// <summary>
+    /// Language of new users.
+    /// </summary>
+    public const string DefaultLanguage = "en";
+
+    /// <summary>
+    /// Longest language tag in <see cref="Language"/>.
+    /// </summary>
+    public const int LanguageMaxLength = 35;
+
     public Guid UserId { get; set; }
 
     public User? User { get; set; }
 
-    public Language Language { get; set; } = Language.En;
+    /// <summary>
+    /// Language of the user interface as BCP 47 language tag, e.g. "en" or "pt-BR"; English by default. The clients
+    /// decide which languages they offer.
+    /// </summary>
+    public string Language { get; set; } = DefaultLanguage;
 
     /// <summary>
     /// Volume normalization of the player; off by default.

@@ -29,7 +29,7 @@ internal sealed class UserSettingsService(IUserRepository users) : IUserSettings
         UserSettings settings = user.Settings ??= new UserSettings { UserId = user.Id };
         if (command.Language is { } language)
         {
-            settings.Language = language;
+            settings.Language = LanguageTags.Normalize(language);
         }
 
         if (command.ReplayGain is { } replayGain)
@@ -130,6 +130,11 @@ internal sealed class UserSettingsService(IUserRepository users) : IUserSettings
 
     private static void Validate(UpdateUserSettingsCommand command)
     {
+        if (command.Language is { } language && !LanguageTags.IsValid(language))
+        {
+            throw new ArgumentOutOfRangeException(nameof(command), language, "The language tag is not valid.");
+        }
+
         if (command.EqualizerPreset is { } preset && !Enum.IsDefined(preset))
         {
             throw new ArgumentOutOfRangeException(nameof(command), preset, "Unknown equalizer preset.");

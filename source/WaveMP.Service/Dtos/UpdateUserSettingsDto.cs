@@ -1,3 +1,6 @@
+using System.ComponentModel.DataAnnotations;
+using WaveMP.Core.Users.Settings;
+
 namespace WaveMP.Service.Dtos;
 
 /// <summary>
@@ -6,9 +9,14 @@ namespace WaveMP.Service.Dtos;
 public sealed class UpdateUserSettingsDto
 {
     /// <summary>
-    /// Language of the user interface.
+    /// Language of the user interface as BCP 47 language tag, e.g. "en", "de" or "pt-BR" (language, optional script,
+    /// region and variants; no extensions). The server keeps any valid tag in the usual case of its subtags
+    /// ("PT-br" becomes "pt-BR"); clients offer the languages they have translations for.
     /// </summary>
-    public LanguageDto? Language { get; init; }
+    [MinLength(LanguageTags.MinLength)]
+    [MaxLength(LanguageTags.MaxLength)]
+    [RegularExpression(LanguageTags.Pattern)]
+    public string? Language { get; init; }
 
     /// <summary>
     /// Whether the players even out the volume with the ReplayGain tags.

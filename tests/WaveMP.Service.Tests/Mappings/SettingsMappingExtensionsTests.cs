@@ -42,14 +42,14 @@ public class SettingsMappingExtensionsTests
     {
         UserSettings settings = new()
         {
-            Language = Language.De,
+            Language = "de",
             ReplayGain = ReplayGainMode.Album,
             PlayerViewMode = PlayerViewMode.Visualization,
         };
 
         UserSettingsDto dto = settings.ToDto();
 
-        dto.Language.Should().Be(LanguageDto.De);
+        dto.Language.Should().Be("de");
         dto.ReplayGain.Should().Be(ReplayGainModeDto.Album);
         dto.PlayerViewMode.Should().Be(PlayerViewModeDto.Visualization);
     }
@@ -128,7 +128,7 @@ public class SettingsMappingExtensionsTests
 
         command.Should().BeEquivalentTo(new
         {
-            Language = (Language?)null,
+            Language = (string?)null,
             EqualizerEnabled = true,
             EqualizerPreset = EqualizerPreset.Custom,
             EqualizerPreampDb = 2.0,

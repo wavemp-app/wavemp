@@ -46,7 +46,7 @@ public class MeSettingsApiTests
         {
             UserSettingsDto settings = await client.GetJsonAsync<UserSettingsDto>("/api/v1/me/settings");
 
-            settings.Language.Should().Be(LanguageDto.En);
+            settings.Language.Should().Be("en");
             settings.ReplayGain.Should().Be(ReplayGainModeDto.Off);
             settings.PlayerViewMode.Should().Be(PlayerViewModeDto.Video);
             settings.SidebarCollapsed.Should().BeFalse();
@@ -71,7 +71,7 @@ public class MeSettingsApiTests
             response.StatusCode.Should().Be(HttpStatusCode.OK);
             (await response.Content.ReadAsStringAsync()).Should().Contain("\"sidebarCollapsed\":true");
             read.SidebarCollapsed.Should().BeTrue();
-            read.Language.Should().Be(LanguageDto.De);
+            read.Language.Should().Be("de");
             read.PlayerViewMode.Should().Be(PlayerViewModeDto.Cover);
             expanded.SidebarCollapsed.Should().BeFalse();
         }
@@ -104,7 +104,7 @@ public class MeSettingsApiTests
             response.StatusCode.Should().Be(HttpStatusCode.OK);
             (await response.Content.ReadAsStringAsync()).Should().Contain($"\"playerViewMode\":\"{value}\"");
             read.PlayerViewMode.Should().Be(expected);
-            read.Language.Should().Be(LanguageDto.De);
+            read.Language.Should().Be("de");
             read.ReplayGain.Should().Be(ReplayGainModeDto.Album);
             otherRead.PlayerViewMode.Should().Be(expected);
         }
@@ -148,7 +148,7 @@ public class MeSettingsApiTests
             response.StatusCode.Should().Be(HttpStatusCode.OK);
             (await response.Content.ReadAsStringAsync()).Should().Contain($"\"replayGain\":\"{value}\"");
             read.ReplayGain.Should().Be(expected);
-            read.Language.Should().Be(LanguageDto.De);
+            read.Language.Should().Be("de");
         }
     }
 
@@ -187,8 +187,8 @@ public class MeSettingsApiTests
 
             response.StatusCode.Should().Be(HttpStatusCode.OK);
             (await response.Content.ReadAsStringAsync()).Should().Contain("\"language\":\"de\"");
-            read.Language.Should().Be(LanguageDto.De);
-            otherRead.Language.Should().Be(LanguageDto.De);
+            read.Language.Should().Be("de");
+            otherRead.Language.Should().Be("de");
         }
     }
 
@@ -206,22 +206,53 @@ public class MeSettingsApiTests
                 HttpClientExtensions.JsonOptions);
 
             response.StatusCode.Should().Be(HttpStatusCode.OK);
-            (await client.GetJsonAsync<UserSettingsDto>("/api/v1/me/settings")).Language.Should().Be(LanguageDto.De);
+            (await client.GetJsonAsync<UserSettingsDto>("/api/v1/me/settings")).Language.Should().Be("de");
         }
     }
 
-    [Test]
-    public async Task UpdateMySettings_WithUnsupportedLanguage_ReturnsBadRequest()
+    [TestCase("fr", "fr")]
+    [TestCase("PT-br", "pt-BR")]
+    [TestCase("zh-hans", "zh-Hans")]
+    [TestCase("es-419", "es-419")]
+    public async Task UpdateMySettings_WithAnyLanguageTag_SavesItInTheUsualCase(string language, string expected)
     {
         (Guid _, HttpClient client) = await CreateProfileAsync();
         using (client)
         {
             HttpResponseMessage response = await client.PatchAsJsonAsync(
                 "/api/v1/me/settings",
-                new { language = "fr" },
+                new { language },
                 HttpClientExtensions.JsonOptions);
 
-            await response.ShouldBeProblemAsync(HttpStatusCode.BadRequest, "request.invalid");
+            response.StatusCode.Should().Be(HttpStatusCode.OK);
+            (await response.Content.ReadFromJsonAsync<UserSettingsDto>(HttpClientExtensions.JsonOptions))!.Language
+                .Should().Be(expected);
+            (await client.GetJsonAsync<UserSettingsDto>("/api/v1/me/settings")).Language.Should().Be(expected);
+        }
+    }
+
+    [TestCase("", ValidationErrorCodeDto.MinLength)]
+    [TestCase("english", ValidationErrorCodeDto.InvalidFormat)]
+    [TestCase("de_DE", ValidationErrorCodeDto.InvalidFormat)]
+    [TestCase("de-", ValidationErrorCodeDto.InvalidFormat)]
+    [TestCase("de-DE-x-private", ValidationErrorCodeDto.InvalidFormat)]
+    [TestCase("de-abcdefgh-abcdefgh-abcdefgh-abcdefgh", ValidationErrorCodeDto.MaxLength)]
+    public async Task UpdateMySettings_WithInvalidLanguageTag_ReturnsTheCodeAndKeepsTheLanguage(
+        string language,
+        ValidationErrorCodeDto expected)
+    {
+        (Guid _, HttpClient client) = await CreateProfileAsync();
+        using (client)
+        {
+            HttpResponseMessage response = await client.PatchAsJsonAsync(
+                "/api/v1/me/settings",
+                new { language },
+                HttpClientExtensions.JsonOptions);
+
+            IReadOnlyList<ValidationErrorDto> errors = await response.ShouldBeValidationProblemAsync();
+            errors.Should().ContainSingle(error => error.Field == "language")
+                .Which.Code.Should().Be(expected);
+            (await client.GetJsonAsync<UserSettingsDto>("/api/v1/me/settings")).Language.Should().Be("en");
         }
     }
 
@@ -238,7 +269,7 @@ public class MeSettingsApiTests
             HttpResponseMessage response = await client.PatchAsync("/api/v1/me/settings", body);
 
             await response.ShouldBeProblemAsync(HttpStatusCode.BadRequest, "request.invalid");
-            (await client.GetJsonAsync<UserSettingsDto>("/api/v1/me/settings")).Language.Should().Be(LanguageDto.En);
+            (await client.GetJsonAsync<UserSettingsDto>("/api/v1/me/settings")).Language.Should().Be("en");
         }
     }
 
@@ -362,7 +393,7 @@ public class MeSettingsApiTests
             read.Equalizer.Preset.Should().Be(EqualizerPresetDto.Jazz);
             read.Equalizer.PreampDb.Should().Be(-3);
             read.SleepTimer.FadeSeconds.Should().Be(30);
-            read.Language.Should().Be(LanguageDto.De);
+            read.Language.Should().Be("de");
             read.ReplayGain.Should().Be(ReplayGainModeDto.Track);
             read.PlayerViewMode.Should().Be(PlayerViewModeDto.Cover);
         }

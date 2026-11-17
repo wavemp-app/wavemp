@@ -22,7 +22,7 @@ public class UserSettingsServiceTests
     [Test]
     public async Task GetAsync_WithUser_ReturnsItsSettings()
     {
-        User user = Given(Language.De);
+        User user = Given("de");
 
         UserSettings? result = await _service.GetAsync(user.Id);
 
@@ -40,45 +40,69 @@ public class UserSettingsServiceTests
     [Test]
     public async Task UpdateAsync_WithLanguage_SavesIt()
     {
-        User user = Given(Language.En);
+        User user = Given("en");
 
-        UserSettings? result = await _service.UpdateAsync(user.Id, new UpdateUserSettingsCommand(Language.De));
+        UserSettings? result = await _service.UpdateAsync(user.Id, new UpdateUserSettingsCommand("de"));
 
-        result!.Language.Should().Be(Language.De);
+        result!.Language.Should().Be("de");
         await _users.Received(1).UpdateAsync(user, Arg.Any<CancellationToken>());
+    }
+
+    [Test]
+    public async Task UpdateAsync_WithLanguageWithoutTranslations_SavesItInTheUsualCase()
+    {
+        User user = Given("en");
+
+        UserSettings? result = await _service.UpdateAsync(user.Id, new UpdateUserSettingsCommand("PT-br"));
+
+        result!.Language.Should().Be("pt-BR");
+    }
+
+    [TestCase("")]
+    [TestCase("english")]
+    [TestCase("de_DE")]
+    public async Task UpdateAsync_WithInvalidLanguageTag_ThrowsAndKeepsTheLanguage(string language)
+    {
+        User user = Given("de");
+
+        Func<Task> act = () => _service.UpdateAsync(user.Id, new UpdateUserSettingsCommand(language));
+
+        await act.Should().ThrowAsync<ArgumentOutOfRangeException>();
+        user.Settings!.Language.Should().Be("de");
+        await _users.DidNotReceive().UpdateAsync(Arg.Any<User>(), Arg.Any<CancellationToken>());
     }
 
     [Test]
     public async Task UpdateAsync_WithoutLanguage_KeepsIt()
     {
-        User user = Given(Language.De);
+        User user = Given("de");
 
         UserSettings? result = await _service.UpdateAsync(user.Id, new UpdateUserSettingsCommand());
 
-        result!.Language.Should().Be(Language.De);
+        result!.Language.Should().Be("de");
     }
 
     [Test]
     public async Task UpdateAsync_WithReplayGain_SavesItAndKeepsTheLanguage()
     {
-        User user = Given(Language.De);
+        User user = Given("de");
 
         UserSettings? result = await _service.UpdateAsync(
             user.Id,
             new UpdateUserSettingsCommand(ReplayGain: ReplayGainMode.Album));
 
         result!.ReplayGain.Should().Be(ReplayGainMode.Album);
-        result.Language.Should().Be(Language.De);
+        result.Language.Should().Be("de");
         await _users.Received(1).UpdateAsync(user, Arg.Any<CancellationToken>());
     }
 
     [Test]
     public async Task UpdateAsync_WithoutReplayGain_KeepsIt()
     {
-        User user = Given(Language.En);
+        User user = Given("en");
         user.Settings!.ReplayGain = ReplayGainMode.Track;
 
-        UserSettings? result = await _service.UpdateAsync(user.Id, new UpdateUserSettingsCommand(Language.De));
+        UserSettings? result = await _service.UpdateAsync(user.Id, new UpdateUserSettingsCommand("de"));
 
         result!.ReplayGain.Should().Be(ReplayGainMode.Track);
     }
@@ -86,7 +110,7 @@ public class UserSettingsServiceTests
     [Test]
     public async Task UpdateAsync_WithPlayerViewMode_SavesItAndKeepsTheOtherSettings()
     {
-        User user = Given(Language.De);
+        User user = Given("de");
         user.Settings!.ReplayGain = ReplayGainMode.Track;
 
         UserSettings? result = await _service.UpdateAsync(
@@ -94,7 +118,7 @@ public class UserSettingsServiceTests
             new UpdateUserSettingsCommand(PlayerViewMode: PlayerViewMode.Visualization));
 
         result!.PlayerViewMode.Should().Be(PlayerViewMode.Visualization);
-        result.Language.Should().Be(Language.De);
+        result.Language.Should().Be("de");
         result.ReplayGain.Should().Be(ReplayGainMode.Track);
         await _users.Received(1).UpdateAsync(user, Arg.Any<CancellationToken>());
     }
@@ -102,11 +126,11 @@ public class UserSettingsServiceTests
     [Test]
     public async Task UpdateAsync_WithSidebarCollapsed_SavesItAndKeepsTheOtherSettings()
     {
-        User user = Given(Language.De);
+        User user = Given("de");
         user.Settings!.PlayerViewMode = PlayerViewMode.Cover;
 
         UserSettings? result = await _service.UpdateAsync(user.Id, new UpdateUserSettingsCommand(SidebarCollapsed: true));
-        UserSettings? unchanged = await _service.UpdateAsync(user.Id, new UpdateUserSettingsCommand(Language.En));
+        UserSettings? unchanged = await _service.UpdateAsync(user.Id, new UpdateUserSettingsCommand("en"));
 
         result!.SidebarCollapsed.Should().BeTrue();
         result.PlayerViewMode.Should().Be(PlayerViewMode.Cover);
@@ -116,10 +140,10 @@ public class UserSettingsServiceTests
     [Test]
     public async Task UpdateAsync_WithoutPlayerViewMode_KeepsIt()
     {
-        User user = Given(Language.En);
+        User user = Given("en");
         user.Settings!.PlayerViewMode = PlayerViewMode.Cover;
 
-        UserSettings? result = await _service.UpdateAsync(user.Id, new UpdateUserSettingsCommand(Language.De));
+        UserSettings? result = await _service.UpdateAsync(user.Id, new UpdateUserSettingsCommand("de"));
 
         result!.PlayerViewMode.Should().Be(PlayerViewMode.Cover);
     }
@@ -127,12 +151,12 @@ public class UserSettingsServiceTests
     [Test]
     public async Task GetAsync_UserWithoutSettings_ReturnsTheDefaults()
     {
-        User user = Given(Language.En);
+        User user = Given("en");
         user.Settings = null;
 
         UserSettings? result = await _service.GetAsync(user.Id);
 
-        result!.Language.Should().Be(Language.En);
+        result!.Language.Should().Be("en");
         result.ReplayGain.Should().Be(ReplayGainMode.Off);
         result.PlayerViewMode.Should().Be(PlayerViewMode.Video);
     }
@@ -140,7 +164,7 @@ public class UserSettingsServiceTests
     [Test]
     public async Task GetAsync_UserWithoutSettings_ReturnsThePlaybackDefaults()
     {
-        User user = Given(Language.En);
+        User user = Given("en");
         user.Settings = null;
 
         UserSettings? result = await _service.GetAsync(user.Id);
@@ -158,7 +182,7 @@ public class UserSettingsServiceTests
     [Test]
     public async Task UpdateAsync_WithEqualizer_SavesItAndKeepsTheOtherSettings()
     {
-        User user = Given(Language.De);
+        User user = Given("de");
         user.Settings!.ReplayGain = ReplayGainMode.Track;
 
         UserSettings? result = await _service.UpdateAsync(
@@ -173,7 +197,7 @@ public class UserSettingsServiceTests
         result.EqualizerPreset.Should().Be(EqualizerPreset.Custom);
         result.EqualizerPreampDb.Should().Be(-3.5);
         result.EqualizerCustomGainsDb.Should().Equal(6, 4.5, 3, 1, 0, -1, -2.5, 0, 2, 4);
-        result.Language.Should().Be(Language.De);
+        result.Language.Should().Be("de");
         result.ReplayGain.Should().Be(ReplayGainMode.Track);
         await _users.Received(1).UpdateAsync(user, Arg.Any<CancellationToken>());
     }
@@ -181,7 +205,7 @@ public class UserSettingsServiceTests
     [Test]
     public async Task UpdateAsync_WithPreset_KeepsTheOwnCurve()
     {
-        User user = Given(Language.En);
+        User user = Given("en");
         user.Settings!.EqualizerCustomGainsDb = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 
         UserSettings? result = await _service.UpdateAsync(
@@ -195,7 +219,7 @@ public class UserSettingsServiceTests
     [Test]
     public async Task UpdateAsync_WithGains_RoundsThemToATenthOfADecibel()
     {
-        User user = Given(Language.En);
+        User user = Given("en");
 
         UserSettings? result = await _service.UpdateAsync(
             user.Id,
@@ -210,7 +234,7 @@ public class UserSettingsServiceTests
     [Test]
     public async Task UpdateAsync_WithCrossfadeAndSleepTimer_SavesThem()
     {
-        User user = Given(Language.En);
+        User user = Given("en");
         user.Settings!.EqualizerPreset = EqualizerPreset.Jazz;
 
         UserSettings? result = await _service.UpdateAsync(
@@ -231,7 +255,7 @@ public class UserSettingsServiceTests
     [Test]
     public async Task UpdateAsync_WithCrossfadeOff_KeepsItsSeconds()
     {
-        User user = Given(Language.En);
+        User user = Given("en");
         user.Settings!.CrossfadeEnabled = true;
         user.Settings.CrossfadeSeconds = 8;
 
@@ -246,7 +270,7 @@ public class UserSettingsServiceTests
     [Test]
     public async Task UpdateAsync_WithoutPlaybackSettings_KeepsThem()
     {
-        User user = Given(Language.En);
+        User user = Given("en");
         UserSettings settings = user.Settings!;
         settings.EqualizerEnabled = true;
         settings.EqualizerPreset = EqualizerPreset.Bass;
@@ -256,7 +280,7 @@ public class UserSettingsServiceTests
         settings.CrossfadeAlbumsGapless = false;
         settings.SleepTimerFadeSeconds = 20;
 
-        UserSettings? result = await _service.UpdateAsync(user.Id, new UpdateUserSettingsCommand(Language.De));
+        UserSettings? result = await _service.UpdateAsync(user.Id, new UpdateUserSettingsCommand("de"));
 
         result.Should().BeEquivalentTo(new
         {
@@ -301,7 +325,7 @@ public class UserSettingsServiceTests
     [Test]
     public async Task GetAsync_UserWithoutSettings_ReturnsTheVisualizationDefaults()
     {
-        User user = Given(Language.En);
+        User user = Given("en");
         user.Settings = null;
 
         UserSettings? result = await _service.GetAsync(user.Id);
@@ -317,7 +341,7 @@ public class UserSettingsServiceTests
     [TestCase(VisualizationModule.BlackCap)]
     public async Task UpdateAsync_WithAnotherModule_ForgetsThePresetOfThePreviousOne(VisualizationModule module)
     {
-        User user = Given(Language.En);
+        User user = Given("en");
         user.Settings!.VisualizationPreset = "Waves";
 
         UserSettings? result = await _service.UpdateAsync(
@@ -331,7 +355,7 @@ public class UserSettingsServiceTests
     [Test]
     public async Task UpdateAsync_FromAForceToBlackCap_ForgetsTheStyleOfAForce()
     {
-        User user = Given(Language.En);
+        User user = Given("en");
         user.Settings!.VisualizationModule = VisualizationModule.AForce;
         user.Settings.VisualizationPreset = "aurora";
 
@@ -346,7 +370,7 @@ public class UserSettingsServiceTests
     [Test]
     public async Task UpdateAsync_WithAnotherModuleAndItsPreset_KeepsTheNamedPreset()
     {
-        User user = Given(Language.En);
+        User user = Given("en");
         user.Settings!.VisualizationPreset = "Waves";
 
         UserSettings? result = await _service.UpdateAsync(
@@ -363,7 +387,7 @@ public class UserSettingsServiceTests
     [TestCase(VisualizationQuality.Auto)]
     public async Task UpdateAsync_WithQuality_SavesItAndKeepsTheRestOfTheVisualization(VisualizationQuality quality)
     {
-        User user = Given(Language.En);
+        User user = Given("en");
         user.Settings!.VisualizationQuality = VisualizationQuality.Medium;
         user.Settings.VisualizationPreset = "Waves";
 
@@ -379,7 +403,7 @@ public class UserSettingsServiceTests
     [Test]
     public async Task UpdateAsync_WithVisualization_SavesItAndKeepsTheOtherSettings()
     {
-        User user = Given(Language.De);
+        User user = Given("de");
         user.Settings!.CrossfadeSeconds = 9;
 
         UserSettings? result = await _service.UpdateAsync(
@@ -393,7 +417,7 @@ public class UserSettingsServiceTests
         result!.VisualizationPreset.Should().Be("Waves");
         result.VisualizationAutoChange.Should().BeFalse();
         result.VisualizationAutoChangeSeconds.Should().Be(600);
-        result.Language.Should().Be(Language.De);
+        result.Language.Should().Be("de");
         result.CrossfadeSeconds.Should().Be(9);
         await _users.Received(1).UpdateAsync(user, Arg.Any<CancellationToken>());
     }
@@ -401,13 +425,13 @@ public class UserSettingsServiceTests
     [Test]
     public async Task UpdateAsync_WithoutVisualization_KeepsIt()
     {
-        User user = Given(Language.En);
+        User user = Given("en");
         user.Settings!.VisualizationPreset = "Waves";
         user.Settings.VisualizationAutoChange = false;
         user.Settings.VisualizationAutoChangeSeconds = 45;
         user.Settings.VisualizationQuality = VisualizationQuality.Low;
 
-        UserSettings? result = await _service.UpdateAsync(user.Id, new UpdateUserSettingsCommand(Language.De));
+        UserSettings? result = await _service.UpdateAsync(user.Id, new UpdateUserSettingsCommand("de"));
 
         result!.VisualizationPreset.Should().Be("Waves");
         result.VisualizationAutoChange.Should().BeFalse();
@@ -418,7 +442,7 @@ public class UserSettingsServiceTests
     [Test]
     public async Task UpdateAsync_WithAutoChangeOff_KeepsItsSeconds()
     {
-        User user = Given(Language.En);
+        User user = Given("en");
         user.Settings!.VisualizationAutoChangeSeconds = 120;
 
         UserSettings? result = await _service.UpdateAsync(
@@ -433,7 +457,7 @@ public class UserSettingsServiceTests
     [TestCase("   ")]
     public async Task UpdateAsync_WithBlankPreset_ForgetsThePreset(string preset)
     {
-        User user = Given(Language.En);
+        User user = Given("en");
         user.Settings!.VisualizationPreset = "Waves";
 
         UserSettings? result = await _service.UpdateAsync(
@@ -446,7 +470,7 @@ public class UserSettingsServiceTests
     [Test]
     public async Task UpdateAsync_WithTheCurrentModuleOnly_KeepsThePreset()
     {
-        User user = Given(Language.En);
+        User user = Given("en");
         user.Settings!.VisualizationPreset = "Waves";
 
         UserSettings? result = await _service.UpdateAsync(
@@ -460,7 +484,7 @@ public class UserSettingsServiceTests
     [TestCaseSource(nameof(InvalidCommands))]
     public async Task UpdateAsync_WithInvalidPlaybackSetting_ThrowsAndSavesNothing(UpdateUserSettingsCommand command)
     {
-        User user = Given(Language.En);
+        User user = Given("en");
 
         Func<Task> act = () => _service.UpdateAsync(user.Id, command);
 
@@ -471,13 +495,13 @@ public class UserSettingsServiceTests
     [Test]
     public async Task UpdateAsync_WithUnknownUser_ReturnsNull()
     {
-        UserSettings? result = await _service.UpdateAsync(Guid.NewGuid(), new UpdateUserSettingsCommand(Language.De));
+        UserSettings? result = await _service.UpdateAsync(Guid.NewGuid(), new UpdateUserSettingsCommand("de"));
 
         result.Should().BeNull();
         await _users.DidNotReceive().UpdateAsync(Arg.Any<User>(), Arg.Any<CancellationToken>());
     }
 
-    private User Given(Language language)
+    private User Given(string language)
     {
         User user = new()
         {

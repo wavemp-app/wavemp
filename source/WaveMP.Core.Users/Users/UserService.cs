@@ -1,5 +1,6 @@
 using WaveMP.Core.Users.Avatars;
 using WaveMP.Core.Users.Profiles;
+using WaveMP.Core.Users.Settings;
 using WaveMP.Data.Entities;
 using WaveMP.Data.Queries;
 using WaveMP.Data.Repositories;
@@ -70,7 +71,7 @@ internal sealed class UserService(IUserRepository users, IAvatarStore avatars, T
             Role = command.Role ?? UserRole.User,
             IsBuiltIn = false,
             CreatedAt = timeProvider.GetUtcNow(),
-            Settings = new UserSettings { Language = Language.En },
+            Settings = new UserSettings { Language = LanguageTags.Default },
         };
 
         try

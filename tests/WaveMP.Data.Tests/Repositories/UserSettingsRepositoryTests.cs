@@ -81,14 +81,14 @@ public class UserSettingsRepositoryTests : LibraryDatabaseTests
         {
             // Like a row from before the migration: only the older columns are written.
             await dbContext.Database.ExecuteSqlInterpolatedAsync(
-                $"INSERT INTO user_settings (user_id, language) VALUES ({user.Id}, 'De')");
+                $"INSERT INTO user_settings (user_id, language) VALUES ({user.Id}, 'de')");
         }
 
         UserSettings settings = (await CreateRepository().FindAsync(user.Id))!.Settings!;
 
         settings.Should().BeEquivalentTo(new
         {
-            Language = Language.De,
+            Language = "de",
             SidebarCollapsed = false,
             EqualizerEnabled = false,
             EqualizerPreset = EqualizerPreset.Flat,

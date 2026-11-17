@@ -10574,14 +10574,6 @@
         "type": "string",
         "description": "What started a job run."
       },
-      "Language": {
-        "enum": [
-          "en",
-          "de"
-        ],
-        "type": "string",
-        "description": "Language of the user interface."
-      },
       "LibrarySettings": {
         "required": [
           "scanIntervalMinutes",
@@ -13246,15 +13238,14 @@
         "type": "object",
         "properties": {
           "language": {
-            "oneOf": [
-              {
-                "type": "null"
-              },
-              {
-                "description": "Language of the user interface.",
-                "$ref": "#/components/schemas/Language"
-              }
-            ]
+            "maxLength": 35,
+            "minLength": 2,
+            "pattern": "^[A-Za-z]{2,3}(-[A-Za-z]{4})?(-([A-Za-z]{2}|[0-9]{3}))?(-([A-Za-z0-9]{5,8}|[0-9][A-Za-z0-9]{3}))*$",
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Language of the user interface as BCP 47 language tag, e.g. \"en\", \"de\" or \"pt-BR\" (language, optional script, region and variants; no extensions). The server keeps any valid tag in the usual case of its subtags (\"PT-br\" becomes \"pt-BR\"); clients offer the languages they have translations for."
           },
           "replayGain": {
             "oneOf": [
@@ -13493,8 +13484,8 @@
         "type": "object",
         "properties": {
           "language": {
-            "description": "Language of the user interface.",
-            "$ref": "#/components/schemas/Language"
+            "type": "string",
+            "description": "Language of the user interface as BCP 47 language tag, e.g. \"en\", \"de\" or \"pt-BR\"; \"en\" by default. A client without translations for the language shows English, or the language without its region if it has that (e.g. \"de\" for \"de-AT\")."
           },
           "replayGain": {
             "description": "Whether the players even out the volume with the ReplayGain tags; Off by default.",

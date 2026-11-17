@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using WaveMP.Core.Users.Profiles;
+using WaveMP.Core.Users.Settings;
 using WaveMP.Data.Entities;
 using WaveMP.Data.Repositories;
 
@@ -36,7 +37,7 @@ public sealed class AdminProfileInitializer(
             Role = UserRole.Admin,
             IsBuiltIn = true,
             CreatedAt = timeProvider.GetUtcNow(),
-            Settings = new UserSettings { Language = Language.En },
+            Settings = new UserSettings { Language = LanguageTags.Default },
         };
 
         try

@@ -42,7 +42,7 @@ public class AdminProfileInitializerTests
         created.Role.Should().Be(UserRole.Admin);
         created.IsBuiltIn.Should().BeTrue();
         created.CreatedAt.Should().Be(_now);
-        created.Settings!.Language.Should().Be(Language.En);
+        created.Settings!.Language.Should().Be("en");
         created.PinHash.Should().BeNull();
     }
 

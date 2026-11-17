@@ -5,7 +5,9 @@ namespace WaveMP.Core.Users.Settings;
 /// <summary>
 /// Changes the settings of a user. Every <c>null</c> value keeps the current value.
 /// </summary>
-/// <param name="Language">Language of the user interface.</param>
+/// <param name="Language">
+/// Language of the user interface as BCP 47 language tag, see <see cref="LanguageTags"/>; it is saved in the usual case.
+/// </param>
 /// <param name="ReplayGain">Volume normalization of the player.</param>
 /// <param name="PlayerViewMode">What the Now Playing stage shows.</param>
 /// <param name="EqualizerEnabled">Whether the equalizer shapes the sound.</param>
@@ -27,7 +29,7 @@ namespace WaveMP.Core.Users.Settings;
 /// </param>
 /// <param name="VisualizationQuality">How much detail the visualization draws.</param>
 public sealed record UpdateUserSettingsCommand(
-    Language? Language = null,
+    string? Language = null,
     ReplayGainMode? ReplayGain = null,
     PlayerViewMode? PlayerViewMode = null,
     bool? EqualizerEnabled = null,

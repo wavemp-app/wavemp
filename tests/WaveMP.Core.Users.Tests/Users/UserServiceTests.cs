@@ -49,7 +49,7 @@ public class UserServiceTests
         user.Role.Should().Be(UserRole.User);
         user.IsBuiltIn.Should().BeFalse();
         user.CreatedAt.Should().Be(_now);
-        user.Settings!.Language.Should().Be(Language.En);
+        user.Settings!.Language.Should().Be("en");
         await _users.Received(1).AddAsync(user, Arg.Any<CancellationToken>());
     }
 

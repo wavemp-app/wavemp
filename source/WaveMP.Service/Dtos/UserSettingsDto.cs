@@ -6,9 +6,11 @@ namespace WaveMP.Service.Dtos;
 public sealed class UserSettingsDto
 {
     /// <summary>
-    /// Language of the user interface.
+    /// Language of the user interface as BCP 47 language tag, e.g. "en", "de" or "pt-BR"; "en" by default. A client
+    /// without translations for the language shows English, or the language without its region if it has that (e.g.
+    /// "de" for "de-AT").
     /// </summary>
-    public required LanguageDto Language { get; init; }
+    public required string Language { get; init; }
 
     /// <summary>
     /// Whether the players even out the volume with the ReplayGain tags; Off by default.

@@ -11,7 +11,7 @@ public static class SettingsMappingExtensions
     {
         return new UserSettingsDto
         {
-            Language = settings.Language.ToDto(),
+            Language = settings.Language,
             ReplayGain = settings.ReplayGain.ToDto(),
             PlayerViewMode = settings.PlayerViewMode.ToDto(),
             SidebarCollapsed = settings.SidebarCollapsed,
@@ -47,7 +47,7 @@ public static class SettingsMappingExtensions
     public static UpdateUserSettingsCommand ToCommand(this UpdateUserSettingsDto request)
     {
         return new UpdateUserSettingsCommand(
-            request.Language?.ToEntity(),
+            request.Language,
             request.ReplayGain?.ToEntity(),
             request.PlayerViewMode?.ToEntity(),
             request.Equalizer?.Enabled,
@@ -169,26 +169,6 @@ public static class SettingsMappingExtensions
             PlayerViewModeDto.Visualization => PlayerViewMode.Visualization,
             PlayerViewModeDto.Lyrics => PlayerViewMode.Lyrics,
             _ => throw new ArgumentOutOfRangeException(nameof(mode), mode, "Unknown player view mode."),
-        };
-    }
-
-    public static LanguageDto ToDto(this Language language)
-    {
-        return language switch
-        {
-            Language.En => LanguageDto.En,
-            Language.De => LanguageDto.De,
-            _ => throw new ArgumentOutOfRangeException(nameof(language), language, "Unknown language."),
-        };
-    }
-
-    public static Language ToEntity(this LanguageDto language)
-    {
-        return language switch
-        {
-            LanguageDto.En => Language.En,
-            LanguageDto.De => Language.De,
-            _ => throw new ArgumentOutOfRangeException(nameof(language), language, "Unknown language."),
         };
     }
 

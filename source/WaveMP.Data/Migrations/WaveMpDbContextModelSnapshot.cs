@@ -1183,8 +1183,8 @@ namespace WaveMP.Data.Migrations
 
                     b.Property<string>("Language")
                         .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("character varying(16)")
+                        .HasMaxLength(35)
+                        .HasColumnType("character varying(35)")
                         .HasColumnName("language");
 
                     b.Property<string>("PlayerViewMode")
