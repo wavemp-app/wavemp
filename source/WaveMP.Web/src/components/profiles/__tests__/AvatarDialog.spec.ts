@@ -78,6 +78,26 @@ describe('AvatarDialog', () => {
         document.body.innerHTML = ''
     })
 
+    it('keeps the editor out of the page while it is closed', async () => {
+        const wrapper = mount(AvatarDialog, {
+            props: { target: { kind: 'me' as const }, profile: anna, open: false },
+            global: { plugins: [createWaveMpI18n('en')] },
+            attachTo: document.body,
+        })
+        await flushPromises()
+        expect(wrapper.find('[data-part="avatar-editor"]').exists()).toBe(false)
+        expect(wrapper.find('[data-part="segmented-control"]').exists()).toBe(false)
+
+        await wrapper.setProps({ open: true })
+        await flushPromises()
+        expect(wrapper.find('[data-part="avatar-editor"]').exists()).toBe(true)
+
+        await wrapper.setProps({ open: false })
+        await flushPromises()
+        expect(wrapper.find('[data-part="avatar-editor"]').exists()).toBe(false)
+        wrapper.unmount()
+    })
+
     it('chooses a built-in avatar', async () => {
         const wrapper = await mountDialog()
 

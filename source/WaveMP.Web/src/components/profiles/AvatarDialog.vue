@@ -205,7 +205,7 @@ function remove(): Promise<void> {
 
 <template>
     <BaseDialog v-model:open="open" data-item="avatar" :title="t('avatars.title')">
-        <div v-if="profile" data-part="avatar-editor" :data-state="mode">
+        <div v-if="profile && open" data-part="avatar-editor" :data-state="mode">
             <ProfileAvatar
                 :initials="profile.initials"
                 :color="profile.color"

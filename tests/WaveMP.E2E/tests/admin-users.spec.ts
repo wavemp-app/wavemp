@@ -26,7 +26,7 @@ test('creates, edits and deletes a profile', async ({ page }) => {
     await expect(adminNavItem(page, 'admin-users')).toHaveAttribute('aria-current', 'page')
 
     const builtIn = page.locator("[data-part='user-item'][data-state~='built-in']")
-    await expect(builtIn.locator("[data-part='user-actions'] button").nth(1)).toBeDisabled()
+    await expect(builtIn.locator("[data-part='user-actions'] [data-item='delete']")).toBeDisabled()
 
     // Create: the initials come from the name.
     await page.locator("[data-part='view-actions'] button").click()
@@ -42,7 +42,7 @@ test('creates, edits and deletes a profile', async ({ page }) => {
     await expect(item.locator("[data-part='badge']").first()).toHaveText('User')
 
     // Edit: own initials and another color.
-    await item.locator("[data-part='user-actions'] button").first().click()
+    await item.locator("[data-part='user-actions'] [data-item='edit']").click()
     await expect(dialog.locator("[data-part='dialog-title']")).toHaveText('Edit profile')
     await dialog.getByRole('textbox', { name: 'Initials' }).fill('XY')
     await dialog.getByRole('radio', { name: 'Green' }).click()
@@ -55,7 +55,7 @@ test('creates, edits and deletes a profile', async ({ page }) => {
     )
 
     // Delete after the confirmation.
-    await item.locator("[data-part='user-actions'] button").nth(1).click()
+    await item.locator("[data-part='user-actions'] [data-item='delete']").click()
     await expect(dialog).toContainText(`Delete the profile ${name}?`)
     await dialog.locator("[data-part='dialog-footer'] button", { hasText: 'Delete' }).click()
 

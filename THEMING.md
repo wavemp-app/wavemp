@@ -263,7 +263,7 @@ Example of a desktop layout with the sidebar on the right:
 | `user-info` | `div` | `user-item` | Name and details of the profile |
 | `user-name` | `span` | `user-info` | Name of the profile |
 | `user-meta` | `span` | `user-info` | Role and built-in state as `badge` with a visible `label`, and the creation date as `label` |
-| `user-actions` | `div` | `user-item` | Buttons to edit and delete the profile |
+| `user-actions` | `div` | `user-item` | Buttons to edit and delete the profile (`data-item` `edit`, `avatar`, `reset-pin` and `delete`) |
 | `admin-nav` | `nav` | `view` | Navigation between the pages of the administration (library, jobs, cache, transcoding, profiles): an `indicator` and one `admin-nav-item` per page; tells the current page with the runtime variables of an active element, see [Active element of a group](#active-element-of-a-group) |
 | `admin-nav-item` | `a` (`aria-current`) | `admin-nav` | Page of the administration with `icon` and `label` |
 | `section` | `section` (`aria-labelledby`) | `view` | Part of a page with a `section-title` |
@@ -483,7 +483,7 @@ The base links states to graphics: buttons use the variables `--wmp-image-<varia
 | `data-column` | `list-column`, `list-cell` | `number`, `title`, `duration`, `artist`, `rating`, `favorite`; in playlists also `handle` (first column, only where entries can be moved), `album` and `detail` (in "Recently played" the time of the last play, in the favorites the time the song was marked) |
 | `data-count` | `playlist-cover` | Number of song covers (1 to 4) |
 | `data-count` | `pin-dots` | Number of entered digits (0 to 8) |
-| `data-item` | `dialog`, `segmented-control`, `button` and `avatar-preset` of the avatar dialog | `avatar` (the `dialog`), `avatar-mode` (the `segmented-control` with the `segment`s `preset` and `upload`), the `button`s `choose-file`, `remove-avatar` and `save-avatar`, the id of an `avatar-preset` (`bubble`, `leaf`, `drop`, `sun`, `wave`, `cloud`, `star`, `fish`); on the settings page the `section` `avatar` with the `button` `change-avatar`, in `user-actions` the `button` `avatar` |
+| `data-item` | `dialog`, `segmented-control`, `button` and `avatar-preset` of the avatar dialog | `avatar` (the `dialog`), `avatar-mode` (the `segmented-control` with the `segment`s `preset` and `upload`), the `button`s `choose-file`, `remove-avatar` and `save-avatar`, the id of an `avatar-preset` (`bubble`, `leaf`, `drop`, `sun`, `wave`, `cloud`, `star`, `fish`); on the settings page the `section` `avatar` with the `button` `change-avatar`, in `user-actions` the `button`s `edit`, `avatar` and `delete` |
 | `data-field` | `form-note` (settings) | `avatar-status`: whether the profile shows a picture |
 | `data-field` | `field` (avatar dialog) | `zoom` |
 | `data-key` | `pin-key` | `0` to `9`, `delete`, `submit` |

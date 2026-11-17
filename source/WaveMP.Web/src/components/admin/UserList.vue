@@ -75,6 +75,7 @@ const format = useFormat()
                 <BaseButton
                     variant="icon"
                     icon="edit"
+                    data-item="edit"
                     :label="t('adminUsers.edit', { name: user.name })"
                     @click="emit('edit', user)"
                 />
@@ -96,6 +97,7 @@ const format = useFormat()
                 <BaseButton
                     variant="icon"
                     icon="delete"
+                    data-item="delete"
                     :label="
                         user.isBuiltIn
                             ? t('adminUsers.builtInNotDeletable')

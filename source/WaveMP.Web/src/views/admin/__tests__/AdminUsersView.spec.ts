@@ -92,7 +92,7 @@ describe('AdminUsersView', () => {
             'Built-in',
         ])
         expect(items[0]?.get('[data-part="user-meta"]').text()).toContain('Created')
-        const deleteAdmin = items[1]?.findAll('[data-part="user-actions"] button')[2]
+        const deleteAdmin = items[1]?.find('[data-part="user-actions"] [data-item="delete"]')
         expect(deleteAdmin?.attributes('disabled')).toBeDefined()
         expect(deleteAdmin?.attributes('title')).toBe(
             'The built-in admin profile cannot be deleted.',
