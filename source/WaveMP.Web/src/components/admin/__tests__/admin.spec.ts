@@ -33,6 +33,7 @@ describe('AdminNav', () => {
         expect(items.map((item) => item.text())).toEqual([
             'Library',
             'Files',
+            'Review',
             'Jobs',
             'Cache',
             'Transcoding',
@@ -42,6 +43,7 @@ describe('AdminNav', () => {
         expect(items.map((item) => item.attributes('href'))).toEqual([
             '/admin/library',
             '/admin/files',
+            '/admin/review',
             '/admin/jobs',
             '/admin/cache',
             '/admin/transcoding',
@@ -49,8 +51,8 @@ describe('AdminNav', () => {
             '/admin/users',
         ])
         expect(items.map((item) => item.attributes('data-item'))).toContain('admin-cache')
-        expect(items[2]!.attributes('aria-current')).toBe('page')
-        expect(items[2]!.attributes('data-state')).toBe('active')
+        expect(items[3]!.attributes('aria-current')).toBe('page')
+        expect(items[3]!.attributes('data-state')).toBe('active')
         expect(items[0]!.attributes('aria-current')).toBeUndefined()
     })
 })

@@ -22,6 +22,8 @@ import { PlaybackRequestBuilderRequestsMetadata, type PlaybackRequestBuilder } f
 // @ts-ignore
 import { RatingRequestBuilderRequestsMetadata, type RatingRequestBuilder } from './rating/index.js';
 // @ts-ignore
+import { ReviewRequestBuilderRequestsMetadata, type ReviewRequestBuilder } from './review/index.js';
+// @ts-ignore
 import { StreamRequestBuilderRequestsMetadata, type StreamRequestBuilder } from './stream/index.js';
 // @ts-ignore
 import { type VideoRequestBuilder, VideoRequestBuilderNavigationMetadata, VideoRequestBuilderRequestsMetadata } from './video/index.js';
@@ -68,6 +70,10 @@ export interface TracksItemRequestBuilder extends BaseRequestBuilder<TracksItemR
      * The rating property
      */
     get rating(): RatingRequestBuilder;
+    /**
+     * The review property
+     */
+    get review(): ReviewRequestBuilder;
     /**
      * The stream property
      */
@@ -127,6 +133,9 @@ export const TracksItemRequestBuilderNavigationMetadata: Record<Exclude<keyof Tr
     },
     rating: {
         requestsMetadata: RatingRequestBuilderRequestsMetadata,
+    },
+    review: {
+        requestsMetadata: ReviewRequestBuilderRequestsMetadata,
     },
     stream: {
         requestsMetadata: StreamRequestBuilderRequestsMetadata,

@@ -59,6 +59,10 @@
         --_icon: var(--wmp-icon-playlists);
     }
 
+    [data-icon='review-inbox'] {
+        --_icon: var(--wmp-icon-review-inbox);
+    }
+
     [data-icon='breadcrumb-root'] {
         --_icon: var(--wmp-icon-breadcrumb-root);
     }
@@ -189,6 +193,14 @@
 
     [data-icon='admin-files'] {
         --_icon: var(--wmp-icon-admin-files);
+    }
+
+    [data-icon='admin-review'] {
+        --_icon: var(--wmp-icon-admin-review);
+    }
+
+    [data-icon='tags-missing'] {
+        --_icon: var(--wmp-icon-tags-missing);
     }
 
     [data-icon='album'] {
@@ -385,6 +397,22 @@
 
     [data-icon='detail-back'] {
         --_icon: var(--wmp-icon-detail-back);
+    }
+
+    [data-icon='review-done'] {
+        --_icon: var(--wmp-icon-review-done);
+    }
+
+    [data-icon='review-skip'] {
+        --_icon: var(--wmp-icon-review-skip);
+    }
+
+    [data-icon='review-previous'] {
+        --_icon: var(--wmp-icon-review-previous);
+    }
+
+    [data-icon='review-next'] {
+        --_icon: var(--wmp-icon-review-next);
     }
 
     [data-icon='go-to-album'] {

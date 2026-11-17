@@ -614,7 +614,8 @@
       "cache": "Cache",
       "transcoding": "Transcoding",
       "backups": "Backups",
-      "profiles": "Profiles"
+      "profiles": "Profiles",
+      "review": "Review"
     }
   },
   "adminLibrary": {
@@ -770,6 +771,67 @@
     "errors": {
       "invalid": "This file can no longer be selected. The files were loaded again.",
       "saveFailed": "The selection could not be saved."
+    }
+  },
+  "reviewInbox": {
+    "title": "Review inbox",
+    "button": "Review",
+    "buttonWithCount": "Review, {count} unreviewed songs",
+    "listTitle": "Unreviewed songs",
+    "listLabel": "Unreviewed songs",
+    "search": "Search songs",
+    "searchPlaceholder": "Title, artist, album or file name",
+    "filterLabel": "Show",
+    "sortLabel": "Sort by",
+    "filters": {
+      "all": "All",
+      "missing": "Missing tags",
+      "complete": "Complete tags"
+    },
+    "sorts": {
+      "firstSeenAt": "Date added",
+      "artist": "Artist",
+      "album": "Album",
+      "title": "Title"
+    },
+    "tags": {
+      "title": "Title",
+      "artist": "Artist",
+      "album": "Album",
+      "year": "Year",
+      "trackNumber": "Track number",
+      "genre": "Genre"
+    },
+    "missingTags": "Missing tags:",
+    "select": "Select {title}",
+    "selectAll": "Select all",
+    "selectedCount": "{count} selected",
+    "markSelected": "Mark selected as reviewed",
+    "bulkLabel": "Selected songs",
+    "reviewed": "Reviewed",
+    "unreviewed": "Not reviewed yet",
+    "reviewedBy": "Reviewed by {name} on {date}",
+    "added": "Added on {date}",
+    "status": "Review",
+    "loadError": "The songs could not be loaded.",
+    "loadTrackError": "The song could not be loaded.",
+    "empty": "All songs are reviewed.",
+    "noMatches": "No unreviewed songs match the filter.",
+    "toInbox": "To the review inbox",
+    "finished": "Done",
+    "finishedText": "No unreviewed song follows in the list.",
+    "metadataTitle": "Metadata",
+    "actionsLabel": "Review",
+    "saveAndReview": "Save and mark as reviewed",
+    "markReviewed": "Mark as reviewed",
+    "skip": "Skip",
+    "navLabel": "Songs of the review inbox",
+    "previous": "Previous song",
+    "next": "Next song",
+    "position": "Song {position} of {count}",
+    "errors": {
+      "markFailed": "The review could not be saved.",
+      "loadNext": "The next songs could not be loaded."
     }
   },
   "adminJobs": {

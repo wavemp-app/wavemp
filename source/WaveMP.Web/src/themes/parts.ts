@@ -21,6 +21,7 @@ export const parts = [
     'tab',
     'server-status',
     'status-indicator',
+    'btn-review-inbox',
 
     // Toolbar
     'toolbar',
@@ -281,6 +282,16 @@ export const parts = [
     'file-selection-title',
     'file-choices',
     'file-choice',
+    'review-filters',
+    'review-bulk',
+    'review-list',
+    'review-item',
+    'review-info',
+    'review-title',
+    'review-meta',
+    'review-tags',
+    'review-actions',
+    'review-nav',
 
     // Base components
     'button',

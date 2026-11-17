@@ -12,6 +12,8 @@ import AdminCacheView from '@/views/admin/AdminCacheView.vue'
 import AdminJobsView from '@/views/admin/AdminJobsView.vue'
 import AdminFilesView from '@/views/admin/AdminFilesView.vue'
 import AdminLibraryView from '@/views/admin/AdminLibraryView.vue'
+import AdminReviewTrackView from '@/views/admin/AdminReviewTrackView.vue'
+import AdminReviewView from '@/views/admin/AdminReviewView.vue'
 import AdminTrackFilesView from '@/views/admin/AdminTrackFilesView.vue'
 import AdminTranscodingView from '@/views/admin/AdminTranscodingView.vue'
 import AdminUsersView from '@/views/admin/AdminUsersView.vue'
@@ -184,6 +186,19 @@ export function createRoutes(extra: readonly RouteRecordRaw[] = []): RouteRecord
             path: '/admin/files/:id',
             name: 'admin-track-files',
             component: AdminTrackFilesView,
+            props: true,
+            meta: { admin: true },
+        },
+        {
+            path: '/admin/review',
+            name: 'admin-review',
+            component: AdminReviewView,
+            meta: { admin: true, keepAlive: true },
+        },
+        {
+            path: '/admin/review/:id',
+            name: 'admin-review-track',
+            component: AdminReviewTrackView,
             props: true,
             meta: { admin: true },
         },

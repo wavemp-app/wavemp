@@ -26,6 +26,7 @@ export const iconSlots = {
     'now-playing': { file: fill('music-notes'), area: 'header' },
     library: { file: fill('books'), area: 'header' },
     playlists: { file: fill('playlist'), area: 'header' },
+    'review-inbox': { file: fill('tray'), area: 'header' },
 
     // Toolbar
     'breadcrumb-root': { file: fill('music-notes'), area: 'toolbar' },
@@ -65,6 +66,8 @@ export const iconSlots = {
     'admin-transcoding': { file: regular('film-reel'), area: 'content' },
     'admin-backups': { file: regular('database'), area: 'content' },
     'admin-files': { file: regular('files'), area: 'content' },
+    'admin-review': { file: regular('tray'), area: 'content' },
+    'tags-missing': { file: regular('warning'), area: 'content' },
     album: { file: fill('vinyl-record'), area: 'content' },
     artist: { file: fill('microphone-stage'), area: 'content' },
     genre: { file: fill('guitar'), area: 'content' },
@@ -118,6 +121,10 @@ export const iconSlots = {
     'view-lyrics': { file: regular('subtitles'), area: 'general' },
     'download-lyrics': { file: regular('cloud-arrow-down'), area: 'general' },
     'detail-back': { file: regular('arrow-left'), area: 'general' },
+    'review-done': { file: regular('check-circle'), area: 'general' },
+    'review-skip': { file: regular('skip-forward'), area: 'general' },
+    'review-previous': { file: regular('caret-left'), area: 'general' },
+    'review-next': { file: regular('caret-right'), area: 'general' },
     'go-to-album': { file: regular('vinyl-record'), area: 'general' },
     'go-to-artist': { file: regular('microphone-stage'), area: 'general' },
     'play-now': { file: regular('play'), area: 'general' },

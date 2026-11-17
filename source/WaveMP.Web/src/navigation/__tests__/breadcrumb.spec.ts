@@ -81,6 +81,23 @@ describe('buildBreadcrumb', () => {
         ])
     })
 
+    it('shows a song of the review inbox below the inbox, with its title once known', () => {
+        const route = { name: 'admin-review-track', params: { id: 'track-1' } }
+
+        expect(pageTitleKey({ name: 'admin-review', params: {} })).toBe('reviewInbox.title')
+        expect(buildBreadcrumb(route).map((c) => c.id)).toEqual(['music', 'admin', 'admin-review'])
+        expect(buildBreadcrumb(route, 'Song').at(-2)).toEqual({
+            id: 'admin-review',
+            labelKey: 'reviewInbox.title',
+            to: { name: 'admin-review' },
+        })
+        expect(buildBreadcrumb(route, 'Song').at(-1)).toEqual({
+            id: 'admin-review-track',
+            labelKey: 'reviewInbox.title',
+            label: 'Song',
+        })
+    })
+
     it('never links the current page', () => {
         const crumbs = buildBreadcrumb({ name: 'playlists', params: {} })
 

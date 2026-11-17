@@ -21,6 +21,7 @@ export interface RouteInfo {
 const adminPageTitles = {
     'admin-library': 'adminLibrary.title',
     'admin-files': 'adminFiles.title',
+    'admin-review': 'reviewInbox.title',
     'admin-jobs': 'adminJobs.title',
     'admin-cache': 'adminCache.title',
     'admin-transcoding': 'adminTranscoding.title',
@@ -132,8 +133,24 @@ export function buildBreadcrumb(route: RouteInfo, detailTitle?: string | null): 
                 })
             }
             break
+        case 'admin-review-track':
+            crumbs.push({ id: 'admin', labelKey: 'admin.title', to: { name: 'admin' } })
+            crumbs.push({
+                id: 'admin-review',
+                labelKey: adminPageTitles['admin-review'],
+                to: { name: 'admin-review' },
+            })
+            if (detailTitle) {
+                crumbs.push({
+                    id: route.name,
+                    labelKey: adminPageTitles['admin-review'],
+                    label: detailTitle,
+                })
+            }
+            break
         case 'admin-library':
         case 'admin-files':
+        case 'admin-review':
         case 'admin-jobs':
         case 'admin-cache':
         case 'admin-transcoding':

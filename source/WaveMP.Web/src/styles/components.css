@@ -2799,4 +2799,194 @@
     [data-section='favorites'] [data-part='list'] {
         --wmp-list-columns: var(--wmp-list-columns-recently-played);
     }
+
+    /* --- Review inbox -------------------------------------------------------------------- */
+
+    /* Entry in the header (admins only): icon, label and the number of unreviewed songs. */
+    [data-part='btn-review-inbox'] {
+        display: inline-flex;
+        align-items: center;
+        align-self: center;
+        gap: var(--wmp-space-xs);
+        padding: var(--wmp-space-xs) var(--wmp-space-s);
+        border-radius: var(--wmp-radius-m);
+        color: inherit;
+        font-size: var(--wmp-font-size-s);
+        text-decoration: none;
+        white-space: nowrap;
+    }
+
+    [data-part='btn-review-inbox']:hover,
+    [data-part='btn-review-inbox'][data-state~='active'] {
+        color: var(--wmp-color-accent);
+    }
+
+    [data-part='btn-review-inbox']:focus-visible {
+        outline: 2px solid var(--wmp-color-focus);
+        outline-offset: 2px;
+    }
+
+    [data-part='btn-review-inbox'] > [data-part='badge'] {
+        min-inline-size: 1.25rem;
+        margin-inline-start: 0;
+        padding: 0 var(--wmp-space-xs);
+        border-radius: var(--wmp-radius-round);
+        background: var(--wmp-color-accent);
+        color: var(--wmp-color-accent-contrast);
+        font-size: var(--wmp-font-size-xs);
+        font-weight: var(--wmp-font-weight-bold);
+        text-align: center;
+    }
+
+    :is([data-part='btn-review-inbox'], [data-part='review-meta'], [data-part='review-tags'])
+        > [data-part='badge']
+        > [data-part='label'] {
+        position: static;
+        inline-size: auto;
+        block-size: auto;
+        overflow: visible;
+        clip-path: none;
+    }
+
+    [data-part='review-filters'] {
+        display: grid;
+        justify-items: start;
+        gap: var(--wmp-space-s);
+        min-inline-size: 0;
+    }
+
+    [data-part='review-filters'] > [data-part='search'] {
+        inline-size: min(100%, 24rem);
+    }
+
+    [data-part='review-filters'] > [data-part='segmented-control'] {
+        max-inline-size: 100%;
+        overflow-x: auto;
+    }
+
+    [data-part='review-bulk'] {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: var(--wmp-space-s) var(--wmp-space-m);
+        padding: var(--wmp-space-s) var(--wmp-space-m);
+        border: 1px solid var(--wmp-color-border);
+        border-radius: var(--wmp-radius-m);
+        background: var(--wmp-color-surface);
+    }
+
+    [data-part='review-bulk'] > [data-field='selected-count'] {
+        color: var(--wmp-color-text-muted);
+        font-size: var(--wmp-font-size-s);
+    }
+
+    [data-part='review-list'] {
+        display: grid;
+        gap: var(--wmp-space-s);
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
+    [data-part='review-item'] {
+        display: grid;
+        grid-template-columns: auto auto minmax(0, 1fr);
+        align-items: center;
+        gap: var(--wmp-space-m);
+        min-inline-size: 0;
+        padding: var(--wmp-space-s) var(--wmp-space-m);
+        border: 1px solid var(--wmp-color-border);
+        border-radius: var(--wmp-radius-m);
+        background: var(--wmp-color-surface);
+    }
+
+    [data-part='review-item'][data-state~='selected'] {
+        border-color: var(--wmp-color-accent);
+    }
+
+    [data-part='review-item'][data-state~='reviewed'] {
+        color: var(--wmp-color-text-muted);
+    }
+
+    [data-part='review-item'] > [data-part='cover'] {
+        inline-size: var(--wmp-cover-size-queue);
+    }
+
+    [data-part='review-info'] {
+        display: grid;
+        gap: 0.125rem;
+        min-inline-size: 0;
+    }
+
+    [data-part='review-info'] > :is([data-part='label'], [data-part='file-path']) {
+        color: var(--wmp-color-text-muted);
+        font-size: var(--wmp-font-size-s);
+        overflow-wrap: anywhere;
+    }
+
+    [data-part='review-title'] {
+        justify-self: start;
+        color: inherit;
+        font-weight: var(--wmp-font-weight-bold);
+        overflow-wrap: anywhere;
+    }
+
+    [data-part='review-title']:hover {
+        color: var(--wmp-color-accent);
+        text-decoration: underline;
+    }
+
+    [data-part='review-meta'],
+    [data-part='review-tags'] {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: var(--wmp-space-xs) var(--wmp-space-s);
+        min-inline-size: 0;
+        color: var(--wmp-color-text-muted);
+        font-size: var(--wmp-font-size-s);
+    }
+
+    [data-part='review-tags'] {
+        color: var(--wmp-color-warning);
+    }
+
+    [data-part='review-tags'] > [data-part='icon'] {
+        --wmp-icon-size: var(--wmp-icon-size-s);
+    }
+
+    :is([data-part='review-meta'], [data-part='review-tags']) > [data-part='badge'] {
+        --_badge-color: var(--wmp-color-text-muted);
+
+        display: inline-flex;
+        align-items: center;
+        gap: var(--wmp-space-xs);
+        margin-inline-start: 0;
+        padding: 0 var(--wmp-space-xs);
+        border: 1px solid var(--_badge-color);
+        border-radius: var(--wmp-radius-s);
+        color: var(--_badge-color);
+        font-size: var(--wmp-font-size-xs);
+    }
+
+    [data-part='badge'][data-state~='missing-tag'] {
+        --_badge-color: var(--wmp-color-warning);
+    }
+
+    [data-part='badge'][data-state~='reviewed'] {
+        --_badge-color: var(--wmp-color-success);
+    }
+
+    [data-part='review-actions'],
+    [data-part='review-nav'] {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: var(--wmp-space-s);
+    }
+
+    [data-part='review-nav'] > [data-field='position'] {
+        color: var(--wmp-color-text-muted);
+        font-size: var(--wmp-font-size-s);
+    }
 }

@@ -7,6 +7,7 @@ import BaseRoundButton from '@/components/base/BaseRoundButton.vue'
 import BaseTabs from '@/components/base/BaseTabs.vue'
 import ProfileMenu, { type ProfileMenuProfile } from './ProfileMenu.vue'
 import ServerStatus from './ServerStatus.vue'
+import ReviewInboxButton from '@/components/review/ReviewInboxButton.vue'
 import { historyAvailability } from '@/navigation/history'
 import { mainNavigation, type MainTab } from '@/navigation/libraryTree'
 import { useSessionStore } from '@/stores/session'
@@ -95,6 +96,7 @@ onUnmounted(() => {
             />
         </div>
         <BaseTabs :items="tabs" :label="t('nav.main')" :active="activeTab ?? route.meta.tab" />
+        <ReviewInboxButton v-if="session.isAdmin" />
         <ServerStatus />
         <ProfileMenu v-if="menuProfile" :profile="menuProfile" />
     </header>

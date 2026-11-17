@@ -916,6 +916,15 @@ export function createProfilePageFromDiscriminatorValue(parseNode: ParseNode | u
 /**
  * Creates a new instance of the appropriate class based on discriminator value
  * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {ProfileReference}
+ */
+// @ts-ignore
+export function createProfileReferenceFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoProfileReference;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
  * @returns {RecentlyPlayedTrack}
  */
 // @ts-ignore
@@ -1100,6 +1109,42 @@ export function createTrackPlaybackFromDiscriminatorValue(parseNode: ParseNode |
 /**
  * Creates a new instance of the appropriate class based on discriminator value
  * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {TrackReview}
+ */
+// @ts-ignore
+export function createTrackReviewFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoTrackReview;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {TrackReviewPage}
+ */
+// @ts-ignore
+export function createTrackReviewPageFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoTrackReviewPage;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {TrackReviewState}
+ */
+// @ts-ignore
+export function createTrackReviewStateFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoTrackReviewState;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {TrackReviewSummary}
+ */
+// @ts-ignore
+export function createTrackReviewSummaryFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoTrackReviewSummary;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
  * @returns {TrackVideoOffset}
  */
 // @ts-ignore
@@ -1190,6 +1235,15 @@ export function createUpdateCrossfadeSettingsFromDiscriminatorValue(parseNode: P
 /**
  * Creates a new instance of the appropriate class based on discriminator value
  * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {UpdatedTrackReviews}
+ */
+// @ts-ignore
+export function createUpdatedTrackReviewsFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoUpdatedTrackReviews;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
  * @returns {UpdateEqualizerSettings}
  */
 // @ts-ignore
@@ -1258,6 +1312,24 @@ export function createUpdateTrackMetadataFromDiscriminatorValue(parseNode: Parse
 // @ts-ignore
 export function createUpdateTrackRatingFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
     return deserializeIntoUpdateTrackRating;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {UpdateTrackReview}
+ */
+// @ts-ignore
+export function createUpdateTrackReviewFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoUpdateTrackReview;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {UpdateTrackReviews}
+ */
+// @ts-ignore
+export function createUpdateTrackReviewsFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoUpdateTrackReviews;
 }
 /**
  * Creates a new instance of the appropriate class based on discriminator value
@@ -2235,6 +2307,18 @@ export function deserializeIntoProfilePage(profilePage: Partial<ProfilePage> | u
 }
 /**
  * The deserialization information for the current model
+ * @param ProfileReference The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoProfileReference(profileReference: Partial<ProfileReference> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "id": n => { profileReference.id = n.getGuidValue(); },
+        "name": n => { profileReference.name = n.getStringValue(); },
+    }
+}
+/**
+ * The deserialization information for the current model
  * @param RecentlyPlayedTrack The instance to deserialize into.
  * @returns {Record<string, (node: ParseNode) => void>}
  */
@@ -2543,6 +2627,70 @@ export function deserializeIntoTrackPlayback(trackPlayback: Partial<TrackPlaybac
 }
 /**
  * The deserialization information for the current model
+ * @param TrackReview The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoTrackReview(trackReview: Partial<TrackReview> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "album": n => { trackReview.album = n.getObjectValue<AlbumReference>(createAlbumReferenceFromDiscriminatorValue); },
+        "artist": n => { trackReview.artist = n.getObjectValue<ArtistReference>(createArtistReferenceFromDiscriminatorValue); },
+        "baseName": n => { trackReview.baseName = n.getStringValue(); },
+        "directoryPath": n => { trackReview.directoryPath = n.getStringValue(); },
+        "firstSeenAt": n => { trackReview.firstSeenAt = n.getDateValue(); },
+        "hasAudio": n => { trackReview.hasAudio = n.getBooleanValue(); },
+        "hasCover": n => { trackReview.hasCover = n.getBooleanValue(); },
+        "hasVideo": n => { trackReview.hasVideo = n.getBooleanValue(); },
+        "missingTags": n => { trackReview.missingTags = n.getCollectionOfEnumValues<MetadataTag>(MetadataTagObject); },
+        "reviewedAt": n => { trackReview.reviewedAt = n.getDateValue(); },
+        "reviewedBy": n => { trackReview.reviewedBy = n.getObjectValue<ProfileReference>(createProfileReferenceFromDiscriminatorValue); },
+        "status": n => { trackReview.status = n.getEnumValue<TrackReviewStatus>(TrackReviewStatusObject); },
+        "title": n => { trackReview.title = n.getStringValue(); },
+        "trackId": n => { trackReview.trackId = n.getGuidValue(); },
+    }
+}
+/**
+ * The deserialization information for the current model
+ * @param TrackReviewPage The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoTrackReviewPage(trackReviewPage: Partial<TrackReviewPage> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "items": n => { trackReviewPage.items = n.getCollectionOfObjectValues<TrackReview>(createTrackReviewFromDiscriminatorValue); },
+        "limit": n => { trackReviewPage.limit = n.getNumberValue(); },
+        "offset": n => { trackReviewPage.offset = n.getNumberValue(); },
+        "total": n => { trackReviewPage.total = n.getNumberValue(); },
+    }
+}
+/**
+ * The deserialization information for the current model
+ * @param TrackReviewState The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoTrackReviewState(trackReviewState: Partial<TrackReviewState> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "reviewedAt": n => { trackReviewState.reviewedAt = n.getDateValue(); },
+        "reviewedBy": n => { trackReviewState.reviewedBy = n.getObjectValue<ProfileReference>(createProfileReferenceFromDiscriminatorValue); },
+        "status": n => { trackReviewState.status = n.getEnumValue<TrackReviewStatus>(TrackReviewStatusObject); },
+        "trackId": n => { trackReviewState.trackId = n.getGuidValue(); },
+    }
+}
+/**
+ * The deserialization information for the current model
+ * @param TrackReviewSummary The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoTrackReviewSummary(trackReviewSummary: Partial<TrackReviewSummary> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "reviewedCount": n => { trackReviewSummary.reviewedCount = n.getNumberValue(); },
+        "unreviewedCount": n => { trackReviewSummary.unreviewedCount = n.getNumberValue(); },
+    }
+}
+/**
+ * The deserialization information for the current model
  * @param TrackVideoOffset The instance to deserialize into.
  * @returns {Record<string, (node: ParseNode) => void>}
  */
@@ -2692,6 +2840,17 @@ export function deserializeIntoUpdateCrossfadeSettings(updateCrossfadeSettings: 
 }
 /**
  * The deserialization information for the current model
+ * @param UpdatedTrackReviews The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoUpdatedTrackReviews(updatedTrackReviews: Partial<UpdatedTrackReviews> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "changedCount": n => { updatedTrackReviews.changedCount = n.getNumberValue(); },
+    }
+}
+/**
+ * The deserialization information for the current model
  * @param UpdateEqualizerSettings The instance to deserialize into.
  * @returns {Record<string, (node: ParseNode) => void>}
  */
@@ -2795,6 +2954,29 @@ export function deserializeIntoUpdateTrackMetadata(updateTrackMetadata: Partial<
 export function deserializeIntoUpdateTrackRating(updateTrackRating: Partial<UpdateTrackRating> | undefined = {}) : Record<string, (node: ParseNode) => void> {
     return {
         "rating": n => { updateTrackRating.rating = n.getNumberValue(); },
+    }
+}
+/**
+ * The deserialization information for the current model
+ * @param UpdateTrackReview The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoUpdateTrackReview(updateTrackReview: Partial<UpdateTrackReview> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "status": n => { updateTrackReview.status = n.getEnumValue<TrackReviewStatus>(TrackReviewStatusObject); },
+    }
+}
+/**
+ * The deserialization information for the current model
+ * @param UpdateTrackReviews The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoUpdateTrackReviews(updateTrackReviews: Partial<UpdateTrackReviews> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "status": n => { updateTrackReviews.status = n.getEnumValue<TrackReviewStatus>(TrackReviewStatusObject); },
+        "trackIds": n => { updateTrackReviews.trackIds = n.getCollectionOfPrimitiveValues<Guid>("string"); },
     }
 }
 /**
@@ -3605,6 +3787,7 @@ export interface MediaFilePage extends AdditionalDataHolder, Parsable {
     total?: number | null;
 }
 export type MediaFileSort = (typeof MediaFileSortObject)[keyof typeof MediaFileSortObject];
+export type MetadataTag = (typeof MetadataTagObject)[keyof typeof MetadataTagObject];
 /**
  * Whether a profile is protected by a PIN. The PIN itself is never returned.
  */
@@ -3857,6 +4040,19 @@ export interface ProfilePage extends AdditionalDataHolder, Parsable {
      * Number of items of the whole collection.
      */
     total?: number | null;
+}
+/**
+ * A profile referred to by another resource, for example the profile that reviewed a track.
+ */
+export interface ProfileReference extends AdditionalDataHolder, Parsable {
+    /**
+     * The id property
+     */
+    id?: Guid | null;
+    /**
+     * The name property
+     */
+    name?: string | null;
 }
 /**
  * A track of the automatic list "Recently played": every track once, at its last play.
@@ -4994,6 +5190,19 @@ export function serializeProfilePage(writer: SerializationWriter, profilePage: P
 /**
  * Serializes information the current object
  * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param ProfileReference The instance to serialize from.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeProfileReference(writer: SerializationWriter, profileReference: Partial<ProfileReference> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!profileReference || isSerializingDerivedType) { return; }
+    writer.writeGuidValue("id", profileReference.id);
+    writer.writeStringValue("name", profileReference.name);
+    writer.writeAdditionalData(profileReference.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
  * @param RecentlyPlayedTrack The instance to serialize from.
  * @param writer Serialization writer to use to serialize this model
  */
@@ -5321,6 +5530,75 @@ export function serializeTrackPlayback(writer: SerializationWriter, trackPlaybac
 /**
  * Serializes information the current object
  * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param TrackReview The instance to serialize from.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeTrackReview(writer: SerializationWriter, trackReview: Partial<TrackReview> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!trackReview || isSerializingDerivedType) { return; }
+    writer.writeObjectValue<AlbumReference>("album", trackReview.album, serializeAlbumReference);
+    writer.writeObjectValue<ArtistReference>("artist", trackReview.artist, serializeArtistReference);
+    writer.writeStringValue("baseName", trackReview.baseName);
+    writer.writeStringValue("directoryPath", trackReview.directoryPath);
+    writer.writeDateValue("firstSeenAt", trackReview.firstSeenAt);
+    writer.writeBooleanValue("hasAudio", trackReview.hasAudio);
+    writer.writeBooleanValue("hasCover", trackReview.hasCover);
+    writer.writeBooleanValue("hasVideo", trackReview.hasVideo);
+    if(trackReview.missingTags)
+    writer.writeCollectionOfEnumValues<MetadataTag>("missingTags", trackReview.missingTags);
+    writer.writeDateValue("reviewedAt", trackReview.reviewedAt);
+    writer.writeObjectValue<ProfileReference>("reviewedBy", trackReview.reviewedBy, serializeProfileReference);
+    writer.writeEnumValue<TrackReviewStatus>("status", trackReview.status);
+    writer.writeStringValue("title", trackReview.title);
+    writer.writeGuidValue("trackId", trackReview.trackId);
+    writer.writeAdditionalData(trackReview.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param TrackReviewPage The instance to serialize from.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeTrackReviewPage(writer: SerializationWriter, trackReviewPage: Partial<TrackReviewPage> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!trackReviewPage || isSerializingDerivedType) { return; }
+    writer.writeCollectionOfObjectValues<TrackReview>("items", trackReviewPage.items, serializeTrackReview);
+    writer.writeNumberValue("limit", trackReviewPage.limit);
+    writer.writeNumberValue("offset", trackReviewPage.offset);
+    writer.writeNumberValue("total", trackReviewPage.total);
+    writer.writeAdditionalData(trackReviewPage.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param TrackReviewState The instance to serialize from.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeTrackReviewState(writer: SerializationWriter, trackReviewState: Partial<TrackReviewState> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!trackReviewState || isSerializingDerivedType) { return; }
+    writer.writeDateValue("reviewedAt", trackReviewState.reviewedAt);
+    writer.writeObjectValue<ProfileReference>("reviewedBy", trackReviewState.reviewedBy, serializeProfileReference);
+    writer.writeEnumValue<TrackReviewStatus>("status", trackReviewState.status);
+    writer.writeGuidValue("trackId", trackReviewState.trackId);
+    writer.writeAdditionalData(trackReviewState.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param TrackReviewSummary The instance to serialize from.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeTrackReviewSummary(writer: SerializationWriter, trackReviewSummary: Partial<TrackReviewSummary> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!trackReviewSummary || isSerializingDerivedType) { return; }
+    writer.writeNumberValue("reviewedCount", trackReviewSummary.reviewedCount);
+    writer.writeNumberValue("unreviewedCount", trackReviewSummary.unreviewedCount);
+    writer.writeAdditionalData(trackReviewSummary.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
  * @param TrackVideoOffset The instance to serialize from.
  * @param writer Serialization writer to use to serialize this model
  */
@@ -5480,6 +5758,18 @@ export function serializeUpdateCrossfadeSettings(writer: SerializationWriter, up
 /**
  * Serializes information the current object
  * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param UpdatedTrackReviews The instance to serialize from.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeUpdatedTrackReviews(writer: SerializationWriter, updatedTrackReviews: Partial<UpdatedTrackReviews> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!updatedTrackReviews || isSerializingDerivedType) { return; }
+    writer.writeNumberValue("changedCount", updatedTrackReviews.changedCount);
+    writer.writeAdditionalData(updatedTrackReviews.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
  * @param UpdateEqualizerSettings The instance to serialize from.
  * @param writer Serialization writer to use to serialize this model
  */
@@ -5591,6 +5881,31 @@ export function serializeUpdateTrackRating(writer: SerializationWriter, updateTr
     if (!updateTrackRating || isSerializingDerivedType) { return; }
     writer.writeNumberValue("rating", updateTrackRating.rating);
     writer.writeAdditionalData(updateTrackRating.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param UpdateTrackReview The instance to serialize from.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeUpdateTrackReview(writer: SerializationWriter, updateTrackReview: Partial<UpdateTrackReview> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!updateTrackReview || isSerializingDerivedType) { return; }
+    writer.writeEnumValue<TrackReviewStatus>("status", updateTrackReview.status);
+    writer.writeAdditionalData(updateTrackReview.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param UpdateTrackReviews The instance to serialize from.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeUpdateTrackReviews(writer: SerializationWriter, updateTrackReviews: Partial<UpdateTrackReviews> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!updateTrackReviews || isSerializingDerivedType) { return; }
+    writer.writeEnumValue<TrackReviewStatus>("status", updateTrackReviews.status);
+    writer.writeCollectionOfPrimitiveValues<Guid>("trackIds", updateTrackReviews.trackIds);
+    writer.writeAdditionalData(updateTrackReviews.additionalData);
 }
 /**
  * Serializes information the current object
@@ -6118,6 +6433,124 @@ export interface TrackPlayback extends AdditionalDataHolder, Parsable {
      */
     transcodeReason?: TranscodeReason | null;
 }
+/**
+ * A track in the review inbox: what identifies it, the fields its tags lack and its review status.
+ */
+export interface TrackReview extends AdditionalDataHolder, Parsable {
+    /**
+     * The album property
+     */
+    album?: AlbumReference | null;
+    /**
+     * The artist property
+     */
+    artist?: ArtistReference | null;
+    /**
+     * File name of the track without extension, shared by all its files.
+     */
+    baseName?: string | null;
+    /**
+     * Folder of the track relative to the media folder with / as separator; empty for the media folder itself.
+     */
+    directoryPath?: string | null;
+    /**
+     * When the track was found for the first time (date added).
+     */
+    firstSeenAt?: Date | null;
+    /**
+     * The hasAudio property
+     */
+    hasAudio?: boolean | null;
+    /**
+     * Whether GetTrackCover returns a picture.
+     */
+    hasCover?: boolean | null;
+    /**
+     * The hasVideo property
+     */
+    hasVideo?: boolean | null;
+    /**
+     * The checked fields the tags lack: of the audio file the track plays, for tracks with a video only of the video. Empty if the tags are complete.
+     */
+    missingTags?: MetadataTag[] | null;
+    /**
+     * When the track was marked as reviewed; null while unreviewed.
+     */
+    reviewedAt?: Date | null;
+    /**
+     * The reviewedBy property
+     */
+    reviewedBy?: ProfileReference | null;
+    /**
+     * Whether an admin checked the metadata of a track. Every track starts Unreviewed, also tracks found by a scan later.
+     */
+    status?: TrackReviewStatus | null;
+    /**
+     * The title property
+     */
+    title?: string | null;
+    /**
+     * The trackId property
+     */
+    trackId?: Guid | null;
+}
+/**
+ * One page of a collection.
+ */
+export interface TrackReviewPage extends AdditionalDataHolder, Parsable {
+    /**
+     * Items of the page, at most limit.
+     */
+    items?: TrackReview[] | null;
+    /**
+     * Maximum number of items of the page, as requested.
+     */
+    limit?: number | null;
+    /**
+     * Number of items skipped before this page.
+     */
+    offset?: number | null;
+    /**
+     * Number of items of the whole collection.
+     */
+    total?: number | null;
+}
+export type TrackReviewSort = (typeof TrackReviewSortObject)[keyof typeof TrackReviewSortObject];
+/**
+ * The review status of a track.
+ */
+export interface TrackReviewState extends AdditionalDataHolder, Parsable {
+    /**
+     * When the track was marked as reviewed; null while unreviewed.
+     */
+    reviewedAt?: Date | null;
+    /**
+     * The reviewedBy property
+     */
+    reviewedBy?: ProfileReference | null;
+    /**
+     * Whether an admin checked the metadata of a track. Every track starts Unreviewed, also tracks found by a scan later.
+     */
+    status?: TrackReviewStatus | null;
+    /**
+     * The trackId property
+     */
+    trackId?: Guid | null;
+}
+export type TrackReviewStatus = (typeof TrackReviewStatusObject)[keyof typeof TrackReviewStatusObject];
+/**
+ * Number of tracks per review status, for example for the badge of the review inbox.
+ */
+export interface TrackReviewSummary extends AdditionalDataHolder, Parsable {
+    /**
+     * The reviewedCount property
+     */
+    reviewedCount?: number | null;
+    /**
+     * The unreviewedCount property
+     */
+    unreviewedCount?: number | null;
+}
 export type TrackSort = (typeof TrackSortObject)[keyof typeof TrackSortObject];
 /**
  * The offset of the video against the audio of a track.
@@ -6367,6 +6800,15 @@ export interface UpdateCrossfadeSettings extends AdditionalDataHolder, Parsable 
     seconds?: number | null;
 }
 /**
+ * Result of setting the review status of several tracks.
+ */
+export interface UpdatedTrackReviews extends AdditionalDataHolder, Parsable {
+    /**
+     * Number of tracks whose status changed; tracks that had the status already and unknown tracks do not count.
+     */
+    changedCount?: number | null;
+}
+/**
  * Changes the equalizer of the current profile. Missing or null values stay unchanged.
  */
 export interface UpdateEqualizerSettings extends AdditionalDataHolder, Parsable {
@@ -6513,6 +6955,28 @@ export interface UpdateTrackRating extends AdditionalDataHolder, Parsable {
      * Number of stars from 1 to 5; 0 removes the rating.
      */
     rating?: number | null;
+}
+/**
+ * Sets the review status of a track.
+ */
+export interface UpdateTrackReview extends AdditionalDataHolder, Parsable {
+    /**
+     * The status property
+     */
+    status?: TrackReviewStatus | null;
+}
+/**
+ * Sets the review status of several tracks at once.
+ */
+export interface UpdateTrackReviews extends AdditionalDataHolder, Parsable {
+    /**
+     * The status property
+     */
+    status?: TrackReviewStatus | null;
+    /**
+     * The tracks; unknown ids and duplicates are skipped.
+     */
+    trackIds?: Guid[] | null;
 }
 /**
  * Sets the offset of the video against the audio of a track.
@@ -7101,6 +7565,17 @@ export const MediaFileSortObject = {
     Size: "Size",
 } as const;
 /**
+ * A field of the tags that the review inbox checks; a track lists those its file lacks.
+ */
+export const MetadataTagObject = {
+    Title: "Title",
+    Artist: "Artist",
+    Album: "Album",
+    Year: "Year",
+    TrackNumber: "TrackNumber",
+    Genre: "Genre",
+} as const;
+/**
  * Direct play or transcoding.
  */
 export const PlaybackMethodObject = {
@@ -7244,6 +7719,19 @@ export const TrackMetadataStatusObject = {
     Editable: "Editable",
     NoAudio: "NoAudio",
     NotWritable: "NotWritable",
+} as const;
+export const TrackReviewSortObject = {
+    FirstSeenAt: "FirstSeenAt",
+    Artist: "Artist",
+    Album: "Album",
+    Title: "Title",
+} as const;
+/**
+ * Whether an admin checked the metadata of a track. Every track starts Unreviewed, also tracks found by a scan later.
+ */
+export const TrackReviewStatusObject = {
+    Unreviewed: "Unreviewed",
+    Reviewed: "Reviewed",
 } as const;
 export const TrackSortObject = {
     AlbumArtist: "AlbumArtist",

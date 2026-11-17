@@ -23,6 +23,7 @@ const route = useRoute()
 const items: readonly AdminNavItem[] = [
     { id: 'admin-library', labelKey: 'admin.nav.library', icon: 'admin-library' },
     { id: 'admin-files', labelKey: 'admin.nav.files', icon: 'admin-files' },
+    { id: 'admin-review', labelKey: 'admin.nav.review', icon: 'admin-review' },
     { id: 'admin-jobs', labelKey: 'admin.nav.jobs', icon: 'admin-jobs' },
     { id: 'admin-cache', labelKey: 'admin.nav.cache', icon: 'admin-cache' },
     { id: 'admin-transcoding', labelKey: 'admin.nav.transcoding', icon: 'admin-transcoding' },
@@ -30,8 +31,14 @@ const items: readonly AdminNavItem[] = [
     { id: 'admin-users', labelKey: 'admin.nav.profiles', icon: 'manage-profiles' },
 ]
 
-// The page of a song belongs to the file selection.
-const active = computed(() => (route.name === 'admin-track-files' ? 'admin-files' : route.name))
+// The page of a song belongs to the file selection or to the review inbox.
+const parentPages: Readonly<Record<string, string>> = {
+    'admin-track-files': 'admin-files',
+    'admin-review-track': 'admin-review',
+}
+const active = computed(() =>
+    typeof route.name === 'string' ? (parentPages[route.name] ?? route.name) : route.name,
+)
 const activeIndex = computed(() => items.findIndex((item) => item.id === active.value))
 const navigation = ref<HTMLElement | null>(null)
 const indicator = useIndicator(navigation, '[aria-current="page"]', () => activeIndex.value)

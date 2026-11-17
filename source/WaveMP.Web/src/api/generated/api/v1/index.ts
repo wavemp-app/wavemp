@@ -34,6 +34,8 @@ import { SessionsRequestBuilderNavigationMetadata, SessionsRequestBuilderRequest
 // @ts-ignore
 import { SettingsRequestBuilderNavigationMetadata, type SettingsRequestBuilder } from './settings/index.js';
 // @ts-ignore
+import { TrackReviewsRequestBuilderNavigationMetadata, TrackReviewsRequestBuilderRequestsMetadata, type TrackReviewsRequestBuilder } from './trackReviews/index.js';
+// @ts-ignore
 import { TracksRequestBuilderNavigationMetadata, TracksRequestBuilderRequestsMetadata, type TracksRequestBuilder } from './tracks/index.js';
 // @ts-ignore
 import { TranscodingRequestBuilderNavigationMetadata, type TranscodingRequestBuilder } from './transcoding/index.js';
@@ -113,6 +115,10 @@ export interface V1RequestBuilder extends BaseRequestBuilder<V1RequestBuilder> {
      */
     get settings(): SettingsRequestBuilder;
     /**
+     * The trackReviews property
+     */
+    get trackReviews(): TrackReviewsRequestBuilder;
+    /**
      * The tracks property
      */
     get tracks(): TracksRequestBuilder;
@@ -191,6 +197,10 @@ export const V1RequestBuilderNavigationMetadata: Record<Exclude<keyof V1RequestB
     },
     settings: {
         navigationMetadata: SettingsRequestBuilderNavigationMetadata,
+    },
+    trackReviews: {
+        requestsMetadata: TrackReviewsRequestBuilderRequestsMetadata,
+        navigationMetadata: TrackReviewsRequestBuilderNavigationMetadata,
     },
     tracks: {
         requestsMetadata: TracksRequestBuilderRequestsMetadata,

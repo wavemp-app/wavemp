@@ -16,6 +16,7 @@ import type {
     ScanIssue,
     TranscodeJob,
     TranscodingStatus,
+    TrackReviewSort,
 } from '@/api/generated/models'
 import { fileCategories, fileChoices } from '@/admin/fileSelections'
 import AdminNav from '@/components/admin/AdminNav.vue'
@@ -74,6 +75,12 @@ import AvatarPresetPicker from '@/components/profiles/AvatarPresetPicker.vue'
 import ProfileAvatar from '@/components/profiles/ProfileAvatar.vue'
 import ProfileSelect from '@/components/profiles/ProfileSelect.vue'
 import ProfileSummary from '@/components/profiles/ProfileSummary.vue'
+import ReviewActions from '@/components/review/ReviewActions.vue'
+import ReviewBulkBar from '@/components/review/ReviewBulkBar.vue'
+import ReviewFilters from '@/components/review/ReviewFilters.vue'
+import ReviewInboxButton from '@/components/review/ReviewInboxButton.vue'
+import ReviewList from '@/components/review/ReviewList.vue'
+import ReviewNav from '@/components/review/ReviewNav.vue'
 import type { ProfileTileData } from '@/components/profiles/ProfileTile.vue'
 import AppBottomNav from '@/components/shell/AppBottomNav.vue'
 import AppHeader from '@/components/shell/AppHeader.vue'
@@ -102,6 +109,8 @@ import {
 import { stageViewOf } from '@/player/videoSync'
 import { initialCrop, type AvatarCrop } from '@/profiles/avatarCrop'
 import { profileColorOptions } from '@/profiles/presentation'
+import type { MissingTagsFilter } from '@/review/inbox'
+import { useReviewStore } from '@/stores/review'
 import { iconSlotNames, iconSlots } from '@/themes/iconSlots'
 import { parts } from '@/themes/parts'
 import NotFoundView from '@/views/NotFoundView.vue'
@@ -114,6 +123,7 @@ import {
     sampleLyrics,
     sampleLyricsPosition,
     sampleTiles,
+    sampleTrackReviews,
     sampleTracks,
 } from './samples'
 
@@ -184,6 +194,14 @@ const sampleCoverRuleOptions = computed(() =>
 )
 const fileFilter = ref<FileSelectionFilter>('Choices')
 const fileSort = ref<FileSelectionSort>('Path')
+const reviewSamples = computed(() => sampleTrackReviews(t))
+const reviewFilter = ref<MissingTagsFilter>('missing')
+const reviewSort = ref<TrackReviewSort>('FirstSeenAt')
+const reviewSearch = ref('')
+const reviewSelected = new Set(['sample-review-missing'])
+const reviewDone = new Set<string>()
+// The badge of the review inbox shows a sample number; the overview never calls the API.
+useReviewStore().unreviewedCount = 12
 const sortSampleMenu = ref<InstanceType<typeof BaseContextMenu> | null>(null)
 const sortSampleItems = computed<MenuItem[]>(() => [
     ...sortOptions('tracks', true).map((key) => ({
@@ -1093,6 +1111,31 @@ const sampleTranscodeJobs = computed<TranscodeJob[]>(() => {
                     <FileSelectionList :items="fileSummaries" :label="t('adminFiles.listLabel')" />
                 </section>
             </div>
+            <div data-part="view" data-view="admin-review">
+                <section data-part="section" data-item="review">
+                    <h2 data-part="section-title">{{ t('reviewInbox.listTitle') }}</h2>
+                    <ReviewFilters
+                        v-model:search="reviewSearch"
+                        v-model:filter="reviewFilter"
+                        v-model:sort="reviewSort"
+                    />
+                    <ReviewBulkBar :selected-count="reviewSelected.size" :selectable-count="2" />
+                    <ReviewList
+                        :items="reviewSamples"
+                        :reviewed="reviewDone"
+                        :selected="reviewSelected"
+                        :label="t('reviewInbox.listLabel')"
+                    />
+                </section>
+            </div>
+            <div data-part="view" data-view="admin-review-track">
+                <ReviewActions form-id="dev-review-form" :can-save="true" />
+                <ReviewNav :index="1" :count="3" :has-previous="true" :has-next="true" />
+                <div data-part="empty-state" data-state="finished">
+                    <p data-part="empty-state-title">{{ t('reviewInbox.finished') }}</p>
+                    <p data-part="empty-state-text">{{ t('reviewInbox.finishedText') }}</p>
+                </div>
+            </div>
             <div data-part="view" data-view="admin-track-files">
                 <section
                     v-for="category in fileCategories"
@@ -1233,6 +1276,7 @@ const sampleTranscodeJobs = computed<TranscodeJob[]>(() => {
         <section data-part="dev-section">
             <h2 data-part="dev-section-title">{{ t('dev.sections.header') }}</h2>
             <AppHeader active-tab="library" :profile="firstProfile" />
+            <ReviewInboxButton :poll="false" />
         </section>
 
         <section data-part="dev-section">

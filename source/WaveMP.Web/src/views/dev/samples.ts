@@ -2,7 +2,13 @@
 // come from the messages (placeholders.*), so they are recognizable as samples in every language.
 // Covers are marked as missing, so the overview never calls the API.
 
-import type { MediaFile, Track, TrackFileSelection, TrackFileSummary } from '@/api/generated/models'
+import type {
+    MediaFile,
+    Track,
+    TrackFileSelection,
+    TrackFileSummary,
+    TrackReview,
+} from '@/api/generated/models'
 import type { Tile } from '@/components/library/TileList.vue'
 import type { LyricsLineTiming, TrackLyrics } from '@/lyrics/timing'
 
@@ -218,6 +224,56 @@ export function sampleFileSummaries(t: Translate): TrackFileSummary[] {
             audio: 'Automatic',
             video: 'Automatic',
             cover: 'Automatic',
+        },
+    ]
+}
+
+/** Songs of the review inbox: one with missing tags, one with complete tags, one reviewed. */
+export function sampleTrackReviews(t: Translate): TrackReview[] {
+    const artist = { id: 'artist-1', name: t('placeholders.artist', { number: 1 }) }
+    const album = { id: 'album-1', title: t('placeholders.album', { number: 1 }) }
+    return [
+        {
+            trackId: 'sample-review-missing',
+            title: t('placeholders.track', { number: 4 }),
+            artist,
+            album: null,
+            directoryPath: 'Unsorted',
+            baseName: 'Track 04',
+            hasAudio: true,
+            hasVideo: false,
+            hasCover: false,
+            firstSeenAt: new Date(Date.UTC(2026, 10, 16, 18, 30)),
+            missingTags: ['Album', 'Year', 'TrackNumber', 'Genre'],
+            status: 'Unreviewed',
+        },
+        {
+            trackId: 'sample-review-complete',
+            title: t('placeholders.track', { number: 5 }),
+            artist,
+            album,
+            directoryPath: 'Artist/Album',
+            baseName: '05 - Song',
+            hasAudio: true,
+            hasVideo: true,
+            hasCover: false,
+            firstSeenAt: new Date(Date.UTC(2026, 10, 15, 9, 0)),
+            missingTags: [],
+            status: 'Unreviewed',
+        },
+        {
+            trackId: 'sample-review-done',
+            title: t('placeholders.track', { number: 6 }),
+            artist,
+            album,
+            directoryPath: 'Artist/Album',
+            baseName: '06 - Song',
+            hasAudio: true,
+            hasVideo: false,
+            hasCover: false,
+            firstSeenAt: new Date(Date.UTC(2026, 10, 14, 12, 0)),
+            missingTags: ['Genre'],
+            status: 'Reviewed',
         },
     ]
 }

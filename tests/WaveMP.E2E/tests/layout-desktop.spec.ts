@@ -15,12 +15,10 @@ async function box(locator: Locator) {
 }
 
 async function maskOf(icon: Locator): Promise<string> {
-    return icon
-        .locator("[data-part='icon-glyph']")
-        .evaluate((element) => {
-            const style = getComputedStyle(element)
-            return style.maskImage || style.getPropertyValue('-webkit-mask-image')
-        })
+    return icon.locator("[data-part='icon-glyph']").evaluate((element) => {
+        const style = getComputedStyle(element)
+        return style.maskImage || style.getPropertyValue('-webkit-mask-image')
+    })
 }
 
 test('shows all desktop areas and hides the mobile ones', async ({ page }) => {
@@ -139,7 +137,9 @@ test('uses the icon style of each area', async ({ page }) => {
     expect(await maskOf(library.locator("[data-part='tree-toggle']"))).toContain(
         '/regular/plus-square.svg',
     )
-    expect(await maskOf(part(page, 'badge').first())).toContain('/regular/video-camera.svg')
+    expect(await maskOf(part(page, 'list-row').locator("[data-part='badge']").first())).toContain(
+        '/regular/video-camera.svg',
+    )
 })
 
 test('navigates with the tabs and the history buttons', async ({ page }) => {

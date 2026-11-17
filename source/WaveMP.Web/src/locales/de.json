@@ -614,7 +614,8 @@
       "cache": "Cache",
       "transcoding": "Transcodierung",
       "backups": "Sicherungen",
-      "profiles": "Profile"
+      "profiles": "Profile",
+      "review": "Prüfen"
     }
   },
   "adminLibrary": {
@@ -770,6 +771,67 @@
     "errors": {
       "invalid": "Diese Datei kann nicht mehr ausgewählt werden. Die Dateien wurden neu geladen.",
       "saveFailed": "Die Auswahl konnte nicht gespeichert werden."
+    }
+  },
+  "reviewInbox": {
+    "title": "Prüf-Eingang",
+    "button": "Prüfen",
+    "buttonWithCount": "Prüfen, {count} ungeprüfte Titel",
+    "listTitle": "Ungeprüfte Titel",
+    "listLabel": "Ungeprüfte Titel",
+    "search": "Titel suchen",
+    "searchPlaceholder": "Titel, Interpret, Album oder Dateiname",
+    "filterLabel": "Anzeigen",
+    "sortLabel": "Sortieren nach",
+    "filters": {
+      "all": "Alle",
+      "missing": "Fehlende Tags",
+      "complete": "Vollständige Tags"
+    },
+    "sorts": {
+      "firstSeenAt": "Hinzugefügt",
+      "artist": "Interpret",
+      "album": "Album",
+      "title": "Titel"
+    },
+    "tags": {
+      "title": "Titel",
+      "artist": "Interpret",
+      "album": "Album",
+      "year": "Jahr",
+      "trackNumber": "Titelnummer",
+      "genre": "Genre"
+    },
+    "missingTags": "Fehlende Tags:",
+    "select": "{title} auswählen",
+    "selectAll": "Alle auswählen",
+    "selectedCount": "{count} ausgewählt",
+    "markSelected": "Auswahl als geprüft markieren",
+    "bulkLabel": "Ausgewählte Titel",
+    "reviewed": "Geprüft",
+    "unreviewed": "Noch nicht geprüft",
+    "reviewedBy": "Geprüft von {name} am {date}",
+    "added": "Hinzugefügt am {date}",
+    "status": "Prüfung",
+    "loadError": "Die Titel konnten nicht geladen werden.",
+    "loadTrackError": "Der Titel konnte nicht geladen werden.",
+    "empty": "Alle Titel sind geprüft.",
+    "noMatches": "Keine ungeprüften Titel passen zum Filter.",
+    "toInbox": "Zum Prüf-Eingang",
+    "finished": "Fertig",
+    "finishedText": "In der Liste folgt kein ungeprüfter Titel mehr.",
+    "metadataTitle": "Metadaten",
+    "actionsLabel": "Prüfung",
+    "saveAndReview": "Speichern und als geprüft markieren",
+    "markReviewed": "Als geprüft markieren",
+    "skip": "Überspringen",
+    "navLabel": "Titel des Prüf-Eingangs",
+    "previous": "Vorheriger Titel",
+    "next": "Nächster Titel",
+    "position": "Titel {position} von {count}",
+    "errors": {
+      "markFailed": "Die Prüfung konnte nicht gespeichert werden.",
+      "loadNext": "Die nächsten Titel konnten nicht geladen werden."
     }
   },
   "adminJobs": {
