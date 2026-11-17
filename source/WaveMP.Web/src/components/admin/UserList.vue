@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
 import BaseButton from '@/components/base/BaseButton.vue'
+import BaseIcon from '@/components/base/BaseIcon.vue'
 import ProfileAvatar from '@/components/profiles/ProfileAvatar.vue'
 import { useFormat } from '@/composables/useFormat'
 
@@ -11,6 +12,8 @@ export interface UserListItem {
     readonly color: string
     readonly isAdmin: boolean
     readonly isBuiltIn: boolean
+    /** Selecting the profile needs its PIN. */
+    readonly hasPin: boolean
     readonly createdAt: Date | null
 }
 
@@ -22,6 +25,7 @@ defineProps<{
 const emit = defineEmits<{
     edit: [user: UserListItem]
     delete: [user: UserListItem]
+    resetPin: [user: UserListItem]
 }>()
 
 const { t } = useI18n()
@@ -48,6 +52,10 @@ const format = useFormat()
                     <span v-if="user.isBuiltIn" data-part="badge" data-state="built-in">
                         <span data-part="label">{{ t('adminUsers.builtIn') }}</span>
                     </span>
+                    <span v-if="user.hasPin" data-part="badge" data-state="pin">
+                        <BaseIcon name="has-pin" />
+                        <span data-part="label">{{ t('adminUsers.hasPin') }}</span>
+                    </span>
                     <span v-if="user.createdAt" data-part="label">{{
                         t('adminUsers.created', { date: format.date(user.createdAt) })
                     }}</span>
@@ -59,6 +67,14 @@ const format = useFormat()
                     icon="edit"
                     :label="t('adminUsers.edit', { name: user.name })"
                     @click="emit('edit', user)"
+                />
+                <BaseButton
+                    v-if="user.hasPin"
+                    variant="icon"
+                    icon="reset-pin"
+                    data-item="reset-pin"
+                    :label="t('adminUsers.resetPin', { name: user.name })"
+                    @click="emit('resetPin', user)"
                 />
                 <BaseButton
                     variant="icon"

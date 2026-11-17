@@ -51,6 +51,21 @@ export async function findUserByName(
     return ((await response.json()).items as TestUser[]).find((user) => user.name === name)
 }
 
+/** Sets the PIN of a profile with a session of the profile itself (PUT /api/v1/me/pin). */
+export async function setUserPin(
+    request: APIRequestContext,
+    userId: string,
+    pin: string,
+): Promise<void> {
+    const session = await request.post('/api/v1/sessions', { data: { profileId: userId } })
+    expect(session.status()).toBe(201)
+    const response = await request.put('/api/v1/me/pin', {
+        data: { pin },
+        headers: authorization((await session.json()).token),
+    })
+    expect(response.status(), await response.text()).toBe(200)
+}
+
 /** Deletes a user; a user that is already gone is fine. */
 export async function deleteUser(request: APIRequestContext, id: string): Promise<void> {
     const response = await request.delete(`/api/v1/users/${id}`, {

@@ -94,6 +94,13 @@ describe('createRoutes', () => {
         expect(route.meta.bare).toBeUndefined()
     })
 
+    it('knows the PIN page of the settings', async () => {
+        const route = await resolve('/settings/pin')
+
+        expect(route.name).toBe('settings-pin')
+        expect(route.meta.public).toBeUndefined()
+    })
+
     it('opens the library of the administration for admins', async () => {
         const route = await resolve('/admin')
 

@@ -13,6 +13,8 @@ export interface StoredProfile {
     readonly color: string
     readonly role: Role
     readonly isBuiltIn: boolean
+    /** Whether selecting the profile needs its PIN; false for snapshots stored before PINs existed. */
+    readonly hasPin: boolean
 }
 
 export interface StoredSession {
@@ -68,6 +70,7 @@ export function toStoredProfile(value: unknown): StoredProfile | null {
         color: value.color,
         role: value.role as Role,
         isBuiltIn: value.isBuiltIn,
+        hasPin: value.hasPin === true,
     }
 }
 

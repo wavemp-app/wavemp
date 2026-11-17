@@ -33,6 +33,24 @@ describe('ProfileTile', () => {
         expect(button.attributes('title')).toBe('Built-in admin profile')
     })
 
+    it('shows a lock on a profile with a PIN', () => {
+        const wrapper = mount(ProfileTile, {
+            props: { profile: { ...anna, hasPin: true } },
+            global,
+        })
+
+        const lock = wrapper.get('[data-part="profile-lock"]')
+        expect(lock.attributes('role')).toBe('img')
+        expect(lock.attributes('aria-label')).toBe('Protected with a PIN')
+        expect(lock.get('[data-part="icon"]').attributes('data-icon')).toBe('profile-lock')
+    })
+
+    it('shows no lock on a profile without a PIN', () => {
+        const wrapper = mount(ProfileTile, { props: { profile: anna }, global })
+
+        expect(wrapper.find('[data-part="profile-lock"]').exists()).toBe(false)
+    })
+
     it('emits select on click', async () => {
         const wrapper = mount(ProfileTile, { props: { profile: anna }, global })
 

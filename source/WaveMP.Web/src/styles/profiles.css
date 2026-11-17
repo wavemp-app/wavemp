@@ -111,4 +111,139 @@
     [data-part='profile-tile']:disabled {
         cursor: progress;
     }
+
+    /* Lock of a profile with a PIN: a small badge at the edge of the avatar. */
+    [data-part='profile-lock'] {
+        position: absolute;
+        inset-block-start: calc(var(--wmp-space-s) + var(--_avatar-size) - 1.75rem);
+        inset-inline-start: calc(50% + var(--_avatar-size) / 2 - 1.75rem);
+        display: grid;
+        place-items: center;
+        inline-size: 1.75rem;
+        block-size: 1.75rem;
+        border-radius: 50%;
+        background: var(--wmp-color-surface);
+        color: var(--wmp-color-text);
+        box-shadow: 0 0 0 2px var(--wmp-profile-select-background);
+    }
+
+    [data-part='profile-lock'] > [data-part='icon'] {
+        --wmp-icon-size: 1rem;
+    }
+
+    /* PIN entry: the profile, the digit pad and the way back. */
+    [data-part='pin-entry'] {
+        --_avatar-size: var(--wmp-avatar-size-l);
+
+        display: grid;
+        justify-items: center;
+        gap: var(--wmp-space-l);
+        inline-size: min(100%, 20rem);
+    }
+
+    [data-part='pin-entry-title'] {
+        font-size: var(--wmp-font-size-l);
+        font-weight: var(--wmp-font-weight-bold);
+    }
+
+    [data-part='pin-entry'] > [data-part='alert'] {
+        inline-size: 100%;
+        text-align: start;
+    }
+
+    [data-part='pin-pad'] {
+        position: relative;
+        display: grid;
+        justify-items: center;
+        gap: var(--wmp-space-l);
+        inline-size: 100%;
+    }
+
+    /* The field keeps focus and keyboard input; the dots show what was entered. */
+    [data-part='pin-field'] {
+        position: absolute;
+        inline-size: 1px;
+        block-size: 1px;
+        padding: 0;
+        border: 0;
+        overflow: hidden;
+        clip-path: inset(50%);
+        white-space: nowrap;
+    }
+
+    [data-part='pin-dots'] {
+        display: flex;
+        justify-content: center;
+        gap: var(--wmp-space-s);
+        min-block-size: 1rem;
+        padding: var(--wmp-space-xs);
+        border-radius: var(--wmp-radius-l);
+    }
+
+    [data-part='pin-pad']:has([data-part='pin-field']:focus-visible) > [data-part='pin-dots'] {
+        outline: 2px solid var(--wmp-color-focus);
+        outline-offset: 2px;
+    }
+
+    [data-part='pin-dot'] {
+        inline-size: 0.75rem;
+        block-size: 0.75rem;
+        border-radius: 50%;
+        background: currentColor;
+    }
+
+    [data-part='pin-keys'] {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: var(--wmp-space-m);
+        inline-size: 100%;
+    }
+
+    [data-part='pin-key'] {
+        display: grid;
+        place-items: center;
+        min-block-size: 3.5rem;
+        border: 1px solid var(--wmp-color-border);
+        border-radius: 50vmax;
+        background: var(--wmp-color-surface);
+        color: var(--wmp-color-text);
+        font: inherit;
+        font-size: var(--wmp-font-size-l);
+        cursor: pointer;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    [data-part='pin-key']:is(:hover, :focus-visible):not(:disabled) {
+        background: var(--wmp-color-hover);
+    }
+
+    [data-part='pin-key']:focus-visible {
+        outline: 2px solid var(--wmp-color-focus);
+        outline-offset: 2px;
+    }
+
+    [data-part='pin-key'][data-key='submit']:not(:disabled) {
+        border-color: transparent;
+        background: var(--wmp-color-accent);
+        color: var(--wmp-color-accent-contrast);
+    }
+
+    [data-part='pin-key']:disabled {
+        color: var(--wmp-color-text-disabled);
+        cursor: default;
+    }
+
+    [data-part='pin-key']:is([data-key='delete'], [data-key='submit']) > [data-part='label'] {
+        position: absolute;
+        inline-size: 1px;
+        block-size: 1px;
+        overflow: hidden;
+        clip-path: inset(50%);
+        white-space: nowrap;
+    }
+
+    [data-part='pin-entry-actions'] {
+        display: flex;
+        justify-content: center;
+    }
 }

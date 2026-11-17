@@ -37,5 +37,10 @@ export const useUsersStore = defineStore('users', () => {
         await apiClient.api.v1.users.byId(id).delete()
     }
 
-    return { users, status, load, create, update, remove }
+    /** Removes the PIN of a profile and ends a lockout after wrong PINs. */
+    async function resetPin(id: string): Promise<void> {
+        await apiClient.api.v1.users.byId(id).pin.delete()
+    }
+
+    return { users, status, load, create, update, remove, resetPin }
 })

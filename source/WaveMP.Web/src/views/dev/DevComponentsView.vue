@@ -62,6 +62,7 @@ import PlayQueue from '@/components/player/PlayQueue.vue'
 import PlaylistTrackList, {
     type PlaylistTrackRow,
 } from '@/components/playlists/PlaylistTrackList.vue'
+import PinPad from '@/components/profiles/PinPad.vue'
 import ProfileSelect from '@/components/profiles/ProfileSelect.vue'
 import ProfileSummary from '@/components/profiles/ProfileSummary.vue'
 import type { ProfileTileData } from '@/components/profiles/ProfileTile.vue'
@@ -333,10 +334,12 @@ const sampleProfiles = computed<ProfileTileData[]>(() => [
         initials: t('dev.samples.secondProfileInitials'),
         color: '#c2185b',
         isBuiltIn: false,
+        hasPin: true,
     },
     adminProfile.value,
 ])
 const firstProfile = computed(() => ({ ...sampleProfiles.value[0]!, role: 'Admin' as const }))
+const samplePin = ref('12')
 const color = ref<string | null>('#2e7d32')
 const colorOptions = computed(() =>
     profileColorOptions.map((option) => ({ value: option.value, label: t(option.labelKey) })),
@@ -345,6 +348,7 @@ const sampleUsers = computed<UserListItem[]>(() =>
     sampleProfiles.value.map((profile, index) => ({
         ...profile,
         isAdmin: profile.isBuiltIn || index === 1,
+        hasPin: !!profile.hasPin,
         createdAt: new Date(Date.UTC(2026, 10, 1 + index)),
     })),
 )
@@ -1085,6 +1089,19 @@ const sampleTranscodeJobs = computed<TranscodeJob[]>(() => {
                 <div data-part="dev-sample">
                     <p data-part="dev-sample-title">{{ t('dev.samples.loadError') }}</p>
                     <ProfileSelect :profiles="[]" state="error" />
+                </div>
+                <div data-part="dev-sample">
+                    <p data-part="dev-sample-title">{{ t('dev.samples.pinEntry') }}</p>
+                    <ProfileSelect
+                        :profiles="sampleProfiles"
+                        state="ready"
+                        :pin-profile="sampleProfiles[1]"
+                        :pin-error="t('pin.wrong')"
+                    />
+                </div>
+                <div data-part="dev-sample">
+                    <p data-part="dev-sample-title">{{ t('dev.samples.pinPad') }}</p>
+                    <PinPad v-model="samplePin" :label="t('pin.field')" />
                 </div>
             </div>
         </section>

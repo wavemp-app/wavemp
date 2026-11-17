@@ -3,6 +3,7 @@ import EqualizerView from '@/views/EqualizerView.vue'
 import HomeView from '@/views/HomeView.vue'
 import NotFoundView from '@/views/NotFoundView.vue'
 import NowPlayingView from '@/views/NowPlayingView.vue'
+import PinSettingsView from '@/views/PinSettingsView.vue'
 import PlaylistsView from '@/views/PlaylistsView.vue'
 import ProfileSelectView from '@/views/ProfileSelectView.vue'
 import SettingsView from '@/views/SettingsView.vue'
@@ -163,6 +164,7 @@ export function createRoutes(extra: readonly RouteRecordRaw[] = []): RouteRecord
             meta: { tab: 'playlists', keepAlive: true },
         },
         { path: '/settings', name: 'settings', component: SettingsView },
+        { path: '/settings/pin', name: 'settings-pin', component: PinSettingsView },
         { path: '/admin', name: 'admin', redirect: { name: 'admin-library' } },
         {
             path: '/admin/library',

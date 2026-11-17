@@ -31,6 +31,7 @@ const health = useHealthStore()
 const format = useFormat()
 
 const aboutTitleId = useId()
+const pinTitleId = useId()
 
 /** Versions of this web app and of the service (from the health check of the app shell). */
 const versions = computed(() => [
@@ -432,6 +433,17 @@ async function changeSleepTimerFade(value: string): Promise<void> {
                 @update:model-value="changeQuality"
             />
         </form>
+        <section data-part="section" data-item="pin" :aria-labelledby="pinTitleId">
+            <h2 :id="pinTitleId" data-part="section-title">{{ t('settings.pin') }}</h2>
+            <p data-part="form-note" data-field="pin-status">
+                {{ session.profile?.hasPin ? t('settings.pinOn') : t('settings.pinOff') }}
+            </p>
+            <p data-part="form-note">
+                <BaseLink :to="{ name: 'settings-pin' }" data-item="open-pin">{{
+                    t('settings.openPin')
+                }}</BaseLink>
+            </p>
+        </section>
         <section data-part="section" data-item="about" :aria-labelledby="aboutTitleId">
             <h2 :id="aboutTitleId" data-part="section-title">{{ t('settings.about') }}</h2>
             <dl data-part="stat-list">

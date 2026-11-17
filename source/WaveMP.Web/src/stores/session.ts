@@ -195,10 +195,11 @@ export const useSessionStore = defineStore('session', () => {
     }
 
     /**
-     * Selects a profile. Another selected profile is signed out first; selecting the current
-     * profile again changes nothing. Errors (e.g. profile.not_found) are passed on.
+     * Selects a profile, with its PIN if it has one. Another selected profile is signed out first;
+     * selecting the current profile again changes nothing. Errors (e.g. profile.not_found,
+     * profile.pin_invalid or profile.pin_locked) are passed on.
      */
-    async function select(profileId: string): Promise<void> {
+    async function select(profileId: string, pin?: string): Promise<void> {
         if (isAuthenticated.value && profile.value?.id === profileId) {
             return
         }
@@ -207,7 +208,9 @@ export const useSessionStore = defineStore('session', () => {
             await signOut()
         }
 
-        const created = await apiClient.api.v1.sessions.post({ profileId })
+        const created = await apiClient.api.v1.sessions.post(
+            pin ? { profileId, pin } : { profileId },
+        )
         if (!created?.token) {
             throw new Error('The server returned no session token.')
         }

@@ -442,4 +442,24 @@
     [data-icon='reset'] {
         --_icon: var(--wmp-icon-reset);
     }
+
+    [data-icon='has-pin'] {
+        --_icon: var(--wmp-icon-has-pin);
+    }
+
+    [data-icon='reset-pin'] {
+        --_icon: var(--wmp-icon-reset-pin);
+    }
+
+    [data-icon='profile-lock'] {
+        --_icon: var(--wmp-icon-profile-lock);
+    }
+
+    [data-icon='pin-delete'] {
+        --_icon: var(--wmp-icon-pin-delete);
+    }
+
+    [data-icon='pin-submit'] {
+        --_icon: var(--wmp-icon-pin-submit);
+    }
 }

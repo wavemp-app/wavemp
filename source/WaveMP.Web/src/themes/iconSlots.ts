@@ -132,6 +132,13 @@ export const iconSlots = {
     'clear-queue': { file: regular('trash'), area: 'general' },
     close: { file: regular('x'), area: 'general' },
     reset: { file: regular('arrow-counter-clockwise'), area: 'general' },
+    'has-pin': { file: regular('lock'), area: 'general' },
+    'reset-pin': { file: regular('lock-open'), area: 'general' },
+
+    // Profile selection and digit pad of the PIN
+    'profile-lock': { file: fill('lock'), area: 'content' },
+    'pin-delete': { file: fill('backspace'), area: 'content' },
+    'pin-submit': { file: fill('arrow-right'), area: 'content' },
 } as const satisfies Record<string, IconSlot>
 
 export type IconSlotName = keyof typeof iconSlots

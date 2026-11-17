@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
+import PinEntry from './PinEntry.vue'
 import ProfileList from './ProfileList.vue'
 import type { ProfileTileData } from './ProfileTile.vue'
 import BaseAlert from '@/components/base/BaseAlert.vue'
@@ -21,13 +22,19 @@ const props = withDefaults(
         /** Message about a failed selection. */
         error?: string | null
         busy?: boolean
+        /** Profile whose PIN is being entered; shows the digit pad instead of the profiles. */
+        pinProfile?: ProfileTileData | null
+        /** Message about a wrong PIN or a lockout. */
+        pinError?: string | null
     }>(),
-    { currentId: null, error: null, busy: false },
+    { currentId: null, error: null, busy: false, pinProfile: null, pinError: null },
 )
 
 const emit = defineEmits<{
     select: [profile: ProfileTileData]
     retry: []
+    pin: [pin: string]
+    cancelPin: []
 }>()
 
 const { t } = useI18n()
@@ -43,7 +50,15 @@ const firstStart = computed(() => props.state === 'ready' && isFirstStart(props.
         </span>
         <h1 data-part="profile-select-title">{{ t('profiles.title') }}</h1>
         <BaseAlert v-if="error" tone="error" :message="error" />
-        <div v-if="state === 'error'" data-part="empty-state">
+        <PinEntry
+            v-if="pinProfile"
+            :profile="pinProfile"
+            :error="pinError"
+            :busy="busy"
+            @submit="emit('pin', $event)"
+            @cancel="emit('cancelPin')"
+        />
+        <div v-else-if="state === 'error'" data-part="empty-state">
             <p data-part="empty-state-title">{{ t('profiles.loadErrorTitle') }}</p>
             <p data-part="empty-state-text">{{ t('profiles.loadErrorText') }}</p>
             <BaseButton :label="t('profiles.retry')" @click="emit('retry')" />
@@ -55,7 +70,7 @@ const firstStart = computed(() => props.state === 'ready' && isFirstStart(props.
             :disabled="busy"
             @select="emit('select', $event)"
         />
-        <p v-if="firstStart" data-part="profile-select-hint" role="note">
+        <p v-if="firstStart && !pinProfile" data-part="profile-select-hint" role="note">
             {{ t('profiles.firstStartHint') }}
         </p>
     </main>

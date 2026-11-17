@@ -201,6 +201,11 @@
         --wmp-icon-clear-queue: url('/icons/phosphor/regular/trash.svg');
         --wmp-icon-close: url('/icons/phosphor/regular/x.svg');
         --wmp-icon-reset: url('/icons/phosphor/regular/arrow-counter-clockwise.svg');
+        --wmp-icon-has-pin: url('/icons/phosphor/regular/lock.svg');
+        --wmp-icon-reset-pin: url('/icons/phosphor/regular/lock-open.svg');
+        --wmp-icon-profile-lock: url('/icons/phosphor/fill/lock-fill.svg');
+        --wmp-icon-pin-delete: url('/icons/phosphor/fill/backspace-fill.svg');
+        --wmp-icon-pin-submit: url('/icons/phosphor/fill/arrow-right-fill.svg');
 
         /* Spacing and radii */
         --wmp-space-xs: 0.25rem;

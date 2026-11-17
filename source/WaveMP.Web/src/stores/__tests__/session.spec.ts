@@ -38,7 +38,15 @@ const { useSessionStore } = await import('../session')
 const expiresAt = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
 
 function profile(id: string, role: 'Admin' | 'User' = 'User') {
-    return { id, name: `Profile ${id}`, initials: 'P', color: '#1f6fd6', role, isBuiltIn: false }
+    return {
+        id,
+        name: `Profile ${id}`,
+        initials: 'P',
+        color: '#1f6fd6',
+        role,
+        isBuiltIn: false,
+        hasPin: false,
+    }
 }
 
 function created(id: string, token = `token-${id}`, role: 'Admin' | 'User' = 'User') {

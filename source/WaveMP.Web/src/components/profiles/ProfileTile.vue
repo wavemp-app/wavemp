@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
 import ProfileAvatar from './ProfileAvatar.vue'
+import BaseIcon from '@/components/base/BaseIcon.vue'
 
 export interface ProfileTileData {
     readonly id: string
@@ -8,12 +9,14 @@ export interface ProfileTileData {
     readonly initials: string
     readonly color: string
     readonly isBuiltIn: boolean
+    /** Selecting the profile needs its PIN. */
+    readonly hasPin?: boolean
 }
 
 /** Tile of the profile selection: avatar and name; selecting it selects the profile. */
 defineProps<{
     profile: ProfileTileData
-    /** data-state tokens: built-in, secondary, current. */
+    /** data-state tokens: built-in, secondary, current, protected. */
     state?: string
     disabled?: boolean
 }>()
@@ -37,5 +40,14 @@ const { t } = useI18n()
     >
         <ProfileAvatar :initials="profile.initials" :color="profile.color" />
         <span data-part="label">{{ profile.name }}</span>
+        <span
+            v-if="profile.hasPin"
+            data-part="profile-lock"
+            role="img"
+            :aria-label="t('profiles.protected')"
+            :title="t('profiles.protected')"
+        >
+            <BaseIcon name="profile-lock" />
+        </span>
     </button>
 </template>

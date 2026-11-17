@@ -13,6 +13,7 @@ const anna: UserListItem = {
     color: '#2e7d32',
     isAdmin: false,
     isBuiltIn: false,
+    hasPin: false,
     createdAt: new Date(),
 }
 

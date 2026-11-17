@@ -4,6 +4,7 @@
 export interface ProfileLike {
     readonly id?: string | null
     readonly isBuiltIn?: boolean | null
+    readonly hasPin?: boolean | null
 }
 
 /** True for the built-in admin profile if there is at least one other profile. */
@@ -11,7 +12,7 @@ export function isSecondaryProfile(profile: ProfileLike, all: readonly ProfileLi
     return !!profile.isBuiltIn && all.some((other) => other.id !== profile.id)
 }
 
-/** data-state tokens of a profile tile: built-in, secondary and current. */
+/** data-state tokens of a profile tile: built-in, secondary, current and protected (with a PIN). */
 export function profileTileStates(
     profile: ProfileLike,
     all: readonly ProfileLike[],
@@ -21,6 +22,7 @@ export function profileTileStates(
         profile.isBuiltIn ? 'built-in' : undefined,
         isSecondaryProfile(profile, all) ? 'secondary' : undefined,
         currentId && profile.id === currentId ? 'current' : undefined,
+        profile.hasPin ? 'protected' : undefined,
     ].filter(Boolean)
 
     return tokens.length > 0 ? tokens.join(' ') : undefined

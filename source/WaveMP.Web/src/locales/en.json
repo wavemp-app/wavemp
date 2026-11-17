@@ -358,6 +358,8 @@
       "adminInitials": "A",
       "firstStart": "First start",
       "loadError": "Profiles could not be loaded",
+      "pinEntry": "PIN entry",
+      "pinPad": "Digit pad with two digits",
       "alertError": "Something went wrong.",
       "alertSuccess": "The changes are saved.",
       "alertInfo": "Changes apply at once.",
@@ -402,7 +404,8 @@
     "loadErrorText": "Check that the server is running, then try again.",
     "retry": "Try again",
     "selectError": "The profile could not be selected. Please try again.",
-    "profileGone": "This profile no longer exists."
+    "profileGone": "This profile no longer exists.",
+    "protected": "Protected with a PIN"
   },
   "profileMenu": {
     "label": "Profile menu",
@@ -455,7 +458,47 @@
     "about": "About WaveMP",
     "appVersion": "App version",
     "serverVersion": "Server version",
-    "versionUnknown": "Unknown"
+    "versionUnknown": "Unknown",
+    "pin": "PIN",
+    "pinOn": "This profile is protected with a PIN.",
+    "pinOff": "This profile has no PIN. Anyone can select it.",
+    "openPin": "Set up the PIN"
+  },
+  "pin": {
+    "title": "Enter the PIN of {name}",
+    "field": "PIN",
+    "keypad": "Digit pad",
+    "delete": "Delete the last digit",
+    "submit": "Sign in",
+    "back": "Back to the profiles",
+    "wrong": "Wrong PIN. Please try again.",
+    "locked": "Too many wrong PINs. Try again in {minutes} min."
+  },
+  "pinSettings": {
+    "title": "PIN",
+    "statusOn": "This profile is protected with a PIN. It is asked for when the profile is selected.",
+    "statusOff": "This profile has no PIN. Anyone can select it.",
+    "statusManaged": "The PIN of this profile is set by the server (ADMIN_PIN) and can only be changed there.",
+    "pin": "PIN",
+    "newPin": "New PIN",
+    "pinHint": "4 to 8 digits.",
+    "confirmation": "Repeat the PIN",
+    "otherDevices": "Other devices signed in with this profile have to select it again.",
+    "set": "Set PIN",
+    "change": "Change PIN",
+    "remove": "Remove PIN",
+    "invalid": "Please enter 4 to 8 digits.",
+    "mismatch": "The PINs do not match.",
+    "saved": "The PIN was saved.",
+    "removed": "The PIN was removed.",
+    "saveError": "The PIN could not be saved.",
+    "removeError": "The PIN could not be removed.",
+    "loadError": "The PIN settings could not be loaded.",
+    "removeDialog": {
+      "title": "Remove PIN",
+      "text": "Remove the PIN? Anyone can then select this profile.",
+      "confirm": "Remove"
+    }
   },
   "adminUsers": {
     "title": "Manage profiles",
@@ -499,12 +542,22 @@
       "invalid": "Please check your input.",
       "saveFailed": "The profile could not be saved.",
       "deleteFailed": "The profile could not be deleted.",
-      "notFound": "This profile no longer exists."
+      "notFound": "This profile no longer exists.",
+      "pinManaged": "The PIN of the built-in admin profile is set by the server (ADMIN_PIN) and can only be changed there.",
+      "resetPinFailed": "The PIN could not be removed."
     },
     "deleteDialog": {
       "title": "Delete profile",
       "text": "Delete the profile {name}? This cannot be undone.",
       "confirm": "Delete"
+    },
+    "hasPin": "PIN",
+    "resetPin": "Remove the PIN of {name}",
+    "pinReset": "The PIN of {name} was removed.",
+    "resetPinDialog": {
+      "title": "Remove PIN",
+      "text": "Remove the PIN of {name}? Anyone can then select this profile until a new PIN is set.",
+      "confirm": "Remove"
     }
   },
   "admin": {

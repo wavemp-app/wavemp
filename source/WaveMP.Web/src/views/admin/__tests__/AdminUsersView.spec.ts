@@ -133,4 +133,61 @@ describe('AdminUsersView', () => {
         expect(session.isAuthenticated).toBe(false)
         wrapper.unmount()
     })
+
+    it('removes the PIN of a profile after the confirmation', async () => {
+        const { wrapper, users, load } = await mountView()
+        users.users = [{ ...anna, hasPin: true }, admin]
+        load.mockImplementation(async () => {
+            users.users = [{ ...anna, hasPin: true }, admin]
+            users.status = 'ready'
+        })
+        await flushPromises()
+        const resetPin = vi.spyOn(users, 'resetPin').mockResolvedValue()
+        const items = wrapper.findAll('[data-part="user-item"]')
+        expect(items[0]?.findAll('[data-part="badge"]').map((badge) => badge.text())).toEqual([
+            'User',
+            'PIN',
+        ])
+        expect(items[1]?.find('[data-item="reset-pin"]').exists()).toBe(false)
+
+        const button = items[0]?.get('[data-item="reset-pin"]')
+        expect(button?.attributes('title')).toBe('Remove the PIN of Anna')
+        await button?.trigger('click')
+        await flushPromises()
+        expect(document.body.textContent).toContain(
+            'Remove the PIN of Anna? Anyone can then select',
+        )
+        await wrapper.get('[data-item="confirm-reset-pin"]').trigger('click')
+        await flushPromises()
+
+        expect(resetPin).toHaveBeenCalledWith('anna')
+        expect(wrapper.get('[data-part="alert"]').text()).toBe('The PIN of Anna was removed.')
+        expect(load).toHaveBeenCalledTimes(2)
+        wrapper.unmount()
+    })
+
+    it('reports a PIN that ADMIN_PIN sets', async () => {
+        const { wrapper, users, load } = await mountView()
+        load.mockImplementation(async () => {
+            users.users = [anna, { ...admin, hasPin: true }]
+            users.status = 'ready'
+        })
+        await users.load()
+        await flushPromises()
+        vi.spyOn(users, 'resetPin').mockRejectedValue({
+            code: 'pin.managed_by_environment',
+            responseStatusCode: 409,
+        })
+
+        await wrapper
+            .findAll('[data-part="user-item"]')[1]
+            ?.get('[data-item="reset-pin"]')
+            .trigger('click')
+        await flushPromises()
+        await wrapper.get('[data-item="confirm-reset-pin"]').trigger('click')
+        await flushPromises()
+
+        expect(wrapper.get('[data-part="alert"]').text()).toContain('(ADMIN_PIN)')
+        wrapper.unmount()
+    })
 })

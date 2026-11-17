@@ -142,3 +142,122 @@ describe('ProfileSelectView', () => {
         expect(wrapper.findAll('[data-part="profile-tile"]')).toHaveLength(1)
     })
 })
+
+describe('ProfileSelectView with PINs', () => {
+    const bert = {
+        id: 'bert',
+        name: 'Bert',
+        initials: 'B',
+        color: '#c2185b',
+        role: 'User',
+        isBuiltIn: false,
+        hasPin: true,
+    }
+
+    beforeEach(() => {
+        localStorage.clear()
+        setActivePinia(createPinia())
+        for (const mock of Object.values(api)) {
+            mock.mockReset()
+        }
+        api.getSettings.mockResolvedValue({ language: 'en' })
+        api.listProfiles.mockResolvedValue({ items: [anna, bert, admin], total: 3 })
+    })
+
+    async function enterPin(
+        wrapper: Awaited<ReturnType<typeof mountView>>['wrapper'],
+        pin: string,
+    ) {
+        for (const digit of pin) {
+            await wrapper.get(`[data-part="pin-key"][data-key="${digit}"]`).trigger('click')
+        }
+        await wrapper.get('[data-part="pin-entry"]').trigger('submit')
+        await flushPromises()
+    }
+
+    it('marks protected profiles and asks for their PIN', async () => {
+        const { wrapper } = await mountView()
+
+        const tiles = wrapper.findAll('[data-part="profile-tile"]')
+        expect(tiles[1]?.attributes('data-state')).toBe('protected')
+        expect(tiles[1]?.find('[data-part="profile-lock"]').exists()).toBe(true)
+        expect(tiles[0]?.find('[data-part="profile-lock"]').exists()).toBe(false)
+
+        await tiles[1]?.trigger('click')
+
+        expect(api.createSession).not.toHaveBeenCalled()
+        expect(wrapper.find('[data-part="profile-list"]').exists()).toBe(false)
+        expect(wrapper.get('[data-part="pin-entry-title"]').text()).toBe('Enter the PIN of Bert')
+    })
+
+    it('selects the profile with the right PIN', async () => {
+        api.createSession.mockResolvedValue({
+            token: 'token',
+            session: { id: 'session', profile: bert, expiresAt },
+        })
+        const { wrapper, router } = await mountView('/profiles?redirect=/playlists')
+        await wrapper.findAll('[data-part="profile-tile"]')[1]?.trigger('click')
+
+        await enterPin(wrapper, '2580')
+
+        expect(api.createSession).toHaveBeenCalledWith({ profileId: 'bert', pin: '2580' })
+        expect(useSessionStore().profile?.hasPin).toBe(true)
+        expect(router.currentRoute.value.fullPath).toBe('/playlists')
+    })
+
+    it('reports a wrong PIN and lets the PIN be entered again', async () => {
+        api.createSession.mockRejectedValue({
+            code: 'profile.pin_invalid',
+            responseStatusCode: 401,
+        })
+        const { wrapper } = await mountView()
+        await wrapper.findAll('[data-part="profile-tile"]')[1]?.trigger('click')
+
+        await enterPin(wrapper, '1111')
+
+        expect(wrapper.get('[data-part="pin-entry"]').attributes('data-state')).toBe('error')
+        expect(wrapper.get('[data-part="alert"]').text()).toBe('Wrong PIN. Please try again.')
+        expect(wrapper.findAll('[data-part="pin-dot"]')).toHaveLength(0)
+        expect(useSessionStore().isAuthenticated).toBe(false)
+    })
+
+    it('reports a lockout with its minutes', async () => {
+        api.createSession.mockRejectedValue({
+            code: 'profile.pin_locked',
+            responseStatusCode: 429,
+            responseHeaders: { 'retry-after': ['241'] },
+        })
+        const { wrapper } = await mountView()
+        await wrapper.findAll('[data-part="profile-tile"]')[1]?.trigger('click')
+
+        await enterPin(wrapper, '1111')
+
+        expect(wrapper.get('[data-part="alert"]').text()).toBe(
+            'Too many wrong PINs. Try again in 5 min.',
+        )
+    })
+
+    it('asks for a PIN that was set after the profiles were loaded', async () => {
+        api.createSession.mockRejectedValue({
+            code: 'profile.pin_required',
+            responseStatusCode: 401,
+        })
+        const { wrapper } = await mountView()
+
+        await wrapper.findAll('[data-part="profile-tile"]')[0]?.trigger('click')
+        await flushPromises()
+
+        expect(wrapper.get('[data-part="pin-entry-title"]').text()).toBe('Enter the PIN of Anna')
+        expect(api.listProfiles).toHaveBeenCalledTimes(2)
+    })
+
+    it('goes back to the profiles', async () => {
+        const { wrapper } = await mountView()
+        await wrapper.findAll('[data-part="profile-tile"]')[1]?.trigger('click')
+
+        await wrapper.get('[data-part="pin-entry-actions"] [data-item="back"]').trigger('click')
+
+        expect(wrapper.find('[data-part="pin-entry"]').exists()).toBe(false)
+        expect(wrapper.findAll('[data-part="profile-tile"]')).toHaveLength(3)
+    })
+})

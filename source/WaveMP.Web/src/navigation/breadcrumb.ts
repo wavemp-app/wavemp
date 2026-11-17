@@ -112,6 +112,10 @@ export function buildBreadcrumb(route: RouteInfo, detailTitle?: string | null): 
         case 'settings':
             crumbs.push({ id: 'settings', labelKey: 'settings.title' })
             break
+        case 'settings-pin':
+            crumbs.push({ id: 'settings', labelKey: 'settings.title', to: { name: 'settings' } })
+            crumbs.push({ id: 'settings-pin', labelKey: 'pinSettings.title' })
+            break
         case 'admin-library':
         case 'admin-jobs':
         case 'admin-cache':

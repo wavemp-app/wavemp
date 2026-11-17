@@ -23,6 +23,9 @@ describe('profileTileStates', () => {
         expect(profileTileStates(anna, [anna, admin], 'anna')).toBe('current')
         expect(profileTileStates(admin, [admin])).toBe('built-in')
         expect(profileTileStates(admin, [anna, admin], 'admin')).toBe('built-in secondary current')
+        expect(profileTileStates({ ...anna, hasPin: true }, [anna, admin], 'anna')).toBe(
+            'current protected',
+        )
     })
 })
 

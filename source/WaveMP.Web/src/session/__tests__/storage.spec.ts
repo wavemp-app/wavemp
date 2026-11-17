@@ -20,6 +20,7 @@ const session: StoredSession = {
         color: '#1f6fd6',
         role: 'User',
         isBuiltIn: false,
+        hasPin: true,
     },
     language: 'de',
 }
@@ -113,6 +114,13 @@ describe('session storage', () => {
             expect(loadStoredSession(now, storage)).toBeNull()
             expect(storage.getItem(sessionStorageKey)).toBeNull()
         }
+    })
+
+    it('treats profiles stored before PINs existed as profiles without a PIN', () => {
+        const { hasPin: _, ...older } = session.profile
+        storage.setItem(sessionStorageKey, JSON.stringify({ ...session, profile: older }))
+
+        expect(loadStoredSession(now, storage)?.profile.hasPin).toBe(false)
     })
 
     it('forgets expired sessions', () => {

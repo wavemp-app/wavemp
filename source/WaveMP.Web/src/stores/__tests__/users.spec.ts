@@ -6,6 +6,7 @@ const api = vi.hoisted(() => ({
     create: vi.fn(),
     update: vi.fn(),
     remove: vi.fn(),
+    resetPin: vi.fn(),
     byId: vi.fn(),
 }))
 
@@ -21,6 +22,7 @@ vi.mock('@/api/client', () => ({
                         return {
                             patch: (body: unknown) => api.update(body),
                             delete: () => api.remove(),
+                            pin: { delete: () => api.resetPin() },
                         }
                     },
                 },
@@ -74,6 +76,16 @@ describe('users store', () => {
         expect(api.update).toHaveBeenCalledWith({ name: 'Renamed' })
         expect(api.remove).toHaveBeenCalledOnce()
         expect(api.byId.mock.calls).toEqual([['a'], ['a']])
+    })
+
+    it('resets the PIN of a profile', async () => {
+        api.resetPin.mockResolvedValue(undefined)
+        const store = useUsersStore()
+
+        await store.resetPin('b')
+
+        expect(api.byId).toHaveBeenCalledWith('b')
+        expect(api.resetPin).toHaveBeenCalledOnce()
     })
 
     it('passes errors of changes on', async () => {

@@ -33,6 +33,7 @@ function mountView() {
                 name: 'equalizer',
                 component: { render: () => null },
             },
+            { path: '/settings/pin', name: 'settings-pin', component: { render: () => null } },
         ],
     })
     const wrapper = mount(SettingsView, {
@@ -373,5 +374,28 @@ describe('SettingsView versions', () => {
         } else {
             expect(appVersion).toMatch(/^\d+\.\d+\.0-dev$/)
         }
+    })
+})
+
+describe('SettingsView PIN', () => {
+    beforeEach(() => {
+        setActivePinia(createPinia())
+    })
+
+    it('tells whether the profile has a PIN and links to the PIN page', async () => {
+        const { wrapper, session } = mountView()
+        const section = wrapper.get('[data-part="section"][data-item="pin"]')
+
+        expect(section.get('[data-field="pin-status"]').text()).toBe(
+            'This profile has no PIN. Anyone can select it.',
+        )
+        expect(section.get('[data-item="open-pin"]').attributes('href')).toBe('/settings/pin')
+
+        session.$patch({ profile: { ...session.profile!, hasPin: true } })
+        await wrapper.vm.$nextTick()
+
+        expect(section.get('[data-field="pin-status"]').text()).toBe(
+            'This profile is protected with a PIN.',
+        )
     })
 })
