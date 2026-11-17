@@ -16,7 +16,9 @@ public interface IPlaylistRepository
     Task<PlaylistRow?> FindAsync(Guid userId, Guid id, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Creates a playlist with its first entries in the given order.
+    /// Creates a playlist with its first entries in the given order. The tracks are locked until the playlist is
+    /// created; a deletion of one of them (e.g. by a scan) that is under way waits for its end or is reported as
+    /// <see cref="PlaylistEntryChangeStatus.TrackNotFound"/>.
     /// </summary>
     /// <returns><see cref="PlaylistEntryChangeStatus.Done"/>, or
     /// <see cref="PlaylistEntryChangeStatus.TrackNotFound"/> if a track does not exist (nothing is created).</returns>
@@ -61,7 +63,9 @@ public interface IPlaylistRepository
 
     /// <summary>
     /// Adds the tracks in the given order at <paramref name="position"/> (at the end if <c>null</c>); the entries from
-    /// there on move back.
+    /// there on move back. The tracks are locked like in <see cref="CreateAsync"/>; a track that does not exist (also
+    /// one deleted during the change) is reported as <see cref="PlaylistEntryChangeStatus.TrackNotFound"/> and nothing
+    /// is added.
     /// </summary>
     Task<PlaylistEntryChange> AddEntriesAsync(
         Guid userId,

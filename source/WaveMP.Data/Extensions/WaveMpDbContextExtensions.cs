@@ -68,6 +68,27 @@ internal static class WaveMpDbContextExtensions
     }
 
     /// <summary>
+    /// Locks the rows of the tracks with one query until the end of the current transaction. Returns <c>false</c> if
+    /// one of the tracks does not exist; an id may occur more than once. Without ids, nothing is locked.
+    /// </summary>
+    public static async Task<bool> LockTracksAsync(
+        this WaveMpDbContext dbContext,
+        IReadOnlyCollection<Guid> trackIds,
+        CancellationToken cancellationToken)
+    {
+        if (trackIds.Count == 0)
+        {
+            return true;
+        }
+
+        Guid[] distinct = [.. trackIds.Distinct()];
+        List<int> rows = await dbContext.Database
+            .SqlQuery<int>($"""SELECT 1 AS "Value" FROM tracks WHERE id = ANY({distinct}) FOR KEY SHARE""")
+            .ToListAsync(cancellationToken);
+        return rows.Count == distinct.Length;
+    }
+
+    /// <summary>
     /// Locks the row of the album until the end of the current transaction. Returns <c>false</c> if the album does not
     /// exist.
     /// </summary>

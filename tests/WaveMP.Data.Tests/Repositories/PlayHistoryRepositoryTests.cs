@@ -110,8 +110,8 @@ public class PlayHistoryRepositoryTests : LibraryDatabaseTests
     {
         StandardLibrary library = await SeedStandardLibraryAsync();
         User user = await AddUserAsync();
-        await using PendingUserDeletion deletion =
-            await PendingUserDeletion.StartAsync(CreateDbContext().Database.GetConnectionString()!, user.Id);
+        await using PendingDeletion deletion =
+            await PendingDeletion.OfUserAsync(CreateDbContext().Database.GetConnectionString()!, user.Id);
 
         Task<bool> add = CreateRepository().AddAsync(NewEntry(user.Id, library.Opening.Id));
         bool waited = await deletion.CommitWhileWaitingAsync(add, TimeSpan.FromSeconds(10));

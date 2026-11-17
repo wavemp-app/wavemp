@@ -2,8 +2,12 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using AwesomeAssertions;
+using Microsoft.Extensions.DependencyInjection;
+using WaveMP.Data;
+using WaveMP.Data.Entities;
 using WaveMP.Service.Dtos;
 using WaveMP.Service.Tests.IntegrationTests.Extensions;
+using WaveMP.Testing.Databases;
 using WaveMP.Testing.Files;
 using WaveMP.Testing.Media;
 
@@ -144,6 +148,28 @@ public class PlaylistsApiTests
     }
 
     [Test]
+    public async Task CreateMyPlaylist_TrackRemovedDuringTheRequest_ReturnsTrackNotFound()
+    {
+        using HttpClient client = await CreateProfileAsync();
+        Guid vanishing = await AddTrackWithoutFilesAsync();
+        await using PendingDeletion deletion = await PendingDeletion.OfTrackAsync(_factory.ConnectionString, vanishing);
+
+        _factory.ErrorLog.Clear();
+
+        // The track is still visible to the request; its change waits for the deletion, like for a running scan.
+        Task<HttpResponseMessage> request = client.PostAsJsonAsync(
+            Path,
+            new { name = "Vanishing", trackIds = new[] { Track("First"), vanishing } });
+        bool waited = await deletion.CommitWhileWaitingAsync(request, TimeSpan.FromSeconds(10));
+        using HttpResponseMessage response = await request;
+
+        waited.Should().BeTrue();
+        await response.ShouldBeProblemAsync(HttpStatusCode.NotFound, "track.not_found");
+        _factory.ErrorLog.Errors.Should().BeEmpty();
+        (await client.GetJsonAsync<PageDto<PlaylistDto>>(Path)).Total.Should().Be(0);
+    }
+
+    [Test]
     public async Task ListMyPlaylists_Always_ListsOnlyTheOwnPlaylistsSortedAndSearched()
     {
         using HttpClient client = await CreateProfileAsync();
@@ -259,6 +285,30 @@ public class PlaylistsApiTests
         entries.Items.Select(entry => entry.Position).Should().Equal(0, 1, 2, 3);
         entries.Items.Select(entry => entry.Id).Should().OnlyHaveUniqueItems();
         (await client.GetJsonAsync<PlaylistEntryDto>($"{path}/{added.Entries[1].Id}")).Position.Should().Be(2);
+    }
+
+    [Test]
+    public async Task AddMyPlaylistEntries_TrackRemovedDuringTheRequest_ReturnsTrackNotFound()
+    {
+        using HttpClient client = await CreateProfileAsync();
+        PlaylistDto playlist = await CreatePlaylistAsync(client, "Mix", Track("First"));
+        string path = $"{Path}/{playlist.Id}/tracks";
+        Guid vanishing = await AddTrackWithoutFilesAsync();
+        await using PendingDeletion deletion = await PendingDeletion.OfTrackAsync(_factory.ConnectionString, vanishing);
+
+        _factory.ErrorLog.Clear();
+
+        Task<HttpResponseMessage> request = client.PostAsJsonAsync(
+            path,
+            new { trackIds = new[] { Track("Second"), vanishing } });
+        bool waited = await deletion.CommitWhileWaitingAsync(request, TimeSpan.FromSeconds(10));
+        using HttpResponseMessage response = await request;
+
+        waited.Should().BeTrue();
+        await response.ShouldBeProblemAsync(HttpStatusCode.NotFound, "track.not_found");
+        _factory.ErrorLog.Errors.Should().BeEmpty();
+        PageDto<PlaylistEntryDto> entries = await client.GetJsonAsync<PageDto<PlaylistEntryDto>>(path);
+        entries.Items.Select(entry => entry.Track.Title).Should().Equal("First");
     }
 
     [Test]
@@ -465,6 +515,33 @@ public class PlaylistsApiTests
             _media.Combine($"{artist}/{album}/{title}.mp3"),
             AudioFormat.Mp3,
             new TestTags { Title = title, Artist = artist, Album = album });
+    }
+
+    /// <summary>
+    /// Adds a track without files directly to the database, like a track a scan is about to remove; it is not part of
+    /// the library the other tests see through <see cref="_tracks"/>.
+    /// </summary>
+    private async Task<Guid> AddTrackWithoutFilesAsync()
+    {
+        string name = "Vanishing " + HttpClientExtensions.Unique();
+        Track track = new()
+        {
+            Id = Guid.CreateVersion7(),
+            DirectoryPath = "Gone",
+            BaseName = name,
+            NormalizedBaseName = name.ToUpperInvariant(),
+            Title = name,
+            HasAudio = true,
+            HasVideo = false,
+            MetadataSource = TrackMetadataSource.FileName,
+            FirstSeenAt = DateTimeOffset.UtcNow,
+            UpdatedAt = DateTimeOffset.UtcNow,
+        };
+        await using AsyncServiceScope scope = _factory.Services.CreateAsyncScope();
+        WaveMpDbContext dbContext = scope.ServiceProvider.GetRequiredService<WaveMpDbContext>();
+        dbContext.Tracks.Add(track);
+        await dbContext.SaveChangesAsync();
+        return track.Id;
     }
 
     private async Task<HttpClient> CreateProfileAsync()

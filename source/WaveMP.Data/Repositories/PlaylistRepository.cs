@@ -48,7 +48,7 @@ internal sealed class PlaylistRepository(WaveMpDbContext dbContext) : IPlaylistR
             async token =>
             {
                 await dbContext.LockUserAsync(playlist.UserId, token);
-                if (!await TracksExistAsync(trackIds, token))
+                if (!await dbContext.LockTracksAsync(trackIds, token))
                 {
                     return PlaylistEntryChange.Of(PlaylistEntryChangeStatus.TrackNotFound);
                 }
@@ -171,7 +171,7 @@ internal sealed class PlaylistRepository(WaveMpDbContext dbContext) : IPlaylistR
                     return PlaylistEntryChange.Of(PlaylistEntryChangeStatus.Full, maxEntries);
                 }
 
-                if (!await TracksExistAsync(trackIds, token))
+                if (!await dbContext.LockTracksAsync(trackIds, token))
                 {
                     return PlaylistEntryChange.Of(PlaylistEntryChangeStatus.TrackNotFound);
                 }
@@ -389,18 +389,6 @@ internal sealed class PlaylistRepository(WaveMpDbContext dbContext) : IPlaylistR
     {
         return dbContext.PlaylistEntries.AsNoTracking()
             .FirstOrDefaultAsync(entry => entry.Id == entryId && entry.PlaylistId == playlistId, cancellationToken);
-    }
-
-    private async Task<bool> TracksExistAsync(IReadOnlyList<Guid> trackIds, CancellationToken cancellationToken)
-    {
-        if (trackIds.Count == 0)
-        {
-            return true;
-        }
-
-        Guid[] distinct = [.. trackIds.Distinct()];
-        int found = await dbContext.Tracks.CountAsync(track => distinct.Contains(track.Id), cancellationToken);
-        return found == distinct.Length;
     }
 
     private static List<PlaylistEntry> CreateEntries(

@@ -654,8 +654,8 @@ public class MeSettingsApiTests
         (Guid profileId, HttpClient client) = await CreateProfileAsync();
         using (client)
         {
-            await using PendingUserDeletion deletion =
-                await PendingUserDeletion.StartAsync(_factory.ConnectionString, profileId);
+            await using PendingDeletion deletion =
+                await PendingDeletion.OfUserAsync(_factory.ConnectionString, profileId);
 
             _factory.ErrorLog.Clear();
 

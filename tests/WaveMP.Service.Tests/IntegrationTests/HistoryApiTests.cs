@@ -147,8 +147,8 @@ public class HistoryApiTests
         UserDto user = await _admin.CreateUserAsync(new { name = $"History {HttpClientExtensions.Unique()}" });
         CreatedSessionDto session = await _anonymous.CreateSessionAsync(user.Id);
         using HttpClient client = _factory.CreateAuthorizedClient(session.Token);
-        await using PendingUserDeletion deletion =
-            await PendingUserDeletion.StartAsync(_factory.ConnectionString, user.Id);
+        await using PendingDeletion deletion =
+            await PendingDeletion.OfUserAsync(_factory.ConnectionString, user.Id);
 
         _factory.ErrorLog.Clear();
 

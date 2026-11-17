@@ -4,6 +4,7 @@ using WaveMP.Data.Entities;
 using WaveMP.Data.Projections;
 using WaveMP.Data.Queries;
 using WaveMP.Data.Repositories;
+using WaveMP.Testing.Databases;
 
 namespace WaveMP.Data.Tests.Repositories;
 
@@ -47,6 +48,28 @@ public class PlaylistRepositoryTests : LibraryDatabaseTests
 
         change.Status.Should().Be(PlaylistEntryChangeStatus.TrackNotFound);
         (await CreateRepository().FindAsync(user.Id, playlist.Id)).Should().BeNull();
+    }
+
+    [Test]
+    public async Task CreateAsync_TrackDeletedWhileCreating_ReturnsTrackNotFoundAndCreatesNothing()
+    {
+        StandardLibrary library = await SeedStandardLibraryAsync();
+        User user = await AddUserAsync();
+        await using PendingDeletion deletion =
+            await PendingDeletion.OfTrackAsync(CreateDbContext().Database.GetConnectionString()!, library.Ballad.Id);
+
+        // The track is still visible to the change; the change waits for the deletion.
+        Playlist playlist = NewPlaylist(user, "Vanishing");
+        Task<PlaylistEntryChange> create = CreateRepository().CreateAsync(
+            playlist,
+            [library.Opening.Id, library.Ballad.Id, library.Ballad.Id]);
+        bool waited = await deletion.CommitWhileWaitingAsync(create, TimeSpan.FromSeconds(10));
+        PlaylistEntryChange change = await create;
+
+        waited.Should().BeTrue();
+        change.Status.Should().Be(PlaylistEntryChangeStatus.TrackNotFound);
+        await using WaveMpDbContext dbContext = CreateDbContext();
+        (await dbContext.Playlists.AnyAsync(candidate => candidate.Id == playlist.Id)).Should().BeFalse();
     }
 
     [Test]
@@ -241,6 +264,33 @@ public class PlaylistRepositoryTests : LibraryDatabaseTests
             100,
             _start.AddDays(1));
 
+        change.Status.Should().Be(PlaylistEntryChangeStatus.TrackNotFound);
+        (await TrackIdsAsync(user, playlist)).Should().Equal(library.Opening.Id);
+        (await CreateRepository().FindAsync(user.Id, playlist.Id))!.UpdatedAt.Should().Be(updatedAt);
+    }
+
+    [Test]
+    public async Task AddEntriesAsync_TrackDeletedWhileAdding_ReturnsTrackNotFoundAndAddsNothing()
+    {
+        StandardLibrary library = await SeedStandardLibraryAsync();
+        User user = await AddUserAsync();
+        Playlist playlist = await CreateAsync(user, "Mix", library.Opening);
+        DateTimeOffset updatedAt = (await CreateRepository().FindAsync(user.Id, playlist.Id))!.UpdatedAt;
+        await using PendingDeletion deletion =
+            await PendingDeletion.OfTrackAsync(CreateDbContext().Database.GetConnectionString()!, library.Ballad.Id);
+
+        // The track is still visible to the change; the change waits for the deletion.
+        Task<PlaylistEntryChange> add = CreateRepository().AddEntriesAsync(
+            user.Id,
+            playlist.Id,
+            [library.Duet.Id, library.Ballad.Id],
+            0,
+            100,
+            _start.AddDays(1));
+        bool waited = await deletion.CommitWhileWaitingAsync(add, TimeSpan.FromSeconds(10));
+        PlaylistEntryChange change = await add;
+
+        waited.Should().BeTrue();
         change.Status.Should().Be(PlaylistEntryChangeStatus.TrackNotFound);
         (await TrackIdsAsync(user, playlist)).Should().Equal(library.Opening.Id);
         (await CreateRepository().FindAsync(user.Id, playlist.Id))!.UpdatedAt.Should().Be(updatedAt);
