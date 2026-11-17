@@ -84,6 +84,12 @@ import type { TransportState } from '@/components/shell/transport'
 import { useFormat } from '@/composables/useFormat'
 import { setLocale } from '@/i18n'
 import { supportedLocales, type SupportedLocale } from '@/i18n/locales'
+import {
+    coverPriorityKey,
+    coverRuleOptionKey,
+    coverRuleOptions,
+    coverRuleToken,
+} from '@/library/coverRules'
 import { groupTracksByAlbum } from '@/library/grouping'
 import { sortItemId, sortLabelKey, sortOptions } from '@/library/sorting'
 import { libraryTree, mainNavigation, type NavigationTreeNode } from '@/navigation/libraryTree'
@@ -165,6 +171,14 @@ const files = sampleFiles()
 const fileSummaries = computed(() => sampleFileSummaries(t))
 const fileSelection = sampleFileSelection()
 const fileSearch = ref('')
+const sampleCoverRule = ref('Inherit')
+const sampleCoverRuleOptions = computed(() =>
+    coverRuleOptions.map((option) => ({
+        value: option,
+        item: coverRuleToken(option),
+        label: t(coverRuleOptionKey(option), { priority: t(coverPriorityKey('AlbumFirst')) }),
+    })),
+)
 const fileFilter = ref<FileSelectionFilter>('Choices')
 const fileSort = ref<FileSelectionSort>('Path')
 const sortSampleMenu = ref<InstanceType<typeof BaseContextMenu> | null>(null)
@@ -716,6 +730,31 @@ const sampleTranscodeJobs = computed<TranscodeJob[]>(() => {
                 <section data-part="section" data-item="files">
                     <h2 data-part="section-title">{{ t('track.filesTitle') }}</h2>
                     <TrackFileList :files="files" :label="t('files.label')" />
+                </section>
+                <section data-part="section" data-item="cover-rule">
+                    <h2 data-part="section-title">{{ t('coverRule.title') }}</h2>
+                    <form data-part="form" @submit.prevent>
+                        <figure data-part="cover-preview" data-state="ready">
+                            <BaseCover :src="sampleCover" />
+                            <figcaption data-part="label">{{ t('coverRule.preview') }}</figcaption>
+                        </figure>
+                        <BaseSegmentedField
+                            v-model="sampleCoverRule"
+                            data-field="cover-rule"
+                            item="cover-rule"
+                            :label="t('coverRule.label')"
+                            :options="sampleCoverRuleOptions"
+                            :hint="t('coverRule.trackHint')"
+                        />
+                        <div data-part="view-actions">
+                            <BaseButton
+                                type="submit"
+                                variant="primary"
+                                data-item="save-cover-rule"
+                                :label="t('coverRule.save')"
+                            />
+                        </div>
+                    </form>
                 </section>
             </div>
             <div data-part="view" data-view="playlist">

@@ -1,24 +1,37 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import type { LibrarySettings } from '@/api/generated/models'
+import type { CoverPriority, LibrarySettings } from '@/api/generated/models'
 import { problemCodeOf, validationErrorsOf } from '@/api/problems'
 import { customIntervalKey, formatList, intervalOptions, parseList } from '@/admin/presentation'
 import BaseAlert from '@/components/base/BaseAlert.vue'
 import BaseButton from '@/components/base/BaseButton.vue'
 import BaseCheckbox from '@/components/base/BaseCheckbox.vue'
+import type { SegmentOption } from '@/components/base/BaseSegmentedControl.vue'
+import BaseSegmentedField from '@/components/base/BaseSegmentedField.vue'
 import BaseSelect, { type SelectOption } from '@/components/base/BaseSelect.vue'
 import BaseTextField from '@/components/base/BaseTextField.vue'
 import { useFormat } from '@/composables/useFormat'
+import {
+    coverPriorities,
+    coverPriorityOf,
+    coverRuleOptionKey,
+    coverRuleToken,
+} from '@/library/coverRules'
 import { validationMessagesByField, type ValidationMessageOptions } from '@/i18n/validation'
+import { useCoversStore } from '@/stores/covers'
 import { useLibrarySettingsStore } from '@/stores/librarySettings'
 
-type Field = 'interval' | 'audio' | 'video' | 'images' | 'coverNames'
+type Field = 'interval' | 'audio' | 'video' | 'images' | 'coverNames' | 'coverPriority'
 
-/** Settings of the library scan: interval, file watcher, extension lists and album cover names. */
+/**
+ * Settings of the library: scan interval, file watcher, extension lists, album cover names and the
+ * global cover rule. A changed cover rule loads the covers of albums and songs again.
+ */
 const { t } = useI18n()
 const format = useFormat()
 const store = useLibrarySettingsStore()
+const covers = useCoversStore()
 
 const interval = ref('')
 const fileWatcher = ref(true)
@@ -26,6 +39,7 @@ const audio = ref('')
 const video = ref('')
 const images = ref('')
 const coverNames = ref('')
+const coverPriority = ref<string>('AlbumFirst')
 const saving = ref(false)
 const saved = ref(false)
 const failed = ref(false)
@@ -37,6 +51,7 @@ const fields: Record<string, Field> = {
     videoExtensions: 'video',
     imageExtensions: 'images',
     albumCoverNames: 'coverNames',
+    coverPriority: 'coverPriority',
 }
 
 const extensionKeys = {
@@ -52,6 +67,7 @@ const messageKeys: Record<Field, ValidationMessageOptions['keys']> = {
     video: extensionKeys,
     images: extensionKeys,
     coverNames: { invalid_format: 'adminLibrary.errors.coverNames' },
+    coverPriority: {},
 }
 
 function show(settings: LibrarySettings | null): void {
@@ -65,7 +81,16 @@ function show(settings: LibrarySettings | null): void {
     video.value = formatList(settings.videoExtensions)
     images.value = formatList(settings.imageExtensions)
     coverNames.value = formatList(settings.albumCoverNames)
+    coverPriority.value = coverPriorityOf(settings.coverPriority)
 }
+
+const coverPriorityOptions = computed<SegmentOption[]>(() =>
+    coverPriorities.map((priority) => ({
+        value: priority,
+        item: coverRuleToken(priority),
+        label: t(coverRuleOptionKey(priority)),
+    })),
+)
 
 const intervalSelectOptions = computed<SelectOption[]>(() => {
     const options = intervalOptions.map((option) => ({
@@ -91,6 +116,7 @@ async function save(): Promise<void> {
     saved.value = false
     failed.value = false
     errors.value = {}
+    const previousPriority = store.settings?.coverPriority
     try {
         const result = await store.update({
             scanIntervalMinutes: Number(interval.value),
@@ -99,7 +125,13 @@ async function save(): Promise<void> {
             videoExtensions: parseList(video.value),
             imageExtensions: parseList(images.value),
             albumCoverNames: parseList(coverNames.value),
+            coverPriority: coverPriorityOf(coverPriority.value as CoverPriority),
         })
+        if (result && result.coverPriority !== previousPriority) {
+            // Albums and songs without a rule of their own may show another cover now.
+            covers.invalidate()
+        }
+
         show(result)
         saved.value = true
     } catch (error) {
@@ -183,6 +215,16 @@ onMounted(async () => {
             :label="t('adminLibrary.albumCoverNames')"
             :hint="t('adminLibrary.coverNamesHint')"
             :error="errors.coverNames"
+            :disabled="saving"
+        />
+        <BaseSegmentedField
+            v-model="coverPriority"
+            data-field="cover-priority"
+            item="cover-priority"
+            :label="t('adminLibrary.coverPriority')"
+            :options="coverPriorityOptions"
+            :hint="t('adminLibrary.coverPriorityHint')"
+            :error="errors.coverPriority"
             :disabled="saving"
         />
         <BaseAlert v-if="saved" tone="success" :message="t('adminLibrary.saved')" />

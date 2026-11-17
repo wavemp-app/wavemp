@@ -1576,6 +1576,19 @@
         inline-size: min(var(--wmp-cover-size-l), 100%);
     }
 
+    /* Preview of a cover rule: the cover the chosen rule shows, with a caption below. */
+    [data-part='cover-preview'] {
+        display: grid;
+        justify-items: start;
+        gap: var(--wmp-space-xs);
+        margin: 0;
+        color: var(--wmp-color-text-muted);
+    }
+
+    [data-part='cover-preview'][data-state='loading'] > [data-part='cover'] {
+        opacity: 0.6;
+    }
+
     [data-part='detail-info'] {
         display: grid;
         flex: 1 1 16rem;

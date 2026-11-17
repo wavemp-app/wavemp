@@ -221,7 +221,7 @@ export const usePlayerStore = defineStore('player', () => {
     /** Tracks skipped in a row; stops when the whole queue failed. */
     let skipped = 0
     let retried: string | null = null
-    let artworkHeld: string | null = null
+    let artworkHeld: { id: string; version: string | undefined } | null = null
 
     const history = new PlayHistoryTracker((trackId, playedAt) => recordPlay(trackId, playedAt))
 
@@ -931,20 +931,25 @@ export const usePlayerStore = defineStore('player', () => {
         () => clear(),
     )
 
-    // The cover of the current track for the media session.
+    // The cover of the current track for the media session, loaded again after a cover rule changed.
     watch(
-        () => (current.value?.track.hasCover ? (current.value.track.id ?? null) : null),
-        async (id) => {
+        () =>
+            [
+                current.value?.track.hasCover ? (current.value.track.id ?? null) : null,
+                covers.versionOf('track'),
+            ] as const,
+        async ([id, version]) => {
             if (artworkHeld) {
-                covers.release('track', artworkHeld, artworkSize)
+                covers.release('track', artworkHeld.id, artworkSize, artworkHeld.version)
                 artworkHeld = null
             }
 
             artwork.value = null
             if (id && playerDependencies.mediaSession) {
-                artworkHeld = id
-                const url = await covers.acquire('track', id, artworkSize)
-                if (artworkHeld === id) {
+                const held = { id, version }
+                artworkHeld = held
+                const url = await covers.acquire('track', id, artworkSize, version)
+                if (artworkHeld === held) {
                     artwork.value = url
                 }
             }

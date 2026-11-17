@@ -159,4 +159,57 @@ describe('covers store', () => {
         expect(revokeObjectURL).toHaveBeenCalledWith('blob:cover-2')
         expect(revokeObjectURL).not.toHaveBeenCalledWith(shown)
     })
+
+    it('keeps the versions of covers until a cover rule changes', () => {
+        const store = useCoversStore()
+
+        expect(store.versionOf('album')).toBeUndefined()
+        expect(store.versionOf('playlist', 'v1')).toBe('v1')
+
+        store.invalidate()
+
+        expect(store.revisionOf('album')).toBe(1)
+        expect(store.revisionOf('track')).toBe(1)
+        expect(store.revisionOf('playlist')).toBe(0)
+        expect(store.versionOf('album')).toBe('r1')
+        expect(store.versionOf('track', 'v2')).toBe('v2.r1')
+        expect(store.versionOf('playlist', 'v1')).toBe('v1')
+    })
+
+    it('frees the covers of albums and tracks after a cover rule changed', async () => {
+        const store = useCoversStore()
+        const idle = await store.acquire('album', 'idle')
+        store.release('album', 'idle')
+        const shown = await store.acquire('track', 'shown')
+        const playlist = await store.acquire('playlist', 'p')
+        store.release('playlist', 'p')
+
+        store.invalidate()
+
+        expect(revokeObjectURL).toHaveBeenCalledWith(idle)
+        expect(revokeObjectURL).not.toHaveBeenCalledWith(shown)
+        expect(revokeObjectURL).not.toHaveBeenCalledWith(playlist)
+        expect(store.size()).toBe(2)
+
+        const reloaded = await store.acquire('track', 'shown', 300, store.versionOf('track'))
+        expect(reloaded).not.toBe(shown)
+        expect(api.fetchTrackCover).toHaveBeenCalledTimes(2)
+
+        store.release('track', 'shown')
+        expect(revokeObjectURL).toHaveBeenCalledWith(shown)
+        expect(revokeObjectURL).not.toHaveBeenCalledWith(reloaded)
+    })
+
+    it('frees a replaced cover that was loading once its load ends', async () => {
+        const store = useCoversStore()
+        const pending = store.acquire('album', 'a')
+        store.release('album', 'a')
+
+        store.invalidate(['album'])
+        const url = await pending
+
+        expect(revokeObjectURL).toHaveBeenCalledWith(url)
+        expect(store.size()).toBe(0)
+        expect(store.revisionOf('track')).toBe(0)
+    })
 })

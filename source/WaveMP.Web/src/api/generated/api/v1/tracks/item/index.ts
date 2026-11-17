@@ -6,6 +6,8 @@ import { createProblemDetailsFromDiscriminatorValue, createTrackFromDiscriminato
 // @ts-ignore
 import { CoverRequestBuilderRequestsMetadata, type CoverRequestBuilder } from './cover/index.js';
 // @ts-ignore
+import { CoverRuleRequestBuilderNavigationMetadata, CoverRuleRequestBuilderRequestsMetadata, type CoverRuleRequestBuilder } from './coverRule/index.js';
+// @ts-ignore
 import { FilesRequestBuilderRequestsMetadata, type FilesRequestBuilder } from './files/index.js';
 // @ts-ignore
 import { FileSelectionRequestBuilderRequestsMetadata, type FileSelectionRequestBuilder } from './fileSelection/index.js';
@@ -32,6 +34,10 @@ export interface TracksItemRequestBuilder extends BaseRequestBuilder<TracksItemR
      * The cover property
      */
     get cover(): CoverRequestBuilder;
+    /**
+     * The coverRule property
+     */
+    get coverRule(): CoverRuleRequestBuilder;
     /**
      * The files property
      */
@@ -89,6 +95,10 @@ export const TracksItemRequestBuilderUriTemplate = "{+baseurl}/api/v1/tracks/{id
 export const TracksItemRequestBuilderNavigationMetadata: Record<Exclude<keyof TracksItemRequestBuilder, KeysToExcludeForNavigationMetadata>, NavigationMetadata> = {
     cover: {
         requestsMetadata: CoverRequestBuilderRequestsMetadata,
+    },
+    coverRule: {
+        requestsMetadata: CoverRuleRequestBuilderRequestsMetadata,
+        navigationMetadata: CoverRuleRequestBuilderNavigationMetadata,
     },
     files: {
         requestsMetadata: FilesRequestBuilderRequestsMetadata,

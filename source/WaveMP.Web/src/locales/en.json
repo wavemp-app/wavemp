@@ -690,6 +690,8 @@
     "albumCoverNames": "Names of album covers",
     "listHint": "Separate the entries with commas. Applies with the next scan.",
     "coverNamesHint": "File names without extension, the most important first. Applies with the next scan.",
+    "coverPriority": "Cover shown first",
+    "coverPriorityHint": "Applies to all albums and songs without a rule of their own. If the chosen cover is missing, the other one is shown.",
     "save": "Save",
     "saved": "The settings are saved.",
     "saveError": "The settings could not be saved.",
@@ -959,7 +961,8 @@
       "schedule": "Scheduled",
       "manual": "Manual",
       "fileWatcher": "File watcher",
-      "libraryScan": "After a scan"
+      "libraryScan": "After a scan",
+      "coverRule": "After a cover rule changed"
     },
     "errors": {
       "jobFailed": "The run failed. Details are in the server log.",
@@ -994,6 +997,25 @@
     "saved": "Saved.",
     "loadError": "The video sync could not be loaded.",
     "saveError": "The video offset could not be saved."
+  },
+  "coverRule": {
+    "title": "Cover",
+    "label": "Cover shown first",
+    "inherit": "Inherited ({priority})",
+    "albumFirst": "Album cover",
+    "trackFirst": "Song cover",
+    "priorities": {
+      "albumFirst": "album cover first",
+      "trackFirst": "song cover first"
+    },
+    "albumHint": "Applies to the album and to its songs without a rule of their own. If the chosen cover is missing, the other one is shown.",
+    "trackHint": "If the chosen cover is missing, the other one is shown. A cover chosen in the files of the song always comes first.",
+    "preview": "Preview",
+    "previewNone": "No cover",
+    "save": "Save",
+    "saved": "Saved. The covers are updated.",
+    "loadError": "The cover rule could not be loaded.",
+    "saveError": "The cover rule could not be saved."
   },
   "trackMetadata": {
     "edit": "Edit metadata",

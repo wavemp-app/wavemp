@@ -342,6 +342,25 @@ export interface CacheUsage extends AdditionalDataHolder, Parsable {
      */
     transcodes?: CacheAreaUsage | null;
 }
+export type CoverPriority = (typeof CoverPriorityObject)[keyof typeof CoverPriorityObject];
+/**
+ * The cover rule of an album or a track and the priority that applies to it.
+ */
+export interface CoverRule extends AdditionalDataHolder, Parsable {
+    /**
+     * The priority that applies: its own rule, otherwise the inherited one.
+     */
+    effectivePriority?: CoverPriority | null;
+    /**
+     * The priority it inherits: for an album the global rule, for a track the rule of its album, otherwise the global rule.
+     */
+    inheritedPriority?: CoverPriority | null;
+    /**
+     * The rule of the album or track itself; Inherit if it has none.
+     */
+    rule?: CoverRuleOption | null;
+}
+export type CoverRuleOption = (typeof CoverRuleOptionObject)[keyof typeof CoverRuleOptionObject];
 /**
  * Creates a new instance of the appropriate class based on discriminator value
  * @param parseNode The parse node to use to read the discriminator value and create the object
@@ -494,6 +513,15 @@ export function createCacheSettingsFromDiscriminatorValue(parseNode: ParseNode |
 // @ts-ignore
 export function createCacheUsageFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
     return deserializeIntoCacheUsage;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {CoverRule}
+ */
+// @ts-ignore
+export function createCoverRuleFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoCoverRule;
 }
 /**
  * Creates a new instance of the appropriate class based on discriminator value
@@ -1117,6 +1145,15 @@ export function createUpdateCacheSettingsFromDiscriminatorValue(parseNode: Parse
 /**
  * Creates a new instance of the appropriate class based on discriminator value
  * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {UpdateCoverRule}
+ */
+// @ts-ignore
+export function createUpdateCoverRuleFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoUpdateCoverRule;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
  * @returns {UpdateCrossfadeSettings}
  */
 // @ts-ignore
@@ -1584,6 +1621,19 @@ export function deserializeIntoCacheUsage(cacheUsage: Partial<CacheUsage> | unde
 }
 /**
  * The deserialization information for the current model
+ * @param CoverRule The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoCoverRule(coverRule: Partial<CoverRule> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "effectivePriority": n => { coverRule.effectivePriority = n.getEnumValue<CoverPriority>(CoverPriorityObject); },
+        "inheritedPriority": n => { coverRule.inheritedPriority = n.getEnumValue<CoverPriority>(CoverPriorityObject); },
+        "rule": n => { coverRule.rule = n.getEnumValue<CoverRuleOption>(CoverRuleOptionObject); },
+    }
+}
+/**
+ * The deserialization information for the current model
  * @param CreatedSession The instance to deserialize into.
  * @returns {Record<string, (node: ParseNode) => void>}
  */
@@ -1900,6 +1950,7 @@ export function deserializeIntoLibrarySettings(librarySettings: Partial<LibraryS
     return {
         "albumCoverNames": n => { librarySettings.albumCoverNames = n.getCollectionOfPrimitiveValues<string>("string"); },
         "audioExtensions": n => { librarySettings.audioExtensions = n.getCollectionOfPrimitiveValues<string>("string"); },
+        "coverPriority": n => { librarySettings.coverPriority = n.getEnumValue<CoverPriority>(CoverPriorityObject); },
         "fileWatcherEnabled": n => { librarySettings.fileWatcherEnabled = n.getBooleanValue(); },
         "imageExtensions": n => { librarySettings.imageExtensions = n.getCollectionOfPrimitiveValues<string>("string"); },
         "scanIntervalMinutes": n => { librarySettings.scanIntervalMinutes = n.getNumberValue(); },
@@ -2549,6 +2600,17 @@ export function deserializeIntoUpdateCacheSettings(updateCacheSettings: Partial<
 }
 /**
  * The deserialization information for the current model
+ * @param UpdateCoverRule The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoUpdateCoverRule(updateCoverRule: Partial<UpdateCoverRule> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "rule": n => { updateCoverRule.rule = n.getEnumValue<CoverRuleOption>(CoverRuleOptionObject); },
+    }
+}
+/**
+ * The deserialization information for the current model
  * @param UpdateCrossfadeSettings The instance to deserialize into.
  * @returns {Record<string, (node: ParseNode) => void>}
  */
@@ -2584,6 +2646,7 @@ export function deserializeIntoUpdateLibrarySettings(updateLibrarySettings: Part
     return {
         "albumCoverNames": n => { updateLibrarySettings.albumCoverNames = n.getCollectionOfPrimitiveValues<string>("string"); },
         "audioExtensions": n => { updateLibrarySettings.audioExtensions = n.getCollectionOfPrimitiveValues<string>("string"); },
+        "coverPriority": n => { updateLibrarySettings.coverPriority = n.getEnumValue<CoverPriority>(CoverPriorityObject); },
         "fileWatcherEnabled": n => { updateLibrarySettings.fileWatcherEnabled = n.getBooleanValue(); },
         "imageExtensions": n => { updateLibrarySettings.imageExtensions = n.getCollectionOfPrimitiveValues<string>("string"); },
         "scanIntervalMinutes": n => { updateLibrarySettings.scanIntervalMinutes = n.getNumberValue(); },
@@ -3264,6 +3327,10 @@ export interface LibrarySettings extends AdditionalDataHolder, Parsable {
      * Extensions of audio files, lower case without dot.
      */
     audioExtensions?: string[] | null;
+    /**
+     * The global cover rule: whether tracks and albums show the cover of the album or the cover of the track first. Albums and tracks with a rule of their own (GetAlbumCoverRule, GetTrackCoverRule) override it.
+     */
+    coverPriority?: CoverPriority | null;
     /**
      * Watches the media folder for changes and scans changed folders shortly after.
      */
@@ -4170,6 +4237,20 @@ export function serializeCacheUsage(writer: SerializationWriter, cacheUsage: Par
 }
 /**
  * Serializes information the current object
+ * @param CoverRule The instance to serialize from.
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeCoverRule(writer: SerializationWriter, coverRule: Partial<CoverRule> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!coverRule || isSerializingDerivedType) { return; }
+    writer.writeEnumValue<CoverPriority>("effectivePriority", coverRule.effectivePriority);
+    writer.writeEnumValue<CoverPriority>("inheritedPriority", coverRule.inheritedPriority);
+    writer.writeEnumValue<CoverRuleOption>("rule", coverRule.rule);
+    writer.writeAdditionalData(coverRule.additionalData);
+}
+/**
+ * Serializes information the current object
  * @param CreatedSession The instance to serialize from.
  * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
  * @param writer Serialization writer to use to serialize this model
@@ -4509,6 +4590,7 @@ export function serializeLibrarySettings(writer: SerializationWriter, librarySet
     if (!librarySettings || isSerializingDerivedType) { return; }
     writer.writeCollectionOfPrimitiveValues<string>("albumCoverNames", librarySettings.albumCoverNames);
     writer.writeCollectionOfPrimitiveValues<string>("audioExtensions", librarySettings.audioExtensions);
+    writer.writeEnumValue<CoverPriority>("coverPriority", librarySettings.coverPriority);
     writer.writeBooleanValue("fileWatcherEnabled", librarySettings.fileWatcherEnabled);
     writer.writeCollectionOfPrimitiveValues<string>("imageExtensions", librarySettings.imageExtensions);
     writer.writeNumberValue("scanIntervalMinutes", librarySettings.scanIntervalMinutes);
@@ -5199,6 +5281,18 @@ export function serializeUpdateCacheSettings(writer: SerializationWriter, update
 /**
  * Serializes information the current object
  * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param UpdateCoverRule The instance to serialize from.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeUpdateCoverRule(writer: SerializationWriter, updateCoverRule: Partial<UpdateCoverRule> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!updateCoverRule || isSerializingDerivedType) { return; }
+    writer.writeEnumValue<CoverRuleOption>("rule", updateCoverRule.rule);
+    writer.writeAdditionalData(updateCoverRule.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
  * @param UpdateCrossfadeSettings The instance to serialize from.
  * @param writer Serialization writer to use to serialize this model
  */
@@ -5236,6 +5330,7 @@ export function serializeUpdateLibrarySettings(writer: SerializationWriter, upda
     if (!updateLibrarySettings || isSerializingDerivedType) { return; }
     writer.writeCollectionOfPrimitiveValues<string>("albumCoverNames", updateLibrarySettings.albumCoverNames);
     writer.writeCollectionOfPrimitiveValues<string>("audioExtensions", updateLibrarySettings.audioExtensions);
+    writer.writeEnumValue<CoverPriority>("coverPriority", updateLibrarySettings.coverPriority);
     writer.writeBooleanValue("fileWatcherEnabled", updateLibrarySettings.fileWatcherEnabled);
     writer.writeCollectionOfPrimitiveValues<string>("imageExtensions", updateLibrarySettings.imageExtensions);
     writer.writeNumberValue("scanIntervalMinutes", updateLibrarySettings.scanIntervalMinutes);
@@ -6072,6 +6167,15 @@ export interface UpdateCacheSettings extends AdditionalDataHolder, Parsable {
     maxSizeMegabytes?: number | null;
 }
 /**
+ * Sets the cover rule of an album or a track.
+ */
+export interface UpdateCoverRule extends AdditionalDataHolder, Parsable {
+    /**
+     * The rule property
+     */
+    rule?: CoverRuleOption | null;
+}
+/**
  * Changes the crossfade of the current profile. Missing or null values stay unchanged.
  */
 export interface UpdateCrossfadeSettings extends AdditionalDataHolder, Parsable {
@@ -6121,6 +6225,10 @@ export interface UpdateLibrarySettings extends AdditionalDataHolder, Parsable {
      * Extensions of audio files (1 to 10 letters or digits; a leading dot is removed); applies to the next scan.
      */
     audioExtensions?: string[] | null;
+    /**
+     * The coverPriority property
+     */
+    coverPriority?: CoverPriority | null;
     /**
      * Switches the file watcher on or off at once.
      */
@@ -6607,6 +6715,21 @@ export const BackupTriggerObject = {
     Migration: "Migration",
 } as const;
 /**
+ * The priority it inherits: for an album the global rule, for a track the rule of its album, otherwise the global rule.
+ */
+export const CoverPriorityObject = {
+    AlbumFirst: "AlbumFirst",
+    TrackFirst: "TrackFirst",
+} as const;
+/**
+ * The rule of the album or track itself; Inherit if it has none.
+ */
+export const CoverRuleOptionObject = {
+    Inherit: "Inherit",
+    AlbumFirst: "AlbumFirst",
+    TrackFirst: "TrackFirst",
+} as const;
+/**
  * Filter of the band.
  */
 export const EqualizerFilterTypeObject = {
@@ -6763,6 +6886,7 @@ export const JobTriggerObject = {
     Manual: "Manual",
     FileWatcher: "FileWatcher",
     LibraryScan: "LibraryScan",
+    CoverRule: "CoverRule",
 } as const;
 /**
  * Language of the user interface.

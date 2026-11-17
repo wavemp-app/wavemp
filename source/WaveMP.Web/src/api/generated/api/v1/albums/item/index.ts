@@ -6,6 +6,8 @@ import { createAlbumFromDiscriminatorValue, createProblemDetailsFromDiscriminato
 // @ts-ignore
 import { CoverRequestBuilderRequestsMetadata, type CoverRequestBuilder } from './cover/index.js';
 // @ts-ignore
+import { CoverRuleRequestBuilderNavigationMetadata, CoverRuleRequestBuilderRequestsMetadata, type CoverRuleRequestBuilder } from './coverRule/index.js';
+// @ts-ignore
 import { TracksRequestBuilderRequestsMetadata, type TracksRequestBuilder } from './tracks/index.js';
 // @ts-ignore
 import { type BaseRequestBuilder, type KeysToExcludeForNavigationMetadata, type NavigationMetadata, type Parsable, type ParsableFactory, type RequestConfiguration, type RequestInformation, type RequestsMetadata } from '@microsoft/kiota-abstractions';
@@ -18,6 +20,10 @@ export interface AlbumsItemRequestBuilder extends BaseRequestBuilder<AlbumsItemR
      * The cover property
      */
     get cover(): CoverRequestBuilder;
+    /**
+     * The coverRule property
+     */
+    get coverRule(): CoverRuleRequestBuilder;
     /**
      * The tracks property
      */
@@ -47,6 +53,10 @@ export const AlbumsItemRequestBuilderUriTemplate = "{+baseurl}/api/v1/albums/{id
 export const AlbumsItemRequestBuilderNavigationMetadata: Record<Exclude<keyof AlbumsItemRequestBuilder, KeysToExcludeForNavigationMetadata>, NavigationMetadata> = {
     cover: {
         requestsMetadata: CoverRequestBuilderRequestsMetadata,
+    },
+    coverRule: {
+        requestsMetadata: CoverRuleRequestBuilderRequestsMetadata,
+        navigationMetadata: CoverRuleRequestBuilderNavigationMetadata,
     },
     tracks: {
         requestsMetadata: TracksRequestBuilderRequestsMetadata,

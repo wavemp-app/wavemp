@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia'
+import { reactive } from 'vue'
 import { statusOf } from '@/api/problems'
 import { fetchAlbumCover, fetchTrackCover } from '@/library/api'
 import { defaultCoverSize, type CoverSize } from '@/library/covers'
@@ -14,12 +15,18 @@ export type CoverKind = 'album' | 'track' | 'playlist' | 'avatar' | 'avatar-pres
 /** Covers kept loaded without a component that shows them, the least recently used go first. */
 export const maxCachedCovers = 100
 
+/** Covers whose picture follows the cover rules (cover of the album or of the track first). */
+export const ruleCoverKinds: readonly CoverKind[] = ['album', 'track']
+
 interface Entry {
+    kind: CoverKind
     url: string | null
     loaded: boolean
     pending: Promise<string | null> | null
     refs: number
     used: number
+    /** Replaced by a newer picture; freed as soon as no component shows it. */
+    stale: boolean
 }
 
 /**
@@ -30,9 +37,13 @@ interface Entry {
  * the API with their ETag whether they changed. A missing cover (404) is remembered as null, other
  * errors are not, so the next attempt loads again. Own covers of playlists and avatars carry the
  * version the API names, so a new picture gets a new entry instead of the one already loaded.
+ * Covers of albums and tracks have no such version; after a change of a cover rule, invalidate()
+ * raises the revision of their kind, and components that show them load them again with
+ * versionOf().
  */
 export const useCoversStore = defineStore('covers', () => {
     const entries = new Map<string, Entry>()
+    const revisions = reactive<Partial<Record<CoverKind, number>>>({})
     let clock = 0
 
     function keyOf(kind: CoverKind, id: string, size: CoverSize, version?: string): string {
@@ -67,10 +78,27 @@ export const useCoversStore = defineStore('covers', () => {
         }
     }
 
+    function free(key: string, entry: Entry): void {
+        if (entry.url) {
+            URL.revokeObjectURL(entry.url)
+        }
+
+        if (entries.get(key) === entry) {
+            entries.delete(key)
+        }
+    }
+
     /** Forgets an entry whose cover failed to load once no component shows it any more. */
     function forgetFailed(key: string, entry: Entry): void {
         if (entry.refs === 0 && !entry.loaded && !entry.pending && entries.get(key) === entry) {
             entries.delete(key)
+        }
+    }
+
+    /** Frees a replaced entry once no component shows it and it is not loading any more. */
+    function freeStale(key: string, entry: Entry): void {
+        if (entry.stale && entry.refs === 0 && !entry.pending) {
+            free(key, entry)
         }
     }
 
@@ -82,11 +110,7 @@ export const useCoversStore = defineStore('covers', () => {
 
         idle.sort(([, a], [, b]) => a.used - b.used)
         for (const [key, entry] of idle.slice(0, idle.length - maxCachedCovers)) {
-            if (entry.url) {
-                URL.revokeObjectURL(entry.url)
-            }
-
-            entries.delete(key)
+            free(key, entry)
         }
     }
 
@@ -103,7 +127,15 @@ export const useCoversStore = defineStore('covers', () => {
         const key = keyOf(kind, id, size, version)
         let entry = entries.get(key)
         if (!entry) {
-            entry = { url: null, loaded: false, pending: null, refs: 0, used: 0 }
+            entry = {
+                kind,
+                url: null,
+                loaded: false,
+                pending: null,
+                refs: 0,
+                used: 0,
+                stale: false,
+            }
             entries.set(key, entry)
         }
 
@@ -121,12 +153,14 @@ export const useCoversStore = defineStore('covers', () => {
                     current.url = url
                     current.loaded = true
                     current.pending = null
+                    freeStale(key, current)
                     evict()
                     return url
                 },
                 () => {
                     current.pending = null
                     forgetFailed(key, current)
+                    freeStale(key, current)
                     return null
                 },
             )
@@ -151,7 +185,48 @@ export const useCoversStore = defineStore('covers', () => {
         entry.refs = Math.max(0, entry.refs - 1)
         entry.used = ++clock
         forgetFailed(key, entry)
+        freeStale(key, entry)
         evict()
+    }
+
+    /** Revision of the pictures of a kind; it rises with every invalidate() of the kind. */
+    function revisionOf(kind: CoverKind): number {
+        return revisions[kind] ?? 0
+    }
+
+    /**
+     * The version to acquire and release a cover with: the version of its own picture and the
+     * revision of its kind. Reading it in a watcher or computed property loads the cover again
+     * after invalidate().
+     */
+    function versionOf(kind: CoverKind, version?: string): string | undefined {
+        const revision = revisionOf(kind)
+        if (revision === 0) {
+            return version
+        }
+
+        return version ? `${version}.r${revision}` : `r${revision}`
+    }
+
+    /**
+     * Drops the loaded pictures of the kinds, e.g. after a cover rule changed: the same album or
+     * track may show another picture now. Pictures no component shows are freed at once, the
+     * others as soon as their components release them; the next acquire loads them again.
+     */
+    function invalidate(kinds: readonly CoverKind[] = ruleCoverKinds): void {
+        for (const [key, entry] of entries) {
+            if (!kinds.includes(entry.kind)) {
+                continue
+            }
+
+            // Entries still shown or loading are freed by release() or when their load ends.
+            entry.stale = true
+            freeStale(key, entry)
+        }
+
+        for (const kind of kinds) {
+            revisions[kind] = revisionOf(kind) + 1
+        }
     }
 
     /** Number of covers kept, for tests and diagnostics. */
@@ -159,5 +234,5 @@ export const useCoversStore = defineStore('covers', () => {
         return entries.size
     }
 
-    return { acquire, release, size }
+    return { acquire, release, revisionOf, versionOf, invalidate, size }
 })

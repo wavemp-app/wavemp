@@ -15,6 +15,8 @@ import type {
     AlbumPage,
     Artist,
     ArtistPage,
+    CoverRule,
+    CoverRuleOption,
     GenrePage,
     MediaFilePage,
     SearchResult,
@@ -123,4 +125,37 @@ export function listYears(query: YearQuery): Promise<YearPage | undefined> {
 
 export function searchLibrary(q: string, limit: number): Promise<SearchResult | undefined> {
     return apiClient.api.v1.search.get({ queryParameters: { q, limit } })
+}
+
+/** What a cover rule belongs to: an album or a track. */
+export type CoverRuleOwner = 'album' | 'track'
+
+function coverRuleOf(owner: CoverRuleOwner, id: string) {
+    return owner === 'album'
+        ? apiClient.api.v1.albums.byId(id).coverRule
+        : apiClient.api.v1.tracks.byId(id).coverRule
+}
+
+/** The cover rule of an album or track with the priority it inherits (admins only). */
+export function getCoverRule(owner: CoverRuleOwner, id: string): Promise<CoverRule | undefined> {
+    return coverRuleOf(owner, id).get()
+}
+
+/** Sets the cover rule of an album or track; Inherit removes its own rule (admins only). */
+export function setCoverRule(
+    owner: CoverRuleOwner,
+    id: string,
+    rule: CoverRuleOption,
+): Promise<CoverRule | undefined> {
+    return coverRuleOf(owner, id).put({ rule })
+}
+
+/** The cover an album or track would show with the rule, without changing it (admins only). */
+export function fetchCoverRulePreview(
+    owner: CoverRuleOwner,
+    id: string,
+    rule: CoverRuleOption,
+    size: CoverSize,
+): Promise<ArrayBuffer | undefined> {
+    return coverRuleOf(owner, id).preview.get({ queryParameters: { rule, size } })
 }

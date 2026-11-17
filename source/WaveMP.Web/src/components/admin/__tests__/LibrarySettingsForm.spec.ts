@@ -3,6 +3,7 @@ import { flushPromises, mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import LibrarySettingsForm from '../LibrarySettingsForm.vue'
 import { createWaveMpI18n } from '@/i18n'
+import { useCoversStore } from '@/stores/covers'
 import { useLibrarySettingsStore } from '@/stores/librarySettings'
 
 const settings = {
@@ -12,6 +13,7 @@ const settings = {
     videoExtensions: ['mkv'],
     imageExtensions: ['jpg'],
     albumCoverNames: ['cover', 'folder'],
+    coverPriority: 'AlbumFirst' as const,
 }
 
 async function mountForm(current = settings) {
@@ -80,10 +82,49 @@ describe('LibrarySettingsForm', () => {
             videoExtensions: ['mkv'],
             imageExtensions: ['jpg'],
             albumCoverNames: ['cover', 'folder'],
+            coverPriority: 'AlbumFirst',
         })
         expect(wrapper.get('[data-part="alert"][data-state="success"]').text()).toBe(
             'The settings are saved.',
         )
+        wrapper.unmount()
+    })
+
+    it('shows the global cover rule as segmented control and saves a change', async () => {
+        const { wrapper, update } = await mountForm()
+        const covers = useCoversStore()
+        const invalidate = vi.spyOn(covers, 'invalidate')
+        update.mockResolvedValue({ ...settings, coverPriority: 'TrackFirst' })
+
+        const field = wrapper.get('[data-field="cover-priority"]')
+        const segments = field.findAll('[data-part="segment"]')
+        expect(segments.map((segment) => segment.attributes('data-item'))).toEqual([
+            'album-first',
+            'track-first',
+        ])
+        expect(segments.map((segment) => segment.text())).toEqual(['Album cover', 'Song cover'])
+        expect(segments[0]!.attributes('aria-checked')).toBe('true')
+
+        await segments[1]!.trigger('click')
+        await wrapper.get('form').trigger('submit')
+        await flushPromises()
+
+        expect(update).toHaveBeenCalledWith(
+            expect.objectContaining({ coverPriority: 'TrackFirst' }),
+        )
+        expect(invalidate).toHaveBeenCalledTimes(1)
+        wrapper.unmount()
+    })
+
+    it('keeps the loaded covers while the cover rule stays the same', async () => {
+        const { wrapper, update } = await mountForm()
+        const invalidate = vi.spyOn(useCoversStore(), 'invalidate')
+        update.mockResolvedValue({ ...settings, scanIntervalMinutes: 720 })
+
+        await wrapper.get('form').trigger('submit')
+        await flushPromises()
+
+        expect(invalidate).not.toHaveBeenCalled()
         wrapper.unmount()
     })
 

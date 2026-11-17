@@ -82,6 +82,7 @@ describe('presentation of the administration', () => {
 
     it('translates the codes of the cache', () => {
         expect(triggerLabelKey('LibraryScan')).toBe('jobRuns.triggers.libraryScan')
+        expect(triggerLabelKey('CoverRule')).toBe('jobRuns.triggers.coverRule')
         expect(errorLabelKey('cache.ffmpeg_unavailable')).toBe('jobRuns.errors.ffmpegUnavailable')
         expect(errorLabelKey('cache.folder_unwritable')).toBe(
             'jobRuns.errors.cacheFolderUnwritable',

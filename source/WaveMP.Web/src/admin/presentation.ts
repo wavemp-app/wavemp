@@ -135,6 +135,7 @@ const triggers: Record<string, Labeled> = {
     Manual: { labelKey: 'jobRuns.triggers.manual' },
     FileWatcher: { labelKey: 'jobRuns.triggers.fileWatcher' },
     LibraryScan: { labelKey: 'jobRuns.triggers.libraryScan' },
+    CoverRule: { labelKey: 'jobRuns.triggers.coverRule' },
 }
 
 /** Message key of what started a run. */

@@ -75,6 +75,7 @@ export const parts = [
     'btn-fullscreen',
     'cover',
     'cover-image',
+    'cover-preview',
 
     // List
     'list',

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, ref, useId, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { Album, Track } from '@/api/generated/models'
 import { fetchAllPages } from '@/api/paging'
@@ -7,6 +7,7 @@ import { statusOf } from '@/api/problems'
 import BaseButton from '@/components/base/BaseButton.vue'
 import BaseLink from '@/components/base/BaseLink.vue'
 import FavoriteButton from '@/components/collection/FavoriteButton.vue'
+import CoverRuleForm from '@/components/library/CoverRuleForm.vue'
 import DetailHeader from '@/components/library/DetailHeader.vue'
 import LibraryCover from '@/components/library/LibraryCover.vue'
 import MetaItem from '@/components/library/MetaItem.vue'
@@ -17,10 +18,11 @@ import { getAlbum, listAlbumTracks } from '@/library/api'
 import { groupTracksByDisc } from '@/library/grouping'
 import { artistLabelKey, durationSeconds } from '@/library/presentation'
 import { usePlayerStore } from '@/stores/player'
+import { useSessionStore } from '@/stores/session'
 
 /**
  * An album with its cover, details and all its tracks in the order of disc and track number, and the
- * heart that marks it as favorite.
+ * heart that marks it as favorite. Admins also choose the cover rule of the album.
  */
 const props = defineProps<{
     id: string
@@ -29,6 +31,8 @@ const props = defineProps<{
 const { t } = useI18n()
 const format = useFormat()
 const player = usePlayerStore()
+const session = useSessionStore()
+const coverRuleTitleId = useId()
 
 const album = ref<Album | null>(null)
 const tracks = ref<Track[]>([])
@@ -157,6 +161,19 @@ useDetailTitle(() => (status.value === 'ready' ? album.value?.title : null))
                 </template>
             </DetailHeader>
             <TrackGroupList :groups="groups" :label="album.title ?? ''" :show-group-info="false" />
+            <section
+                v-if="session.isAdmin"
+                data-part="section"
+                data-item="cover-rule"
+                :aria-labelledby="coverRuleTitleId"
+            >
+                <h2 :id="coverRuleTitleId" data-part="section-title">{{ t('coverRule.title') }}</h2>
+                <CoverRuleForm
+                    owner="album"
+                    :id="album.id ?? id"
+                    :available="album.hasCover ?? false"
+                />
+            </section>
         </template>
     </div>
 </template>
