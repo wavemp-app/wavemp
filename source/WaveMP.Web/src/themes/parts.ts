@@ -268,6 +268,13 @@ export const parts = [
     'backup-name',
     'backup-meta',
     'backup-actions',
+    'file-selection-filters',
+    'file-selection-list',
+    'file-selection-item',
+    'file-selection-info',
+    'file-selection-title',
+    'file-choices',
+    'file-choice',
 
     // Base components
     'button',

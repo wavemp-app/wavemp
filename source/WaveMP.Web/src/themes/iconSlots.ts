@@ -64,6 +64,7 @@ export const iconSlots = {
     'admin-cache': { file: regular('hard-drives'), area: 'content' },
     'admin-transcoding': { file: regular('film-reel'), area: 'content' },
     'admin-backups': { file: regular('database'), area: 'content' },
+    'admin-files': { file: regular('files'), area: 'content' },
     album: { file: fill('vinyl-record'), area: 'content' },
     artist: { file: fill('microphone-stage'), area: 'content' },
     genre: { file: fill('guitar'), area: 'content' },

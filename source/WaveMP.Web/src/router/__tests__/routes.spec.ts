@@ -112,6 +112,8 @@ describe('createRoutes', () => {
     it('keeps every page of the administration for admins', async () => {
         for (const [path, name] of [
             ['/admin/library', 'admin-library'],
+            ['/admin/files', 'admin-files'],
+            ['/admin/files/track-1', 'admin-track-files'],
             ['/admin/jobs', 'admin-jobs'],
             ['/admin/cache', 'admin-cache'],
             ['/admin/transcoding', 'admin-transcoding'],

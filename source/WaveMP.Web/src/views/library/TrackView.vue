@@ -243,11 +243,15 @@ useDetailTitle(() => (status.value === 'ready' ? track.value?.title : null))
                     <p data-part="empty-state-title">{{ t('track.filesError') }}</p>
                     <BaseButton :label="t('library.retry')" @click="loadFiles" />
                 </div>
-                <TrackFileList
-                    v-else-if="files.length > 0"
-                    :files="files"
-                    :label="t('files.label')"
-                />
+                <template v-else-if="files.length > 0">
+                    <TrackFileList :files="files" :label="t('files.label')" />
+                    <BaseLink
+                        data-item="choose-files"
+                        :to="{ name: 'admin-track-files', params: { id: track.id ?? id } }"
+                    >
+                        {{ t('track.openFiles') }}
+                    </BaseLink>
+                </template>
             </section>
             <section
                 v-if="session.isAdmin && track.hasVideo"

@@ -2,7 +2,7 @@
 // come from the messages (placeholders.*), so they are recognizable as samples in every language.
 // Covers are marked as missing, so the overview never calls the API.
 
-import type { MediaFile, Track } from '@/api/generated/models'
+import type { MediaFile, Track, TrackFileSelection, TrackFileSummary } from '@/api/generated/models'
 import type { Tile } from '@/components/library/TileList.vue'
 
 type Translate = (key: string, values?: Record<string, unknown>) => string
@@ -185,4 +185,67 @@ export function sampleFiles(): MediaFile[] {
             size: 84_000,
         },
     ]
+}
+
+/** Songs of the file selection: one with a selected audio file and a missing cover, one plain. */
+export function sampleFileSummaries(t: Translate): TrackFileSummary[] {
+    return [
+        {
+            trackId: 'sample-selected',
+            title: t('placeholders.track', { number: 2 }),
+            artist: { id: 'artist-1', name: t('placeholders.artist', { number: 1 }) },
+            album: { id: 'album-1', title: t('placeholders.album', { number: 1 }) },
+            directoryPath: 'Artist/Album',
+            baseName: '02 - Song',
+            audioCount: 2,
+            videoCount: 1,
+            coverCount: 2,
+            audio: 'Selected',
+            video: 'Automatic',
+            cover: 'Missing',
+        },
+        {
+            trackId: 'sample-automatic',
+            title: t('placeholders.track', { number: 3 }),
+            artist: { id: 'artist-1', name: t('placeholders.artist', { number: 1 }) },
+            album: null,
+            directoryPath: 'Artist/Album',
+            baseName: '03 - Song',
+            audioCount: 1,
+            videoCount: 0,
+            coverCount: 0,
+            audio: 'Automatic',
+            video: 'Automatic',
+            cover: 'Automatic',
+        },
+    ]
+}
+
+/** The selection of the sample files: the mp3 selected, the video automatic, a cover missing. */
+export function sampleFileSelection(): TrackFileSelection {
+    return {
+        trackId: 'sample-selected',
+        audio: {
+            state: 'Selected',
+            selectedFileId: 'mp3',
+            selectedPath: 'Artist/Album/02 - Song.mp3',
+            activeFileId: 'mp3',
+            automaticFileId: 'flac',
+            candidateFileIds: ['flac', 'mp3'],
+        },
+        video: {
+            state: 'Automatic',
+            activeFileId: 'mkv',
+            automaticFileId: 'mkv',
+            candidateFileIds: ['mkv'],
+        },
+        cover: {
+            state: 'Missing',
+            selectedFileId: 'png',
+            selectedPath: 'Artist/Album/02 - Song.png',
+            activeFileId: 'jpg',
+            automaticFileId: 'jpg',
+            candidateFileIds: ['jpg'],
+        },
+    }
 }

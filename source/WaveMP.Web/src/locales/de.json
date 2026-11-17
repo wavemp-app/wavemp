@@ -609,6 +609,7 @@
     "nav": {
       "label": "Administration",
       "library": "Bibliothek",
+      "files": "Dateien",
       "jobs": "Jobs",
       "cache": "Cache",
       "transcoding": "Transcodierung",
@@ -699,6 +700,72 @@
       "extensionDuplicate": "Eine Endung darf nur in einer Liste stehen.",
       "extensionsRequired": "Gib Audio- oder Videoendungen ein.",
       "coverNames": "Namen ohne Schrägstriche, ohne Punkt am Anfang und mit höchstens 50 Zeichen."
+    }
+  },
+  "adminFiles": {
+    "title": "Dateiauswahl",
+    "songsTitle": "Titel und ihre Dateien",
+    "search": "Titel suchen",
+    "searchPlaceholder": "Titel, Ordner oder Dateiname",
+    "filterLabel": "Anzeigen",
+    "sortLabel": "Sortieren nach",
+    "listLabel": "Titel",
+    "filters": {
+      "all": "Alle",
+      "choices": "Mehrere Dateien",
+      "severalAudio": "Mehrere Audiodateien",
+      "severalVideo": "Mehrere Videos",
+      "severalCovers": "Mehrere Cover",
+      "selected": "Ausgewählt",
+      "missing": "Ausgewählte Datei fehlt"
+    },
+    "sorts": {
+      "path": "Ordner",
+      "title": "Titel",
+      "fileCount": "Anzahl der Dateien"
+    },
+    "counts": {
+      "audio": "Audio: {count}",
+      "video": "Video: {count}",
+      "cover": "Cover: {count}"
+    },
+    "states": {
+      "audioSelected": "Audio ausgewählt",
+      "audioMissing": "Ausgewähltes Audio fehlt",
+      "videoSelected": "Video ausgewählt",
+      "videoMissing": "Ausgewähltes Video fehlt",
+      "coverSelected": "Cover ausgewählt",
+      "coverMissing": "Ausgewähltes Cover fehlt"
+    },
+    "categories": {
+      "audio": "Audio",
+      "video": "Video",
+      "cover": "Cover"
+    },
+    "none": {
+      "audio": "Dieser Titel hat keine Audiodatei.",
+      "video": "Dieser Titel hat kein Video.",
+      "cover": "Dieser Titel hat kein eigenes Cover. Er zeigt das Album-Cover, falls es eines gibt."
+    },
+    "automatic": "Automatisch",
+    "automaticFile": "Beste Qualität: {path}",
+    "noFile": "Keine Datei",
+    "missingFile": "Datei fehlt",
+    "missingAlert": "Die ausgewählte Datei {path} ist nicht mehr vorhanden. Der Titel nutzt die automatische Auswahl, bis die Datei wieder da ist oder eine andere Datei ausgewählt wird.",
+    "embedded": "Eingebettetes Bild",
+    "inUse": "In Verwendung",
+    "best": "Beste Qualität",
+    "song": "Titel",
+    "openSong": "Titel öffnen",
+    "reset": "Auswahl zurücksetzen",
+    "saved": "Die Auswahl wurde gespeichert.",
+    "loadError": "Die Dateien konnten nicht geladen werden.",
+    "empty": "Es gibt noch keine Titel.",
+    "noMatches": "Keine Titel passen zum Filter.",
+    "toOverview": "Zur Dateiauswahl",
+    "errors": {
+      "invalid": "Diese Datei kann nicht mehr ausgewählt werden. Die Dateien wurden neu geladen.",
+      "saveFailed": "Die Auswahl konnte nicht gespeichert werden."
     }
   },
   "adminJobs": {
@@ -915,7 +982,8 @@
       "video": "Nur Video"
     },
     "filesTitle": "Dateien",
-    "filesError": "Die Dateien konnten nicht geladen werden."
+    "filesError": "Die Dateien konnten nicht geladen werden.",
+    "openFiles": "Dateien auswählen"
   },
   "trackVideo": {
     "title": "Video-Synchronisation",

@@ -85,6 +85,7 @@ const icons: Record<IconStyle, string[]> = {
         'dots-six-vertical',
         'film-reel',
         'film-strip',
+        'files',
         'floppy-disk',
         'folder-open',
         'gear-six',

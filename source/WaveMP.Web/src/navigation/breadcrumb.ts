@@ -20,6 +20,7 @@ export interface RouteInfo {
 /** Message keys of the titles of the admin pages. */
 const adminPageTitles = {
     'admin-library': 'adminLibrary.title',
+    'admin-files': 'adminFiles.title',
     'admin-jobs': 'adminJobs.title',
     'admin-cache': 'adminCache.title',
     'admin-transcoding': 'adminTranscoding.title',
@@ -37,8 +38,8 @@ const detailSections: Readonly<Record<string, LibrarySection>> = {
 }
 
 /**
- * The crumbs of a page. Detail pages (album, artist, genre, year, track, playlist) end with their
- * name, once it is known; until then with their section.
+ * The crumbs of a page. Detail pages (album, artist, genre, year, track, playlist, the files of a
+ * song) end with their name, once it is known; until then with their section.
  */
 export function buildBreadcrumb(route: RouteInfo, detailTitle?: string | null): Crumb[] {
     const crumbs: Crumb[] = [{ id: 'music', labelKey: 'breadcrumb.music', to: { name: 'library' } }]
@@ -116,7 +117,23 @@ export function buildBreadcrumb(route: RouteInfo, detailTitle?: string | null): 
             crumbs.push({ id: 'settings', labelKey: 'settings.title', to: { name: 'settings' } })
             crumbs.push({ id: 'settings-pin', labelKey: 'pinSettings.title' })
             break
+        case 'admin-track-files':
+            crumbs.push({ id: 'admin', labelKey: 'admin.title', to: { name: 'admin' } })
+            crumbs.push({
+                id: 'admin-files',
+                labelKey: adminPageTitles['admin-files'],
+                to: { name: 'admin-files' },
+            })
+            if (detailTitle) {
+                crumbs.push({
+                    id: route.name,
+                    labelKey: adminPageTitles['admin-files'],
+                    label: detailTitle,
+                })
+            }
+            break
         case 'admin-library':
+        case 'admin-files':
         case 'admin-jobs':
         case 'admin-cache':
         case 'admin-transcoding':

@@ -609,6 +609,7 @@
     "nav": {
       "label": "Administration",
       "library": "Library",
+      "files": "Files",
       "jobs": "Jobs",
       "cache": "Cache",
       "transcoding": "Transcoding",
@@ -699,6 +700,72 @@
       "extensionDuplicate": "An extension may only be in one list.",
       "extensionsRequired": "Enter audio or video extensions.",
       "coverNames": "Use names without slashes, without a leading dot and with at most 50 characters."
+    }
+  },
+  "adminFiles": {
+    "title": "File selection",
+    "songsTitle": "Songs and their files",
+    "search": "Search songs",
+    "searchPlaceholder": "Title, folder or file name",
+    "filterLabel": "Show",
+    "sortLabel": "Sort by",
+    "listLabel": "Songs",
+    "filters": {
+      "all": "All",
+      "choices": "Several files",
+      "severalAudio": "Several audio files",
+      "severalVideo": "Several videos",
+      "severalCovers": "Several covers",
+      "selected": "Selected",
+      "missing": "Selected file missing"
+    },
+    "sorts": {
+      "path": "Folder",
+      "title": "Title",
+      "fileCount": "Number of files"
+    },
+    "counts": {
+      "audio": "Audio: {count}",
+      "video": "Video: {count}",
+      "cover": "Covers: {count}"
+    },
+    "states": {
+      "audioSelected": "Audio selected",
+      "audioMissing": "Selected audio missing",
+      "videoSelected": "Video selected",
+      "videoMissing": "Selected video missing",
+      "coverSelected": "Cover selected",
+      "coverMissing": "Selected cover missing"
+    },
+    "categories": {
+      "audio": "Audio",
+      "video": "Video",
+      "cover": "Cover"
+    },
+    "none": {
+      "audio": "This song has no audio file.",
+      "video": "This song has no video.",
+      "cover": "This song has no cover of its own. It shows the album cover, if there is one."
+    },
+    "automatic": "Automatic",
+    "automaticFile": "Best quality: {path}",
+    "noFile": "No file",
+    "missingFile": "File missing",
+    "missingAlert": "The selected file {path} is gone. The song uses the automatic choice until the file is back or another file is selected.",
+    "embedded": "Embedded picture",
+    "inUse": "In use",
+    "best": "Best quality",
+    "song": "Song",
+    "openSong": "Open song",
+    "reset": "Reset selection",
+    "saved": "The selection was saved.",
+    "loadError": "The files could not be loaded.",
+    "empty": "There are no songs yet.",
+    "noMatches": "No songs match the filter.",
+    "toOverview": "To the file selection",
+    "errors": {
+      "invalid": "This file can no longer be selected. The files were loaded again.",
+      "saveFailed": "The selection could not be saved."
     }
   },
   "adminJobs": {
@@ -915,7 +982,8 @@
       "video": "Video only"
     },
     "filesTitle": "Files",
-    "filesError": "The files could not be loaded."
+    "filesError": "The files could not be loaded.",
+    "openFiles": "Choose files"
   },
   "trackVideo": {
     "title": "Video sync",

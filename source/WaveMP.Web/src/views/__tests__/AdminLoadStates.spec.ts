@@ -43,9 +43,13 @@ async function mountPage(component: Component) {
         history: createMemoryHistory(),
         routes: [
             { path: '/', name: 'admin-jobs', component: { render: () => null } },
-            ...['admin-library', 'admin-cache', 'admin-transcoding', 'admin-backups'].map(
-                (name) => ({ path: `/${name}`, name, component: { render: () => null } }),
-            ),
+            ...[
+                'admin-library',
+                'admin-files',
+                'admin-cache',
+                'admin-transcoding',
+                'admin-backups',
+            ].map((name) => ({ path: `/${name}`, name, component: { render: () => null } })),
             { path: '/users', name: 'admin-users', component: { render: () => null } },
             { path: '/library', name: 'library', component: { render: () => null } },
             { path: '/profiles', name: 'profiles', component: { render: () => null } },

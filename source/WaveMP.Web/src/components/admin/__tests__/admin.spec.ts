@@ -32,6 +32,7 @@ describe('AdminNav', () => {
         const items = wrapper.findAll('[data-part="admin-nav-item"]')
         expect(items.map((item) => item.text())).toEqual([
             'Library',
+            'Files',
             'Jobs',
             'Cache',
             'Transcoding',
@@ -40,6 +41,7 @@ describe('AdminNav', () => {
         ])
         expect(items.map((item) => item.attributes('href'))).toEqual([
             '/admin/library',
+            '/admin/files',
             '/admin/jobs',
             '/admin/cache',
             '/admin/transcoding',
@@ -47,8 +49,8 @@ describe('AdminNav', () => {
             '/admin/users',
         ])
         expect(items.map((item) => item.attributes('data-item'))).toContain('admin-cache')
-        expect(items[1]!.attributes('aria-current')).toBe('page')
-        expect(items[1]!.attributes('data-state')).toBe('active')
+        expect(items[2]!.attributes('aria-current')).toBe('page')
+        expect(items[2]!.attributes('data-state')).toBe('active')
         expect(items[0]!.attributes('aria-current')).toBeUndefined()
     })
 })

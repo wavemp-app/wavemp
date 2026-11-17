@@ -10,7 +10,9 @@ import SettingsView from '@/views/SettingsView.vue'
 import AdminBackupsView from '@/views/admin/AdminBackupsView.vue'
 import AdminCacheView from '@/views/admin/AdminCacheView.vue'
 import AdminJobsView from '@/views/admin/AdminJobsView.vue'
+import AdminFilesView from '@/views/admin/AdminFilesView.vue'
 import AdminLibraryView from '@/views/admin/AdminLibraryView.vue'
+import AdminTrackFilesView from '@/views/admin/AdminTrackFilesView.vue'
 import AdminTranscodingView from '@/views/admin/AdminTranscodingView.vue'
 import AdminUsersView from '@/views/admin/AdminUsersView.vue'
 import AlbumView from '@/views/library/AlbumView.vue'
@@ -170,6 +172,19 @@ export function createRoutes(extra: readonly RouteRecordRaw[] = []): RouteRecord
             path: '/admin/library',
             name: 'admin-library',
             component: AdminLibraryView,
+            meta: { admin: true },
+        },
+        {
+            path: '/admin/files',
+            name: 'admin-files',
+            component: AdminFilesView,
+            meta: { admin: true, keepAlive: true },
+        },
+        {
+            path: '/admin/files/:id',
+            name: 'admin-track-files',
+            component: AdminTrackFilesView,
+            props: true,
             meta: { admin: true },
         },
         {

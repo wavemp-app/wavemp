@@ -187,6 +187,10 @@
         --_icon: var(--wmp-icon-admin-backups);
     }
 
+    [data-icon='admin-files'] {
+        --_icon: var(--wmp-icon-admin-files);
+    }
+
     [data-icon='album'] {
         --_icon: var(--wmp-icon-album);
     }

@@ -8,6 +8,8 @@ import { useI18n } from 'vue-i18n'
 import type {
     Backup,
     CacheUsage,
+    FileSelectionFilter,
+    FileSelectionSort,
     Job,
     PlayerViewMode,
     Scan,
@@ -15,10 +17,14 @@ import type {
     TranscodeJob,
     TranscodingStatus,
 } from '@/api/generated/models'
+import { fileCategories, fileChoices } from '@/admin/fileSelections'
 import AdminNav from '@/components/admin/AdminNav.vue'
 import BackupList from '@/components/admin/BackupList.vue'
 import BackupStatusPanel from '@/components/admin/BackupStatus.vue'
 import CacheUsagePanel from '@/components/admin/CacheUsage.vue'
+import FileChoiceGroup from '@/components/admin/FileChoiceGroup.vue'
+import FileSelectionFilters from '@/components/admin/FileSelectionFilters.vue'
+import FileSelectionList from '@/components/admin/FileSelectionList.vue'
 import JobList from '@/components/admin/JobList.vue'
 import ScanHistory from '@/components/admin/ScanHistory.vue'
 import ScanIssues from '@/components/admin/ScanIssues.vue'
@@ -95,7 +101,13 @@ import { parts } from '@/themes/parts'
 import NotFoundView from '@/views/NotFoundView.vue'
 import NowPlayingView from '@/views/NowPlayingView.vue'
 import PlaylistsView from '@/views/PlaylistsView.vue'
-import { sampleFiles, sampleTiles, sampleTracks } from './samples'
+import {
+    sampleFileSelection,
+    sampleFileSummaries,
+    sampleFiles,
+    sampleTiles,
+    sampleTracks,
+} from './samples'
 
 const i18n = useI18n({ useScope: 'global' })
 const { t } = i18n
@@ -150,6 +162,11 @@ const playlistRows = computed<PlaylistTrackRow[]>(() =>
     sampleTracks(t).map((track, index) => ({ id: `sample-entry-${index}`, track })),
 )
 const files = sampleFiles()
+const fileSummaries = computed(() => sampleFileSummaries(t))
+const fileSelection = sampleFileSelection()
+const fileSearch = ref('')
+const fileFilter = ref<FileSelectionFilter>('Choices')
+const fileSort = ref<FileSelectionSort>('Path')
 const sortSampleMenu = ref<InstanceType<typeof BaseContextMenu> | null>(null)
 const sortSampleItems = computed<MenuItem[]>(() => [
     ...sortOptions('tracks', true).map((key) => ({
@@ -1021,6 +1038,34 @@ const sampleTranscodeJobs = computed<TranscodeJob[]>(() => {
                         deleting="wavemp-20261115T193000Z-manual"
                     />
                     <BackupList :backups="[]" />
+                </section>
+            </div>
+            <div data-part="view" data-view="admin-files">
+                <section data-part="section" data-item="songs">
+                    <h2 data-part="section-title">{{ t('adminFiles.songsTitle') }}</h2>
+                    <FileSelectionFilters
+                        v-model:search="fileSearch"
+                        v-model:filter="fileFilter"
+                        v-model:sort="fileSort"
+                    />
+                    <FileSelectionList :items="fileSummaries" :label="t('adminFiles.listLabel')" />
+                </section>
+            </div>
+            <div data-part="view" data-view="admin-track-files">
+                <section
+                    v-for="category in fileCategories"
+                    :key="category"
+                    data-part="section"
+                    :data-item="category"
+                >
+                    <h2 :id="`dev-file-choices-${category}`" data-part="section-title">
+                        {{ t(`adminFiles.categories.${category}`) }}
+                    </h2>
+                    <FileChoiceGroup
+                        :category="category"
+                        :choices="fileChoices(fileSelection[category], files)"
+                        :labelledby="`dev-file-choices-${category}`"
+                    />
                 </section>
             </div>
             <div data-part="view" data-view="admin-transcoding">

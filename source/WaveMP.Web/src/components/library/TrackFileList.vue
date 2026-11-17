@@ -2,8 +2,8 @@
 import { useI18n } from 'vue-i18n'
 import type { MediaFile } from '@/api/generated/models'
 import { issueLabelKey } from '@/admin/presentation'
-import { useFormat } from '@/composables/useFormat'
-import { durationSeconds, fileKindKey, fileKindToken } from '@/library/presentation'
+import { useFileDetails } from '@/composables/useFileDetails'
+import { fileKindKey, fileKindToken } from '@/library/presentation'
 
 /**
  * The files of a track for admins: path, kind, whether it plays (primary), and its technical
@@ -16,59 +16,10 @@ defineProps<{
 }>()
 
 const { t } = useI18n()
-const format = useFormat()
+const details = useFileDetails()
 
 function itemState(file: MediaFile): string {
     return [fileKindToken(file.kind), ...(file.isPrimary ? ['primary'] : [])].join(' ')
-}
-
-function details(file: MediaFile): string[] {
-    const values: string[] = []
-    const codec = file.codec ?? file.format
-    if (codec) {
-        values.push(codec.toUpperCase())
-    }
-
-    if (file.bitrate) {
-        values.push(t('files.bitrate', { value: format.number(Math.round(file.bitrate / 1000)) }))
-    }
-
-    if (file.sampleRate) {
-        values.push(
-            t('files.sampleRate', {
-                value: format.number(file.sampleRate / 1000, { maximumFractionDigits: 1 }),
-            }),
-        )
-    }
-
-    if (file.bitDepth) {
-        values.push(t('files.bitDepth', { value: format.number(file.bitDepth) }))
-    }
-
-    if (file.channels) {
-        values.push(t('files.channels', { count: format.number(file.channels) }))
-    }
-
-    if (file.width && file.height) {
-        values.push(
-            t('files.resolution', {
-                width: format.number(file.width, { useGrouping: false }),
-                height: format.number(file.height, { useGrouping: false }),
-            }),
-        )
-    }
-
-    const seconds = durationSeconds(file.durationMilliseconds)
-    if (seconds !== null) {
-        values.push(format.duration(seconds))
-    }
-
-    values.push(format.fileSize(file.size ?? 0))
-    if (file.modifiedAt) {
-        values.push(t('files.modified', { date: format.date(file.modifiedAt) }))
-    }
-
-    return values
 }
 </script>
 

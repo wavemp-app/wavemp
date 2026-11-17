@@ -66,6 +66,19 @@ describe('buildBreadcrumb', () => {
         expect(pageTitleKey({ name: 'admin-library', params: {} })).toBe('adminLibrary.title')
         expect(pageTitleKey({ name: 'admin-jobs', params: {} })).toBe('adminJobs.title')
         expect(pageTitleKey({ name: 'admin-cache', params: {} })).toBe('adminCache.title')
+        expect(pageTitleKey({ name: 'admin-files', params: {} })).toBe('adminFiles.title')
+    })
+
+    it('shows the files of a song below the file selection, with its title once known', () => {
+        const route = { name: 'admin-track-files', params: { id: 'track-1' } }
+
+        expect(buildBreadcrumb(route).map((c) => c.id)).toEqual(['music', 'admin', 'admin-files'])
+        expect(buildBreadcrumb(route, 'Song')).toEqual([
+            { id: 'music', labelKey: 'breadcrumb.music', to: { name: 'library' } },
+            { id: 'admin', labelKey: 'admin.title', to: { name: 'admin' } },
+            { id: 'admin-files', labelKey: 'adminFiles.title', to: { name: 'admin-files' } },
+            { id: 'admin-track-files', labelKey: 'adminFiles.title', label: 'Song' },
+        ])
     })
 
     it('never links the current page', () => {
