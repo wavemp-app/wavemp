@@ -5,6 +5,7 @@
     <Project Path="source/WaveMP.Core.Collection/WaveMP.Core.Collection.csproj" />
     <Project Path="source/WaveMP.Core.Jobs/WaveMP.Core.Jobs.csproj" />
     <Project Path="source/WaveMP.Core.Library/WaveMP.Core.Library.csproj" />
+    <Project Path="source/WaveMP.Core.Lyrics/WaveMP.Core.Lyrics.csproj" />
     <Project Path="source/WaveMP.Core.Metadata/WaveMP.Core.Metadata.csproj" />
     <Project Path="source/WaveMP.Core.Playlists/WaveMP.Core.Playlists.csproj" />
     <Project Path="source/WaveMP.Core.Scanning/WaveMP.Core.Scanning.csproj" />
@@ -21,6 +22,7 @@
     <Project Path="tests/WaveMP.Core.Collection.Tests/WaveMP.Core.Collection.Tests.csproj" />
     <Project Path="tests/WaveMP.Core.Jobs.Tests/WaveMP.Core.Jobs.Tests.csproj" />
     <Project Path="tests/WaveMP.Core.Library.Tests/WaveMP.Core.Library.Tests.csproj" />
+    <Project Path="tests/WaveMP.Core.Lyrics.Tests/WaveMP.Core.Lyrics.Tests.csproj" />
     <Project Path="tests/WaveMP.Core.Metadata.Tests/WaveMP.Core.Metadata.Tests.csproj" />
     <Project Path="tests/WaveMP.Core.Playlists.Tests/WaveMP.Core.Playlists.Tests.csproj" />
     <Project Path="tests/WaveMP.Core.Scanning.Tests/WaveMP.Core.Scanning.Tests.csproj" />

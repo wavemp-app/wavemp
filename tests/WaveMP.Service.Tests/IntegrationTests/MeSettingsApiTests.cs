@@ -110,7 +110,7 @@ public class MeSettingsApiTests
         }
     }
 
-    [TestCase("\"Lyrics\"")]
+    [TestCase("\"Karaoke\"")]
     [TestCase("1")]
     public async Task UpdateMySettings_WithInvalidPlayerViewMode_ReturnsBadRequest(string value)
     {

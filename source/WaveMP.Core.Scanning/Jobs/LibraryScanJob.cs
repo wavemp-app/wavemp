@@ -6,6 +6,8 @@ using WaveMP.Core.Jobs.Runs;
 using WaveMP.Core.Jobs.Services;
 using WaveMP.Core.Scanning.Plans;
 using WaveMP.Core.Scanning.Scans;
+using WaveMP.Core.Settings.Groups;
+using WaveMP.Core.Settings.Snapshots;
 using WaveMP.Data.Entities;
 
 namespace WaveMP.Core.Scanning.Jobs;
@@ -15,13 +17,15 @@ namespace WaveMP.Core.Scanning.Jobs;
 /// list of relative paths, sent by the file watcher). Never runs in parallel to itself; every run is built in a
 /// dependency injection scope of its own. The result becomes part of the run history. After a full scan, and after a
 /// partial scan that changed files, it starts the job <see cref="JobIds.CoverCache"/>, which prepares the covers of
-/// the changed library.
+/// the changed library, and, if the download of lyrics is switched on, the job <see cref="JobIds.LyricsDownload"/>,
+/// which looks up the lyrics of new tracks.
 /// </summary>
 [DisallowConcurrentExecution]
 public sealed class LibraryScanJob(
     ILibraryScanner scanner,
     IJobRunTracker tracker,
     IJobService jobs,
+    ISettingsSnapshot<LibrarySettings> settings,
     ILogger<LibraryScanJob> logger) : IJob
 {
     public async ValueTask Execute(IJobExecutionContext context, CancellationToken cancellationToken)
@@ -33,7 +37,11 @@ public sealed class LibraryScanJob(
 
         if (ShouldPrepareCovers(scope, result))
         {
-            await StartCoverPreparationAsync();
+            await StartFollowUpAsync(JobIds.CoverCache);
+            if (settings.Current.DownloadLyrics)
+            {
+                await StartFollowUpAsync(JobIds.LyricsDownload);
+            }
         }
     }
 
@@ -77,23 +85,24 @@ public sealed class LibraryScanJob(
     }
 
     /// <summary>
-    /// Queues the preparation of the covers. The scan stays successful if it cannot be started.
+    /// Queues a job that follows the scan, e.g. the preparation of the covers. The scan stays successful if it cannot
+    /// be started.
     /// </summary>
-    private async Task StartCoverPreparationAsync()
+    private async Task StartFollowUpAsync(string jobId)
     {
         try
         {
             JobRunStartResult started = await jobs.StartRunAsync(
-                new JobRunRequest(JobIds.CoverCache, JobRunTrigger.LibraryScan),
+                new JobRunRequest(jobId, JobRunTrigger.LibraryScan),
                 CancellationToken.None);
             if (!started.IsSuccess)
             {
-                logger.LogDebug("The covers are not prepared after the scan: {Reason}", started.Error);
+                logger.LogDebug("The job {JobId} is not started after the scan: {Reason}", jobId, started.Error);
             }
         }
         catch (Exception exception)
         {
-            logger.LogWarning(exception, "Cannot start the preparation of the covers after the scan");
+            logger.LogWarning(exception, "Cannot start the job {JobId} after the scan", jobId);
         }
     }
 }

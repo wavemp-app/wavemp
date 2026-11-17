@@ -13,6 +13,8 @@ public class DiscoveryTests
     [TestCase("SONG.FLAC", MediaFileKind.Audio)]
     [TestCase("Clip.mkv", MediaFileKind.Video)]
     [TestCase("cover.JPG", MediaFileKind.Image)]
+    [TestCase("Song.lrc", MediaFileKind.Lyrics)]
+    [TestCase("Song.LRC", MediaFileKind.Lyrics)]
     [TestCase("notes.txt", null)]
     [TestCase("README", null)]
     [TestCase(".mp3", null)]

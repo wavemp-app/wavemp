@@ -142,6 +142,7 @@ public static class LibraryMappingExtensions
             MediaFileKind.Audio => MediaFileKindDto.Audio,
             MediaFileKind.Video => MediaFileKindDto.Video,
             MediaFileKind.Image => MediaFileKindDto.Image,
+            MediaFileKind.Lyrics => MediaFileKindDto.Lyrics,
             _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, "Unknown kind."),
         };
     }
@@ -153,6 +154,7 @@ public static class LibraryMappingExtensions
             MediaFileKindDto.Audio => MediaFileKind.Audio,
             MediaFileKindDto.Video => MediaFileKind.Video,
             MediaFileKindDto.Image => MediaFileKind.Image,
+            MediaFileKindDto.Lyrics => MediaFileKind.Lyrics,
             _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, "Unknown kind."),
         };
     }

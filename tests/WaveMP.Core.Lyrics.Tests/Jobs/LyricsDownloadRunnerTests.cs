@@ -1,0 +1,158 @@
+using AwesomeAssertions;
+using Microsoft.Extensions.Logging.Abstractions;
+using NSubstitute;
+using WaveMP.Core.Jobs.Runs;
+using WaveMP.Core.Lyrics.Downloads;
+using WaveMP.Core.Lyrics.Jobs;
+using WaveMP.Core.Lyrics.Options;
+using WaveMP.Core.Settings.Groups;
+using WaveMP.Core.Settings.Snapshots;
+using WaveMP.Data.Entities;
+using WaveMP.Data.Projections;
+using WaveMP.Data.Repositories;
+
+namespace WaveMP.Core.Lyrics.Tests.Jobs;
+
+[TestFixture]
+public class LyricsDownloadRunnerTests
+{
+    private ILyricsRepository _repository = null!;
+    private ILyricsDownloader _downloader = null!;
+    private ISettingsSnapshot<LibrarySettings> _settings = null!;
+    private LyricsDownloadRunner _runner = null!;
+
+    [SetUp]
+    public void SetUp()
+    {
+        _repository = Substitute.For<ILyricsRepository>();
+        _repository.ListTracksToLookUpAsync(Arg.Any<int>(), Arg.Any<IReadOnlyCollection<Guid>>(), Arg.Any<CancellationToken>())
+            .Returns([]);
+        _downloader = Substitute.For<ILyricsDownloader>();
+        _settings = Substitute.For<ISettingsSnapshot<LibrarySettings>>();
+        _settings.Current.Returns(new LibrarySettings { DownloadLyrics = true });
+        _runner = new LyricsDownloadRunner(
+            _repository,
+            _downloader,
+            _settings,
+            Microsoft.Extensions.Options.Options.Create(new LyricsOptions
+            {
+                MaxAttempts = 3,
+                RetryDelay = TimeSpan.Zero,
+            }),
+            TimeProvider.System,
+            NullLogger<LyricsDownloadRunner>.Instance);
+    }
+
+    [Test]
+    public async Task RunAsync_SwitchedOff_Fails()
+    {
+        _settings.Current.Returns(new LibrarySettings());
+
+        Func<Task> act = () => _runner.RunAsync();
+
+        (await act.Should().ThrowAsync<JobFailedException>())
+            .Which.Code.Should().Be(JobErrorCode.LyricsDownloadDisabled);
+    }
+
+    [Test]
+    public async Task RunAsync_Tracks_DownloadsEachOnceAndCountsTheOutcomes()
+    {
+        Guid[] ids = [Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid()];
+        Batches([ids[0], ids[1]], [ids[2], ids[3]]);
+        Outcome(ids[0], LyricsDownloadOutcome.SavedToFile);
+        Outcome(ids[1], LyricsDownloadOutcome.NotFound);
+        Outcome(ids[2], LyricsDownloadOutcome.SavedToDatabase);
+        Outcome(ids[3], LyricsDownloadOutcome.NotNeeded);
+
+        LyricsDownloadJobResult result = await _runner.RunAsync();
+
+        result.Should().Be(new LyricsDownloadJobResult(4, 2, 1, 1, false));
+        foreach (Guid id in ids)
+        {
+            await _downloader.Received(1).DownloadAsync(id, LyricsDownloadMode.Automatic, Arg.Any<CancellationToken>());
+        }
+
+        await _repository.Received().ListTracksToLookUpAsync(
+            LyricsDownloadRunner.BatchSize,
+            Arg.Is<IReadOnlyCollection<Guid>>(excluded => excluded.Count == 4),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Test]
+    public async Task RunAsync_ServiceBusyOnce_TriesTheTrackAgain()
+    {
+        var id = Guid.NewGuid();
+        Batches([id]);
+        _downloader.DownloadAsync(id, LyricsDownloadMode.Automatic, Arg.Any<CancellationToken>())
+            .Returns(
+                new LyricsDownloadResult(LyricsDownloadOutcome.RateLimited),
+                new LyricsDownloadResult(LyricsDownloadOutcome.SavedToFile));
+
+        LyricsDownloadJobResult result = await _runner.RunAsync();
+
+        result.Downloaded.Should().Be(1);
+        await _downloader.Received(2).DownloadAsync(id, LyricsDownloadMode.Automatic, Arg.Any<CancellationToken>());
+    }
+
+    [Test]
+    public async Task RunAsync_ServiceUnavailable_FailsAfterTheLastAttempt()
+    {
+        var id = Guid.NewGuid();
+        Batches([id]);
+        Outcome(id, LyricsDownloadOutcome.Unavailable);
+
+        Func<Task> act = () => _runner.RunAsync();
+
+        (await act.Should().ThrowAsync<JobFailedException>())
+            .Which.Code.Should().Be(JobErrorCode.LyricsServiceUnavailable);
+        await _downloader.Received(3).DownloadAsync(id, LyricsDownloadMode.Automatic, Arg.Any<CancellationToken>());
+    }
+
+    [Test]
+    public async Task RunAsync_SwitchedOffWhileRunning_Stops()
+    {
+        var first = Guid.NewGuid();
+        var second = Guid.NewGuid();
+        Batches([first, second]);
+        Outcome(first, LyricsDownloadOutcome.NotFound);
+        _settings.Current.Returns(
+            new LibrarySettings { DownloadLyrics = true },
+            new LibrarySettings { DownloadLyrics = true },
+            new LibrarySettings());
+
+        LyricsDownloadJobResult result = await _runner.RunAsync();
+
+        result.Should().Be(new LyricsDownloadJobResult(1, 0, 1, 0, true));
+        await _downloader.DidNotReceive().DownloadAsync(second, Arg.Any<LyricsDownloadMode>(), Arg.Any<CancellationToken>());
+    }
+
+    [TestCase(null, 30)]
+    [TestCase(10, 10)]
+    [TestCase(0, 30)]
+    [TestCase(3600, 300)]
+    public void RetryDelay_RequestedWait_IsUsedWithinTheLimit(int? requestedSeconds, int expectedSeconds)
+    {
+        TimeSpan? requested = requestedSeconds is { } seconds ? TimeSpan.FromSeconds(seconds) : null;
+
+        LyricsDownloadRunner.RetryDelay(requested, new LyricsOptions())
+            .Should().Be(TimeSpan.FromSeconds(expectedSeconds));
+    }
+
+    private void Batches(params Guid[][] batches)
+    {
+        IReadOnlyList<LyricsTrackRow>[] rows = [.. batches.Select(batch => (IReadOnlyList<LyricsTrackRow>)[.. batch.Select(Row)])];
+        _repository.ListTracksToLookUpAsync(Arg.Any<int>(), Arg.Any<IReadOnlyCollection<Guid>>(), Arg.Any<CancellationToken>())
+            .Returns(rows[0], [.. rows.Skip(1), []]);
+    }
+
+    private void Outcome(Guid id, LyricsDownloadOutcome outcome)
+    {
+        _downloader.DownloadAsync(id, LyricsDownloadMode.Automatic, Arg.Any<CancellationToken>())
+            .Returns(new LyricsDownloadResult(outcome));
+    }
+
+    private static LyricsTrackRow Row(Guid id)
+    {
+        return new LyricsTrackRow(id, "Band", "Song", "Song", "Band", "Album", null, null, "Band/Song.mp3", null, null);
+    }
+}

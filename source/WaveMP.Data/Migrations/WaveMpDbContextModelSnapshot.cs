@@ -320,6 +320,32 @@ namespace WaveMP.Data.Migrations
                     b.ToTable("job_runs", (string)null);
                 });
 
+            modelBuilder.Entity("WaveMP.Data.Entities.LyricsDownload", b =>
+                {
+                    b.Property<Guid>("TrackId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("track_id");
+
+                    b.Property<DateTimeOffset>("CheckedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("checked_at");
+
+                    b.Property<string>("Content")
+                        .HasColumnType("text")
+                        .HasColumnName("content");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("status");
+
+                    b.HasKey("TrackId")
+                        .HasName("pk_lyrics_downloads");
+
+                    b.ToTable("lyrics_downloads", (string)null);
+                });
+
             modelBuilder.Entity("WaveMP.Data.Entities.MediaFile", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1293,6 +1319,18 @@ namespace WaveMP.Data.Migrations
                     b.Navigation("Track");
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("WaveMP.Data.Entities.LyricsDownload", b =>
+                {
+                    b.HasOne("WaveMP.Data.Entities.Track", "Track")
+                        .WithOne()
+                        .HasForeignKey("WaveMP.Data.Entities.LyricsDownload", "TrackId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_lyrics_downloads_tracks_track_id");
+
+                    b.Navigation("Track");
                 });
 
             modelBuilder.Entity("WaveMP.Data.Entities.MediaFile", b =>

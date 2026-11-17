@@ -25,6 +25,11 @@ public static class ScannerVersions
     public const int ImageMetadata = 1;
 
     /// <summary>
+    /// Version of lyrics files; the scan only stores their size and change time.
+    /// </summary>
+    public const int LyricsMetadata = 1;
+
+    /// <summary>
     /// The current version of the metadata of a kind of file.
     /// </summary>
     public static int MetadataOf(MediaFileKind kind)
@@ -33,6 +38,7 @@ public static class ScannerVersions
         {
             MediaFileKind.Video => VideoMetadata,
             MediaFileKind.Image => ImageMetadata,
+            MediaFileKind.Lyrics => LyricsMetadata,
             _ => AudioMetadata,
         };
     }

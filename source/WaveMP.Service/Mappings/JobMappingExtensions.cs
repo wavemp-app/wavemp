@@ -57,6 +57,7 @@ public static class JobMappingExtensions
             JobIds.LibraryScan => JobIdDto.LibraryScan,
             JobIds.CoverCache => JobIdDto.CoverCache,
             JobIds.DatabaseBackup => JobIdDto.DatabaseBackup,
+            JobIds.LyricsDownload => JobIdDto.LyricsDownload,
             _ => throw new ArgumentOutOfRangeException(nameof(jobId), jobId, "Unknown job."),
         };
     }
@@ -81,6 +82,7 @@ public static class JobMappingExtensions
             JobRunTrigger.FileWatcher => JobTriggerDto.FileWatcher,
             JobRunTrigger.LibraryScan => JobTriggerDto.LibraryScan,
             JobRunTrigger.CoverRule => JobTriggerDto.CoverRule,
+            JobRunTrigger.Settings => JobTriggerDto.Settings,
             _ => throw new ArgumentOutOfRangeException(nameof(trigger), trigger, "Unknown trigger."),
         };
     }
@@ -94,6 +96,7 @@ public static class JobMappingExtensions
             JobTriggerDto.FileWatcher => JobRunTrigger.FileWatcher,
             JobTriggerDto.LibraryScan => JobRunTrigger.LibraryScan,
             JobTriggerDto.CoverRule => JobRunTrigger.CoverRule,
+            JobTriggerDto.Settings => JobRunTrigger.Settings,
             _ => throw new ArgumentOutOfRangeException(nameof(trigger), trigger, "Unknown trigger."),
         };
     }
@@ -141,6 +144,8 @@ public static class JobMappingExtensions
             JobErrorCode.BackupFolderUnwritable => JobErrorCodeDto.BackupFolderUnwritable,
             JobErrorCode.PgDumpUnavailable => JobErrorCodeDto.BackupPgDumpUnavailable,
             JobErrorCode.BackupFailed => JobErrorCodeDto.BackupFailed,
+            JobErrorCode.LyricsDownloadDisabled => JobErrorCodeDto.LyricsDownloadDisabled,
+            JobErrorCode.LyricsServiceUnavailable => JobErrorCodeDto.LyricsServiceUnavailable,
             _ => throw new ArgumentOutOfRangeException(nameof(code), code, "Unknown error code."),
         };
     }

@@ -26,4 +26,11 @@ public enum JobIdDto
     /// </summary>
     [JsonStringEnumMemberName("database-backup")]
     DatabaseBackup,
+
+    /// <summary>
+    /// Downloads the lyrics of new tracks without lyrics from LRCLIB, after scans and when the download is switched
+    /// on.
+    /// </summary>
+    [JsonStringEnumMemberName("lyrics-download")]
+    LyricsDownload,
 }

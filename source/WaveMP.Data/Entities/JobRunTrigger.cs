@@ -29,4 +29,9 @@ public enum JobRunTrigger
     /// A change of a cover rule (global, of an album or of a track), e.g. to prepare the covers shown now.
     /// </summary>
     CoverRule,
+
+    /// <summary>
+    /// A change of the settings, e.g. switching on the download of lyrics.
+    /// </summary>
+    Settings,
 }

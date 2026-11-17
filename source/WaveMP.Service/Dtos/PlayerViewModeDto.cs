@@ -23,4 +23,9 @@ public enum PlayerViewModeDto
     /// A visualization of the music.
     /// </summary>
     Visualization,
+
+    /// <summary>
+    /// The lyrics of tracks with lyrics (GetTrackLyrics); the cover of tracks without.
+    /// </summary>
+    Lyrics,
 }

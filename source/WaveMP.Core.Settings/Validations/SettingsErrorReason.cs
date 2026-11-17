@@ -16,7 +16,7 @@ public enum SettingsErrorReason
     Invalid,
 
     /// <summary>
-    /// An extension is in more than one list.
+    /// An extension is in more than one list, or is the extension of lyrics files (<c>lrc</c>).
     /// </summary>
     Overlap,
 

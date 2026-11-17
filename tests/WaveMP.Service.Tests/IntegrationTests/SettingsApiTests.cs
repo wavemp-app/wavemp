@@ -26,6 +26,7 @@ public class SettingsApiTests
         settings.VideoExtensions.Should().Contain(["mp4", "mkv"]);
         settings.ImageExtensions.Should().Contain(["jpg", "png"]);
         settings.AlbumCoverNames.Should().Equal("cover", "folder", "front", "album", "albumart");
+        settings.DownloadLyrics.Should().BeFalse();
         await factory.DeleteDatabaseAsync();
     }
 

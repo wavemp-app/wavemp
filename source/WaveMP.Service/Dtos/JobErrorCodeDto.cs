@@ -74,4 +74,16 @@ public enum JobErrorCodeDto
     /// </summary>
     [JsonStringEnumMemberName("backup.failed")]
     BackupFailed,
+
+    /// <summary>
+    /// The download of lyrics is switched off in the library settings.
+    /// </summary>
+    [JsonStringEnumMemberName("lyrics.download_disabled")]
+    LyricsDownloadDisabled,
+
+    /// <summary>
+    /// The lyrics service LRCLIB cannot be reached, e.g. without an internet connection, or keeps refusing requests.
+    /// </summary>
+    [JsonStringEnumMemberName("lyrics.service_unavailable")]
+    LyricsServiceUnavailable,
 }

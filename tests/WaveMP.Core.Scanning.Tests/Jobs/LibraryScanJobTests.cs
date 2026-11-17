@@ -43,8 +43,7 @@ public class LibraryScanJobTests
             [JobDataKeys.Payload] = LibraryScanJob.CreatePayload(ScanScope.Of(["Artist/Album", "Other"])),
         });
 
-        await new LibraryScanJob(scanner, tracker, Substitute.For<IJobService>(), NullLogger<LibraryScanJob>.Instance)
-            .Execute(context, CancellationToken.None);
+        await CreateJob(scanner, Substitute.For<IJobService>(), tracker).Execute(context, CancellationToken.None);
 
         await scanner.Received(1).ScanAsync(
             Arg.Is<ScanScope>(scope => scope.Directories.SequenceEqual(new[] { "Artist/Album", "Other" })),
@@ -67,11 +66,32 @@ public class LibraryScanJobTests
         IJobService jobs = Substitute.For<IJobService>();
         IJobExecutionContext context = ContextFor(full ? null : ScanScope.Of(["Artist/Album"]));
 
-        await new LibraryScanJob(scanner, new JobRunTracker(), jobs, NullLogger<LibraryScanJob>.Instance)
-            .Execute(context, CancellationToken.None);
+        await CreateJob(scanner, jobs).Execute(context, CancellationToken.None);
 
         await jobs.Received(expected ? 1 : 0).StartRunAsync(
             new JobRunRequest(JobIds.CoverCache, JobRunTrigger.LibraryScan),
+            Arg.Any<CancellationToken>());
+    }
+
+    [TestCase(true, true, 1)]
+    [TestCase(false, true, 0)]
+    [TestCase(true, false, 0)]
+    public async Task Execute_AfterTheScan_StartsTheDownloadOfLyricsOnlyWhenSwitchedOnAndAfterChanges(
+        bool downloadLyrics,
+        bool changed,
+        int expected)
+    {
+        ILibraryScanner scanner = Substitute.For<ILibraryScanner>();
+        scanner.ScanAsync(Arg.Any<ScanScope>(), Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+            .Returns(new ScanResult(new ScanStatistics { FilesAdded = changed ? 1 : 0, IsPartial = true }, []));
+        IJobService jobs = Substitute.For<IJobService>();
+        IJobExecutionContext context = ContextFor(ScanScope.Of(["Artist/Album"]));
+
+        await CreateJob(scanner, jobs, settings: new LibrarySettings { DownloadLyrics = downloadLyrics })
+            .Execute(context, CancellationToken.None);
+
+        await jobs.Received(expected).StartRunAsync(
+            new JobRunRequest(JobIds.LyricsDownload, JobRunTrigger.LibraryScan),
             Arg.Any<CancellationToken>());
     }
 
@@ -87,7 +107,7 @@ public class LibraryScanJobTests
         IJobExecutionContext context = ContextFor(null);
 
         Func<Task> execute = async () =>
-            await new LibraryScanJob(scanner, new JobRunTracker(), jobs, NullLogger<LibraryScanJob>.Instance)
+            await CreateJob(scanner, jobs, settings: new LibrarySettings { DownloadLyrics = true })
                 .Execute(context, CancellationToken.None);
 
         await execute.Should().NotThrowAsync();
@@ -147,6 +167,22 @@ public class LibraryScanJobTests
             CancellationToken.None);
 
         await scheduler.DidNotReceive().RescheduleAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
+    }
+
+    private static LibraryScanJob CreateJob(
+        ILibraryScanner scanner,
+        IJobService jobs,
+        JobRunTracker? tracker = null,
+        LibrarySettings? settings = null)
+    {
+        ISettingsSnapshot<LibrarySettings> snapshot = Substitute.For<ISettingsSnapshot<LibrarySettings>>();
+        snapshot.Current.Returns(settings ?? new LibrarySettings());
+        return new LibraryScanJob(
+            scanner,
+            tracker ?? new JobRunTracker(),
+            jobs,
+            snapshot,
+            NullLogger<LibraryScanJob>.Instance);
     }
 
     private static IJobExecutionContext ContextFor(ScanScope? scope)

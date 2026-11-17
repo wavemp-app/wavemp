@@ -19,7 +19,8 @@ public sealed class UpdateLibrarySettingsDto
     public bool? FileWatcherEnabled { get; init; }
 
     /// <summary>
-    /// Extensions of audio files (1 to 10 letters or digits; a leading dot is removed); applies to the next scan.
+    /// Extensions of audio files (1 to 10 letters or digits; a leading dot is removed); applies to the next scan. The
+    /// extension lrc belongs to lyrics files and is not allowed in any list.
     /// </summary>
     [MaxLength(50)]
     public IReadOnlyList<string>? AudioExtensions { get; init; }
@@ -46,4 +47,9 @@ public sealed class UpdateLibrarySettingsDto
     /// The global cover rule; applies at once to all albums and tracks without a rule of their own.
     /// </summary>
     public CoverPriorityDto? CoverPriority { get; init; }
+
+    /// <summary>
+    /// Switches the download of lyrics from LRCLIB on or off; switching it on starts the job lyrics-download.
+    /// </summary>
+    public bool? DownloadLyrics { get; init; }
 }

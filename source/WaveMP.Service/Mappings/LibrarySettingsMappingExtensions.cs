@@ -17,6 +17,7 @@ public static class LibrarySettingsMappingExtensions
             ImageExtensions = settings.ImageExtensions,
             AlbumCoverNames = settings.AlbumCoverNames,
             CoverPriority = settings.CoverPriority.ToDto(),
+            DownloadLyrics = settings.DownloadLyrics,
         };
     }
 
@@ -29,7 +30,8 @@ public static class LibrarySettingsMappingExtensions
             request.VideoExtensions,
             request.ImageExtensions,
             request.AlbumCoverNames,
-            request.CoverPriority?.ToEntity());
+            request.CoverPriority?.ToEntity(),
+            request.DownloadLyrics);
     }
 
     /// <summary>

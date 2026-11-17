@@ -3,8 +3,8 @@ using WaveMP.Data.Entities;
 namespace WaveMP.Core.Scanning.Groupings;
 
 /// <summary>
-/// The files of a folder that share a base name (without regard to case), e.g. <c>Song.flac</c>, <c>Song.mkv</c> and
-/// <c>song.jpg</c>. A group with an audio or video file is a track.
+/// The files of a folder that share a base name (without regard to case), e.g. <c>Song.flac</c>, <c>Song.mkv</c>,
+/// <c>song.jpg</c> and <c>Song.lrc</c>. A group with an audio or video file is a track.
 /// </summary>
 public sealed class FileGroup(string normalizedBaseName, string baseName, IReadOnlyList<MediaFile> files)
 {

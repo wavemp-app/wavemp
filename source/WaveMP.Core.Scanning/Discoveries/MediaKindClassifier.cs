@@ -4,7 +4,8 @@ using WaveMP.Data.Entities;
 namespace WaveMP.Core.Scanning.Discoveries;
 
 /// <summary>
-/// Classifies files as audio, video or picture by their extension, after the lists of the library settings.
+/// Classifies files as audio, video or picture by their extension, after the lists of the library settings, and files
+/// with the extension <see cref="LibrarySettings.LyricsExtension"/> as lyrics.
 /// </summary>
 public sealed class MediaKindClassifier
 {
@@ -15,6 +16,7 @@ public sealed class MediaKindClassifier
         Add(settings.ImageExtensions, MediaFileKind.Image);
         Add(settings.VideoExtensions, MediaFileKind.Video);
         Add(settings.AudioExtensions, MediaFileKind.Audio);
+        Add([LibrarySettings.LyricsExtension], MediaFileKind.Lyrics);
     }
 
     /// <summary>

@@ -155,6 +155,7 @@ public static class SettingsMappingExtensions
             PlayerViewMode.Cover => PlayerViewModeDto.Cover,
             PlayerViewMode.Video => PlayerViewModeDto.Video,
             PlayerViewMode.Visualization => PlayerViewModeDto.Visualization,
+            PlayerViewMode.Lyrics => PlayerViewModeDto.Lyrics,
             _ => throw new ArgumentOutOfRangeException(nameof(mode), mode, "Unknown player view mode."),
         };
     }
@@ -166,6 +167,7 @@ public static class SettingsMappingExtensions
             PlayerViewModeDto.Cover => PlayerViewMode.Cover,
             PlayerViewModeDto.Video => PlayerViewMode.Video,
             PlayerViewModeDto.Visualization => PlayerViewMode.Visualization,
+            PlayerViewModeDto.Lyrics => PlayerViewMode.Lyrics,
             _ => throw new ArgumentOutOfRangeException(nameof(mode), mode, "Unknown player view mode."),
         };
     }

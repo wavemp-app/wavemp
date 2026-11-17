@@ -19,4 +19,9 @@ public enum PlayerViewMode
     /// A visualization of the music.
     /// </summary>
     Visualization,
+
+    /// <summary>
+    /// The lyrics of the track, for tracks with lyrics; the cover of the others.
+    /// </summary>
+    Lyrics,
 }

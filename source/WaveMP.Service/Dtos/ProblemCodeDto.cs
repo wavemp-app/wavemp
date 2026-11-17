@@ -313,4 +313,47 @@ public enum ProblemCodeDto
     /// </summary>
     [JsonStringEnumMemberName("avatar.unreadable")]
     AvatarUnreadable,
+
+    /// <summary>
+    /// The track has no lyrics: no lyrics file, no downloaded lyrics and none in its tags (404).
+    /// </summary>
+    [JsonStringEnumMemberName("lyrics.not_found")]
+    LyricsNotFound,
+
+    /// <summary>
+    /// The download of lyrics is switched off in the library settings (409).
+    /// </summary>
+    [JsonStringEnumMemberName("lyrics.download_disabled")]
+    LyricsDownloadDisabled,
+
+    /// <summary>
+    /// The track already has a lyrics file, which a download never replaces (409).
+    /// </summary>
+    [JsonStringEnumMemberName("lyrics.file_exists")]
+    LyricsFileExists,
+
+    /// <summary>
+    /// The lyrics service has no lyrics for the track (404).
+    /// </summary>
+    [JsonStringEnumMemberName("lyrics.download_not_found")]
+    LyricsDownloadNotFound,
+
+    /// <summary>
+    /// The lyrics service lists the track as instrumental, without lyrics (404).
+    /// </summary>
+    [JsonStringEnumMemberName("lyrics.instrumental")]
+    LyricsInstrumental,
+
+    /// <summary>
+    /// The lyrics service cannot be reached, e.g. without an internet connection (503).
+    /// </summary>
+    [JsonStringEnumMemberName("lyrics.service_unavailable")]
+    LyricsServiceUnavailable,
+
+    /// <summary>
+    /// The lyrics service refuses requests for a while; try again later (503, with Retry-After if the service names a
+    /// time).
+    /// </summary>
+    [JsonStringEnumMemberName("lyrics.rate_limited")]
+    LyricsRateLimited,
 }

@@ -28,6 +28,7 @@ public static partial class LibrarySettingsValidator
             ImageExtensions = NormalizeList(settings.ImageExtensions, trimDot: true),
             AlbumCoverNames = NormalizeList(settings.AlbumCoverNames, trimDot: false),
             CoverPriority = settings.CoverPriority,
+            DownloadLyrics = settings.DownloadLyrics,
         };
     }
 
@@ -65,8 +66,9 @@ public static partial class LibrarySettingsValidator
             {
                 errors.Add(new(field, SettingsErrorReason.Invalid));
             }
-            else if (values.Any(earlierExtensions.Contains))
+            else if (values.Any(earlierExtensions.Contains) || values.Contains(LibrarySettings.LyricsExtension))
             {
+                // An extension of an earlier list, or the extension of lyrics files, which is always part of the library.
                 errors.Add(new(field, SettingsErrorReason.Overlap));
             }
 

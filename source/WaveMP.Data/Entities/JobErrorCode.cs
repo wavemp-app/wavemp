@@ -59,4 +59,14 @@ public enum JobErrorCode
     /// pg_dump failed or took too long; details are in the log.
     /// </summary>
     BackupFailed,
+
+    /// <summary>
+    /// The download of lyrics is switched off in the library settings.
+    /// </summary>
+    LyricsDownloadDisabled,
+
+    /// <summary>
+    /// The lyrics service cannot be reached, e.g. without an internet connection, or keeps refusing requests.
+    /// </summary>
+    LyricsServiceUnavailable,
 }

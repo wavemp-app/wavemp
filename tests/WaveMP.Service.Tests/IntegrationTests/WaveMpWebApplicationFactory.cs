@@ -6,7 +6,9 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using NSubstitute;
 using WaveMP.Core.Backups.Exports;
+using WaveMP.Core.Lyrics.Downloads;
 using WaveMP.Data;
 using WaveMP.Service.Tests.IntegrationTests.Fakes;
 using WaveMP.Testing.Databases;
@@ -40,12 +42,17 @@ namespace WaveMP.Service.Tests.IntegrationTests;
 /// Further configuration values of the service, e.g. <c>ADMIN_PIN</c>. Without it, <c>ADMIN_PIN</c> is empty, so a
 /// variable of the environment of the test run does not protect the admin profile of the tests.
 /// </param>
+/// <param name="lrclib">
+/// Replaces the client of the online lyrics service LRCLIB, so no test sends requests to it; if <c>null</c>, a
+/// substitute that finds nothing.
+/// </param>
 public sealed class WaveMpWebApplicationFactory(
     string? databaseName = null,
     bool freshDatabase = false,
     string? mediaPath = null,
     FakeDatabaseExporter? exporter = null,
-    IReadOnlyDictionary<string, string?>? settings = null) : WebApplicationFactory<Program>
+    IReadOnlyDictionary<string, string?>? settings = null,
+    ILrclibClient? lrclib = null) : WebApplicationFactory<Program>
 {
     public const string TestDatabaseName = "wavemp_tests";
 
@@ -64,6 +71,11 @@ public sealed class WaveMpWebApplicationFactory(
     /// The export of the database that replaces pg_dump.
     /// </summary>
     public FakeDatabaseExporter Exporter { get; } = exporter ?? new FakeDatabaseExporter();
+
+    /// <summary>
+    /// The simulated online lyrics service LRCLIB.
+    /// </summary>
+    public ILrclibClient Lrclib { get; } = lrclib ?? CreateLrclib();
 
     /// <summary>
     /// The errors the service logged.
@@ -118,6 +130,8 @@ public sealed class WaveMpWebApplicationFactory(
         {
             services.RemoveAll<IDatabaseExporter>();
             services.AddSingleton<IDatabaseExporter>(Exporter);
+            services.RemoveAll<ILrclibClient>();
+            services.AddSingleton(Lrclib);
         });
     }
 
@@ -141,6 +155,14 @@ public sealed class WaveMpWebApplicationFactory(
         }
 
         return host;
+    }
+
+    private static ILrclibClient CreateLrclib()
+    {
+        ILrclibClient client = Substitute.For<ILrclibClient>();
+        client.GetAsync(Arg.Any<LrclibQuery>(), Arg.Any<CancellationToken>()).Returns(LrclibResponse.NotFound);
+        client.SearchAsync(Arg.Any<LrclibQuery>(), Arg.Any<CancellationToken>()).Returns(LrclibResponse.NotFound);
+        return client;
     }
 
     public override async ValueTask DisposeAsync()

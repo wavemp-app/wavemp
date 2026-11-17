@@ -11,6 +11,7 @@ namespace WaveMP.Core.Metadata.Readers;
 /// <summary>
 /// Reads tags with TagLib# first, then checks whether audio files are writable and finally runs ffprobe; on Windows
 /// a file still opened by TagLib# could not be checked. Tag values that TagLib# does not find come from ffprobe.
+/// Lyrics files are not read.
 /// </summary>
 internal sealed class MediaMetadataReader(ITagReader tagReader, IMediaProber prober, IFileWriteAccess writeAccess)
     : IMediaMetadataReader
@@ -20,6 +21,13 @@ internal sealed class MediaMetadataReader(ITagReader tagReader, IMediaProber pro
         MediaFileKind kind,
         CancellationToken cancellationToken = default)
     {
+        if (kind == MediaFileKind.Lyrics)
+        {
+            // Lyrics files are text: neither TagLib# nor ffprobe reads them. Their content is read when the lyrics of
+            // the track are asked for.
+            return new MediaFileMetadata();
+        }
+
         TagReadResult tags = kind == MediaFileKind.Image
             ? TagReadResult.Failed(TagReadStatus.Unsupported)
             : tagReader.Read(path);

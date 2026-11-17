@@ -12,4 +12,5 @@ public sealed record UpdateLibrarySettingsCommand(
     IReadOnlyList<string>? VideoExtensions = null,
     IReadOnlyList<string>? ImageExtensions = null,
     IReadOnlyList<string>? AlbumCoverNames = null,
-    CoverPriority? CoverPriority = null);
+    CoverPriority? CoverPriority = null,
+    bool? DownloadLyrics = null);

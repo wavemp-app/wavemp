@@ -40,4 +40,11 @@ public sealed class LibrarySettingsDto
     /// Albums and tracks with a rule of their own (GetAlbumCoverRule, GetTrackCoverRule) override it.
     /// </summary>
     public required CoverPriorityDto CoverPriority { get; init; }
+
+    /// <summary>
+    /// Downloads the lyrics of tracks without lyrics from the online lyrics database LRCLIB (lrclib.net): new tracks
+    /// after scans, all tracks when it is switched on, and single tracks on request (DownloadTrackLyrics). Off by
+    /// default, because titles, artists and albums of the library are sent to the service.
+    /// </summary>
+    public required bool DownloadLyrics { get; init; }
 }

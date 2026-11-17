@@ -194,6 +194,17 @@ public class MediaMetadataReaderTests
     }
 
     [Test]
+    public async Task ReadAsync_LyricsFile_ReadsNothing()
+    {
+        MediaFileMetadata metadata = await _reader.ReadAsync(Path, MediaFileKind.Lyrics);
+
+        _tags.DidNotReceive().Read(Arg.Any<string>());
+        await _prober.DidNotReceive().ProbeAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
+        metadata.Issue.Should().BeNull();
+        metadata.Duration.Should().BeNull();
+    }
+
+    [Test]
     public async Task ReadAsync_UnreadableImage_IsUnreadable()
     {
         MediaFileMetadata metadata = await _reader.ReadAsync(Path, MediaFileKind.Image);

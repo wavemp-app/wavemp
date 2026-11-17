@@ -5,7 +5,7 @@ namespace WaveMP.Core.Settings.Groups;
 
 /// <summary>
 /// Settings of the media library: how often the media folder is scanned, whether changes are watched, which files
-/// belong to the library and which cover a track shows.
+/// belong to the library, which cover a track shows and whether lyrics are downloaded.
 /// Stored as the settings group <see cref="Key"/>; values missing in the stored JSON keep the defaults below.
 /// Extensions are lower case without a dot.
 /// </summary>
@@ -15,6 +15,12 @@ public sealed class LibrarySettings
     /// Key of the settings group.
     /// </summary>
     public const string Key = "library";
+
+    /// <summary>
+    /// Extension of lyrics files (<c>Song.lrc</c> next to <c>Song.mp3</c>). Always part of the library, so it cannot
+    /// be one of the extensions below.
+    /// </summary>
+    public const string LyricsExtension = "lrc";
 
     /// <summary>
     /// Minutes between two periodic scans. The periodic scan always runs, also with the file watcher, because file
@@ -50,4 +56,11 @@ public sealed class LibrarySettings
     /// </summary>
     [JsonConverter(typeof(JsonStringEnumConverter<CoverPriority>))]
     public CoverPriority CoverPriority { get; init; } = CoverPriority.AlbumFirst;
+
+    /// <summary>
+    /// Downloads the lyrics of tracks without lyrics from the online lyrics database LRCLIB (lrclib.net): for new tracks
+    /// after scans and when an admin asks for a track. Off by default, because it sends the titles, artists and albums
+    /// of the library to the service.
+    /// </summary>
+    public bool DownloadLyrics { get; init; }
 }

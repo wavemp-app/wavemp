@@ -90,6 +90,25 @@ public class LibrarySettingsValidatorTests
     }
 
     [Test]
+    public void Validate_ExtensionOfLyricsFiles_IsAnOverlap()
+    {
+        LibrarySettings settings = new() { AudioExtensions = ["mp3", "lrc"] };
+
+        IReadOnlyList<SettingsValidationError> errors = LibrarySettingsValidator.Validate(settings);
+
+        errors.Should().Equal(
+            new SettingsValidationError(LibrarySettingsField.AudioExtensions, SettingsErrorReason.Overlap));
+    }
+
+    [Test]
+    public void DownloadLyrics_ByDefault_IsOff()
+    {
+        new LibrarySettings().DownloadLyrics.Should().BeFalse();
+        LibrarySettingsValidator.Normalize(new LibrarySettings { DownloadLyrics = true }).DownloadLyrics
+            .Should().BeTrue();
+    }
+
+    [Test]
     public void Validate_ImageExtensionThatIsAlsoVideo_IsAnOverlap()
     {
         LibrarySettings settings = new() { ImageExtensions = ["jpg", "mkv"] };

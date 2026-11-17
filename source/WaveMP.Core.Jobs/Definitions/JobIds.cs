@@ -19,4 +19,10 @@ public static class JobIds
     /// Exports the database into the backup folder, every day and when an admin starts it.
     /// </summary>
     public const string DatabaseBackup = "database-backup";
+
+    /// <summary>
+    /// Downloads the lyrics of tracks without lyrics from the online lyrics database, after scans and when the
+    /// download is switched on.
+    /// </summary>
+    public const string LyricsDownload = "lyrics-download";
 }

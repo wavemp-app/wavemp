@@ -3096,6 +3096,152 @@
         ]
       }
     },
+    "/api/v1/tracks/{id}/lyrics": {
+      "get": {
+        "tags": [
+          "Lyrics"
+        ],
+        "summary": "Returns the lyrics of a track from the source of the highest priority that has lyrics: the lyrics file, then downloaded lyrics stored in the database, then the tags. Synchronized lyrics carry the start of every line (and of every word for word-synchronized lyrics) in milliseconds; static lyrics have no times.",
+        "operationId": "GetTrackLyrics",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Id of the track.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "The lyrics.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Lyrics"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The track does not exist (code `track.not_found`) or has no lyrics (code `lyrics.not_found`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/api/v1/tracks/{id}/lyrics/download": {
+      "post": {
+        "tags": [
+          "Lyrics"
+        ],
+        "summary": "Downloads the lyrics of a track from LRCLIB, for admins only, and returns the lyrics the track has afterwards. LRCLIB is asked by title, artist, album and duration; synchronized lyrics are preferred. The lyrics are saved as lyrics file with the base name of the track if its folder is writable, otherwise in the database. Lyrics of the tags or the database are replaced; a lyrics file never is. Requests to LRCLIB are spaced, so the answer may take a moment.",
+        "operationId": "DownloadTrackLyrics",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Id of the track.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "The lyrics of the track after the download.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Lyrics"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The track does not exist (code `track.not_found`), LRCLIB has no lyrics for it (code `lyrics.download_not_found`) or lists it as instrumental (code `lyrics.instrumental`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The download is switched off in the library settings (code `lyrics.download_disabled`) or the track has a lyrics file (code `lyrics.file_exists`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "LRCLIB cannot be reached, e.g. without an internet connection (code `lyrics.service_unavailable`), or refuses requests for a while (code `lyrics.rate_limited`, with Retry-After if LRCLIB names a time).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
     "/api/v1/me/settings": {
       "get": {
         "tags": [
@@ -10247,7 +10393,9 @@
           "cache.folder_unwritable",
           "backup.folder_unwritable",
           "backup.pg_dump_unavailable",
-          "backup.failed"
+          "backup.failed",
+          "lyrics.download_disabled",
+          "lyrics.service_unavailable"
         ],
         "type": "string"
       },
@@ -10255,7 +10403,8 @@
         "enum": [
           "library-scan",
           "cover-cache",
-          "database-backup"
+          "database-backup",
+          "lyrics-download"
         ],
         "type": "string",
         "description": "Id of a background job."
@@ -10419,7 +10568,8 @@
           "Manual",
           "FileWatcher",
           "LibraryScan",
-          "CoverRule"
+          "CoverRule",
+          "Settings"
         ],
         "type": "string",
         "description": "What started a job run."
@@ -10440,7 +10590,8 @@
           "videoExtensions",
           "imageExtensions",
           "albumCoverNames",
-          "coverPriority"
+          "coverPriority",
+          "downloadLyrics"
         ],
         "type": "object",
         "properties": {
@@ -10484,9 +10635,122 @@
           "coverPriority": {
             "description": "The global cover rule: whether tracks and albums show the cover of the album or the cover of the track first. Albums and tracks with a rule of their own (GetAlbumCoverRule, GetTrackCoverRule) override it.",
             "$ref": "#/components/schemas/CoverPriority"
+          },
+          "downloadLyrics": {
+            "type": "boolean",
+            "description": "Downloads the lyrics of tracks without lyrics from the online lyrics database LRCLIB (lrclib.net): new tracks after scans, all tracks when it is switched on, and single tracks on request (DownloadTrackLyrics). Off by default, because titles, artists and albums of the library are sent to the service."
           }
         },
         "description": "Settings of the media library."
+      },
+      "Lyrics": {
+        "required": [
+          "type",
+          "source",
+          "lines"
+        ],
+        "type": "object",
+        "properties": {
+          "type": {
+            "description": "How the lyrics follow the music.",
+            "$ref": "#/components/schemas/LyricsType"
+          },
+          "source": {
+            "description": "Where the lyrics come from.",
+            "$ref": "#/components/schemas/LyricsSource"
+          },
+          "lines": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LyricsLine"
+            },
+            "description": "The lines; synchronized lines are sorted by the time they start."
+          }
+        },
+        "description": "The lyrics of a track."
+      },
+      "LyricsLine": {
+        "required": [
+          "startMilliseconds",
+          "endMilliseconds",
+          "text",
+          "words"
+        ],
+        "type": "object",
+        "properties": {
+          "startMilliseconds": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "description": "When the line starts, in milliseconds from the start of the track; null for static lyrics.",
+            "format": "int64"
+          },
+          "endMilliseconds": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "description": "When the next line starts, in milliseconds; null for the last line and for static lyrics.",
+            "format": "int64"
+          },
+          "text": {
+            "type": "string"
+          },
+          "words": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LyricsWord"
+            },
+            "description": "The words with their times, for lines with word timestamps; otherwise empty."
+          }
+        },
+        "description": "A line of lyrics. An empty text marks a part without singing."
+      },
+      "LyricsSource": {
+        "enum": [
+          "File",
+          "Download",
+          "Tags"
+        ],
+        "type": "string",
+        "description": "Where lyrics come from."
+      },
+      "LyricsType": {
+        "enum": [
+          "LineSynchronized",
+          "WordSynchronized",
+          "Static"
+        ],
+        "type": "string",
+        "description": "How lyrics follow the music."
+      },
+      "LyricsWord": {
+        "required": [
+          "startMilliseconds",
+          "endMilliseconds",
+          "text"
+        ],
+        "type": "object",
+        "properties": {
+          "startMilliseconds": {
+            "type": "integer",
+            "description": "When the word is sung, in milliseconds from the start of the track.",
+            "format": "int64"
+          },
+          "endMilliseconds": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "description": "When the next word or line starts, in milliseconds; null for the last word without an end.",
+            "format": "int64"
+          },
+          "text": {
+            "type": "string"
+          }
+        },
+        "description": "A word or syllable of a word-synchronized line. Its text keeps the spaces around it, so the words of a line put together give the text of the line."
       },
       "MediaFile": {
         "required": [
@@ -10658,10 +10922,11 @@
         "enum": [
           "Audio",
           "Video",
-          "Image"
+          "Image",
+          "Lyrics"
         ],
         "type": "string",
-        "description": "Kind of a media file."
+        "description": "Kind of a media file; Lyrics is a lyrics file (.lrc) with the base name of the track."
       },
       "MediaFilePage": {
         "required": [
@@ -10735,7 +11000,8 @@
         "enum": [
           "Cover",
           "Video",
-          "Visualization"
+          "Visualization",
+          "Lyrics"
         ],
         "type": "string",
         "description": "What the Now Playing view of a player shows."
@@ -11038,7 +11304,14 @@
           "avatar.not_found",
           "avatar.unsupported_format",
           "avatar.too_large",
-          "avatar.unreadable"
+          "avatar.unreadable",
+          "lyrics.not_found",
+          "lyrics.download_disabled",
+          "lyrics.file_exists",
+          "lyrics.download_not_found",
+          "lyrics.instrumental",
+          "lyrics.service_unavailable",
+          "lyrics.rate_limited"
         ],
         "type": "string",
         "description": "Machine-readable code of a problem, part of every Problem Details response. Clients translate it."
@@ -12628,7 +12901,7 @@
             "items": {
               "type": "string"
             },
-            "description": "Extensions of audio files (1 to 10 letters or digits; a leading dot is removed); applies to the next scan."
+            "description": "Extensions of audio files (1 to 10 letters or digits; a leading dot is removed); applies to the next scan. The extension lrc belongs to lyrics files and is not allowed in any list."
           },
           "videoExtensions": {
             "maxItems": 50,
@@ -12673,6 +12946,13 @@
                 "$ref": "#/components/schemas/CoverPriority"
               }
             ]
+          },
+          "downloadLyrics": {
+            "type": [
+              "null",
+              "boolean"
+            ],
+            "description": "Switches the download of lyrics from LRCLIB on or off; switching it on starts the job lyrics-download."
           }
         },
         "description": "Changes the settings of the media library. Missing or null values stay unchanged."
@@ -13545,6 +13825,9 @@
     },
     {
       "name": "Jobs"
+    },
+    {
+      "name": "Lyrics"
     },
     {
       "name": "Me"

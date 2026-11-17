@@ -15,6 +15,7 @@ public class JobMappingExtensionsTests
     [TestCase(JobIds.LibraryScan, JobIdDto.LibraryScan, "library-scan")]
     [TestCase(JobIds.CoverCache, JobIdDto.CoverCache, "cover-cache")]
     [TestCase(JobIds.DatabaseBackup, JobIdDto.DatabaseBackup, "database-backup")]
+    [TestCase(JobIds.LyricsDownload, JobIdDto.LyricsDownload, "lyrics-download")]
     public void ToJobIdDto_EveryJob_HasItsIdInTheApi(string jobId, JobIdDto expected, string json)
     {
         jobId.ToJobIdDto().Should().Be(expected);
