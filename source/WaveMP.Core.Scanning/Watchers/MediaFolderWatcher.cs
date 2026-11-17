@@ -89,10 +89,16 @@ public sealed class MediaFolderWatcher(
         return ValueTask.CompletedTask;
     }
 
+    /// <summary>
+    /// Stops watching and ends the scan loop. Like <see cref="BackgroundService"/>, this only cancels the
+    /// <see cref="CancellationTokenSource"/> and does not dispose it: the host can stop its services twice, and the
+    /// second stop may run after the first one disposed them (the test host stops the host while the
+    /// <c>RunAsync</c> of the program stops and disposes it as well). A source without a timer holds no resources.
+    /// </summary>
     public void Dispose()
     {
         Disable();
-        _stopping.Dispose();
+        _stopping.Cancel();
     }
 
     private void Enable()

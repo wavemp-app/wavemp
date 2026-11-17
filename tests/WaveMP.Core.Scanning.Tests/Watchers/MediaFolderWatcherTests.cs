@@ -161,6 +161,29 @@ public class MediaFolderWatcherTests
         JsonSerializer.Deserialize<string[]>(request.Payload!).Should().Equal("Other");
     }
 
+    [Test]
+    public async Task StopAfterDispose_DoesNotThrowAndStopsWatching()
+    {
+        await _watcher.StartAsync(CancellationToken.None);
+
+        _watcher.Dispose();
+        Func<Task> stop = () => _watcher.StopAsync(CancellationToken.None);
+
+        await stop.Should().NotThrowAsync();
+        _watcher.IsWatching.Should().BeFalse();
+    }
+
+    [Test]
+    public async Task StopTwice_DoesNotThrow()
+    {
+        await _watcher.StartAsync(CancellationToken.None);
+
+        await _watcher.StopAsync(CancellationToken.None);
+        Func<Task> stop = () => _watcher.StopAsync(CancellationToken.None);
+
+        await stop.Should().NotThrowAsync();
+    }
+
     private List<JobRunRequest> StartedRequests()
     {
         return [.. _jobs.ReceivedCalls()
