@@ -9,6 +9,8 @@
 [![Main](https://github.com/wavemp-app/wavemp/actions/workflows/main.yml/badge.svg?branch=main)](https://github.com/wavemp-app/wavemp/actions/workflows/main.yml)
 [![Release](https://img.shields.io/github/v/release/wavemp-app/wavemp)](https://github.com/wavemp-app/wavemp/releases)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Docker Hub pulls](https://img.shields.io/docker/pulls/wavemp/wavemp?logo=docker&label=docker%20pulls)](https://hub.docker.com/r/wavemp/wavemp)
+[![Docker Hub version](https://img.shields.io/docker/v/wavemp/wavemp?sort=semver&logo=docker&label=docker%20hub)](https://hub.docker.com/r/wavemp/wavemp)
 
 > **Status:** WaveMP is in active development and already a complete player for your music and music videos. Everything listed under Features works today, except where it is marked as planned; the [releases](https://github.com/wavemp-app/wavemp/releases) describe what each milestone added. Profiles cannot be protected by a PIN yet, so do not expose WaveMP to the internet without protection.
 
@@ -58,7 +60,7 @@ The screenshots show the synthetic test media of the end-to-end tests (sine tone
 
 ## Quick Start
 
-WaveMP runs as two containers: the app and a PostgreSQL database.
+WaveMP runs as two containers: the app, published on Docker Hub as [`wavemp/wavemp`](https://hub.docker.com/r/wavemp/wavemp), and a PostgreSQL database.
 
 Create a `.env` file with a database password of your choice:
 
@@ -71,7 +73,7 @@ Create a `docker-compose.yml` next to it:
 ```yaml
 services:
   wavemp:
-    image: ghcr.io/wavemp-app/wavemp:latest
+    image: wavemp/wavemp:latest
     container_name: wavemp
     ports:
       - "8080:8080"
@@ -110,7 +112,7 @@ volumes:
   wavemp-db:
 ```
 
-The database is not exposed outside the Docker network. The app image is also available on Docker Hub as `wavemp/wavemp`.
+The database is not exposed outside the Docker network.
 
 Start it:
 
@@ -124,7 +126,7 @@ WaveMP can be installed as an app (PWA). Browsers require HTTPS for that, except
 
 ### Image tags
 
-Images are built for `linux/amd64` and `linux/arm64` and published as `ghcr.io/wavemp-app/wavemp` and on Docker Hub as `wavemp/wavemp`, both with the same tags. Every change on `main` that passes all tests is published as a new version `1.0.N`:
+Images are built for `linux/amd64` and `linux/arm64` and published on Docker Hub as [`wavemp/wavemp`](https://hub.docker.com/r/wavemp/wavemp/tags), where all tags are listed. Every change on `main` that passes all tests is published as a new version `1.0.N`:
 
 | Tag | Content |
 |---|---|
@@ -135,6 +137,8 @@ Images are built for `linux/amd64` and `linux/arm64` and published as `ghcr.io/w
 | `sha-<commit>` | The version of a specific commit on `main` (short hash) |
 
 The running version is shown under **Settings** and reported by `GET /api/v1/health`. Each completed milestone is also marked as a [GitHub release](https://github.com/wavemp-app/wavemp/releases) with release notes, named after the version it was published with.
+
+> **Alternative registry:** The same images with the same tags are also available from the GitHub Container Registry as [`ghcr.io/wavemp-app/wavemp`](https://github.com/wavemp-app/wavemp/pkgs/container/wavemp), for example `ghcr.io/wavemp-app/wavemp:latest`.
 
 ### Settings
 
