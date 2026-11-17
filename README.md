@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/logo/wavemp-logo.svg" alt="WaveMP logo" width="128" height="128">
+</p>
+
 # WaveMP
 
 **A nostalgic media player for your self-hosted music and music videos.**
@@ -314,7 +318,7 @@ This builds the image from source and starts WaveMP on `http://localhost:8080`. 
 | `source/WaveMP.Data` | EF Core with PostgreSQL (DbContext, entities, repositories, migrations) |
 | `source/WaveMP.Web` | Vue 3 web app |
 | `tests/` | Unit and integration tests (NUnit), E2E tests (Playwright); `tests/WaveMP.Testing` holds helpers shared by the test projects (test databases, temporary folders, synthetic media) |
-| `assets/` | Graphics, icons, themes and license texts; `assets/web` is served unchanged by the web app |
+| `assets/` | Logo, graphics, icons, themes and license texts; `assets/web` is served unchanged by the web app |
 | `.github/` | GitHub Actions workflows, license check script and policy |
 | `THEMING.md` | Theme API for theme authors |
 | `THIRD-PARTY-NOTICES.md` | Third-party components and their licenses |
@@ -350,6 +354,8 @@ The backups need `pg_dump` of PostgreSQL 18, which the image contains. Without i
 The development server also serves an internal component overview at `http://localhost:5173/dev/components`: all parts of the theme API in all states and the app at mobile and desktop size. It is not part of the production build.
 
 The Phosphor icons in `assets/web/icons` are copied from the npm package `@phosphor-icons/core`. To add an icon, add it to the list in `source/WaveMP.Web/scripts/sync-icons.ts` and run `npm run icons:sync` in `source/WaveMP.Web`.
+
+The logo is `assets/logo/wavemp-logo.svg`, an optimized copy of the source logo `assets/logo/wavemp-logo-teal-wave-round.svg`. The build of the web app generates the favicon, the PWA icons (including the maskable ones) and the Apple touch icon from it (`source/WaveMP.Web/scripts/vite-plugin-app-icons.ts`). `npm run logo:export` in `source/WaveMP.Web` creates `wavemp-logo.svg` and its PNG exports (`wavemp-logo-256.png`, `wavemp-logo-512.png`) again from the source logo; it skips files that already exist unless it is called with `-- --force`.
 
 If you set `DB_PORT` in `.env`, also set it for the service: `dotnet user-secrets set DB_PORT <port> --project source/WaveMP.Service`.
 

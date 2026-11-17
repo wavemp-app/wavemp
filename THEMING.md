@@ -538,7 +538,7 @@ The background of `avatar` is the color of the profile, `--wmp-profile-color` (s
 
 | Variable | Default | Used for |
 |---|---|---|
-| `--wmp-image-logo` | `url('/brand/logo.svg') center / contain no-repeat` | `logo-image` |
+| `--wmp-image-logo` | `url('/logo/wavemp-logo.svg') center / contain no-repeat` | `logo-image`; the WaveMP logo, which the app serves under `/logo/wavemp-logo.svg` |
 | `--wmp-image-cover-placeholder` | `var(--wmp-color-surface-raised)` | `cover` without image |
 | `--wmp-progress-track-background` | `var(--wmp-color-border)` | `progress-track`, `meter-track` |
 | `--wmp-progress-fill-background` | `var(--wmp-color-accent)` | `progress-fill`, `meter-fill` |

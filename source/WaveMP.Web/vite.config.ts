@@ -7,6 +7,9 @@ import vueDevTools from 'vite-plugin-vue-devtools'
 import VueI18nPlugin from '@intlify/unplugin-vue-i18n/vite'
 import { VitePWA } from 'vite-plugin-pwa'
 
+import { createManifestIcons } from './scripts/app-icons.ts'
+import { appIcons } from './scripts/vite-plugin-app-icons.ts'
+
 // Address of WaveMP.Service during development (see Properties/launchSettings.json).
 const serviceUrl = process.env.WAVEMP_SERVICE_URL ?? 'http://localhost:5080'
 
@@ -44,6 +47,13 @@ export default defineConfig({
     plugins: [
         vue(),
         vueDevTools(),
+        // Favicon, PWA icons and Apple touch icon, generated from the logo during the build (served
+        // under /logo and /favicon.ico). The placeholder graphics in assets/web/brand are not used
+        // any more and stay out of the build until the folder is deleted.
+        appIcons({
+            logo: fileURLToPath(new URL('../../assets/logo/wavemp-logo.svg', import.meta.url)),
+            excludePublicDirectories: ['brand'],
+        }),
         // Precompiles the messages in src/locales, so the app uses the runtime-only build of
         // vue-i18n (no message compiler and no eval at runtime).
         VueI18nPlugin({
@@ -70,20 +80,10 @@ export default defineConfig({
                 display: 'standalone',
                 background_color: '#0b0d10',
                 theme_color: '#43484f',
-                icons: [
-                    { src: '/brand/pwa-192x192.png', sizes: '192x192', type: 'image/png' },
-                    { src: '/brand/pwa-512x512.png', sizes: '512x512', type: 'image/png' },
-                    {
-                        src: '/brand/pwa-maskable-512x512.png',
-                        sizes: '512x512',
-                        type: 'image/png',
-                        purpose: 'maskable',
-                    },
-                    { src: '/brand/logo.svg', sizes: 'any', type: 'image/svg+xml' },
-                ],
+                icons: createManifestIcons(),
             },
             workbox: {
-                globPatterns: ['**/*.{js,css,html,svg,png,webp,woff2}'],
+                globPatterns: ['**/*.{js,css,html,svg,png,ico,webp,woff2}'],
                 navigateFallback: '/index.html',
                 // The API, the OpenAPI document and paths that look like files (as on the server)
                 // always come from the network.

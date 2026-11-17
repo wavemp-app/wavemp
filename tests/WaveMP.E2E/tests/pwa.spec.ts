@@ -53,6 +53,35 @@ test('provides a web app manifest with icons', async ({ page, request }) => {
     }
 })
 
+test('uses the WaveMP logo as favicon and app logo', async ({ page, request }) => {
+    await page.goto('/library/songs')
+
+    await expect(page.locator('link[rel="icon"][type="image/svg+xml"]')).toHaveAttribute(
+        'href',
+        '/logo/wavemp-logo.svg',
+    )
+    await expect(page.locator('link[rel="icon"][href="/favicon.ico"]')).toHaveCount(1)
+    await expect(page.locator("[data-part='header'] [data-part='logo-image']")).toHaveCSS(
+        'background-image',
+        /\/logo\/wavemp-logo\.svg/,
+    )
+
+    const logo = await request.get('/logo/wavemp-logo.svg')
+    expect(logo.status()).toBe(200)
+    expect(logo.headers()['content-type']).toContain('image/svg+xml')
+    expect(await logo.text()).toContain('aria-label="WaveMP"')
+
+    // ICO header: reserved 0, type 1 (icon).
+    const favicon = await request.get('/favicon.ico')
+    expect(favicon.status()).toBe(200)
+    expect([...(await favicon.body()).subarray(0, 4)]).toEqual([0, 0, 1, 0])
+
+    // The placeholder graphics of earlier versions are not shipped any more.
+    for (const path of ['/brand/logo.svg', '/brand/pwa-512x512.png']) {
+        expect((await request.get(path)).status(), path).toBe(404)
+    }
+})
+
 test('caches the app shell but never the API and works offline', async ({ page, context }) => {
     await page.goto('/library/songs')
 

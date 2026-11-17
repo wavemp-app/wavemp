@@ -59,7 +59,7 @@
         --wmp-profile-secondary-opacity: 0.55;
 
         /* Graphics (values of the background shorthand) */
-        --wmp-image-logo: url('/brand/logo.svg') center / contain no-repeat;
+        --wmp-image-logo: url('/logo/wavemp-logo.svg') center / contain no-repeat;
         --wmp-image-cover-placeholder: var(--wmp-color-surface-raised);
         --wmp-progress-track-background: var(--wmp-color-border);
         --wmp-progress-fill-background: var(--wmp-color-accent);

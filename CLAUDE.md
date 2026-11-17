@@ -61,6 +61,8 @@ CLAUDE.md
 
 Neue Projekte und Ordner fügen sich in diese Struktur ein. Abweichungen nur, wenn es nicht anders geht, und dann in der Abschlussmeldung begründen. `/docs` enthält nur die Release-Notes (`/docs/releases`) und später die Website. Nutzerdokumentation steht in der README bzw. in den genannten Dateien im Root, Hinweise für den Maintainer kommen in die Abschlussmeldung und den Abschlusskommentar des Issues.
 
+**Dateien unter `/assets`** werden nie gelöscht, umbenannt oder überschrieben, außer der Maintainer erlaubt es ausdrücklich. Abgeleitete Dateien (optimierte Kopien, PNG-Exporte, neue Ordner) dürfen hinzugefügt werden. Wird eine Datei unter `/assets` nicht mehr gebraucht, wird sie nicht mehr verwendet und in der Abschlussmeldung zum Löschen vorgeschlagen.
+
 ## Konventionen
 
 ### Code-Stil
@@ -88,7 +90,16 @@ Neue Projekte und Ordner fügen sich in diese Struktur ein. Abweichungen nur, we
 - Mobil zuerst: Jede Ansicht funktioniert auf dem Smartphone. Die Web-App ist als PWA installierbar.
 - **Themes:** Der DOM ist generisch und wird über stabile `data-part`-Attribute beschrieben (Theme-API, dokumentiert in `THEMING.md`). Ein Theme ist genau eine CSS-Datei plus Grafiken und darf das Layout komplett umgestalten. Komponenten enthalten keine theme-spezifischen Styles. Icons und Beschriftungen stecken immer in eigenen Kind-Elementen (`data-part="icon"`, `data-part="label"`), damit `::before` und `::after` der Bereiche und Buttons frei für Theme-Effekte wie Glanz und Leuchten bleiben. Neue Bereiche bekommen eigene Parts; Änderungen an bestehenden Parts erhöhen die Version der Theme-API.
 - Mitgelieferte Themes tragen eigene Namen (z. B. "Midnight"), keine Marken von Microsoft oder Apple, und nutzen nur eigene Grafiken.
-- **Icons:** SVG-Icons aus Phosphor Icons (MIT). Der Stil richtet sich nach dem Bereich: "fill" in dunklen Bereichen und Toolbars, "duotone" in der Sidebar, "regular" für kleine Hinweise im Inhaltsbereich. Icons werden als `mask-image` eingebunden, damit das Theme sie per `background` beliebig füllen kann, auch mit Farbverläufen, dazu Glanz und Leuchten per `filter: drop-shadow()`. Die Farbe kommt nie aus der SVG-Datei. Welche Icons ein Theme nutzt, steuern CSS-Variablen. Jede Fremdquelle wird mit Lizenz in `/assets/LICENSES.md` eingetragen. Das App-Logo liegt unter `/assets/logo/wavemp-logo.svg`; alle abgeleiteten Formate (Favicon, PWA-Icons, PNGs) werden daraus erzeugt.
+- **Icons:** SVG-Icons aus Phosphor Icons (MIT). Der Stil richtet sich nach dem Bereich: "fill" in dunklen Bereichen und Toolbars, "duotone" in der Sidebar, "regular" für kleine Hinweise im Inhaltsbereich. Icons werden als `mask-image` eingebunden, damit das Theme sie per `background` beliebig füllen kann, auch mit Farbverläufen, dazu Glanz und Leuchten per `filter: drop-shadow()`. Die Farbe kommt nie aus der SVG-Datei. Welche Icons ein Theme nutzt, steuern CSS-Variablen. Jede Fremdquelle wird mit Lizenz in `/assets/LICENSES.md` eingetragen.
+- **Logo:** Alle Logo-Dateien liegen unter `/assets/logo`. Verwendet wird überall `wavemp-logo.svg`; alle abgeleiteten Formate werden daraus erzeugt, Favicon, PWA-Icons (auch maskable) und Apple-Touch-Icon beim Build der Web-App (`source/WaveMP.Web/scripts/vite-plugin-app-icons.ts`). `npm run logo:export` in `source/WaveMP.Web` erzeugt die optimierte Kopie und die PNG-Exporte neu und überschreibt vorhandene Dateien nur mit `-- --force`.
+
+  | Datei | Zweck |
+  |---|---|
+  | `wavemp-logo-teal-wave-round.svg` | Quelle des Hauptlogos vom Maintainer, unoptimiert, wird nicht verändert |
+  | `wavemp-logo.svg` | Optimierte Kopie der Quelle (svgo, viewBox, `role="img"`, `aria-label="WaveMP"`), das Logo für README, Web-App (`--wmp-image-logo`), Favicon, PWA- und Apple-Touch-Icons |
+  | `wavemp-logo-256.png`, `wavemp-logo-512.png` | PNG-Exporte von `wavemp-logo.svg` für Ziele, die Rastergrafiken brauchen (App-Kataloge, Icon-Labels des Docker-Images) |
+  | `wavemp-logo-fluent.svg`, `wavemp-logo-fluent-dark.svg` | Varianten für die späteren nativen Apps, noch nicht verwendet |
+  | `wavemp-logo-mono-white.svg` | Einfarbige weiße Glyphe für eingefärbte und dunkle Icons, noch nicht verwendet |
 - API-Zugriffe laufen ausschließlich über einen mit Microsoft Kiota aus dem OpenAPI-Dokument generierten Client, nie direkt per `fetch` in Komponenten. Der generierte Code wird nicht von Hand bearbeitet.
 - **Mehrsprachigkeit:** Alle UI-Texte laufen über vue-i18n (eine JSON-Datei pro Sprache, Weblate-kompatibel). Sprachen: Englisch (Standard) und Deutsch. Die Sprache wird pro Benutzer gespeichert. Keine festen Texte in Komponenten.
 - **Keine Texte im Backend:** i18n findet nur in den Clients statt. Die API liefert keine anzeigbaren Texte, sondern stabile, maschinenlesbare Codes (z. B. `code: "track.not_writable"` in den Problem Details, Statuswerte als Enums). Die Clients übersetzen diese Codes. Exception- und Log-Meldungen sind interne Texte auf Englisch und werden nie in der UI angezeigt. Alle Codes stehen als Enum bzw. Konstanten im OpenAPI-Dokument.
