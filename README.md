@@ -223,6 +223,128 @@ docker compose start wavemp
 
 An export of an older version of WaveMP is updated to the current version on the next start. To restore on a new server, start WaveMP once with an empty database, copy the data volume back (or the export into the new volume) and restore the export as above. Restoring is not possible in the web app, so a wrong click cannot replace your library.
 
+## Installation
+
+The [Quick Start](#quick-start) works on every system with Docker and docker compose. This section explains the particularities of common NAS systems. On every platform WaveMP needs:
+
+- a PostgreSQL 18 database next to it, with the same database password in both containers,
+- your media folder at `/media`, readable for WaveMP, and writable if you want to edit tags,
+- a persistent folder at `/data` for the daily exports of the database (`backups`), uploaded pictures and the cache,
+- optionally the render device `/dev/dri` of an Intel CPU or GPU for [hardware transcoding](#hardware-transcoding-optional).
+
+The templates for the app catalogs of TrueNAS, Unraid, ZimaOS and CasaOS are in [`deploy/`](deploy/README.md). They use a fixed version (`1.0.N`) that is raised with new versions of WaveMP. WaveMP is not listed in these catalogs yet; until then, each section names a way to install it without the catalog.
+
+### TrueNAS
+
+For TrueNAS Community Edition 24.10 or later. Install **WaveMP** under **Apps > Discover Apps** and fill in the form:
+
+- **Database Password** (required): a long random password; the app sets it for WaveMP and its PostgreSQL database alike. **Admin PIN** is optional.
+- **Media Storage**: choose **Host Path** and the dataset with your music and music videos. WaveMP runs as the user `apps` (568) by default, so give this user read access to the dataset (**Datasets > Permissions**), and write access if you want to edit tags. With **Read Only** WaveMP never changes your files.
+- **WaveMP Data Storage** and **WaveMP Postgres Data Storage**: keep **ixVolume** (datasets created for the app) or choose host paths. The data storage holds the exports of the database in its folder `backups`; include it in your snapshots or replication.
+- **Hardware transcoding**: under **Resources Configuration > GPU Configuration**, pass the Intel GPU (**Passthrough available (non-NVIDIA) GPUs**).
+
+Without the catalog: install the compose file of the [Quick Start](#quick-start) with **Apps > Discover Apps > Install via YAML**, with host paths of your datasets instead of the volumes `wavemp-data` and `wavemp-db`, the password in place of `${DB_PASSWORD:?...}`, and `user: "568:568"` under `wavemp`.
+
+### Unraid
+
+WaveMP and its database are two templates in Community Applications, `WaveMP` and `wavemp-db`, which talk to each other in their own Docker network:
+
+1. Create the network once in the terminal of Unraid: `docker network create wavemp`.
+2. Install **wavemp-db** and set a **Database password**. Its files are stored in `/mnt/user/appdata/wavemp-db`.
+3. Install **WaveMP** with the same **Database password**. **Media** is your share with music and music videos (set the access mode to read only if WaveMP should never change your files), **Data** is `/mnt/user/appdata/wavemp`, which holds the exports of the database in its folder `backups`; include it in your appdata backup.
+4. **Hardware transcoding**: in the advanced view of the template, set **Intel GPU** to `/dev/dri`. The device exists when the driver of the Intel GPU is loaded on the server.
+
+Both containers start with `--restart unless-stopped`, so WaveMP waits for the database by starting again. WaveMP runs as root on Unraid (`--user 0:0` in **Extra Parameters**), because Unraid creates new appdata folders as root; files it writes, such as edited tags, belong to root.
+
+Without the catalog: save both templates into the templates folder of Unraid and add them under **Docker > Add Container > Template**:
+
+```bash
+cd /boot/config/plugins/dockerMan/templates-user
+wget -O my-wavemp-db.xml https://raw.githubusercontent.com/wavemp-app/wavemp/main/deploy/unraid/wavemp-db.xml
+wget -O my-WaveMP.xml https://raw.githubusercontent.com/wavemp-app/wavemp/main/deploy/unraid/wavemp.xml
+```
+
+### ZimaOS and CasaOS
+
+Install **WaveMP** from the **App Store**. Before the first start, open the settings of the app and replace the database password `casaos` with your own: the same value for `DB_PASSWORD` (container `wavemp`) and `POSTGRES_PASSWORD` (container `wavemp-db`).
+
+- **Media**: `/DATA/Media/Music` by default; choose another folder under **Volumes** of the container `wavemp`.
+- **Data**: `/DATA/AppData/wavemp/data` holds the exports of the database in its folder `backups`, `/DATA/AppData/wavemp/db` the database itself.
+- **Hardware transcoding**: add the device `/dev/dri` to the container `wavemp` in the settings of the app (ZimaBoard, ZimaBlade and ZimaCube have Intel graphics).
+
+WaveMP runs as root here, because ZimaOS and CasaOS create the folders of the app as root.
+
+Without the store: **App Store > Custom Install** (the plus icon), **Import**, and paste [`deploy/casaos/WaveMP/docker-compose.yml`](deploy/casaos/WaveMP/docker-compose.yml).
+
+### Synology Container Manager
+
+For DSM 7.2 or later with the package **Container Manager**. WaveMP runs as a DSM user of your choice, so it has the same access to your files as this user:
+
+1. In **File Station**, create the folders `wavemp/data` and `wavemp/db` in the shared folder `docker`.
+2. Find the user and group id of a DSM user with access to your music: in an SSH session, `id <user>` prints for example `uid=1026` and `gid=100`.
+3. In **Container Manager > Project > Create**, choose the path `/volume1/docker/wavemp` and **Create docker-compose.yml**, and paste:
+
+```yaml
+services:
+  wavemp:
+    image: wavemp/wavemp:latest
+    container_name: wavemp
+    # User and group id of step 2.
+    user: "1026:100"
+    ports:
+      - "8080:8080"
+    environment:
+      DB_HOST: wavemp-db
+      DB_PASSWORD: change-me-to-a-long-random-password
+      TZ: Europe/Berlin
+    volumes:
+      - /volume1/docker/wavemp/data:/data
+      # Your music and music videos; append :ro to keep WaveMP from changing your files.
+      - /volume1/music:/media
+    depends_on:
+      wavemp-db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  wavemp-db:
+    image: postgres:18
+    container_name: wavemp-db
+    environment:
+      POSTGRES_USER: wavemp
+      POSTGRES_DB: wavemp
+      # The same password as DB_PASSWORD above.
+      POSTGRES_PASSWORD: change-me-to-a-long-random-password
+    volumes:
+      - /volume1/docker/wavemp/db:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U wavemp -d wavemp"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+```
+
+Change the paths to your volume and shared folders, and the port on the left (`8080:`) if it is taken. The exports of the database end up in `docker/wavemp/data/backups`, where Hyper Backup can pick them up.
+
+**Hardware transcoding** works on models with an Intel CPU that have `/dev/dri`. Add the device and the group of the render device (`stat -c '%g' /dev/dri/renderD128` in an SSH session) to `wavemp`:
+
+```yaml
+    devices:
+      - /dev/dri:/dev/dri
+    group_add:
+      - "937"   # the group id printed by stat
+```
+
+### QNAP Container Station
+
+For Container Station 3 or later: **Applications > Create**, give the application the name `wavemp` and paste the compose file of [Synology](#synology-container-manager) with QNAP paths:
+
+- `user`: the user and group id of a QTS user with access to your music (`id <user>` in an SSH session),
+- `/share/Container/wavemp/data:/data` and `/share/Container/wavemp/db:/var/lib/postgresql`; create these folders in **File Station** first,
+- your music, for example `/share/Multimedia:/media` or `/share/Music:/media`.
+
+The exports of the database end up in `Container/wavemp/data/backups`, where Hybrid Backup Sync can pick them up. **Hardware transcoding** works on models with an Intel CPU that have `/dev/dri`, with `devices` and `group_add` as for Synology. If port 8080 is taken (by the QTS web server, for example), change the port on the left.
+
 ## Organizing Your Media
 
 All files that belong to one track must share the **same name** in the same folder. Only the extension differs:
@@ -312,7 +434,8 @@ A PIN keeps other people in your household out of a profile; it is not a login. 
 | Platform | Status |
 |---|---|
 | Docker (linux/amd64, linux/arm64) | Available (`latest`, or `1.0.N` to pin a version) |
-| TrueNAS, ZimaOS and other app catalogs | Planned |
+| TrueNAS, Unraid, ZimaOS and CasaOS | Templates for the app catalogs ready, listing in the catalogs pending; see [Installation](#installation) |
+| Synology, QNAP | With docker compose; see [Installation](#installation) |
 | Android, iOS, Windows, macOS | Planned |
 
 ## Translations
@@ -391,7 +514,8 @@ This builds the image from source and starts WaveMP on `http://localhost:8080`. 
 | `source/WaveMP.Web` | Vue 3 web app |
 | `tests/` | Unit and integration tests (NUnit), E2E tests (Playwright); `tests/WaveMP.Testing` holds helpers shared by the test projects (test databases, temporary folders, synthetic media) |
 | `assets/` | Logo, graphics, icons, themes and license texts; `assets/web` is served unchanged by the web app |
-| `.github/` | GitHub Actions workflows, license check script and policy |
+| `deploy/` | Templates for the app catalogs of TrueNAS, Unraid, ZimaOS and CasaOS; see [deploy/README.md](deploy/README.md) |
+| `.github/` | GitHub Actions workflows, license check script and policy, check of the app catalog templates |
 | `THEMING.md` | Theme API for theme authors |
 | `THIRD-PARTY-NOTICES.md` | Third-party components and their licenses |
 | `docs/releases` | Release notes of the milestones |
@@ -508,7 +632,7 @@ The projects `chromium` (desktop) and `mobile` (phone) run all specs except `tes
 
 If you set `WAVEMP_PORT` in `.env`, point the E2E tests at it, for example `E2E_BASE_URL=http://localhost:8081 npm test`.
 
-The screenshots of this README in `assets/screenshots` are taken with Playwright from the same test media: `npm run screenshots` in `tests/WaveMP.E2E` (also with `E2E_BASE_URL`) scans the media, creates two profiles with playlists, favorites, ratings and plays, takes the pictures on the desktop and on a phone and removes the profiles again. Run it against a fresh instance, for example one started with `docker compose -f docker-compose.dev.yml up --build` after `docker compose -f docker-compose.dev.yml down --volumes`, and commit the changed pictures. `npm run test:unit` runs the unit tests of the web app (Vitest), including checks that every text comes from the translation files and that `THEMING.md` matches the code.
+The screenshots of this README in `assets/screenshots` are taken with Playwright from the same test media: `npm run screenshots` in `tests/WaveMP.E2E` (also with `E2E_BASE_URL`) scans the media, creates two profiles with playlists, favorites, ratings and plays, takes the pictures on the desktop and on a phone and removes the profiles again. Run it against a fresh instance, for example one started with `docker compose -f docker-compose.dev.yml up --build` after `docker compose -f docker-compose.dev.yml down --volumes`, and commit the changed pictures. `npm run screenshots:catalogs` takes the pictures of the app catalogs the same way, in 1920 x 1080, into `assets/screenshots/catalogs`; copy them into `deploy/casaos/WaveMP` afterwards (see [deploy/README.md](deploy/README.md)). `npm run test:unit` runs the unit tests of the web app (Vitest), including checks that every text comes from the translation files and that `THEMING.md` matches the code.
 
 `npm run lint:check` only reports problems, like the CI does; `npm run lint` fixes what it can. The E2E tests check the version that `/api/v1/health` and the settings page report: exactly if `E2E_EXPECTED_VERSION` is set (the CI sets it to the version of the image it built), otherwise any version of the form `1.0.N` or `1.0.0-dev`. They scan the media folder of the running instance before the tests (project `setup`) and need the test media of `tests/WaveMP.E2E/scripts/generate-media.sh` in it (see [Local development](#local-development)): the library tests browse and search exactly these songs. With `E2E_EXPECTED_TRACKS=4` they also check the number of songs, as the CI does. "Loose Song" lasts 20 seconds, so the tests can switch the view of Now Playing while it plays. The test of the metadata editor writes genre and year of "Loose Song" and removes them again afterwards, so the media folder must be writable for the container (`generate-media.sh` makes the files it creates writable for everyone). The test of the review inbox (project `chromium` only) puts all songs back into the review inbox before and after it.
 
@@ -527,7 +651,7 @@ It restores the .NET tools and npm packages it needs by itself and fails if a pa
 
 ### Continuous integration
 
-GitHub Actions run `.github/workflows/test.yml` for every pull request (`pull-request.yml`) and every push to `main` (`main.yml`): the .NET build with unit and media tests (with ffmpeg) and integration tests against a PostgreSQL 18 service container, lint, type check, unit tests (Vitest) and build of the web app, the license check, and the E2E tests against the Docker image with synthetic test media. After the tests pass, `main.yml` publishes the image with the tags `1.0.N`, `1.0`, `latest`, `edge` and `sha-<commit>` and checks that both registries deliver it.
+GitHub Actions run `.github/workflows/test.yml` for every pull request (`pull-request.yml`) and every push to `main` (`main.yml`): the .NET build with unit and media tests (with ffmpeg) and integration tests against a PostgreSQL 18 service container, lint, type check, unit tests (Vitest) and build of the web app, the license check, the check of the app catalog templates in `deploy/` (`node .github/scripts/check-deploy.mjs` and its tests `node --test .github/scripts/check-deploy.test.mjs`, plus `docker compose config` of the CasaOS file), and the E2E tests against the Docker image with synthetic test media. After the tests pass, `main.yml` publishes the image with the tags `1.0.N`, `1.0`, `latest`, `edge` and `sha-<commit>` and checks that both registries deliver it.
 
 Versions are `<major>.<minor>.<N>`: major and minor are the `VersionPrefix` in `Directory.Build.props` (changed by the maintainer only), N is the run number of `main.yml`. The CI passes the version to the .NET build (`-p:Version=1.0.N`), to the web app build (`WAVEMP_VERSION`) and to the Docker build (build argument `VERSION`), and sets it as the label `org.opencontainers.image.version` of the image. Builds without it, such as local builds and pull requests, report `1.0.0-dev`. Tags trigger no workflow: the GitHub release of a milestone (`v1.0.N`) marks a version that `main.yml` has already published.
 
