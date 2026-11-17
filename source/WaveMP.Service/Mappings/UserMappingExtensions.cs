@@ -1,3 +1,4 @@
+using WaveMP.Core.Users.Pins;
 using WaveMP.Data.Entities;
 using WaveMP.Service.Dtos;
 
@@ -15,6 +16,7 @@ public static class UserMappingExtensions
             Color = user.Color,
             Role = user.Role.ToDto(),
             IsBuiltIn = user.IsBuiltIn,
+            HasPin = user.PinHash is not null,
         };
     }
 
@@ -28,8 +30,14 @@ public static class UserMappingExtensions
             Color = user.Color,
             Role = user.Role.ToDto(),
             IsBuiltIn = user.IsBuiltIn,
+            HasPin = user.PinHash is not null,
             CreatedAt = user.CreatedAt,
         };
+    }
+
+    public static PinStatusDto ToDto(this PinStatus status)
+    {
+        return new PinStatusDto { IsSet = status.IsSet, IsManagedByEnvironment = status.IsManagedByEnvironment };
     }
 
     public static RoleDto ToDto(this UserRole role)

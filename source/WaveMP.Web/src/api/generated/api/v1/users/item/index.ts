@@ -4,12 +4,18 @@
 // @ts-ignore
 import { createProblemDetailsFromDiscriminatorValue, createUserFromDiscriminatorValue, createValidationProblemFromDiscriminatorValue, serializeUpdateUser, serializeUser, type ProblemDetails, type UpdateUser, type User, type ValidationProblem } from '../../../../models/index.js';
 // @ts-ignore
-import { type BaseRequestBuilder, type Parsable, type ParsableFactory, type RequestConfiguration, type RequestInformation, type RequestsMetadata } from '@microsoft/kiota-abstractions';
+import { PinRequestBuilderRequestsMetadata, type PinRequestBuilder } from './pin/index.js';
+// @ts-ignore
+import { type BaseRequestBuilder, type KeysToExcludeForNavigationMetadata, type NavigationMetadata, type Parsable, type ParsableFactory, type RequestConfiguration, type RequestInformation, type RequestsMetadata } from '@microsoft/kiota-abstractions';
 
 /**
  * Builds and executes requests for operations under /api/v1/users/{id}
  */
 export interface UsersItemRequestBuilder extends BaseRequestBuilder<UsersItemRequestBuilder> {
+    /**
+     * The pin property
+     */
+    get pin(): PinRequestBuilder;
     /**
      * Deletes a user with its settings and sessions.
      * @param requestConfiguration Configuration for the request such as headers, query parameters, and middleware options.
@@ -64,6 +70,14 @@ export interface UsersItemRequestBuilder extends BaseRequestBuilder<UsersItemReq
  * Uri template for the request builder.
  */
 export const UsersItemRequestBuilderUriTemplate = "{+baseurl}/api/v1/users/{id}";
+/**
+ * Metadata for all the navigation properties in the request builder.
+ */
+export const UsersItemRequestBuilderNavigationMetadata: Record<Exclude<keyof UsersItemRequestBuilder, KeysToExcludeForNavigationMetadata>, NavigationMetadata> = {
+    pin: {
+        requestsMetadata: PinRequestBuilderRequestsMetadata,
+    },
+};
 /**
  * Metadata for all the requests in the request builder.
  */

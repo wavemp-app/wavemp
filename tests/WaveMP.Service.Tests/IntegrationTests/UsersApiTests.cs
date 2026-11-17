@@ -53,6 +53,7 @@ public class UsersApiTests
         yield return new TestCaseData("POST", "/api/v1/users", "{\"name\":\"Nobody\"}").SetArgDisplayNames("CreateUser");
         yield return new TestCaseData("PATCH", $"/api/v1/users/{id}", "{}").SetArgDisplayNames("UpdateUser");
         yield return new TestCaseData("DELETE", $"/api/v1/users/{id}", null).SetArgDisplayNames("DeleteUser");
+        yield return new TestCaseData("DELETE", $"/api/v1/users/{id}/pin", null).SetArgDisplayNames("ResetUserPin");
     }
 
     [TestCaseSource(nameof(Endpoints))]

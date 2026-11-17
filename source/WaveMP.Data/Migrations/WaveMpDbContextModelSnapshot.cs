@@ -1024,10 +1024,18 @@ namespace WaveMP.Data.Migrations
                         .HasColumnType("character varying(50)")
                         .HasColumnName("normalized_name");
 
+                    b.Property<int>("PinFailedAttempts")
+                        .HasColumnType("integer")
+                        .HasColumnName("pin_failed_attempts");
+
                     b.Property<string>("PinHash")
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)")
                         .HasColumnName("pin_hash");
+
+                    b.Property<DateTimeOffset?>("PinLockoutEnd")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("pin_lockout_end");
 
                     b.Property<string>("Role")
                         .IsRequired()

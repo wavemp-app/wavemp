@@ -35,6 +35,16 @@ internal sealed class SessionRepository(WaveMpDbContext dbContext) : ISessionRep
             .ExecuteDeleteAsync(cancellationToken);
     }
 
+    public Task<int> DeleteForUserAsync(
+        Guid userId,
+        Guid? exceptSessionId = null,
+        CancellationToken cancellationToken = default)
+    {
+        return dbContext.Sessions
+            .Where(session => session.UserId == userId && session.Id != exceptSessionId)
+            .ExecuteDeleteAsync(cancellationToken);
+    }
+
     public Task<int> DeleteExpiredAsync(DateTimeOffset now, CancellationToken cancellationToken = default)
     {
         return dbContext.Sessions

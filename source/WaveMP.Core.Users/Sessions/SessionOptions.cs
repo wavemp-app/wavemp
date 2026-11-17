@@ -6,8 +6,8 @@ namespace WaveMP.Core.Users.Sessions;
 public sealed class SessionOptions
 {
     /// <summary>
-    /// How long a session and its token stay valid. Profiles have no password, so a short lifetime would add no
-    /// security; the selection is remembered until the profile is switched.
+    /// How long a session and its token stay valid. Profiles have no password (at most a PIN), so the selection is
+    /// remembered until the profile is switched; setting a PIN ends the other sessions of the profile.
     /// </summary>
     public TimeSpan Lifetime { get; set; } = TimeSpan.FromDays(365);
 }

@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+using WaveMP.Core.Users.Pins;
 using WaveMP.Service.Validators;
 
 namespace WaveMP.Service.Dtos;
@@ -12,4 +14,10 @@ public sealed class CreateSessionDto
     /// </summary>
     [RequiredValue]
     public required Guid ProfileId { get; init; }
+
+    /// <summary>
+    /// PIN of the profile, 4 to 8 digits; only needed for profiles with <c>hasPin</c>.
+    /// </summary>
+    [RegularExpression(PinRules.Pattern)]
+    public string? Pin { get; init; }
 }

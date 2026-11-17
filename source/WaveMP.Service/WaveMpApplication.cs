@@ -12,6 +12,7 @@ using WaveMP.Core.Settings.Extensions;
 using WaveMP.Core.Streaming.Extensions;
 using WaveMP.Core.Transcoding.Extensions;
 using WaveMP.Core.Users.Extensions;
+using WaveMP.Core.Users.Pins;
 using WaveMP.Data;
 using WaveMP.Data.Extensions;
 using WaveMP.Data.Options;
@@ -86,11 +87,11 @@ public static class WaveMpApplication
     }
 
     /// <summary>
-    /// Validates the database configuration, exports the database and applies pending migrations, creates the
-    /// built-in admin profile on the first start, loads the keys that sign the session tokens and the media URLs and
-    /// the server settings, prepares the cache folder, and plans the background jobs (they start to run once the
-    /// application has started). Returns <c>false</c> if the configuration is invalid or the export before the
-    /// migrations failed; the reason is logged.
+    /// Validates the database and PIN configuration, exports the database and applies pending migrations, creates the
+    /// built-in admin profile on the first start and applies <c>ADMIN_PIN</c> to it, loads the keys that sign the
+    /// session tokens and the media URLs and the server settings, prepares the cache folder, and plans the background
+    /// jobs (they start to run once the application has started). Returns <c>false</c> if the configuration is invalid
+    /// or the export before the migrations failed; the reason is logged.
     /// </summary>
     public static async Task<bool> InitializeAsync(WebApplication app, CancellationToken cancellationToken = default)
     {
@@ -101,6 +102,17 @@ public static class WaveMpApplication
         catch (OptionsValidationException exception)
         {
             app.Logger.LogCritical("Invalid database configuration: {Errors}", string.Join(" ", exception.Failures));
+            return false;
+        }
+
+        try
+        {
+            _ = app.Services.GetRequiredService<IOptions<PinOptions>>().Value;
+        }
+        catch (OptionsValidationException exception)
+        {
+            // An admin PIN that cannot be applied must not leave the admin profile unprotected.
+            app.Logger.LogCritical("Invalid PIN configuration: {Errors}", string.Join(" ", exception.Failures));
             return false;
         }
 

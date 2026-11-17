@@ -28,4 +28,9 @@ public sealed class ProfileDto
     /// True for the built-in admin profile, which cannot be deleted and always stays an admin.
     /// </summary>
     public required bool IsBuiltIn { get; init; }
+
+    /// <summary>
+    /// True if the profile is protected by a PIN, which selecting it needs.
+    /// </summary>
+    public required bool HasPin { get; init; }
 }

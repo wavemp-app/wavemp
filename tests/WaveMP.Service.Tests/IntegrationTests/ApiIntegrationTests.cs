@@ -246,6 +246,10 @@ public class ApiIntegrationTests
     [TestCase("DeleteCurrentSession", true)]
     [TestCase("GetMySettings", true)]
     [TestCase("UpdateMySettings", true)]
+    [TestCase("GetMyPin", true)]
+    [TestCase("SetMyPin", true)]
+    [TestCase("DeleteMyPin", true)]
+    [TestCase("ResetUserPin", true)]
     [TestCase("StartScan", true)]
     [TestCase("GetCurrentScan", true)]
     [TestCase("ListJobs", true)]
@@ -297,7 +301,7 @@ public class ApiIntegrationTests
         }
     }
 
-    [TestCase("Users", 5)]
+    [TestCase("Users", 6)]
     [TestCase("Scans", 4)]
     [TestCase("Jobs", 5)]
     [TestCase("Settings", 8)]

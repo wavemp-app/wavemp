@@ -3,6 +3,7 @@ using Microsoft.Net.Http.Headers;
 using WaveMP.Core.Caching.Covers;
 using WaveMP.Core.Library.Covers;
 using WaveMP.Core.Playlists.Playlists;
+using WaveMP.Core.Users.Pins;
 using WaveMP.Service.Dtos;
 using WaveMP.Service.Problems;
 
@@ -83,6 +84,26 @@ public static class ControllerBaseExtensions
                 StatusCodes.Status400BadRequest),
             _ => throw new ArgumentOutOfRangeException(nameof(status), status, "Not a failure."),
         };
+    }
+
+    /// <summary>
+    /// The Problem Details response of a failed change of a PIN: 404 if the profile does not exist, 409 if the PIN
+    /// comes from ADMIN_PIN, 400 for a PIN that is not 4 to 8 digits (normally already rejected by the validation).
+    /// </summary>
+    public static ActionResult PinProblem(this ControllerBase controller, PinChangeStatus status)
+    {
+        switch (status)
+        {
+            case PinChangeStatus.NotFound:
+                return controller.Problem(ProblemCodeDto.UserNotFound, StatusCodes.Status404NotFound);
+            case PinChangeStatus.ManagedByEnvironment:
+                return controller.Problem(ProblemCodeDto.PinManagedByEnvironment, StatusCodes.Status409Conflict);
+            case PinChangeStatus.InvalidPin:
+                controller.ModelState.AddValidationError("pin", ValidationErrorCodeDto.InvalidFormat);
+                return controller.ValidationProblem();
+            default:
+                throw new ArgumentOutOfRangeException(nameof(status), status, "Not a failure.");
+        }
     }
 
     /// <summary>

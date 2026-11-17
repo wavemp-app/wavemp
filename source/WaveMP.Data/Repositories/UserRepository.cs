@@ -56,6 +56,11 @@ internal sealed class UserRepository(WaveMpDbContext dbContext) : IUserRepositor
         return dbContext.Users.AnyAsync(user => user.IsBuiltIn, cancellationToken);
     }
 
+    public Task<User?> FindBuiltInAdminAsync(CancellationToken cancellationToken = default)
+    {
+        return dbContext.Users.AsNoTracking().FirstOrDefaultAsync(user => user.IsBuiltIn, cancellationToken);
+    }
+
     public async Task<IReadOnlyList<string>> ListColorsAsync(CancellationToken cancellationToken = default)
     {
         return await dbContext.Users.Select(user => user.Color).ToListAsync(cancellationToken);
@@ -70,6 +75,63 @@ internal sealed class UserRepository(WaveMpDbContext dbContext) : IUserRepositor
     public Task UpdateAsync(User user, CancellationToken cancellationToken = default)
     {
         return SaveChangesAsync(user, cancellationToken);
+    }
+
+    public async Task<PinAttempt?> BeginPinAttemptAsync(
+        Guid userId,
+        DateTimeOffset now,
+        int maxFailedAttempts,
+        DateTimeOffset lockoutEnd,
+        CancellationToken cancellationToken = default)
+    {
+        // One statement: PostgreSQL locks the row and checks the condition again after a parallel attempt, so every
+        // attempt sees the count of the one before. All expressions read the values before the update.
+        int counted = await dbContext.Users
+            .Where(user => user.Id == userId && (user.PinLockoutEnd == null || user.PinLockoutEnd <= now))
+            .ExecuteUpdateAsync(
+                setters => setters
+                    .SetProperty(
+                        user => user.PinFailedAttempts,
+                        user => (user.PinLockoutEnd == null ? user.PinFailedAttempts : 0) + 1)
+                    .SetProperty(
+                        user => user.PinLockoutEnd,
+                        user => (user.PinLockoutEnd == null ? user.PinFailedAttempts : 0) + 1 >= maxFailedAttempts
+                            ? (DateTimeOffset?)lockoutEnd
+                            : null),
+                cancellationToken);
+
+        var state = await dbContext.Users.AsNoTracking()
+            .Where(user => user.Id == userId)
+            .Select(user => new { user.PinFailedAttempts, user.PinLockoutEnd })
+            .FirstOrDefaultAsync(cancellationToken);
+        return state is null ? null : new PinAttempt(counted > 0, state.PinFailedAttempts, state.PinLockoutEnd);
+    }
+
+    public Task ResetPinAttemptsAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        return dbContext.Users
+            .Where(user => user.Id == userId)
+            .ExecuteUpdateAsync(
+                setters => setters
+                    .SetProperty(user => user.PinFailedAttempts, 0)
+                    .SetProperty(user => user.PinLockoutEnd, (DateTimeOffset?)null),
+                cancellationToken);
+    }
+
+    public async Task<bool> SetPinHashAsync(
+        Guid userId,
+        string? pinHash,
+        CancellationToken cancellationToken = default)
+    {
+        int updated = await dbContext.Users
+            .Where(user => user.Id == userId)
+            .ExecuteUpdateAsync(
+                setters => setters
+                    .SetProperty(user => user.PinHash, pinHash)
+                    .SetProperty(user => user.PinFailedAttempts, 0)
+                    .SetProperty(user => user.PinLockoutEnd, (DateTimeOffset?)null),
+                cancellationToken);
+        return updated > 0;
     }
 
     public async Task DeleteAsync(User user, CancellationToken cancellationToken = default)

@@ -22,6 +22,15 @@ public interface ISessionRepository
     Task DeleteAsync(Guid sessionId, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Deletes all sessions of the user except <paramref name="exceptSessionId"/> and returns their number, e.g.
+    /// after the PIN of the profile changed.
+    /// </summary>
+    Task<int> DeleteForUserAsync(
+        Guid userId,
+        Guid? exceptSessionId = null,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Deletes all sessions that have expired at <paramref name="now"/> and returns their number.
     /// </summary>
     Task<int> DeleteExpiredAsync(DateTimeOffset now, CancellationToken cancellationToken = default);

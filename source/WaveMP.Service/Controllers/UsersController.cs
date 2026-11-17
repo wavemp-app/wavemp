@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using WaveMP.Core.Users.Pins;
 using WaveMP.Core.Users.Users;
 using WaveMP.Data.Entities;
 using WaveMP.Data.Queries;
@@ -21,7 +22,7 @@ namespace WaveMP.Service.Controllers;
 [Route("api/v1/users")]
 [ProducesResponseType<ProblemDetails>(StatusCodes.Status401Unauthorized, "application/problem+json")]
 [ProducesResponseType<ProblemDetails>(StatusCodes.Status403Forbidden, "application/problem+json")]
-public sealed class UsersController(IUserService users) : ControllerBase
+public sealed class UsersController(IUserService users, IPinService pins) : ControllerBase
 {
     private const string GetUserRoute = "GetUser";
 
@@ -160,6 +161,26 @@ public sealed class UsersController(IUserService users) : ControllerBase
     {
         UserError? error = await users.DeleteAsync(id, cancellationToken);
         return error is { } value ? Failure(value) : NoContent();
+    }
+
+    /// <summary>
+    /// Resets the PIN of a profile, e.g. after it was forgotten: the profile can then be selected without a PIN, and a
+    /// lockout after wrong PINs ends.
+    /// </summary>
+    /// <param name="id">Id of the user.</param>
+    /// <param name="cancellationToken">Aborts the request.</param>
+    /// <response code="204">The profile has no PIN (also if it had none before).</response>
+    /// <response code="404">The user does not exist (code <c>user.not_found</c>).</response>
+    /// <response code="409">The PIN of the built-in admin profile is set by ADMIN_PIN (code
+    /// <c>pin.managed_by_environment</c>).</response>
+    [HttpDelete("{id:guid}/pin", Name = "ResetUserPin")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound, "application/problem+json")]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict, "application/problem+json")]
+    public async Task<IActionResult> ResetUserPinAsync(Guid id, CancellationToken cancellationToken)
+    {
+        PinChangeStatus status = await pins.RemoveAsync(id, cancellationToken);
+        return status == PinChangeStatus.Success ? NoContent() : this.PinProblem(status);
     }
 
     private ActionResult Failure(UserError error)

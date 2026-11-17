@@ -36,9 +36,21 @@ public class User
     public required bool IsBuiltIn { get; set; }
 
     /// <summary>
-    /// Prepared for the optional PIN (roadmap step 20); not used yet.
+    /// Hash of the optional PIN, never the PIN itself; <c>null</c> if the profile is not protected.
     /// </summary>
     public string? PinHash { get; set; }
+
+    /// <summary>
+    /// Wrong PIN attempts since the last correct one or since the last lockout ended. Every attempt is counted before
+    /// the PIN is checked, so parallel attempts cannot get past the limit; a correct PIN resets the count.
+    /// </summary>
+    public int PinFailedAttempts { get; set; }
+
+    /// <summary>
+    /// End of the temporary lockout after too many wrong PINs; <c>null</c> without a lockout. An ended lockout stays
+    /// until the next attempt, which starts counting again.
+    /// </summary>
+    public DateTimeOffset? PinLockoutEnd { get; set; }
 
     public required DateTimeOffset CreatedAt { get; set; }
 

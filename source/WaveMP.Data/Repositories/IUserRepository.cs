@@ -34,6 +34,11 @@ public interface IUserRepository
     Task<bool> BuiltInAdminExistsAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Finds the built-in admin profile; nothing is tracked.
+    /// </summary>
+    Task<User?> FindBuiltInAdminAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Colors of all users, one entry per user.
     /// </summary>
     Task<IReadOnlyList<string>> ListColorsAsync(CancellationToken cancellationToken = default);
@@ -50,6 +55,31 @@ public interface IUserRepository
     /// <exception cref="UserNameConflictException">Another user has the same name.</exception>
     /// <exception cref="UserNotFoundException">The user was deleted since it was loaded.</exception>
     Task UpdateAsync(User user, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Counts a PIN attempt of the user before the PIN is checked, in one atomic statement, so parallel attempts
+    /// cannot get past the limit. Nothing is counted while the user is locked out (<see cref="User.PinLockoutEnd"/> is
+    /// after <paramref name="now"/>). After a lockout has ended, counting starts again. The attempt that reaches
+    /// <paramref name="maxFailedAttempts"/> starts the lockout until <paramref name="lockoutEnd"/>; a correct PIN
+    /// lifts it with <see cref="ResetPinAttemptsAsync"/>. Returns <c>null</c> if the user does not exist.
+    /// </summary>
+    Task<PinAttempt?> BeginPinAttemptAsync(
+        Guid userId,
+        DateTimeOffset now,
+        int maxFailedAttempts,
+        DateTimeOffset lockoutEnd,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Forgets the counted PIN attempts and lifts a lockout, e.g. after a correct PIN.
+    /// </summary>
+    Task ResetPinAttemptsAsync(Guid userId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Sets (or with <c>null</c> removes) the hash of the PIN of the user, forgets the counted attempts and lifts a
+    /// lockout. Returns <c>false</c> if the user does not exist.
+    /// </summary>
+    Task<bool> SetPinHashAsync(Guid userId, string? pinHash, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Deletes a user loaded with <see cref="FindAsync"/>, together with its settings and sessions.

@@ -17,16 +17,18 @@ export interface SessionsRequestBuilder extends BaseRequestBuilder<SessionsReque
      */
     get current(): CurrentRequestBuilder;
     /**
-     * Selects a profile: creates a session and returns its token.
+     * Selects a profile: creates a session and returns its token. A profile with `hasPin` needs its PIN. Every given PIN counts as an attempt; after several wrong PINs in a row, the profile is locked out for a while.
      * @param body Selects a profile.
      * @param requestConfiguration Configuration for the request such as headers, query parameters, and middleware options.
      * @returns {Promise<CreatedSession>}
      * @throws {ValidationProblem} error when the service returns a 400 status code
+     * @throws {ProblemDetails} error when the service returns a 401 status code
      * @throws {ProblemDetails} error when the service returns a 404 status code
+     * @throws {ProblemDetails} error when the service returns a 429 status code
      */
      post(body: CreateSession, requestConfiguration?: RequestConfiguration<object> | undefined) : Promise<CreatedSession | undefined>;
     /**
-     * Selects a profile: creates a session and returns its token.
+     * Selects a profile: creates a session and returns its token. A profile with `hasPin` needs its PIN. Every given PIN counts as an attempt; after several wrong PINs in a row, the profile is locked out for a while.
      * @param body Selects a profile.
      * @param requestConfiguration Configuration for the request such as headers, query parameters, and middleware options.
      * @returns {RequestInformation}
@@ -54,7 +56,9 @@ export const SessionsRequestBuilderRequestsMetadata: RequestsMetadata = {
         responseBodyContentType: "application/json",
         errorMappings: {
             400: createValidationProblemFromDiscriminatorValue as ParsableFactory<Parsable>,
+            401: createProblemDetailsFromDiscriminatorValue as ParsableFactory<Parsable>,
             404: createProblemDetailsFromDiscriminatorValue as ParsableFactory<Parsable>,
+            429: createProblemDetailsFromDiscriminatorValue as ParsableFactory<Parsable>,
         },
         adapterMethodName: "send",
         responseBodyFactory:  createCreatedSessionFromDiscriminatorValue,

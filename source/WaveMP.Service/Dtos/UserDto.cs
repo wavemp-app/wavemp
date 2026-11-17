@@ -30,6 +30,11 @@ public sealed class UserDto
     public required bool IsBuiltIn { get; init; }
 
     /// <summary>
+    /// True if the profile is protected by a PIN, which selecting it needs.
+    /// </summary>
+    public required bool HasPin { get; init; }
+
+    /// <summary>
     /// When the profile was created.
     /// </summary>
     public required DateTimeOffset CreatedAt { get; init; }

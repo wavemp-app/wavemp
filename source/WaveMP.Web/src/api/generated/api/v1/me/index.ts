@@ -8,6 +8,8 @@ import { HistoryRequestBuilderNavigationMetadata, HistoryRequestBuilderRequestsM
 // @ts-ignore
 import { HomeRequestBuilderRequestsMetadata, type HomeRequestBuilder } from './home/index.js';
 // @ts-ignore
+import { PinRequestBuilderRequestsMetadata, type PinRequestBuilder } from './pin/index.js';
+// @ts-ignore
 import { PlaylistsRequestBuilderNavigationMetadata, PlaylistsRequestBuilderRequestsMetadata, type PlaylistsRequestBuilder } from './playlists/index.js';
 // @ts-ignore
 import { RecentlyPlayedRequestBuilderRequestsMetadata, type RecentlyPlayedRequestBuilder } from './recentlyPlayed/index.js';
@@ -32,6 +34,10 @@ export interface MeRequestBuilder extends BaseRequestBuilder<MeRequestBuilder> {
      * The home property
      */
     get home(): HomeRequestBuilder;
+    /**
+     * The pin property
+     */
+    get pin(): PinRequestBuilder;
     /**
      * The playlists property
      */
@@ -63,6 +69,9 @@ export const MeRequestBuilderNavigationMetadata: Record<Exclude<keyof MeRequestB
     },
     home: {
         requestsMetadata: HomeRequestBuilderRequestsMetadata,
+    },
+    pin: {
+        requestsMetadata: PinRequestBuilderRequestsMetadata,
     },
     playlists: {
         requestsMetadata: PlaylistsRequestBuilderRequestsMetadata,

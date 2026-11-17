@@ -1,3 +1,4 @@
+using System.Globalization;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using WaveMP.Core.Users.Sessions;
@@ -13,34 +14,46 @@ namespace WaveMP.Service.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/v1/sessions")]
-public sealed class SessionsController(ISessionService sessions, ITokenIssuer tokenIssuer) : ControllerBase
+public sealed class SessionsController(
+    ISessionService sessions,
+    ITokenIssuer tokenIssuer,
+    TimeProvider timeProvider) : ControllerBase
 {
     private const string CurrentSessionRoute = "GetCurrentSession";
 
     /// <summary>
-    /// Selects a profile: creates a session and returns its token.
+    /// Selects a profile: creates a session and returns its token. A profile with <c>hasPin</c> needs its PIN. Every
+    /// given PIN counts as an attempt; after several wrong PINs in a row, the profile is locked out for a while.
     /// </summary>
-    /// <param name="request">The profile to select.</param>
+    /// <param name="request">The profile to select and its PIN.</param>
     /// <param name="cancellationToken">Aborts the request.</param>
     /// <response code="201">The session with its token; Location points to the current session.</response>
-    /// <response code="400">The request is invalid (code <c>request.invalid</c>).</response>
+    /// <response code="400">The request is invalid (code <c>request.invalid</c>), e.g. a PIN that is not 4 to 8
+    /// digits (<c>invalid_format</c>).</response>
+    /// <response code="401">The profile needs a PIN and the request has none (code <c>profile.pin_required</c>), or
+    /// the PIN is wrong (code <c>profile.pin_invalid</c>).</response>
     /// <response code="404">The profile does not exist (code <c>profile.not_found</c>).</response>
+    /// <response code="429">Too many wrong PINs: the profile is locked out (code <c>profile.pin_locked</c>); the
+    /// header Retry-After says after how many seconds the next attempt is possible.</response>
     [HttpPost(Name = "CreateSession")]
     [AllowAnonymous]
     [Consumes("application/json")]
     [ProducesResponseType<CreatedSessionDto>(StatusCodes.Status201Created, "application/json")]
     [ProducesResponseType<ValidationProblemDto>(StatusCodes.Status400BadRequest, "application/problem+json")]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status401Unauthorized, "application/problem+json")]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound, "application/problem+json")]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status429TooManyRequests, "application/problem+json")]
     public async Task<ActionResult<CreatedSessionDto>> CreateSessionAsync(
         CreateSessionDto request,
         CancellationToken cancellationToken)
     {
-        ActiveSession? session = await sessions.CreateAsync(request.ProfileId, cancellationToken);
-        if (session is null)
+        SessionResult result = await sessions.CreateAsync(request.ProfileId, request.Pin, cancellationToken);
+        if (!result.IsSuccess)
         {
-            return this.Problem(ProblemCodeDto.ProfileNotFound, StatusCodes.Status404NotFound);
+            return Failure(result);
         }
 
+        ActiveSession session = result.Session;
         CreatedSessionDto created = new() { Token = tokenIssuer.Issue(session), Session = session.ToDto() };
         return CreatedAtRoute(CurrentSessionRoute, null, created);
     }
@@ -81,5 +94,33 @@ public sealed class SessionsController(ISessionService sessions, ITokenIssuer to
     {
         await sessions.DeleteAsync(User.GetSessionId(), cancellationToken);
         return NoContent();
+    }
+
+    private ObjectResult Failure(SessionResult result)
+    {
+        switch (result.Error)
+        {
+            case SessionError.ProfileNotFound:
+                return this.Problem(ProblemCodeDto.ProfileNotFound, StatusCodes.Status404NotFound);
+            case SessionError.PinRequired:
+                return this.Problem(ProblemCodeDto.ProfilePinRequired, StatusCodes.Status401Unauthorized);
+            case SessionError.PinInvalid:
+                return this.Problem(ProblemCodeDto.ProfilePinInvalid, StatusCodes.Status401Unauthorized);
+            case SessionError.PinLockedOut:
+                Response.Headers.RetryAfter = RetryAfterSeconds(result.LockoutEnd)
+                    .ToString(CultureInfo.InvariantCulture);
+                return this.Problem(ProblemCodeDto.ProfilePinLocked, StatusCodes.Status429TooManyRequests);
+            default:
+                throw new ArgumentOutOfRangeException(nameof(result), result.Error, "Not a failure.");
+        }
+    }
+
+    /// <summary>
+    /// Whole seconds until the lockout ends, at least one.
+    /// </summary>
+    private long RetryAfterSeconds(DateTimeOffset? lockoutEnd)
+    {
+        TimeSpan remaining = (lockoutEnd ?? DateTimeOffset.MinValue) - timeProvider.GetUtcNow();
+        return Math.Max(1, (long)Math.Ceiling(remaining.TotalSeconds));
     }
 }

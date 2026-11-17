@@ -38,6 +38,7 @@ NuGet packages of the service and its libraries (`source/`), shipped in the imag
 | `Microsoft.Extensions.Configuration.Abstractions` | MIT | Configuration of the libraries |
 | `Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore` | MIT | Database check of `/api/v1/health` |
 | `Microsoft.Extensions.Hosting.Abstractions` | MIT | Background services of the libraries |
+| `Microsoft.Extensions.Identity.Core` | MIT | Hashes the PINs of the profiles (`PasswordHasher`) |
 | `Microsoft.Extensions.Options.ConfigurationExtensions` | MIT | Options of the libraries |
 | `Microsoft.Extensions.Options.DataAnnotations` | MIT | Validation of the options at start |
 | `Npgsql.EntityFrameworkCore.PostgreSQL` | PostgreSQL | PostgreSQL provider of Entity Framework Core; includes `Npgsql` (PostgreSQL) |

@@ -2379,6 +2379,179 @@
         ]
       }
     },
+    "/api/v1/me/pin": {
+      "get": {
+        "tags": [
+          "Me"
+        ],
+        "summary": "Returns whether the current profile is protected by a PIN and whether the PIN comes from ADMIN_PIN.",
+        "operationId": "GetMyPin",
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "The state of the PIN.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PinStatus"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The profile was deleted in the meantime (code `user.not_found`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "Me"
+        ],
+        "summary": "Sets or changes the PIN of the current profile. All other sessions of the profile end, so other devices have to enter the new PIN; the current session stays.",
+        "operationId": "SetMyPin",
+        "requestBody": {
+          "description": "The new PIN.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetPin"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetPin"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "The new state of the PIN.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PinStatus"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is invalid (code `request.invalid`), e.g. a PIN that is not 4 to 8 digits (`invalid_format`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The profile was deleted in the meantime (code `user.not_found`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The PIN is set by ADMIN_PIN (code `pin.managed_by_environment`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "Me"
+        ],
+        "summary": "Removes the PIN of the current profile; it can then be selected without a PIN.",
+        "operationId": "DeleteMyPin",
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "The profile has no PIN (also if it had none before)."
+          },
+          "404": {
+            "description": "The profile was deleted in the meantime (code `user.not_found`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The PIN is set by ADMIN_PIN (code `pin.managed_by_environment`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
     "/api/v1/me/playlists/{id}/cover": {
       "get": {
         "tags": [
@@ -3931,10 +4104,10 @@
         "tags": [
           "Sessions"
         ],
-        "summary": "Selects a profile: creates a session and returns its token.",
+        "summary": "Selects a profile: creates a session and returns its token. A profile with `hasPin` needs its PIN. Every given PIN counts as an attempt; after several wrong PINs in a row, the profile is locked out for a while.",
         "operationId": "CreateSession",
         "requestBody": {
-          "description": "The profile to select.",
+          "description": "The profile to select and its PIN.",
           "content": {
             "application/json": {
               "schema": {
@@ -3971,7 +4144,7 @@
             }
           },
           "400": {
-            "description": "The request is invalid (code `request.invalid`).",
+            "description": "The request is invalid (code `request.invalid`), e.g. a PIN that is not 4 to 8 digits (`invalid_format`).",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -3980,8 +4153,28 @@
               }
             }
           },
+          "401": {
+            "description": "The profile needs a PIN and the request has none (code `profile.pin_required`), or the PIN is wrong (code `profile.pin_invalid`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "404": {
             "description": "The profile does not exist (code `profile.not_found`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many wrong PINs: the profile is locked out (code `profile.pin_locked`); the header Retry-After says after how many seconds the next attempt is possible.",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -7051,6 +7244,77 @@
         ]
       }
     },
+    "/api/v1/users/{id}/pin": {
+      "delete": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Resets the PIN of a profile, e.g. after it was forgotten: the profile can then be selected without a PIN, and a lockout after wrong PINs ends.",
+        "operationId": "ResetUserPin",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Id of the user.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "The profile has no PIN (also if it had none before)."
+          },
+          "404": {
+            "description": "The user does not exist (code `user.not_found`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The PIN of the built-in admin profile is set by ADMIN_PIN (code `pin.managed_by_environment`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
     "/api/v1/years": {
       "get": {
         "tags": [
@@ -7718,6 +7982,14 @@
             "type": "string",
             "description": "Id of the profile to select.",
             "format": "uuid"
+          },
+          "pin": {
+            "pattern": "^[0-9]{4,8}$",
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "PIN of the profile, 4 to 8 digits; only needed for profiles with `hasPin`."
           }
         },
         "description": "Selects a profile."
@@ -8774,6 +9046,24 @@
         ],
         "type": "string"
       },
+      "PinStatus": {
+        "required": [
+          "isSet",
+          "isManagedByEnvironment"
+        ],
+        "type": "object",
+        "properties": {
+          "isSet": {
+            "type": "boolean",
+            "description": "True if the profile can only be selected with its PIN."
+          },
+          "isManagedByEnvironment": {
+            "type": "boolean",
+            "description": "True if the PIN is set by the environment variable ADMIN_PIN (built-in admin profile only); it cannot be changed or removed then."
+          }
+        },
+        "description": "Whether a profile is protected by a PIN. The PIN itself is never returned."
+      },
       "PlaybackMethod": {
         "enum": [
           "DirectPlay",
@@ -9052,6 +9342,10 @@
           "user.not_found",
           "user.name_taken",
           "user.built_in_admin",
+          "profile.pin_required",
+          "profile.pin_invalid",
+          "profile.pin_locked",
+          "pin.managed_by_environment",
           "scan.already_running",
           "scan.not_running",
           "scan.not_found",
@@ -9135,7 +9429,8 @@
           "initials",
           "color",
           "role",
-          "isBuiltIn"
+          "isBuiltIn",
+          "hasPin"
         ],
         "type": "object",
         "properties": {
@@ -9161,6 +9456,10 @@
           "isBuiltIn": {
             "type": "boolean",
             "description": "True for the built-in admin profile, which cannot be deleted and always stays an admin."
+          },
+          "hasPin": {
+            "type": "boolean",
+            "description": "True if the profile is protected by a PIN, which selecting it needs."
           }
         },
         "description": "A profile as shown in the profile selection."
@@ -9644,6 +9943,20 @@
           }
         },
         "description": "A session of a profile."
+      },
+      "SetPin": {
+        "required": [
+          "pin"
+        ],
+        "type": "object",
+        "properties": {
+          "pin": {
+            "pattern": "^[0-9]{4,8}$",
+            "type": "string",
+            "description": "The new PIN, 4 to 8 digits."
+          }
+        },
+        "description": "Sets or changes the PIN of a profile."
       },
       "SleepTimerSettings": {
         "required": [
@@ -10927,6 +11240,7 @@
           "color",
           "role",
           "isBuiltIn",
+          "hasPin",
           "createdAt"
         ],
         "type": "object",
@@ -10953,6 +11267,10 @@
           "isBuiltIn": {
             "type": "boolean",
             "description": "True for the built-in admin profile, which cannot be deleted and always stays an admin."
+          },
+          "hasPin": {
+            "type": "boolean",
+            "description": "True if the profile is protected by a PIN, which selecting it needs."
           },
           "createdAt": {
             "type": "string",

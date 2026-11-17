@@ -655,6 +655,15 @@ export function createMediaFilePageFromDiscriminatorValue(parseNode: ParseNode |
     return deserializeIntoMediaFilePage;
 }
 /**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {PinStatus}
+ */
+// @ts-ignore
+export function createPinStatusFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoPinStatus;
+}
+/**
  * Records a play of a track in the play history of the current profile.
  */
 export interface CreatePlayHistoryEntry extends AdditionalDataHolder, Parsable {
@@ -856,6 +865,10 @@ export function createSearchResultFromDiscriminatorValue(parseNode: ParseNode | 
  */
 export interface CreateSession extends AdditionalDataHolder, Parsable {
     /**
+     * PIN of the profile, 4 to 8 digits; only needed for profiles with `hasPin`.
+     */
+    pin?: string | null;
+    /**
      * Id of the profile to select.
      */
     profileId?: Guid | null;
@@ -868,6 +881,15 @@ export interface CreateSession extends AdditionalDataHolder, Parsable {
 // @ts-ignore
 export function createSessionFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
     return deserializeIntoSession;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {SetPin}
+ */
+// @ts-ignore
+export function createSetPinFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoSetPin;
 }
 /**
  * Creates a new instance of the appropriate class based on discriminator value
@@ -1452,6 +1474,7 @@ export function deserializeIntoCreatePlaylist(createPlaylist: Partial<CreatePlay
 // @ts-ignore
 export function deserializeIntoCreateSession(createSession: Partial<CreateSession> | undefined = {}) : Record<string, (node: ParseNode) => void> {
     return {
+        "pin": n => { createSession.pin = n.getStringValue(); },
         "profileId": n => { createSession.profileId = n.getGuidValue(); },
     }
 }
@@ -1766,6 +1789,18 @@ export function deserializeIntoMediaFilePage(mediaFilePage: Partial<MediaFilePag
 }
 /**
  * The deserialization information for the current model
+ * @param PinStatus The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoPinStatus(pinStatus: Partial<PinStatus> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "isManagedByEnvironment": n => { pinStatus.isManagedByEnvironment = n.getBooleanValue(); },
+        "isSet": n => { pinStatus.isSet = n.getBooleanValue(); },
+    }
+}
+/**
+ * The deserialization information for the current model
  * @param PlayHistoryEntry The instance to deserialize into.
  * @returns {Record<string, (node: ParseNode) => void>}
  */
@@ -1888,6 +1923,7 @@ export function deserializeIntoProblemDetails(problemDetails: Partial<ProblemDet
 export function deserializeIntoProfile(profile: Partial<Profile> | undefined = {}) : Record<string, (node: ParseNode) => void> {
     return {
         "color": n => { profile.color = n.getStringValue(); },
+        "hasPin": n => { profile.hasPin = n.getBooleanValue(); },
         "id": n => { profile.id = n.getGuidValue(); },
         "initials": n => { profile.initials = n.getStringValue(); },
         "isBuiltIn": n => { profile.isBuiltIn = n.getBooleanValue(); },
@@ -2063,6 +2099,17 @@ export function deserializeIntoSession(session: Partial<Session> | undefined = {
         "expiresAt": n => { session.expiresAt = n.getDateValue(); },
         "id": n => { session.id = n.getGuidValue(); },
         "profile": n => { session.profile = n.getObjectValue<Profile>(createProfileFromDiscriminatorValue); },
+    }
+}
+/**
+ * The deserialization information for the current model
+ * @param SetPin The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoSetPin(setPin: Partial<SetPin> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "pin": n => { setPin.pin = n.getStringValue(); },
     }
 }
 /**
@@ -2468,6 +2515,7 @@ export function deserializeIntoUser(user: Partial<User> | undefined = {}) : Reco
     return {
         "color": n => { user.color = n.getStringValue(); },
         "createdAt": n => { user.createdAt = n.getDateValue(); },
+        "hasPin": n => { user.hasPin = n.getBooleanValue(); },
         "id": n => { user.id = n.getGuidValue(); },
         "initials": n => { user.initials = n.getStringValue(); },
         "isBuiltIn": n => { user.isBuiltIn = n.getBooleanValue(); },
@@ -3096,6 +3144,19 @@ export interface MediaFilePage extends AdditionalDataHolder, Parsable {
     total?: number | null;
 }
 export type MediaFileSort = (typeof MediaFileSortObject)[keyof typeof MediaFileSortObject];
+/**
+ * Whether a profile is protected by a PIN. The PIN itself is never returned.
+ */
+export interface PinStatus extends AdditionalDataHolder, Parsable {
+    /**
+     * True if the PIN is set by the environment variable ADMIN_PIN (built-in admin profile only); it cannot be changed or removed then.
+     */
+    isManagedByEnvironment?: boolean | null;
+    /**
+     * True if the profile can only be selected with its PIN.
+     */
+    isSet?: boolean | null;
+}
 export type PlaybackMethod = (typeof PlaybackMethodObject)[keyof typeof PlaybackMethodObject];
 export type PlayerViewMode = (typeof PlayerViewModeObject)[keyof typeof PlayerViewModeObject];
 /**
@@ -3286,6 +3347,10 @@ export interface Profile extends AdditionalDataHolder, Parsable {
      * Color of the profile as #rrggbb.
      */
     color?: string | null;
+    /**
+     * True if the profile is protected by a PIN, which selecting it needs.
+     */
+    hasPin?: boolean | null;
     /**
      * The id property
      */
@@ -3842,6 +3907,7 @@ export function serializeCreatePlaylist(writer: SerializationWriter, createPlayl
 // @ts-ignore
 export function serializeCreateSession(writer: SerializationWriter, createSession: Partial<CreateSession> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
     if (!createSession || isSerializingDerivedType) { return; }
+    writer.writeStringValue("pin", createSession.pin);
     writer.writeGuidValue("profileId", createSession.profileId);
     writer.writeAdditionalData(createSession.additionalData);
 }
@@ -4177,6 +4243,19 @@ export function serializeMediaFilePage(writer: SerializationWriter, mediaFilePag
 /**
  * Serializes information the current object
  * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param PinStatus The instance to serialize from.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializePinStatus(writer: SerializationWriter, pinStatus: Partial<PinStatus> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!pinStatus || isSerializingDerivedType) { return; }
+    writer.writeBooleanValue("isManagedByEnvironment", pinStatus.isManagedByEnvironment);
+    writer.writeBooleanValue("isSet", pinStatus.isSet);
+    writer.writeAdditionalData(pinStatus.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
  * @param PlayHistoryEntry The instance to serialize from.
  * @param writer Serialization writer to use to serialize this model
  */
@@ -4307,6 +4386,7 @@ export function serializeProblemDetails(writer: SerializationWriter, problemDeta
 export function serializeProfile(writer: SerializationWriter, profile: Partial<Profile> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
     if (!profile || isSerializingDerivedType) { return; }
     writer.writeStringValue("color", profile.color);
+    writer.writeBooleanValue("hasPin", profile.hasPin);
     writer.writeGuidValue("id", profile.id);
     writer.writeStringValue("initials", profile.initials);
     writer.writeBooleanValue("isBuiltIn", profile.isBuiltIn);
@@ -4494,6 +4574,18 @@ export function serializeSession(writer: SerializationWriter, session: Partial<S
     writer.writeGuidValue("id", session.id);
     writer.writeObjectValue<Profile>("profile", session.profile, serializeProfile);
     writer.writeAdditionalData(session.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param SetPin The instance to serialize from.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeSetPin(writer: SerializationWriter, setPin: Partial<SetPin> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!setPin || isSerializingDerivedType) { return; }
+    writer.writeStringValue("pin", setPin.pin);
+    writer.writeAdditionalData(setPin.additionalData);
 }
 /**
  * Serializes information the current object
@@ -4925,6 +5017,7 @@ export function serializeUser(writer: SerializationWriter, user: Partial<User> |
     if (!user || isSerializingDerivedType) { return; }
     writer.writeStringValue("color", user.color);
     writer.writeDateValue("createdAt", user.createdAt);
+    writer.writeBooleanValue("hasPin", user.hasPin);
     writer.writeGuidValue("id", user.id);
     writer.writeStringValue("initials", user.initials);
     writer.writeBooleanValue("isBuiltIn", user.isBuiltIn);
@@ -5064,6 +5157,15 @@ export interface Session extends AdditionalDataHolder, Parsable {
      * The selected profile.
      */
     profile?: Profile | null;
+}
+/**
+ * Sets or changes the PIN of a profile.
+ */
+export interface SetPin extends AdditionalDataHolder, Parsable {
+    /**
+     * The new PIN, 4 to 8 digits.
+     */
+    pin?: string | null;
 }
 /**
  * Sleep timer of the current profile. The running timer itself belongs to the player that plays and is not stored.
@@ -5745,6 +5847,10 @@ export interface User extends AdditionalDataHolder, Parsable {
      */
     createdAt?: Date | null;
     /**
+     * True if the profile is protected by a PIN, which selecting it needs.
+     */
+    hasPin?: boolean | null;
+    /**
      * The id property
      */
     id?: Guid | null;
@@ -6192,6 +6298,10 @@ export const ProblemCodeObject = {
     UserNot_found: "user.not_found",
     UserName_taken: "user.name_taken",
     UserBuilt_in_admin: "user.built_in_admin",
+    ProfilePin_required: "profile.pin_required",
+    ProfilePin_invalid: "profile.pin_invalid",
+    ProfilePin_locked: "profile.pin_locked",
+    PinManaged_by_environment: "pin.managed_by_environment",
     ScanAlready_running: "scan.already_running",
     ScanNot_running: "scan.not_running",
     ScanNot_found: "scan.not_found",

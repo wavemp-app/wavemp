@@ -36,11 +36,16 @@ namespace WaveMP.Service.Tests.IntegrationTests;
 /// <param name="exporter">
 /// Replaces pg_dump for the database backups; if <c>null</c>, a <see cref="FakeDatabaseExporter"/> that succeeds.
 /// </param>
+/// <param name="settings">
+/// Further configuration values of the service, e.g. <c>ADMIN_PIN</c>. Without it, <c>ADMIN_PIN</c> is empty, so a
+/// variable of the environment of the test run does not protect the admin profile of the tests.
+/// </param>
 public sealed class WaveMpWebApplicationFactory(
     string? databaseName = null,
     bool freshDatabase = false,
     string? mediaPath = null,
-    FakeDatabaseExporter? exporter = null) : WebApplicationFactory<Program>
+    FakeDatabaseExporter? exporter = null,
+    IReadOnlyDictionary<string, string?>? settings = null) : WebApplicationFactory<Program>
 {
     public const string TestDatabaseName = "wavemp_tests";
 
@@ -85,22 +90,29 @@ public sealed class WaveMpWebApplicationFactory(
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment(EnvironmentName);
-        Dictionary<string, string?> settings = TestDatabaseSettings.ToConfiguration(DatabaseName);
-        settings["MEDIA_PATH"] = mediaPath ?? _emptyMedia!.Path;
-        settings["DATA_PATH"] = _data.Path;
+        Dictionary<string, string?> values = TestDatabaseSettings.ToConfiguration(DatabaseName);
+        values["MEDIA_PATH"] = mediaPath ?? _emptyMedia!.Path;
+        values["DATA_PATH"] = _data.Path;
         // The periodic scan would start one minute after the start; tests start scans themselves.
-        settings["Scanning:StartupDelay"] = "1.00:00:00";
+        values["Scanning:StartupDelay"] = "1.00:00:00";
         // Short HLS segments, so the synthetic videos of a few seconds have several.
-        settings["Transcoding:SegmentDuration"] = "00:00:02";
+        values["Transcoding:SegmentDuration"] = "00:00:02";
+        // The PIN of the admin profile only comes from the test itself.
+        values["ADMIN_PIN"] = string.Empty;
         if (Environment.GetEnvironmentVariable("FFMPEG_PATH") is { Length: > 0 } ffmpeg)
         {
             string extension = OperatingSystem.IsWindows() ? ".exe" : string.Empty;
-            settings["Metadata:FfprobePath"] = Path.Combine(ffmpeg, "ffprobe" + extension);
-            settings["Caching:FfmpegPath"] = Path.Combine(ffmpeg, "ffmpeg" + extension);
-            settings["Transcoding:FfmpegPath"] = Path.Combine(ffmpeg, "ffmpeg" + extension);
+            values["Metadata:FfprobePath"] = Path.Combine(ffmpeg, "ffprobe" + extension);
+            values["Caching:FfmpegPath"] = Path.Combine(ffmpeg, "ffmpeg" + extension);
+            values["Transcoding:FfmpegPath"] = Path.Combine(ffmpeg, "ffmpeg" + extension);
         }
 
-        builder.ConfigureAppConfiguration(configuration => configuration.AddInMemoryCollection(settings));
+        foreach ((string key, string? value) in settings ?? new Dictionary<string, string?>())
+        {
+            values[key] = value;
+        }
+
+        builder.ConfigureAppConfiguration(configuration => configuration.AddInMemoryCollection(values));
         builder.ConfigureLogging(logging => logging.AddProvider(ErrorLog));
         builder.ConfigureTestServices(services =>
         {
@@ -118,13 +130,13 @@ public sealed class WaveMpWebApplicationFactory(
 
         IHost host = base.CreateHost(builder);
 
-        // Program.cs exits without starting the service if the database configuration is invalid or the backup before
-        // the migrations failed.
+        // Program.cs exits without starting the service if the database or PIN configuration is invalid or the backup
+        // before the migrations failed.
         if (!host.Services.GetRequiredService<IHostApplicationLifetime>().ApplicationStarted.IsCancellationRequested)
         {
             host.Dispose();
             throw new InvalidOperationException(
-                "WaveMP did not start because the database configuration is invalid or the backup before the "
+                "WaveMP did not start because the database or PIN configuration is invalid or the backup before the "
                 + "migrations failed. Check DB_PASSWORD and DB_PORT in .env or in the environment.");
         }
 

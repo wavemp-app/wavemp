@@ -82,6 +82,31 @@ public enum ProblemCodeDto
     UserBuiltInAdmin,
 
     /// <summary>
+    /// The profile to select is protected by a PIN, but the request has none; the client asks for it (401).
+    /// </summary>
+    [JsonStringEnumMemberName("profile.pin_required")]
+    ProfilePinRequired,
+
+    /// <summary>
+    /// The PIN of the profile to select is wrong (401). Wrong PINs are counted; too many lock the profile out.
+    /// </summary>
+    [JsonStringEnumMemberName("profile.pin_invalid")]
+    ProfilePinInvalid,
+
+    /// <summary>
+    /// Too many wrong PINs: the profile is locked out for a while; try again after Retry-After seconds (429).
+    /// </summary>
+    [JsonStringEnumMemberName("profile.pin_locked")]
+    ProfilePinLocked,
+
+    /// <summary>
+    /// The PIN of the built-in admin profile is set by the environment variable ADMIN_PIN and cannot be changed or
+    /// removed through the API (409).
+    /// </summary>
+    [JsonStringEnumMemberName("pin.managed_by_environment")]
+    PinManagedByEnvironment,
+
+    /// <summary>
     /// A scan is already queued or running (409).
     /// </summary>
     [JsonStringEnumMemberName("scan.already_running")]
