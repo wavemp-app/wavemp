@@ -50,7 +50,12 @@ function submit(): void {
         :aria-labelledby="titleId"
         @submit.prevent="submit"
     >
-        <ProfileAvatar :initials="profile.initials" :color="profile.color" />
+        <ProfileAvatar
+            :initials="profile.initials"
+            :color="profile.color"
+            :user-id="profile.id"
+            :avatar-version="profile.avatarVersion"
+        />
         <h2 :id="titleId" data-part="pin-entry-title">
             {{ t('pin.title', { name: profile.name }) }}
         </h2>

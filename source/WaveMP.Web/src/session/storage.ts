@@ -15,6 +15,10 @@ export interface StoredProfile {
     readonly isBuiltIn: boolean
     /** Whether selecting the profile needs its PIN; false for snapshots stored before PINs existed. */
     readonly hasPin: boolean
+    /** Version of the avatar of the profile; null without one (and for older snapshots). */
+    readonly avatarVersion: string | null
+    /** Id of the built-in avatar of the profile; null for an uploaded picture or none. */
+    readonly avatarPresetId: string | null
 }
 
 export interface StoredSession {
@@ -48,6 +52,35 @@ function isNonEmptyString(value: unknown): value is string {
     return typeof value === 'string' && value !== ''
 }
 
+/**
+ * The version of the avatar: from a profile of the API (avatar.version) or from a stored snapshot
+ * (avatarVersion); null without an avatar.
+ */
+function avatarVersionOf(value: Record<string, unknown>): string | null {
+    if (isNonEmptyString(value.avatarVersion)) {
+        return value.avatarVersion
+    }
+
+    return isRecord(value.avatar) && isNonEmptyString(value.avatar.version)
+        ? value.avatar.version
+        : null
+}
+
+/** The id of the built-in avatar, like avatarVersionOf; null without one. */
+function avatarPresetIdOf(value: Record<string, unknown>): string | null {
+    if (avatarVersionOf(value) === null) {
+        return null
+    }
+
+    if (isNonEmptyString(value.avatarPresetId)) {
+        return value.avatarPresetId
+    }
+
+    return isRecord(value.avatar) && isNonEmptyString(value.avatar.presetId)
+        ? value.avatar.presetId
+        : null
+}
+
 /** A profile snapshot with all fields, or null. */
 export function toStoredProfile(value: unknown): StoredProfile | null {
     if (
@@ -71,6 +104,8 @@ export function toStoredProfile(value: unknown): StoredProfile | null {
         role: value.role as Role,
         isBuiltIn: value.isBuiltIn,
         hasPin: value.hasPin === true,
+        avatarVersion: avatarVersionOf(value),
+        avatarPresetId: avatarPresetIdOf(value),
     }
 }
 

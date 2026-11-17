@@ -360,6 +360,8 @@
       "loadError": "Profiles could not be loaded",
       "pinEntry": "PIN entry",
       "pinPad": "Digit pad with two digits",
+      "avatarPresets": "Avatar presets",
+      "avatarCrop": "Avatar crop",
       "alertError": "Something went wrong.",
       "alertSuccess": "The changes are saved.",
       "alertInfo": "Changes apply at once.",
@@ -462,7 +464,11 @@
     "pin": "PIN",
     "pinOn": "This profile is protected with a PIN.",
     "pinOff": "This profile has no PIN. Anyone can select it.",
-    "openPin": "Set up the PIN"
+    "openPin": "Set up the PIN",
+    "avatar": "Profile picture",
+    "avatarOn": "This profile shows a picture.",
+    "avatarOff": "This profile shows its initials.",
+    "changeAvatar": "Change picture"
   },
   "pin": {
     "title": "Enter the PIN of {name}",
@@ -498,6 +504,43 @@
       "title": "Remove PIN",
       "text": "Remove the PIN? Anyone can then select this profile.",
       "confirm": "Remove"
+    }
+  },
+  "avatars": {
+    "title": "Profile picture",
+    "mode": "Kind of picture",
+    "modes": {
+      "preset": "Built-in",
+      "upload": "Own picture"
+    },
+    "presetList": "Built-in pictures",
+    "presets": {
+      "bubble": "Bubble",
+      "leaf": "Leaf",
+      "drop": "Drop",
+      "sun": "Sun",
+      "wave": "Wave",
+      "cloud": "Cloud",
+      "star": "Star",
+      "fish": "Fish"
+    },
+    "uploadHint": "Choose a JPEG, PNG or WebP picture. You can then move and zoom it to choose the square that is shown.",
+    "choose": "Choose picture",
+    "chooseOther": "Choose another picture",
+    "cropFrame": "Visible part of the picture",
+    "cropHint": "Drag the picture or use the arrow keys to move it.",
+    "preview": "Preview",
+    "zoom": "Zoom",
+    "zoomValue": "{percent} %",
+    "remove": "Remove picture",
+    "save": "Save",
+    "errors": {
+      "type": "Please choose a JPEG, PNG or WebP picture.",
+      "size": "The picture is too large (at most 10 MB).",
+      "unreadable": "The picture is damaged and cannot be read.",
+      "notFound": "This profile no longer exists.",
+      "saveFailed": "The picture could not be changed.",
+      "presetsFailed": "The built-in pictures could not be loaded."
     }
   },
   "adminUsers": {
@@ -558,7 +601,8 @@
       "title": "Remove PIN",
       "text": "Remove the PIN of {name}? Anyone can then select this profile until a new PIN is set.",
       "confirm": "Remove"
-    }
+    },
+    "changeAvatar": "Change the picture of {name}"
   },
   "admin": {
     "title": "Administration",

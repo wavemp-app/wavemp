@@ -360,6 +360,8 @@
       "loadError": "Profile konnten nicht geladen werden",
       "pinEntry": "PIN-Eingabe",
       "pinPad": "Ziffernblock mit zwei Ziffern",
+      "avatarPresets": "Mitgelieferte Profilbilder",
+      "avatarCrop": "Ausschnitt eines Profilbilds",
       "alertError": "Etwas ist schiefgelaufen.",
       "alertSuccess": "Die Änderungen sind gespeichert.",
       "alertInfo": "Änderungen gelten sofort.",
@@ -462,7 +464,11 @@
     "pin": "PIN",
     "pinOn": "Dieses Profil ist mit einer PIN geschützt.",
     "pinOff": "Dieses Profil hat keine PIN. Jeder kann es auswählen.",
-    "openPin": "PIN einrichten"
+    "openPin": "PIN einrichten",
+    "avatar": "Profilbild",
+    "avatarOn": "Dieses Profil zeigt ein Bild.",
+    "avatarOff": "Dieses Profil zeigt seine Initialen.",
+    "changeAvatar": "Bild ändern"
   },
   "pin": {
     "title": "PIN von {name} eingeben",
@@ -498,6 +504,43 @@
       "title": "PIN entfernen",
       "text": "PIN entfernen? Danach kann jeder dieses Profil auswählen.",
       "confirm": "Entfernen"
+    }
+  },
+  "avatars": {
+    "title": "Profilbild",
+    "mode": "Art des Bildes",
+    "modes": {
+      "preset": "Mitgeliefert",
+      "upload": "Eigenes Bild"
+    },
+    "presetList": "Mitgelieferte Bilder",
+    "presets": {
+      "bubble": "Blase",
+      "leaf": "Blatt",
+      "drop": "Tropfen",
+      "sun": "Sonne",
+      "wave": "Welle",
+      "cloud": "Wolke",
+      "star": "Stern",
+      "fish": "Fisch"
+    },
+    "uploadHint": "Wähle ein Bild als JPEG, PNG oder WebP. Danach kannst du es verschieben und zoomen, um den sichtbaren Ausschnitt festzulegen.",
+    "choose": "Bild auswählen",
+    "chooseOther": "Anderes Bild auswählen",
+    "cropFrame": "Sichtbarer Ausschnitt des Bildes",
+    "cropHint": "Ziehe das Bild oder verschiebe es mit den Pfeiltasten.",
+    "preview": "Vorschau",
+    "zoom": "Zoom",
+    "zoomValue": "{percent} %",
+    "remove": "Bild entfernen",
+    "save": "Speichern",
+    "errors": {
+      "type": "Bitte wähle ein Bild als JPEG, PNG oder WebP.",
+      "size": "Das Bild ist zu groß (höchstens 10 MB).",
+      "unreadable": "Das Bild ist beschädigt und kann nicht gelesen werden.",
+      "notFound": "Dieses Profil gibt es nicht mehr.",
+      "saveFailed": "Das Bild konnte nicht geändert werden.",
+      "presetsFailed": "Die mitgelieferten Bilder konnten nicht geladen werden."
     }
   },
   "adminUsers": {
@@ -558,7 +601,8 @@
       "title": "PIN entfernen",
       "text": "PIN von {name} entfernen? Bis eine neue PIN festgelegt wird, kann jeder dieses Profil auswählen.",
       "confirm": "Entfernen"
-    }
+    },
+    "changeAvatar": "Bild von {name} ändern"
   },
   "admin": {
     "title": "Administration",

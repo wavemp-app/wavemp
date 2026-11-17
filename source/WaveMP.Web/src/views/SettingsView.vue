@@ -2,11 +2,13 @@
 import { computed, ref, useId, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import BaseAlert from '@/components/base/BaseAlert.vue'
+import BaseButton from '@/components/base/BaseButton.vue'
 import BaseCheckbox from '@/components/base/BaseCheckbox.vue'
 import BaseLink from '@/components/base/BaseLink.vue'
 import BaseSegmentedField from '@/components/base/BaseSegmentedField.vue'
 import type { SegmentOption } from '@/components/base/BaseSegmentedControl.vue'
 import BaseSelect, { type SelectOption } from '@/components/base/BaseSelect.vue'
+import AvatarDialog, { type AvatarDialogProfile } from '@/components/profiles/AvatarDialog.vue'
 import ProfileSummary from '@/components/profiles/ProfileSummary.vue'
 import {
     ReplayGainModeObject,
@@ -31,7 +33,25 @@ const health = useHealthStore()
 const format = useFormat()
 
 const aboutTitleId = useId()
+const avatarTitleId = useId()
 const pinTitleId = useId()
+
+const avatarOpen = ref(false)
+
+/** The own profile as the avatar dialog shows it. */
+const avatarProfile = computed<AvatarDialogProfile | null>(() => {
+    const profile = session.profile
+    return profile
+        ? {
+              id: profile.id,
+              name: profile.name,
+              initials: profile.initials,
+              color: profile.color,
+              avatarVersion: profile.avatarVersion,
+              avatarPresetId: profile.avatarPresetId,
+          }
+        : null
+})
 
 /** Versions of this web app and of the service (from the health check of the app shell). */
 const versions = computed(() => [
@@ -353,6 +373,8 @@ async function changeSleepTimerFade(value: string): Promise<void> {
             :name="session.profile.name"
             :initials="session.profile.initials"
             :color="session.profile.color"
+            :user-id="session.profile.id"
+            :avatar-version="session.profile.avatarVersion"
         />
         <BaseAlert v-if="error" tone="error" :message="error" />
         <form data-part="form" @submit.prevent>
@@ -433,6 +455,30 @@ async function changeSleepTimerFade(value: string): Promise<void> {
                 @update:model-value="changeQuality"
             />
         </form>
+        <section data-part="section" data-item="avatar" :aria-labelledby="avatarTitleId">
+            <h2 :id="avatarTitleId" data-part="section-title">{{ t('settings.avatar') }}</h2>
+            <p data-part="form-note" data-field="avatar-status">
+                {{
+                    session.profile?.avatarVersion
+                        ? t('settings.avatarOn')
+                        : t('settings.avatarOff')
+                }}
+            </p>
+            <div data-part="view-actions">
+                <BaseButton
+                    data-item="change-avatar"
+                    icon="change-avatar"
+                    :label="t('settings.changeAvatar')"
+                    @click="avatarOpen = true"
+                />
+            </div>
+        </section>
+        <AvatarDialog
+            v-model:open="avatarOpen"
+            :target="{ kind: 'me' }"
+            :profile="avatarProfile"
+            @saved="session.refresh()"
+        />
         <section data-part="section" data-item="pin" :aria-labelledby="pinTitleId">
             <h2 :id="pinTitleId" data-part="section-title">{{ t('settings.pin') }}</h2>
             <p data-part="form-note" data-field="pin-status">

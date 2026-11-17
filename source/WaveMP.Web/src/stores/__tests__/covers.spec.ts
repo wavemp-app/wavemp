@@ -12,6 +12,10 @@ const playlistApi = vi.hoisted(() => ({ fetchPlaylistCover: vi.fn() }))
 
 vi.mock('@/playlists/api', () => playlistApi)
 
+const avatarApi = vi.hoisted(() => ({ fetchAvatar: vi.fn(), fetchAvatarPreset: vi.fn() }))
+
+vi.mock('@/profiles/avatarApi', () => avatarApi)
+
 const { maxCachedCovers, useCoversStore } = await import('../covers')
 
 describe('covers store', () => {
@@ -25,6 +29,8 @@ describe('covers store', () => {
         api.fetchAlbumCover.mockReset().mockResolvedValue(new Uint8Array([1, 2, 3]).buffer)
         api.fetchTrackCover.mockReset().mockResolvedValue(new Uint8Array([4]).buffer)
         playlistApi.fetchPlaylistCover.mockReset().mockResolvedValue(new Uint8Array([5]).buffer)
+        avatarApi.fetchAvatar.mockReset().mockResolvedValue(new Uint8Array([6]).buffer)
+        avatarApi.fetchAvatarPreset.mockReset().mockResolvedValue(new Uint8Array([7]).buffer)
         createObjectURL.mockClear()
         revokeObjectURL.mockClear()
         vi.stubGlobal('URL', { ...URL, createObjectURL, revokeObjectURL })
@@ -82,6 +88,19 @@ describe('covers store', () => {
         expect(playlistApi.fetchPlaylistCover).toHaveBeenCalledWith('p', 300)
         expect(api.fetchAlbumCover).not.toHaveBeenCalled()
         expect(api.fetchTrackCover).not.toHaveBeenCalled()
+    })
+
+    it('loads avatars and built-in avatars through their endpoints', async () => {
+        const store = useCoversStore()
+
+        expect(await store.acquire('avatar', 'u', 96, 'v1')).toBe('blob:cover-1')
+        expect(await store.acquire('avatar', 'u', 96, 'v2')).toBe('blob:cover-2')
+        expect(await store.acquire('avatar-preset', 'leaf', 300)).toBe('blob:cover-3')
+
+        expect(avatarApi.fetchAvatar).toHaveBeenCalledTimes(2)
+        expect(avatarApi.fetchAvatar).toHaveBeenCalledWith('u', 96)
+        expect(avatarApi.fetchAvatarPreset).toHaveBeenCalledWith('leaf', 300)
+        expect(api.fetchAlbumCover).not.toHaveBeenCalled()
     })
 
     it('loads covers of tracks through their endpoint', async () => {

@@ -189,6 +189,7 @@ export const parts = [
     'profile-tile',
     'avatar',
     'avatar-initials',
+    'avatar-image',
     'profile-lock',
     'pin-entry',
     'pin-entry-title',
@@ -199,6 +200,16 @@ export const parts = [
     'pin-dot',
     'pin-keys',
     'pin-key',
+
+    // Avatar dialog
+    'avatar-editor',
+    'avatar-presets',
+    'avatar-preset',
+    'avatar-preset-image',
+    'avatar-crop',
+    'avatar-crop-frame',
+    'avatar-crop-image',
+    'avatar-crop-preview',
 
     // Profile menu and settings
     'btn-profile',

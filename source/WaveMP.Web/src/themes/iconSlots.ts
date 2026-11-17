@@ -134,6 +134,7 @@ export const iconSlots = {
     reset: { file: regular('arrow-counter-clockwise'), area: 'general' },
     'has-pin': { file: regular('lock'), area: 'general' },
     'reset-pin': { file: regular('lock-open'), area: 'general' },
+    'change-avatar': { file: regular('user-circle'), area: 'general' },
 
     // Profile selection and digit pad of the PIN
     'profile-lock': { file: fill('lock'), area: 'content' },

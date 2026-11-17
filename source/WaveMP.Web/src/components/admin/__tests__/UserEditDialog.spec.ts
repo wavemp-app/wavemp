@@ -15,6 +15,8 @@ const anna: UserListItem = {
     isBuiltIn: false,
     hasPin: false,
     createdAt: new Date(),
+    avatarVersion: null,
+    avatarPresetId: null,
 }
 
 async function mountDialog(user: UserListItem | null) {

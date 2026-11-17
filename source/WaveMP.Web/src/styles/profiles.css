@@ -246,4 +246,134 @@
         display: flex;
         justify-content: center;
     }
+
+    /*
+     * Avatar dialog: the current avatar, the kind of picture, then the built-in avatars or the
+     * cropping of an own picture. Mobile first: one column, the crop frame as wide as the dialog.
+     */
+    [data-part='avatar-editor'] {
+        --_avatar-size: var(--wmp-avatar-size-l);
+
+        display: grid;
+        justify-items: center;
+        gap: var(--wmp-space-l);
+        min-inline-size: min(100%, 20rem);
+    }
+
+    [data-part='avatar-editor'] > :is([data-part='alert'], [data-part='form-note']) {
+        justify-self: stretch;
+    }
+
+    [data-part='avatar-presets'] {
+        position: relative;
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(4.5rem, 1fr));
+        gap: var(--wmp-space-s);
+        inline-size: 100%;
+    }
+
+    [data-part='avatar-presets'] > [data-part='indicator'] {
+        position: absolute;
+        inset-block-start: var(--wmp-indicator-y, 0);
+        left: var(--wmp-indicator-x, 0);
+        inline-size: var(--wmp-indicator-width, 0);
+        block-size: var(--wmp-indicator-height, 0);
+        pointer-events: none;
+    }
+
+    [data-part='avatar-preset'] {
+        position: relative;
+        display: grid;
+        aspect-ratio: 1;
+        padding: 0;
+        overflow: hidden;
+        border: 1px solid var(--wmp-color-border);
+        border-radius: var(--wmp-radius-m);
+        background: var(--wmp-color-surface-raised);
+        cursor: pointer;
+    }
+
+    [data-part='avatar-preset'][aria-checked='true'] {
+        box-shadow:
+            0 0 0 2px var(--wmp-color-surface),
+            0 0 0 4px var(--wmp-color-accent);
+    }
+
+    [data-part='avatar-preset']:focus-visible {
+        outline: 2px solid var(--wmp-color-focus);
+        outline-offset: 2px;
+    }
+
+    [data-part='avatar-preset'][aria-disabled='true'] {
+        cursor: default;
+    }
+
+    [data-part='avatar-preset-image'] {
+        inline-size: 100%;
+        block-size: 100%;
+        object-fit: cover;
+    }
+
+    [data-part='avatar-preset'] > [data-part='label'] {
+        position: absolute;
+        inline-size: 1px;
+        block-size: 1px;
+        overflow: hidden;
+        clip-path: inset(50%);
+        white-space: nowrap;
+    }
+
+    /*
+     * Cropping: the picture lies behind the square frame. --wmp-crop-scale is its width in widths
+     * of the frame, --wmp-crop-x and --wmp-crop-y the offset of its top left corner.
+     */
+    [data-part='avatar-crop'] {
+        display: grid;
+        justify-items: center;
+        gap: var(--wmp-space-m);
+        inline-size: 100%;
+    }
+
+    :is([data-part='avatar-crop-frame'], [data-part='avatar-crop-preview']) {
+        position: relative;
+        overflow: hidden;
+        aspect-ratio: 1;
+        background: var(--wmp-color-surface-raised);
+        touch-action: none;
+    }
+
+    [data-part='avatar-crop-frame'] {
+        inline-size: min(100%, 16rem);
+        border-radius: var(--wmp-radius-m);
+        cursor: grab;
+    }
+
+    [data-part='avatar-crop'][data-state='dragging'] > [data-part='avatar-crop-frame'] {
+        cursor: grabbing;
+    }
+
+    [data-part='avatar-crop-frame']:focus-visible {
+        outline: 2px solid var(--wmp-color-focus);
+        outline-offset: 2px;
+    }
+
+    [data-part='avatar-crop-preview'] {
+        inline-size: var(--wmp-avatar-size-l);
+        border-radius: var(--wmp-radius-m);
+    }
+
+    [data-part='avatar-crop-image'] {
+        position: absolute;
+        inset-block-start: calc(var(--wmp-crop-y, 0) * -100%);
+        left: calc(var(--wmp-crop-x, 0) * -100%);
+        inline-size: calc(var(--wmp-crop-scale, 1) * 100%);
+        max-inline-size: none;
+        block-size: auto;
+        user-select: none;
+        pointer-events: none;
+    }
+
+    [data-part='avatar-crop'] > [data-part='field'] {
+        inline-size: 100%;
+    }
 }

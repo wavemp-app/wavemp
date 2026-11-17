@@ -235,8 +235,9 @@ Example of a desktop layout with the sidebar on the right:
 | `profile-list` | `ul` | `profile-select` | Profiles to select |
 | `profile-item` | `li` | `profile-list` | One profile |
 | `profile-tile` | `button` | `profile-item` | Selects the profile; `avatar` and `label` (name) |
-| `avatar` | `span` (`aria-hidden`) | `profile-tile`, any | Initials on the color of the profile (`--wmp-profile-color`) |
+| `avatar` | `span` (`aria-hidden`) | `profile-tile`, any | The picture of the profile (`avatar-image`), or its initials (`avatar-initials`) on the color of the profile (`--wmp-profile-color`) while it has no picture, while the picture loads and if it cannot be loaded |
 | `avatar-initials` | `span` | `avatar` | Initials of the profile |
+| `avatar-image` | `img` (`alt=""`) | `avatar` | Square picture of the profile (uploaded or built-in), loaded in the size the avatar is shown in; the base lets it cover the avatar |
 | `profile-lock` | `span` (`role="img"`, `aria-label`) | `profile-tile` | Lock symbol of a profile with a PIN, with `icon` (slot `profile-lock`) |
 | `pin-entry` | `form` (`aria-labelledby`) | `profile-select` | PIN entry for a profile with a PIN, shown instead of `profile-list`: `avatar`, `pin-entry-title`, an `alert` after a wrong PIN or during a lockout, `pin-pad` and `pin-entry-actions` |
 | `pin-entry-title` | `h2` | `pin-entry` | Asks for the PIN of the profile |
@@ -248,6 +249,14 @@ Example of a desktop layout with the sidebar on the right:
 | `pin-keys` | `div` (`role="group"`) | `pin-pad` | The twelve `pin-key`s in the order of a phone keypad: `1` to `9`, `delete`, `0`, `submit` |
 | `pin-key` | `button` (`data-key`) | `pin-keys` | One key with a `label` (the digit, or a visually hidden text for `delete` and `submit`); `delete` and `submit` also carry an `icon` (slots `pin-delete` and `pin-submit`). `submit` is the submit button of `pin-entry` and disabled until 4 digits are entered, `delete` while nothing is entered |
 | `profile-summary` | `div` | `view` | The current profile on the settings page: `avatar` and `label` with the name |
+| `avatar-editor` | `div` (`data-state`) | `dialog-body` of the `dialog` `avatar` | Changes the picture of a profile: the current `avatar`, a `segmented-control` `avatar-mode` (`segment`s `preset` and `upload`), an `alert` on errors, then `avatar-presets`, or `avatar-crop` with a `form-note` and the `button` `choose-file` |
+| `avatar-presets` | `div` (`role="radiogroup"`, `aria-label`) | `avatar-editor` | Choice of a built-in picture: an `indicator` and one `avatar-preset` per picture; tells the chosen picture with the runtime variables of an active element, see [Active element of a group](#active-element-of-a-group) |
+| `avatar-preset` | `button` (`role="radio"`, `aria-checked`, `data-item`) | `avatar-presets` | One built-in picture (`data-item` is its id, for example `bubble`) with `avatar-preset-image` and a visually hidden `label` |
+| `avatar-preset-image` | `img` (`alt=""`) | `avatar-preset` | The built-in picture; missing while it loads |
+| `avatar-crop` | `div` (`data-state`) | `avatar-editor` | Cropping of an own picture before the upload: `avatar-crop-frame`, a `form-note`, `avatar-crop-preview` and the `field` `zoom` with a `slider`. Carries `--wmp-crop-scale`, `--wmp-crop-x` and `--wmp-crop-y` |
+| `avatar-crop-frame` | `div` (`role="group"`, `tabindex`) | `avatar-crop` | Square frame with the visible part of the picture; dragging it or the arrow keys move the picture |
+| `avatar-crop-image` | `img` (`alt=""`) | `avatar-crop-frame`, `avatar-crop-preview` | The chosen picture, placed behind the frame with the runtime variables of `avatar-crop` |
+| `avatar-crop-preview` | `div` (`role="img"`, `aria-label`) | `avatar-crop` | Small preview of the square that is uploaded |
 | `view-actions` | `div` | `view` | Actions of a page, for example "Add profile" |
 | `user-list` | `ul` | `view` | Profiles on the admin page |
 | `user-item` | `li` | `user-list` | One profile with `avatar`, `user-info` and `user-actions` |
@@ -380,6 +389,9 @@ The internal component overview (`/dev/components`) uses its own parts starting 
 | `pin-entry` | `busy` while the PIN is checked, `error` after a wrong PIN or during a lockout |
 | `pin-pad` | `disabled` while the PIN is checked |
 | `view` with `data-view="settings-pin"` | `loading`, `error`, `on` (the profile has a PIN), `off` (no PIN) or `managed` (the PIN comes from `ADMIN_PIN` and cannot be changed) |
+| `avatar` | `image` while it shows a picture; no state while it shows the initials |
+| `avatar-editor` | `preset` or `upload`: the checked kind of picture |
+| `avatar-crop` | `dragging` while the picture is dragged |
 | `profile-tile` | `built-in` for the built-in admin profile, additionally `secondary` as soon as other profiles exist; `current` for the profile of the current session; `protected` for a profile with a PIN |
 | `alert` | `error`, `success` or `info` |
 | `field` | `invalid` while the field has an error |
@@ -404,6 +416,7 @@ Every group in which one entry is the active one gives the theme the same means 
 | `admin-nav` | `admin-nav-item` of the current page |
 | `tree` | `tree-item` of the current page (among the visible items) |
 | `color-picker` | selected `color-swatch` |
+| `avatar-presets` | chosen `avatar-preset` |
 | `segmented-control` | checked `segment` |
 
 - The state is an attribute of the entry: `aria-current="page"` and `data-state="active"`, or `aria-checked="true"`.
@@ -470,6 +483,9 @@ The base links states to graphics: buttons use the variables `--wmp-image-<varia
 | `data-column` | `list-column`, `list-cell` | `number`, `title`, `duration`, `artist`, `rating`, `favorite`; in playlists also `handle` (first column, only where entries can be moved), `album` and `detail` (in "Recently played" the time of the last play, in the favorites the time the song was marked) |
 | `data-count` | `playlist-cover` | Number of song covers (1 to 4) |
 | `data-count` | `pin-dots` | Number of entered digits (0 to 8) |
+| `data-item` | `dialog`, `segmented-control`, `button` and `avatar-preset` of the avatar dialog | `avatar` (the `dialog`), `avatar-mode` (the `segmented-control` with the `segment`s `preset` and `upload`), the `button`s `choose-file`, `remove-avatar` and `save-avatar`, the id of an `avatar-preset` (`bubble`, `leaf`, `drop`, `sun`, `wave`, `cloud`, `star`, `fish`); on the settings page the `section` `avatar` with the `button` `change-avatar`, in `user-actions` the `button` `avatar` |
+| `data-field` | `form-note` (settings) | `avatar-status`: whether the profile shows a picture |
+| `data-field` | `field` (avatar dialog) | `zoom` |
 | `data-key` | `pin-key` | `0` to `9`, `delete`, `submit` |
 | `data-field` | `meta-item` | `album`, `artist`, `genre`, `year`, `tracks`, `albums`, `duration`, `number`, `disc`, `media`, `rating` |
 | `data-field` | `field` (metadata editor) | `title`, `artist`, `album`, `album-artist`, `year`, `number`, `disc`, `genre` |
@@ -683,12 +699,15 @@ The app sets these variables on single elements. Themes can read them, but never
 | `--wmp-progress-value` | `progress` | Share of the work done between 0 and 1 (0 while indeterminate) |
 | `--wmp-meter-value` | `meter` | Share of the range between 0 and 1 |
 | `--wmp-video-aspect-ratio` | `video-stage` | Width divided by the height of the picture of the video, for example `1.7778` or `0.5625`; missing while the video has not loaded its size |
-| `--wmp-item-count` | `segmented-control`, `tabs`, `bottom-nav`, `admin-nav`, `tree`, `color-picker`, `rating`, `playlist-cover` | Number of entries of the group: `segment`s, `tab`s, `bottom-nav-item`s, `admin-nav-item`s, visible `tree-item`s, `color-swatch`es, `rating-star`s or `playlist-cover-slide`s |
-| `--wmp-active-index` | the same | Index of the active entry, starting at 0: the checked `segment`, the `tab`, `bottom-nav-item` or `admin-nav-item` of the current page, the `tree-item` of the current page among the visible items, the selected `color-swatch`, the `rating-star` of the rating or the shown `playlist-cover-slide`; `-1` without one |
-| `--wmp-indicator-x` | `segmented-control`, `tabs`, `bottom-nav`, `admin-nav`, `tree`, `color-picker` | Distance of the active entry from the left edge of the group (including its scrolled distance), in pixels, for example `84.5px`; `0px` without one |
+| `--wmp-item-count` | `segmented-control`, `tabs`, `bottom-nav`, `admin-nav`, `tree`, `color-picker`, `avatar-presets`, `rating`, `playlist-cover` | Number of entries of the group: `segment`s, `tab`s, `bottom-nav-item`s, `admin-nav-item`s, visible `tree-item`s, `color-swatch`es, `avatar-preset`s, `rating-star`s or `playlist-cover-slide`s |
+| `--wmp-active-index` | the same | Index of the active entry, starting at 0: the checked `segment`, the `tab`, `bottom-nav-item` or `admin-nav-item` of the current page, the `tree-item` of the current page among the visible items, the selected `color-swatch`, the chosen `avatar-preset`, the `rating-star` of the rating or the shown `playlist-cover-slide`; `-1` without one |
+| `--wmp-indicator-x` | `segmented-control`, `tabs`, `bottom-nav`, `admin-nav`, `tree`, `color-picker`, `avatar-presets` | Distance of the active entry from the left edge of the group (including its scrolled distance), in pixels, for example `84.5px`; `0px` without one |
 | `--wmp-indicator-y` | the same | Distance of the active entry from the top edge of the group (including its scrolled distance), in pixels; `0px` without one |
 | `--wmp-indicator-width` | the same | Width of the active entry in pixels; `0px` without one or while it is hidden, for example in a collapsed node of the tree |
 | `--wmp-indicator-height` | the same | Height of the active entry in pixels; `0px` without one or while it is hidden |
+| `--wmp-crop-scale` | `avatar-crop` | Width of the chosen picture in widths of `avatar-crop-frame`, at least 1, for example `2.5` |
+| `--wmp-crop-x` | `avatar-crop` | Distance of the left edge of the picture from the left edge of the frame, in widths of the frame (the base moves the picture by minus this value), for example `0.75` |
+| `--wmp-crop-y` | `avatar-crop` | The same for the top edge, in heights of the (square) frame |
 
 ## Icons
 
@@ -815,6 +834,7 @@ The defaults are icons of [Phosphor Icons](https://phosphoricons.com) (MIT) unde
 | `reset` | `--wmp-icon-reset` | `/icons/phosphor/regular/arrow-counter-clockwise.svg` | Menus and dialogs |
 | `has-pin` | `--wmp-icon-has-pin` | `/icons/phosphor/regular/lock.svg` | Content (`badge` `pin` of a profile on the admin page) |
 | `reset-pin` | `--wmp-icon-reset-pin` | `/icons/phosphor/regular/lock-open.svg` | Menus and dialogs (removes the PIN of a profile on the admin page) |
+| `change-avatar` | `--wmp-icon-change-avatar` | `/icons/phosphor/regular/user-circle.svg` | Menus and dialogs (changes the picture of a profile on the settings page, on the admin page and in the avatar dialog) |
 | `profile-lock` | `--wmp-icon-profile-lock` | `/icons/phosphor/fill/lock-fill.svg` | Profile selection (`profile-lock` of a profile with a PIN) |
 | `pin-delete` | `--wmp-icon-pin-delete` | `/icons/phosphor/fill/backspace-fill.svg` | Profile selection (`pin-key` `delete`) |
 | `pin-submit` | `--wmp-icon-pin-submit` | `/icons/phosphor/fill/arrow-right-fill.svg` | Profile selection (`pin-key` `submit`) |
@@ -860,6 +880,7 @@ The version of the theme API is in `data-theme-api` on the root element and at t
 
 - **Version 5:** visualizations. Changed: the `visualization` is no longer a placeholder: the state `placeholder` is gone, its `icon` and `label` moved into the new `visualization-message`, and the base lays out the `visualization` as a positioned box (no longer a grid) with the background `--wmp-stage-view-background`; themes that styled `visualization > icon` or `visualization > label` have to style `visualization-message > icon` and `visualization-message > label`; `btn-fullscreen` also lies in `visualization-controls`, so theme rules for `btn-fullscreen` that should only apply to the video need `video-stage > btn-fullscreen`. Added: the states `idle`, `loading`, `waiting`, `running`, `paused`, `unsupported`, `failed` and `fullscreen` of `visualization` and its attribute `data-module`; the parts `visualization-canvas`, `visualization-message`, `visualization-controls`, `btn-preset-previous`, `btn-preset-next` and `btn-auto-change` (states `on` and `off`, `aria-pressed`); the values `visualization-preset` and `visualization-auto-change` of `data-field`; the icon slots `preset-previous`, `preset-next` and `auto-change`.
     - Additions without a version change: PINs of the profiles. On the profile selection the lock symbol `profile-lock` in `profile-tile` (state `protected`) and the PIN entry `pin-entry` with `pin-entry-title`, `pin-entry-actions` and the digit pad `pin-pad` (`pin-field`, `pin-dots` with `data-count`, `pin-dot`, `pin-keys`, `pin-key` with `data-key`) and their states; the PIN page `data-view="settings-pin"` with the `data-field` values `pin`, `pin-confirmation` and `pin-status`, the `section` `pin` of the settings page, the `badge` token `pin` in `user-meta`, further values of `data-item` and the icon slots `profile-lock`, `pin-delete`, `pin-submit`, `has-pin` and `reset-pin`.
+    - Additions without a version change: pictures of the profiles. `avatar-image` in `avatar` and the state `image` of `avatar`; the avatar dialog (`dialog` `avatar`) with `avatar-editor` and its states, the built-in pictures `avatar-presets`, `avatar-preset` and `avatar-preset-image`, the cropping `avatar-crop` (state `dragging`), `avatar-crop-frame`, `avatar-crop-image` and `avatar-crop-preview` with the runtime variables `--wmp-crop-scale`, `--wmp-crop-x` and `--wmp-crop-y`; the `section` `avatar` of the settings page with the `form-note` `avatar-status`, further values of `data-item` and `data-field` and the icon slot `change-avatar`.
     - Additions without a version change: the visualization A-Force and the quality of the visualizations. The value `aforce` of `data-module`, the attribute `data-quality` of `visualization` (`low`, `medium`, `high`), the `segmented-control` `visualization-module` (`segment`s `milkdrop` and `aforce`) at the end of `visualization-controls`, and on the settings page the `field` `visualization-quality` (a `segmented-control` with the `segment`s `auto`, `low`, `medium` and `high`).
     - Additions without a version change: the visualization BlackCap. The value `blackcap` of `data-module` and the `segment` `blackcap` at the end of the `segmented-control` `visualization-module`.
     - Additions without a version change: the backup page of the administration (`backup-status` with its states, `backup-list`, `backup-item` with `data-kind` and the state `busy`, `backup-info`, `backup-name`, `backup-meta`, `backup-actions`, `data-view="admin-backups"`, the entry `admin-backups` of `admin-nav`, the job `database-backup`, the tokens `schedule`, `manual` and `migration` of `badge`, further values of `data-item` and `data-field`) with the icon slots `admin-backups` and `backup`.

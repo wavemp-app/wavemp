@@ -11,6 +11,8 @@ export interface ProfileTileData {
     readonly isBuiltIn: boolean
     /** Selecting the profile needs its PIN. */
     readonly hasPin?: boolean
+    /** Version of the avatar; null or missing without one. */
+    readonly avatarVersion?: string | null
 }
 
 /** Tile of the profile selection: avatar and name; selecting it selects the profile. */
@@ -38,7 +40,12 @@ const { t } = useI18n()
         :disabled="disabled"
         @click="emit('select')"
     >
-        <ProfileAvatar :initials="profile.initials" :color="profile.color" />
+        <ProfileAvatar
+            :initials="profile.initials"
+            :color="profile.color"
+            :user-id="profile.id"
+            :avatar-version="profile.avatarVersion"
+        />
         <span data-part="label">{{ profile.name }}</span>
         <span
             v-if="profile.hasPin"

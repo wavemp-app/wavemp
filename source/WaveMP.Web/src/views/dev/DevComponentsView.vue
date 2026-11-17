@@ -63,6 +63,9 @@ import PlaylistTrackList, {
     type PlaylistTrackRow,
 } from '@/components/playlists/PlaylistTrackList.vue'
 import PinPad from '@/components/profiles/PinPad.vue'
+import AvatarCropper from '@/components/profiles/AvatarCropper.vue'
+import AvatarPresetPicker from '@/components/profiles/AvatarPresetPicker.vue'
+import ProfileAvatar from '@/components/profiles/ProfileAvatar.vue'
 import ProfileSelect from '@/components/profiles/ProfileSelect.vue'
 import ProfileSummary from '@/components/profiles/ProfileSummary.vue'
 import type { ProfileTileData } from '@/components/profiles/ProfileTile.vue'
@@ -85,6 +88,7 @@ import {
     flatCurve,
 } from '@/player/equalizer'
 import { stageViewOf } from '@/player/videoSync'
+import { initialCrop, type AvatarCrop } from '@/profiles/avatarCrop'
 import { profileColorOptions } from '@/profiles/presentation'
 import { iconSlotNames, iconSlots } from '@/themes/iconSlots'
 import { parts } from '@/themes/parts'
@@ -340,6 +344,11 @@ const sampleProfiles = computed<ProfileTileData[]>(() => [
 ])
 const firstProfile = computed(() => ({ ...sampleProfiles.value[0]!, role: 'Admin' as const }))
 const samplePin = ref('12')
+const samplePresets = ['bubble', 'leaf', 'drop', 'sun']
+const samplePresetPictures = Object.fromEntries(samplePresets.map((id) => [id, sampleCover]))
+const samplePreset = ref<string | null>('leaf')
+const sampleCropPicture = { width: 600, height: 400 }
+const sampleCrop = ref<AvatarCrop>(initialCrop(sampleCropPicture))
 const color = ref<string | null>('#2e7d32')
 const colorOptions = computed(() =>
     profileColorOptions.map((option) => ({ value: option.value, label: t(option.labelKey) })),
@@ -350,6 +359,8 @@ const sampleUsers = computed<UserListItem[]>(() =>
         isAdmin: profile.isBuiltIn || index === 1,
         hasPin: !!profile.hasPin,
         createdAt: new Date(Date.UTC(2026, 10, 1 + index)),
+        avatarVersion: null,
+        avatarPresetId: null,
     })),
 )
 
@@ -1102,6 +1113,32 @@ const sampleTranscodeJobs = computed<TranscodeJob[]>(() => {
                 <div data-part="dev-sample">
                     <p data-part="dev-sample-title">{{ t('dev.samples.pinPad') }}</p>
                     <PinPad v-model="samplePin" :label="t('pin.field')" />
+                </div>
+                <div data-part="dev-sample">
+                    <p data-part="dev-sample-title">{{ t('dev.samples.avatarPresets') }}</p>
+                    <div data-part="avatar-editor" data-state="preset">
+                        <ProfileAvatar
+                            :initials="firstProfile.initials"
+                            :color="firstProfile.color"
+                            :image="sampleCover"
+                        />
+                        <AvatarPresetPicker
+                            v-model="samplePreset"
+                            :label="t('avatars.presetList')"
+                            :presets="samplePresets"
+                            :pictures="samplePresetPictures"
+                        />
+                    </div>
+                </div>
+                <div data-part="dev-sample">
+                    <p data-part="dev-sample-title">{{ t('dev.samples.avatarCrop') }}</p>
+                    <div data-part="avatar-editor" data-state="upload">
+                        <AvatarCropper
+                            v-model="sampleCrop"
+                            :src="sampleCover"
+                            :picture="sampleCropPicture"
+                        />
+                    </div>
                 </div>
             </div>
         </section>

@@ -451,6 +451,10 @@
         --_icon: var(--wmp-icon-reset-pin);
     }
 
+    [data-icon='change-avatar'] {
+        --_icon: var(--wmp-icon-change-avatar);
+    }
+
     [data-icon='profile-lock'] {
         --_icon: var(--wmp-icon-profile-lock);
     }

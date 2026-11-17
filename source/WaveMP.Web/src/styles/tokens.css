@@ -203,6 +203,7 @@
         --wmp-icon-reset: url('/icons/phosphor/regular/arrow-counter-clockwise.svg');
         --wmp-icon-has-pin: url('/icons/phosphor/regular/lock.svg');
         --wmp-icon-reset-pin: url('/icons/phosphor/regular/lock-open.svg');
+        --wmp-icon-change-avatar: url('/icons/phosphor/regular/user-circle.svg');
         --wmp-icon-profile-lock: url('/icons/phosphor/fill/lock-fill.svg');
         --wmp-icon-pin-delete: url('/icons/phosphor/fill/backspace-fill.svg');
         --wmp-icon-pin-submit: url('/icons/phosphor/fill/arrow-right-fill.svg');

@@ -8,6 +8,12 @@ import { useHealthStore } from '@/stores/health'
 import { useSessionStore } from '@/stores/session'
 import { appVersion } from '@/version'
 
+vi.mock('@/profiles/avatarApi', () => ({
+    listAvatarPresets: vi.fn(() => Promise.resolve(['bubble'])),
+    fetchAvatar: vi.fn(() => Promise.resolve(undefined)),
+    fetchAvatarPreset: vi.fn(() => Promise.resolve(undefined)),
+}))
+
 function mountView() {
     const session = useSessionStore()
     session.$patch({
@@ -397,5 +403,22 @@ describe('SettingsView PIN', () => {
         expect(section.get('[data-field="pin-status"]').text()).toBe(
             'This profile is protected with a PIN.',
         )
+    })
+
+    it('tells whether the profile shows a picture and opens the avatar dialog', async () => {
+        const { wrapper, session } = mountView()
+        const section = wrapper.get('[data-part="section"][data-item="avatar"]')
+
+        expect(section.get('[data-field="avatar-status"]').text()).toBe(
+            'This profile shows its initials.',
+        )
+        session.$patch({
+            profile: { ...session.profile!, avatarVersion: null, avatarPresetId: null },
+        })
+        await section.get('[data-item="change-avatar"]').trigger('click')
+        await flushPromises()
+
+        expect(wrapper.get('[data-part="dialog"][data-item="avatar"]').isVisible()).toBe(true)
+        expect(wrapper.find('[data-part="avatar-editor"]').exists()).toBe(true)
     })
 })

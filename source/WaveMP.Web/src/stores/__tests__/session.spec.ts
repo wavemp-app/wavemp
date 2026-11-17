@@ -46,6 +46,8 @@ function profile(id: string, role: 'Admin' | 'User' = 'User') {
         role,
         isBuiltIn: false,
         hasPin: false,
+        avatarVersion: null,
+        avatarPresetId: null,
     }
 }
 

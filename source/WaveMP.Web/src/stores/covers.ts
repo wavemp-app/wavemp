@@ -3,8 +3,13 @@ import { statusOf } from '@/api/problems'
 import { fetchAlbumCover, fetchTrackCover } from '@/library/api'
 import { defaultCoverSize, type CoverSize } from '@/library/covers'
 import { fetchPlaylistCover } from '@/playlists/api'
+import { fetchAvatar, fetchAvatarPreset } from '@/profiles/avatarApi'
 
-export type CoverKind = 'album' | 'track' | 'playlist'
+/**
+ * What a picture belongs to: covers of albums, tracks and playlists, avatars of profiles (by the id
+ * of the profile) and built-in avatars (by their id).
+ */
+export type CoverKind = 'album' | 'track' | 'playlist' | 'avatar' | 'avatar-preset'
 
 /** Covers kept loaded without a component that shows them, the least recently used go first. */
 export const maxCachedCovers = 100
@@ -23,8 +28,8 @@ interface Entry {
  * an entry of its own. Components acquire a cover while they show it and release it afterwards;
  * requests for the same cover and size are shared. The browser keeps the pictures as well and asks
  * the API with their ETag whether they changed. A missing cover (404) is remembered as null, other
- * errors are not, so the next attempt loads again. Own covers of playlists carry the version the
- * API names, so a new picture gets a new entry instead of the one already loaded.
+ * errors are not, so the next attempt loads again. Own covers of playlists and avatars carry the
+ * version the API names, so a new picture gets a new entry instead of the one already loaded.
  */
 export const useCoversStore = defineStore('covers', () => {
     const entries = new Map<string, Entry>()
@@ -40,6 +45,10 @@ export const useCoversStore = defineStore('covers', () => {
                 return fetchAlbumCover(id, size)
             case 'playlist':
                 return fetchPlaylistCover(id, size)
+            case 'avatar':
+                return fetchAvatar(id, size)
+            case 'avatar-preset':
+                return fetchAvatarPreset(id, size)
             default:
                 return fetchTrackCover(id, size)
         }

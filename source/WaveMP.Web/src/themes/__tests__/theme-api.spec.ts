@@ -31,6 +31,9 @@ const runtimeVariables = [
     '--wmp-indicator-y',
     '--wmp-indicator-width',
     '--wmp-indicator-height',
+    '--wmp-crop-scale',
+    '--wmp-crop-x',
+    '--wmp-crop-y',
 ]
 
 function read(file: string): string {

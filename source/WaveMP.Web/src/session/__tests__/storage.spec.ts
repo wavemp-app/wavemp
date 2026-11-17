@@ -4,6 +4,7 @@ import {
     loadStoredSession,
     saveStoredSession,
     sessionStorageKey,
+    toStoredProfile,
     type StoredSession,
 } from '../storage'
 
@@ -21,6 +22,8 @@ const session: StoredSession = {
         role: 'User',
         isBuiltIn: false,
         hasPin: true,
+        avatarVersion: '18f3a2b4c5d6e7',
+        avatarPresetId: 'leaf',
     },
     language: 'de',
 }
@@ -121,6 +124,30 @@ describe('session storage', () => {
         storage.setItem(sessionStorageKey, JSON.stringify({ ...session, profile: older }))
 
         expect(loadStoredSession(now, storage)?.profile.hasPin).toBe(false)
+    })
+
+    it('treats profiles stored before avatars existed as profiles without an avatar', () => {
+        const { avatarVersion: _, avatarPresetId: __, ...older } = session.profile
+        storage.setItem(sessionStorageKey, JSON.stringify({ ...session, profile: older }))
+
+        const profile = loadStoredSession(now, storage)?.profile
+        expect(profile?.avatarVersion).toBeNull()
+        expect(profile?.avatarPresetId).toBeNull()
+    })
+
+    it('takes the avatar of a profile of the API', () => {
+        const { avatarVersion: _, avatarPresetId: __, ...fromApi } = session.profile
+
+        expect(
+            toStoredProfile({ ...fromApi, avatar: { version: 'abc', presetId: null } }),
+        ).toMatchObject({ avatarVersion: 'abc', avatarPresetId: null })
+        expect(
+            toStoredProfile({ ...fromApi, avatar: { version: 'abc', presetId: 'sun' } }),
+        ).toMatchObject({ avatarVersion: 'abc', avatarPresetId: 'sun' })
+        expect(toStoredProfile({ ...fromApi, avatar: null })).toMatchObject({
+            avatarVersion: null,
+            avatarPresetId: null,
+        })
     })
 
     it('forgets expired sessions', () => {

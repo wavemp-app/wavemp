@@ -2,11 +2,23 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { createMemoryHistory, createRouter } from 'vue-router'
-import AdminUsersView from '../AdminUsersView.vue'
 import { createWaveMpI18n } from '@/i18n'
 import { createRoutes } from '@/router/routes'
 import { useSessionStore } from '@/stores/session'
 import { useUsersStore } from '@/stores/users'
+
+const avatarApi = vi.hoisted(() => ({
+    listAvatarPresets: vi.fn(),
+    chooseAvatarPreset: vi.fn(),
+    uploadAvatar: vi.fn(),
+    removeAvatar: vi.fn(),
+    fetchAvatar: vi.fn(),
+    fetchAvatarPreset: vi.fn(),
+}))
+
+vi.mock('@/profiles/avatarApi', () => avatarApi)
+
+const { default: AdminUsersView } = await import('../AdminUsersView.vue')
 
 const admin = {
     id: 'admin',
@@ -54,6 +66,11 @@ async function mountView(profileId = 'admin') {
 describe('AdminUsersView', () => {
     beforeEach(() => {
         setActivePinia(createPinia())
+        avatarApi.listAvatarPresets.mockReset().mockResolvedValue(['bubble', 'leaf'])
+        avatarApi.chooseAvatarPreset.mockReset().mockResolvedValue({})
+        avatarApi.removeAvatar.mockReset().mockResolvedValue(undefined)
+        avatarApi.fetchAvatar.mockReset().mockResolvedValue(undefined)
+        avatarApi.fetchAvatarPreset.mockReset().mockResolvedValue(undefined)
     })
 
     it('lists the profiles with role, built-in state and actions', async () => {
@@ -75,7 +92,7 @@ describe('AdminUsersView', () => {
             'Built-in',
         ])
         expect(items[0]?.get('[data-part="user-meta"]').text()).toContain('Created')
-        const deleteAdmin = items[1]?.findAll('[data-part="user-actions"] button')[1]
+        const deleteAdmin = items[1]?.findAll('[data-part="user-actions"] button')[2]
         expect(deleteAdmin?.attributes('disabled')).toBeDefined()
         expect(deleteAdmin?.attributes('title')).toBe(
             'The built-in admin profile cannot be deleted.',
@@ -87,7 +104,7 @@ describe('AdminUsersView', () => {
         const { wrapper, users, load } = await mountView()
         const remove = vi.spyOn(users, 'remove').mockResolvedValue()
 
-        await wrapper.findAll('[data-part="user-item"]')[0]?.findAll('button')[1]?.trigger('click')
+        await wrapper.findAll('[data-part="user-item"]')[0]?.findAll('button')[2]?.trigger('click')
         await flushPromises()
         expect(document.body.textContent).toContain(
             'Delete the profile Anna? This cannot be undone.',
@@ -107,7 +124,7 @@ describe('AdminUsersView', () => {
         const { wrapper, users } = await mountView()
         vi.spyOn(users, 'remove').mockRejectedValue(new TypeError('Failed to fetch'))
 
-        await wrapper.findAll('[data-part="user-item"]')[0]?.findAll('button')[1]?.trigger('click')
+        await wrapper.findAll('[data-part="user-item"]')[0]?.findAll('button')[2]?.trigger('click')
         const confirm = wrapper
             .findAll('[data-part="dialog-footer"] button')
             .find((button) => button.text() === 'Delete')
@@ -122,7 +139,7 @@ describe('AdminUsersView', () => {
         const { wrapper, users, session, router } = await mountView('anna')
         vi.spyOn(users, 'remove').mockResolvedValue()
 
-        await wrapper.findAll('[data-part="user-item"]')[0]?.findAll('button')[1]?.trigger('click')
+        await wrapper.findAll('[data-part="user-item"]')[0]?.findAll('button')[2]?.trigger('click')
         const confirm = wrapper
             .findAll('[data-part="dialog-footer"] button')
             .find((button) => button.text() === 'Delete')
@@ -188,6 +205,25 @@ describe('AdminUsersView', () => {
         await flushPromises()
 
         expect(wrapper.get('[data-part="alert"]').text()).toContain('(ADMIN_PIN)')
+        wrapper.unmount()
+    })
+
+    it('changes the avatar of another profile', async () => {
+        const { wrapper, load } = await mountView()
+
+        const button = wrapper.findAll('[data-part="user-item"]')[0]?.get('[data-item="avatar"]')
+        expect(button?.attributes('title')).toBe('Change the picture of Anna')
+        await button?.trigger('click')
+        await flushPromises()
+        await wrapper.get('[data-part="avatar-preset"][data-item="leaf"]').trigger('click')
+        await wrapper.get('[data-item="save-avatar"]').trigger('click')
+        await flushPromises()
+
+        expect(avatarApi.chooseAvatarPreset).toHaveBeenCalledWith(
+            { kind: 'user', id: 'anna' },
+            'leaf',
+        )
+        expect(load).toHaveBeenCalledTimes(2)
         wrapper.unmount()
     })
 })

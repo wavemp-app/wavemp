@@ -11,10 +11,12 @@ import UserList, { type UserListItem } from '@/components/admin/UserList.vue'
 import UserPinResetDialog from '@/components/admin/UserPinResetDialog.vue'
 import BaseAlert from '@/components/base/BaseAlert.vue'
 import BaseButton from '@/components/base/BaseButton.vue'
+import AvatarDialog from '@/components/profiles/AvatarDialog.vue'
+import type { AvatarTarget } from '@/profiles/avatarApi'
 import { useSessionStore } from '@/stores/session'
 import { useUsersStore } from '@/stores/users'
 
-/** Admin page: create, edit and delete profiles and remove their PINs. */
+/** Admin page: create, edit and delete profiles, change their avatars and remove their PINs. */
 const { t } = useI18n()
 const router = useRouter()
 const session = useSessionStore()
@@ -28,6 +30,12 @@ const deleteBusy = ref(false)
 const resetPinOpen = ref(false)
 const resettingPin = ref<UserListItem | null>(null)
 const resetPinBusy = ref(false)
+const avatarOpen = ref(false)
+const avatarUser = ref<UserListItem | null>(null)
+const avatarTarget = computed<AvatarTarget>(() => ({
+    kind: 'user',
+    id: avatarUser.value?.id ?? '',
+}))
 const message = ref<string | null>(null)
 const notice = ref<string | null>(null)
 
@@ -45,6 +53,8 @@ function toItem(user: User): UserListItem | null {
         isBuiltIn: !!user.isBuiltIn,
         hasPin: !!user.hasPin,
         createdAt: user.createdAt ?? null,
+        avatarVersion: user.avatar?.version ?? null,
+        avatarPresetId: (user.avatar?.version && user.avatar.presetId) || null,
     }
 }
 
@@ -69,6 +79,20 @@ function openResetPin(user: UserListItem): void {
     notice.value = null
     resettingPin.value = user
     resetPinOpen.value = true
+}
+
+function openAvatar(user: UserListItem): void {
+    message.value = null
+    notice.value = null
+    avatarUser.value = user
+    avatarOpen.value = true
+}
+
+async function onAvatarSaved(): Promise<void> {
+    await usersStore.load()
+    if (avatarUser.value?.id === session.profile?.id) {
+        await session.refresh()
+    }
 }
 
 function openDelete(user: UserListItem): void {
@@ -189,13 +213,25 @@ onMounted(() => {
         </template>
         <BaseAlert v-if="message" tone="error" :message="message" />
         <BaseAlert v-if="notice" tone="success" :message="notice" />
-        <UserList :users="items" @edit="openEdit" @delete="openDelete" @reset-pin="openResetPin" />
+        <UserList
+            :users="items"
+            @edit="openEdit"
+            @delete="openDelete"
+            @reset-pin="openResetPin"
+            @avatar="openAvatar"
+        />
         <UserEditDialog v-model:open="editOpen" :user="editing" @saved="onSaved" />
         <UserDeleteDialog
             v-model:open="deleteOpen"
             :user="deleting"
             :busy="deleteBusy"
             @confirm="confirmDelete"
+        />
+        <AvatarDialog
+            v-model:open="avatarOpen"
+            :target="avatarTarget"
+            :profile="avatarUser"
+            @saved="onAvatarSaved"
         />
         <UserPinResetDialog
             v-model:open="resetPinOpen"

@@ -813,6 +813,14 @@
         white-space: nowrap;
     }
 
+    /* The picture of the avatar covers the color; it is square, the avatar may be rounded. */
+    [data-part='avatar-image'] {
+        grid-area: 1 / 1;
+        inline-size: 100%;
+        block-size: 100%;
+        object-fit: cover;
+    }
+
     [data-part='btn-profile'] {
         padding: 0.125rem;
         border-radius: var(--wmp-radius-m);

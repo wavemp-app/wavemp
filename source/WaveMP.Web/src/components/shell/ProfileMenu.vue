@@ -8,11 +8,15 @@ import ProfileAvatar from '@/components/profiles/ProfileAvatar.vue'
 import { useSessionStore } from '@/stores/session'
 
 export interface ProfileMenuProfile {
+    /** Id of the profile; with avatarVersion it shows the avatar picture. */
+    readonly id?: string
     readonly name: string
     readonly initials: string
     readonly color: string
     /** Admins also get the administration. */
     readonly role?: Role
+    /** Version of the avatar; null or missing without one. */
+    readonly avatarVersion?: string | null
 }
 
 /**
@@ -88,7 +92,12 @@ const title = computed(() => t('profileMenu.open', { name: props.profile.name })
         :title="title"
         @click="toggle"
     >
-        <ProfileAvatar :initials="profile.initials" :color="profile.color" />
+        <ProfileAvatar
+            :initials="profile.initials"
+            :color="profile.color"
+            :user-id="profile.id"
+            :avatar-version="profile.avatarVersion"
+        />
         <span data-part="label">{{ title }}</span>
     </button>
     <BaseContextMenu ref="menu" :items="items" :label="t('profileMenu.label')" @select="choose" />

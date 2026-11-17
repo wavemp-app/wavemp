@@ -15,6 +15,10 @@ export interface UserListItem {
     /** Selecting the profile needs its PIN. */
     readonly hasPin: boolean
     readonly createdAt: Date | null
+    /** Version of the avatar; null without one. */
+    readonly avatarVersion: string | null
+    /** Id of the built-in avatar; null for an uploaded picture or none. */
+    readonly avatarPresetId: string | null
 }
 
 /** Profiles on the admin page with their role and actions. */
@@ -26,6 +30,7 @@ const emit = defineEmits<{
     edit: [user: UserListItem]
     delete: [user: UserListItem]
     resetPin: [user: UserListItem]
+    avatar: [user: UserListItem]
 }>()
 
 const { t } = useI18n()
@@ -40,7 +45,12 @@ const format = useFormat()
             data-part="user-item"
             :data-state="user.isBuiltIn ? 'built-in' : undefined"
         >
-            <ProfileAvatar :initials="user.initials" :color="user.color" />
+            <ProfileAvatar
+                :initials="user.initials"
+                :color="user.color"
+                :user-id="user.id"
+                :avatar-version="user.avatarVersion"
+            />
             <div data-part="user-info">
                 <span data-part="user-name">{{ user.name }}</span>
                 <span data-part="user-meta">
@@ -67,6 +77,13 @@ const format = useFormat()
                     icon="edit"
                     :label="t('adminUsers.edit', { name: user.name })"
                     @click="emit('edit', user)"
+                />
+                <BaseButton
+                    variant="icon"
+                    icon="change-avatar"
+                    data-item="avatar"
+                    :label="t('adminUsers.changeAvatar', { name: user.name })"
+                    @click="emit('avatar', user)"
                 />
                 <BaseButton
                     v-if="user.hasPin"
