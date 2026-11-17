@@ -153,6 +153,9 @@ test.describe('with a profile of its own', () => {
             .poll(async () => (await storedSettings(request, user.id)).replayGain)
             .toBe('Track')
 
+        // The group is disabled until the page has the answer of the save, which can come after
+        // the server stored the mode; a key pressed before that does nothing, so wait for it.
+        await expect(group).not.toHaveAttribute('aria-disabled', 'true')
         await page.keyboard.press('End')
         await expect(segment('album')).toHaveAttribute('aria-checked', 'true')
         await expect
