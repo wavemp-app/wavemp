@@ -425,10 +425,6 @@
     "language": "Language",
     "languageHint": "Applies to this profile on all devices.",
     "saveError": "The setting could not be saved.",
-    "languages": {
-      "en": "English",
-      "de": "Deutsch"
-    },
     "replayGain": "Volume leveling (ReplayGain)",
     "replayGainHint": "Evens out the volume of songs with their ReplayGain tags. Applies to this profile on all devices.",
     "replayGainModes": {

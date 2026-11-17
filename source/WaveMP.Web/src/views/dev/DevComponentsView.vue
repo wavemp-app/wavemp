@@ -83,7 +83,7 @@ import AppTransport from '@/components/shell/AppTransport.vue'
 import type { TransportState } from '@/components/shell/transport'
 import { useFormat } from '@/composables/useFormat'
 import { setLocale } from '@/i18n'
-import { supportedLocales, type SupportedLocale } from '@/i18n/locales'
+import { languageName, supportedLocales } from '@/i18n/locales'
 import {
     coverPriorityKey,
     coverRuleOptionKey,
@@ -121,11 +121,7 @@ const i18n = useI18n({ useScope: 'global' })
 const { t } = i18n
 const format = useFormat()
 
-function languageName(locale: SupportedLocale): string {
-    return new Intl.DisplayNames([locale], { type: 'language' }).of(locale) ?? locale
-}
-
-function switchLanguage(locale: SupportedLocale): void {
+function switchLanguage(locale: string): void {
     setLocale(i18n, locale)
 }
 

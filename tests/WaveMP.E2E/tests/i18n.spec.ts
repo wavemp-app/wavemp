@@ -8,6 +8,8 @@ import { emptyStorageState } from './helpers/storage'
 const browserLanguages = [
     { locale: 'en-US', lang: 'en', title: "Who's listening?" },
     { locale: 'de-DE', lang: 'de', title: 'Wer hört zu?' },
+    // A regional language without its own translation shows the translation of its language.
+    { locale: 'de-AT', lang: 'de', title: 'Wer hört zu?' },
     { locale: 'fr-FR', lang: 'en', title: "Who's listening?" },
 ]
 

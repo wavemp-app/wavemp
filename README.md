@@ -36,7 +36,7 @@ WaveMP brings back the glossy, glassy look of the classic desktop media players 
 - **Daily backups.** The database is exported every day and before every update, and the last exports are kept next to your other data.
 - **Open API.** A documented REST API (OpenAPI) for building your own clients. Native apps are planned.
 - **Installable as an app (PWA)** on desktop and mobile devices.
-- **English and German.** More languages will follow through community translations.
+- **Your language.** English and German are built in, more languages come from the community through [Weblate](https://hosted.weblate.org/engage/wavemp/). A language appears in WaveMP as soon as its translation exists; texts that are not translated yet are shown in English. See [Translations](#translations).
 - **Themes.** The look is a theme: one CSS file plus graphics, from colors to the complete desktop layout. WaveMP ships with the dark glass theme *Midnight*; see [THEMING.md](THEMING.md) for writing your own.
 
 ## Screenshots
@@ -273,7 +273,7 @@ A number at the start of a file name is only a track number inside an album fold
 1. **Select a profile.** WaveMP starts with a profile selection instead of a login. On the first start there is only the built-in **Admin** profile. The selection is remembered on the device, so the next start goes straight on. After the selection, WaveMP opens **Home**.
 2. **Create profiles.** As admin, open the profile menu (your initials at the top right), choose **Administration** and then **Profiles** to add, edit or delete profiles: name, initials (created from the name if left empty), color and role (admin or user). The built-in admin profile can be renamed, but it cannot be deleted and always stays an admin. Once there are other profiles, it is shown less prominently in the selection.
 3. **Switch profiles** with **Switch profile** in the profile menu.
-4. **Choose your language** under **Settings** in the profile menu. It is stored with the profile and applies on all devices; before a profile is selected, WaveMP uses the language of the browser (English or German, otherwise English).
+4. **Choose your language** under **Settings** in the profile menu. It is stored with the profile and applies on all devices; the list offers every language WaveMP has a translation for, each in its own language. Before a profile is selected, WaveMP uses the language of the browser if it has a translation for it (also for regional variants: German for `de-AT`), otherwise English.
 5. **Choose a picture.** Under **Settings > Profile picture**, **Change picture** gives your profile one of the built-in pictures or an own JPEG, PNG or WebP picture of up to 10 MB: drag it and zoom it until the square shows what you want, then save. **Remove picture** shows your initials again. The picture appears in the profile selection, in the profile menu and on the admin page; admins change and remove the pictures of all profiles under **Administration > Profiles**.
 6. **Protect your profile with a PIN.** Under **Settings > PIN** every profile can set, change or remove a PIN of 4 to 8 digits. A protected profile shows a lock in the selection and asks for its PIN on a digit pad (the keyboard works as well) before it opens. Setting or changing the PIN signs the profile out on all other devices. Admins remove forgotten PINs under **Administration > Profiles**.
 7. **Scan your library.** As admin, open **Administration > Library**: **Scan now** starts a scan of your media folder, shows its progress and then its result (files found, added, updated and removed, tracks, albums and artists, and files with problems). Below are the history of scans and the settings: how often the library is scanned, whether the media folder is watched for changes, the file extensions of audio, video and pictures, the names of album covers and which cover is shown first (album cover or song cover) for all albums and songs without a rule of their own. **Administration > Files** lists all songs with the number of their audio files, videos and covers, filtered for example to songs with several audio files, with a selected file or with a selected file that is gone, and searched by title, folder or file name. A song opens its files with format and quality per category; click a file to use it for playback and display instead of the one of the highest quality, **Automatic** to go back to the quality rule, or **Reset selection** for all categories at once. The selection survives scans; if a selected file is deleted, the song uses the automatic choice and the page shows the missing file until it is back or another file is chosen. A chosen cover of the song is shown before the album cover. **Administration > Jobs** lists all background jobs with their last and next run and runs them on demand; **Prepare covers** runs after every scan. **Administration > Cache** shows how much space the cache of scaled covers and transcoded media uses, clears it and sets its maximum size. **Administration > Transcoding** shows whether transcoding works, the state of the hardware acceleration and the running transcodes, which you can stop there, and sets the hardware acceleration, how many transcodes run at the same time, the largest height of transcoded videos and the bitrate of transcoded sound. **Administration > Backups** shows the daily exports of the database, backs up on demand and sets when and how many exports are kept (see [Backup & Restore](#backup--restore)).
@@ -313,6 +313,49 @@ A PIN keeps other people in your household out of a profile; it is not a login. 
 | Docker (linux/amd64, linux/arm64) | Available (`latest`, or `1.0.N` to pin a version) |
 | TrueNAS, ZimaOS and other app catalogs | Planned |
 | Android, iOS, Windows, macOS | Planned |
+
+## Translations
+
+WaveMP is translated on [Hosted Weblate](https://hosted.weblate.org/engage/wavemp/). Sign in there, pick your language (or start a new one) and translate in the browser; no programming needed. Weblate sends the translations to this repository as pull requests, and the next version of WaveMP offers the language under **Settings > Language**. Texts that are not translated yet are shown in English, so a language can be used before it is complete.
+
+A few rules keep the translations working:
+
+- Keep the placeholders in curly braces exactly as they are, for example `{name}` or `{count}`; WaveMP replaces them with names and numbers. Weblate marks a translation that changes them.
+- Do not use HTML or the characters `<`, `>`, `@`, `|` and `$`; they have a special meaning for the translation library of the web app. The checks of the pull request reject them.
+- The key of a text (for example `settings.languageHint`) tells where it appears; the English text is the reference. Weblate shows both, and maintainers add explanations to texts that need them.
+
+### Translation files
+
+The web app has one JSON file per language in `source/WaveMP.Web/src/locales`, named after its BCP 47 language tag (`en.json`, `de.json`, `pt-BR.json`, `zh-Hans.json`). `en.json` is the source: every text of the app is added there first, with a camelCase key nested by area. The build includes every file in the folder, so a new file adds its language to the selection without further changes; a language with a region falls back to the language without it (`de-AT` shows `de`), and every language falls back to English. The texts never use plural forms: numbers stand in phrases that fit every count, like `Songs: {count}`.
+
+The unit tests of the web app check every file: its name is a valid language tag, it has no keys that `en.json` lacks, no empty texts, the same placeholders as English and no markup. English and German are maintained with the code and must always be complete; the other languages may be incomplete.
+
+The profiles store their language as language tag through the API (`language` in `/api/v1/me/settings`). The server accepts any valid tag, so other clients can offer languages the web app does not have yet; the web app shows English for those.
+
+### Weblate setup
+
+For maintainers: the project on Hosted Weblate uses one component for the web app with these settings.
+
+| Setting | Value |
+|---|---|
+| Project | Name `WaveMP`, URL slug `wavemp`, website `https://github.com/wavemp-app/wavemp` |
+| Component | Name `Web app`, URL slug `web` |
+| Version control system | GitHub pull request |
+| Source code repository | `https://github.com/wavemp-app/wavemp.git`, branch `main` |
+| File format | JSON nested structure file |
+| File mask | `source/WaveMP.Web/src/locales/*.json` |
+| Monolingual base language file | `source/WaveMP.Web/src/locales/en.json` |
+| Edit base file | Off (English is written in the code) |
+| Template for new translations | Empty (new languages start as an empty file) |
+| Language code style | BCP style using hyphen as a separator (`pt-BR`) |
+| File format parameters | JSON indentation 2 spaces, keys not sorted (matches the `.editorconfig` and Prettier) |
+| Source language | English |
+| Translation flags | `vue-format` |
+| Enforced checks | Vue I18n formatting |
+| Translation license | MIT |
+| Add-ons | Cleanup translation files, Remove blank strings |
+
+The repository needs a webhook so Weblate picks up new English texts at once: payload URL `https://hosted.weblate.org/hooks/github/`, content type `application/json`, push events only. With "GitHub pull request", Weblate pushes from its own fork and opens a pull request; the CI (`pull-request.yml`) checks the files before they are merged.
 
 ## Building from Source
 

@@ -17,7 +17,7 @@ import {
     type VisualizationQuality,
 } from '@/api/generated/models'
 import { useFormat } from '@/composables/useFormat'
-import { isSupportedLocale, type SupportedLocale } from '@/i18n/locales'
+import { appLocale, isSupportedLocale, languageName, supportedLocales } from '@/i18n/locales'
 import { maxCrossfadeSeconds, type CrossfadeSettings } from '@/player/crossfade'
 import { useEqualizerStore } from '@/stores/equalizer'
 import { useHealthStore } from '@/stores/health'
@@ -63,11 +63,11 @@ const versions = computed(() => [
     },
 ])
 
-// Every language in its own language, so it can be found without understanding the current one.
-const languageOptions = computed<SelectOption[]>(() => [
-    { value: 'en', label: t('settings.languages.en') },
-    { value: 'de', label: t('settings.languages.de') },
-])
+// Every language with a translation file, each in its own language, so it can be found without
+// understanding the current one; sorted by these names.
+const languageOptions: SelectOption[] = supportedLocales
+    .map((value) => ({ value, label: languageName(value) }))
+    .sort((a, b) => a.label.localeCompare(b.label, undefined, { sensitivity: 'base' }))
 
 const replayGainOptions = computed<SegmentOption[]>(() => [
     { value: ReplayGainModeObject.Off, item: 'off', label: t('settings.replayGainModes.off') },
@@ -84,7 +84,8 @@ const replayGainOptions = computed<SegmentOption[]>(() => [
 ])
 const replayGainModes = new Set<string>(Object.values(ReplayGainModeObject))
 
-const language = ref<string>(session.language ?? locale.value)
+// The language of the profile as one of the languages of the web app (English for others).
+const language = ref<string>(session.language ? appLocale(session.language) : locale.value)
 const replayGain = ref<string>(session.replayGain)
 const saving = ref(false)
 const error = ref<string | null>(null)
@@ -93,7 +94,7 @@ watch(
     () => session.language,
     (value) => {
         if (value && !saving.value) {
-            language.value = value
+            language.value = appLocale(value)
         }
     },
 )
@@ -130,14 +131,14 @@ async function changeLanguage(value: string): Promise<void> {
         return
     }
 
-    const previous: SupportedLocale | null = session.language
+    const previous = session.language
     saving.value = true
     error.value = null
     try {
         await session.updateLanguage(value)
     } catch {
         error.value = t('settings.saveError')
-        language.value = previous ?? locale.value
+        language.value = previous ? appLocale(previous) : locale.value
     } finally {
         saving.value = false
     }

@@ -2846,7 +2846,7 @@ export function deserializeIntoUpdateUserSettings(updateUserSettings: Partial<Up
     return {
         "crossfade": n => { updateUserSettings.crossfade = n.getObjectValue<UpdateCrossfadeSettings>(createUpdateCrossfadeSettingsFromDiscriminatorValue); },
         "equalizer": n => { updateUserSettings.equalizer = n.getObjectValue<UpdateEqualizerSettings>(createUpdateEqualizerSettingsFromDiscriminatorValue); },
-        "language": n => { updateUserSettings.language = n.getEnumValue<Language>(LanguageObject); },
+        "language": n => { updateUserSettings.language = n.getStringValue(); },
         "playerViewMode": n => { updateUserSettings.playerViewMode = n.getEnumValue<PlayerViewMode>(PlayerViewModeObject); },
         "replayGain": n => { updateUserSettings.replayGain = n.getEnumValue<ReplayGainMode>(ReplayGainModeObject); },
         "sidebarCollapsed": n => { updateUserSettings.sidebarCollapsed = n.getBooleanValue(); },
@@ -2912,7 +2912,7 @@ export function deserializeIntoUserSettings(userSettings: Partial<UserSettings> 
     return {
         "crossfade": n => { userSettings.crossfade = n.getObjectValue<CrossfadeSettings>(createCrossfadeSettingsFromDiscriminatorValue); },
         "equalizer": n => { userSettings.equalizer = n.getObjectValue<EqualizerSettings>(createEqualizerSettingsFromDiscriminatorValue); },
-        "language": n => { userSettings.language = n.getEnumValue<Language>(LanguageObject); },
+        "language": n => { userSettings.language = n.getStringValue(); },
         "playerViewMode": n => { userSettings.playerViewMode = n.getEnumValue<PlayerViewMode>(PlayerViewModeObject); },
         "replayGain": n => { userSettings.replayGain = n.getEnumValue<ReplayGainMode>(ReplayGainModeObject); },
         "sidebarCollapsed": n => { userSettings.sidebarCollapsed = n.getBooleanValue(); },
@@ -3383,7 +3383,6 @@ export interface JobRunPage extends AdditionalDataHolder, Parsable {
 export type JobRunStatus = (typeof JobRunStatusObject)[keyof typeof JobRunStatusObject];
 export type JobState = (typeof JobStateObject)[keyof typeof JobStateObject];
 export type JobTrigger = (typeof JobTriggerObject)[keyof typeof JobTriggerObject];
-export type Language = (typeof LanguageObject)[keyof typeof LanguageObject];
 /**
  * Settings of the media library.
  */
@@ -5646,7 +5645,7 @@ export function serializeUpdateUserSettings(writer: SerializationWriter, updateU
     if (!updateUserSettings || isSerializingDerivedType) { return; }
     writer.writeObjectValue<UpdateCrossfadeSettings>("crossfade", updateUserSettings.crossfade, serializeUpdateCrossfadeSettings);
     writer.writeObjectValue<UpdateEqualizerSettings>("equalizer", updateUserSettings.equalizer, serializeUpdateEqualizerSettings);
-    writer.writeEnumValue<Language>("language", updateUserSettings.language);
+    writer.writeStringValue("language", updateUserSettings.language);
     writer.writeEnumValue<PlayerViewMode>("playerViewMode", updateUserSettings.playerViewMode);
     writer.writeEnumValue<ReplayGainMode>("replayGain", updateUserSettings.replayGain);
     writer.writeBooleanValue("sidebarCollapsed", updateUserSettings.sidebarCollapsed);
@@ -5716,7 +5715,7 @@ export function serializeUserSettings(writer: SerializationWriter, userSettings:
     if (!userSettings || isSerializingDerivedType) { return; }
     writer.writeObjectValue<CrossfadeSettings>("crossfade", userSettings.crossfade, serializeCrossfadeSettings);
     writer.writeObjectValue<EqualizerSettings>("equalizer", userSettings.equalizer, serializeEqualizerSettings);
-    writer.writeEnumValue<Language>("language", userSettings.language);
+    writer.writeStringValue("language", userSettings.language);
     writer.writeEnumValue<PlayerViewMode>("playerViewMode", userSettings.playerViewMode);
     writer.writeEnumValue<ReplayGainMode>("replayGain", userSettings.replayGain);
     writer.writeBooleanValue("sidebarCollapsed", userSettings.sidebarCollapsed);
@@ -6579,9 +6578,9 @@ export interface UpdateUserSettings extends AdditionalDataHolder, Parsable {
      */
     equalizer?: UpdateEqualizerSettings | null;
     /**
-     * The language property
+     * Language of the user interface as BCP 47 language tag, e.g. "en", "de" or "pt-BR" (language, optional script, region and variants; no extensions). The server keeps any valid tag in the usual case of its subtags ("PT-br" becomes "pt-BR"); clients offer the languages they have translations for.
      */
-    language?: Language | null;
+    language?: string | null;
     /**
      * The playerViewMode property
      */
@@ -6703,9 +6702,9 @@ export interface UserSettings extends AdditionalDataHolder, Parsable {
      */
     equalizer?: EqualizerSettings | null;
     /**
-     * Language of the user interface.
+     * Language of the user interface as BCP 47 language tag, e.g. "en", "de" or "pt-BR"; "en" by default. A client without translations for the language shows English, or the language without its region if it has that (e.g. "de" for "de-AT").
      */
-    language?: Language | null;
+    language?: string | null;
     /**
      * What the Now Playing view shows; Video by default. Clients keep the choice of the profile with it.
      */
@@ -7070,13 +7069,6 @@ export const JobTriggerObject = {
     LibraryScan: "LibraryScan",
     CoverRule: "CoverRule",
     Settings: "Settings",
-} as const;
-/**
- * Language of the user interface.
- */
-export const LanguageObject = {
-    En: "en",
-    De: "de",
 } as const;
 /**
  * Where the lyrics come from.

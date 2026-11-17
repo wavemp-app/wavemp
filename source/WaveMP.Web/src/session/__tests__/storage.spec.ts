@@ -157,8 +157,14 @@ describe('session storage', () => {
         expect(storage.getItem(sessionStorageKey)).toBeNull()
     })
 
-    it('keeps the session but drops an unknown language', () => {
-        storage.setItem(sessionStorageKey, JSON.stringify({ ...session, language: 'fr' }))
+    it('keeps any language, also one without translations', () => {
+        storage.setItem(sessionStorageKey, JSON.stringify({ ...session, language: 'pt-br' }))
+
+        expect(loadStoredSession(now, storage)?.language).toBe('pt-BR')
+    })
+
+    it('keeps the session but drops an invalid language', () => {
+        storage.setItem(sessionStorageKey, JSON.stringify({ ...session, language: 'not a tag' }))
 
         expect(loadStoredSession(now, storage)?.language).toBeNull()
     })

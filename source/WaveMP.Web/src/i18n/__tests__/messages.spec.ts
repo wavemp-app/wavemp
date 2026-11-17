@@ -1,10 +1,11 @@
-// Checks the message files (read as raw JSON; importing them yields precompiled functions) and
-// that every message key used in the source code exists.
+// Checks the message files (read as raw JSON; importing them yields precompiled functions), also
+// the ones from Weblate, and that every message key used in the source code exists.
 import { readdirSync, readFileSync, statSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 import { supportedLocales } from '../locales'
+import { localeFromFileName } from '../tags'
 
 // Not new URL(..., import.meta.url): Vite rewrites that pattern into an asset URL.
 const sourceDirectory = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
@@ -48,20 +49,43 @@ function sourceFiles(directory: string): string[] {
 
 const english = flatten(readMessages('en'))
 
+/**
+ * Languages maintained together with the code; they always have every message. Translations from
+ * Weblate may be incomplete, their missing messages fall back to English.
+ */
+const completeLocales = ['en', 'de']
+
+const files = readdirSync(localesDirectory).sort()
+
 describe('message files', () => {
-    it('exist for every supported language', () => {
-        expect(readdirSync(localesDirectory).sort()).toEqual(
-            supportedLocales.map((locale) => `${locale}.json`).sort(),
-        )
+    it('are the supported languages', () => {
+        expect(files).toEqual(supportedLocales.map((locale) => `${locale}.json`).sort())
+    })
+
+    it('are named after their language tag in its canonical form', () => {
+        // e.g. pt-BR.json; Weblate creates the files with the BCP 47 language code style.
+        const invalid = files.filter((file) => localeFromFileName(file) + '.json' !== file)
+        expect(invalid).toEqual([])
+    })
+
+    it('include the complete languages', () => {
+        expect(supportedLocales).toEqual(expect.arrayContaining(completeLocales))
     })
 
     for (const locale of supportedLocales) {
         describe(locale, () => {
             const messages = flatten(readMessages(locale))
 
-            it('has exactly the keys of the English messages', () => {
-                expect([...messages.keys()].sort()).toEqual([...english.keys()].sort())
-            })
+            if (completeLocales.includes(locale)) {
+                it('has exactly the keys of the English messages', () => {
+                    expect([...messages.keys()].sort()).toEqual([...english.keys()].sort())
+                })
+            } else {
+                it('has only keys of the English messages', () => {
+                    const unknown = [...messages.keys()].filter((key) => !english.has(key))
+                    expect(unknown).toEqual([])
+                })
+            }
 
             it('has no empty messages', () => {
                 const empty = [...messages].filter(([, value]) => value.trim() === '')

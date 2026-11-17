@@ -7,7 +7,6 @@ import {
     PlayerViewModeObject,
     ReplayGainModeObject,
     RoleObject,
-    type Language,
     type PlayerViewMode,
     type ReplayGainMode,
     type Session,
@@ -17,7 +16,7 @@ import {
     type UserSettings,
 } from '@/api/generated/models'
 import { isUnauthorized } from '@/api/problems'
-import { isSupportedLocale, type SupportedLocale } from '@/i18n/locales'
+import { canonicalLocale } from '@/i18n/locales'
 import {
     defaultCrossfadeSettings,
     toCrossfadeSettings,
@@ -63,8 +62,9 @@ function toPlayerViewMode(settings: UserSettings | null | undefined): PlayerView
     return mode && playerViewModes.has(mode) ? mode : null
 }
 
-function toLocale(language: Language | null | undefined): SupportedLocale | null {
-    return language && isSupportedLocale(language) ? language : null
+/** The language of the profile as canonical tag; any language, also one without translations. */
+function toLocale(language: string | null | undefined): string | null {
+    return canonicalLocale(language)
 }
 
 /**
@@ -78,7 +78,7 @@ export const useSessionStore = defineStore('session', () => {
     const sessionId = ref<string | null>(null)
     const expiresAt = ref<string | null>(null)
     const profile = ref<StoredProfile | null>(null)
-    const language = ref<SupportedLocale | null>(null)
+    const language = ref<string | null>(null)
     /** ReplayGain mode of the profile; Off until the settings are loaded. */
     const replayGain = ref<ReplayGainMode>(ReplayGainModeObject.Off)
     /** What Now Playing shows for the profile; the video until the settings are loaded. */
@@ -270,7 +270,7 @@ export const useSessionStore = defineStore('session', () => {
     }
 
     /** Saves the language of the profile on the server. Errors are passed on. */
-    async function updateLanguage(locale: SupportedLocale): Promise<void> {
+    async function updateLanguage(locale: string): Promise<void> {
         const settings = await apiClient.api.v1.me.settings.patch({ language: locale })
         language.value = toLocale(settings?.language) ?? locale
         persist()

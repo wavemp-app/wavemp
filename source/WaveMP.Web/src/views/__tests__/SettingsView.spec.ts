@@ -64,7 +64,7 @@ describe('SettingsView', () => {
         expect(select.element.value).toBe('en')
         expect(
             wrapper.findAll('[data-field="language"] option').map((option) => option.text()),
-        ).toEqual(['English', 'Deutsch'])
+        ).toEqual(['Deutsch', 'English'])
         const replayGain = wrapper.get('[data-field="replay-gain"] [data-part="segmented-control"]')
         expect(replayGain.attributes('role')).toBe('radiogroup')
         expect(

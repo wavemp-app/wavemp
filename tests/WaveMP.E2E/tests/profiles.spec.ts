@@ -80,6 +80,8 @@ test('keeps the language per profile', async ({ page }) => {
 
     await chooseFromProfileMenu(page, 'settings')
     await expect(page).toHaveURL(/\/settings$/)
+    // One entry per translation file, each named in its own language.
+    await expect(page.locator("[data-field='language'] option")).toHaveText(['Deutsch', 'English'])
     await page.locator("[data-field='language'] [data-part='select']").selectOption('de')
 
     await expect(page.locator('html')).toHaveAttribute('lang', 'de')

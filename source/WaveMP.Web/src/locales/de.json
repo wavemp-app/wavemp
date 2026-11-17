@@ -425,10 +425,6 @@
     "language": "Sprache",
     "languageHint": "Gilt für dieses Profil auf allen Geräten.",
     "saveError": "Die Einstellung konnte nicht gespeichert werden.",
-    "languages": {
-      "en": "English",
-      "de": "Deutsch"
-    },
     "replayGain": "Lautstärkeausgleich (ReplayGain)",
     "replayGainHint": "Gleicht die Lautstärke der Titel mit ihren ReplayGain-Tags an. Gilt für dieses Profil auf allen Geräten.",
     "replayGainModes": {

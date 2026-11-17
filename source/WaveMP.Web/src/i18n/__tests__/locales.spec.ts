@@ -1,18 +1,30 @@
 import { describe, expect, it } from 'vitest'
-import { LanguageObject } from '@/api/generated/models'
-import { createWaveMpI18n, setLocale } from '../index'
-import { browserLocales, defaultLocale, resolveLocale, supportedLocales } from '../locales'
+import { createWaveMpI18n, setLocale, type MessageSchema } from '../index'
+import { localeMessages } from '../messages'
+import {
+    appLocale,
+    browserLocales,
+    defaultLocale,
+    isSupportedLocale,
+    resolveLocale,
+    supportedLocales,
+} from '../locales'
 
-describe('resolveLocale', () => {
-    it('supports English and German with English as default', () => {
-        expect(supportedLocales).toEqual(['en', 'de'])
+describe('supportedLocales', () => {
+    it('are the languages of the translation files with English first', () => {
+        expect(supportedLocales).toEqual(Object.keys(localeMessages))
+        expect(supportedLocales[0]).toBe('en')
+        expect(supportedLocales).toContain('de')
         expect(defaultLocale).toBe('en')
     })
 
-    it('are exactly the languages of the API', () => {
-        expect([...supportedLocales].sort()).toEqual(Object.values(LanguageObject).sort())
+    it('are checked exactly', () => {
+        expect(isSupportedLocale('de')).toBe(true)
+        expect(isSupportedLocale('de-AT')).toBe(false)
     })
+})
 
+describe('resolveLocale', () => {
     it('matches exact tags case-insensitively', () => {
         expect(resolveLocale(['DE'])).toBe('de')
         expect(resolveLocale(['en'])).toBe('en')
@@ -25,14 +37,35 @@ describe('resolveLocale', () => {
     })
 
     it('takes the first supported language in order of preference', () => {
-        expect(resolveLocale(['fr-FR', 'de-DE', 'en-US'])).toBe('de')
+        expect(resolveLocale(['xx-XX', 'de-DE', 'en-US'])).toBe('de')
         expect(resolveLocale(['en-US', 'de-DE'])).toBe('en')
     })
 
     it('falls back to English', () => {
-        expect(resolveLocale(['fr-FR', 'ja'])).toBe('en')
+        expect(resolveLocale(['xx-XX', 'yy'])).toBe('en')
         expect(resolveLocale([])).toBe('en')
         expect(resolveLocale([''])).toBe('en')
+    })
+
+    it('offers a language as soon as it has a translation file', () => {
+        expect(resolveLocale(['fr-FR'], ['en', 'de'])).toBe('en')
+        expect(resolveLocale(['fr-FR'], ['en', 'de', 'fr'])).toBe('fr')
+    })
+})
+
+describe('appLocale', () => {
+    it('uses the language of the profile once one is selected', () => {
+        expect(appLocale('de', ['en-US'])).toBe('de')
+        expect(appLocale('de-AT', ['en-US'])).toBe('de')
+    })
+
+    it('shows English for a profile language without translations', () => {
+        expect(appLocale('xx', ['de-DE'])).toBe('en')
+    })
+
+    it('uses the browser languages before a profile is selected', () => {
+        expect(appLocale(null, ['de-DE', 'en'])).toBe('de')
+        expect(appLocale(undefined, [])).toBe('en')
     })
 })
 
@@ -68,5 +101,33 @@ describe('setLocale', () => {
         const i18n = createWaveMpI18n('de')
 
         expect(i18n.global.t('placeholders.album', { number: 2 })).toBe('Platzhalter-Album 2')
+    })
+})
+
+describe('incomplete translations', () => {
+    // A community translation with a single message, like a new file from Weblate.
+    const messages = {
+        ...localeMessages,
+        xx: { nav: { library: 'Xibliothek' } } as unknown as MessageSchema,
+    }
+
+    it('use their own messages', () => {
+        const i18n = createWaveMpI18n('xx', messages)
+
+        expect(i18n.global.t('nav.library')).toBe('Xibliothek')
+    })
+
+    it('fall back to English for missing messages', () => {
+        const i18n = createWaveMpI18n('xx', messages)
+
+        expect(i18n.global.t('nav.playlists')).toBe('Playlists')
+        expect(i18n.global.t('placeholders.album', { number: 2 })).toBe('Placeholder Album 2')
+    })
+
+    it('fall back from a region to the language, then to English', () => {
+        const i18n = createWaveMpI18n('xx-YY', messages)
+
+        expect(i18n.global.t('nav.library')).toBe('Xibliothek')
+        expect(i18n.global.t('nav.playlists')).toBe('Playlists')
     })
 })

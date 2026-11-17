@@ -4,7 +4,7 @@
 // blocked site data), so every access is guarded and invalid or expired data counts as no session.
 
 import { RoleObject, type Role } from '@/api/generated/models'
-import { isSupportedLocale, type SupportedLocale } from '@/i18n/locales'
+import { canonicalLocale } from '@/i18n/locales'
 
 export interface StoredProfile {
     readonly id: string
@@ -28,7 +28,7 @@ export interface StoredSession {
     readonly expiresAt: string
     readonly profile: StoredProfile
     /** Language of the profile; null while it is unknown. */
-    readonly language: SupportedLocale | null
+    readonly language: string | null
 }
 
 /** Key in localStorage; the version changes if the stored format changes. */
@@ -125,10 +125,8 @@ function toStoredSession(value: unknown, now: Date): StoredSession | null {
         return null
     }
 
-    const language =
-        typeof value.language === 'string' && isSupportedLocale(value.language)
-            ? value.language
-            : null
+    // Any language tag; the app shows English for a language it has no translation for.
+    const language = typeof value.language === 'string' ? canonicalLocale(value.language) : null
 
     return {
         token: value.token,

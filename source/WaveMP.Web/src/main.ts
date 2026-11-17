@@ -6,7 +6,7 @@ import App from './App.vue'
 import router, { historyEntries } from './router'
 import { historyEntriesKey } from './router/entries'
 import { createWaveMpI18n } from './i18n'
-import { browserLocales, resolveLocale } from './i18n/locales'
+import { appLocale } from './i18n/locales'
 import { useSessionStore } from './stores/session'
 import { applyTheme, resolveThemeId } from './themes/themes'
 
@@ -17,8 +17,7 @@ session.restore()
 
 // The language of the profile applies once one is selected; before that the browser language
 // (useLocaleSync keeps it in line afterwards).
-const locale =
-    session.isAuthenticated && session.language ? session.language : resolveLocale(browserLocales())
+const locale = appLocale(session.isAuthenticated ? session.language : null)
 document.documentElement.lang = locale
 
 // index.html loads the default theme for the first paint; the selection per user follows later.
