@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#e2f8ff"/>
+      <stop offset="0.6" stop-color="#9edcf5"/>
+      <stop offset="1" stop-color="#5ab7e6"/>
+    </linearGradient>
+    <linearGradient id="back" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#5fd6e8"/>
+      <stop offset="1" stop-color="#1689b8"/>
+    </linearGradient>
+    <linearGradient id="front" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3ab8e8"/>
+      <stop offset="1" stop-color="#0b4f93"/>
+    </linearGradient>
+    <linearGradient id="shine" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.85"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="gloss" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" fill="url(#sky)"/>
+  <circle cx="384" cy="132" r="56" fill="#ffffff" opacity="0.55"/>
+  <circle cx="384" cy="132" r="80" fill="#ffffff" opacity="0.18"/>
+  <path d="M0 300C70 250 140 250 210 290C280 330 350 330 420 280C460 252 490 248 512 252V512H0Z" fill="url(#back)"/>
+  <path d="M0 360C40 300 110 280 170 316C200 334 214 360 200 380C250 360 300 300 380 300C440 300 486 330 512 350V512H0Z" fill="url(#front)"/>
+  <path d="M10 352C52 306 112 292 164 320C190 334 202 352 196 368C170 346 120 330 70 344C44 352 24 360 10 352Z" fill="url(#shine)"/>
+  <path d="M230 360C280 322 330 306 380 308C430 310 470 330 500 352C460 336 420 328 380 330C330 332 280 346 230 360Z" fill="url(#shine)"/>
+  <circle cx="120" cy="430" r="10" fill="#ffffff" opacity="0.5"/>
+  <circle cx="150" cy="456" r="6" fill="#ffffff" opacity="0.45"/>
+  <circle cx="400" cy="430" r="8" fill="#ffffff" opacity="0.45"/>
+  <path d="M0 0H512V190C380 230 132 230 0 190Z" fill="url(#gloss)"/>
+</svg>

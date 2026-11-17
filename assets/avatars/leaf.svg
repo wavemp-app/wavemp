@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="meadow" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#e9ffd6"/>
+      <stop offset="0.55" stop-color="#8fd86a"/>
+      <stop offset="1" stop-color="#3f9e3a"/>
+    </linearGradient>
+    <linearGradient id="leaf" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#c6f56b"/>
+      <stop offset="0.5" stop-color="#5fc23c"/>
+      <stop offset="1" stop-color="#23802c"/>
+    </linearGradient>
+    <linearGradient id="shine" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.8"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+    <radialGradient id="drop" cx="0.35" cy="0.3" r="0.7">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.95"/>
+      <stop offset="0.5" stop-color="#e2fff0" stop-opacity="0.4"/>
+      <stop offset="1" stop-color="#a6f0c8" stop-opacity="0.7"/>
+    </radialGradient>
+    <linearGradient id="gloss" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.5"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" fill="url(#meadow)"/>
+  <circle cx="420" cy="96" r="54" fill="#ffffff" opacity="0.2"/>
+  <circle cx="84" cy="420" r="40" fill="#ffffff" opacity="0.14"/>
+  <path d="M120 400C110 250 210 120 400 104C410 290 300 400 120 400Z" fill="url(#leaf)" stroke="#1d6e26" stroke-opacity="0.35" stroke-width="4"/>
+  <path d="M120 400C200 320 290 220 372 136" fill="none" stroke="#ffffff" stroke-opacity="0.65" stroke-width="8" stroke-linecap="round"/>
+  <path d="M210 312L196 236M256 262L250 186M300 214L304 156M234 290L304 290M282 238L352 230" fill="none" stroke="#ffffff" stroke-opacity="0.45" stroke-width="5" stroke-linecap="round"/>
+  <path d="M150 360C150 250 230 150 380 124C300 160 210 240 150 360Z" fill="url(#shine)" opacity="0.7"/>
+  <path d="M120 400C104 420 92 440 84 460" fill="none" stroke="#2d7a2a" stroke-width="10" stroke-linecap="round"/>
+  <ellipse cx="318" cy="300" rx="26" ry="24" fill="url(#drop)" stroke="#ffffff" stroke-opacity="0.8" stroke-width="2"/>
+  <ellipse cx="310" cy="291" rx="9" ry="6" transform="rotate(-30 310 291)" fill="#ffffff"/>
+  <path d="M0 0H512V200C380 240 132 240 0 200Z" fill="url(#gloss)"/>
+</svg>

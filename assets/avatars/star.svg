@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="dusk" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#bcd4ff"/>
+      <stop offset="0.55" stop-color="#6f8fe8"/>
+      <stop offset="1" stop-color="#3a4fb8"/>
+    </linearGradient>
+    <linearGradient id="star" x1="0" y1="0" x2="0.4" y2="1">
+      <stop offset="0" stop-color="#fff4a8"/>
+      <stop offset="0.5" stop-color="#ffcf3a"/>
+      <stop offset="1" stop-color="#e78a0c"/>
+    </linearGradient>
+    <radialGradient id="halo" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="shine" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.9"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="gloss" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.45"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" fill="url(#dusk)"/>
+  <circle cx="256" cy="268" r="210" fill="url(#halo)"/>
+  <g fill="#ffffff">
+    <circle cx="84" cy="96" r="5" opacity="0.9"/>
+    <circle cx="430" cy="84" r="4" opacity="0.8"/>
+    <circle cx="452" cy="380" r="5" opacity="0.7"/>
+    <circle cx="70" cy="400" r="4" opacity="0.7"/>
+    <circle cx="140" cy="60" r="3" opacity="0.7"/>
+  </g>
+  <path d="M256 84L305 192L422 205L334 284L359 400L256 340L153 400L178 284L90 205L207 192Z" fill="url(#star)" stroke="#ffffff" stroke-opacity="0.8" stroke-width="6" stroke-linejoin="round"/>
+  <path d="M256 104L296 196L398 208L330 268C300 230 230 214 170 214L114 208L216 196Z" fill="url(#shine)" opacity="0.8"/>
+  <path d="M0 0H512V200C380 240 132 240 0 200Z" fill="url(#gloss)"/>
+</svg>

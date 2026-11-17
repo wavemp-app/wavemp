@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="water" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#b6f4ff"/>
+      <stop offset="0.55" stop-color="#38bde0"/>
+      <stop offset="1" stop-color="#11709f"/>
+    </linearGradient>
+    <linearGradient id="fish" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffd07a"/>
+      <stop offset="0.5" stop-color="#ff8a2a"/>
+      <stop offset="1" stop-color="#d4520e"/>
+    </linearGradient>
+    <linearGradient id="fin" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ffb35a"/>
+      <stop offset="1" stop-color="#e2600f"/>
+    </linearGradient>
+    <linearGradient id="shine" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.85"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="gloss" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.5"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" fill="url(#water)"/>
+  <path d="M60 512C80 440 60 400 90 340" fill="none" stroke="#2fa35a" stroke-width="14" stroke-linecap="round" opacity="0.6"/>
+  <path d="M452 512C440 450 470 410 446 360" fill="none" stroke="#2fa35a" stroke-width="12" stroke-linecap="round" opacity="0.5"/>
+  <path d="M352 262L452 186C462 230 462 300 452 340Z" fill="url(#fin)" stroke="#ffffff" stroke-opacity="0.6" stroke-width="4" stroke-linejoin="round"/>
+  <path d="M220 182C240 140 290 130 320 150L290 196Z" fill="url(#fin)"/>
+  <ellipse cx="236" cy="262" rx="150" ry="102" fill="url(#fish)" stroke="#ffffff" stroke-opacity="0.7" stroke-width="5"/>
+  <path d="M250 330C270 360 300 370 318 352L286 318Z" fill="url(#fin)"/>
+  <path d="M290 200C300 240 300 290 286 326" fill="none" stroke="#c4480c" stroke-opacity="0.45" stroke-width="6" stroke-linecap="round"/>
+  <ellipse cx="216" cy="210" rx="110" ry="40" fill="url(#shine)"/>
+  <circle cx="152" cy="246" r="22" fill="#ffffff"/>
+  <circle cx="146" cy="248" r="12" fill="#1a2b44"/>
+  <circle cx="142" cy="243" r="4" fill="#ffffff"/>
+  <path d="M96 286C106 292 116 292 124 286" fill="none" stroke="#a63c08" stroke-width="5" stroke-linecap="round"/>
+  <circle cx="60" cy="210" r="12" fill="none" stroke="#ffffff" stroke-opacity="0.8" stroke-width="3"/>
+  <circle cx="78" cy="160" r="8" fill="none" stroke="#ffffff" stroke-opacity="0.8" stroke-width="3"/>
+  <circle cx="64" cy="118" r="5" fill="none" stroke="#ffffff" stroke-opacity="0.8" stroke-width="2"/>
+  <path d="M0 0H512V190C380 230 132 230 0 190Z" fill="url(#gloss)"/>
+</svg>
