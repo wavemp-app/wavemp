@@ -1,11 +1,11 @@
 using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
 
-namespace WaveMP.Service.Tests.IntegrationTests.Fakes;
+namespace WaveMP.Testing.Logs;
 
 /// <summary>
-/// Collects the log entries of the service from level <see cref="LogLevel.Error"/> on, so tests can check that an
-/// expected situation is not logged as an error.
+/// Collects the log entries from level <see cref="LogLevel.Error"/> on, so tests can check that an expected situation
+/// is not logged as an error. Shared by the tests of the service and of the data access.
 /// </summary>
 public sealed class ErrorLogCollector : ILoggerProvider
 {

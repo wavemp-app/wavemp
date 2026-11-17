@@ -79,6 +79,20 @@ public static class TestDatabaseSettings
         NpgsqlConnection.ClearAllPools();
     }
 
+    /// <summary>
+    /// Drops the database if it exists and creates it again without any table, like the database container of a new
+    /// installation creates it.
+    /// </summary>
+    public static void CreateEmptyDatabase(string databaseName)
+    {
+        DropDatabase(databaseName);
+        using NpgsqlConnection connection = new(BuildConnectionString(MaintenanceDatabase));
+        connection.Open();
+        using NpgsqlCommand command = connection.CreateCommand();
+        command.CommandText = $"CREATE DATABASE \"{databaseName.Replace("\"", "\"\"", StringComparison.Ordinal)}\"";
+        command.ExecuteNonQuery();
+    }
+
     private static string? Read(string key)
     {
         return Environment.GetEnvironmentVariable(key) ?? ReadFromDotEnv(key);

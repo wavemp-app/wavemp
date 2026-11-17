@@ -6,7 +6,7 @@ internal sealed class DatabaseMigrator(WaveMpDbContext dbContext) : IDatabaseMig
 {
     public async Task<IReadOnlyList<string>> GetAppliedMigrationsAsync(CancellationToken cancellationToken = default)
     {
-        // On an empty database EF Core logs a failed query for the not yet existing history table. This is expected.
+        // Empty for a new database without the history table; WaveMpHistoryRepository checks for it without an error.
         return [.. await dbContext.Database.GetAppliedMigrationsAsync(cancellationToken)];
     }
 

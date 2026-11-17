@@ -64,6 +64,21 @@ public class MigrationBackupApiTests
 
         factory.Exporter.Exports.Should().Be(0);
         (await IsAppliedAsync()).Should().BeTrue();
+        factory.ErrorLog.Errors.Should().BeEmpty("a new installation is no error");
+    }
+
+    [Test]
+    public async Task Start_WithEmptyDatabaseOfANewInstallation_MigratesWithoutExportAndWithoutErrors()
+    {
+        // The database container of a new installation creates the database, but no table in it.
+        TestDatabaseSettings.CreateEmptyDatabase(DatabaseName);
+
+        await using WaveMpWebApplicationFactory factory = new(DatabaseName);
+        using HttpClient client = factory.CreateClient();
+
+        factory.Exporter.Exports.Should().Be(0);
+        (await IsAppliedAsync()).Should().BeTrue();
+        factory.ErrorLog.Errors.Should().BeEmpty("the missing migrations history table of a new database is expected");
     }
 
     private static async Task CreateDatabaseWithPendingMigrationAsync()

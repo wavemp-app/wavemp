@@ -11,6 +11,7 @@ using WaveMP.Data;
 using WaveMP.Service.Tests.IntegrationTests.Fakes;
 using WaveMP.Testing.Databases;
 using WaveMP.Testing.Files;
+using WaveMP.Testing.Logs;
 
 namespace WaveMP.Service.Tests.IntegrationTests;
 
