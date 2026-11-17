@@ -6,6 +6,7 @@ using WaveMP.Core.Scanning.Discoveries;
 using WaveMP.Core.Scanning.Groupings;
 using WaveMP.Core.Scanning.Plans;
 using WaveMP.Core.Scanning.Processors;
+using WaveMP.Core.Scanning.Selections;
 using WaveMP.Data.Entities;
 using WaveMP.Data.Repositories;
 
@@ -13,7 +14,9 @@ namespace WaveMP.Core.Scanning.Writers;
 
 /// <summary>
 /// Writes the result of the scan of a folder into the library: files, tracks with their primary files and covers,
-/// artists and albums. All changes of a folder are saved together. Album covers are written after all folders.
+/// artists and albums. All changes of a folder are saved together. Album covers are written after all folders. The
+/// files the admin selected for a track win over the quality rule as long as they exist; whether they do is stored
+/// with each selection.
 /// </summary>
 public sealed class LibraryWriter(ILibraryScanRepository library)
 {
@@ -61,12 +64,68 @@ public sealed class LibraryWriter(ILibraryScanRepository library)
 
         FolderWriteResult result = await WriteTracksAsync(
             plan.RelativePath,
-            FolderProcessor.Process(plan.RelativePath, files),
+            FolderProcessor.Process(plan.RelativePath, files, ChoicesOf(stored.Tracks, files)),
             stored.Tracks,
             now,
             cancellationToken);
         await library.SaveChangesAsync(cancellationToken);
         return result;
+    }
+
+    /// <summary>
+    /// Writes the tracks of a folder again from its stored files, without reading any file, e.g. after the admin
+    /// changed the file selection of one of its tracks.
+    /// </summary>
+    public async Task<FolderWriteResult> RewriteFolderAsync(
+        string directoryPath,
+        DateTimeOffset now,
+        CancellationToken cancellationToken = default)
+    {
+        StoredFolder stored = await library.LoadFolderAsync(directoryPath, cancellationToken);
+        FolderWriteResult result = await WriteTracksAsync(
+            directoryPath,
+            FolderProcessor.Process(directoryPath, stored.Files, ChoicesOf(stored.Tracks, stored.Files)),
+            stored.Tracks,
+            now,
+            cancellationToken);
+        await library.SaveChangesAsync(cancellationToken);
+        return result;
+    }
+
+    /// <summary>
+    /// The selections of the tracks by their normalized base name. A selection whose file is gone follows a file that
+    /// appeared again under its path (it got a new id).
+    /// </summary>
+    internal static IReadOnlyDictionary<string, FileChoices> ChoicesOf(
+        IReadOnlyList<Track> tracks,
+        IReadOnlyList<MediaFile> files)
+    {
+        HashSet<Guid> ids = [.. files.Select(file => file.Id)];
+        var byPath = files.ToDictionary(file => file.RelativePath, StringComparer.Ordinal);
+        Dictionary<string, FileChoices> choices = new(StringComparer.Ordinal);
+        foreach (Track track in tracks.Where(track => track.FileSelections.Count > 0))
+        {
+            foreach (TrackFileSelection selection in track.FileSelections)
+            {
+                if (!ids.Contains(selection.MediaFileId)
+                    && byPath.TryGetValue(selection.RelativePath, out MediaFile? reappeared))
+                {
+                    selection.MediaFileId = reappeared.Id;
+                }
+            }
+
+            choices[track.NormalizedBaseName] = new FileChoices(
+                SelectedId(track, FileSelectionCategory.Audio),
+                SelectedId(track, FileSelectionCategory.Video),
+                SelectedId(track, FileSelectionCategory.Cover));
+        }
+
+        return choices;
+    }
+
+    private static Guid? SelectedId(Track track, FileSelectionCategory category)
+    {
+        return track.FileSelections.FirstOrDefault(selection => selection.Category == category)?.MediaFileId;
     }
 
     /// <summary>
@@ -154,6 +213,8 @@ public sealed class LibraryWriter(ILibraryScanRepository library)
                 file.IsPrimary = file == processed.PrimaryAudio || file == processed.PrimaryVideo;
             }
 
+            UpdateSelections(track, processed);
+
             Track owner = track;
             SyncCovers(
                 [.. track.Covers],
@@ -179,6 +240,24 @@ public sealed class LibraryWriter(ILibraryScanRepository library)
         }
 
         return new FolderWriteResult(added, updated, tracks.Count);
+    }
+
+    /// <summary>
+    /// Marks the selections of the track whose file the track does not use (gone, or no longer of the category) as
+    /// missing, and the others as found.
+    /// </summary>
+    private static void UpdateSelections(Track track, ProcessedTrack processed)
+    {
+        foreach (TrackFileSelection selection in track.FileSelections)
+        {
+            Guid? used = selection.Category switch
+            {
+                FileSelectionCategory.Audio => processed.PrimaryAudio?.Id,
+                FileSelectionCategory.Video => processed.PrimaryVideo?.Id,
+                _ => processed.Covers.Count > 0 ? processed.Covers[0].File.Id : null,
+            };
+            selection.IsMissing = used != selection.MediaFileId;
+        }
     }
 
     /// <summary>

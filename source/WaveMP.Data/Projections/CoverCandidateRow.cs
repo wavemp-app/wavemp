@@ -22,6 +22,8 @@ namespace WaveMP.Data.Projections;
 /// <param name="MimeType">Type of the picture, if known.</param>
 /// <param name="Size">Size of the file in bytes.</param>
 /// <param name="ModifiedAt">Time of the last change of the file.</param>
+/// <param name="IsSelected">The cover the admin selected for its track; it is shown for the track before any other
+/// cover, whatever the cover rule says.</param>
 public sealed record CoverCandidateRow(
     Guid CoverId,
     Guid MediaFileId,
@@ -36,4 +38,5 @@ public sealed record CoverCandidateRow(
     string RelativePath,
     string? MimeType,
     long Size,
-    DateTimeOffset ModifiedAt);
+    DateTimeOffset ModifiedAt,
+    bool IsSelected = false);

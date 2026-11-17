@@ -71,4 +71,9 @@ public class Track
     public ICollection<MediaFile> Files { get; set; } = [];
 
     public ICollection<Cover> Covers { get; set; } = [];
+
+    /// <summary>
+    /// The files the admin selected instead of the automatic choice by quality, at most one per category.
+    /// </summary>
+    public ICollection<TrackFileSelection> FileSelections { get; set; } = [];
 }

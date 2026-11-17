@@ -52,7 +52,8 @@ public class MediaFile
     public Track? Track { get; set; }
 
     /// <summary>
-    /// The file of its category (audio or video) that the track plays: the one with the highest quality.
+    /// The file of its category (audio or video) that the track plays: the one the admin selected (see
+    /// <see cref="TrackFileSelection"/>), otherwise the one with the highest quality.
     /// </summary>
     public required bool IsPrimary { get; set; }
 

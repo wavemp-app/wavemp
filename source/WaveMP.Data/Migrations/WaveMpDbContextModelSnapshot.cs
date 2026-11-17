@@ -951,6 +951,40 @@ namespace WaveMP.Data.Migrations
                     b.ToTable("tracks", (string)null);
                 });
 
+            modelBuilder.Entity("WaveMP.Data.Entities.TrackFileSelection", b =>
+                {
+                    b.Property<Guid>("TrackId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("track_id");
+
+                    b.Property<string>("Category")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("category");
+
+                    b.Property<bool>("IsMissing")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_missing");
+
+                    b.Property<Guid>("MediaFileId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("media_file_id");
+
+                    b.Property<string>("RelativePath")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("relative_path");
+
+                    b.Property<DateTimeOffset>("SelectedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("selected_at");
+
+                    b.HasKey("TrackId", "Category")
+                        .HasName("pk_track_file_selections");
+
+                    b.ToTable("track_file_selections", (string)null);
+                });
+
             modelBuilder.Entity("WaveMP.Data.Entities.TrackRating", b =>
                 {
                     b.Property<Guid>("UserId")
@@ -1358,6 +1392,18 @@ namespace WaveMP.Data.Migrations
                     b.Navigation("Artist");
                 });
 
+            modelBuilder.Entity("WaveMP.Data.Entities.TrackFileSelection", b =>
+                {
+                    b.HasOne("WaveMP.Data.Entities.Track", "Track")
+                        .WithMany("FileSelections")
+                        .HasForeignKey("TrackId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_track_file_selections_tracks_track_id");
+
+                    b.Navigation("Track");
+                });
+
             modelBuilder.Entity("WaveMP.Data.Entities.TrackRating", b =>
                 {
                     b.HasOne("WaveMP.Data.Entities.Track", "Track")
@@ -1406,6 +1452,8 @@ namespace WaveMP.Data.Migrations
             modelBuilder.Entity("WaveMP.Data.Entities.Track", b =>
                 {
                     b.Navigation("Covers");
+
+                    b.Navigation("FileSelections");
 
                     b.Navigation("Files");
                 });

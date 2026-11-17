@@ -3,32 +3,43 @@ using WaveMP.Core.Metadata.Resolutions;
 using WaveMP.Core.Metadata.Tags;
 using WaveMP.Core.Scanning.Groupings;
 using WaveMP.Core.Scanning.Qualities;
+using WaveMP.Core.Scanning.Selections;
 using WaveMP.Data.Entities;
 
 namespace WaveMP.Core.Scanning.Processors;
 
 /// <summary>
 /// Derives the tracks of a folder from its media files, without touching the database: groups the files by base
-/// name, chooses the files of the highest quality, finds a file name pattern of the folder, resolves the metadata of
-/// every track and the album artists of the folder, and orders the covers of every track.
+/// name, chooses the files of the highest quality (or the files the admin selected), finds a file name pattern of the
+/// folder, resolves the metadata of every track and the album artists of the folder, and orders the covers of every
+/// track.
 /// </summary>
 public static class FolderProcessor
 {
-    public static ProcessedFolder Process(string directoryPath, IReadOnlyList<MediaFile> files)
+    /// <param name="directoryPath">Folder relative to the media folder.</param>
+    /// <param name="files">The media files of the folder.</param>
+    /// <param name="choices">The files the admin selected, by the normalized base name of the track. A selected file
+    /// that is not part of the track (or not of the category) is ignored, and the quality rule chooses.</param>
+    public static ProcessedFolder Process(
+        string directoryPath,
+        IReadOnlyList<MediaFile> files,
+        IReadOnlyDictionary<string, FileChoices>? choices = null)
     {
         IReadOnlyList<FileGroup> groups = FileGrouper.Group(files);
         FileGroup[] trackGroups = [.. groups.Where(group => group.IsTrack)];
         FileNamePattern? pattern = FileNamePatternDetector.Detect([.. trackGroups.Select(group => group.BaseName)]);
         string[] segments = directoryPath.Split('/', StringSplitOptions.RemoveEmptyEntries);
 
-        List<(FileGroup Group, MediaFile? Audio, MediaFile? Video, ResolvedTrackMetadata Metadata)> tracks = [];
+        List<(FileGroup Group, FileChoices Choice, MediaFile? Audio, MediaFile? Video, ResolvedTrackMetadata Metadata)>
+            tracks = [];
         foreach (FileGroup group in trackGroups)
         {
-            MediaFile? audio = group.Audio.Order(AudioQualityComparer.Instance).FirstOrDefault();
-            MediaFile? video = group.Video.Order(VideoQualityComparer.Instance).FirstOrDefault();
+            FileChoices choice = choices?.GetValueOrDefault(group.NormalizedBaseName) ?? FileChoices.None;
+            MediaFile? audio = ChooseAudio(group, choice.Audio);
+            MediaFile? video = ChooseVideo(group, choice.Video);
             MediaFile source = audio ?? video!;
             PathMetadata path = PathMetadataParser.Parse(segments, group.BaseName, pattern);
-            tracks.Add((group, audio, video, TrackMetadataResolver.Resolve(ToMediaTags(source.Tags), path)));
+            tracks.Add((group, choice, audio, video, TrackMetadataResolver.Resolve(ToMediaTags(source.Tags), path)));
         }
 
         IReadOnlyList<AlbumAssignment?> albums = AlbumArtistResolver.Resolve([.. tracks.Select(track => track.Metadata)]);
@@ -40,15 +51,36 @@ public static class FolderProcessor
                 albums[index],
                 track.Audio,
                 track.Video,
-                OrderCovers(track.Group, track.Audio)))],
+                OrderCovers(track.Group, track.Audio, track.Choice.Cover)))],
             [.. groups.Where(group => !group.IsTrack)]);
     }
 
     /// <summary>
-    /// Picture files of the group first (best quality first), then pictures embedded in the primary audio file, in
-    /// the other audio files and in the video files.
+    /// The audio file the track plays: the selected one, if it is an audio file of the group, otherwise the one of the
+    /// highest quality.
     /// </summary>
-    internal static IReadOnlyList<CoverCandidate> OrderCovers(FileGroup group, MediaFile? primaryAudio)
+    internal static MediaFile? ChooseAudio(FileGroup group, Guid? selected = null)
+    {
+        return Choose(group.Audio.Order(AudioQualityComparer.Instance), selected);
+    }
+
+    /// <summary>
+    /// The video file the track plays: the selected one, if it is a video file of the group, otherwise the one of the
+    /// highest quality.
+    /// </summary>
+    internal static MediaFile? ChooseVideo(FileGroup group, Guid? selected = null)
+    {
+        return Choose(group.Video.Order(VideoQualityComparer.Instance), selected);
+    }
+
+    /// <summary>
+    /// Picture files of the group first (best quality first), then pictures embedded in the primary audio file, in
+    /// the other audio files and in the video files. A selected cover that is one of them comes first.
+    /// </summary>
+    internal static IReadOnlyList<CoverCandidate> OrderCovers(
+        FileGroup group,
+        MediaFile? primaryAudio,
+        Guid? selected = null)
     {
         IEnumerable<CoverCandidate> pictures = group.Images
             .Where(image => image.Issue is null)
@@ -71,7 +103,22 @@ public static class FolderProcessor
             file.EmbeddedPictureHeight,
             file.EmbeddedPictureMimeType));
 
-        return [.. pictures.Concat(embedded)];
+        List<CoverCandidate> ordered = [.. pictures.Concat(embedded)];
+        int index = selected is { } id ? ordered.FindIndex(candidate => candidate.File.Id == id) : -1;
+        if (index > 0)
+        {
+            CoverCandidate chosen = ordered[index];
+            ordered.RemoveAt(index);
+            ordered.Insert(0, chosen);
+        }
+
+        return ordered;
+    }
+
+    private static MediaFile? Choose(IOrderedEnumerable<MediaFile> ordered, Guid? selected)
+    {
+        MediaFile[] files = [.. ordered];
+        return (selected is { } id ? Array.Find(files, file => file.Id == id) : null) ?? files.FirstOrDefault();
     }
 
     public static string? MimeTypeOf(string extension)

@@ -8,6 +8,8 @@ import { CoverRequestBuilderRequestsMetadata, type CoverRequestBuilder } from '.
 // @ts-ignore
 import { FilesRequestBuilderRequestsMetadata, type FilesRequestBuilder } from './files/index.js';
 // @ts-ignore
+import { FileSelectionRequestBuilderRequestsMetadata, type FileSelectionRequestBuilder } from './fileSelection/index.js';
+// @ts-ignore
 import { HlsRequestBuilderNavigationMetadata, type HlsRequestBuilder } from './hls/index.js';
 // @ts-ignore
 import { MetadataRequestBuilderRequestsMetadata, type MetadataRequestBuilder } from './metadata/index.js';
@@ -34,6 +36,10 @@ export interface TracksItemRequestBuilder extends BaseRequestBuilder<TracksItemR
      * The files property
      */
     get files(): FilesRequestBuilder;
+    /**
+     * The fileSelection property
+     */
+    get fileSelection(): FileSelectionRequestBuilder;
     /**
      * The hls property
      */
@@ -86,6 +92,9 @@ export const TracksItemRequestBuilderNavigationMetadata: Record<Exclude<keyof Tr
     },
     files: {
         requestsMetadata: FilesRequestBuilderRequestsMetadata,
+    },
+    fileSelection: {
+        requestsMetadata: FileSelectionRequestBuilderRequestsMetadata,
     },
     hls: {
         navigationMetadata: HlsRequestBuilderNavigationMetadata,

@@ -1,6 +1,7 @@
 using AwesomeAssertions;
 using WaveMP.Core.Scanning.Groupings;
 using WaveMP.Core.Scanning.Processors;
+using WaveMP.Core.Scanning.Selections;
 using WaveMP.Data.Entities;
 using WaveMP.Data.Repositories;
 
@@ -93,6 +94,53 @@ public class FolderProcessorTests
             (video, CoverSource.Embedded));
         track.Covers[0].MimeType.Should().Be("image/png");
         track.Covers[2].Width.Should().Be(500);
+    }
+
+    [Test]
+    public void Process_SelectedFiles_WinOverTheQualityRule()
+    {
+        MediaFile flac = Audio("A/Song.flac", true, file => file.Tags = new MediaFileTags { Title = "Lossless" });
+        MediaFile mp3 = Audio("A/Song.mp3", false, file =>
+        {
+            file.Tags = new MediaFileTags { Title = "Lossy" };
+            file.Duration = TimeSpan.FromSeconds(5);
+            Embedded(file, 600);
+        });
+        MediaFile small = TestFiles.Create("A/Song.mp4", configure: file => (file.Width, file.Height) = (320, 240));
+        MediaFile large = TestFiles.Create("A/Song.mkv", configure: file => (file.Width, file.Height) = (640, 480));
+        MediaFile picture = TestFiles.Create("A/Song.jpg", configure: file => (file.Width, file.Height) = (300, 300));
+        Dictionary<string, FileChoices> choices = new() { ["SONG"] = new FileChoices(mp3.Id, small.Id, mp3.Id) };
+
+        ProcessedTrack track = FolderProcessor.Process("A", [flac, mp3, small, large, picture], choices)
+            .Tracks.Single();
+
+        track.PrimaryAudio.Should().BeSameAs(mp3);
+        track.PrimaryVideo.Should().BeSameAs(small);
+        track.Metadata.Title.Should().Be("Lossy");
+        track.Duration.Should().Be(TimeSpan.FromSeconds(5));
+        track.Covers.Select(cover => (cover.File, cover.Source)).Should().Equal(
+            (mp3, CoverSource.Embedded),
+            (picture, CoverSource.File));
+    }
+
+    [Test]
+    public void Process_SelectedFilesOutsideTheirCategory_AreIgnored()
+    {
+        MediaFile flac = Audio("A/Song.flac", true);
+        MediaFile mp3 = Audio("A/Song.mp3", false);
+        MediaFile video = TestFiles.Create("A/Song.mkv");
+        MediaFile picture = TestFiles.Create("A/Song.jpg", configure: file => (file.Width, file.Height) = (300, 300));
+        Dictionary<string, FileChoices> choices = new()
+        {
+            ["SONG"] = new FileChoices(video.Id, mp3.Id, Guid.NewGuid()),
+            ["OTHER"] = new FileChoices(mp3.Id),
+        };
+
+        ProcessedTrack track = FolderProcessor.Process("A", [flac, mp3, video, picture], choices).Tracks.Single();
+
+        track.PrimaryAudio.Should().BeSameAs(flac);
+        track.PrimaryVideo.Should().BeSameAs(video);
+        track.Covers[0].File.Should().BeSameAs(picture);
     }
 
     [Test]

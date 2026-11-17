@@ -7,7 +7,8 @@ namespace WaveMP.Core.Library.Covers;
 /// Orders the covers that may be shown for a track or an album, the best first. The rule decides between the cover of
 /// the album (a picture in its folder) and the cover of the track; the other one is the fallback, the covers of the
 /// other tracks of the album come last. Within a group the covers of the first track (disc and track number) come
-/// first, then the primary cover, picture files before embedded pictures.
+/// first, then the primary cover, picture files before embedded pictures. A cover the admin selected for the track
+/// comes before all others, whatever the rule says.
 /// </summary>
 public static class CoverResolver
 {
@@ -18,6 +19,11 @@ public static class CoverResolver
     {
         return Order(candidates, candidate =>
         {
+            if (candidate.IsSelected && candidate.TrackId == trackId)
+            {
+                return -1;
+            }
+
             if (candidate.AlbumId is not null)
             {
                 return priority == CoverPriority.AlbumFirst ? 0 : 1;

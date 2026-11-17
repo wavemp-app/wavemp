@@ -41,6 +41,20 @@ public class CoverResolverTests
     }
 
     [Test]
+    public void OrderForTrack_SelectedOwnCover_ComesFirstWhateverTheRule()
+    {
+        CoverCandidateRow selected = _own with { IsSelected = true };
+        CoverCandidateRow otherSelected = _firstTrack with { IsSelected = true };
+
+        IReadOnlyList<CoverCandidateRow> ordered = CoverResolver.OrderForTrack(
+            _trackId,
+            CoverPriority.AlbumFirst,
+            [_secondTrack, otherSelected, _album, selected]);
+
+        ordered.Should().Equal(selected, _album, otherSelected, _secondTrack);
+    }
+
+    [Test]
     public void OrderForTrack_WithoutAlbumCover_FallsBackToTheOwnCover()
     {
         IReadOnlyList<CoverCandidateRow> ordered = CoverResolver.OrderForTrack(

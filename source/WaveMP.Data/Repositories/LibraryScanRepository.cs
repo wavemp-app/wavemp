@@ -54,6 +54,7 @@ internal sealed class LibraryScanRepository(WaveMpDbContext dbContext) : ILibrar
             .ToListAsync(cancellationToken);
         List<Track> tracks = await dbContext.Tracks
             .Include(track => track.Covers)
+            .Include(track => track.FileSelections)
             .Where(track => track.DirectoryPath == directoryPath)
             .ToListAsync(cancellationToken);
         return new StoredFolder(files, tracks);

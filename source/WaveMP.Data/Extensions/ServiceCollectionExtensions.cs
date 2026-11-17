@@ -40,6 +40,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IAlbumRepository, AlbumRepository>();
         services.AddScoped<ITrackRepository, TrackRepository>();
         services.AddScoped<ICoverRepository, CoverRepository>();
+        services.AddScoped<IFileSelectionRepository, FileSelectionRepository>();
         services.AddScoped<ITrackMetadataRepository, TrackMetadataRepository>();
         services.AddScoped<IPlayHistoryRepository, PlayHistoryRepository>();
         services.AddScoped<IPlaylistRepository, PlaylistRepository>();

@@ -32,7 +32,8 @@ public sealed class MediaFileDto
     public required DateTimeOffset ModifiedAt { get; init; }
 
     /// <summary>
-    /// The file of its kind (audio or video) that the track plays: the one with the highest quality.
+    /// The file of its kind (audio or video) that the track plays: the one the admin selected, otherwise the one with
+    /// the highest quality.
     /// </summary>
     public required bool IsPrimary { get; init; }
 

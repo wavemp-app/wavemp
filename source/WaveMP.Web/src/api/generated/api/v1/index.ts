@@ -14,6 +14,8 @@ import { CacheRequestBuilderRequestsMetadata, type CacheRequestBuilder } from '.
 // @ts-ignore
 import { EqualizerRequestBuilderRequestsMetadata, type EqualizerRequestBuilder } from './equalizer/index.js';
 // @ts-ignore
+import { FileSelectionsRequestBuilderRequestsMetadata, type FileSelectionsRequestBuilder } from './fileSelections/index.js';
+// @ts-ignore
 import { GenresRequestBuilderRequestsMetadata, type GenresRequestBuilder } from './genres/index.js';
 // @ts-ignore
 import { HealthRequestBuilderRequestsMetadata, type HealthRequestBuilder } from './health/index.js';
@@ -70,6 +72,10 @@ export interface V1RequestBuilder extends BaseRequestBuilder<V1RequestBuilder> {
      * The equalizer property
      */
     get equalizer(): EqualizerRequestBuilder;
+    /**
+     * The fileSelections property
+     */
+    get fileSelections(): FileSelectionsRequestBuilder;
     /**
      * The genres property
      */
@@ -152,6 +158,9 @@ export const V1RequestBuilderNavigationMetadata: Record<Exclude<keyof V1RequestB
     },
     equalizer: {
         requestsMetadata: EqualizerRequestBuilderRequestsMetadata,
+    },
+    fileSelections: {
+        requestsMetadata: FileSelectionsRequestBuilderRequestsMetadata,
     },
     genres: {
         requestsMetadata: GenresRequestBuilderRequestsMetadata,

@@ -223,7 +223,7 @@ public static class LibraryMappingExtensions
     /// <summary>
     /// A reference only if both id and name are known.
     /// </summary>
-    private static ArtistReferenceDto? ToReference(Guid? id, string? name)
+    internal static ArtistReferenceDto? ToReference(Guid? id, string? name)
     {
         return id is { } artistId && name is not null ? new ArtistReferenceDto { Id = artistId, Name = name } : null;
     }

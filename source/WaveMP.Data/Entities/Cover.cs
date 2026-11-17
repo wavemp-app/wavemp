@@ -32,7 +32,7 @@ public class Cover
     public string? MimeType { get; set; }
 
     /// <summary>
-    /// The cover chosen automatically for the album or track.
+    /// The cover chosen for the album or track: the one the admin selected for a track, otherwise the best one.
     /// </summary>
     public required bool IsPrimary { get; set; }
 }

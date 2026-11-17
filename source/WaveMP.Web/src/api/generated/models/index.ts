@@ -619,6 +619,15 @@ export function createFavoritePageFromDiscriminatorValue(parseNode: ParseNode | 
 /**
  * Creates a new instance of the appropriate class based on discriminator value
  * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {FileSelection}
+ */
+// @ts-ignore
+export function createFileSelectionFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoFileSelection;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
  * @returns {Genre}
  */
 // @ts-ignore
@@ -973,6 +982,33 @@ export function createSleepTimerSettingsFromDiscriminatorValue(parseNode: ParseN
 /**
  * Creates a new instance of the appropriate class based on discriminator value
  * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {TrackFileSelection}
+ */
+// @ts-ignore
+export function createTrackFileSelectionFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoTrackFileSelection;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {TrackFileSummary}
+ */
+// @ts-ignore
+export function createTrackFileSummaryFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoTrackFileSummary;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {TrackFileSummaryPage}
+ */
+// @ts-ignore
+export function createTrackFileSummaryPageFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoTrackFileSummaryPage;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
  * @returns {Track}
  */
 // @ts-ignore
@@ -1131,6 +1167,15 @@ export function createUpdatePlaylistFromDiscriminatorValue(parseNode: ParseNode 
 // @ts-ignore
 export function createUpdateSleepTimerSettingsFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
     return deserializeIntoUpdateSleepTimerSettings;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {UpdateTrackFileSelection}
+ */
+// @ts-ignore
+export function createUpdateTrackFileSelectionFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoUpdateTrackFileSelection;
 }
 /**
  * Creates a new instance of the appropriate class based on discriminator value
@@ -1698,6 +1743,22 @@ export function deserializeIntoFavoritePage(favoritePage: Partial<FavoritePage> 
 }
 /**
  * The deserialization information for the current model
+ * @param FileSelection The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoFileSelection(fileSelection: Partial<FileSelection> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "activeFileId": n => { fileSelection.activeFileId = n.getGuidValue(); },
+        "automaticFileId": n => { fileSelection.automaticFileId = n.getGuidValue(); },
+        "candidateFileIds": n => { fileSelection.candidateFileIds = n.getCollectionOfPrimitiveValues<Guid>("string"); },
+        "selectedFileId": n => { fileSelection.selectedFileId = n.getGuidValue(); },
+        "selectedPath": n => { fileSelection.selectedPath = n.getStringValue(); },
+        "state": n => { fileSelection.state = n.getEnumValue<FileSelectionState>(FileSelectionStateObject); },
+    }
+}
+/**
+ * The deserialization information for the current model
  * @param Genre The instance to deserialize into.
  * @returns {Record<string, (node: ParseNode) => void>}
  */
@@ -2258,6 +2319,56 @@ export function deserializeIntoTrack(track: Partial<Track> | undefined = {}) : R
 }
 /**
  * The deserialization information for the current model
+ * @param TrackFileSelection The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoTrackFileSelection(trackFileSelection: Partial<TrackFileSelection> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "audio": n => { trackFileSelection.audio = n.getObjectValue<FileSelection>(createFileSelectionFromDiscriminatorValue); },
+        "cover": n => { trackFileSelection.cover = n.getObjectValue<FileSelection>(createFileSelectionFromDiscriminatorValue); },
+        "trackId": n => { trackFileSelection.trackId = n.getGuidValue(); },
+        "video": n => { trackFileSelection.video = n.getObjectValue<FileSelection>(createFileSelectionFromDiscriminatorValue); },
+    }
+}
+/**
+ * The deserialization information for the current model
+ * @param TrackFileSummary The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoTrackFileSummary(trackFileSummary: Partial<TrackFileSummary> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "album": n => { trackFileSummary.album = n.getObjectValue<AlbumReference>(createAlbumReferenceFromDiscriminatorValue); },
+        "artist": n => { trackFileSummary.artist = n.getObjectValue<ArtistReference>(createArtistReferenceFromDiscriminatorValue); },
+        "audio": n => { trackFileSummary.audio = n.getEnumValue<FileSelectionState>(FileSelectionStateObject); },
+        "audioCount": n => { trackFileSummary.audioCount = n.getNumberValue(); },
+        "baseName": n => { trackFileSummary.baseName = n.getStringValue(); },
+        "cover": n => { trackFileSummary.cover = n.getEnumValue<FileSelectionState>(FileSelectionStateObject); },
+        "coverCount": n => { trackFileSummary.coverCount = n.getNumberValue(); },
+        "directoryPath": n => { trackFileSummary.directoryPath = n.getStringValue(); },
+        "title": n => { trackFileSummary.title = n.getStringValue(); },
+        "trackId": n => { trackFileSummary.trackId = n.getGuidValue(); },
+        "video": n => { trackFileSummary.video = n.getEnumValue<FileSelectionState>(FileSelectionStateObject); },
+        "videoCount": n => { trackFileSummary.videoCount = n.getNumberValue(); },
+    }
+}
+/**
+ * The deserialization information for the current model
+ * @param TrackFileSummaryPage The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoTrackFileSummaryPage(trackFileSummaryPage: Partial<TrackFileSummaryPage> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "items": n => { trackFileSummaryPage.items = n.getCollectionOfObjectValues<TrackFileSummary>(createTrackFileSummaryFromDiscriminatorValue); },
+        "limit": n => { trackFileSummaryPage.limit = n.getNumberValue(); },
+        "offset": n => { trackFileSummaryPage.offset = n.getNumberValue(); },
+        "total": n => { trackFileSummaryPage.total = n.getNumberValue(); },
+    }
+}
+/**
+ * The deserialization information for the current model
  * @param TrackMetadata The instance to deserialize into.
  * @returns {Record<string, (node: ParseNode) => void>}
  */
@@ -2510,6 +2621,19 @@ export function deserializeIntoUpdatePlaylistEntry(updatePlaylistEntry: Partial<
 export function deserializeIntoUpdateSleepTimerSettings(updateSleepTimerSettings: Partial<UpdateSleepTimerSettings> | undefined = {}) : Record<string, (node: ParseNode) => void> {
     return {
         "fadeSeconds": n => { updateSleepTimerSettings.fadeSeconds = n.getNumberValue(); },
+    }
+}
+/**
+ * The deserialization information for the current model
+ * @param UpdateTrackFileSelection The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoUpdateTrackFileSelection(updateTrackFileSelection: Partial<UpdateTrackFileSelection> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "audioFileId": n => { updateTrackFileSelection.audioFileId = n.getGuidValue(); },
+        "coverFileId": n => { updateTrackFileSelection.coverFileId = n.getGuidValue(); },
+        "videoFileId": n => { updateTrackFileSelection.videoFileId = n.getGuidValue(); },
     }
 }
 /**
@@ -2867,6 +2991,38 @@ export interface FavoritePage extends AdditionalDataHolder, Parsable {
 }
 export type FavoriteType = (typeof FavoriteTypeObject)[keyof typeof FavoriteTypeObject];
 /**
+ * The file a track uses in one category of the file selection, and the files it could use.
+ */
+export interface FileSelection extends AdditionalDataHolder, Parsable {
+    /**
+     * Id of the file the track uses (plays or shows); null if the track has no file of the category.
+     */
+    activeFileId?: Guid | null;
+    /**
+     * Id of the file the quality rule chooses without selection.
+     */
+    automaticFileId?: Guid | null;
+    /**
+     * Ids of the files that can be selected (see ListTrackFiles), in the order of the quality rule, the best first. Covers are the readable pictures with the base name of the track and the audio and video files with an embedded picture.
+     */
+    candidateFileIds?: Guid[] | null;
+    /**
+     * Id of the file the admin selected; for a missing selection the id the file had. Null without selection.
+     */
+    selectedFileId?: Guid | null;
+    /**
+     * Path of the selected file relative to the media folder, as it was selected. Null without selection.
+     */
+    selectedPath?: string | null;
+    /**
+     * Which file a track uses in a category of the file selection. Automatic: no selection, the file of the highest quality. Selected: the file the admin selected. Missing: the admin selected a file that is gone; the track falls back to the automatic choice until the file is back, another file is selected or the selection is reset.
+     */
+    state?: FileSelectionState | null;
+}
+export type FileSelectionFilter = (typeof FileSelectionFilterObject)[keyof typeof FileSelectionFilterObject];
+export type FileSelectionSort = (typeof FileSelectionSortObject)[keyof typeof FileSelectionSortObject];
+export type FileSelectionState = (typeof FileSelectionStateObject)[keyof typeof FileSelectionStateObject];
+/**
  * A genre of the tracks; genres that differ only in case are one genre.
  */
 export interface Genre extends AdditionalDataHolder, Parsable {
@@ -3186,7 +3342,7 @@ export interface MediaFile extends AdditionalDataHolder, Parsable {
      */
     isLossless?: boolean | null;
     /**
-     * The file of its kind (audio or video) that the track plays: the one with the highest quality.
+     * The file of its kind (audio or video) that the track plays: the one the admin selected, otherwise the one with the highest quality.
      */
     isPrimary?: boolean | null;
     /**
@@ -4185,6 +4341,23 @@ export function serializeFavoritePage(writer: SerializationWriter, favoritePage:
 }
 /**
  * Serializes information the current object
+ * @param FileSelection The instance to serialize from.
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeFileSelection(writer: SerializationWriter, fileSelection: Partial<FileSelection> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!fileSelection || isSerializingDerivedType) { return; }
+    writer.writeGuidValue("activeFileId", fileSelection.activeFileId);
+    writer.writeGuidValue("automaticFileId", fileSelection.automaticFileId);
+    writer.writeCollectionOfPrimitiveValues<Guid>("candidateFileIds", fileSelection.candidateFileIds);
+    writer.writeGuidValue("selectedFileId", fileSelection.selectedFileId);
+    writer.writeStringValue("selectedPath", fileSelection.selectedPath);
+    writer.writeEnumValue<FileSelectionState>("state", fileSelection.state);
+    writer.writeAdditionalData(fileSelection.additionalData);
+}
+/**
+ * Serializes information the current object
  * @param Genre The instance to serialize from.
  * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
  * @param writer Serialization writer to use to serialize this model
@@ -4782,6 +4955,59 @@ export function serializeTrack(writer: SerializationWriter, track: Partial<Track
 /**
  * Serializes information the current object
  * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param TrackFileSelection The instance to serialize from.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeTrackFileSelection(writer: SerializationWriter, trackFileSelection: Partial<TrackFileSelection> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!trackFileSelection || isSerializingDerivedType) { return; }
+    writer.writeObjectValue<FileSelection>("audio", trackFileSelection.audio, serializeFileSelection);
+    writer.writeObjectValue<FileSelection>("cover", trackFileSelection.cover, serializeFileSelection);
+    writer.writeGuidValue("trackId", trackFileSelection.trackId);
+    writer.writeObjectValue<FileSelection>("video", trackFileSelection.video, serializeFileSelection);
+    writer.writeAdditionalData(trackFileSelection.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param TrackFileSummary The instance to serialize from.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeTrackFileSummary(writer: SerializationWriter, trackFileSummary: Partial<TrackFileSummary> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!trackFileSummary || isSerializingDerivedType) { return; }
+    writer.writeObjectValue<AlbumReference>("album", trackFileSummary.album, serializeAlbumReference);
+    writer.writeObjectValue<ArtistReference>("artist", trackFileSummary.artist, serializeArtistReference);
+    writer.writeEnumValue<FileSelectionState>("audio", trackFileSummary.audio);
+    writer.writeNumberValue("audioCount", trackFileSummary.audioCount);
+    writer.writeStringValue("baseName", trackFileSummary.baseName);
+    writer.writeEnumValue<FileSelectionState>("cover", trackFileSummary.cover);
+    writer.writeNumberValue("coverCount", trackFileSummary.coverCount);
+    writer.writeStringValue("directoryPath", trackFileSummary.directoryPath);
+    writer.writeStringValue("title", trackFileSummary.title);
+    writer.writeGuidValue("trackId", trackFileSummary.trackId);
+    writer.writeEnumValue<FileSelectionState>("video", trackFileSummary.video);
+    writer.writeNumberValue("videoCount", trackFileSummary.videoCount);
+    writer.writeAdditionalData(trackFileSummary.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param TrackFileSummaryPage The instance to serialize from.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeTrackFileSummaryPage(writer: SerializationWriter, trackFileSummaryPage: Partial<TrackFileSummaryPage> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!trackFileSummaryPage || isSerializingDerivedType) { return; }
+    writer.writeCollectionOfObjectValues<TrackFileSummary>("items", trackFileSummaryPage.items, serializeTrackFileSummary);
+    writer.writeNumberValue("limit", trackFileSummaryPage.limit);
+    writer.writeNumberValue("offset", trackFileSummaryPage.offset);
+    writer.writeNumberValue("total", trackFileSummaryPage.total);
+    writer.writeAdditionalData(trackFileSummaryPage.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
  * @param TrackMetadata The instance to serialize from.
  * @param writer Serialization writer to use to serialize this model
  */
@@ -5051,6 +5277,20 @@ export function serializeUpdateSleepTimerSettings(writer: SerializationWriter, u
     if (!updateSleepTimerSettings || isSerializingDerivedType) { return; }
     writer.writeNumberValue("fadeSeconds", updateSleepTimerSettings.fadeSeconds);
     writer.writeAdditionalData(updateSleepTimerSettings.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param UpdateTrackFileSelection The instance to serialize from.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeUpdateTrackFileSelection(writer: SerializationWriter, updateTrackFileSelection: Partial<UpdateTrackFileSelection> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!updateTrackFileSelection || isSerializingDerivedType) { return; }
+    writer.writeGuidValue("audioFileId", updateTrackFileSelection.audioFileId);
+    writer.writeGuidValue("coverFileId", updateTrackFileSelection.coverFileId);
+    writer.writeGuidValue("videoFileId", updateTrackFileSelection.videoFileId);
+    writer.writeAdditionalData(updateTrackFileSelection.additionalData);
 }
 /**
  * Serializes information the current object
@@ -5397,6 +5637,101 @@ export interface Track extends AdditionalDataHolder, Parsable {
      * The year property
      */
     year?: number | null;
+}
+/**
+ * The file selection of a track: per category the file it uses, the selection of the admin and the files to choose from.
+ */
+export interface TrackFileSelection extends AdditionalDataHolder, Parsable {
+    /**
+     * The audio file the track plays.
+     */
+    audio?: FileSelection | null;
+    /**
+     * The cover of the track itself. A selected cover is shown for the track before the cover of its album.
+     */
+    cover?: FileSelection | null;
+    /**
+     * The trackId property
+     */
+    trackId?: Guid | null;
+    /**
+     * The video file the track plays.
+     */
+    video?: FileSelection | null;
+}
+/**
+ * A track in the overview of the file selection: its number of files per category and the state of its selections.
+ */
+export interface TrackFileSummary extends AdditionalDataHolder, Parsable {
+    /**
+     * The album property
+     */
+    album?: AlbumReference | null;
+    /**
+     * The artist property
+     */
+    artist?: ArtistReference | null;
+    /**
+     * Which file a track uses in a category of the file selection. Automatic: no selection, the file of the highest quality. Selected: the file the admin selected. Missing: the admin selected a file that is gone; the track falls back to the automatic choice until the file is back, another file is selected or the selection is reset.
+     */
+    audio?: FileSelectionState | null;
+    /**
+     * The audioCount property
+     */
+    audioCount?: number | null;
+    /**
+     * File name of the track without extension, shared by all its files.
+     */
+    baseName?: string | null;
+    /**
+     * Which file a track uses in a category of the file selection. Automatic: no selection, the file of the highest quality. Selected: the file the admin selected. Missing: the admin selected a file that is gone; the track falls back to the automatic choice until the file is back, another file is selected or the selection is reset.
+     */
+    cover?: FileSelectionState | null;
+    /**
+     * Number of covers of the track itself: pictures with its base name and pictures embedded in its files.
+     */
+    coverCount?: number | null;
+    /**
+     * Folder of the track relative to the media folder with / as separator; empty for the media folder itself.
+     */
+    directoryPath?: string | null;
+    /**
+     * The title property
+     */
+    title?: string | null;
+    /**
+     * The trackId property
+     */
+    trackId?: Guid | null;
+    /**
+     * Which file a track uses in a category of the file selection. Automatic: no selection, the file of the highest quality. Selected: the file the admin selected. Missing: the admin selected a file that is gone; the track falls back to the automatic choice until the file is back, another file is selected or the selection is reset.
+     */
+    video?: FileSelectionState | null;
+    /**
+     * The videoCount property
+     */
+    videoCount?: number | null;
+}
+/**
+ * One page of a collection.
+ */
+export interface TrackFileSummaryPage extends AdditionalDataHolder, Parsable {
+    /**
+     * Items of the page, at most limit.
+     */
+    items?: TrackFileSummary[] | null;
+    /**
+     * Maximum number of items of the page, as requested.
+     */
+    limit?: number | null;
+    /**
+     * Number of items skipped before this page.
+     */
+    offset?: number | null;
+    /**
+     * Number of items of the whole collection.
+     */
+    total?: number | null;
 }
 /**
  * The metadata of a track as the metadata editor shows it: the values of the tags of its audio file; values the tags do not contain come from the library (e.g. derived from the folder and file name).
@@ -5829,6 +6164,23 @@ export interface UpdateSleepTimerSettings extends AdditionalDataHolder, Parsable
      * Seconds the sleep timer fades out the music before it stops, from 1 to 60.
      */
     fadeSeconds?: number | null;
+}
+/**
+ * The files the admin selects for a track. Replaces the whole selection: a missing or null id leaves the choice of the category to the quality rule. Sending the id of the current selection keeps it, also a missing one.
+ */
+export interface UpdateTrackFileSelection extends AdditionalDataHolder, Parsable {
+    /**
+     * Id of an audio file of the track.
+     */
+    audioFileId?: Guid | null;
+    /**
+     * Id of a readable picture file of the track, or of an audio or video file of the track with an embedded picture.
+     */
+    coverFileId?: Guid | null;
+    /**
+     * Id of a video file of the track.
+     */
+    videoFileId?: Guid | null;
 }
 /**
  * Changes the metadata of a track. Missing members stay unchanged; null or an empty text removes the value from the tags, and the library derives it from the folder and file name again.
@@ -6284,6 +6636,28 @@ export const FavoriteTypeObject = {
     Track: "Track",
     Album: "Album",
     Artist: "Artist",
+} as const;
+export const FileSelectionFilterObject = {
+    All: "All",
+    SeveralAudio: "SeveralAudio",
+    SeveralVideo: "SeveralVideo",
+    SeveralCovers: "SeveralCovers",
+    Choices: "Choices",
+    Selected: "Selected",
+    Missing: "Missing",
+} as const;
+export const FileSelectionSortObject = {
+    Path: "Path",
+    Title: "Title",
+    FileCount: "FileCount",
+} as const;
+/**
+ * Which file a track uses in a category of the file selection. Automatic: no selection, the file of the highest quality. Selected: the file the admin selected. Missing: the admin selected a file that is gone; the track falls back to the automatic choice until the file is back, another file is selected or the selection is reset.
+ */
+export const FileSelectionStateObject = {
+    Automatic: "Automatic",
+    Selected: "Selected",
+    Missing: "Missing",
 } as const;
 export const GenreSortObject = {
     Name: "Name",

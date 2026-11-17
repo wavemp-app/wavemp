@@ -1569,6 +1569,122 @@
         ]
       }
     },
+    "/api/v1/file-selections": {
+      "get": {
+        "tags": [
+          "FileSelections"
+        ],
+        "summary": "Lists the tracks with their number of audio files, video files and covers and the state of their file selection per category, optionally filtered and searched.",
+        "operationId": "ListFileSelections",
+        "parameters": [
+          {
+            "name": "offset",
+            "in": "query",
+            "description": "Number of tracks to skip.",
+            "schema": {
+              "maximum": 2147483647,
+              "minimum": 0,
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Maximum number of tracks of the page.",
+            "schema": {
+              "maximum": 100,
+              "minimum": 1,
+              "type": "integer",
+              "format": "int32",
+              "default": 50
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "description": "Sort key; Path by default.",
+            "schema": {
+              "$ref": "#/components/schemas/FileSelectionSort"
+            }
+          },
+          {
+            "name": "direction",
+            "in": "query",
+            "description": "Sort direction; ascending by default, descending for FileCount.",
+            "schema": {
+              "$ref": "#/components/schemas/SortDirection"
+            }
+          },
+          {
+            "name": "filter",
+            "in": "query",
+            "description": "Which tracks to list; All by default.",
+            "schema": {
+              "$ref": "#/components/schemas/FileSelectionFilter"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "description": "Only tracks whose title, folder or file name contains the text, without regard to case.",
+            "schema": {
+              "maxLength": 200,
+              "minLength": 0,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "One page of tracks.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrackFileSummaryPage"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid query parameters (code `request.invalid`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblem"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
     "/api/v1/genres": {
       "get": {
         "tags": [
@@ -5005,6 +5121,225 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ValidationProblem"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/api/v1/tracks/{id}/file-selection": {
+      "get": {
+        "tags": [
+          "TrackFileSelections"
+        ],
+        "summary": "Returns the file selection of a track: per category (audio, video, cover) the file the track uses, the file the admin selected and its state, the file the quality rule chooses and the files to choose from.",
+        "operationId": "GetTrackFileSelection",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Id of the track.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "The file selection of the track.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrackFileSelection"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The track does not exist (code `track.not_found`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "TrackFileSelections"
+        ],
+        "summary": "Selects the audio, video and cover file of a track instead of the automatic choice by quality and applies the selection at once: the track plays the selected files, takes its metadata from the selected audio file and shows the selected cover before the cover of its album. Replaces the whole selection; a missing or null id leaves the category to the quality rule, and the id of the current selection keeps it (also a missing one). The selection stays across scans; if a selected file is deleted, the track falls back to the automatic choice and the selection becomes Missing.",
+        "operationId": "SetTrackFileSelection",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Id of the track.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "The selected files.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateTrackFileSelection"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateTrackFileSelection"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "The file selection after the change.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrackFileSelection"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "A selected file is not a file of its category of the track (code `request.invalid`, field `audioFileId`, `videoFileId` or `coverFileId` with `invalid_value`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The track does not exist (code `track.not_found`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "TrackFileSelections"
+        ],
+        "summary": "Removes the whole file selection of a track, so the quality rule chooses all its files again, and applies it at once.",
+        "operationId": "ResetTrackFileSelection",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Id of the track.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "The selection is removed."
+          },
+          "404": {
+            "description": "The track does not exist (code `track.not_found`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
                 }
               }
             }
@@ -8942,6 +9277,87 @@
         "type": "string",
         "description": "What a favorite marks."
       },
+      "FileSelection": {
+        "required": [
+          "state",
+          "candidateFileIds"
+        ],
+        "type": "object",
+        "properties": {
+          "state": {
+            "$ref": "#/components/schemas/FileSelectionState"
+          },
+          "selectedFileId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Id of the file the admin selected; for a missing selection the id the file had. Null without selection.",
+            "format": "uuid"
+          },
+          "selectedPath": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Path of the selected file relative to the media folder, as it was selected. Null without selection."
+          },
+          "activeFileId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Id of the file the track uses (plays or shows); null if the track has no file of the category.",
+            "format": "uuid"
+          },
+          "automaticFileId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Id of the file the quality rule chooses without selection.",
+            "format": "uuid"
+          },
+          "candidateFileIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Ids of the files that can be selected (see ListTrackFiles), in the order of the quality rule, the best first. Covers are the readable pictures with the base name of the track and the audio and video files with an embedded picture."
+          }
+        },
+        "description": "The file a track uses in one category of the file selection, and the files it could use."
+      },
+      "FileSelectionFilter": {
+        "enum": [
+          "All",
+          "SeveralAudio",
+          "SeveralVideo",
+          "SeveralCovers",
+          "Choices",
+          "Selected",
+          "Missing"
+        ],
+        "type": "string"
+      },
+      "FileSelectionSort": {
+        "enum": [
+          "Path",
+          "Title",
+          "FileCount"
+        ],
+        "type": "string"
+      },
+      "FileSelectionState": {
+        "enum": [
+          "Automatic",
+          "Selected",
+          "Missing"
+        ],
+        "type": "string",
+        "description": "Which file a track uses in a category of the file selection. Automatic: no selection, the file of the highest quality. Selected: the file the admin selected. Missing: the admin selected a file that is gone; the track falls back to the automatic choice until the file is back, another file is selected or the selection is reset."
+      },
       "Genre": {
         "required": [
           "name",
@@ -9508,7 +9924,7 @@
           },
           "isPrimary": {
             "type": "boolean",
-            "description": "The file of its kind (audio or video) that the track plays: the one with the highest quality."
+            "description": "The file of its kind (audio or video) that the track plays: the one the admin selected, otherwise the one with the highest quality."
           },
           "format": {
             "type": [
@@ -10740,6 +11156,145 @@
         },
         "description": "A track of the library: all media files with the same base name in one folder."
       },
+      "TrackFileSelection": {
+        "required": [
+          "trackId",
+          "audio",
+          "video",
+          "cover"
+        ],
+        "type": "object",
+        "properties": {
+          "trackId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "audio": {
+            "description": "The audio file the track plays.",
+            "$ref": "#/components/schemas/FileSelection"
+          },
+          "video": {
+            "description": "The video file the track plays.",
+            "$ref": "#/components/schemas/FileSelection"
+          },
+          "cover": {
+            "description": "The cover of the track itself. A selected cover is shown for the track before the cover of its album.",
+            "$ref": "#/components/schemas/FileSelection"
+          }
+        },
+        "description": "The file selection of a track: per category the file it uses, the selection of the admin and the files to choose from."
+      },
+      "TrackFileSummary": {
+        "required": [
+          "trackId",
+          "title",
+          "directoryPath",
+          "baseName",
+          "audioCount",
+          "videoCount",
+          "coverCount",
+          "audio",
+          "video",
+          "cover"
+        ],
+        "type": "object",
+        "properties": {
+          "trackId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string"
+          },
+          "artist": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "Artist of the track; null if unknown.",
+                "$ref": "#/components/schemas/ArtistReference"
+              }
+            ]
+          },
+          "album": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "Album of the track; null for tracks without album.",
+                "$ref": "#/components/schemas/AlbumReference"
+              }
+            ]
+          },
+          "directoryPath": {
+            "type": "string",
+            "description": "Folder of the track relative to the media folder with / as separator; empty for the media folder itself."
+          },
+          "baseName": {
+            "type": "string",
+            "description": "File name of the track without extension, shared by all its files."
+          },
+          "audioCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "videoCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "coverCount": {
+            "type": "integer",
+            "description": "Number of covers of the track itself: pictures with its base name and pictures embedded in its files.",
+            "format": "int32"
+          },
+          "audio": {
+            "$ref": "#/components/schemas/FileSelectionState"
+          },
+          "video": {
+            "$ref": "#/components/schemas/FileSelectionState"
+          },
+          "cover": {
+            "$ref": "#/components/schemas/FileSelectionState"
+          }
+        },
+        "description": "A track in the overview of the file selection: its number of files per category and the state of its selections."
+      },
+      "TrackFileSummaryPage": {
+        "required": [
+          "items",
+          "offset",
+          "limit",
+          "total"
+        ],
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TrackFileSummary"
+            },
+            "description": "Items of the page, at most limit."
+          },
+          "offset": {
+            "type": "integer",
+            "description": "Number of items skipped before this page.",
+            "format": "int32"
+          },
+          "limit": {
+            "type": "integer",
+            "description": "Maximum number of items of the page, as requested.",
+            "format": "int32"
+          },
+          "total": {
+            "type": "integer",
+            "description": "Number of items of the whole collection.",
+            "format": "int32"
+          }
+        },
+        "description": "One page of a collection."
+      },
       "TrackMetadata": {
         "required": [
           "trackId",
@@ -11529,6 +12084,36 @@
         },
         "description": "Changes the sleep timer of the current profile. Missing or null values stay unchanged."
       },
+      "UpdateTrackFileSelection": {
+        "type": "object",
+        "properties": {
+          "audioFileId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Id of an audio file of the track.",
+            "format": "uuid"
+          },
+          "videoFileId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Id of a video file of the track.",
+            "format": "uuid"
+          },
+          "coverFileId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Id of a readable picture file of the track, or of an audio or video file of the track with an embedded picture.",
+            "format": "uuid"
+          }
+        },
+        "description": "The files the admin selects for a track. Replaces the whole selection: a missing or null id leaves the choice of the category to the quality rule. Sending the id of the current selection keeps it, also a missing one."
+      },
       "UpdateTrackMetadata": {
         "type": "object",
         "properties": {
@@ -12298,6 +12883,9 @@
       "name": "Favorites"
     },
     {
+      "name": "FileSelections"
+    },
+    {
       "name": "Genres"
     },
     {
@@ -12344,6 +12932,9 @@
     },
     {
       "name": "Settings"
+    },
+    {
+      "name": "TrackFileSelections"
     },
     {
       "name": "TrackHls"

@@ -68,6 +68,37 @@ public class CoverRepositoryTests : LibraryDatabaseTests
     }
 
     [Test]
+    public async Task GetTrackCandidatesAsync_CoverSelectedByTheAdmin_IsMarkedAsSelected()
+    {
+        LibrarySeed seed = new();
+        Track track = seed.Track("Track");
+        MediaFile selectedFile = seed.File("Track.jpg", MediaFileKind.Image, track);
+        Cover selected = seed.TrackCover(track, selectedFile);
+        Cover other = seed.TrackCover(track, seed.File("Track.png", MediaFileKind.Image, track), isPrimary: false);
+        await SaveAsync(seed);
+        await using (WaveMpDbContext db = CreateDbContext())
+        {
+            db.TrackFileSelections.Add(new TrackFileSelection
+            {
+                TrackId = track.Id,
+                Category = FileSelectionCategory.Cover,
+                MediaFileId = selectedFile.Id,
+                RelativePath = selectedFile.RelativePath,
+                IsMissing = false,
+                SelectedAt = LibrarySeed.DefaultTime,
+            });
+            await db.SaveChangesAsync();
+        }
+
+        CoverRepository repository = new(CreateDbContext());
+
+        IReadOnlyList<CoverCandidateRow> candidates = (await repository.GetTrackCandidatesAsync(track.Id))!;
+
+        candidates.Single(candidate => candidate.CoverId == selected.Id).IsSelected.Should().BeTrue();
+        candidates.Single(candidate => candidate.CoverId == other.Id).IsSelected.Should().BeFalse();
+    }
+
+    [Test]
     public async Task GetTrackCandidatesAsync_TrackWithoutAlbum_ReturnsOnlyItsOwnCovers()
     {
         LibrarySeed seed = new();

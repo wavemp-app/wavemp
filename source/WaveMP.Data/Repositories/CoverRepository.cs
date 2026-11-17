@@ -115,6 +115,12 @@ internal sealed class CoverRepository(WaveMpDbContext dbContext) : ICoverReposit
             cover.MediaFile!.RelativePath,
             cover.MimeType,
             cover.MediaFile.Size,
-            cover.MediaFile.ModifiedAt));
+            cover.MediaFile.ModifiedAt,
+            cover.Track != null
+                && cover.IsPrimary
+                && cover.Track.FileSelections.Any(selection =>
+                    selection.Category == FileSelectionCategory.Cover
+                    && !selection.IsMissing
+                    && selection.MediaFileId == cover.MediaFileId)));
     }
 }
