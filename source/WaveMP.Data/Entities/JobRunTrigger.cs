@@ -24,4 +24,9 @@ public enum JobRunTrigger
     /// A library scan that finished, e.g. to prepare the covers of the changed library.
     /// </summary>
     LibraryScan,
+
+    /// <summary>
+    /// A change of a cover rule (global, of an album or of a track), e.g. to prepare the covers shown now.
+    /// </summary>
+    CoverRule,
 }

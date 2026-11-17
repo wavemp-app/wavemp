@@ -50,6 +50,106 @@ public class CoverChoicesTests
     }
 
     [Test]
+    public void ForAlbum_RuleOfTheAlbum_OverridesTheGlobalRule()
+    {
+        CoverCandidateRow album = _album with { AlbumCoverPriority = CoverPriority.TrackFirst };
+        CoverCandidateRow first = _first with { AlbumCoverPriority = CoverPriority.TrackFirst };
+        CoverCandidateRow second = _second with { AlbumCoverPriority = CoverPriority.TrackFirst };
+
+        IReadOnlyList<IReadOnlyList<CoverCandidateRow>> lists =
+            CoverChoices.ForAlbum(CoverPriority.AlbumFirst, [second, album, first]);
+
+        lists[0].Should().Equal(first, second, album);
+        lists.Where(list => list[0] == album).Should().ContainSingle()
+            .Which.Should().Equal(album, first, second);
+    }
+
+    [Test]
+    public void ForAlbum_RuleOfATrack_OverridesTheRuleOfTheAlbumOnlyForThatTrack()
+    {
+        CoverCandidateRow second = _second with { TrackCoverPriority = CoverPriority.TrackFirst };
+
+        IReadOnlyList<IReadOnlyList<CoverCandidateRow>> lists =
+            CoverChoices.ForAlbum(CoverPriority.AlbumFirst, [second, _album, _first]);
+
+        lists.Select(CoverChoices.KeyOf).Should().BeEquivalentTo(
+        [
+            CoverChoices.KeyOf([_album, _first, second]),
+            CoverChoices.KeyOf([second, _album, _first]),
+        ]);
+    }
+
+    [Test]
+    public void ForTrack_RuleOfTheTrackAndOfTheAlbum_TheTrackWins()
+    {
+        CoverCandidateRow album = _album with { AlbumCoverPriority = CoverPriority.TrackFirst };
+        CoverCandidateRow first = _first with
+        {
+            AlbumCoverPriority = CoverPriority.TrackFirst,
+            TrackCoverPriority = CoverPriority.AlbumFirst,
+        };
+        CoverCandidateRow second = _second with { AlbumCoverPriority = CoverPriority.TrackFirst };
+
+        CoverChoices.ForTrack(_firstTrackId, CoverPriority.TrackFirst, [second, album, first])
+            .Should().Equal(album, first, second);
+        CoverChoices.ForTrack(_secondTrackId, CoverPriority.AlbumFirst, [second, album, first])
+            .Should().Equal(second, album, first);
+    }
+
+    [Test]
+    public void ForTrack_PreferredCoverMissing_FallsBackToTheOther()
+    {
+        CoverCandidateRow first = _first with { TrackCoverPriority = CoverPriority.AlbumFirst };
+
+        CoverChoices.ForTrack(_firstTrackId, CoverPriority.TrackFirst, [first]).Should().Equal(first);
+        CoverChoices.ForTrack(_secondTrackId, CoverPriority.TrackFirst, [_album]).Should().Equal(_album);
+    }
+
+    [TestCase(null, CoverPriority.AlbumFirst)]
+    [TestCase(CoverPriority.AlbumFirst, CoverPriority.AlbumFirst)]
+    [TestCase(CoverPriority.TrackFirst, CoverPriority.TrackFirst)]
+    public void PreviewForAlbum_Rule_OrdersAsIfTheAlbumHadIt(CoverPriority? rule, CoverPriority expected)
+    {
+        // The stored rule of the album is replaced by the previewed one; inherit falls back to the global rule.
+        CoverCandidateRow album = _album with { AlbumCoverPriority = CoverPriority.TrackFirst };
+        CoverCandidateRow first = _first with { AlbumCoverPriority = CoverPriority.TrackFirst };
+
+        IReadOnlyList<CoverCandidateRow> ordered =
+            CoverChoices.PreviewForAlbum(CoverPriority.AlbumFirst, rule, [first, album]);
+
+        ordered.Should().Equal(expected == CoverPriority.AlbumFirst ? [album, first] : [first, album]);
+    }
+
+    [TestCase(null, CoverPriority.TrackFirst)]
+    [TestCase(CoverPriority.AlbumFirst, CoverPriority.AlbumFirst)]
+    [TestCase(CoverPriority.TrackFirst, CoverPriority.TrackFirst)]
+    public void PreviewForTrack_Rule_OrdersAsIfTheTrackHadIt(CoverPriority? rule, CoverPriority expected)
+    {
+        // The album says TrackFirst, the stored rule of the track AlbumFirst; inherit previews the rule of the album.
+        CoverCandidateRow album = _album with { AlbumCoverPriority = CoverPriority.TrackFirst };
+        CoverCandidateRow first = _first with
+        {
+            AlbumCoverPriority = CoverPriority.TrackFirst,
+            TrackCoverPriority = CoverPriority.AlbumFirst,
+        };
+
+        IReadOnlyList<CoverCandidateRow> ordered =
+            CoverChoices.PreviewForTrack(_firstTrackId, CoverPriority.AlbumFirst, rule, [album, first]);
+
+        ordered.Should().Equal(expected == CoverPriority.AlbumFirst ? [album, first] : [first, album]);
+    }
+
+    [Test]
+    public void PreviewForTrack_SelectedCover_StaysFirst()
+    {
+        CoverCandidateRow selected = _first with { IsSelected = true };
+
+        CoverChoices
+            .PreviewForTrack(_firstTrackId, CoverPriority.AlbumFirst, CoverPriority.AlbumFirst, [_album, selected])
+            .Should().Equal(selected, _album);
+    }
+
+    [Test]
     public void ForAlbum_WithoutCovers_ListsNothing()
     {
         CoverChoices.ForAlbum(CoverPriority.AlbumFirst, []).Should().BeEmpty();

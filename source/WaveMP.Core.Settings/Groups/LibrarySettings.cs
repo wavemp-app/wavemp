@@ -46,7 +46,7 @@ public sealed class LibrarySettings
 
     /// <summary>
     /// Which cover a track shows: the cover of its album or its own; the other one is the fallback. Applies to all
-    /// albums and tracks; settings per album and per track can override it later. Stored as its name.
+    /// albums and tracks without a rule of their own (a rule of an album or a track overrides it). Stored as its name.
     /// </summary>
     [JsonConverter(typeof(JsonStringEnumConverter<CoverPriority>))]
     public CoverPriority CoverPriority { get; init; } = CoverPriority.AlbumFirst;

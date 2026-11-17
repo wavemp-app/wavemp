@@ -22,6 +22,9 @@ internal sealed class TrackConfiguration : IEntityTypeConfiguration<Track>
         builder.Property(track => track.MetadataSource)
             .HasConversion<string>()
             .HasMaxLength(LibraryColumns.EnumMaxLength);
+        builder.Property(track => track.CoverPriority)
+            .HasConversion<string>()
+            .HasMaxLength(LibraryColumns.EnumMaxLength);
 
         // One track per base name and folder, without regard to the case of the base name.
         builder.HasIndex(track => new { track.DirectoryPath, track.NormalizedBaseName }).IsUnique();

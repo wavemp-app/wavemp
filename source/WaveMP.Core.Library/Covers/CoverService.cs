@@ -21,7 +21,7 @@ internal sealed class CoverService(
         IReadOnlyList<CoverCandidateRow>? candidates = await covers.GetTrackCandidatesAsync(trackId, cancellationToken);
         return candidates is null
             ? CoverCandidates.OwnerNotFound
-            : new CoverCandidates(true, CoverChoices.ForTrack(trackId, Priority(), candidates));
+            : new CoverCandidates(true, CoverChoices.ForTrack(trackId, Global(), candidates));
     }
 
     public async Task<CoverCandidates> GetAlbumCandidatesAsync(
@@ -31,13 +31,37 @@ internal sealed class CoverService(
         IReadOnlyList<CoverCandidateRow>? candidates = await covers.GetAlbumCandidatesAsync(albumId, cancellationToken);
         return candidates is null
             ? CoverCandidates.OwnerNotFound
-            : new CoverCandidates(true, CoverResolver.OrderForAlbum(Priority(), candidates));
+            : new CoverCandidates(
+                true,
+                CoverResolver.OrderForAlbum(CoverRules.ForAlbum(Global(), candidates), candidates));
+    }
+
+    public async Task<CoverCandidates> PreviewTrackCandidatesAsync(
+        Guid trackId,
+        CoverPriority? rule,
+        CancellationToken cancellationToken = default)
+    {
+        IReadOnlyList<CoverCandidateRow>? candidates = await covers.GetTrackCandidatesAsync(trackId, cancellationToken);
+        return candidates is null
+            ? CoverCandidates.OwnerNotFound
+            : new CoverCandidates(true, CoverChoices.PreviewForTrack(trackId, Global(), rule, candidates));
+    }
+
+    public async Task<CoverCandidates> PreviewAlbumCandidatesAsync(
+        Guid albumId,
+        CoverPriority? rule,
+        CancellationToken cancellationToken = default)
+    {
+        IReadOnlyList<CoverCandidateRow>? candidates = await covers.GetAlbumCandidatesAsync(albumId, cancellationToken);
+        return candidates is null
+            ? CoverCandidates.OwnerNotFound
+            : new CoverCandidates(true, CoverChoices.PreviewForAlbum(Global(), rule, candidates));
     }
 
     public async IAsyncEnumerable<IReadOnlyList<CoverCandidateRow>> EnumerateShownCoversAsync(
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        CoverPriority priority = Priority();
+        CoverPriority global = Global();
         HashSet<string> seen = new(StringComparer.Ordinal);
 
         IReadOnlyList<Guid> albumIds = await covers.ListAlbumIdsWithCoversAsync(cancellationToken);
@@ -49,7 +73,7 @@ internal sealed class CoverService(
                 .GroupBy(candidate => candidate.AlbumId ?? candidate.TrackAlbumId)
                 .OrderBy(album => album.Key))
             {
-                foreach (IReadOnlyList<CoverCandidateRow> list in CoverChoices.ForAlbum(priority, album))
+                foreach (IReadOnlyList<CoverCandidateRow> list in CoverChoices.ForAlbum(global, album))
                 {
                     if (seen.Add(CoverChoices.KeyOf(list)))
                     {
@@ -69,7 +93,7 @@ internal sealed class CoverService(
                 .OrderBy(track => track.Key))
             {
                 IReadOnlyList<CoverCandidateRow> list =
-                    CoverChoices.ForTrack(track.Key ?? Guid.Empty, priority, track);
+                    CoverChoices.ForTrack(track.Key ?? Guid.Empty, global, track);
                 if (list.Count > 0 && seen.Add(CoverChoices.KeyOf(list)))
                 {
                     yield return list;
@@ -79,10 +103,10 @@ internal sealed class CoverService(
     }
 
     /// <summary>
-    /// Albums and tracks have no rule of their own yet; the global one applies.
+    /// The global rule; albums and tracks may override it with rules of their own, which travel with their covers.
     /// </summary>
-    private CoverPriority Priority()
+    private CoverPriority Global()
     {
-        return CoverRules.Effective(settings.Current.CoverPriority, album: null, track: null);
+        return settings.Current.CoverPriority;
     }
 }

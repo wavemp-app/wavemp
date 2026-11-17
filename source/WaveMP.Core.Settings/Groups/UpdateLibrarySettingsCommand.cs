@@ -1,3 +1,5 @@
+using WaveMP.Data.Entities;
+
 namespace WaveMP.Core.Settings.Groups;
 
 /// <summary>
@@ -9,4 +11,5 @@ public sealed record UpdateLibrarySettingsCommand(
     IReadOnlyList<string>? AudioExtensions = null,
     IReadOnlyList<string>? VideoExtensions = null,
     IReadOnlyList<string>? ImageExtensions = null,
-    IReadOnlyList<string>? AlbumCoverNames = null);
+    IReadOnlyList<string>? AlbumCoverNames = null,
+    CoverPriority? CoverPriority = null);

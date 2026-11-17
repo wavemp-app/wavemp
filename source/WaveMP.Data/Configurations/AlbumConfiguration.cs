@@ -20,6 +20,9 @@ internal sealed class AlbumConfiguration : IEntityTypeConfiguration<Album>
         builder.Property(album => album.Title).HasMaxLength(LibraryColumns.TextMaxLength);
         builder.Property(album => album.NormalizedTitle).HasMaxLength(LibraryColumns.TextMaxLength);
         builder.Property(album => album.AlbumKey).HasMaxLength(LibraryColumns.AlbumKeyLength);
+        builder.Property(album => album.CoverPriority)
+            .HasConversion<string>()
+            .HasMaxLength(LibraryColumns.EnumMaxLength);
 
         builder.HasIndex(album => album.AlbumKey).IsUnique();
         builder.HasIndex(album => album.AlbumArtistId);

@@ -34,4 +34,10 @@ public sealed class LibrarySettingsDto
     /// Base names of pictures that are album covers, in the order of their priority.
     /// </summary>
     public required IReadOnlyList<string> AlbumCoverNames { get; init; }
+
+    /// <summary>
+    /// The global cover rule: whether tracks and albums show the cover of the album or the cover of the track first.
+    /// Albums and tracks with a rule of their own (GetAlbumCoverRule, GetTrackCoverRule) override it.
+    /// </summary>
+    public required CoverPriorityDto CoverPriority { get; init; }
 }

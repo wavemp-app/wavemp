@@ -82,6 +82,47 @@ internal sealed class CoverRepository(WaveMpDbContext dbContext) : ICoverReposit
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<CoverRuleRow?> GetAlbumRuleAsync(Guid albumId, CancellationToken cancellationToken = default)
+    {
+        return await dbContext.Albums.AsNoTracking()
+            .Where(album => album.Id == albumId)
+            .Select(album => new CoverRuleRow(album.CoverPriority, null))
+            .FirstOrDefaultAsync(cancellationToken);
+    }
+
+    public async Task<CoverRuleRow?> GetTrackRuleAsync(Guid trackId, CancellationToken cancellationToken = default)
+    {
+        return await dbContext.Tracks.AsNoTracking()
+            .Where(track => track.Id == trackId)
+            .Select(track => new CoverRuleRow(
+                track.CoverPriority,
+                track.Album != null ? track.Album.CoverPriority : null))
+            .FirstOrDefaultAsync(cancellationToken);
+    }
+
+    public async Task<bool> SetAlbumRuleAsync(
+        Guid albumId,
+        CoverPriority? rule,
+        CancellationToken cancellationToken = default)
+    {
+        // Not a change of the content of the library, so the time of the last change stays.
+        int changed = await dbContext.Albums
+            .Where(album => album.Id == albumId)
+            .ExecuteUpdateAsync(setters => setters.SetProperty(album => album.CoverPriority, rule), cancellationToken);
+        return changed > 0;
+    }
+
+    public async Task<bool> SetTrackRuleAsync(
+        Guid trackId,
+        CoverPriority? rule,
+        CancellationToken cancellationToken = default)
+    {
+        int changed = await dbContext.Tracks
+            .Where(track => track.Id == trackId)
+            .ExecuteUpdateAsync(setters => setters.SetProperty(track => track.CoverPriority, rule), cancellationToken);
+        return changed > 0;
+    }
+
     public async Task<IReadOnlyList<CoverSourceRow>> ListCoverSourcesAsync(
         CancellationToken cancellationToken = default)
     {
@@ -121,6 +162,12 @@ internal sealed class CoverRepository(WaveMpDbContext dbContext) : ICoverReposit
                 && cover.Track.FileSelections.Any(selection =>
                     selection.Category == FileSelectionCategory.Cover
                     && !selection.IsMissing
-                    && selection.MediaFileId == cover.MediaFileId)));
+                    && selection.MediaFileId == cover.MediaFileId),
+            cover.Album != null
+                ? cover.Album.CoverPriority
+                : cover.Track != null && cover.Track.Album != null
+                    ? cover.Track.Album.CoverPriority
+                    : null,
+            cover.Track != null ? cover.Track.CoverPriority : null));
     }
 }

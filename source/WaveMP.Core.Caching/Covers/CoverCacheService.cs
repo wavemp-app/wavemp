@@ -1,4 +1,5 @@
 using WaveMP.Core.Library.Covers;
+using WaveMP.Data.Entities;
 
 namespace WaveMP.Core.Caching.Covers;
 
@@ -19,6 +20,26 @@ internal sealed class CoverCacheService(ICoverService covers, ICoverImageCache c
         CancellationToken cancellationToken = default)
     {
         CoverCandidates candidates = await covers.GetAlbumCandidatesAsync(albumId, cancellationToken);
+        return await DeliverAsync(candidates, size, cancellationToken);
+    }
+
+    public async Task<CoverDeliveryResult> PreviewTrackCoverAsync(
+        Guid trackId,
+        CoverPriority? rule,
+        int? size,
+        CancellationToken cancellationToken = default)
+    {
+        CoverCandidates candidates = await covers.PreviewTrackCandidatesAsync(trackId, rule, cancellationToken);
+        return await DeliverAsync(candidates, size, cancellationToken);
+    }
+
+    public async Task<CoverDeliveryResult> PreviewAlbumCoverAsync(
+        Guid albumId,
+        CoverPriority? rule,
+        int? size,
+        CancellationToken cancellationToken = default)
+    {
+        CoverCandidates candidates = await covers.PreviewAlbumCandidatesAsync(albumId, rule, cancellationToken);
         return await DeliverAsync(candidates, size, cancellationToken);
     }
 

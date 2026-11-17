@@ -1,10 +1,11 @@
+using WaveMP.Data.Entities;
 using WaveMP.Data.Projections;
 
 namespace WaveMP.Data.Repositories;
 
 /// <summary>
-/// Finds the covers that may be shown for a track or an album, also in batches for the whole library. Nothing is
-/// tracked.
+/// Finds the covers that may be shown for a track or an album, also in batches for the whole library, and reads and
+/// writes the cover rules of albums and tracks. Nothing is tracked.
 /// </summary>
 public interface ICoverRepository
 {
@@ -47,6 +48,28 @@ public interface ICoverRepository
     Task<IReadOnlyList<CoverCandidateRow>> GetTrackBatchCandidatesAsync(
         IReadOnlyCollection<Guid> trackIds,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// The cover rule of the album; <c>null</c> if the album does not exist.
+    /// </summary>
+    Task<CoverRuleRow?> GetAlbumRuleAsync(Guid albumId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// The cover rule of the track and of its album; <c>null</c> if the track does not exist.
+    /// </summary>
+    Task<CoverRuleRow?> GetTrackRuleAsync(Guid trackId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Sets the cover rule of the album; <c>null</c> inherits the global rule. <c>false</c> if the album does not
+    /// exist.
+    /// </summary>
+    Task<bool> SetAlbumRuleAsync(Guid albumId, CoverPriority? rule, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Sets the cover rule of the track; <c>null</c> inherits the rule of its album. <c>false</c> if the track does not
+    /// exist.
+    /// </summary>
+    Task<bool> SetTrackRuleAsync(Guid trackId, CoverPriority? rule, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// All distinct versions of pictures that covers come from, e.g. to find cached pictures of older versions.

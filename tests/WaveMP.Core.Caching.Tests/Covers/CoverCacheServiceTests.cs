@@ -73,6 +73,35 @@ public class CoverCacheServiceTests
         (await _service.GetAlbumCoverAsync(_id, 300)).Status.Should().Be(CoverStatus.OwnerNotFound);
     }
 
+    [Test]
+    public async Task PreviewTrackCoverAsync_Rule_DeliversTheCoversOrderedByIt()
+    {
+        CoverCandidateRow candidate = Candidate();
+        CoverDelivery delivery = new(new MemoryStream([1]), "image/webp", "etag", DateTimeOffset.UnixEpoch);
+        _covers.PreviewTrackCandidatesAsync(_id, CoverPriority.TrackFirst, Arg.Any<CancellationToken>())
+            .Returns(new CoverCandidates(true, [candidate]));
+        _cache.DeliverAsync(
+                Arg.Is<IReadOnlyList<CoverCandidateRow>>(list => list.Single() == candidate),
+                300,
+                Arg.Any<CancellationToken>())
+            .Returns(delivery);
+
+        CoverDeliveryResult result = await _service.PreviewTrackCoverAsync(_id, CoverPriority.TrackFirst, 300);
+
+        result.Should().Be(CoverDeliveryResult.Found(delivery));
+    }
+
+    [Test]
+    public async Task PreviewAlbumCoverAsync_UnknownAlbum_ReturnsOwnerNotFound()
+    {
+        _covers.PreviewAlbumCandidatesAsync(_id, null, Arg.Any<CancellationToken>())
+            .Returns(CoverCandidates.OwnerNotFound);
+
+        CoverDeliveryResult result = await _service.PreviewAlbumCoverAsync(_id, null, 96);
+
+        result.Should().Be(CoverDeliveryResult.OwnerNotFound);
+    }
+
     private CoverCandidateRow Candidate()
     {
         return new CoverCandidateRow(

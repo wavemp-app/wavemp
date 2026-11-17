@@ -10,6 +10,7 @@ using WaveMP.Core.Caching.Services;
 using WaveMP.Core.Caching.Stores;
 using WaveMP.Core.Jobs.Definitions;
 using WaveMP.Core.Jobs.Extensions;
+using WaveMP.Core.Library.Covers;
 using WaveMP.Core.Settings.Groups;
 using WaveMP.Core.Settings.Handlers;
 using WaveMP.Core.Settings.Paths;
@@ -21,9 +22,10 @@ public static class ServiceCollectionExtensions
     /// <summary>
     /// Registers the cache: its folder <c>cache</c> in the data folder of <c>DATA_PATH</c> (default <c>/data</c>;
     /// relative paths against the content root), settings from the section <c>Caching</c>, the scaled covers with
-    /// ffmpeg, the job <c>cover-cache</c> that prepares them after scans and the clean-up when the limit is lowered.
-    /// Needs <c>AddWaveMpData</c>, <c>AddWaveMpSettings</c>, <c>AddWaveMpLibrary</c> and <c>AddWaveMpJobs</c>. The
-    /// folder is prepared on start by <see cref="ServiceProviderExtensions.InitializeWaveMpCacheAsync"/>.
+    /// ffmpeg, the job <c>cover-cache</c> that prepares them after scans and changes of a cover rule, and the clean-up
+    /// when the limit is lowered. Needs <c>AddWaveMpData</c>, <c>AddWaveMpSettings</c>, <c>AddWaveMpLibrary</c> and
+    /// <c>AddWaveMpJobs</c>. The folder is prepared on start by
+    /// <see cref="ServiceProviderExtensions.InitializeWaveMpCacheAsync"/>.
     /// </summary>
     public static IServiceCollection AddWaveMpCaching(this IServiceCollection services)
     {
@@ -45,6 +47,12 @@ public static class ServiceCollectionExtensions
 
         services.AddWaveMpJob<CoverCacheJob>(JobIds.CoverCache);
         services.AddSingleton<ISettingsChangeHandler<CacheSettings>, CacheLimitChangeHandler>();
+
+        // Scoped like the services that call them, because starting a job needs the database.
+        services.AddScoped<CoverRuleChangeHandler>();
+        services.AddScoped<ICoverRuleChangeHandler>(provider => provider.GetRequiredService<CoverRuleChangeHandler>());
+        services.AddScoped<ISettingsChangeHandler<LibrarySettings>>(provider =>
+            provider.GetRequiredService<CoverRuleChangeHandler>());
 
         return services;
     }

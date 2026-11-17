@@ -41,4 +41,9 @@ public sealed class UpdateLibrarySettingsDto
     /// </summary>
     [MaxLength(50)]
     public IReadOnlyList<string>? AlbumCoverNames { get; init; }
+
+    /// <summary>
+    /// The global cover rule; applies at once to all albums and tracks without a rule of their own.
+    /// </summary>
+    public CoverPriorityDto? CoverPriority { get; init; }
 }

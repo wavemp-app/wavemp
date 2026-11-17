@@ -68,6 +68,13 @@ public class Track
     /// </summary>
     public int VideoOffsetMilliseconds { get; set; }
 
+    /// <summary>
+    /// The cover rule of the track, set by the admin: whether it shows the cover of its album or its own cover first.
+    /// <c>null</c> inherits the rule of its album, and that one the global rule. A scan never changes it. Stored as its
+    /// name.
+    /// </summary>
+    public CoverPriority? CoverPriority { get; set; }
+
     public ICollection<MediaFile> Files { get; set; } = [];
 
     public ICollection<Cover> Covers { get; set; } = [];

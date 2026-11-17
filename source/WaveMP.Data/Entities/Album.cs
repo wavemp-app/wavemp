@@ -38,6 +38,13 @@ public class Album
 
     public required DateTimeOffset UpdatedAt { get; set; }
 
+    /// <summary>
+    /// The cover rule of the album, set by the admin: whether the album and its tracks show the cover of the album or
+    /// the covers of the tracks first. <c>null</c> inherits the global rule of the library settings. A scan never
+    /// changes it. Stored as its name.
+    /// </summary>
+    public CoverPriority? CoverPriority { get; set; }
+
     public ICollection<Track> Tracks { get; set; } = [];
 
     public ICollection<Cover> Covers { get; set; } = [];

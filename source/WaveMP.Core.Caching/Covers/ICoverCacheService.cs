@@ -1,8 +1,10 @@
+using WaveMP.Data.Entities;
+
 namespace WaveMP.Core.Caching.Covers;
 
 /// <summary>
-/// Delivers the covers of tracks and albums following the cover rule of the library settings: scaled from the cache
-/// with a size, as stored without one.
+/// Delivers the covers of tracks and albums following the most specific cover rule (track, album, library settings):
+/// scaled from the cache with a size, as stored without one.
 /// </summary>
 public interface ICoverCacheService
 {
@@ -28,6 +30,32 @@ public interface ICoverCacheService
     /// <param name="cancellationToken">Aborts the request.</param>
     Task<CoverDeliveryResult> GetAlbumCoverAsync(
         Guid albumId,
+        int? size,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// The cover a track would show with another rule of its own, without changing it.
+    /// </summary>
+    /// <param name="trackId">Id of the track.</param>
+    /// <param name="rule">The rule to try; <c>null</c> inherits the rule of its album.</param>
+    /// <param name="size">Requested width and height in pixels; <c>null</c> for the picture as stored.</param>
+    /// <param name="cancellationToken">Aborts the request.</param>
+    Task<CoverDeliveryResult> PreviewTrackCoverAsync(
+        Guid trackId,
+        CoverPriority? rule,
+        int? size,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// The cover an album would show with another rule of its own, without changing it.
+    /// </summary>
+    /// <param name="albumId">Id of the album.</param>
+    /// <param name="rule">The rule to try; <c>null</c> inherits the global rule.</param>
+    /// <param name="size">Requested width and height in pixels; <c>null</c> for the picture as stored.</param>
+    /// <param name="cancellationToken">Aborts the request.</param>
+    Task<CoverDeliveryResult> PreviewAlbumCoverAsync(
+        Guid albumId,
+        CoverPriority? rule,
         int? size,
         CancellationToken cancellationToken = default);
 }

@@ -1183,6 +1183,572 @@
         ]
       }
     },
+    "/api/v1/albums/{id}/cover-rule": {
+      "get": {
+        "tags": [
+          "CoverRules"
+        ],
+        "summary": "Returns the cover rule of an album, the global rule it inherits and the priority that applies to it.",
+        "operationId": "GetAlbumCoverRule",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Id of the album.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "The cover rule of the album.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CoverRule"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The album does not exist (code `album.not_found`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "CoverRules"
+        ],
+        "summary": "Sets the cover rule of an album; it applies to the album and to its tracks without a rule of their own. Inherit follows the global rule again. A change starts the job cover-cache, which prepares the covers shown now; the cover URLs stay the same and deliver the new picture with a new ETag.",
+        "operationId": "SetAlbumCoverRule",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Id of the album.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "The rule.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCoverRule"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCoverRule"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "The rule is set.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CoverRule"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The rule is missing or unknown (code `request.invalid`, field `rule`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The album does not exist (code `album.not_found`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/api/v1/albums/{id}/cover-rule/preview": {
+      "get": {
+        "tags": [
+          "CoverRules"
+        ],
+        "summary": "Returns the cover an album would show with the given rule, without changing it, e.g. to preview a rule before it is set. The picture is delivered like GetAlbumCover: scaled as WebP with size, as stored without.",
+        "operationId": "GetAlbumCoverRulePreview",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Id of the album.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "rule",
+            "in": "query",
+            "description": "The rule to preview; Inherit previews the global rule.",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/CoverRuleOption"
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "description": "Largest width and height in pixels the client shows the picture with (1 to 4096); the server rounds it up to 96, 300 or 1000.",
+            "schema": {
+              "maximum": 4096,
+              "minimum": 1,
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "The picture.",
+            "content": {
+              "image/jpeg": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "image/png": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "image/webp": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "image/gif": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "image/bmp": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The rule is missing or unknown, or the size is invalid (code `request.invalid`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The album does not exist (code `album.not_found`) or has no cover (code `cover.not_found`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/api/v1/tracks/{id}/cover-rule": {
+      "get": {
+        "tags": [
+          "CoverRules"
+        ],
+        "summary": "Returns the cover rule of a track, the rule it inherits (of its album, otherwise the global one) and the priority that applies to it.",
+        "operationId": "GetTrackCoverRule",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Id of the track.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "The cover rule of the track.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CoverRule"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The track does not exist (code `track.not_found`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "CoverRules"
+        ],
+        "summary": "Sets the cover rule of a track; Inherit follows the rule of its album again. A cover the admin selected for the track (SetTrackFileSelection) still comes first. A change starts the job cover-cache, which prepares the covers shown now; the cover URLs stay the same and deliver the new picture with a new ETag.",
+        "operationId": "SetTrackCoverRule",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Id of the track.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "The rule.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCoverRule"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCoverRule"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "The rule is set.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CoverRule"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The rule is missing or unknown (code `request.invalid`, field `rule`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The track does not exist (code `track.not_found`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/api/v1/tracks/{id}/cover-rule/preview": {
+      "get": {
+        "tags": [
+          "CoverRules"
+        ],
+        "summary": "Returns the cover a track would show with the given rule, without changing it, e.g. to preview a rule before it is set. The picture is delivered like GetTrackCover: scaled as WebP with size, as stored without.",
+        "operationId": "GetTrackCoverRulePreview",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Id of the track.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "rule",
+            "in": "query",
+            "description": "The rule to preview; Inherit previews the rule of its album.",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/CoverRuleOption"
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "description": "Largest width and height in pixels the client shows the picture with (1 to 4096); the server rounds it up to 96, 300 or 1000.",
+            "schema": {
+              "maximum": 4096,
+              "minimum": 1,
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "The picture.",
+            "content": {
+              "image/jpeg": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "image/png": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "image/webp": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "image/gif": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "image/bmp": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The rule is missing or unknown, or the size is invalid (code `request.invalid`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The track does not exist (code `track.not_found`) or has no cover (code `cover.not_found`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
     "/api/v1/equalizer": {
       "get": {
         "tags": [
@@ -8872,6 +9438,46 @@
         },
         "description": "The space the cache uses, in total and per area, and its size limit."
       },
+      "CoverPriority": {
+        "enum": [
+          "AlbumFirst",
+          "TrackFirst"
+        ],
+        "type": "string",
+        "description": "Which cover comes first: the cover of the album or the cover of the track. If the preferred cover is missing, the other one is shown."
+      },
+      "CoverRule": {
+        "required": [
+          "rule",
+          "inheritedPriority",
+          "effectivePriority"
+        ],
+        "type": "object",
+        "properties": {
+          "rule": {
+            "description": "The rule of the album or track itself; Inherit if it has none.",
+            "$ref": "#/components/schemas/CoverRuleOption"
+          },
+          "inheritedPriority": {
+            "description": "The priority it inherits: for an album the global rule, for a track the rule of its album, otherwise the global rule.",
+            "$ref": "#/components/schemas/CoverPriority"
+          },
+          "effectivePriority": {
+            "description": "The priority that applies: its own rule, otherwise the inherited one.",
+            "$ref": "#/components/schemas/CoverPriority"
+          }
+        },
+        "description": "The cover rule of an album or a track and the priority that applies to it."
+      },
+      "CoverRuleOption": {
+        "enum": [
+          "Inherit",
+          "AlbumFirst",
+          "TrackFirst"
+        ],
+        "type": "string",
+        "description": "The cover rule of an album or a track: a priority of its own or the rule of the next level."
+      },
       "CreatedSession": {
         "required": [
           "token",
@@ -9812,7 +10418,8 @@
           "Schedule",
           "Manual",
           "FileWatcher",
-          "LibraryScan"
+          "LibraryScan",
+          "CoverRule"
         ],
         "type": "string",
         "description": "What started a job run."
@@ -9832,7 +10439,8 @@
           "audioExtensions",
           "videoExtensions",
           "imageExtensions",
-          "albumCoverNames"
+          "albumCoverNames",
+          "coverPriority"
         ],
         "type": "object",
         "properties": {
@@ -9872,6 +10480,10 @@
               "type": "string"
             },
             "description": "Base names of pictures that are album covers, in the order of their priority."
+          },
+          "coverPriority": {
+            "description": "The global cover rule: whether tracks and albums show the cover of the album or the cover of the track first. Albums and tracks with a rule of their own (GetAlbumCoverRule, GetTrackCoverRule) override it.",
+            "$ref": "#/components/schemas/CoverPriority"
           }
         },
         "description": "Settings of the media library."
@@ -11890,6 +12502,26 @@
         },
         "description": "Changes the settings of the cache. Missing or null values stay unchanged."
       },
+      "UpdateCoverRule": {
+        "required": [
+          "rule"
+        ],
+        "type": "object",
+        "properties": {
+          "rule": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "The rule; Inherit removes the rule of its own.",
+                "$ref": "#/components/schemas/CoverRuleOption"
+              }
+            ]
+          }
+        },
+        "description": "Sets the cover rule of an album or a track."
+      },
       "UpdateCrossfadeSettings": {
         "type": "object",
         "properties": {
@@ -12030,6 +12662,17 @@
               "type": "string"
             },
             "description": "Base names of album covers (without extension), in the order of their priority."
+          },
+          "coverPriority": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "The global cover rule; applies at once to all albums and tracks without a rule of their own.",
+                "$ref": "#/components/schemas/CoverPriority"
+              }
+            ]
           }
         },
         "description": "Changes the settings of the media library. Missing or null values stay unchanged."
@@ -12875,6 +13518,9 @@
     },
     {
       "name": "Cache"
+    },
+    {
+      "name": "CoverRules"
     },
     {
       "name": "Equalizer"

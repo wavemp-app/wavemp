@@ -69,6 +69,107 @@ public class CoverServiceTests
     }
 
     [Test]
+    public async Task GetTrackCandidatesAsync_RuleOfTheAlbum_OverridesTheGlobalRule()
+    {
+        CoverCandidateRow album = AlbumCover() with { AlbumCoverPriority = CoverPriority.TrackFirst };
+        CoverCandidateRow own = TrackCover(_trackId) with { AlbumCoverPriority = CoverPriority.TrackFirst };
+        _covers.GetTrackCandidatesAsync(_trackId, Arg.Any<CancellationToken>()).Returns([album, own]);
+
+        CoverCandidates candidates = await _service.GetTrackCandidatesAsync(_trackId);
+
+        candidates.Ordered.Should().Equal(own, album);
+    }
+
+    [Test]
+    public async Task GetTrackCandidatesAsync_RuleOfTheTrack_OverridesTheAlbumAndGlobalRule()
+    {
+        _settings.Current.Returns(new LibrarySettings { CoverPriority = CoverPriority.TrackFirst });
+        CoverCandidateRow album = AlbumCover() with { AlbumCoverPriority = CoverPriority.TrackFirst };
+        CoverCandidateRow own = TrackCover(_trackId) with
+        {
+            AlbumCoverPriority = CoverPriority.TrackFirst,
+            TrackCoverPriority = CoverPriority.AlbumFirst,
+        };
+        _covers.GetTrackCandidatesAsync(_trackId, Arg.Any<CancellationToken>()).Returns([own, album]);
+
+        CoverCandidates candidates = await _service.GetTrackCandidatesAsync(_trackId);
+
+        candidates.Ordered.Should().Equal(album, own);
+    }
+
+    [Test]
+    public async Task GetAlbumCandidatesAsync_RuleOfTheAlbum_OverridesTheGlobalRule()
+    {
+        CoverCandidateRow album = AlbumCover() with { AlbumCoverPriority = CoverPriority.TrackFirst };
+        CoverCandidateRow track = TrackCover(_trackId) with { AlbumCoverPriority = CoverPriority.TrackFirst };
+        _covers.GetAlbumCandidatesAsync(_albumId, Arg.Any<CancellationToken>()).Returns([album, track]);
+
+        CoverCandidates candidates = await _service.GetAlbumCandidatesAsync(_albumId);
+
+        candidates.Ordered.Should().Equal(track, album);
+    }
+
+    [Test]
+    public async Task PreviewTrackCandidatesAsync_OtherRule_OrdersByItWithoutTheStoredRule()
+    {
+        CoverCandidateRow album = AlbumCover();
+        CoverCandidateRow own = TrackCover(_trackId) with { TrackCoverPriority = CoverPriority.AlbumFirst };
+        _covers.GetTrackCandidatesAsync(_trackId, Arg.Any<CancellationToken>()).Returns([album, own]);
+
+        CoverCandidates trackFirst = await _service.PreviewTrackCandidatesAsync(_trackId, CoverPriority.TrackFirst);
+        CoverCandidates inherited = await _service.PreviewTrackCandidatesAsync(_trackId, null);
+
+        trackFirst.Ordered.Should().Equal(own, album);
+        inherited.Ordered.Should().Equal(album, own);
+    }
+
+    [Test]
+    public async Task PreviewAlbumCandidatesAsync_UnknownAndKnownAlbum_ReturnsOwnerNotFoundOrTheOrderedCovers()
+    {
+        CoverCandidateRow album = AlbumCover();
+        CoverCandidateRow track = TrackCover(_trackId);
+        _covers.GetAlbumCandidatesAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+            .Returns((IReadOnlyList<CoverCandidateRow>?)null);
+        _covers.GetAlbumCandidatesAsync(_albumId, Arg.Any<CancellationToken>()).Returns([album, track]);
+
+        CoverCandidates missing = await _service.PreviewAlbumCandidatesAsync(Guid.NewGuid(), CoverPriority.TrackFirst);
+        CoverCandidates known = await _service.PreviewAlbumCandidatesAsync(_albumId, CoverPriority.TrackFirst);
+
+        missing.OwnerExists.Should().BeFalse();
+        known.Ordered.Should().Equal(track, album);
+    }
+
+    [Test]
+    public async Task PreviewTrackCandidatesAsync_UnknownTrack_ReturnsOwnerNotFound()
+    {
+        _covers.GetTrackCandidatesAsync(_trackId, Arg.Any<CancellationToken>())
+            .Returns((IReadOnlyList<CoverCandidateRow>?)null);
+
+        CoverCandidates candidates = await _service.PreviewTrackCandidatesAsync(_trackId, CoverPriority.TrackFirst);
+
+        candidates.OwnerExists.Should().BeFalse();
+    }
+
+    [Test]
+    public async Task EnumerateShownCoversAsync_RulesOfAlbumAndTrack_ListsTheCoversShownByThem()
+    {
+        CoverCandidateRow album = AlbumCover() with { AlbumCoverPriority = CoverPriority.TrackFirst };
+        CoverCandidateRow own = TrackCover(_trackId) with { AlbumCoverPriority = CoverPriority.TrackFirst };
+        _covers.ListAlbumIdsWithCoversAsync(Arg.Any<CancellationToken>()).Returns([_albumId]);
+        _covers.GetAlbumBatchCandidatesAsync(Arg.Any<IReadOnlyCollection<Guid>>(), Arg.Any<CancellationToken>())
+            .Returns([album, own]);
+
+        List<IReadOnlyList<CoverCandidateRow>> lists = [];
+        await foreach (IReadOnlyList<CoverCandidateRow> list in _service.EnumerateShownCoversAsync())
+        {
+            lists.Add(list);
+        }
+
+        // The album and the track show the cover of the track first; tracks without a cover show the album cover.
+        lists.Select(list => list[0]).Should().Equal(own, album);
+    }
+
+    [Test]
     public async Task GetAlbumCandidatesAsync_UnknownAndKnownAlbum_ReturnsOwnerNotFoundOrTheOrderedCovers()
     {
         CoverCandidateRow track = TrackCover(_trackId);

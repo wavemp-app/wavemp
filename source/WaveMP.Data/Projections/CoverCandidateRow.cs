@@ -3,7 +3,8 @@ using WaveMP.Data.Entities;
 namespace WaveMP.Data.Projections;
 
 /// <summary>
-/// A cover that may be shown for a track or an album, with the file it comes from.
+/// A cover that may be shown for a track or an album, with the file it comes from and the cover rules that apply to
+/// it.
 /// </summary>
 /// <param name="CoverId">Id of the cover.</param>
 /// <param name="MediaFileId">Id of the file the picture comes from: the picture file, or the audio or video file it is
@@ -24,6 +25,10 @@ namespace WaveMP.Data.Projections;
 /// <param name="ModifiedAt">Time of the last change of the file.</param>
 /// <param name="IsSelected">The cover the admin selected for its track; it is shown for the track before any other
 /// cover, whatever the cover rule says.</param>
+/// <param name="AlbumCoverPriority">The cover rule of the album the cover belongs to (its own album, or the album of
+/// its track); <c>null</c> if the album inherits the global rule or there is no album.</param>
+/// <param name="TrackCoverPriority">The cover rule of the track of the cover; <c>null</c> for covers of an album and
+/// for tracks that inherit the rule.</param>
 public sealed record CoverCandidateRow(
     Guid CoverId,
     Guid MediaFileId,
@@ -39,4 +44,6 @@ public sealed record CoverCandidateRow(
     string? MimeType,
     long Size,
     DateTimeOffset ModifiedAt,
-    bool IsSelected = false);
+    bool IsSelected = false,
+    CoverPriority? AlbumCoverPriority = null,
+    CoverPriority? TrackCoverPriority = null);

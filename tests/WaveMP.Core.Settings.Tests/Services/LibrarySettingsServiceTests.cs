@@ -87,6 +87,31 @@ public class LibrarySettingsServiceTests
     }
 
     [Test]
+    public async Task UpdateAsync_WithCoverPriority_ChangesTheGlobalCoverRule()
+    {
+        _saved = new LibrarySettings { ScanIntervalMinutes = 45 };
+
+        LibrarySettingsResult result = await _service.UpdateAsync(
+            new UpdateLibrarySettingsCommand(CoverPriority: CoverPriority.TrackFirst));
+
+        result.IsSuccess.Should().BeTrue();
+        result.Settings!.CoverPriority.Should().Be(CoverPriority.TrackFirst);
+        result.Settings.ScanIntervalMinutes.Should().Be(45);
+        _snapshot.Current.CoverPriority.Should().Be(CoverPriority.TrackFirst);
+    }
+
+    [Test]
+    public async Task UpdateAsync_UndefinedCoverPriority_IsRejected()
+    {
+        LibrarySettingsResult result = await _service.UpdateAsync(
+            new UpdateLibrarySettingsCommand(CoverPriority: (CoverPriority)99));
+
+        result.IsSuccess.Should().BeFalse();
+        result.Errors.Should().ContainSingle().Which.Field.Should().Be(LibrarySettingsField.CoverPriority);
+        await _store.DidNotReceiveWithAnyArgs().SaveAsync<LibrarySettings>(default!, default!, default);
+    }
+
+    [Test]
     public async Task UpdateAsync_WithValidValues_ReplacesTheSnapshotAndTellsEveryHandler()
     {
         LibrarySettings previous = _snapshot.Current;

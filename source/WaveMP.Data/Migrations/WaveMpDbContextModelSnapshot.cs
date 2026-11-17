@@ -40,6 +40,11 @@ namespace WaveMP.Data.Migrations
                         .HasColumnType("character varying(64)")
                         .HasColumnName("album_key");
 
+                    b.Property<string>("CoverPriority")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("cover_priority");
+
                     b.Property<DateTimeOffset>("FirstSeenAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("first_seen_at");
@@ -862,6 +867,11 @@ namespace WaveMP.Data.Migrations
                         .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("base_name");
+
+                    b.Property<string>("CoverPriority")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("cover_priority");
 
                     b.Property<string>("DirectoryPath")
                         .IsRequired()

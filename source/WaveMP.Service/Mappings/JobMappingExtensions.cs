@@ -80,6 +80,7 @@ public static class JobMappingExtensions
             JobRunTrigger.Manual => JobTriggerDto.Manual,
             JobRunTrigger.FileWatcher => JobTriggerDto.FileWatcher,
             JobRunTrigger.LibraryScan => JobTriggerDto.LibraryScan,
+            JobRunTrigger.CoverRule => JobTriggerDto.CoverRule,
             _ => throw new ArgumentOutOfRangeException(nameof(trigger), trigger, "Unknown trigger."),
         };
     }
@@ -92,6 +93,7 @@ public static class JobMappingExtensions
             JobTriggerDto.Manual => JobRunTrigger.Manual,
             JobTriggerDto.FileWatcher => JobRunTrigger.FileWatcher,
             JobTriggerDto.LibraryScan => JobRunTrigger.LibraryScan,
+            JobTriggerDto.CoverRule => JobRunTrigger.CoverRule,
             _ => throw new ArgumentOutOfRangeException(nameof(trigger), trigger, "Unknown trigger."),
         };
     }

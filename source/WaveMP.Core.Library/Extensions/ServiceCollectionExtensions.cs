@@ -10,7 +10,7 @@ namespace WaveMP.Core.Library.Extensions;
 public static class ServiceCollectionExtensions
 {
     /// <summary>
-    /// Registers the library: artists, albums, tracks, genres, years, the search and the covers. Needs the
+    /// Registers the library: artists, albums, tracks, genres, years, the search, the covers and their rules. Needs the
     /// repositories of <c>AddWaveMpData</c>, the library settings of <c>AddWaveMpSettings</c> and the media folder of
     /// <c>AddWaveMpMetadata</c>.
     /// </summary>
@@ -21,6 +21,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ITrackService, TrackService>();
         services.AddScoped<ISearchService, SearchService>();
         services.AddScoped<ICoverService, CoverService>();
+        services.AddScoped<ICoverRuleService, CoverRuleService>();
         services.AddSingleton<ICoverSourceReader, CoverSourceReader>();
 
         return services;
