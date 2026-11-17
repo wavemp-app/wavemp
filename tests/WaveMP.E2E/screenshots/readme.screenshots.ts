@@ -1,34 +1,35 @@
 import { mkdirSync } from 'node:fs'
-import { fileURLToPath } from 'node:url'
-import {
-    devices,
-    expect,
-    test,
-    type APIRequestContext,
-    type Browser,
-    type Locator,
-    type Page,
-} from '@playwright/test'
+import { devices, expect, test, type Browser, type Page } from '@playwright/test'
 import {
     adminToken,
-    createUser,
     deleteBackup,
     deleteUser,
     findAlbumId,
-    findTrackId,
-    findUserByName,
     listBackups,
     type TestUser,
 } from '../tests/helpers/api'
 import { homeUrl, profileTile } from '../tests/helpers/navigation'
 import { emptyStorageState } from '../tests/helpers/storage'
+import {
+    createProfiles,
+    part,
+    pause,
+    play,
+    prepareProfile,
+    save as saveAs,
+    screenshotsDirectory,
+    selectProfile,
+    send,
+    sessionHeaders,
+    showVisualization as showVisualizationOf,
+} from './helpers'
 
 // The screenshots of the README, taken with the synthetic test media (sine tones and test pictures)
 // and two profiles created for them: Alex with playlists, favorites, ratings and plays, and Sam.
 // They are written to assets/screenshots and replace the files there; the profiles and the export of
 // the database made for the backup page are removed afterwards.
 
-const outputDirectory = fileURLToPath(new URL('../../../assets/screenshots/', import.meta.url))
+const outputDirectory = screenshotsDirectory
 const desktop = { width: 1440, height: 900 }
 
 test.describe.configure({ mode: 'serial' })
@@ -38,124 +39,25 @@ let alex: TestUser
 let sam: TestUser
 let alexHeaders: Record<string, string>
 
-async function sessionHeaders(
-    request: APIRequestContext,
-    profileId: string,
-): Promise<Record<string, string>> {
-    const session = await request.post('/api/v1/sessions', { data: { profileId } })
-    expect(session.status()).toBe(201)
-    return { Authorization: `Bearer ${(await session.json()).token}` }
-}
-
-async function send(
-    request: APIRequestContext,
-    method: 'post' | 'put' | 'patch',
-    url: string,
-    data?: unknown,
-): Promise<void> {
-    const response = await request[method](url, { data, headers: alexHeaders })
-    expect(response.ok(), `${method.toUpperCase()} ${url}: ${await response.text()}`).toBe(true)
-}
-
-/** Fills the profile Alex with what the home page shows. */
-async function prepareAlex(request: APIRequestContext): Promise<void> {
-    const first = await findTrackId(request, 'First Song')
-    const second = await findTrackId(request, 'Second Song')
-    const loose = await findTrackId(request, 'Loose Song')
-    const video = await findTrackId(request, 'Video Only')
-    const album = await findAlbumId(request, 'E2E Album')
-
-    await send(request, 'post', '/api/v1/me/playlists', {
-        name: 'Evening Mix',
-        trackIds: [first, loose, second],
-    })
-    await send(request, 'post', '/api/v1/me/playlists', {
-        name: 'Road Trip',
-        trackIds: [loose, second, video],
-    })
-    await send(request, 'put', `/api/v1/me/favorites/albums/${album}`)
-    await send(request, 'put', `/api/v1/me/favorites/tracks/${loose}`)
-    await send(request, 'put', `/api/v1/tracks/${first}/rating`, { rating: 5 })
-    await send(request, 'put', `/api/v1/tracks/${loose}/rating`, { rating: 4 })
-    for (const trackId of [second, first, loose]) {
-        await send(request, 'post', '/api/v1/me/history', { trackId })
-    }
-    await send(request, 'patch', '/api/v1/me/settings', {
-        playerViewMode: 'Cover',
-        visualization: { autoChange: false, quality: 'High' },
-    })
-}
-
 async function save(page: Page, name: string): Promise<void> {
-    // Hover effects and the text cursor stay out of the pictures.
-    await page.mouse.move(0, 0)
-    await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur())
-    await page.waitForTimeout(500)
-    await page.screenshot({ path: `${outputDirectory}${name}.png` })
-}
-
-function part(page: Page, name: string): Locator {
-    return page.locator(`[data-part='app'] [data-part='${name}']`)
-}
-
-async function selectProfile(page: Page, name: string): Promise<void> {
-    await page.goto('/profiles')
-    await profileTile(page, name).click()
-    await expect(page).toHaveURL(homeUrl)
-}
-
-/** Plays a song from its page and opens Now Playing. */
-async function play(page: Page, request: APIRequestContext, title: string): Promise<void> {
-    await page.goto(`/library/tracks/${await findTrackId(request, title)}`)
-    await part(page, 'detail-actions').locator("[data-item='play']").click()
-    await expect(part(page, 'now-playing-title').filter({ visible: true }).first()).toHaveText(
-        title,
-    )
-    await page.locator("[data-part='app'] a[href='/now-playing']").filter({ visible: true }).click()
-    await expect(page).toHaveURL(/\/now-playing$/)
-}
-
-async function pause(page: Page): Promise<void> {
-    const button = part(page, 'btn-play').filter({ visible: true }).first()
-    await button.click()
+    await saveAs(page, `${outputDirectory}${name}`)
 }
 
 /** Shows a visualization of Loose Song with the given module and preset. */
 async function showVisualization(
     page: Page,
-    request: APIRequestContext,
+    request: Parameters<typeof showVisualizationOf>[1],
     module: string,
     preset: string | null,
 ): Promise<void> {
-    await send(request, 'patch', '/api/v1/me/settings', {
-        visualization: { module, preset: preset ?? '' },
-    })
-    await selectProfile(page, alex.name)
-    await play(page, request, 'Loose Song')
-    await page
-        .locator(
-            "[data-part='app'] [data-part='stage-actions'] [data-part='segment'][data-item='visualization']",
-        )
-        .click()
-    const visualization = part(page, 'visualization')
-    await expect(visualization).toHaveAttribute('data-state', /\brunning\b/, { timeout: 30_000 })
-    // Let the picture build up with the music.
-    await page.waitForTimeout(4000)
+    await showVisualizationOf(page, request, alexHeaders, alex.name, module, preset)
 }
 
 test.beforeAll(async ({ request }) => {
     mkdirSync(outputDirectory, { recursive: true })
-    // Profiles left over from an interrupted run.
-    for (const name of ['Alex', 'Sam']) {
-        const left = await findUserByName(request, name)
-        if (left) {
-            await deleteUser(request, left.id)
-        }
-    }
-    alex = await createUser(request, 'Alex')
-    sam = await createUser(request, 'Sam')
+    ;[alex, sam] = await createProfiles(request, ['Alex', 'Sam'])
     alexHeaders = await sessionHeaders(request, alex.id)
-    await prepareAlex(request)
+    await prepareProfile(request, alexHeaders)
 })
 
 test.afterAll(async ({ request }) => {
@@ -272,7 +174,7 @@ test.describe('phone', () => {
     })
 
     test('now playing on the phone', async ({ page, request }) => {
-        await send(request, 'patch', '/api/v1/me/settings', {
+        await send(request, alexHeaders, 'patch', '/api/v1/me/settings', {
             visualization: { module: 'AForce', preset: 'nebula' },
         })
         await selectProfile(page, alex.name)

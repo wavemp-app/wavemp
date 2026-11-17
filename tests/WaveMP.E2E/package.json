@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "test": "playwright test",
-    "screenshots": "playwright test --config playwright.screenshots.config.ts",
+    "screenshots": "playwright test --config playwright.screenshots.config.ts screenshots/readme.screenshots.ts",
+    "screenshots:catalogs": "playwright test --config playwright.screenshots.config.ts screenshots/catalog.screenshots.ts",
     "install-browsers": "playwright install --with-deps chromium"
   },
   "engines": {

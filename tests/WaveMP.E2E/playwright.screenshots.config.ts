@@ -1,9 +1,11 @@
 import { defineConfig, devices } from '@playwright/test'
 
 /**
- * Creates the screenshots of the README (assets/screenshots) with the synthetic test media of
- * scripts/generate-media.sh, against a running WaveMP instance like the E2E tests:
+ * Creates the screenshots of the README (assets/screenshots) and of the app catalogs
+ * (assets/screenshots/catalogs) with the synthetic test media of scripts/generate-media.sh, against
+ * a running WaveMP instance like the E2E tests:
  *   npm run screenshots
+ *   npm run screenshots:catalogs
  * The project "setup" scans the test media first. The screenshots are not part of `npm test`.
  */
 export default defineConfig({
