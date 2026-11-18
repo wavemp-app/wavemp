@@ -30,6 +30,19 @@ export function toSleepTimerSettings(value: unknown): SleepTimerSettings | null 
         : null
 }
 
+/** A change of the sleep timer settings, as the API takes it: missing or null values stay. */
+export interface SleepTimerSettingsChange {
+    readonly fadeSeconds?: number | null
+}
+
+/** The settings after a change, as the server applies it. */
+export function applySleepTimerChange(
+    settings: SleepTimerSettings,
+    change: SleepTimerSettingsChange,
+): SleepTimerSettings {
+    return { fadeSeconds: change.fadeSeconds ?? settings.fadeSeconds }
+}
+
 export interface SleepTimerState {
     readonly mode: SleepTimerMode
     /** When the timer of the mode duration ends, in milliseconds since the epoch. */

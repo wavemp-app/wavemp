@@ -3,6 +3,7 @@ import { computed, ref } from 'vue'
 import { sessionTokens } from '@/api/auth'
 import { apiClient } from '@/api/client'
 import { createLatestValueSender } from '@/api/latestValue'
+import { createRequestQueue } from '@/api/requestQueue'
 import {
     PlayerViewModeObject,
     ReplayGainModeObject,
@@ -10,17 +11,18 @@ import {
     type PlayerViewMode,
     type ReplayGainMode,
     type Session,
-    type UpdateCrossfadeSettings,
     type UpdateEqualizerSettings,
-    type UpdateSleepTimerSettings,
+    type UpdateUserSettings,
     type UserSettings,
 } from '@/api/generated/models'
 import { isUnauthorized } from '@/api/problems'
 import { canonicalLocale } from '@/i18n/locales'
 import {
+    applyCrossfadeChange,
     defaultCrossfadeSettings,
     toCrossfadeSettings,
     type CrossfadeSettings,
+    type CrossfadeSettingsChange,
 } from '@/player/crossfade'
 import {
     defaultEqualizerSettings,
@@ -28,10 +30,13 @@ import {
     type EqualizerSettings,
 } from '@/player/equalizer'
 import {
+    applySleepTimerChange,
     defaultSleepTimerSettings,
     toSleepTimerSettings,
     type SleepTimerSettings,
+    type SleepTimerSettingsChange,
 } from '@/player/sleepTimer'
+import { createSettingSaver, mergeChanges } from '@/session/settingSaver'
 import {
     clearStoredSession,
     loadStoredSession,
@@ -43,6 +48,7 @@ import {
 import {
     applyVisualizationChange,
     defaultVisualizationSettings,
+    explicitVisualizationChange,
     toVisualizationSettings,
     type VisualizationSettings,
     type VisualizationSettingsChange,
@@ -93,17 +99,82 @@ export const useSessionStore = defineStore('session', () => {
     const sleepTimer = ref<SleepTimerSettings>(defaultSleepTimerSettings)
     /** Visualization of Now Playing of the profile. */
     const visualization = ref<VisualizationSettings>(defaultVisualizationSettings)
-    /** Increase with every change of a group, so older answers do not overwrite newer changes. */
-    const requests = { equalizer: 0, crossfade: 0, sleepTimer: 0, visualization: 0 }
+    /** Increases with every change of the equalizer, so older answers do not overwrite newer ones. */
+    const requests = { equalizer: 0 }
+    /**
+     * Changes of the settings reach the server one after the other, also of different settings, in
+     * the order they were made, like the settings page did while it waited for every save.
+     */
+    const settingsQueue = createRequestQueue()
+
+    function patchSettings(body: UpdateUserSettings): Promise<UserSettings | undefined> {
+        return settingsQueue.run(() => apiClient.api.v1.me.settings.patch(body))
+    }
+
+    /**
+     * The settings of the settings page show a choice at once and save it one request after the
+     * other, only the latest choice (changes of a group merged), so quick changes are neither lost
+     * nor reach the server out of order (see createSettingSaver).
+     */
+    const languageSaver = createSettingSaver({
+        get: () => language.value,
+        set: (value: string | null) => {
+            language.value = value
+            persist()
+        },
+        apply: (_: string | null, locale: string) => locale,
+        request: (locale: string) => patchSettings({ language: locale }),
+        read: (settings) => toLocale(settings?.language),
+    })
+    const replayGainSaver = createSettingSaver({
+        get: () => replayGain.value,
+        set: (value: ReplayGainMode) => {
+            replayGain.value = value
+        },
+        apply: (_: ReplayGainMode, mode: ReplayGainMode) => mode,
+        request: (mode: ReplayGainMode) => patchSettings({ replayGain: mode }),
+        read: toReplayGain,
+    })
+    const crossfadeSaver = createSettingSaver({
+        get: () => crossfade.value,
+        set: (value: CrossfadeSettings) => {
+            crossfade.value = value
+        },
+        apply: applyCrossfadeChange,
+        merge: mergeChanges,
+        request: (change: CrossfadeSettingsChange) => patchSettings({ crossfade: { ...change } }),
+        read: (settings) => toCrossfadeSettings(settings?.crossfade),
+    })
+    const sleepTimerSaver = createSettingSaver({
+        get: () => sleepTimer.value,
+        set: (value: SleepTimerSettings) => {
+            sleepTimer.value = value
+        },
+        apply: applySleepTimerChange,
+        merge: mergeChanges,
+        request: (change: SleepTimerSettingsChange) => patchSettings({ sleepTimer: { ...change } }),
+        read: (settings) => toSleepTimerSettings(settings?.sleepTimer),
+    })
+    const visualizationSaver = createSettingSaver({
+        get: () => visualization.value,
+        set: (value: VisualizationSettings) => {
+            visualization.value = value
+        },
+        apply: applyVisualizationChange,
+        merge: mergeChanges,
+        request: (change: VisualizationSettingsChange) =>
+            patchSettings({ visualization: { ...change } }),
+        read: (settings) => toVisualizationSettings(settings?.visualization),
+    })
     /**
      * Save view mode and sidebar one request after the other and only the latest choice, so quick
      * changes cannot reach the server out of order and leave an older value stored.
      */
     const playerViewModeSender = createLatestValueSender((mode: PlayerViewMode) =>
-        apiClient.api.v1.me.settings.patch({ playerViewMode: mode }),
+        patchSettings({ playerViewMode: mode }),
     )
     const sidebarCollapsedSender = createLatestValueSender((collapsed: boolean) =>
-        apiClient.api.v1.me.settings.patch({ sidebarCollapsed: collapsed }),
+        patchSettings({ sidebarCollapsed: collapsed }),
     )
 
     const isAuthenticated = computed(
@@ -129,11 +200,16 @@ export const useSessionStore = defineStore('session', () => {
         sessionTokens.current = token.value
     }
 
-    /** ReplayGain, view mode and sidebar back to their defaults; a waiting choice is dropped. */
+    /**
+     * ReplayGain, view mode and sidebar back to their defaults; a waiting choice (also of the
+     * language) is dropped.
+     */
     function resetProfileSettings(): void {
         replayGain.value = ReplayGainModeObject.Off
         playerViewMode.value = PlayerViewModeObject.Video
         sidebarCollapsed.value = false
+        languageSaver.reset()
+        replayGainSaver.reset()
         playerViewModeSender.reset()
         sidebarCollapsedSender.reset()
     }
@@ -144,9 +220,9 @@ export const useSessionStore = defineStore('session', () => {
         sleepTimer.value = defaultSleepTimerSettings
         visualization.value = defaultVisualizationSettings
         requests.equalizer++
-        requests.crossfade++
-        requests.sleepTimer++
-        requests.visualization++
+        crossfadeSaver.reset()
+        sleepTimerSaver.reset()
+        visualizationSaver.reset()
     }
 
     /** Takes over the playback settings of an answer; incomplete groups keep their values. */
@@ -269,17 +345,17 @@ export const useSessionStore = defineStore('session', () => {
         }
     }
 
-    /** Saves the language of the profile on the server. Errors are passed on. */
-    async function updateLanguage(locale: string): Promise<void> {
-        const settings = await apiClient.api.v1.me.settings.patch({ language: locale })
-        language.value = toLocale(settings?.language) ?? locale
-        persist()
+    /**
+     * Changes the language of the profile at once and saves it on the server. If saving fails, the
+     * saved language comes back, unless a newer one was chosen meanwhile. Errors are passed on.
+     */
+    function updateLanguage(locale: string): Promise<void> {
+        return languageSaver.save(locale)
     }
 
-    /** Saves the ReplayGain mode of the profile on the server. Errors are passed on. */
-    async function updateReplayGain(mode: ReplayGainMode): Promise<void> {
-        const settings = await apiClient.api.v1.me.settings.patch({ replayGain: mode })
-        replayGain.value = toReplayGain(settings) ?? mode
+    /** Changes the ReplayGain mode of the profile at once and saves it like updateLanguage. */
+    function updateReplayGain(mode: ReplayGainMode): Promise<void> {
+        return replayGainSaver.save(mode)
     }
 
     /**
@@ -336,78 +412,37 @@ export const useSessionStore = defineStore('session', () => {
     async function updateEqualizer(change: UpdateEqualizerSettings): Promise<void> {
         const requestToken = token.value
         const request = ++requests.equalizer
-        const settings = await apiClient.api.v1.me.settings.patch({ equalizer: change })
+        const settings = await patchSettings({ equalizer: change })
         if (token.value === requestToken && request === requests.equalizer) {
             equalizer.value = toEqualizerSettings(settings?.equalizer) ?? equalizer.value
         }
     }
 
     /**
-     * Turns the crossfade of the profile on or off at once and saves it; the length stays. If saving
-     * fails, the previous state comes back, unless a newer change was made meanwhile. Errors are
-     * passed on.
+     * Turns the crossfade of the profile on or off at once and saves it; the length stays. Saved
+     * like updateCrossfade. Errors are passed on.
      */
-    async function setCrossfadeEnabled(enabled: boolean): Promise<void> {
-        const requestToken = token.value
-        const request = ++requests.crossfade
-        const previous = crossfade.value
-        crossfade.value = { ...previous, enabled }
-        try {
-            const settings = await apiClient.api.v1.me.settings.patch({ crossfade: { enabled } })
-            if (token.value === requestToken && request === requests.crossfade) {
-                crossfade.value = toCrossfadeSettings(settings?.crossfade) ?? crossfade.value
-            }
-        } catch (error) {
-            if (token.value === requestToken && request === requests.crossfade) {
-                crossfade.value = previous
-            }
-            throw error
-        }
-    }
-
-    /** Saves the crossfade of the profile like updateEqualizer. Errors are passed on. */
-    async function updateCrossfade(change: UpdateCrossfadeSettings): Promise<void> {
-        const requestToken = token.value
-        const request = ++requests.crossfade
-        const settings = await apiClient.api.v1.me.settings.patch({ crossfade: change })
-        if (token.value === requestToken && request === requests.crossfade) {
-            crossfade.value = toCrossfadeSettings(settings?.crossfade) ?? crossfade.value
-        }
-    }
-
-    /** Saves the sleep timer settings of the profile like updateEqualizer. Errors are passed on. */
-    async function updateSleepTimer(change: UpdateSleepTimerSettings): Promise<void> {
-        const requestToken = token.value
-        const request = ++requests.sleepTimer
-        const settings = await apiClient.api.v1.me.settings.patch({ sleepTimer: change })
-        if (token.value === requestToken && request === requests.sleepTimer) {
-            sleepTimer.value = toSleepTimerSettings(settings?.sleepTimer) ?? sleepTimer.value
-        }
+    function setCrossfadeEnabled(enabled: boolean): Promise<void> {
+        return crossfadeSaver.save({ enabled })
     }
 
     /**
-     * Changes the visualization of the profile at once and saves it. If saving fails, the previous
-     * settings come back, unless a newer change was made meanwhile. Errors are passed on.
+     * Changes the crossfade of the profile at once and saves it. Changes made while one is saved
+     * follow merged into one; if saving fails, the saved settings come back, unless a newer change
+     * was made meanwhile. Errors are passed on.
      */
-    async function updateVisualization(change: VisualizationSettingsChange): Promise<void> {
-        const requestToken = token.value
-        const request = ++requests.visualization
-        const previous = visualization.value
-        visualization.value = applyVisualizationChange(previous, change)
-        try {
-            const settings = await apiClient.api.v1.me.settings.patch({
-                visualization: { ...change },
-            })
-            if (token.value === requestToken && request === requests.visualization) {
-                visualization.value =
-                    toVisualizationSettings(settings?.visualization) ?? visualization.value
-            }
-        } catch (error) {
-            if (token.value === requestToken && request === requests.visualization) {
-                visualization.value = previous
-            }
-            throw error
-        }
+    function updateCrossfade(change: CrossfadeSettingsChange): Promise<void> {
+        return crossfadeSaver.save(change)
+    }
+
+    /** Changes the sleep timer settings of the profile at once and saves them like updateCrossfade. */
+    function updateSleepTimer(change: SleepTimerSettingsChange): Promise<void> {
+        return sleepTimerSaver.save(change)
+    }
+
+    /** Changes the visualization of the profile at once and saves it like updateCrossfade. */
+    function updateVisualization(change: VisualizationSettingsChange): Promise<void> {
+        return visualizationSaver.save(explicitVisualizationChange(visualization.value, change))
     }
 
     /** Ends the session on the server (if reachable) and forgets it. */

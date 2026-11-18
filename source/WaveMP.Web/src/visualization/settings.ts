@@ -113,3 +113,17 @@ export function applyVisualizationChange(
         quality: change.quality ?? settings.quality,
     }
 }
+
+/**
+ * The change with its effect on the preset spelled out: another module than the current one also
+ * forgets the preset (an empty preset), unless the change names one. So changes made one after the
+ * other can be merged member by member and still have the same effect as one after the other.
+ */
+export function explicitVisualizationChange(
+    settings: VisualizationSettings,
+    change: VisualizationSettingsChange,
+): VisualizationSettingsChange {
+    return change.module && change.module !== settings.module && typeof change.preset !== 'string'
+        ? { ...change, preset: '' }
+        : change
+}

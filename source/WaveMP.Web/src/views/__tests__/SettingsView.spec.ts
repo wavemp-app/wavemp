@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
+import { nextTick } from 'vue'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import SettingsView from '../SettingsView.vue'
 import { FakeCastLayer } from '@/casting/__tests__/fakes'
@@ -123,15 +124,46 @@ describe('SettingsView', () => {
         expect(segment('track').attributes('aria-checked')).toBe('false')
     })
 
-    it('reports an error and keeps the saved language', async () => {
+    it('reports an error and shows the saved language again', async () => {
         const { wrapper, session } = mountView()
-        vi.spyOn(session, 'updateLanguage').mockRejectedValue(new TypeError('Failed to fetch'))
+        // Like the store: the choice shows at once and the saved language comes back on an error.
+        vi.spyOn(session, 'updateLanguage').mockImplementation(async (locale) => {
+            session.language = locale
+            await nextTick()
+            session.language = 'en'
+            throw new TypeError('Failed to fetch')
+        })
 
         await wrapper.get('[data-part="select"]').setValue('de')
         await flushPromises()
 
         expect(wrapper.get('[data-part="alert"]').text()).toBe('The setting could not be saved.')
         expect(wrapper.get<HTMLSelectElement>('[data-part="select"]').element.value).toBe('en')
+    })
+
+    it('keeps the fields usable while a change is saved and saves every quick choice', async () => {
+        const { wrapper, session } = mountView()
+        const saves: string[] = []
+        // Like the store: the choice shows at once, the server has not answered yet.
+        vi.spyOn(session, 'updateReplayGain').mockImplementation((mode) => {
+            session.replayGain = mode
+            saves.push(mode)
+            return new Promise(() => undefined)
+        })
+        const group = wrapper.get('[data-field="replay-gain"] [data-part="segmented-control"]')
+        const segment = (item: string) => group.get(`[data-part="segment"][data-item="${item}"]`)
+
+        await segment('off').trigger('keydown', { key: 'ArrowRight' })
+        expect(group.attributes('aria-disabled')).toBeUndefined()
+        expect(segment('track').attributes('aria-checked')).toBe('true')
+        await segment('track').trigger('keydown', { key: 'End' })
+        expect(segment('album').attributes('aria-checked')).toBe('true')
+        await segment('track').trigger('click')
+        expect(segment('track').attributes('aria-checked')).toBe('true')
+
+        expect(saves).toEqual(['Track', 'Album', 'Track'])
+        expect(wrapper.find('[data-part="select"]:disabled').exists()).toBe(false)
+        expect(wrapper.find('[data-field="equalizer"] input:disabled').exists()).toBe(false)
     })
 })
 
@@ -245,12 +277,19 @@ describe('SettingsView playback', () => {
         expect(field<HTMLSelectElement>(wrapper, 'crossfade', 'select').element.value).toBe('off')
     })
 
-    it('saves the fade-out and restores it after an error', async () => {
+    it('saves the fade-out and shows the saved one again after an error', async () => {
         const { wrapper, session } = mountView()
-        vi.spyOn(session, 'updateSleepTimer').mockRejectedValue(new TypeError('Failed to fetch'))
+        const update = vi.spyOn(session, 'updateSleepTimer').mockImplementation(async (change) => {
+            session.sleepTimer = { fadeSeconds: change.fadeSeconds ?? 10 }
+            await nextTick()
+            session.sleepTimer = { fadeSeconds: 10 }
+            throw new TypeError('Failed to fetch')
+        })
 
         await field(wrapper, 'sleep-timer-fade', 'select').setValue('30')
         await flushPromises()
+
+        expect(update).toHaveBeenCalledWith({ fadeSeconds: 30 })
 
         expect(wrapper.get('[data-part="alert"]').text()).toBe('The setting could not be saved.')
         expect(field<HTMLSelectElement>(wrapper, 'sleep-timer-fade', 'select').element.value).toBe(

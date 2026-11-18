@@ -51,8 +51,8 @@ const checked = computed(() => props.options.findIndex((option) => option.value 
 const disabledOptions = computed(() =>
     props.options.map((option) => props.disabled || !!option.disabled),
 )
-// A disabled group (e.g. while its value is saved) keeps its segments focusable with aria-disabled,
-// so the focus stays where it is; disabled options are left out of the tab order.
+// A disabled group (e.g. the ReplayGain mode while casting) keeps its segments focusable with
+// aria-disabled, so the focus stays where it is; disabled options are left out of the tab order.
 const tabStop = computed(() =>
     segmentTabStop(
         checked.value,

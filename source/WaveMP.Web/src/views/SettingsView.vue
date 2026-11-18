@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, useId, watch } from 'vue'
+import { computed, ref, useId } from 'vue'
 import { useI18n } from 'vue-i18n'
 import BaseAlert from '@/components/base/BaseAlert.vue'
 import BaseButton from '@/components/base/BaseButton.vue'
@@ -90,46 +90,30 @@ const replayGainOptions = computed<SegmentOption[]>(() => [
 ])
 const replayGainModes = new Set<string>(Object.values(ReplayGainModeObject))
 
+// Every setting shows a choice at once and the store saves it in the background, one change after
+// the other (see createSettingSaver), so the fields stay usable while a change is saved and quick
+// keys or clicks are not lost. If saving fails, the store shows the saved value again.
+
 // The language of the profile as one of the languages of the web app (English for others).
-const language = ref<string>(session.language ? appLocale(session.language) : locale.value)
-const replayGain = ref<string>(session.replayGain)
-const saving = ref(false)
+const language = computed(() => (session.language ? appLocale(session.language) : locale.value))
 const error = ref<string | null>(null)
 
-watch(
-    () => session.language,
-    (value) => {
-        if (value && !saving.value) {
-            language.value = appLocale(value)
-        }
-    },
-)
-
-watch(
-    () => session.replayGain,
-    (value) => {
-        if (!saving.value) {
-            replayGain.value = value
-        }
-    },
-)
+/** Saves a change of the profile and shows an error if it fails. */
+async function save(change: () => Promise<void>): Promise<void> {
+    error.value = null
+    try {
+        await change()
+    } catch {
+        error.value = t('settings.saveError')
+    }
+}
 
 async function changeReplayGain(value: string): Promise<void> {
     if (!replayGainModes.has(value) || value === session.replayGain) {
         return
     }
 
-    const previous = session.replayGain
-    saving.value = true
-    error.value = null
-    try {
-        await session.updateReplayGain(value as ReplayGainMode)
-    } catch {
-        error.value = t('settings.saveError')
-        replayGain.value = previous
-    } finally {
-        saving.value = false
-    }
+    await save(() => session.updateReplayGain(value as ReplayGainMode))
 }
 
 async function changeLanguage(value: string): Promise<void> {
@@ -137,18 +121,9 @@ async function changeLanguage(value: string): Promise<void> {
         return
     }
 
-    const previous = session.language
-    saving.value = true
-    error.value = null
-    try {
-        await session.updateLanguage(value)
-    } catch {
-        error.value = t('settings.saveError')
-        language.value = previous ? appLocale(previous) : locale.value
-    } finally {
-        saving.value = false
-    }
+    await save(() => session.updateLanguage(value))
 }
+
 /** Value of the crossfade menu: "off" while the crossfade is off, otherwise its seconds. */
 const crossfadeOff = 'off'
 
@@ -175,28 +150,8 @@ const sleepTimerFadeOptions = computed<SelectOption[]>(() =>
         })),
 )
 
-const crossfade = ref(crossfadeValue(session.crossfade))
-const crossfadeAlbums = ref(session.crossfade.albumsGapless)
-const sleepTimerFade = ref(String(session.sleepTimer.fadeSeconds))
-
-watch(
-    () => session.crossfade,
-    (value) => {
-        if (!saving.value) {
-            crossfade.value = crossfadeValue(value)
-            crossfadeAlbums.value = value.albumsGapless
-        }
-    },
-)
-
-watch(
-    () => session.sleepTimer,
-    (value) => {
-        if (!saving.value) {
-            sleepTimerFade.value = String(value.fadeSeconds)
-        }
-    },
-)
+const crossfade = computed(() => crossfadeValue(session.crossfade))
+const sleepTimerFade = computed(() => String(session.sleepTimer.fadeSeconds))
 
 /** Value of the menu of the automatic change: "off" while it is off, otherwise its seconds. */
 const autoChangeOff = 'off'
@@ -219,7 +174,7 @@ const autoChangeOptions = computed<SelectOption[]>(() => [
         .map((seconds) => ({ value: String(seconds), label: autoChangeLabel(seconds) })),
 ])
 
-const autoChange = ref(autoChangeValue(session.visualization))
+const autoChange = computed(() => autoChangeValue(session.visualization))
 
 const qualityOptions = computed<SegmentOption[]>(() => [
     {
@@ -245,33 +200,7 @@ const qualityOptions = computed<SegmentOption[]>(() => [
 ])
 const qualities = new Set<string>(Object.values(VisualizationQualityObject))
 
-const quality = ref<string>(session.visualization.quality)
-
-watch(
-    () => session.visualization,
-    (value) => {
-        if (!saving.value) {
-            autoChange.value = autoChangeValue(value)
-            quality.value = value.quality
-        }
-    },
-)
-
 const equalizerEnabled = computed(() => equalizer.settings.enabled)
-
-/** Saves a change of the profile and shows an error if it fails; reset restores the field. */
-async function save(change: () => Promise<void>, reset: () => void): Promise<void> {
-    saving.value = true
-    error.value = null
-    try {
-        await change()
-    } catch {
-        error.value = t('settings.saveError')
-        reset()
-    } finally {
-        saving.value = false
-    }
-}
 
 async function changeEqualizer(enabled: boolean): Promise<void> {
     error.value = null
@@ -288,35 +217,22 @@ async function changeEqualizer(enabled: boolean): Promise<void> {
  * again); a length turns it on with that length.
  */
 async function changeCrossfade(value: string): Promise<void> {
-    const previous = crossfadeValue(session.crossfade)
     const seconds = Number(value)
-    if (value === previous || (value !== crossfadeOff && !Number.isInteger(seconds))) {
+    if (value === crossfade.value || (value !== crossfadeOff && !Number.isInteger(seconds))) {
         return
     }
 
-    await save(
-        () =>
-            session.updateCrossfade(
-                value === crossfadeOff ? { enabled: false } : { enabled: true, seconds },
-            ),
-        () => {
-            crossfade.value = previous
-        },
+    await save(() =>
+        session.updateCrossfade(
+            value === crossfadeOff ? { enabled: false } : { enabled: true, seconds },
+        ),
     )
 }
 
 async function changeCrossfadeAlbums(value: boolean): Promise<void> {
-    if (value === session.crossfade.albumsGapless) {
-        return
+    if (value !== session.crossfade.albumsGapless) {
+        await save(() => session.updateCrossfade({ albumsGapless: value }))
     }
-
-    const previous = session.crossfade.albumsGapless
-    await save(
-        () => session.updateCrossfade({ albumsGapless: value }),
-        () => {
-            crossfadeAlbums.value = previous
-        },
-    )
 }
 
 /**
@@ -324,52 +240,31 @@ async function changeCrossfadeAlbums(value: boolean): Promise<void> {
  * it on again); an interval turns it on with that interval.
  */
 async function changeAutoChange(value: string): Promise<void> {
-    const previous = autoChangeValue(session.visualization)
     const seconds = Number(value)
-    if (value === previous || (value !== autoChangeOff && !Number.isInteger(seconds))) {
+    if (value === autoChange.value || (value !== autoChangeOff && !Number.isInteger(seconds))) {
         return
     }
 
-    await save(
-        () =>
-            session.updateVisualization(
-                value === autoChangeOff
-                    ? { autoChange: false }
-                    : { autoChange: true, autoChangeSeconds: seconds },
-            ),
-        () => {
-            autoChange.value = previous
-        },
+    await save(() =>
+        session.updateVisualization(
+            value === autoChangeOff
+                ? { autoChange: false }
+                : { autoChange: true, autoChangeSeconds: seconds },
+        ),
     )
 }
 
 async function changeQuality(value: string): Promise<void> {
-    if (!qualities.has(value) || value === session.visualization.quality) {
-        return
+    if (qualities.has(value) && value !== session.visualization.quality) {
+        await save(() => session.updateVisualization({ quality: value as VisualizationQuality }))
     }
-
-    const previous = session.visualization.quality
-    await save(
-        () => session.updateVisualization({ quality: value as VisualizationQuality }),
-        () => {
-            quality.value = previous
-        },
-    )
 }
 
 async function changeSleepTimerFade(value: string): Promise<void> {
     const fadeSeconds = Number(value)
-    if (!Number.isInteger(fadeSeconds) || fadeSeconds === session.sleepTimer.fadeSeconds) {
-        return
+    if (Number.isInteger(fadeSeconds) && fadeSeconds !== session.sleepTimer.fadeSeconds) {
+        await save(() => session.updateSleepTimer({ fadeSeconds }))
     }
-
-    const previous = session.sleepTimer.fadeSeconds
-    await save(
-        () => session.updateSleepTimer({ fadeSeconds }),
-        () => {
-            sleepTimerFade.value = String(previous)
-        },
-    )
 }
 </script>
 
@@ -386,22 +281,21 @@ async function changeSleepTimerFade(value: string): Promise<void> {
         <BaseAlert v-if="error" tone="error" :message="error" />
         <form data-part="form" @submit.prevent>
             <BaseSelect
-                v-model="language"
+                :model-value="language"
                 data-field="language"
                 :label="t('settings.language')"
                 :options="languageOptions"
                 :hint="t('settings.languageHint')"
-                :disabled="saving"
                 @update:model-value="changeLanguage"
             />
             <BaseSegmentedField
-                v-model="replayGain"
+                :model-value="session.replayGain"
                 data-field="replay-gain"
                 item="replay-gain"
                 :label="t('settings.replayGain')"
                 :options="replayGainOptions"
                 :hint="t('settings.replayGainHint')"
-                :disabled="saving || cast.connected"
+                :disabled="cast.connected"
                 @update:model-value="changeReplayGain"
             />
             <h2 data-part="section-title">{{ t('settings.playback') }}</h2>
@@ -422,47 +316,44 @@ async function changeSleepTimerFade(value: string): Promise<void> {
                 }}</BaseLink>
             </p>
             <BaseSelect
-                v-model="crossfade"
+                :model-value="crossfade"
                 data-field="crossfade"
                 :label="t('settings.crossfade')"
                 :options="crossfadeOptions"
                 :hint="t('settings.crossfadeHint')"
-                :disabled="saving || cast.connected"
+                :disabled="cast.connected"
                 @update:model-value="changeCrossfade"
             />
             <BaseCheckbox
-                v-model="crossfadeAlbums"
+                :model-value="session.crossfade.albumsGapless"
                 data-field="crossfade-albums"
                 :label="t('settings.crossfadeAlbums')"
-                :disabled="saving || cast.connected || crossfade === crossfadeOff"
+                :disabled="cast.connected || crossfade === crossfadeOff"
                 @update:model-value="changeCrossfadeAlbums"
             />
             <BaseSelect
-                v-model="sleepTimerFade"
+                :model-value="sleepTimerFade"
                 data-field="sleep-timer-fade"
                 :label="t('settings.sleepTimerFade')"
                 :options="sleepTimerFadeOptions"
                 :hint="t('settings.sleepTimerFadeHint')"
-                :disabled="saving"
                 @update:model-value="changeSleepTimerFade"
             />
             <BaseSelect
-                v-model="autoChange"
+                :model-value="autoChange"
                 data-field="visualization-auto-change"
                 :label="t('settings.visualizationAutoChange')"
                 :options="autoChangeOptions"
                 :hint="t('settings.visualizationAutoChangeHint')"
-                :disabled="saving"
                 @update:model-value="changeAutoChange"
             />
             <BaseSegmentedField
-                v-model="quality"
+                :model-value="session.visualization.quality"
                 data-field="visualization-quality"
                 item="visualization-quality"
                 :label="t('settings.visualizationQuality')"
                 :options="qualityOptions"
                 :hint="t('settings.visualizationQualityHint')"
-                :disabled="saving"
                 @update:model-value="changeQuality"
             />
         </form>

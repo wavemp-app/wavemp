@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
+    applySleepTimerChange,
     SleepTimer,
     toSleepTimerSettings,
     type SleepTimerClock,
@@ -197,5 +198,14 @@ describe('SleepTimer', () => {
         expect(toSleepTimerSettings({ fadeSeconds: 30 })).toEqual({ fadeSeconds: 30 })
         expect(toSleepTimerSettings({ fadeSeconds: 0 })).toBeNull()
         expect(toSleepTimerSettings(null)).toBeNull()
+    })
+})
+
+describe('applySleepTimerChange', () => {
+    it('changes the fade-out if the change names it', () => {
+        expect(applySleepTimerChange({ fadeSeconds: 10 }, { fadeSeconds: 30 })).toEqual({
+            fadeSeconds: 30,
+        })
+        expect(applySleepTimerChange({ fadeSeconds: 10 }, {})).toEqual({ fadeSeconds: 10 })
     })
 })

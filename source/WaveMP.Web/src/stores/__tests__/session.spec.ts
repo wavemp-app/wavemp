@@ -559,7 +559,7 @@ describe('session store', () => {
             expect(session.equalizer).toEqual(equalizer)
         })
 
-        it('ignores an older answer after a newer change', async () => {
+        it('saves changes made while one is saved after it, merged into one', async () => {
             saveStoredSession(stored('a'))
             let answerFirst: (value: unknown) => void = () => undefined
             api.updateSettings
@@ -570,17 +570,29 @@ describe('session store', () => {
                         }),
                 )
                 .mockResolvedValueOnce({
-                    crossfade: { enabled: true, seconds: 8, albumsGapless: true },
+                    crossfade: { enabled: true, seconds: 8, albumsGapless: false },
                 })
             const session = useSessionStore()
             session.restore()
 
-            const first = session.updateCrossfade({ seconds: 2 })
-            await session.updateCrossfade({ seconds: 8 })
+            const first = session.updateCrossfade({ enabled: true, seconds: 2 })
+            const albums = session.updateCrossfade({ albumsGapless: false })
+            const last = session.updateCrossfade({ seconds: 8 })
+            expect(session.crossfade).toEqual({ enabled: true, seconds: 8, albumsGapless: false })
+            await settle()
+            expect(api.updateSettings).toHaveBeenCalledOnce()
+
+            // The older answer does not take back the newer choice.
             answerFirst({ crossfade: { enabled: true, seconds: 2, albumsGapless: true } })
             await first
-
             expect(session.crossfade.seconds).toBe(8)
+            await Promise.all([albums, last])
+
+            expect(api.updateSettings).toHaveBeenCalledTimes(2)
+            expect(api.updateSettings).toHaveBeenLastCalledWith({
+                crossfade: { albumsGapless: false, seconds: 8 },
+            })
+            expect(session.crossfade).toEqual({ enabled: true, seconds: 8, albumsGapless: false })
         })
 
         it('saves the fade-out of the sleep timer and passes errors on', async () => {
@@ -698,6 +710,134 @@ describe('session store', () => {
             )
 
             expect(session.visualization.autoChange).toBe(true)
+        })
+    })
+
+    describe('settings saved at once', () => {
+        /** Holds the answers of the server to the saved settings until the test gives them. */
+        function heldAnswers() {
+            const answers: ((value: unknown) => void)[] = []
+            api.updateSettings.mockImplementation(
+                () => new Promise((resolve) => answers.push(resolve)),
+            )
+            return answers
+        }
+
+        it('shows the ReplayGain mode at once and saves only the latest of quick changes', async () => {
+            saveStoredSession(stored('a'))
+            const answers = heldAnswers()
+            const session = useSessionStore()
+            session.restore()
+
+            const first = session.updateReplayGain('Track')
+            expect(session.replayGain).toBe('Track')
+            const skipped = session.updateReplayGain('Off')
+            const last = session.updateReplayGain('Album')
+            expect(session.replayGain).toBe('Album')
+            await skipped
+            expect(api.updateSettings).toHaveBeenCalledOnce()
+
+            answers[0]!({ replayGain: 'Track' })
+            await first
+            expect(session.replayGain).toBe('Album')
+            await settle()
+            expect(api.updateSettings).toHaveBeenCalledTimes(2)
+            expect(api.updateSettings).toHaveBeenLastCalledWith({ replayGain: 'Album' })
+
+            answers[1]!({ replayGain: 'Album' })
+            await last
+            expect(session.replayGain).toBe('Album')
+        })
+
+        it('shows the language at once and remembers it', async () => {
+            saveStoredSession(stored('a', 'en'))
+            const answers = heldAnswers()
+            const session = useSessionStore()
+            session.restore()
+
+            const saving = session.updateLanguage('de')
+            expect(session.language).toBe('de')
+            expect(loadStoredSession()?.language).toBe('de')
+
+            answers[0]!({ language: 'de' })
+            await saving
+            expect(session.language).toBe('de')
+        })
+
+        it('sends a module chosen after a preset so that it forgets the preset', async () => {
+            saveStoredSession(stored('a'))
+            const answers = heldAnswers()
+            const session = useSessionStore()
+            session.restore()
+            session.visualization = { ...session.visualization, preset: 'Waves' }
+
+            const quality = session.updateVisualization({ quality: 'Low' })
+            void session.updateVisualization({ preset: 'Flames' })
+            const module = session.updateVisualization({ module: 'AForce' })
+            expect(session.visualization).toMatchObject({
+                module: 'AForce',
+                preset: null,
+                quality: 'Low',
+            })
+
+            answers[0]!({})
+            await quality
+            await settle()
+            expect(api.updateSettings).toHaveBeenLastCalledWith({
+                visualization: { preset: '', module: 'AForce' },
+            })
+            answers[1]!({})
+            await module
+        })
+
+        it('drops a waiting change when another profile is selected', async () => {
+            saveStoredSession(stored('a'))
+            const answers = heldAnswers()
+            api.createSession.mockResolvedValue(created('b'))
+            api.getSettings.mockResolvedValue({ language: 'en', replayGain: 'Off' })
+            api.deleteCurrentSession.mockResolvedValue(undefined)
+            const session = useSessionStore()
+            session.restore()
+
+            const first = session.updateReplayGain('Track')
+            void session.updateReplayGain('Album')
+            await session.select('b')
+            expect(session.replayGain).toBe('Off')
+
+            answers[0]!({ replayGain: 'Track' })
+            await first
+            await settle()
+            expect(api.updateSettings).toHaveBeenCalledOnce()
+            expect(session.replayGain).toBe('Off')
+        })
+
+        it('saves different settings one after the other, never two at once', async () => {
+            saveStoredSession(stored('a'))
+            const answers = heldAnswers()
+            const session = useSessionStore()
+            session.restore()
+
+            const replayGain = session.updateReplayGain('Track')
+            const quality = session.updateVisualization({ quality: 'High' })
+            const sidebar = session.updateSidebarCollapsed(true)
+            expect(session.visualization.quality).toBe('High')
+            await settle()
+            expect(api.updateSettings).toHaveBeenCalledOnce()
+
+            answers[0]!({ replayGain: 'Track' })
+            await replayGain
+            await settle()
+            expect(api.updateSettings).toHaveBeenCalledTimes(2)
+            expect(api.updateSettings).toHaveBeenLastCalledWith({
+                visualization: { quality: 'High' },
+            })
+
+            answers[1]!({})
+            await quality
+            await settle()
+            expect(api.updateSettings).toHaveBeenLastCalledWith({ sidebarCollapsed: true })
+            answers[2]!({ sidebarCollapsed: true })
+            await sidebar
         })
     })
 })

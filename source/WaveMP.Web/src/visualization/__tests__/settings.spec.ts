@@ -2,9 +2,11 @@ import { describe, expect, it } from 'vitest'
 import {
     applyVisualizationChange,
     defaultVisualizationSettings,
+    explicitVisualizationChange,
     toVisualizationSettings,
     type VisualizationSettings,
 } from '../settings'
+import { mergeChanges } from '@/session/settingSaver'
 
 const settings: VisualizationSettings = {
     module: 'Milkdrop',
@@ -95,5 +97,36 @@ describe('applyVisualizationChange', () => {
 
     it('keeps the preset when the same module is named', () => {
         expect(applyVisualizationChange(settings, { module: 'Milkdrop' }).preset).toBe('Waves')
+    })
+})
+
+describe('explicitVisualizationChange', () => {
+    it('forgets the preset for another module unless the change names one', () => {
+        expect(explicitVisualizationChange(settings, { module: 'AForce' })).toEqual({
+            module: 'AForce',
+            preset: '',
+        })
+        expect(
+            explicitVisualizationChange(settings, { module: 'AForce', preset: 'ember' }),
+        ).toEqual({ module: 'AForce', preset: 'ember' })
+    })
+
+    it('leaves other changes as they are', () => {
+        expect(explicitVisualizationChange(settings, { module: 'Milkdrop' })).toEqual({
+            module: 'Milkdrop',
+        })
+        expect(explicitVisualizationChange(settings, { quality: 'Low' })).toEqual({
+            quality: 'Low',
+        })
+    })
+
+    it('has the effect of two changes one after the other when merged', () => {
+        const first = explicitVisualizationChange(settings, { preset: 'Flames' })
+        const between = applyVisualizationChange(settings, first)
+        const second = explicitVisualizationChange(between, { module: 'AForce' })
+
+        expect(applyVisualizationChange(settings, mergeChanges(first, second))).toEqual(
+            applyVisualizationChange(between, second),
+        )
     })
 })

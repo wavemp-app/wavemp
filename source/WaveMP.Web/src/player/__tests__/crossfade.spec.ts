@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { Track } from '@/api/generated/models'
 import {
+    applyCrossfadeChange,
     crossfadeDuration,
     equalPowerCurve,
     toCrossfadeSettings,
@@ -69,5 +70,17 @@ describe('crossfade', () => {
         expect(toCrossfadeSettings({ enabled: true, seconds: 13, albumsGapless: true })).toBeNull()
         expect(toCrossfadeSettings({ enabled: true, seconds: 2.5, albumsGapless: true })).toBeNull()
         expect(toCrossfadeSettings(undefined)).toBeNull()
+    })
+})
+
+describe('applyCrossfadeChange', () => {
+    it('changes only the given values', () => {
+        expect(applyCrossfadeChange(on, { enabled: false })).toEqual({ ...on, enabled: false })
+        expect(applyCrossfadeChange(on, { seconds: 9, albumsGapless: false })).toEqual({
+            enabled: true,
+            seconds: 9,
+            albumsGapless: false,
+        })
+        expect(applyCrossfadeChange(on, { seconds: null })).toEqual(on)
     })
 })

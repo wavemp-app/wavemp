@@ -46,6 +46,25 @@ export function toCrossfadeSettings(value: unknown): CrossfadeSettings | null {
     }
 }
 
+/** A change of the crossfade settings, as the API takes it: missing or null values stay unchanged. */
+export interface CrossfadeSettingsChange {
+    readonly enabled?: boolean | null
+    readonly seconds?: number | null
+    readonly albumsGapless?: boolean | null
+}
+
+/** The settings after a change, as the server applies it. */
+export function applyCrossfadeChange(
+    settings: CrossfadeSettings,
+    change: CrossfadeSettingsChange,
+): CrossfadeSettings {
+    return {
+        enabled: change.enabled ?? settings.enabled,
+        seconds: change.seconds ?? settings.seconds,
+        albumsGapless: change.albumsGapless ?? settings.albumsGapless,
+    }
+}
+
 function durationOf(track: Pick<Track, 'durationMilliseconds'>, known?: number): number {
     if (known !== undefined && known > 0) {
         return known
