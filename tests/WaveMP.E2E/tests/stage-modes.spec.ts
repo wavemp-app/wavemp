@@ -23,6 +23,13 @@ import { adminStorageState, emptyStorageState } from './helpers/storage'
 //   First Song: audio without a video
 //   Second Song: audio with a video; the video sync test changes its offset and resets it
 // The chosen view belongs to the profile, so the tests that switch it select their own profile.
+//
+// The tests switch the views of the stage; what the visualization draws is the subject of
+// visualization.spec.ts. Headless Chromium has no GPU and would draw the visualization in software,
+// which in several workers at once took so much of the CPU that the saves of the views and even the
+// profile selection ran out of time (that spec therefore runs alone in one worker). So this file
+// starts Chromium without WebGL: the visualization view shows its hint and draws nothing.
+test.use({ launchOptions: { args: ['--disable-webgl'] } })
 
 /**
  * How long a test waits for the server to store a view. A busy machine (several workers playing
@@ -134,6 +141,17 @@ async function storedViewMode(request: APIRequestContext, profileId: string): Pr
     return (await response.json()).playerViewMode
 }
 
+/** Waits until the server has stored the view for the profile, longer than expect does. */
+async function expectStoredViewMode(
+    request: APIRequestContext,
+    profileId: string,
+    mode: string,
+): Promise<void> {
+    await expect
+        .poll(() => storedViewMode(request, profileId), { timeout: settleTimeout })
+        .toBe(mode)
+}
+
 test.describe('with a profile of its own', () => {
     test.use({ storageState: emptyStorageState, locale: 'en-US' })
 
@@ -168,20 +186,22 @@ test.describe('with a profile of its own', () => {
         await expect(viewSegment(page, 'cover')).toHaveAttribute('aria-checked', 'true')
         await expect(stageView(page, 'cover')).toHaveAttribute('data-state', 'active')
         await expect(stageView(page, 'video')).not.toHaveAttribute('data-state', 'active')
-        await expect.poll(() => storedViewMode(request, user.id)).toBe('Cover')
+        await expectStoredViewMode(request, user.id, 'Cover')
         await playsOn(page)
 
         await viewSegment(page, 'visualization').click()
         await expect(stage).toHaveAttribute('data-state', 'visualization')
         await expect(part(page, 'visualization')).toBeVisible()
-        await expect.poll(() => storedViewMode(request, user.id)).toBe('Visualization')
+        // Without WebGL (see test.use above), the view shows its hint instead of drawing.
+        await expect(part(page, 'visualization')).toHaveAttribute('data-state', /\bunsupported\b/)
+        await expectStoredViewMode(request, user.id, 'Visualization')
         await playsOn(page)
 
         // Back to the video: it catches up with the audio, which went on in the meantime.
         await viewSegment(page, 'video').click()
         await expect(stage).toHaveAttribute('data-state', 'video')
         await expect(part(page, 'video')).toBeVisible()
-        await expect.poll(() => storedViewMode(request, user.id)).toBe('Video')
+        await expectStoredViewMode(request, user.id, 'Video')
         await expectVideoInSync(page)
 
         // The audio led all the time: it played on and never started again.
@@ -220,7 +240,7 @@ test.describe('with a profile of its own', () => {
         await expect(viewSegment(page, 'visualization')).toHaveAttribute('aria-checked', 'true')
         await expect(viewSegment(page, 'visualization')).toBeFocused()
         await expect(part(page, 'stage')).toHaveAttribute('data-state', 'visualization')
-        await expect.poll(() => storedViewMode(request, user.id)).toBe('Visualization')
+        await expectStoredViewMode(request, user.id, 'Visualization')
 
         // After loading the app again, the profile keeps its view, also for a song with a video.
         await page.reload()
@@ -268,7 +288,9 @@ test.describe('with a profile of its own', () => {
             })
 
             // Wait for the answers of both saves instead of polling for a few seconds: under load,
-            // they can take longer than the default timeout of expect.
+            // they can take longer than the default timeout of expect. The page sends the second
+            // save only after the answer of the first, so both waits start before the clicks and
+            // the time of both saves counts against settleTimeout.
             const answered = Promise.all([
                 page.waitForResponse((response) => viewModeOf(response.request()) === 'Cover', {
                     timeout: settleTimeout,
