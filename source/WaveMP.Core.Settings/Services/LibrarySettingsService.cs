@@ -45,6 +45,7 @@ internal sealed class LibrarySettingsService(
                 AlbumCoverNames = command.AlbumCoverNames ?? current.AlbumCoverNames,
                 CoverPriority = command.CoverPriority ?? current.CoverPriority,
                 DownloadLyrics = command.DownloadLyrics ?? current.DownloadLyrics,
+                SubsonicDownloads = command.SubsonicDownloads ?? current.SubsonicDownloads,
             });
 
             IReadOnlyList<SettingsValidationError> errors = LibrarySettingsValidator.Validate(changed);

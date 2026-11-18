@@ -51,6 +51,8 @@ public class WaveMpDbContext(DbContextOptions<WaveMpDbContext> options) : DbCont
 
     public DbSet<ScrobbleQueueEntry> ScrobbleQueue => Set<ScrobbleQueueEntry>();
 
+    public DbSet<SubsonicAccount> SubsonicAccounts => Set<SubsonicAccount>();
+
     /// <summary>
     /// PostgreSQL extension of the fault-tolerant library search (trigrams). It is part of the official image and
     /// trusted since PostgreSQL 13, so the owner of the database can create it.
@@ -85,5 +87,6 @@ public class WaveMpDbContext(DbContextOptions<WaveMpDbContext> options) : DbCont
         modelBuilder.ApplyConfiguration(new LyricsDownloadConfiguration());
         modelBuilder.ApplyConfiguration(new ScrobbleConnectionConfiguration());
         modelBuilder.ApplyConfiguration(new ScrobbleQueueEntryConfiguration());
+        modelBuilder.ApplyConfiguration(new SubsonicAccountConfiguration());
     }
 }

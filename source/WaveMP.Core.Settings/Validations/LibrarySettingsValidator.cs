@@ -29,6 +29,7 @@ public static partial class LibrarySettingsValidator
             AlbumCoverNames = NormalizeList(settings.AlbumCoverNames, trimDot: false),
             CoverPriority = settings.CoverPriority,
             DownloadLyrics = settings.DownloadLyrics,
+            SubsonicDownloads = settings.SubsonicDownloads,
         };
     }
 

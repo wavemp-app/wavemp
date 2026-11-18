@@ -919,6 +919,40 @@ namespace WaveMP.Data.Migrations
                     b.ToTable("sessions", (string)null);
                 });
 
+            modelBuilder.Entity("WaveMP.Data.Entities.SubsonicAccount", b =>
+                {
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.Property<bool>("Enabled")
+                        .HasColumnType("boolean")
+                        .HasColumnName("enabled");
+
+                    b.Property<DateTimeOffset?>("PasswordCreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("password_created_at");
+
+                    b.Property<string>("PasswordHash")
+                        .HasMaxLength(64)
+                        .HasColumnType("character(64)")
+                        .HasColumnName("password_hash")
+                        .IsFixedLength();
+
+                    b.Property<string>("ProtectedPassword")
+                        .HasColumnType("text")
+                        .HasColumnName("protected_password");
+
+                    b.HasKey("UserId")
+                        .HasName("pk_subsonic_accounts");
+
+                    b.HasIndex("PasswordHash")
+                        .IsUnique()
+                        .HasDatabaseName("ix_subsonic_accounts_password_hash");
+
+                    b.ToTable("subsonic_accounts", (string)null);
+                });
+
             modelBuilder.Entity("WaveMP.Data.Entities.TagBackup", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1559,6 +1593,18 @@ namespace WaveMP.Data.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_sessions_users_user_id");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("WaveMP.Data.Entities.SubsonicAccount", b =>
+                {
+                    b.HasOne("WaveMP.Data.Entities.User", "User")
+                        .WithOne()
+                        .HasForeignKey("WaveMP.Data.Entities.SubsonicAccount", "UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_subsonic_accounts_users_user_id");
 
                     b.Navigation("User");
                 });

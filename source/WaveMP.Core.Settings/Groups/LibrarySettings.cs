@@ -63,4 +63,10 @@ public sealed class LibrarySettings
     /// of the library to the service.
     /// </summary>
     public bool DownloadLyrics { get; init; }
+
+    /// <summary>
+    /// Whether Subsonic apps may download the original files of the tracks (the endpoint <c>download</c> of the Subsonic
+    /// API, e.g. to keep them on the device). Off by default; streaming is always allowed.
+    /// </summary>
+    public bool SubsonicDownloads { get; init; }
 }

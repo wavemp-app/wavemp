@@ -109,6 +109,14 @@ public class LibrarySettingsValidatorTests
     }
 
     [Test]
+    public void SubsonicDownloads_ByDefault_AreOff()
+    {
+        new LibrarySettings().SubsonicDownloads.Should().BeFalse();
+        LibrarySettingsValidator.Normalize(new LibrarySettings { SubsonicDownloads = true }).SubsonicDownloads
+            .Should().BeTrue();
+    }
+
+    [Test]
     public void Validate_ImageExtensionThatIsAlsoVideo_IsAnOverlap()
     {
         LibrarySettings settings = new() { ImageExtensions = ["jpg", "mkv"] };
