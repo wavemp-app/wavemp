@@ -2,12 +2,9 @@ name: wavemp
 services:
   wavemp:
     container_name: wavemp
-    image: wavemp/wavemp:1.0.50
+    image: wavemp/wavemp:1.0.66
     # CasaOS creates the folders of the bind mounts as root. WaveMP starts as root, hands its data
     # folder to the user PUID and the group PGID (set by CasaOS and ZimaOS) and runs as them.
-    # user: "0:0" is the default of current images; images before PUID and PGID need it to start
-    # as root, otherwise they run as user 1654, which cannot write the data folder.
-    user: "0:0"
     restart: unless-stopped
     depends_on:
       wavemp-db:
@@ -162,11 +159,11 @@ x-casaos:
   architectures:
     - amd64
     - arm64
-  version: "1.0.50"
-  update_at: "2026-11-17"
+  version: "1.0.66"
+  update_at: "2026-11-18"
   release_notes:
-    en_US: First version of WaveMP in the app store.
-    de_DE: Erste Version von WaveMP im App Store.
+    en_US: "Cast to Chromecast and AirPlay devices, scrobble to Last.fm and ListenBrainz, play your library with Subsonic apps, and choose the user that owns the files WaveMP writes. All changes: https://github.com/wavemp-app/wavemp/releases/tag/v1.0.66"
+    de_DE: "Wiedergabe auf Chromecast- und AirPlay-Geräten, Scrobbeln zu Last.fm und ListenBrainz, deine Bibliothek in Subsonic-Apps, und ein wählbarer Benutzer für die Dateien, die WaveMP schreibt. Alle Änderungen: https://github.com/wavemp-app/wavemp/releases/tag/v1.0.66"
   website: https://wavemp-app.github.io
   repo: https://github.com/wavemp-app/wavemp
   support: https://github.com/wavemp-app/wavemp/issues

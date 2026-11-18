@@ -64,7 +64,7 @@ Neue Projekte und Ordner fügen sich in diese Struktur ein. Abweichungen nur, we
 
 **Dateien unter `/assets`:**
 - **Geschützt** sind `/assets/logo/` und alle Dateien und Ordner, die der Maintainer selbst hinzufügt (z. B. per eigenem Commit oder im Issue als seine Dateien benannt); im Zweifel gilt eine Datei als geschützt. Sie werden nie gelöscht, umbenannt oder überschrieben, außer der Maintainer erlaubt es ausdrücklich. Abgeleitete Dateien (optimierte Kopien, PNG-Exporte, neue Ordner) dürfen daneben hinzugefügt werden. Wird eine geschützte Datei nicht mehr gebraucht, wird sie nicht mehr verwendet und in der Abschlussmeldung zum Löschen vorgeschlagen.
-- **Alles andere** unter `/assets`, das der Agent selbst angelegt hat (Themes, Icons, Screenshots, Web-Assets, `LICENSES.md`, `/assets/web/brand`), darf wie gewöhnlicher Code geändert und gelöscht werden.
+- **Alles andere** unter `/assets`, das der Agent selbst angelegt hat (Themes, Icons, Screenshots, Web-Assets, `LICENSES.md`), darf wie gewöhnlicher Code geändert und gelöscht werden.
 
 ## Konventionen
 
@@ -163,10 +163,11 @@ Neue Projekte und Ordner fügen sich in diese Struktur ein. Abweichungen nur, we
 
 - Version `1.0.N`: Major und Minor stehen in `Directory.Build.props` (`<VersionPrefix>`) und werden nur vom Maintainer geändert. N ist `github.run_number` des CI-Workflows. Lokale Builds laufen als `1.0.0-dev`.
 - Jeder Push auf `main` veröffentlicht das Image auf GHCR und Docker Hub mit den Tags `1.0.N`, `1.0`, `latest`, `edge` und `sha-<kurzer-hash>`.
-- Abschluss eines Meilensteins (nach dem letzten Issue des Meilensteins und grüner CI):
-  - `/docs/releases/release-m{N}.md` auf Englisch schreiben: für Nutzer lesbar, nur was in diesem Meilenstein tatsächlich neu dazugekommen ist. Keine Hinweise, woher Ideen stammen oder was als Vorbild diente, keine Interna, keine Issue- oder Commit-Nummern.
-  - GitHub-Release `v1.0.N` (N des Images dieses Stands) mit dem Inhalt der Release-Notes anlegen.
-  - Milestone schließen.
+- Abschluss eines Meilensteins (nach dem letzten Issue des Meilensteins und grüner CI), genau in dieser Reihenfolge (Details in `deploy/README.md`, Abschnitt "Release of a milestone"):
+  1. **Release-Notes:** `/docs/releases/release-m{M}.md` auf Englisch schreiben: für Nutzer lesbar, nur was in diesem Meilenstein tatsächlich neu dazugekommen ist. Keine Hinweise, woher Ideen stammen oder was als Vorbild diente, keine Interna, keine Issue- oder Commit-Nummern. Committen (`WMP-{N}: M{M} add the release notes for M{M}`, N des letzten Issues), pushen, auf die CI warten. Dieser CI-Lauf veröffentlicht das Image des Releases `1.0.R` (R = seine Run-Nummer: `gh run list --workflow main.yml --commit <sha> --json number --jq '.[0].number'`).
+  2. **Deploy-Vorlagen:** Alle Vorlagen unter `/deploy` (TrueNAS, Unraid, CasaOS) auf `1.0.R` heben, TrueNAS mit dem Digest des Images (`docker buildx imagetools inspect wavemp/wavemp:1.0.R`), samt `app_version`/`version` (TrueNAS) und `version`/`update_at`/`release_notes` (CasaOS). Mit `node .github/scripts/check-deploy.mjs --release 1.0.R --digest <digest>` prüfen, als eigenen Commit (`WMP-{N}: M{M} raise the deploy templates to 1.0.R`) pushen, der nur `/deploy` ändert, und auf die CI warten. Das Image, das dieser Lauf zusätzlich veröffentlicht (`1.0.R+1`), ist nicht das Release.
+  3. **GitHub-Release:** `gh workflow run release.yml --ref main -f version=1.0.R -f milestone={M}` starten und abwarten. Der Workflow prüft, dass das Image `1.0.R` auf Docker Hub und GHCR mit gleichem Digest existiert, dass `main` sich vom Commit des Images nur in `/deploy` unterscheidet und dass alle Vorlagen `1.0.R` mit diesem Digest nennen; nur dann legt er das Release `v1.0.R` mit dem Inhalt der Release-Notes auf dem Commit aus Schritt 2 an. Schlägt er fehl, wird nichts angelegt: Vorlagen korrigieren, pushen, Workflow erneut starten. Muss außerhalb von `/deploy` etwas geändert werden, gilt das Image dieses Commits als neues `1.0.R` und es geht mit Schritt 2 weiter.
+  4. **Milestone schließen.**
 
 ## Issues und Projekt
 

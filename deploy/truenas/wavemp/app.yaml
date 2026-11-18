@@ -1,4 +1,4 @@
-app_version: 1.0.50
+app_version: 1.0.66
 capabilities: []
 categories:
 - media
@@ -42,4 +42,4 @@ sources:
 - https://hub.docker.com/r/wavemp/wavemp
 title: WaveMP
 train: community
-version: 1.0.0
+version: 1.0.1

@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <Container version="2">
   <Name>WaveMP</Name>
-  <Repository>wavemp/wavemp:1.0.50</Repository>
+  <Repository>wavemp/wavemp:1.0.66</Repository>
   <Registry>https://hub.docker.com/r/wavemp/wavemp</Registry>
   <Network>wavemp</Network>
   <MyIP/>
@@ -17,7 +17,7 @@ WaveMP needs a PostgreSQL 18 database: install the template wavemp-db first, and
   <WebUI>http://[IP]:[PORT:8080]/</WebUI>
   <TemplateURL>https://raw.githubusercontent.com/wavemp-app/wavemp/main/deploy/unraid/wavemp.xml</TemplateURL>
   <Icon>https://raw.githubusercontent.com/wavemp-app/wavemp/main/assets/logo/wavemp-logo-512.png</Icon>
-  <ExtraParams>--user 0:0 --restart unless-stopped</ExtraParams>
+  <ExtraParams>--restart unless-stopped</ExtraParams>
   <PostArgs/>
   <CPUset/>
   <DateInstalled/>
