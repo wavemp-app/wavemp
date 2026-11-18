@@ -56,7 +56,7 @@
 
         /* Profiles */
         --wmp-avatar-color: #ffffff;
-        --wmp-profile-secondary-opacity: 0.55;
+        --wmp-profile-secondary-opacity: 0.7;
 
         /* Graphics (values of the background shorthand) */
         --wmp-image-logo: url('/logo/wavemp-logo.svg') center / contain no-repeat;

@@ -80,7 +80,7 @@
             rgb(0 0 0 / 0%) 65%
         ),
         linear-gradient(#2c3036 0%, #121417 45%, #030405 100%);
-    --wmp-profile-secondary-opacity: 0.5;
+    --wmp-profile-secondary-opacity: 0.65;
     /* The status bar continues the top of the glossy black header. */
     --wmp-theme-color: #43484f;
 
@@ -100,19 +100,20 @@
     );
     --wmp-image-default-button-active: linear-gradient(#c3dcf6, #d6e8fb);
     --wmp-image-default-button-disabled: #f1f3f5;
+    /* The white label keeps 4.5:1 on every stop of the gloss (THEMING.md, "Contrast"). */
     --wmp-image-primary-button: linear-gradient(
-        #5db4ff,
-        #2a86e8 50%,
-        #1468cc 51%,
-        #2c86e2
+        #2a78d8,
+        #1c69cc 50%,
+        #155dbe 51%,
+        #1a66c8
     );
     --wmp-image-primary-button-hover: linear-gradient(
-        #86c8ff,
-        #3e98f2 50%,
-        #1d77dd 51%,
-        #3a95ef
+        #2a7bdc,
+        #1a68cc 50%,
+        #1259b8 51%,
+        #1863c4
     );
-    --wmp-image-primary-button-active: linear-gradient(#1a63bd, #2f86e0);
+    --wmp-image-primary-button-active: linear-gradient(#1a63bd, #1f6fd6);
     --wmp-image-primary-button-disabled: linear-gradient(#b8cde3, #a9bfd7);
     --wmp-image-icon-button: transparent;
     --wmp-image-icon-button-hover: transparent;
@@ -286,10 +287,10 @@
 [data-part="btn-review-inbox"] > [data-part="badge"][data-state~="unreviewed"] {
     border: 1px solid #0a3a7a;
     background: linear-gradient(
-        #8cccff 0%,
-        #3a93ea 46%,
-        #1664c8 54%,
-        #2a7fe0 100%
+        #2a78d8 0%,
+        #1f6fd6 46%,
+        #1a63c4 54%,
+        #1f6bcc 100%
     );
     box-shadow:
         inset 0 1px rgb(255 255 255 / 55%),
@@ -404,7 +405,7 @@ a[data-part="breadcrumb-link"]:hover {
 }
 
 [data-part="tree-toggle"] {
-    --wmp-icon-fill: #8a929d;
+    --wmp-icon-fill: #6f7782;
 }
 
 /* The button that collapses the sidebar takes the blue of the tree icons. */
@@ -415,7 +416,7 @@ a[data-part="breadcrumb-link"]:hover {
 /* --- Content: white list grouped by album -------------------------------------------------------- */
 
 [data-part="content"] {
-    --wmp-icon-fill: #8a929d;
+    --wmp-icon-fill: #6f7782;
 }
 
 [data-part="placeholder-notice"] {
@@ -480,7 +481,7 @@ a[data-part="breadcrumb-link"]:hover {
 }
 
 [data-part="badge"] {
-    --wmp-icon-fill: #8a929d;
+    --wmp-icon-fill: #6f7782;
 }
 
 [data-part="empty-state-title"] {
