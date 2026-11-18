@@ -250,13 +250,20 @@ describe('shipped themes', () => {
                 expect(queries.filter((query) => query !== desktopMediaQuery)).toEqual([])
             })
 
+            it('names the current version of the theme API in its header comment', () => {
+                const header = /^\/\*([\s\S]*?)\*\//.exec(read(file))?.[1] ?? ''
+                expect(header).toMatch(/theme API version \d+\b/)
+                expect(header).toMatch(new RegExp(`theme API version ${themeApiVersion}\\b`))
+            })
+
             it('uses only parts of the theme API', () => {
                 const known = new Set<string>(parts)
                 const used = unique(
-                    [...css.matchAll(/\[data-part='([a-z0-9-]+)'\]/g)].map(
-                        (match) => match[1] ?? '',
+                    [...css.matchAll(/\[data-part=(['"])([a-z0-9-]+)\1\]/g)].map(
+                        (match) => match[2] ?? '',
                     ),
                 )
+                expect(used.length).toBeGreaterThan(0)
                 expect(used.filter((name) => !known.has(name))).toEqual([])
             })
         })
