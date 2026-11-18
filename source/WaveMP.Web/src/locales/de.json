@@ -723,7 +723,8 @@
       "transcoding": "Transcodierung",
       "backups": "Sicherungen",
       "profiles": "Profile",
-      "review": "Prüfen"
+      "review": "Prüfen",
+      "themes": "Designs"
     }
   },
   "adminLibrary": {
@@ -1122,6 +1123,92 @@
     "errors": {
       "scheduleTime": "Gib eine Uhrzeit zwischen 00:00 und 23:59 ein.",
       "retention": "Wähle eine Zahl zwischen {min} und {max}."
+    }
+  },
+  "adminThemes": {
+    "title": "Designs",
+    "uploadTitle": "Design hochladen",
+    "uploadHint": "Ein Design ist eine ZIP-Datei mit einer manifest.json, genau einer CSS-Datei und Bildern im Format SVG, PNG oder WebP. THEMING.md beschreibt, wie man eines baut; die Vorlage ist ein kommentiertes Beispiel zum Einstieg.",
+    "template": "Vorlage herunterladen",
+    "upload": "Design hochladen",
+    "themesTitle": "Hochgeladene Designs",
+    "list": "Hochgeladene Designs",
+    "empty": "Es wurden noch keine Designs hochgeladen. Die mit WaveMP gelieferten Designs stehen immer zur Wahl.",
+    "loadError": "Die Designs konnten nicht geladen werden.",
+    "by": "von {author}",
+    "version": "Version {version}",
+    "installedAt": "Installiert am {date}",
+    "replace": "Neue Version von {name} hochladen",
+    "delete": "{name} löschen",
+    "installed": "Das Design {name} ist installiert. Jedes Profil kann es jetzt in den Einstellungen wählen.",
+    "replaced": "Das Design {name} ist aktualisiert. Profile, die es nutzen, sehen die neue Version.",
+    "invalid": "Das Design wurde nicht installiert. Behebe diese Probleme und lade es erneut hoch:",
+    "uploadErrors": {
+      "tooLarge": "Die Datei ist größer, als der Server erlaubt.",
+      "unsupportedFormat": "Die Datei ist keine ZIP-Datei.",
+      "alreadyInstalled": "Ein Design mit der ID dieses Pakets ist bereits installiert. Lade es stattdessen als neue Version dieses Designs hoch.",
+      "notFound": "Das Design gibt es nicht mehr.",
+      "error": "Das Design konnte nicht hochgeladen werden."
+    },
+    "deleted": "Das Design ist gelöscht. Profile, die es genutzt haben, sehen jetzt das Standard-Design.",
+    "deleteError": "Das Design konnte nicht gelöscht werden.",
+    "deleteDialog": {
+      "title": "Design löschen",
+      "text": "Das Design {name} löschen? Profile, die es nutzen, bekommen das Standard-Design.",
+      "confirm": "Löschen"
+    },
+    "errorList": "Probleme des Design-Pakets",
+    "errorLocation": {
+      "file": "{path}",
+      "line": "{path}, Zeile {line}"
+    },
+    "errorCodes": {
+      "package": {
+        "corrupt": "Die ZIP-Datei ist beschädigt, verschlüsselt oder nutzt eine Kompression, die der Server nicht lesen kann.",
+        "tooManyEntries": "Das Paket enthält mehr als {max} Dateien und Ordner.",
+        "tooLarge": "Die Dateien des Pakets sind entpackt größer als {max}."
+      },
+      "file": {
+        "tooLarge": "Die Datei ist entpackt größer als {max}.",
+        "invalidPath": "Der Pfad ist nicht erlaubt. Verwende relative Pfade aus Buchstaben, Ziffern, Punkten, Binde- und Unterstrichen, höchstens fünf Ordner tief.",
+        "duplicatePath": "Der Pfad kommt doppelt vor, auch wenn sich nur Groß- und Kleinschreibung unterscheiden.",
+        "unsupportedType": "Ein Design kann diese Art von Datei nicht enthalten. Erlaubt sind manifest.json, eine CSS-Datei und Bilder im Format SVG, PNG und WebP."
+      },
+      "manifest": {
+        "missing": "Das Paket hat keine manifest.json.",
+        "invalidJson": "manifest.json ist kein gültiges JSON-Objekt oder nennt einen Eintrag doppelt.",
+        "missingField": "Der Eintrag {field} fehlt.",
+        "invalidField": "Der Eintrag {field} hat einen ungültigen Wert.",
+        "reservedId": "Die ID gehört zu einem mit WaveMP gelieferten Design. Wähle eine andere.",
+        "idMismatch": "Die ID ist nicht die ID des Designs, das ersetzt wird.",
+        "unsupportedApiVersion": "Das Design ist für eine Version der Theme-API geschrieben, die dieser Server nicht unterstützt. Unterstützt: Versionen {min} bis {max}.",
+        "previewMissing": "Das Vorschaubild {file} ist nicht im Paket oder kein Bild im Format SVG, PNG oder WebP."
+      },
+      "css": {
+        "missing": "Das Paket hat keine CSS-Datei.",
+        "multiple": "Das Paket hat mehr als eine CSS-Datei. Ein Design hat genau eine.",
+        "invalidEncoding": "Die CSS-Datei ist nicht als UTF-8 gespeichert.",
+        "syntaxError": "Eine Zeichenkette oder Adresse ist nicht richtig abgeschlossen.",
+        "import": "Andere CSS-Dateien zu importieren ist nicht erlaubt. Schreibe alle Regeln in die eine CSS-Datei.",
+        "layer": "Kaskaden-Ebenen (Layer) sind in Designs nicht erlaubt.",
+        "atRuleNotAllowed": "Diese At-Regel ist in Designs nicht erlaubt.",
+        "externalUrl": "Designs können nichts von anderen Servern oder aus data:-Adressen laden.",
+        "absoluteUrl": "Verwende einen Pfad relativ zur CSS-Datei statt einer Adresse, die mit einem Schrägstrich beginnt.",
+        "invalidUrl": "Die Adresse ist ungültig: leer, mit Query, außerhalb des Pakets oder mit var(), attr() oder env() gebaut.",
+        "missingFile": "Die Datei {file} ist nicht im Paket oder kein Bild."
+      },
+      "svg": {
+        "invalid": "Die Datei ist kein gültiges SVG-Bild.",
+        "entity": "SVG-Bilder können keinen DOCTYPE und keine Entities enthalten.",
+        "script": "SVG-Bilder können keine Skripte enthalten.",
+        "eventHandler": "SVG-Bilder können keine Event-Handler wie onload enthalten.",
+        "foreignObject": "SVG-Bilder können kein HTML und keine anderen fremden Inhalte einbetten.",
+        "externalReference": "SVG-Bilder können nicht auf andere Dateien, Websites oder javascript:-Links verweisen."
+      },
+      "image": {
+        "invalid": "Die Datei enthält kein Bild in dem Format, das ihre Endung nennt."
+      },
+      "unknown": "Das Paket hat ein Problem, das diese Version der App nicht kennt."
     }
   },
   "jobRuns": {

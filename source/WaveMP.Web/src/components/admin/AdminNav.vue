@@ -28,6 +28,7 @@ const items: readonly AdminNavItem[] = [
     { id: 'admin-cache', labelKey: 'admin.nav.cache', icon: 'admin-cache' },
     { id: 'admin-transcoding', labelKey: 'admin.nav.transcoding', icon: 'admin-transcoding' },
     { id: 'admin-backups', labelKey: 'admin.nav.backups', icon: 'admin-backups' },
+    { id: 'admin-themes', labelKey: 'admin.nav.themes', icon: 'admin-themes' },
     { id: 'admin-users', labelKey: 'admin.nav.profiles', icon: 'manage-profiles' },
 ]
 

@@ -723,7 +723,8 @@
       "transcoding": "Transcoding",
       "backups": "Backups",
       "profiles": "Profiles",
-      "review": "Review"
+      "review": "Review",
+      "themes": "Themes"
     }
   },
   "adminLibrary": {
@@ -1122,6 +1123,92 @@
     "errors": {
       "scheduleTime": "Enter a time between 00:00 and 23:59.",
       "retention": "Choose a number between {min} and {max}."
+    }
+  },
+  "adminThemes": {
+    "title": "Themes",
+    "uploadTitle": "Upload a theme",
+    "uploadHint": "A theme is a ZIP file with a manifest.json, exactly one CSS file and SVG, PNG or WebP pictures. THEMING.md describes how to build one; the template is a commented example to start from.",
+    "template": "Download the template",
+    "upload": "Upload theme",
+    "themesTitle": "Uploaded themes",
+    "list": "Uploaded themes",
+    "empty": "No themes have been uploaded yet. The themes shipped with WaveMP are always available.",
+    "loadError": "The themes could not be loaded.",
+    "by": "by {author}",
+    "version": "Version {version}",
+    "installedAt": "Installed on {date}",
+    "replace": "Upload a new version of {name}",
+    "delete": "Delete {name}",
+    "installed": "The theme {name} is installed. Every profile can now choose it in the settings.",
+    "replaced": "The theme {name} is updated. Profiles that use it see the new version.",
+    "invalid": "The theme was not installed. Fix these problems and upload it again:",
+    "uploadErrors": {
+      "tooLarge": "The file is larger than the server allows.",
+      "unsupportedFormat": "The file is no ZIP file.",
+      "alreadyInstalled": "A theme with the id of this package is already installed. Upload it as new version of that theme instead.",
+      "notFound": "The theme no longer exists.",
+      "error": "The theme could not be uploaded."
+    },
+    "deleted": "The theme is deleted. Profiles that used it now see the default theme.",
+    "deleteError": "The theme could not be deleted.",
+    "deleteDialog": {
+      "title": "Delete theme",
+      "text": "Delete the theme {name}? Profiles that use it get the default theme.",
+      "confirm": "Delete"
+    },
+    "errorList": "Problems of the theme package",
+    "errorLocation": {
+      "file": "{path}",
+      "line": "{path}, line {line}"
+    },
+    "errorCodes": {
+      "package": {
+        "corrupt": "The ZIP file is damaged, encrypted or uses a compression the server cannot read.",
+        "tooManyEntries": "The package holds more than {max} files and folders.",
+        "tooLarge": "The files of the package are larger than {max} once unpacked."
+      },
+      "file": {
+        "tooLarge": "The file is larger than {max} once unpacked.",
+        "invalidPath": "The path is not allowed. Use relative paths of letters, digits, dots, hyphens and underscores, at most five folders deep.",
+        "duplicatePath": "The path appears twice, also when only upper and lower case differ.",
+        "unsupportedType": "A theme cannot contain this kind of file. Allowed are manifest.json, one CSS file and SVG, PNG and WebP pictures."
+      },
+      "manifest": {
+        "missing": "The package has no manifest.json.",
+        "invalidJson": "manifest.json is no valid JSON object or names a member twice.",
+        "missingField": "The member {field} is missing.",
+        "invalidField": "The member {field} has an invalid value.",
+        "reservedId": "The id belongs to a theme shipped with WaveMP. Choose another one.",
+        "idMismatch": "The id is not the id of the theme that is replaced.",
+        "unsupportedApiVersion": "The theme is written for a version of the theme API this server does not support. Supported: versions {min} to {max}.",
+        "previewMissing": "The preview picture {file} is not in the package or is no SVG, PNG or WebP picture."
+      },
+      "css": {
+        "missing": "The package has no CSS file.",
+        "multiple": "The package has more than one CSS file. A theme has exactly one.",
+        "invalidEncoding": "The CSS file is not saved as UTF-8.",
+        "syntaxError": "A string or an address is not closed properly.",
+        "import": "Imports of other CSS files are not allowed. Put all rules into the one CSS file.",
+        "layer": "Cascade layers are not allowed in themes.",
+        "atRuleNotAllowed": "This at-rule is not allowed in themes.",
+        "externalUrl": "Themes cannot load anything from other servers or from data: addresses.",
+        "absoluteUrl": "Use a path relative to the CSS file instead of an address starting with a slash.",
+        "invalidUrl": "The address is invalid: empty, with a query, outside of the package or built with var(), attr() or env().",
+        "missingFile": "The file {file} is not in the package or is no picture."
+      },
+      "svg": {
+        "invalid": "The file is no valid SVG picture.",
+        "entity": "SVG pictures cannot contain a DOCTYPE or entities.",
+        "script": "SVG pictures cannot contain scripts.",
+        "eventHandler": "SVG pictures cannot contain event handlers such as onload.",
+        "foreignObject": "SVG pictures cannot embed HTML or other foreign content.",
+        "externalReference": "SVG pictures cannot reference other files, websites or javascript: links."
+      },
+      "image": {
+        "invalid": "The file contains no picture of the format its extension names."
+      },
+      "unknown": "The package has a problem this version of the app does not know."
     }
   },
   "jobRuns": {

@@ -191,6 +191,10 @@
         --_icon: var(--wmp-icon-admin-backups);
     }
 
+    [data-icon='admin-themes'] {
+        --_icon: var(--wmp-icon-admin-themes);
+    }
+
     [data-icon='admin-files'] {
         --_icon: var(--wmp-icon-admin-files);
     }
@@ -397,6 +401,10 @@
 
     [data-icon='download-lyrics'] {
         --_icon: var(--wmp-icon-download-lyrics);
+    }
+
+    [data-icon='upload'] {
+        --_icon: var(--wmp-icon-upload);
     }
 
     [data-icon='detail-back'] {

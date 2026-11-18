@@ -287,6 +287,16 @@ export const parts = [
     'backup-name',
     'backup-meta',
     'backup-actions',
+    'theme-list',
+    'theme-item',
+    'theme-info',
+    'theme-name',
+    'theme-meta',
+    'theme-actions',
+    'theme-errors',
+    'theme-error',
+    'theme-error-location',
+    'theme-error-message',
 
     // Scrobbling services of the settings page
     'scrobble-list',

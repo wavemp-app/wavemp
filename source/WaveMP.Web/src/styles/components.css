@@ -1152,6 +1152,8 @@
     [data-part='job-list'],
     [data-part='transcode-list'],
     [data-part='backup-list'],
+    [data-part='theme-list'],
+    [data-part='theme-errors'],
     [data-part='scrobble-list'] {
         display: grid;
         gap: var(--wmp-space-s);
@@ -1172,6 +1174,7 @@
     [data-part='job-meta'],
     [data-part='transcode-meta'],
     [data-part='backup-meta'],
+    [data-part='theme-meta'],
     [data-part='scrobble-meta'] {
         display: flex;
         flex-wrap: wrap;
@@ -1185,6 +1188,7 @@
     [data-part='job-item'],
     [data-part='transcode-item'],
     [data-part='backup-item'],
+    [data-part='theme-item'],
     [data-part='scrobble-item'] {
         display: flex;
         flex-wrap: wrap;
@@ -1199,6 +1203,7 @@
     [data-part='job-info'],
     [data-part='transcode-info'],
     [data-part='backup-info'],
+    [data-part='theme-info'],
     [data-part='scrobble-info'] {
         display: grid;
         flex: 1 1 16rem;
@@ -1213,6 +1218,7 @@
     [data-part='job-name'],
     [data-part='transcode-title'],
     [data-part='backup-name'],
+    [data-part='theme-name'],
     [data-part='scrobble-name'] {
         font-weight: var(--wmp-font-weight-bold);
         overflow-wrap: anywhere;
@@ -1221,6 +1227,7 @@
     [data-part='job-actions'],
     [data-part='transcode-actions'],
     [data-part='backup-actions'],
+    [data-part='theme-actions'],
     [data-part='scrobble-actions'] {
         display: flex;
         gap: var(--wmp-space-xs);
@@ -1510,6 +1517,7 @@
 
     [data-part='list'][data-state~='busy'],
     [data-part='backup-item'][data-state~='busy'],
+    [data-part='theme-item'][data-state~='busy'],
     [data-part='scrobble-item'][data-state~='busy'] {
         cursor: progress;
     }
@@ -3139,5 +3147,25 @@
     [data-part='theme-variants'] {
         color: var(--wmp-color-text-muted);
         font-size: var(--wmp-font-size-s);
+    }
+
+    [data-part='theme-item'] > [data-part='theme-preview'] {
+        flex: 0 0 auto;
+        inline-size: 8rem;
+    }
+
+    [data-part='theme-error'] {
+        display: grid;
+        gap: 0.125rem;
+        padding: var(--wmp-space-s) var(--wmp-space-m);
+        border: 1px solid var(--wmp-color-border);
+        border-radius: var(--wmp-radius-m);
+        background: var(--wmp-color-surface);
+    }
+
+    [data-part='theme-error-location'] {
+        color: var(--wmp-color-text-muted);
+        font-size: var(--wmp-font-size-s);
+        overflow-wrap: anywhere;
     }
 }

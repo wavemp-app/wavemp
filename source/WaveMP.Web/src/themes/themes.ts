@@ -1,11 +1,13 @@
-// Registry of the themes shipped with WaveMP. A theme is exactly one CSS file plus graphics under
-// /assets/web/themes/<id>/, served at /themes/<id>/theme.css and loaded with a <link> element.
-// applyTheme() switches the theme without reloading the page. Each theme has one or two variants
-// (light and dark in one CSS file); the root element tells the shown variant in
-// data-theme-variant, so the CSS of the theme selects it with [data-theme-variant='dark'].
-// The registry is prepared for uploaded themes (WMP-33): the id of the theme of a profile is any
-// string the API accepts, and an unknown id shows the default theme.
+// Registry of the themes: the themes shipped with WaveMP and the themes admins uploaded. A theme is
+// exactly one CSS file plus graphics; shipped themes live under /assets/web/themes/<id>/ and are
+// served at /themes/<id>/theme.css, uploaded themes come from the API
+// (/api/v1/themes/<id>/files/...). The theme is loaded with a <link> element; applyTheme()
+// switches it without reloading the page. Each theme has one or two variants (light and dark in one
+// CSS file); the root element tells the shown variant in data-theme-variant, so the CSS of the
+// theme selects it with [data-theme-variant='dark']. The id of the theme of a profile is any
+// string the API accepts, and an unknown id (e.g. of a deleted theme) shows the default theme.
 
+import { shallowRef } from 'vue'
 import { themeApiVersion } from './parts'
 
 /** Variant of a theme: themes with both variants follow the appearance of the profile. */
@@ -21,6 +23,13 @@ export interface ThemeDefinition {
     readonly stylesheet: string
     /** The variants of the theme; the first one is used where the appearance has no say. */
     readonly variants: readonly [ThemeVariant, ...ThemeVariant[]]
+    /**
+     * The preview pictures of an uploaded theme per variant. Shipped themes have none here; their
+     * previews are /themes/<id>/preview-<variant>.webp.
+     */
+    readonly previews?: Readonly<Partial<Record<ThemeVariant, string>>>
+    /** Whether an admin uploaded the theme. */
+    readonly custom?: boolean
 }
 
 function builtIn(
@@ -52,17 +61,29 @@ export const themeLinkId = 'wavemp-theme'
 /** Media query of the dark mode of the device, which the appearance "system" follows. */
 export const darkModeMediaQuery = '(prefers-color-scheme: dark)'
 
-export function isThemeId(value: string): value is ThemeId {
-    return themes.some((theme) => theme.id === value)
+/**
+ * The themes admins uploaded, after the shipped ones (see src/themes/custom.ts). Reactive, so the
+ * theme of a profile applies as soon as the list is known; remembered for the first paint.
+ */
+export const customThemes = shallowRef<readonly ThemeDefinition[]>([])
+
+/** Every theme a profile can choose: the shipped themes, then the uploaded ones. */
+export function availableThemes(): readonly ThemeDefinition[] {
+    return [...themes, ...customThemes.value]
+}
+
+/** Whether a theme with the id exists, shipped or uploaded. */
+export function isThemeId(value: string): boolean {
+    return availableThemes().some((theme) => theme.id === value)
 }
 
 /** Returns the given theme if it exists, otherwise the default theme. */
-export function resolveThemeId(candidate?: string | null): ThemeId {
+export function resolveThemeId(candidate?: string | null): string {
     return candidate && isThemeId(candidate) ? candidate : defaultThemeId
 }
 
 export function themeById(id: string): ThemeDefinition {
-    return themes.find((theme) => theme.id === id) ?? themes[0]
+    return availableThemes().find((theme) => theme.id === id) ?? themes[0]
 }
 
 /** Whether the theme has a light and a dark variant, so the appearance of the profile applies. */
@@ -86,6 +107,10 @@ export function resolveThemeVariant(
 
 /** URL of the preview picture of a variant of a theme (shown on the settings page). */
 export function themePreview(theme: ThemeDefinition, variant: ThemeVariant): string {
+    if (theme.previews) {
+        return theme.previews[variant] ?? theme.previews[theme.variants[0]] ?? ''
+    }
+
     return `/themes/${theme.id}/preview-${variant}.webp`
 }
 

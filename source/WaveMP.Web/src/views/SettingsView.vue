@@ -28,7 +28,13 @@ import { useEqualizerStore } from '@/stores/equalizer'
 import { useHealthStore } from '@/stores/health'
 import { useSessionStore } from '@/stores/session'
 import { isThemeAppearance } from '@/themes/choice'
-import { darkModeMediaQuery, hasVariants, resolveThemeId, themeById, themes } from '@/themes/themes'
+import {
+    availableThemes,
+    darkModeMediaQuery,
+    hasVariants,
+    resolveThemeId,
+    themeById,
+} from '@/themes/themes'
 import { appVersion } from '@/version'
 import { autoChangeChoices, type VisualizationSettings } from '@/visualization/settings'
 
@@ -135,6 +141,8 @@ async function changeLanguage(value: string): Promise<void> {
 const systemDark = useMediaQuery(darkModeMediaQuery)
 const themeId = computed(() => resolveThemeId(session.theme.id))
 const chosenTheme = computed(() => themeById(themeId.value))
+// The shipped themes and the themes admins uploaded (loaded once a profile is selected).
+const themeChoices = computed(() => availableThemes())
 const appearanceOptions = computed<SegmentOption[]>(() =>
     (['system', 'light', 'dark'] as const).map((value) => ({
         value,
@@ -323,7 +331,7 @@ async function changeSleepTimerFade(value: string): Promise<void> {
                 <span :id="themeLabelId" data-part="label">{{ t('settings.theme') }}</span>
                 <ThemePicker
                     :model-value="themeId"
-                    :themes="themes"
+                    :themes="themeChoices"
                     :labelledby="themeLabelId"
                     :describedby="themeHintId"
                     :appearance="session.theme.appearance"

@@ -138,6 +138,7 @@
         --wmp-icon-admin-cache: url('/icons/phosphor/regular/hard-drives.svg');
         --wmp-icon-admin-transcoding: url('/icons/phosphor/regular/film-reel.svg');
         --wmp-icon-admin-backups: url('/icons/phosphor/regular/database.svg');
+        --wmp-icon-admin-themes: url('/icons/phosphor/regular/palette.svg');
         --wmp-icon-admin-files: url('/icons/phosphor/regular/files.svg');
         --wmp-icon-admin-review: url('/icons/phosphor/regular/tray.svg');
         --wmp-icon-tags-missing: url('/icons/phosphor/regular/warning.svg');
@@ -190,6 +191,7 @@
         --wmp-icon-view-cover: url('/icons/phosphor/regular/image.svg');
         --wmp-icon-view-lyrics: url('/icons/phosphor/regular/subtitles.svg');
         --wmp-icon-download-lyrics: url('/icons/phosphor/regular/cloud-arrow-down.svg');
+        --wmp-icon-upload: url('/icons/phosphor/regular/upload-simple.svg');
         --wmp-icon-detail-back: url('/icons/phosphor/regular/arrow-left.svg');
         --wmp-icon-review-done: url('/icons/phosphor/regular/check-circle.svg');
         --wmp-icon-review-skip: url('/icons/phosphor/regular/skip-forward.svg');

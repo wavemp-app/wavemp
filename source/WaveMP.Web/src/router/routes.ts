@@ -9,6 +9,7 @@ import PlaylistsView from '@/views/PlaylistsView.vue'
 import ProfileSelectView from '@/views/ProfileSelectView.vue'
 import SettingsView from '@/views/SettingsView.vue'
 import AdminBackupsView from '@/views/admin/AdminBackupsView.vue'
+import AdminThemesView from '@/views/admin/AdminThemesView.vue'
 import AdminCacheView from '@/views/admin/AdminCacheView.vue'
 import AdminJobsView from '@/views/admin/AdminJobsView.vue'
 import AdminFilesView from '@/views/admin/AdminFilesView.vue'
@@ -230,6 +231,12 @@ export function createRoutes(extra: readonly RouteRecordRaw[] = []): RouteRecord
             path: '/admin/backups',
             name: 'admin-backups',
             component: AdminBackupsView,
+            meta: { admin: true },
+        },
+        {
+            path: '/admin/themes',
+            name: 'admin-themes',
+            component: AdminThemesView,
             meta: { admin: true },
         },
         {

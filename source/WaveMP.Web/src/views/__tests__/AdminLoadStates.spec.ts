@@ -50,6 +50,7 @@ async function mountPage(component: Component) {
                 'admin-cache',
                 'admin-transcoding',
                 'admin-backups',
+                'admin-themes',
             ].map((name) => ({ path: `/${name}`, name, component: { render: () => null } })),
             { path: '/users', name: 'admin-users', component: { render: () => null } },
             { path: '/library', name: 'library', component: { render: () => null } },

@@ -6,7 +6,7 @@ This document describes how themes change the look of the WaveMP web app: the pa
 
 ## Overview
 
-A theme is exactly one CSS file plus its graphics. The themes shipped with WaveMP live in `/assets/web/themes/<id>/` and are served as `/themes/<id>/theme.css`, their graphics under `/themes/<id>/images/`. The app loads the active theme with a `<link id="wavemp-theme">` element.
+A theme is exactly one CSS file plus its graphics. The themes shipped with WaveMP live in `/assets/web/themes/<id>/` and are served as `/themes/<id>/theme.css`, their graphics under `/themes/<id>/images/`. Admins can upload further themes as ZIP packages, see [Uploaded themes](#uploaded-themes). The app loads the active theme with a `<link id="wavemp-theme">` element.
 
 The DOM is the same for every theme. Every element a theme can address has a stable `data-part` attribute, for example `data-part="transport"` or `data-part="btn-play"`. States are expressed with `data-state` tokens and ARIA attributes. Icons and labels are always separate child elements (`data-part="icon"`, `data-part="label"`), so the pseudo-elements `::before` and `::after` of all areas and buttons are free for the theme, for example for gloss and glow effects.
 
@@ -302,9 +302,9 @@ The color changes with the song; a theme can let it fade with `transition` on th
 | `profile-summary` | `div` | `view` | The current profile on the settings page: `avatar` and `label` with the name |
 | `theme-picker` | `div` (`role="radiogroup"`, `aria-labelledby`) | `field` (`data-field="theme"`) | The themes on the settings page as tiles with a preview: an `indicator` and one `theme-option` per theme. One tab stop; the arrow keys, Home and End choose another theme, which shows at once. It carries the runtime variables of an active element |
 | `theme-option` | `button` (`role="radio"`, `aria-checked`) | `theme-picker` | One theme: `theme-preview`, `label` (the name of the theme) and `theme-variants`; `data-item` is the id of the theme, `data-variants` its variants |
-| `theme-preview` | `span` | `theme-option` | Frame of the preview picture; `data-kind` is the variant it shows (the one the profile would see) |
-| `theme-preview-image` | `img` (`alt=""`) | `theme-preview` | Preview picture `/themes/<id>/preview-<variant>.webp`; missing while the picture cannot be loaded |
-| `theme-variants` | `span` | `theme-option` | The variants of the theme as text, for example "Light and dark" |
+| `theme-preview` | `span` | `theme-option`, `theme-item` | Frame of the preview picture; `data-kind` is the variant it shows (the one the profile would see) |
+| `theme-preview-image` | `img` (`alt=""`) | `theme-preview` | Preview picture: `/themes/<id>/preview-<variant>.webp` for shipped themes, the preview of the manifest for uploaded themes; missing while the picture cannot be loaded |
+| `theme-variants` | `span` | `theme-option`, `theme-meta` | The variants of the theme as text, for example "Light and dark" |
 | `avatar-editor` | `div` (`data-state`) | `dialog-body` of the `dialog` `avatar` | Changes the picture of a profile: the current `avatar`, a `segmented-control` `avatar-mode` (`segment`s `preset` and `upload`), an `alert` on errors, then `avatar-presets`, or `avatar-crop` with a `form-note` and the `button` `choose-file` |
 | `avatar-presets` | `div` (`role="radiogroup"`, `aria-label`) | `avatar-editor` | Choice of a built-in picture: an `indicator` and one `avatar-preset` per picture; tells the chosen picture with the runtime variables of an active element, see [Active element of a group](#active-element-of-a-group) |
 | `avatar-preset` | `button` (`role="radio"`, `aria-checked`, `data-item`) | `avatar-presets` | One built-in picture (`data-item` is its id, for example `bubble`) with `avatar-preset-image` and a visually hidden `label` |
@@ -363,6 +363,16 @@ The color changes with the song; a theme can let it fade with `transition` on th
 | `backup-name` | `span` | `backup-info` | File name of the export |
 | `backup-meta` | `span` | `backup-info` | A `badge` of what created the export, its time and its size as `label`s |
 | `backup-actions` | `div` | `backup-item` | Button that deletes the export |
+| `theme-list` | `ul` (`aria-label`) | `section` | Uploaded themes on the theme page of the administration; an `empty-state` instead while there is none |
+| `theme-item` | `li` (`data-item`, `data-variants`) | `theme-list` | One uploaded theme with `theme-preview`, `theme-info` and `theme-actions`; `data-item` is its id, `data-variants` its variants; state `busy` while it is replaced or deleted |
+| `theme-info` | `div` | `theme-item` | `theme-name` and `theme-meta` |
+| `theme-name` | `span` | `theme-info` | Name of the theme |
+| `theme-meta` | `span` | `theme-info` | Author, version, `theme-variants`, size and installation date of the theme as `label`s |
+| `theme-actions` | `div` | `theme-item` | Buttons `replace` (upload a new version) and `delete` |
+| `theme-errors` | `ul` (`aria-label`) | `section` | Why an uploaded theme package was rejected, one `theme-error` per problem |
+| `theme-error` | `li` (`data-item`) | `theme-errors` | One problem; `data-item` is its code, for example `css.external_url` (see [Uploaded themes](#uploaded-themes)) |
+| `theme-error-location` | `span` | `theme-error` | File and line of the problem; missing for problems of the package as a whole |
+| `theme-error-message` | `span` | `theme-error` | Message of the problem |
 | `scrobble-list` | `ul` (`aria-label`, `aria-busy` while it loads) | `section` | Scrobbling services of the profile on the settings page (Last.fm, ListenBrainz) |
 | `scrobble-item` | `li` (`data-item`) | `scrobble-list` | One service with `scrobble-info`, a `form-note` while the service needs attention, and `scrobble-actions` |
 | `scrobble-info` | `div` | `scrobble-item` | `scrobble-name` and `scrobble-meta` |
@@ -486,6 +496,7 @@ The internal component overview (`/dev/components`) uses its own parts starting 
 | `admin-nav-item` | `active` for the current page |
 | `scan-status`, `job-item`, `backup-status` | `idle`, `queued` or `running` |
 | `backup-item` | `busy` while the export is deleted |
+| `theme-item` | `busy` while the theme is replaced or deleted |
 | `scrobble-item` | `connected`, `not-connected`, `authorization-failed` (the service no longer accepts the access) or `unavailable` (Last.fm without API account on the server); additionally `busy` while the service is connected or disconnected |
 | `view` with `data-view="settings-scrobbling-lastfm"` | `connecting` while the token of Last.fm is handed to the server, `failed` if that did not work |
 | `run-item` | `queued`, `running`, `succeeded`, `failed`, `canceled` or `interrupted` |
@@ -577,7 +588,7 @@ The base links states to graphics: buttons use the variables `--wmp-image-<varia
 | `data-field` | `field` (appearance in the settings) | `theme` (the `theme-picker`), `theme-appearance` (the `segmented-control` `theme-appearance` with the `segment`s `system`, `light` and `dark`; disabled for themes with one variant); the `section` around them has `data-item="appearance"` |
 | `data-orientation` | `slider` | `horizontal`, `vertical`; also as `aria-orientation` on `slider-thumb` |
 | `data-orientation` | `video-stage` | Orientation of the picture of the video as it is shown (rotation applied): `landscape`, `portrait` or `square`; missing while the video has not loaded its size |
-| `data-view` | `view` | `library`, `library-search`, `library-album`, `library-artist`, `library-genre`, `library-year`, `library-track`, `home`, `now-playing`, `playlists`, `playlist`, `recently-played`, `settings`, `equalizer`, `settings-pin`, `settings-scrobbling-lastfm`, `admin-library`, `admin-jobs`, `admin-cache`, `admin-transcoding`, `admin-backups`, `admin-users`, `admin-files`, `admin-track-files`, `admin-review`, `admin-review-track`, `not-found` |
+| `data-view` | `view` | `library`, `library-search`, `library-album`, `library-artist`, `library-genre`, `library-year`, `library-track`, `home`, `now-playing`, `playlists`, `playlist`, `recently-played`, `settings`, `equalizer`, `settings-pin`, `settings-scrobbling-lastfm`, `admin-library`, `admin-jobs`, `admin-cache`, `admin-transcoding`, `admin-backups`, `admin-themes`, `admin-users`, `admin-files`, `admin-track-files`, `admin-review`, `admin-review-track`, `not-found` |
 | `data-kind` | `tile` | `album`, `artist`, `track`, `genre`, `year`, `playlist`, `recently-played` |
 | `data-kind` | `stage-view` | `cover`, `video`, `visualization`, `lyrics` |
 | `data-words` | `lyrics` | `true` for synchronized lyrics with word timestamps |
@@ -617,7 +628,7 @@ The base links states to graphics: buttons use the variables `--wmp-image-<varia
 | `data-field` | `label` in `scrobble-meta`, `form-note` in `scrobble-item`, `field` of the token dialog, `form-note` of the Last.fm page | `account`, `last-scrobbled` and `queued` (the `label`s); `authorization-failed` and `unavailable` (the hints); `scrobbling-token` (the `field`); `lastfm-status` |
 | `data-field` | `field` and `stat-item` of the Subsonic access (settings) | `subsonic-enabled` (checkbox); the `stat-item`s `subsonic-server` (address of the server), `subsonic-user-name`, `subsonic-password-state` (whether and when the app password was created) and, right after a new app password was created, `subsonic-new-password` (the password, shown once) |
 | `data-item` | `stat-list`, `form-note` and `button` of the Subsonic access (settings) | `subsonic-sign-in` (the `stat-list`), `subsonic-password-once` (the hint that the new password is shown once, `role="status"`), the `button`s `create-subsonic-password`, `revoke-subsonic-password` and `copy-subsonic-password` in `view-actions`, `retry` after a failed load |
-| `data-item` | `menu-item`, `admin-nav-item`, `stat-item`, `job-item`, `section`, `shelf`, `button` in `view-actions`, `detail-actions`, `shelf-actions`, `queue`, `queue-item-actions`, `transcode-actions` and `equalizer-controls`, `link` on the settings page | Id of the entry: the menu entry (in the profile menu `settings`, `administration`, `switch-profile`; in the menu of a song `play`, `play-next` and `add-to-queue` for songs with audio, `add-to-playlist`, `favorite`, then `details`, `album`, `artist`, for admins `edit-metadata` and on the page of a playlist `move-up`, `move-down` and `remove-from-playlist`; in the sort options `sort-album-artist`, `sort-album`, `sort-title`, `sort-artist`, `sort-name`, `sort-duration`, `sort-year`, `sort-genre`, `sort-first-seen-at`, `sort-track-count`, `sort-rating`, `sort-relevance`, `direction-asc`, `direction-desc`), the page (`admin-library`, `admin-files`, `admin-review`, `admin-jobs`, `admin-cache`, `admin-transcoding`, `admin-backups`, `admin-users`), the statistic (for example `filesFound`, `tracksTotal`, `duration`; of the cache `covers`, `transcodes`, `entries`; of the transcoding `hardware`, `ffmpeg`, `cache`, `running-jobs`, `encoder`, `device`; of the backups `status`, `last-run`, `next-run`, `schedule`, `backups`, `size`), the job (`library-scan`, `cover-cache`, `database-backup`, `lyrics-download`) or the section of the search, of an artist and of the favorites (`artists`, `albums`, `tracks`), the row of the home page (`playlists`, `recently-played`, `recently-added`, `favorites`, `top-rated`), of a song (`files`, for admins `cover-rule` and `lyrics`; for songs with a video also `video-sync`), of an album (for admins `cover-rule`), of the file selection (`songs`; on the page of a song `audio`, `video`, `cover`), of the cache page (`usage`, `settings`), of the settings page (`pin`, `scrobbling`, `subsonic`, `about`) of the transcoding page (`status`, `jobs`, `settings`) and of the backup page (`status`, `backups`, `settings`), the action of a page (`play`, `shuffle`, `favorite`, `edit-metadata`; on the page of a song `save-video-offset` and `download-lyrics`; on the page of an album or song `save-cover-rule`; of a row of the home page `play`; of a playlist also `rename`, `cover`, `remove-cover`, `delete`; on the playlist overview `create-playlist`) of the queue (`clear-queue`; per entry `move-up`, `move-down`, `remove`) or of a running transcode (`cancel`); in the menu of the sleep timer `sleep-off`, `sleep-15`, `sleep-30`, `sleep-45`, `sleep-60`, `sleep-90`, `sleep-120`, `sleep-end-of-track`, `sleep-end-of-queue`; the `button`s `power` and `reset` of `equalizer-controls`; the `link`s `open-equalizer` and `open-pin` on the settings page; the `link` `choose-files` in the section `files` of a song and the `button` `reset-file-selection` on the page of the files of a song; the `button`s `save-pin`, `remove-pin` and `confirm-remove-pin` of the PIN page, `back` of `pin-entry-actions`, `reset-pin` of `user-actions` and `confirm-reset-pin` of its dialog; the `section`s `review` (the review inbox) and `metadata` (the editor on the page of a song of the inbox), the `button` `mark-selected-reviewed` of `review-bulk`, `save-and-review`, `mark-reviewed` and `skip` of `review-actions` and `previous` and `next` of `review-nav` |
+| `data-item` | `menu-item`, `admin-nav-item`, `stat-item`, `job-item`, `section`, `shelf`, `button` in `view-actions`, `detail-actions`, `shelf-actions`, `queue`, `queue-item-actions`, `transcode-actions` and `equalizer-controls`, `link` on the settings page | Id of the entry: the menu entry (in the profile menu `settings`, `administration`, `switch-profile`; in the menu of a song `play`, `play-next` and `add-to-queue` for songs with audio, `add-to-playlist`, `favorite`, then `details`, `album`, `artist`, for admins `edit-metadata` and on the page of a playlist `move-up`, `move-down` and `remove-from-playlist`; in the sort options `sort-album-artist`, `sort-album`, `sort-title`, `sort-artist`, `sort-name`, `sort-duration`, `sort-year`, `sort-genre`, `sort-first-seen-at`, `sort-track-count`, `sort-rating`, `sort-relevance`, `direction-asc`, `direction-desc`), the page (`admin-library`, `admin-files`, `admin-review`, `admin-jobs`, `admin-cache`, `admin-transcoding`, `admin-backups`, `admin-themes`, `admin-users`), the statistic (for example `filesFound`, `tracksTotal`, `duration`; of the cache `covers`, `transcodes`, `entries`; of the transcoding `hardware`, `ffmpeg`, `cache`, `running-jobs`, `encoder`, `device`; of the backups `status`, `last-run`, `next-run`, `schedule`, `backups`, `size`), the job (`library-scan`, `cover-cache`, `database-backup`, `lyrics-download`) or the section of the search, of an artist and of the favorites (`artists`, `albums`, `tracks`), the row of the home page (`playlists`, `recently-played`, `recently-added`, `favorites`, `top-rated`), of a song (`files`, for admins `cover-rule` and `lyrics`; for songs with a video also `video-sync`), of an album (for admins `cover-rule`), of the file selection (`songs`; on the page of a song `audio`, `video`, `cover`), of the cache page (`usage`, `settings`), of the settings page (`pin`, `scrobbling`, `subsonic`, `about`) of the transcoding page (`status`, `jobs`, `settings`) of the backup page (`status`, `backups`, `settings`) and of the theme page (`theme-upload`, `themes`), the action of a page (`play`, `shuffle`, `favorite`, `edit-metadata`; on the page of a song `save-video-offset` and `download-lyrics`; on the page of an album or song `save-cover-rule`; of a row of the home page `play`; of a playlist also `rename`, `cover`, `remove-cover`, `delete`; on the playlist overview `create-playlist`; on the theme page `upload-theme` and per theme `replace` and `delete`) of the queue (`clear-queue`; per entry `move-up`, `move-down`, `remove`) or of a running transcode (`cancel`); in the menu of the sleep timer `sleep-off`, `sleep-15`, `sleep-30`, `sleep-45`, `sleep-60`, `sleep-90`, `sleep-120`, `sleep-end-of-track`, `sleep-end-of-queue`; the `button`s `power` and `reset` of `equalizer-controls`; the `link`s `open-equalizer` and `open-pin` on the settings page; the `link` `theme-template` (the download of the template) on the theme page; the `link` `choose-files` in the section `files` of a song and the `button` `reset-file-selection` on the page of the files of a song; the `button`s `save-pin`, `remove-pin` and `confirm-remove-pin` of the PIN page, `back` of `pin-entry-actions`, `reset-pin` of `user-actions` and `confirm-reset-pin` of its dialog; the `section`s `review` (the review inbox) and `metadata` (the editor on the page of a song of the inbox), the `button` `mark-selected-reviewed` of `review-bulk`, `save-and-review`, `mark-reviewed` and `skip` of `review-actions` and `previous` and `next` of `review-nav` |
 
 ## Variables
 
@@ -895,6 +906,7 @@ The defaults are icons of [Phosphor Icons](https://phosphoricons.com) (MIT) unde
 | `admin-cache` | `--wmp-icon-admin-cache` | `/icons/phosphor/regular/hard-drives.svg` | Content (administration) |
 | `admin-transcoding` | `--wmp-icon-admin-transcoding` | `/icons/phosphor/regular/film-reel.svg` | Content (administration) |
 | `admin-backups` | `--wmp-icon-admin-backups` | `/icons/phosphor/regular/database.svg` | Content (administration) |
+| `admin-themes` | `--wmp-icon-admin-themes` | `/icons/phosphor/regular/palette.svg` | Content (administration) |
 | `admin-files` | `--wmp-icon-admin-files` | `/icons/phosphor/regular/files.svg` | Content (administration) |
 | `admin-review` | `--wmp-icon-admin-review` | `/icons/phosphor/regular/tray.svg` | Content (administration) |
 | `tags-missing` | `--wmp-icon-tags-missing` | `/icons/phosphor/regular/warning.svg` | Content (review inbox) |
@@ -947,6 +959,7 @@ The defaults are icons of [Phosphor Icons](https://phosphoricons.com) (MIT) unde
 | `view-cover` | `--wmp-icon-view-cover` | `/icons/phosphor/regular/image.svg` | Content (`btn-view-cover`) |
 | `view-lyrics` | `--wmp-icon-view-lyrics` | `/icons/phosphor/regular/subtitles.svg` | Content (`segment` `lyrics` of `stage-actions`) |
 | `download-lyrics` | `--wmp-icon-download-lyrics` | `/icons/phosphor/regular/cloud-arrow-down.svg` | Content (`button` `download-lyrics` on the page of a song) |
+| `upload` | `--wmp-icon-upload` | `/icons/phosphor/regular/upload-simple.svg` | Content (`button` `upload-theme` and `replace` on the theme page of the administration) |
 | `detail-back` | `--wmp-icon-detail-back` | `/icons/phosphor/regular/arrow-left.svg` | Menus and dialogs |
 | `review-done` | `--wmp-icon-review-done` | `/icons/phosphor/regular/check-circle.svg` | Review inbox |
 | `review-skip` | `--wmp-icon-review-skip` | `/icons/phosphor/regular/skip-forward.svg` | Review inbox |
@@ -1069,6 +1082,116 @@ npm run test:themes             # compare in the Playwright image of the CI
 npm run test:themes:update      # take the baselines again
 ```
 
+## Uploaded themes
+
+Admins can install own themes without changing WaveMP: the page Administration > Themes uploads a theme package, and every profile can then choose the theme on the settings page. The same page downloads the template (also at `/api/v1/theme-template`): a complete example theme with a commented CSS file, a manifest and pictures to start from.
+
+### Package
+
+A theme package is a ZIP file with these files:
+
+| File | Content |
+|---|---|
+| `manifest.json` | Description of the theme, see [Manifest](#manifest) |
+| Exactly one `.css` file | The theme, saved as UTF-8; any name and folder, for example `theme.css` |
+| `.svg`, `.png`, `.webp` files | The pictures the CSS uses and the previews |
+
+The files may lie in a single folder of the ZIP file, as when a folder is compressed. `README`, `LICENSE` and other `.md` and `.txt` files are allowed but not installed, nor are `__MACOSX`, `.DS_Store`, `Thumbs.db` and `desktop.ini`. Every other file is rejected, for example scripts, HTML, fonts, JPEG pictures and nested archives.
+
+Paths consist of letters, digits, `.`, `_` and `-`, separated by `/`; at most five levels and 200 characters, and no two paths that differ only in upper and lower case. The default limits:
+
+| Limit | Default | Environment variable |
+|---|---|---|
+| Size of the ZIP file | 10 MiB | `Themes__MaxUploadBytes` |
+| Size of all files once unpacked | 32 MiB | `Themes__MaxUnpackedBytes` |
+| Size of a file | 5 MiB | `Themes__MaxFileBytes` |
+| Size of the CSS file | 1 MiB | `Themes__MaxStylesheetBytes` |
+| Number of entries | 256 | `Themes__MaxEntries` |
+
+### Manifest
+
+```json
+{
+    "id": "my-theme",
+    "name": "My Theme",
+    "author": "Your Name",
+    "version": "1.0.0",
+    "themeApi": 5,
+    "variants": ["light", "dark"],
+    "previews": { "light": "preview-light.svg", "dark": "preview-dark.svg" }
+}
+```
+
+| Member | Rule |
+|---|---|
+| `id` | Lowercase letters, digits and single hyphens, at most 40 characters, not the id of a shipped theme (`midnight`, `meadow`, `daylight`, `accent`, `pinstripe`, `clear-glass`). Profiles store the id; a new version of the theme keeps it |
+| `name` | Name in the theme picker, at most 60 characters |
+| `author` | At most 60 characters |
+| `version` | Version of the theme, for example `1.2.0`; letters, digits, `.`, `+` and `-`, at most 32 characters |
+| `themeApi` | The version of this document the theme is written for. The server only accepts versions it supports; a rejected package names them |
+| `variants` | `light`, `dark` or both, see [Variants](#variants); the first one is shown where the appearance of a profile has no say |
+| `previews` | One preview picture per variant, a path in the package (SVG, PNG or WebP, ideally 16:10), shown in the theme picker |
+
+Comments, trailing commas and further members (for example `description`) are allowed; no member may appear twice.
+
+### CSS of an uploaded theme
+
+The CSS file works like the CSS file of a shipped theme, see [Cascade](#cascade) and [Variants](#variants). These rules keep a theme from loading anything from elsewhere:
+
+- Pictures are named with paths relative to the CSS file, for example `url('images/play.svg')`, also in variables and in `image-set()`. The server replaces each path with the address of the installed file; a path to a file that is not a picture of the package is rejected. `url('#id')` (a reference into the document) stays as it is.
+- No addresses with a scheme (`https:`, `data:`, `blob:`, `javascript:` and so on), no `//`, no addresses that start with `/`, no queries such as `?v=1` and no paths outside the package. `url()`, `src()`, `image()` and `image-set()` cannot take their address from `var()`, `attr()` or `env()`. The server reads the CSS file like a browser, so escapes such as `u\72l(` and comments do not hide an address.
+- No `@import`: everything is in the one CSS file. No `@layer`: the theme stays outside the layers of the base. No `@namespace` or `@document`. Allowed are `@charset`, `@media`, `@supports`, `@container`, `@keyframes`, `@font-face`, `@property`, `@starting-style`, `@scope`, `@counter-style`, `@font-feature-values`, `@font-palette-values`, `@view-transition` and `@page`. A package cannot contain font files, so `@font-face` can only name installed fonts with `local()`.
+
+### Pictures of an uploaded theme
+
+SVG files are cleaned on upload: the server reads them without a document type definition and writes them again with only the elements and attributes of drawings. Comments, metadata of drawing programs and animations are removed. Rejected are scripts, event handlers such as `onload`, `foreignObject` and HTML, `DOCTYPE` and entities, and references outside the picture: an SVG file may only reference its own elements (`#id`) and embed PNG, JPEG, WebP or GIF pictures as `data:image/...;base64`. PNG and WebP files must contain a picture of their format.
+
+### Installation
+
+The server keeps uploaded themes in the volume `/data`, in `themes/<id>`. Every file is named after a hash of its content and served at `/api/v1/themes/<id>/files/<name>` without a session and with a cache time of one year, so a new version of a file always has a new address. Upload a new version of a theme with its button on the theme page (`PUT /api/v1/themes/<id>`); profiles that chose the theme keep it. Deleting a theme gives these profiles the default theme.
+
+The web app sends a Content Security Policy that allows styles, pictures, fonts and media only from the server itself. Even a theme that was changed in the folder `/data/themes` cannot load anything from elsewhere.
+
+### Rejected packages
+
+A rejected package lists every problem at once, with the file and the line it concerns. The codes (`ThemeErrorCode` in the OpenAPI document):
+
+| Code | Problem |
+|---|---|
+| `package.corrupt` | The ZIP file is damaged, encrypted or uses a compression the server cannot read |
+| `package.too_many_entries` | More entries than allowed |
+| `package.too_large` | The files are larger than allowed once unpacked |
+| `file.too_large` | A file is larger than allowed once unpacked |
+| `file.invalid_path` | A path is absolute, leaves the package, is too deep or too long, or has other characters |
+| `file.duplicate_path` | A path appears twice, also when only upper and lower case differ |
+| `file.unsupported_type` | A file of a type a theme cannot contain |
+| `manifest.missing` | No `manifest.json` |
+| `manifest.invalid_json` | `manifest.json` is no valid JSON object or names a member twice |
+| `manifest.missing_field` | A required member is missing |
+| `manifest.invalid_field` | A member has a wrong type or value |
+| `manifest.reserved_id` | The id of a shipped theme |
+| `manifest.id_mismatch` | A new version names another id than the theme it replaces |
+| `manifest.unsupported_api_version` | The server does not support the version of the theme API; the problem names the supported versions |
+| `manifest.preview_missing` | A preview is not in the package or no picture |
+| `css.missing` | No CSS file |
+| `css.multiple` | More than one CSS file |
+| `css.invalid_encoding` | The CSS file is not UTF-8 |
+| `css.syntax_error` | A string or address is not closed properly |
+| `css.import` | `@import` |
+| `css.layer` | `@layer` |
+| `css.at_rule_not_allowed` | Another at-rule that themes cannot use |
+| `css.external_url` | An external address (a scheme or `//`) |
+| `css.absolute_url` | An address that starts with `/` |
+| `css.invalid_url` | An empty address, a query, a path outside the package or an address from `var()`, `attr()` or `env()` |
+| `css.missing_file` | A path to a file that is not a picture of the package |
+| `svg.invalid` | No well-formed SVG document |
+| `svg.entity` | A `DOCTYPE` or entities |
+| `svg.script` | A script |
+| `svg.event_handler` | An event handler attribute |
+| `svg.foreign_object` | `foreignObject` or HTML |
+| `svg.external_reference` | A reference outside the picture |
+| `image.invalid` | A PNG or WebP file without a picture of its format |
+
 ## Versioning
 
 The version of the theme API is in `data-theme-api` on the root element and at the top of this document. Changing or removing an existing part, state, attribute or variable increases the version. New parts, states, icon slots and variables do not.
@@ -1091,6 +1214,7 @@ The themes shipped with WaveMP name the version they are written for in the comm
     - Additions without a version change: cover rules. For admins the `section` `cover-rule` on the page of an album and of a song with a `form` holding `cover-preview` (states `loading`, `ready`, `empty`), the `field` `cover-rule` (a `segmented-control` with the `segment`s `inherit`, `album-first` and `track-first`) and the `button` `save-cover-rule`; on the library page of the administration the `field` `cover-priority` (a `segmented-control` with the `segment`s `album-first` and `track-first`).
     - Additions without a version change: casting. In `mode-switch` the part `cast` (states `chromecast`, `airplay`, `available`, `insecure`, `disconnected`, `connecting`, `connected`, `no-devices`, `hint`) with `btn-cast` (states `disconnected`, `connecting`, `connected`) and `cast-hint` (states `open`, `closed`), the icon slot `cast`, `cast-status` in `now-playing-meta`, `data-kind="cast"` on `stage-notice`, and the `form-note` `cast-effects` on the settings page. While casting, `btn-crossfade`, `btn-equalizer`, the `segment` `visualization` of `stage-view` and the fields `replay-gain`, `equalizer`, `crossfade` and `crossfade-albums` of the settings are disabled.
     - Additions without a version change: scrobbling. On the settings page the `section` `scrobbling` with `scrobble-list`, `scrobble-item` (`data-item`, states `connected`, `not-connected`, `authorization-failed`, `unavailable` and `busy`), `scrobble-info`, `scrobble-name`, `scrobble-meta` and `scrobble-actions`, the `badge` tokens of these states in `scrobble-meta`, the token dialog `scrobbling-token`; the page `data-view="settings-scrobbling-lastfm"` (states `connecting` and `failed`) that Last.fm returns to; further values of `data-item` and `data-field`.
+    - Additions without a version change: uploaded themes, see [Uploaded themes](#uploaded-themes). The theme page of the administration (`data-view="admin-themes"`, the entry `admin-themes` of `admin-nav` with its icon slot, the `section`s `theme-upload` and `themes`) with `theme-list`, `theme-item` (`data-item`, `data-variants`, state `busy`), `theme-info`, `theme-name`, `theme-meta`, `theme-actions` (`button`s `replace` and `delete`), the `theme-preview` of a `theme-item`, the `link` `theme-template`, the `button` `upload-theme` with the icon slot `upload` and the list of the problems of a rejected package (`theme-errors`, `theme-error` with the code as `data-item`, `theme-error-location`, `theme-error-message`). The theme picker of the settings page also lists the uploaded themes.
 - **Version 4:** fixes from the first test on phones and tablets. Changed: the `video` lies over the whole `video-stage` with a transparent background and always shows its picture whole and centered, also for portrait videos and in full screen; the free areas around it show the background of the `video-stage` and the new `video-backdrop`, so themes that styled the background of the `video` have to style the `video-stage` or the `video-backdrop` instead; `app` pads the safe areas at the top and at the sides (showing `--wmp-theme-color`) instead of the mobile `header`, and the transport bar on the desktop pads the safe area at the bottom; the page never scrolls, `sidebar` and `content` are containing blocks and contain their overscroll; the `list` is one grid whose `list-header`, `list-group`, `list-group-rows` and `list-row` are subgrids, so `list-group` no longer has grid areas and `list-header` no longer has a margin at its start, and the padding at the start and end of rows moved to their first and last `list-column` and `list-cell`; the `label` of the column header `favorite` is visually hidden; icons in buttons (`data-variant`) no longer inherit `--wmp-icon-fill` from their area but take the text color of the button, unless the theme sets `--wmp-icon-fill` on the button or its `icon`; mutually exclusive options are segmented controls: the buttons `btn-view-cover`, `btn-view-video` and `btn-view-visualization` are replaced by the `segment`s `cover`, `video` and `visualization` of the `segmented-control` `stage-view` in `stage-actions`, and the `button`s of `scope-switch` by the `segment`s `all-music` and `my-music` of the `segmented-control` `scope`, both checked with `aria-checked` instead of `aria-pressed`; `stage-actions` and `scope-switch` lost their `role="group"`; the ReplayGain mode on the settings page, the role in the dialog of a profile and the hardware acceleration on the transcoding page are segmented controls instead of `select`s; the `queue-list` shows only the last three played entries before the current one, and `queue-item-info` is a grid with the `cover` of the song in its first column, spanning title and artist. Added: the part `video-backdrop`, the attribute `data-orientation` on `video-stage`, the runtime variable `--wmp-video-aspect-ratio` and the variable `--wmp-theme-color`, which the app also hands to the browser as theme color; the toggle button `btn-crossfade` (states `on` and `off`, `aria-pressed`) between `btn-repeat` and `btn-stop` with the icon slot `crossfade`, in the mobile full-screen player in the second row between the volume and `btn-stop`; the parts `segmented-control` (`role="radiogroup"`, `data-item`, `aria-disabled`, `aria-invalid`, the runtime variables `--wmp-item-count`, `--wmp-active-index`, `--wmp-indicator-x` and `--wmp-indicator-width`) and `segment` (`role="radio"`, `aria-checked`) with an `indicator`, and the values `role` and `hardware-acceleration` of `data-field`; the collapsible sidebar on the desktop with the button `btn-sidebar-toggle`, the states `collapsed` and `expanded` of `sidebar`, the variable `--wmp-sidebar-collapsed-width` and the icon slots `sidebar-collapse` and `sidebar-expand`; the `cover` in `queue-item-info` with the variable `--wmp-cover-size-queue` and the attribute `start` of `queue-list`.
     - Theme-capable groups: every group with one active entry (`tabs`, `bottom-nav`, `admin-nav`, `tree`, `color-picker` and `segmented-control`) has an `indicator` as first child and carries the runtime variables of its active entry, see [Active element of a group](#active-element-of-a-group). Changed: `tabs`, `bottom-nav`, `admin-nav`, `tree` and `color-picker` are containing blocks (`position: relative`) with a new first child; the `indicator` of a `tab` is `aria-hidden`. Added: the `indicator` of these groups, the runtime variables `--wmp-item-count`, `--wmp-active-index`, `--wmp-indicator-x` and `--wmp-indicator-width` on them and the new runtime variables `--wmp-indicator-y` and `--wmp-indicator-height` (also on `segmented-control`), `--wmp-item-count` and `--wmp-active-index` on `rating` and `playlist-cover`, and the documented states `on` and `off` of the `button` `power` of `equalizer-controls`.
 - **Version 3:** cover, video and visualization on the stage, with a fade. Changed: `btn-video` is replaced by `btn-view-video`, one of the three buttons `btn-view-cover`, `btn-view-video` and `btn-view-visualization`, of which the chosen view is pressed; `stage-actions` is shown for every current song, not only for songs with a video; the `cover` and the `video-stage` of the stage no longer lie directly in `stage` but each in a `stage-view` inside `stage-views`, so themes that address `stage > cover`, `stage cover` or `stage > video-stage` have to use `stage-view > cover` and `stage-view > video-stage`; the `video` is muted and follows the music. Added: the state `visualization` of `stage`, the parts `stage-views`, `stage-view` (with `data-kind` and the states `active`, `loading` and `failed`), `stage-notice`, `visualization` (state `placeholder`) and the `btn-view-*` buttons, the variables `--wmp-stage-transition-duration` and `--wmp-stage-view-background`, and for admins the `section` `video-sync` on the page of a song with a video (`field` `video-offset`, `button` `save-video-offset`). The icon slots `view-cover`, `view-video` and `view-visualization` now belong to the content.

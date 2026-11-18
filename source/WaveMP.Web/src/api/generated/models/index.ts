@@ -1100,6 +1100,51 @@ export function createSubsonicPasswordFromDiscriminatorValue(parseNode: ParseNod
 /**
  * Creates a new instance of the appropriate class based on discriminator value
  * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {ThemeError}
+ */
+// @ts-ignore
+export function createThemeErrorFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoThemeError;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {Theme}
+ */
+// @ts-ignore
+export function createThemeFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoTheme;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {ThemePage}
+ */
+// @ts-ignore
+export function createThemePageFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoThemePage;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {ThemePreview}
+ */
+// @ts-ignore
+export function createThemePreviewFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoThemePreview;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {ThemeProblem}
+ */
+// @ts-ignore
+export function createThemeProblemFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoThemeProblem;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
  * @returns {ThemeSettings}
  */
 // @ts-ignore
@@ -2649,6 +2694,86 @@ export function deserializeIntoSubsonicPassword(subsonicPassword: Partial<Subson
     return {
         "access": n => { subsonicPassword.access = n.getObjectValue<SubsonicAccess>(createSubsonicAccessFromDiscriminatorValue); },
         "password": n => { subsonicPassword.password = n.getStringValue(); },
+    }
+}
+/**
+ * The deserialization information for the current model
+ * @param Theme The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoTheme(theme: Partial<Theme> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "author": n => { theme.author = n.getStringValue(); },
+        "id": n => { theme.id = n.getStringValue(); },
+        "installedAt": n => { theme.installedAt = n.getDateValue(); },
+        "name": n => { theme.name = n.getStringValue(); },
+        "previews": n => { theme.previews = n.getCollectionOfObjectValues<ThemePreview>(createThemePreviewFromDiscriminatorValue); },
+        "sizeBytes": n => { theme.sizeBytes = n.getNumberValue(); },
+        "stylesheetUrl": n => { theme.stylesheetUrl = n.getStringValue(); },
+        "themeApi": n => { theme.themeApi = n.getNumberValue(); },
+        "variants": n => { theme.variants = n.getCollectionOfEnumValues<ThemeVariant>(ThemeVariantObject); },
+        "version": n => { theme.version = n.getStringValue(); },
+    }
+}
+/**
+ * The deserialization information for the current model
+ * @param ThemeError The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoThemeError(themeError: Partial<ThemeError> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "code": n => { themeError.code = n.getEnumValue<ThemeErrorCode>(ThemeErrorCodeObject); },
+        "field": n => { themeError.field = n.getStringValue(); },
+        "file": n => { themeError.file = n.getStringValue(); },
+        "line": n => { themeError.line = n.getNumberValue(); },
+        "max": n => { themeError.max = n.getNumberValue(); },
+        "min": n => { themeError.min = n.getNumberValue(); },
+        "path": n => { themeError.path = n.getStringValue(); },
+    }
+}
+/**
+ * The deserialization information for the current model
+ * @param ThemePage The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoThemePage(themePage: Partial<ThemePage> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "items": n => { themePage.items = n.getCollectionOfObjectValues<Theme>(createThemeFromDiscriminatorValue); },
+        "limit": n => { themePage.limit = n.getNumberValue(); },
+        "offset": n => { themePage.offset = n.getNumberValue(); },
+        "total": n => { themePage.total = n.getNumberValue(); },
+    }
+}
+/**
+ * The deserialization information for the current model
+ * @param ThemePreview The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoThemePreview(themePreview: Partial<ThemePreview> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "url": n => { themePreview.url = n.getStringValue(); },
+        "variant": n => { themePreview.variant = n.getEnumValue<ThemeVariant>(ThemeVariantObject); },
+    }
+}
+/**
+ * The deserialization information for the current model
+ * @param ThemeProblem The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoThemeProblem(themeProblem: Partial<ThemeProblem> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "code": n => { themeProblem.code = n.getEnumValue<ProblemCode>(ProblemCodeObject); },
+        "detail": n => { themeProblem.detail = n.getStringValue(); },
+        "errors": n => { themeProblem.errors = n.getCollectionOfObjectValues<ThemeError>(createThemeErrorFromDiscriminatorValue); },
+        "instance": n => { themeProblem.instance = n.getStringValue(); },
+        "status": n => { themeProblem.status = n.getNumberValue(); },
+        "title": n => { themeProblem.title = n.getStringValue(); },
+        "type": n => { themeProblem.type = n.getStringValue(); },
     }
 }
 /**
@@ -5724,6 +5849,92 @@ export function serializeSubsonicPassword(writer: SerializationWriter, subsonicP
 /**
  * Serializes information the current object
  * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param Theme The instance to serialize from.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeTheme(writer: SerializationWriter, theme: Partial<Theme> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!theme || isSerializingDerivedType) { return; }
+    writer.writeStringValue("author", theme.author);
+    writer.writeStringValue("id", theme.id);
+    writer.writeDateValue("installedAt", theme.installedAt);
+    writer.writeStringValue("name", theme.name);
+    writer.writeCollectionOfObjectValues<ThemePreview>("previews", theme.previews, serializeThemePreview);
+    writer.writeNumberValue("sizeBytes", theme.sizeBytes);
+    writer.writeStringValue("stylesheetUrl", theme.stylesheetUrl);
+    writer.writeNumberValue("themeApi", theme.themeApi);
+    if(theme.variants)
+    writer.writeCollectionOfEnumValues<ThemeVariant>("variants", theme.variants);
+    writer.writeStringValue("version", theme.version);
+    writer.writeAdditionalData(theme.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param ThemeError The instance to serialize from.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeThemeError(writer: SerializationWriter, themeError: Partial<ThemeError> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!themeError || isSerializingDerivedType) { return; }
+    writer.writeEnumValue<ThemeErrorCode>("code", themeError.code);
+    writer.writeStringValue("field", themeError.field);
+    writer.writeStringValue("file", themeError.file);
+    writer.writeNumberValue("line", themeError.line);
+    writer.writeNumberValue("max", themeError.max);
+    writer.writeNumberValue("min", themeError.min);
+    writer.writeStringValue("path", themeError.path);
+    writer.writeAdditionalData(themeError.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param ThemePage The instance to serialize from.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeThemePage(writer: SerializationWriter, themePage: Partial<ThemePage> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!themePage || isSerializingDerivedType) { return; }
+    writer.writeCollectionOfObjectValues<Theme>("items", themePage.items, serializeTheme);
+    writer.writeNumberValue("limit", themePage.limit);
+    writer.writeNumberValue("offset", themePage.offset);
+    writer.writeNumberValue("total", themePage.total);
+    writer.writeAdditionalData(themePage.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param ThemePreview The instance to serialize from.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeThemePreview(writer: SerializationWriter, themePreview: Partial<ThemePreview> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!themePreview || isSerializingDerivedType) { return; }
+    writer.writeStringValue("url", themePreview.url);
+    writer.writeEnumValue<ThemeVariant>("variant", themePreview.variant);
+    writer.writeAdditionalData(themePreview.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param ThemeProblem The instance to serialize from.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeThemeProblem(writer: SerializationWriter, themeProblem: Partial<ThemeProblem> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!themeProblem || isSerializingDerivedType) { return; }
+    writer.writeEnumValue<ProblemCode>("code", themeProblem.code);
+    writer.writeStringValue("detail", themeProblem.detail);
+    writer.writeCollectionOfObjectValues<ThemeError>("errors", themeProblem.errors, serializeThemeError);
+    writer.writeStringValue("instance", themeProblem.instance);
+    writer.writeNumberValue("status", themeProblem.status);
+    writer.writeStringValue("title", themeProblem.title);
+    writer.writeStringValue("type", themeProblem.type);
+    writer.writeAdditionalData(themeProblem.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
  * @param ThemeSettings The instance to serialize from.
  * @param writer Serialization writer to use to serialize this model
  */
@@ -6573,7 +6784,153 @@ export interface SubsonicPassword extends AdditionalDataHolder, Parsable {
      */
     password?: string | null;
 }
+/**
+ * A theme an admin uploaded. The themes shipped with WaveMP are part of the clients and not listed here.
+ */
+export interface Theme extends AdditionalDataHolder, Parsable {
+    /**
+     * The author property
+     */
+    author?: string | null;
+    /**
+     * Id of the theme from its manifest: lowercase letters, digits and single hyphens. Profiles choose it in their settings (`theme.id`).
+     */
+    id?: string | null;
+    /**
+     * When this version of the theme was installed.
+     */
+    installedAt?: Date | null;
+    /**
+     * The name property
+     */
+    name?: string | null;
+    /**
+     * The preview picture of each variant.
+     */
+    previews?: ThemePreview[] | null;
+    /**
+     * Size of all files of the theme in bytes.
+     */
+    sizeBytes?: number | null;
+    /**
+     * Address of the CSS file of the theme, relative to the root of the server. It needs no session; its content never changes, a new version of the theme has a new address.
+     */
+    stylesheetUrl?: string | null;
+    /**
+     * Version of the theme API the theme is written for.
+     */
+    themeApi?: number | null;
+    /**
+     * The variants of the theme, one or both; the first one is shown where the appearance of a profile has no say.
+     */
+    variants?: ThemeVariant[] | null;
+    /**
+     * Version of the theme as its author names it, e.g. `1.2.0`.
+     */
+    version?: string | null;
+}
 export type ThemeAppearance = (typeof ThemeAppearanceObject)[keyof typeof ThemeAppearanceObject];
+/**
+ * One reason why a theme package is rejected.
+ */
+export interface ThemeError extends AdditionalDataHolder, Parsable {
+    /**
+     * Why a theme package is rejected. Clients translate it; the members of ThemeErrorDto named in brackets carry the details.
+     */
+    code?: ThemeErrorCode | null;
+    /**
+     * The member of `manifest.json` the error concerns, e.g. `themeApi` or `previews.dark`.
+     */
+    field?: string | null;
+    /**
+     * A further file, e.g. the missing file an address of the CSS file names.
+     */
+    file?: string | null;
+    /**
+     * The line in that file, from 1, if known.
+     */
+    line?: number | null;
+    /**
+     * Upper limit, e.g. the newest supported version of the theme API, the most bytes for `package.too_large` and `file.too_large` or the most entries for `package.too_many_entries`.
+     */
+    max?: number | null;
+    /**
+     * Lower limit, e.g. the oldest supported version of the theme API for `manifest.unsupported_api_version`.
+     */
+    min?: number | null;
+    /**
+     * The file in the package the error concerns, e.g. `images/play.svg`; missing for the package as a whole.
+     */
+    path?: string | null;
+}
+export type ThemeErrorCode = (typeof ThemeErrorCodeObject)[keyof typeof ThemeErrorCodeObject];
+/**
+ * One page of a collection.
+ */
+export interface ThemePage extends AdditionalDataHolder, Parsable {
+    /**
+     * Items of the page, at most limit.
+     */
+    items?: Theme[] | null;
+    /**
+     * Maximum number of items of the page, as requested.
+     */
+    limit?: number | null;
+    /**
+     * Number of items skipped before this page.
+     */
+    offset?: number | null;
+    /**
+     * Number of items of the whole collection.
+     */
+    total?: number | null;
+}
+/**
+ * The preview picture of one variant of a theme.
+ */
+export interface ThemePreview extends AdditionalDataHolder, Parsable {
+    /**
+     * Address of the picture (SVG, PNG or WebP), relative to the root of the server. It needs no session and never changes its content.
+     */
+    url?: string | null;
+    /**
+     * A variant of a theme.
+     */
+    variant?: ThemeVariant | null;
+}
+/**
+ * Problem Details (RFC 9457) of a rejected theme package (422, code `theme.invalid`). Instead of texts, every error names a machine-readable code with the file, line and limits it concerns; clients translate them.
+ */
+export interface ThemeProblem extends AdditionalDataHolder, ApiError, Parsable {
+    /**
+     * Machine-readable code of a problem, part of every Problem Details response. Clients translate it.
+     */
+    code?: ProblemCode | null;
+    /**
+     * The detail property
+     */
+    detail?: string | null;
+    /**
+     * The errors, at least one and at most 50, by file and line.
+     */
+    errors?: ThemeError[] | null;
+    /**
+     * The instance property
+     */
+    instance?: string | null;
+    /**
+     * The status property
+     */
+    status?: number | null;
+    /**
+     * The title property
+     */
+    title?: string | null;
+    /**
+     * The type property
+     */
+    type?: string | null;
+}
 /**
  * Theme of the web app of the current profile.
  */
@@ -6587,6 +6944,7 @@ export interface ThemeSettings extends AdditionalDataHolder, Parsable {
      */
     id?: string | null;
 }
+export type ThemeVariant = (typeof ThemeVariantObject)[keyof typeof ThemeVariantObject];
 /**
  * A track of the library: all media files with the same base name in one folder.
  */
@@ -8160,6 +8518,12 @@ export const ProblemCodeObject = {
     ScrobblingToken_invalid: "scrobbling.token_invalid",
     ScrobblingService_unavailable: "scrobbling.service_unavailable",
     ScrobblingNot_connected: "scrobbling.not_connected",
+    ThemeNot_found: "theme.not_found",
+    ThemeFile_not_found: "theme.file_not_found",
+    ThemeInvalid: "theme.invalid",
+    ThemeToo_large: "theme.too_large",
+    ThemeUnsupported_format: "theme.unsupported_format",
+    ThemeAlready_installed: "theme.already_installed",
 } as const;
 /**
  * Whether the players even out the volume with the ReplayGain tags; Off by default.
@@ -8224,6 +8588,51 @@ export const StreamProtocolObject = {
  */
 export const ThemeAppearanceObject = {
     System: "System",
+    Light: "Light",
+    Dark: "Dark",
+} as const;
+/**
+ * Why a theme package is rejected. Clients translate it; the members of ThemeErrorDto named in brackets carry the details.
+ */
+export const ThemeErrorCodeObject = {
+    PackageCorrupt: "package.corrupt",
+    PackageToo_many_entries: "package.too_many_entries",
+    PackageToo_large: "package.too_large",
+    FileToo_large: "file.too_large",
+    FileInvalid_path: "file.invalid_path",
+    FileDuplicate_path: "file.duplicate_path",
+    FileUnsupported_type: "file.unsupported_type",
+    ManifestMissing: "manifest.missing",
+    ManifestInvalid_json: "manifest.invalid_json",
+    ManifestMissing_field: "manifest.missing_field",
+    ManifestInvalid_field: "manifest.invalid_field",
+    ManifestReserved_id: "manifest.reserved_id",
+    ManifestId_mismatch: "manifest.id_mismatch",
+    ManifestUnsupported_api_version: "manifest.unsupported_api_version",
+    ManifestPreview_missing: "manifest.preview_missing",
+    CssMissing: "css.missing",
+    CssMultiple: "css.multiple",
+    CssInvalid_encoding: "css.invalid_encoding",
+    CssSyntax_error: "css.syntax_error",
+    CssImport: "css.import",
+    CssLayer: "css.layer",
+    CssAt_rule_not_allowed: "css.at_rule_not_allowed",
+    CssExternal_url: "css.external_url",
+    CssAbsolute_url: "css.absolute_url",
+    CssInvalid_url: "css.invalid_url",
+    CssMissing_file: "css.missing_file",
+    SvgInvalid: "svg.invalid",
+    SvgEntity: "svg.entity",
+    SvgScript: "svg.script",
+    SvgEvent_handler: "svg.event_handler",
+    SvgForeign_object: "svg.foreign_object",
+    SvgExternal_reference: "svg.external_reference",
+    ImageInvalid: "image.invalid",
+} as const;
+/**
+ * A variant of a theme.
+ */
+export const ThemeVariantObject = {
     Light: "Light",
     Dark: "Dark",
 } as const;

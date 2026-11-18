@@ -34,6 +34,10 @@ import { SessionsRequestBuilderNavigationMetadata, SessionsRequestBuilderRequest
 // @ts-ignore
 import { SettingsRequestBuilderNavigationMetadata, type SettingsRequestBuilder } from './settings/index.js';
 // @ts-ignore
+import { ThemesRequestBuilderNavigationMetadata, ThemesRequestBuilderRequestsMetadata, type ThemesRequestBuilder } from './themes/index.js';
+// @ts-ignore
+import { ThemeTemplateRequestBuilderRequestsMetadata, type ThemeTemplateRequestBuilder } from './themeTemplate/index.js';
+// @ts-ignore
 import { TrackReviewsRequestBuilderNavigationMetadata, TrackReviewsRequestBuilderRequestsMetadata, type TrackReviewsRequestBuilder } from './trackReviews/index.js';
 // @ts-ignore
 import { TracksRequestBuilderNavigationMetadata, TracksRequestBuilderRequestsMetadata, type TracksRequestBuilder } from './tracks/index.js';
@@ -114,6 +118,14 @@ export interface V1RequestBuilder extends BaseRequestBuilder<V1RequestBuilder> {
      * The settings property
      */
     get settings(): SettingsRequestBuilder;
+    /**
+     * The themes property
+     */
+    get themes(): ThemesRequestBuilder;
+    /**
+     * The themeTemplate property
+     */
+    get themeTemplate(): ThemeTemplateRequestBuilder;
     /**
      * The trackReviews property
      */
@@ -197,6 +209,13 @@ export const V1RequestBuilderNavigationMetadata: Record<Exclude<keyof V1RequestB
     },
     settings: {
         navigationMetadata: SettingsRequestBuilderNavigationMetadata,
+    },
+    themes: {
+        requestsMetadata: ThemesRequestBuilderRequestsMetadata,
+        navigationMetadata: ThemesRequestBuilderNavigationMetadata,
+    },
+    themeTemplate: {
+        requestsMetadata: ThemeTemplateRequestBuilderRequestsMetadata,
     },
     trackReviews: {
         requestsMetadata: TrackReviewsRequestBuilderRequestsMetadata,

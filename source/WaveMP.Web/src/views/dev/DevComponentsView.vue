@@ -15,6 +15,7 @@ import type {
     Scan,
     ScanIssue,
     ScrobblingService,
+    Theme,
     TranscodeJob,
     TranscodingStatus,
     TrackReviewSort,
@@ -22,6 +23,9 @@ import type {
 import { fileCategories, fileChoices } from '@/admin/fileSelections'
 import AdminNav from '@/components/admin/AdminNav.vue'
 import BackupList from '@/components/admin/BackupList.vue'
+import ThemeErrorList from '@/components/admin/ThemeErrorList.vue'
+import ThemeList from '@/components/admin/ThemeList.vue'
+import type { ThemePackageError } from '@/admin/themeErrors'
 import BackupStatusPanel from '@/components/admin/BackupStatus.vue'
 import CacheUsagePanel from '@/components/admin/CacheUsage.vue'
 import FileChoiceGroup from '@/components/admin/FileChoiceGroup.vue'
@@ -653,6 +657,37 @@ const sampleBackups: Backup[] = [
         trigger: 'Migration',
     },
 ]
+const sampleThemeFile = (hash: string, extension: string) =>
+    `/api/v1/themes/aurora/files/${hash.repeat(32)}.${extension}`
+const sampleThemes: Theme[] = [
+    {
+        id: 'aurora',
+        name: 'Aurora',
+        author: 'WaveMP',
+        version: '1.2.0',
+        themeApi: 5,
+        variants: ['Light', 'Dark'],
+        stylesheetUrl: sampleThemeFile('a', 'css'),
+        previews: [
+            { variant: 'Light', url: sampleThemeFile('b', 'png') },
+            { variant: 'Dark', url: sampleThemeFile('c', 'png') },
+        ],
+        sizeBytes: 182_000,
+        installedAt: sampleTime,
+    },
+]
+const sampleThemeErrors: ThemePackageError[] = [
+    { code: 'css.external_url', path: 'theme.css', line: 12 },
+    { code: 'svg.script', path: 'images/play.svg' },
+    {
+        code: 'manifest.unsupported_api_version',
+        path: 'manifest.json',
+        field: 'themeApi',
+        min: 5,
+        max: 5,
+    },
+    { code: 'package.too_large', max: 33_554_432 },
+]
 const sampleCacheUsage: CacheUsage = {
     isAvailable: true,
     sizeBytes: 1_240_000_000,
@@ -1200,6 +1235,17 @@ const sampleTranscodeJobs = computed<TranscodeJob[]>(() => {
                         deleting="wavemp-20261115T193000Z-manual"
                     />
                     <BackupList :backups="[]" />
+                </section>
+            </div>
+            <div data-part="view" data-view="admin-themes">
+                <section data-part="section" data-item="theme-upload">
+                    <h2 data-part="section-title">{{ t('adminThemes.uploadTitle') }}</h2>
+                    <ThemeErrorList :errors="sampleThemeErrors" />
+                </section>
+                <section data-part="section" data-item="themes">
+                    <h2 data-part="section-title">{{ t('adminThemes.themesTitle') }}</h2>
+                    <ThemeList :themes="sampleThemes" busy="aurora" />
+                    <ThemeList :themes="[]" />
                 </section>
             </div>
             <div data-part="view" data-view="settings">

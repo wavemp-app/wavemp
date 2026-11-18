@@ -10,7 +10,8 @@ import { appLocale } from './i18n/locales'
 import { useSessionStore } from './stores/session'
 import { shownTheme } from './composables/useThemeSync'
 import { defaultThemeChoice } from './themes/choice'
-import { applyTheme, darkModeMediaQuery } from './themes/themes'
+import { readCustomThemes } from './themes/custom'
+import { applyTheme, customThemes, darkModeMediaQuery } from './themes/themes'
 
 // The remembered profile is restored before the first navigation, so the route guard knows it.
 const pinia = createPinia()
@@ -23,7 +24,9 @@ const locale = appLocale(session.isAuthenticated ? session.language : null)
 document.documentElement.lang = locale
 
 // index.html loads the default theme; the remembered theme of the profile replaces it before the
-// first paint of the app (useThemeSync follows changes afterwards).
+// first paint of the app (useThemeSync follows changes afterwards). Uploaded themes come from the
+// remembered list until the list of the server is loaded.
+customThemes.value = readCustomThemes()
 const systemDark = window.matchMedia?.(darkModeMediaQuery).matches ?? false
 const firstTheme = shownTheme(
     session.isAuthenticated ? session.theme : defaultThemeChoice,
