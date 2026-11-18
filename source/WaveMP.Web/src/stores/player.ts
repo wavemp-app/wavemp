@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { computed, ref, shallowRef, watch } from 'vue'
 import {
     PlaybackMethodObject,
+    PlaybackTargetObject,
     PlayerViewModeObject,
     StreamProtocolObject,
     type AudioFormat,
@@ -11,6 +12,9 @@ import {
     type TrackVideoPlayback,
 } from '@/api/generated/models'
 import { statusOf } from '@/api/problems'
+import { CastEngine } from '@/casting/engine'
+import type { CastLayer } from '@/casting/layer'
+import { castMediaKind, castMediaOf } from '@/casting/media'
 import {
     nextRepeatMode,
     type PlaybackState,
@@ -67,6 +71,7 @@ import {
 import { browserVideoFormats, type VideoFormats } from '@/player/videoFormats'
 import { stageViewOf, type StageView, type VideoState } from '@/player/videoSync'
 import { clampVolume, loadVolume, saveVolume, volumeToGain } from '@/player/volume'
+import { useCastStore } from './cast'
 import { useCoversStore } from './covers'
 import { useEqualizerStore } from './equalizer'
 import { useSessionStore } from './session'
@@ -100,6 +105,11 @@ export type PlayerVideoFollower = Pick<
 /** Parts of the browser the player uses; tests replace them. */
 export const playerDependencies = {
     createEngine: (events: EngineEvents): PlayerEngine => new AudioEngine(events),
+    /** The engine while a casting device plays. */
+    createCastEngine: (layer: CastLayer, events: EngineEvents): PlayerEngine =>
+        new CastEngine(layer, events),
+    /** Origin of the server as the browser reaches it; casting devices load absolute URLs. */
+    origin: (): string => (typeof window === 'undefined' ? '' : window.location.origin),
     createVideoFollower: (
         element: HTMLVideoElement,
         clock: () => FollowerClock,
@@ -119,8 +129,13 @@ const artworkSize = 300
 
 interface Loaded {
     readonly key: string
-    readonly playback: TrackPlayback
+    /** The audio playback; for a casting device also the video playback. */
+    readonly playback: TrackPlayback | TrackVideoPlayback
+    readonly source: DeckSource
 }
+
+/** Where the music plays: in the browser or on a casting device. */
+type Output = 'local' | 'cast'
 
 function isHls(value: TrackPlayback | TrackVideoPlayback): boolean {
     return (
@@ -151,11 +166,16 @@ function artistOf(track: Track | undefined): string | undefined {
  * The equalizer and the crossfade of the profile apply through the engine; tracks only fade into
  * each other when one ends on its own. The sleep timer belongs to this device: it fades out and
  * pauses after a time, at the end of the track or at the end of the queue.
+ *
+ * While a casting device is connected (see src/casting), the device plays instead of the browser:
+ * the queue and the controls stay here, the device gets one track after the other (its video while
+ * the video view is chosen), and equalizer, crossfade, ReplayGain and the visualization rest.
  */
 export const usePlayerStore = defineStore('player', () => {
     const session = useSessionStore()
     const covers = useCoversStore()
     const equalizer = useEqualizerStore()
+    const cast = useCastStore()
 
     const queue = shallowRef<Queue>(emptyQueue)
     const playback = ref<PlaybackState>('idle')
@@ -177,7 +197,11 @@ export const usePlayerStore = defineStore('player', () => {
         typeof document === 'undefined' || document.visibilityState !== 'hidden',
     )
     /** Whether the equalizer can shape the sound in this browser. */
-    const equalizerAvailable = ref(playerDependencies.webAudio())
+    const localEqualizer = ref(playerDependencies.webAudio())
+    /** Whether a casting device plays the music. */
+    const casting = computed(() => cast.connected)
+    /** Whether the equalizer, crossfade and ReplayGain apply: not while casting. */
+    const equalizerAvailable = computed(() => localEqualizer.value && !casting.value)
     /**
      * The output of the player (after volume and equalizer) for the visualizations; null without Web
      * Audio and before the first playback, which builds the audio graph.
@@ -202,19 +226,31 @@ export const usePlayerStore = defineStore('player', () => {
             current.value !== undefined &&
             lyrics.value.trackId === current.value.track.id,
     )
-    const stageView = computed<StageView>(() =>
-        stageViewOf(viewMode.value, hasVideo.value, videoState.value, hasLyrics.value),
-    )
+    /**
+     * What the stage shows. While casting it shows the cover instead of the video (the device shows
+     * it) and of the visualization (the browser does not hear the music).
+     */
+    const stageView = computed<StageView>(() => {
+        const view = stageViewOf(viewMode.value, hasVideo.value, videoState.value, hasLyrics.value)
+        return casting.value && (view === 'visualization' || view === 'video') ? 'cover' : view
+    })
     /** Whether the video of the current track is to be shown. */
     const videoWanted = computed(
         () =>
             videoElement.value !== null &&
             hasVideo.value &&
             viewMode.value === PlayerViewModeObject.Video &&
-            pageVisible.value,
+            pageVisible.value &&
+            !casting.value,
     )
+    /** What a casting device plays of the current track: its video or its sound. */
+    const castKind = computed(() => castMediaKind(viewMode.value, hasVideo.value))
 
     let engine: PlayerEngine | null = null
+    /** The engine of the casting device, created with the first connection. */
+    let castEngine: PlayerEngine | null = null
+    /** Where the music plays; events of the other engine are ignored. */
+    let output: Output = 'local'
     let follower: PlayerVideoFollower | null = null
     /** The queue entry whose video is loaded or requested. */
     let videoKey: string | null = null
@@ -239,7 +275,7 @@ export const usePlayerStore = defineStore('player', () => {
     const engineEvents: EngineEvents = {
         timeupdate: onTimeUpdate,
         playing: () => {
-            analyser.value = engine?.analyser ?? null
+            analyser.value = output === 'local' ? (engine?.analyser ?? null) : null
             playback.value = 'playing'
             loading.value = false
             skipped = 0
@@ -261,6 +297,26 @@ export const usePlayerStore = defineStore('player', () => {
         error: onError,
     }
 
+    /** The events of the engine of an output; only those of the current output count. */
+    function eventsOf(source: Output): EngineEvents {
+        const when =
+            <T extends unknown[]>(handler: ((...args: T) => void) | undefined) =>
+            (...args: T): void => {
+                if (output === source) {
+                    handler?.(...args)
+                }
+            }
+        return {
+            timeupdate: when(engineEvents.timeupdate),
+            playing: when(engineEvents.playing),
+            paused: when(engineEvents.paused),
+            waiting: when(engineEvents.waiting),
+            ended: when(engineEvents.ended),
+            advanced: when(engineEvents.advanced),
+            error: when(engineEvents.error),
+        }
+    }
+
     function outputGain(): number {
         return volumeToGain({ volume: volume.value, muted: muted.value })
     }
@@ -269,8 +325,8 @@ export const usePlayerStore = defineStore('player', () => {
     let sleepTicker: number | null = null
     const sleep = new SleepTimer(
         {
-            fadeOut: (seconds) => engine?.fadeOut(seconds),
-            restore: () => engine?.restoreOutput(),
+            fadeOut: (seconds) => runningEngine()?.fadeOut(seconds),
+            restore: () => runningEngine()?.restoreOutput(),
             pause: () => pause(),
             changed: (value) => {
                 sleepTimer.value = value
@@ -283,7 +339,7 @@ export const usePlayerStore = defineStore('player', () => {
 
     function getEngine(): PlayerEngine {
         if (!engine) {
-            engine = playerDependencies.createEngine(engineEvents)
+            engine = playerDependencies.createEngine(eventsOf('local'))
             engine.setEqualizer(equalizer.output, equalizer.layout)
         }
 
@@ -291,10 +347,27 @@ export const usePlayerStore = defineStore('player', () => {
         return engine
     }
 
-    /** Starts the engine and notes whether its equalizer works. */
+    function getCastEngine(): PlayerEngine {
+        castEngine ??= playerDependencies.createCastEngine(cast.layer, eventsOf('cast'))
+        return castEngine
+    }
+
+    /** The engine of the current output. */
+    function activeEngine(): PlayerEngine {
+        return output === 'cast' ? getCastEngine() : getEngine()
+    }
+
+    /** The engine of the current output, if it was created. */
+    function runningEngine(): PlayerEngine | null {
+        return output === 'cast' ? castEngine : engine
+    }
+
+    /** Starts the engine and notes whether its equalizer works (only the browser has one). */
     async function startEngine(player: PlayerEngine): Promise<void> {
         await player.play()
-        equalizerAvailable.value = player.equalizerAvailable
+        if (player === engine) {
+            localEqualizer.value = player.equalizerAvailable
+        }
     }
 
     /** Whether the current entry is the last one in the order of the queue, without repeat. */
@@ -326,8 +399,11 @@ export const usePlayerStore = defineStore('player', () => {
         }
     }
 
-    function gainOf(value: TrackPlayback | null | undefined): number {
-        return replayGainFactor(session.replayGain, value?.replayGain)
+    function gainOf(value: TrackPlayback | TrackVideoPlayback | null | undefined): number {
+        return replayGainFactor(
+            session.replayGain,
+            value && 'replayGain' in value ? value.replayGain : undefined,
+        )
     }
 
     function sourceOf(value: TrackPlayback): DeckSource | null {
@@ -347,20 +423,48 @@ export const usePlayerStore = defineStore('player', () => {
         return isHls(value) ? { url: value.streamUrl, hls: true } : { url: value.streamUrl }
     }
 
-    async function fetchPlayback(item: QueueItem): Promise<TrackPlayback | PlayerMessage> {
+    /** The playback of an entry for the current output, or the notice why it cannot play. */
+    async function fetchPlayback(item: QueueItem): Promise<Loaded | PlayerMessage> {
         try {
-            const result = await getPlayback(item.track.id ?? '', playerDependencies.audioFormats())
-            return result && sourceOf(result) ? result : 'unsupported'
+            return output === 'cast'
+                ? await fetchCastPlayback(item)
+                : await fetchLocalPlayback(item)
         } catch (error) {
             const status = statusOf(error)
             return status === undefined || status >= 500 ? 'failed' : 'unavailable'
         }
     }
 
+    async function fetchLocalPlayback(item: QueueItem): Promise<Loaded | PlayerMessage> {
+        const result = await getPlayback(item.track.id ?? '', playerDependencies.audioFormats())
+        const source = result ? sourceOf(result) : null
+        return result && source ? { key: item.key, playback: result, source } : 'unsupported'
+    }
+
+    /**
+     * The playback for the casting device, decided by its formats: the video of the track while the
+     * video view is chosen and the track has one, otherwise its sound.
+     */
+    async function fetchCastPlayback(item: QueueItem): Promise<Loaded | PlayerMessage> {
+        const track = item.track
+        const formats = cast.layer.formats()
+        const kind = castMediaKind(viewMode.value, track.hasVideo === true)
+        const result =
+            kind === 'video'
+                ? await getVideoPlayback(track.id ?? '', formats.video, PlaybackTargetObject.Cast)
+                : await getPlayback(track.id ?? '', formats.audio, PlaybackTargetObject.Cast)
+        const media = result ? castMediaOf(result, kind, track, playerDependencies.origin()) : null
+        if (!result || !media) {
+            return 'unsupported'
+        }
+
+        return { key: item.key, playback: result, source: { url: media.url, gain: 1, cast: media } }
+    }
+
     function forgetPrepared(): void {
         prepared = null
         preparing = null
-        engine?.prepare(null)
+        runningEngine()?.prepare(null)
     }
 
     /** Loads the current entry and plays it (autoplay) or waits paused at the position. */
@@ -392,11 +496,10 @@ export const usePlayerStore = defineStore('player', () => {
             return
         }
 
-        const source = sourceOf(result)!
-        loaded = { key: item.key, playback: result }
-        duration.value = seconds(result.durationMilliseconds) || duration.value
-        const player = getEngine()
-        player.load(source, startPosition)
+        loaded = result
+        duration.value = seconds(result.playback.durationMilliseconds) || duration.value
+        const player = activeEngine()
+        player.load(result.source, startPosition)
         history.start(item.track.id ?? '', startPosition)
         if (shouldPlay) {
             playback.value = 'playing'
@@ -454,6 +557,7 @@ export const usePlayerStore = defineStore('player', () => {
         const index = nextIndex(queue.value, repeat.value, true)
         const item = index === null ? undefined : queue.value.items[index]
         if (
+            output === 'cast' ||
             !item ||
             !loaded ||
             prepared?.key === item.key ||
@@ -476,10 +580,9 @@ export const usePlayerStore = defineStore('player', () => {
             return
         }
 
-        prepared = { key: item.key, playback: result }
-        const source = sourceOf(result)
+        prepared = result
         const crossfade = crossfadeInto(item)
-        getEngine().prepare(source && crossfade > 0 ? { ...source, crossfade } : source)
+        getEngine().prepare(crossfade > 0 ? { ...result.source, crossfade } : result.source)
     }
 
     function onAdvanced(): void {
@@ -571,7 +674,7 @@ export const usePlayerStore = defineStore('player', () => {
         forgetPrepared()
         loaded = null
         history.stop()
-        engine?.stop()
+        runningEngine()?.stop()
         reset()
     }
 
@@ -637,7 +740,7 @@ export const usePlayerStore = defineStore('player', () => {
         }
 
         playback.value = 'playing'
-        const player = getEngine()
+        const player = activeEngine()
         // After a stop of the sleep timer the output is back already; this only covers a fade it left.
         if (!sleep.state.fading) {
             player.restoreOutput()
@@ -647,7 +750,7 @@ export const usePlayerStore = defineStore('player', () => {
     }
 
     function pause(): void {
-        engine?.pause()
+        runningEngine()?.pause()
         if (playback.value === 'playing') {
             playback.value = 'paused'
         }
@@ -707,7 +810,7 @@ export const usePlayerStore = defineStore('player', () => {
         position.value = target
         history.seek(target)
         if (loaded) {
-            getEngine().seek(target)
+            activeEngine().seek(target)
         }
 
         follower?.sync()
@@ -738,8 +841,9 @@ export const usePlayerStore = defineStore('player', () => {
 
     /** The audio the video follows. */
     function clock(): FollowerClock {
+        const player = runningEngine()
         return {
-            position: loaded && engine ? engine.position : position.value,
+            position: loaded && player ? player.position : position.value,
             playing: playback.value === 'playing' && !loading.value && loaded !== null,
         }
     }
@@ -891,18 +995,64 @@ export const usePlayerStore = defineStore('player', () => {
         }
     }
 
+    /** Mutes the browser, or the device while casting. */
     function toggleMute(): void {
+        if (casting.value) {
+            cast.setMuted(!cast.muted)
+            return
+        }
+
         muted.value = !muted.value
         applyVolume()
     }
 
+    /** Sets the volume of the browser, or of the device while casting. */
     function setVolume(value: number): void {
+        if (casting.value) {
+            const level = clampVolume(value)
+            cast.setVolume(level)
+            if (level > 0 && cast.muted) {
+                cast.setMuted(false)
+            }
+
+            return
+        }
+
         volume.value = clampVolume(value)
         if (volume.value > 0) {
             muted.value = false
         }
 
         applyVolume()
+    }
+
+    /**
+     * Moves the playback to the casting device or back to the browser: the engine of the previous
+     * output stops, and the current track loads on the new one at its position. On the device it
+     * goes on playing if it played; back in the browser it waits paused.
+     */
+    function switchOutput(next: Output): void {
+        if (next === output) {
+            return
+        }
+
+        const wasPlaying = playback.value === 'playing'
+        const at = position.value
+        generation++
+        forgetPrepared()
+        runningEngine()?.stop()
+        output = next
+        loaded = null
+        analyser.value = null
+        history.stop()
+        if (current.value && playback.value !== 'idle') {
+            void startCurrent(next === 'cast' && wasPlaying, at)
+        }
+    }
+
+    /** Opens the device selection; the preview helps AirPlay to offer its devices. */
+    function requestCast(): void {
+        cast.requestSession(output === 'local' ? (loaded?.source.url ?? null) : null)
     }
 
     /**
@@ -945,7 +1095,7 @@ export const usePlayerStore = defineStore('player', () => {
     watch(
         () => session.replayGain,
         () => {
-            if (loaded) {
+            if (loaded && output === 'local') {
                 engine?.setTrackGain(gainOf(loaded.playback))
             }
 
@@ -963,7 +1113,7 @@ export const usePlayerStore = defineStore('player', () => {
     // The equalizer follows every change at once, also during playback.
     watch(
         () => [equalizer.output, equalizer.layout] as const,
-        ([output, layout]) => engine?.setEqualizer(output, layout),
+        ([curve, layout]) => engine?.setEqualizer(curve, layout),
     )
 
     // A new entry, view mode, stage or visibility: the video follows; the audio is not touched.
@@ -985,6 +1135,16 @@ export const usePlayerStore = defineStore('player', () => {
             pageVisible.value = document.visibilityState !== 'hidden'
         })
     }
+
+    // A casting device connects or goes: the playback moves to it or back to the browser.
+    watch(casting, (now) => switchOutput(now ? 'cast' : 'local'), { immediate: true })
+
+    // The video view is chosen or left while casting: the device plays the video or the sound.
+    watch(castKind, () => {
+        if (output === 'cast' && loaded) {
+            void startCurrent(playback.value === 'playing', position.value)
+        }
+    })
 
     // Another profile (or none) gets an empty player: stream URLs and history belong to the session.
     watch(
@@ -1032,8 +1192,8 @@ export const usePlayerStore = defineStore('player', () => {
             duration: duration.value,
             shuffle: shuffle.value,
             repeat: repeat.value,
-            volume: volume.value,
-            muted: muted.value,
+            volume: casting.value ? cast.volume : volume.value,
+            muted: casting.value ? cast.muted : muted.value,
             message: message.value,
             equalizer: equalizer.settings.enabled,
             crossfade: session.crossfade.enabled,
@@ -1041,6 +1201,14 @@ export const usePlayerStore = defineStore('player', () => {
                 mode: sleepTimer.value.mode,
                 remaining: sleepRemaining.value,
                 fading: sleepTimer.value.fading,
+            },
+            effects: !casting.value,
+            cast: {
+                availability: cast.availability,
+                connection: cast.connection,
+                technology: cast.technology,
+                device: cast.deviceName,
+                devicesFound: cast.devicesFound,
             },
         }
     })
@@ -1095,6 +1263,7 @@ export const usePlayerStore = defineStore('player', () => {
         livePosition,
         refreshLyrics,
         equalizerAvailable,
+        casting,
         analyser,
         sleepTimer,
         sleepRemaining,
@@ -1125,5 +1294,6 @@ export const usePlayerStore = defineStore('player', () => {
         applyVideoOffset,
         startSleepTimer,
         cancelSleepTimer,
+        requestCast,
     }
 })

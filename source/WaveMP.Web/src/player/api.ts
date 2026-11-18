@@ -6,32 +6,40 @@ import { apiClient } from '@/api/client'
 import type {
     AudioFormat,
     Equalizer,
+    PlaybackTarget,
     PlayHistoryEntry,
     TrackPlayback,
     TrackVideoPlayback,
 } from '@/api/generated/models'
 import type { VideoFormats } from './videoFormats'
 
-/** How the client plays a track, with the signed stream URL for direct play. */
+/**
+ * How the client plays a track, with the signed stream URL for direct play. With the target Cast,
+ * the formats are those of a casting device; the URLs then stay valid longer and the cover is
+ * signed as well.
+ */
 export function getPlayback(
     trackId: string,
     audioFormats: readonly AudioFormat[],
+    target?: PlaybackTarget,
 ): Promise<TrackPlayback | undefined> {
-    return apiClient.api.v1.tracks
-        .byId(trackId)
-        .playback.get({ queryParameters: { audioFormats: [...audioFormats] } })
+    return apiClient.api.v1.tracks.byId(trackId).playback.get({
+        queryParameters: { audioFormats: [...audioFormats], ...(target ? { target } : {}) },
+    })
 }
 
-/** How the client plays the video of a track: the file as it is or an HLS stream. */
+/** How the client (or a casting device) plays the video of a track: the file or an HLS stream. */
 export function getVideoPlayback(
     trackId: string,
     formats: VideoFormats,
+    target?: PlaybackTarget,
 ): Promise<TrackVideoPlayback | undefined> {
     return apiClient.api.v1.tracks.byId(trackId).video.playback.get({
         queryParameters: {
             videoContainers: [...formats.containers],
             videoCodecs: [...formats.videoCodecs],
             audioCodecs: [...formats.audioCodecs],
+            ...(target ? { target } : {}),
         },
     })
 }

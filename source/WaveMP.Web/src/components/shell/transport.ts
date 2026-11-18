@@ -1,6 +1,7 @@
 // State of the transport bar. The bar is controlled through props only; the player store
 // (src/stores/player.ts) provides the state and handles the events.
 
+import type { CastAvailability, CastConnection, CastTechnology } from '@/casting/types'
 import type { SleepTimerMode } from '@/player/sleepTimer'
 import type { IconSlotName } from '@/themes/iconSlots'
 
@@ -42,6 +43,38 @@ export interface TransportState {
     crossfade?: boolean
     /** The sleep timer of this device. */
     sleepTimer?: TransportSleepTimer
+    /**
+     * Whether equalizer, crossfade and ReplayGain apply; not while a casting device plays. True
+     * when not given.
+     */
+    effects?: boolean
+    /** Casting of this browser; hidden when not given. */
+    cast?: TransportCast
+}
+
+/** Casting as the transport bar shows it: the cast button and the device that plays. */
+export interface TransportCast {
+    availability: CastAvailability
+    connection: CastConnection
+    technology: CastTechnology | null
+    /** Name of the device; null while unknown (AirPlay never tells it). */
+    device: string | null
+    /** Whether the browser found devices. */
+    devicesFound: boolean
+}
+
+/** data-state tokens of the cast control, e.g. "chromecast available connected". */
+export function castStateTokens(cast: TransportCast | undefined): string {
+    if (!cast) {
+        return 'unsupported'
+    }
+
+    return [
+        ...(cast.technology ? [cast.technology] : []),
+        cast.availability,
+        cast.connection,
+        ...(cast.devicesFound ? [] : ['no-devices']),
+    ].join(' ')
 }
 
 export type SleepTimerChoice =

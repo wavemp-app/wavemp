@@ -15,6 +15,7 @@ import { crossfadeCurveSteps, equalPowerCurve } from './crossfade'
 import { fallbackEqualizerBands, type EqualizerBandLayout, type EqualizerState } from './equalizer'
 import { EqualizerChain } from './equalizerChain'
 import { browserHlsSupport, MediaSourceSlot, type HlsSupport } from './hls'
+import type { CastMedia } from '@/casting/types'
 
 export interface DeckSource {
     /** URL of the stream. */
@@ -25,6 +26,8 @@ export interface DeckSource {
     readonly hls?: boolean
     /** Seconds the previous track fades into this one when it ends on its own; gapless without. */
     readonly crossfade?: number
+    /** What a casting device plays instead (see src/casting/engine.ts); the audio engine ignores it. */
+    readonly cast?: CastMedia
 }
 
 export interface EngineEvents {
