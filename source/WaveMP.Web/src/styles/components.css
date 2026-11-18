@@ -955,14 +955,16 @@
 
     /* --- Administration ------------------------------------------------------------------ */
 
-    /* Tabs of the administration; scrolls sideways instead of widening the page. */
+    /*
+     * Tabs of the administration; they wrap onto further rows instead of widening the page or
+     * scrolling sideways, so every page stays in sight.
+     */
     [data-part='admin-nav'] {
         display: flex;
+        flex-wrap: wrap;
         gap: var(--wmp-space-xs);
         max-inline-size: 100%;
-        overflow-x: auto;
         border-block-end: 1px solid var(--wmp-color-border);
-        scrollbar-width: thin;
     }
 
     [data-part='admin-nav-item'] {
