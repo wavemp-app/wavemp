@@ -33,6 +33,25 @@ async function ping(page: Page, password: string): Promise<string> {
     return (await response.json())['subsonic-response'].status
 }
 
+/**
+ * Switches the Subsonic access on or off and waits for the answer of the save. The checkbox
+ * follows the click at once, so only the answer tells that the server has the new state.
+ */
+async function setSubsonicEnabled(page: Page, enabled: boolean): Promise<void> {
+    const input = page.locator(
+        "[data-part='section'][data-item='subsonic'] [data-field='subsonic-enabled'] input",
+    )
+    const saved = page.waitForResponse(
+        (response) =>
+            response.request().method() === 'PATCH' &&
+            new URL(response.url()).pathname === '/api/v1/me/subsonic',
+    )
+    await input.setChecked(enabled)
+    expect((await saved).status()).toBe(200)
+    await expect(input).toBeChecked({ checked: enabled })
+    await expect(input).toBeEnabled()
+}
+
 test('creates an app password that Subsonic apps sign in with', async ({ page }) => {
     await selectProfile(page)
     await page.goto('/settings')
@@ -48,8 +67,7 @@ test('creates an app password that Subsonic apps sign in with', async ({ page })
         section.locator("[data-field='subsonic-password-state'] [data-part='stat-value']"),
     ).toHaveText('Not created yet')
 
-    await enabled.check()
-    await expect(enabled).toBeChecked()
+    await setSubsonicEnabled(page, true)
     await section.locator("[data-item='create-subsonic-password']").click()
 
     const shown = section.locator("[data-field='subsonic-new-password'] [data-part='stat-value']")
@@ -68,11 +86,10 @@ test('creates an app password that Subsonic apps sign in with', async ({ page })
     ).toContainText('Created on')
 
     // Switched off, the password no longer signs in.
-    await section.locator("[data-field='subsonic-enabled'] input").uncheck()
-    await expect(section.locator("[data-field='subsonic-enabled'] input")).not.toBeChecked()
+    await setSubsonicEnabled(page, false)
     expect(await ping(page, password)).toBe('failed')
 
-    await section.locator("[data-field='subsonic-enabled'] input").check()
+    await setSubsonicEnabled(page, true)
     await section.locator("[data-item='revoke-subsonic-password']").click()
     await expect(section.locator("[data-part='alert']")).toContainText('was revoked')
     expect(await ping(page, password)).toBe('failed')
