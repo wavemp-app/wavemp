@@ -3,10 +3,12 @@ import { mount } from '@vue/test-utils'
 import { createPinia } from 'pinia'
 import AppTransport from '../AppTransport.vue'
 import {
+    castStateTokens,
     nextRepeatMode,
     sleepTimerStateTokens,
     transportIcons,
     transportStateTokens,
+    type TransportCast,
     type TransportState,
 } from '../transport'
 import { createWaveMpI18n } from '@/i18n'
@@ -294,5 +296,100 @@ describe('AppTransport equalizer and sleep timer', () => {
             [{ mode: 'endOfQueue' }],
             [{ mode: 'off' }],
         ])
+    })
+})
+
+describe('AppTransport casting', () => {
+    const chromecast: TransportCast = {
+        availability: 'available',
+        connection: 'disconnected',
+        technology: 'chromecast',
+        device: null,
+        devicesFound: true,
+    }
+
+    it('describes the casting state as tokens', () => {
+        expect(castStateTokens(undefined)).toBe('unsupported')
+        expect(castStateTokens(chromecast)).toBe('chromecast available disconnected')
+        expect(castStateTokens({ ...chromecast, devicesFound: false })).toBe(
+            'chromecast available disconnected no-devices',
+        )
+        expect(
+            castStateTokens({ ...chromecast, technology: 'airplay', connection: 'connected' }),
+        ).toBe('airplay available connected')
+    })
+
+    it('hides the cast button in browsers that cannot cast', () => {
+        expect(mountTransport().find('[data-part="cast"]').exists()).toBe(false)
+        expect(
+            mountTransport({
+                cast: { ...chromecast, availability: 'unsupported', technology: null },
+            })
+                .find('[data-part="cast"]')
+                .exists(),
+        ).toBe(false)
+    })
+
+    it('opens the device selection with the cast button', async () => {
+        const wrapper = mountTransport({ cast: chromecast })
+
+        const cast = wrapper.get('[data-part="mode-switch"] [data-part="cast"]')
+        expect(cast.attributes('data-state')).toBe('chromecast available disconnected')
+        const button = cast.get('[data-part="btn-cast"]')
+        expect(button.find('[data-part="icon"]').attributes('data-icon')).toBe('cast')
+        expect(button.get('[data-part="label"]').text()).toBe('Cast')
+        expect(button.attributes('aria-disabled')).toBeUndefined()
+        await button.trigger('click')
+
+        expect(wrapper.emitted('cast')).toHaveLength(1)
+        expect(cast.find('[data-part="cast-hint"]').exists()).toBe(false)
+    })
+
+    it('greys Chromecast out without HTTPS and shows why instead', async () => {
+        const wrapper = mountTransport({ cast: { ...chromecast, availability: 'insecure' } })
+
+        const button = wrapper.get('[data-part="btn-cast"]')
+        const hint = wrapper.get('[data-part="cast-hint"]')
+        expect(button.attributes('aria-disabled')).toBe('true')
+        expect(button.attributes('aria-describedby')).toBe(hint.attributes('id'))
+        expect(button.attributes('aria-expanded')).toBe('false')
+        expect(hint.attributes('data-state')).toBe('closed')
+        expect(hint.text()).toContain('HTTPS')
+        await button.trigger('click')
+
+        expect(wrapper.emitted('cast')).toBeUndefined()
+        expect(button.attributes('aria-expanded')).toBe('true')
+        expect(hint.attributes('data-state')).toBe('open')
+        expect(wrapper.get('[data-part="cast"]').attributes('data-state')).toContain('hint')
+    })
+
+    it('names the device that plays and greys out crossfade and equalizer', () => {
+        const wrapper = mountTransport({
+            playback: 'playing',
+            title: 'A',
+            artist: 'Band',
+            effects: false,
+            cast: { ...chromecast, connection: 'connected', device: 'Living Room' },
+        })
+
+        expect(wrapper.get('[data-part="cast-status"]').text()).toBe('Playing on Living Room')
+        expect(wrapper.get('[data-part="btn-cast"]').attributes('data-state')).toBe('connected')
+        expect(wrapper.get('[data-part="btn-cast"] [data-part="label"]').text()).toBe(
+            'Casting to Living Room',
+        )
+        for (const part of ['btn-crossfade', 'btn-equalizer']) {
+            const button = wrapper.get(`[data-part="${part}"]`)
+            expect(button.attributes('disabled')).toBeDefined()
+            expect(button.get('[data-part="label"]').text()).toContain(
+                'not available while casting',
+            )
+        }
+    })
+
+    it('shows no device notice and keeps the effects without casting', () => {
+        const wrapper = mountTransport({ playback: 'playing', title: 'A', cast: chromecast })
+
+        expect(wrapper.find('[data-part="cast-status"]').exists()).toBe(false)
+        expect(wrapper.get('[data-part="btn-equalizer"]').attributes('disabled')).toBeUndefined()
     })
 })

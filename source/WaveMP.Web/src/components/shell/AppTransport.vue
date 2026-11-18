@@ -5,11 +5,13 @@ import BaseButton from '@/components/base/BaseButton.vue'
 import BaseCover from '@/components/base/BaseCover.vue'
 import BaseSlider from '@/components/base/BaseSlider.vue'
 import FavoriteButton from '@/components/collection/FavoriteButton.vue'
+import CastButton from '@/components/player/CastButton.vue'
 import RatingStars from '@/components/collection/RatingStars.vue'
 import SleepTimerControl from '@/components/player/SleepTimerControl.vue'
 import LibraryCover from '@/components/library/LibraryCover.vue'
 import { useFormat } from '@/composables/useFormat'
 import { useMediaQuery } from '@/composables/useMediaQuery'
+import { castStatusText } from '@/casting/presentation'
 import { desktopMediaQuery } from '@/themes/breakpoints'
 import {
     transportIcons,
@@ -23,6 +25,7 @@ import {
  * Transport bar: seek bar, mini player and playback controls. It is controlled through props and
  * events only; on mobile, the same DOM becomes the mini player and the full-screen player. The heart
  * and the stars of the current track save the favorite and the rating of the profile themselves.
+ * While a casting device plays, the bar names it and greys out the crossfade and the equalizer.
  */
 const props = withDefaults(
     defineProps<{
@@ -48,6 +51,8 @@ const emit = defineEmits<{
     compact: []
     openEqualizer: []
     sleepTimer: [choice: SleepTimerChoice]
+    /** Opens the device selection for casting. */
+    cast: []
     showNowPlaying: []
     expand: []
     collapse: []
@@ -73,6 +78,20 @@ const messageText = computed(() => {
         failed: t('player.messages.failed'),
     }
     return props.state.message ? messages[props.state.message] : ''
+})
+
+/** Whether equalizer and crossfade apply; not while a casting device plays. */
+const effects = computed(() => props.state.effects !== false)
+
+/** The label of a button that rests while casting. */
+function effectLabel(name: string): string {
+    return effects.value ? name : t('cast.unavailableWhileCasting', { name })
+}
+
+/** "Playing on ..." while a casting device connects or plays. */
+const castStatus = computed(() => {
+    const text = castStatusText(props.state.cast)
+    return text ? t(text.key, { ...text.params }) : ''
 })
 
 const repeatLabel = computed(() => {
@@ -136,6 +155,7 @@ function onMiniPlayer(): void {
                     state.title ?? t('player.nothingPlaying')
                 }}</span>
                 <span data-part="now-playing-artist">{{ state.artist }}</span>
+                <span v-if="castStatus" data-part="cast-status">{{ castStatus }}</span>
             </span>
             <span data-part="label">{{
                 isDesktop ? t('player.showNowPlaying') : t('player.open')
@@ -182,9 +202,10 @@ function onMiniPlayer(): void {
                 part="btn-crossfade"
                 variant="icon"
                 icon="crossfade"
-                :label="t('player.crossfade')"
+                :label="effectLabel(t('player.crossfade'))"
                 :pressed="state.crossfade ?? false"
                 :state="state.crossfade ? 'on' : 'off'"
+                :disabled="!effects"
                 @click="emit('toggleCrossfade')"
             />
             <BaseButton
@@ -254,11 +275,13 @@ function onMiniPlayer(): void {
                 part="btn-equalizer"
                 variant="icon"
                 icon="equalizer"
-                :label="t('player.equalizer')"
+                :label="effectLabel(t('player.equalizer'))"
                 :state="state.equalizer ? 'on' : 'off'"
+                :disabled="!effects"
                 @click="emit('openEqualizer')"
             />
             <SleepTimerControl :timer="state.sleepTimer" @choose="emit('sleepTimer', $event)" />
+            <CastButton :cast="state.cast" @cast="emit('cast')" />
         </div>
         <BaseButton
             part="btn-collapse"

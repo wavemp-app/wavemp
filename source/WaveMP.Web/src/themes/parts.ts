@@ -181,6 +181,10 @@ export const parts = [
     'sleep-timer',
     'btn-sleep-timer',
     'sleep-timer-remaining',
+    'cast',
+    'btn-cast',
+    'cast-hint',
+    'cast-status',
     'btn-collapse',
 
     // Mobile

@@ -938,7 +938,7 @@ a[data-part="breadcrumb-link"]:hover {
     color: #ffffff;
 }
 
-[data-part="transport"] [data-variant]:disabled [data-part="icon"] {
+[data-part="transport"] [data-variant]:is(:disabled, [aria-disabled="true"]) [data-part="icon"] {
     opacity: 0.4;
 }
 
@@ -1450,11 +1450,12 @@ a[data-part="breadcrumb-link"]:hover {
     background: linear-gradient(#e3f1fe, #cfe6fc);
 }
 
-/* --- Equalizer and sleep timer ------------------------------------------------------------------ */
+/* --- Equalizer, sleep timer and casting ----------------------------------------------------- */
 
 /* The equalizer and a running sleep timer glow like the pressed toggles of the transport bar. */
 [data-part="btn-equalizer"][data-state~="on"] [data-part="icon"],
-[data-part="btn-sleep-timer"][data-state~="on"] [data-part="icon"] {
+[data-part="btn-sleep-timer"][data-state~="on"] [data-part="icon"],
+[data-part="btn-cast"][data-state~="connected"] [data-part="icon"] {
     --wmp-icon-fill: linear-gradient(#ffffff 30%, #8fd2ff);
 
     filter: drop-shadow(0 0 3px #4aa8ff)
@@ -1469,6 +1470,23 @@ a[data-part="breadcrumb-link"]:hover {
 
 [data-part="sleep-timer"][data-state~="fading"] [data-part="sleep-timer-remaining"] {
     opacity: 0.6;
+}
+
+/* While a device connects, its button is dimmed; the device that plays shines below the artist. */
+[data-part="btn-cast"][data-state~="connecting"] [data-part="icon"] {
+    opacity: 0.6;
+}
+
+[data-part="cast-status"] {
+    color: #8fd2ff;
+    text-shadow: 0 0 6px rgb(74 168 255 / 70%);
+}
+
+[data-part="cast-hint"] {
+    color: #f1f4f8;
+    background: linear-gradient(#26313d, #151b22);
+    border-color: #3a4a5a;
+    box-shadow: 0 4px 12px rgb(0 0 0 / 50%);
 }
 
 /* A dark glass console in the white content area, with glowing blue faders. */

@@ -194,6 +194,21 @@
     "lyricsLabel": "Lyrics of the song",
     "lyricsBreak": "Instrumental part"
   },
+  "cast": {
+    "button": "Cast",
+    "buttonConnected": "Casting to {device}",
+    "buttonConnectedUnnamed": "Casting",
+    "buttonInsecure": "Cast (needs HTTPS)",
+    "httpsRequired": "Casting to Chromecast needs WaveMP to be opened over HTTPS. AirPlay works without it.",
+    "noDevices": "No casting devices found",
+    "connecting": "Connecting to {device}…",
+    "connectingUnnamed": "Connecting to the device…",
+    "playingOn": "Playing on {device}",
+    "playingOnAirPlay": "Playing on an AirPlay device",
+    "playingOnUnnamed": "Playing on the casting device",
+    "effectsUnavailable": "While casting, the device plays the music as it is: equalizer, crossfade, volume leveling and the visualization rest until playback is back on this device.",
+    "unavailableWhileCasting": "{name} (not available while casting)"
+  },
   "equalizer": {
     "title": "Equalizer",
     "power": "Equalizer on",
@@ -388,8 +403,11 @@
       "message": "Notice (format not supported)",
       "expanded": "Expanded (full-screen player on mobile)",
       "sleepTimer": "Sleep timer running",
-      "crossfade": "Crossfade on"
+      "crossfade": "Crossfade on",
+      "casting": "Casting to a device",
+      "castInsecure": "Casting without HTTPS"
     },
+    "castDevice": "Living room",
     "table": {
       "part": "Part",
       "slot": "Slot",

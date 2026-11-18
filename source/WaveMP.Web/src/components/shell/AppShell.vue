@@ -170,6 +170,7 @@ onUnmounted(() => {
             @show-now-playing="router.push({ name: 'now-playing' })"
             @open-equalizer="openEqualizer"
             @sleep-timer="chooseSleepTimer"
+            @cast="player.requestCast"
             @expand="expandPlayer"
             @collapse="collapsePlayer"
         />

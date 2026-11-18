@@ -194,6 +194,21 @@
     "lyricsLabel": "Songtext des Titels",
     "lyricsBreak": "Instrumentaler Teil"
   },
+  "cast": {
+    "button": "Streamen",
+    "buttonConnected": "Streamt auf {device}",
+    "buttonConnectedUnnamed": "Streamt",
+    "buttonInsecure": "Streamen (benötigt HTTPS)",
+    "httpsRequired": "Für Chromecast muss WaveMP über HTTPS geöffnet sein. AirPlay funktioniert auch ohne.",
+    "noDevices": "Keine Geräte zum Streamen gefunden",
+    "connecting": "Verbinde mit {device} …",
+    "connectingUnnamed": "Verbinde mit dem Gerät …",
+    "playingOn": "Wiedergabe auf {device}",
+    "playingOnAirPlay": "Wiedergabe auf einem AirPlay-Gerät",
+    "playingOnUnnamed": "Wiedergabe auf dem Streaming-Gerät",
+    "effectsUnavailable": "Beim Streamen spielt das Gerät die Musik unverändert: Equalizer, Überblenden, Lautstärkeausgleich und Visualisierung ruhen, bis die Wiedergabe wieder auf diesem Gerät läuft.",
+    "unavailableWhileCasting": "{name} (beim Streamen nicht verfügbar)"
+  },
   "equalizer": {
     "title": "Equalizer",
     "power": "Equalizer an",
@@ -388,8 +403,11 @@
       "message": "Hinweis (Format nicht unterstützt)",
       "expanded": "Erweitert (mobiler Vollbild-Player)",
       "sleepTimer": "Sleep-Timer läuft",
-      "crossfade": "Überblenden an"
+      "crossfade": "Überblenden an",
+      "casting": "Streamen auf ein Gerät",
+      "castInsecure": "Streamen ohne HTTPS"
     },
+    "castDevice": "Wohnzimmer",
     "table": {
       "part": "Part",
       "slot": "Slot",

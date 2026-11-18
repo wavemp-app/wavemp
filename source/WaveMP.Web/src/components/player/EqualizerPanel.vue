@@ -30,8 +30,10 @@ const props = withDefaults(
         maxGainDb: number
         /** False if this browser cannot apply the equalizer (no Web Audio). */
         available?: boolean
+        /** Whether a casting device plays, which plays the music without the equalizer. */
+        casting?: boolean
     }>(),
-    { available: true },
+    { available: true, casting: false },
 )
 
 const emit = defineEmits<{
@@ -129,7 +131,8 @@ const bandItems = computed(() =>
                 @click="emit('reset')"
             />
         </div>
-        <BaseAlert v-if="!available" tone="info" :message="t('equalizer.unavailable')" />
+        <BaseAlert v-if="casting" tone="info" :message="t('cast.effectsUnavailable')" />
+        <BaseAlert v-else-if="!available" tone="info" :message="t('equalizer.unavailable')" />
         <div data-part="equalizer-bands" role="group" :aria-label="t('equalizer.bands')">
             <div data-part="equalizer-band" data-kind="preamp">
                 <span data-part="equalizer-value" aria-hidden="true">{{

@@ -19,6 +19,7 @@ import {
 import { useFormat } from '@/composables/useFormat'
 import { appLocale, isSupportedLocale, languageName, supportedLocales } from '@/i18n/locales'
 import { maxCrossfadeSeconds, type CrossfadeSettings } from '@/player/crossfade'
+import { useCastStore } from '@/stores/cast'
 import { useEqualizerStore } from '@/stores/equalizer'
 import { useHealthStore } from '@/stores/health'
 import { useSessionStore } from '@/stores/session'
@@ -30,6 +31,7 @@ const { t, locale } = useI18n({ useScope: 'global' })
 const session = useSessionStore()
 const equalizer = useEqualizerStore()
 const health = useHealthStore()
+const cast = useCastStore()
 const format = useFormat()
 
 const aboutTitleId = useId()
@@ -395,15 +397,19 @@ async function changeSleepTimerFade(value: string): Promise<void> {
                 :label="t('settings.replayGain')"
                 :options="replayGainOptions"
                 :hint="t('settings.replayGainHint')"
-                :disabled="saving"
+                :disabled="saving || cast.connected"
                 @update:model-value="changeReplayGain"
             />
             <h2 data-part="section-title">{{ t('settings.playback') }}</h2>
+            <p v-if="cast.connected" data-part="form-note" data-item="cast-effects">
+                {{ t('cast.effectsUnavailable') }}
+            </p>
             <BaseCheckbox
                 data-field="equalizer"
                 :model-value="equalizerEnabled"
                 :label="t('settings.equalizerOn')"
                 :hint="t('settings.equalizerHint')"
+                :disabled="cast.connected"
                 @update:model-value="changeEqualizer"
             />
             <p data-part="form-note">
@@ -417,14 +423,14 @@ async function changeSleepTimerFade(value: string): Promise<void> {
                 :label="t('settings.crossfade')"
                 :options="crossfadeOptions"
                 :hint="t('settings.crossfadeHint')"
-                :disabled="saving"
+                :disabled="saving || cast.connected"
                 @update:model-value="changeCrossfade"
             />
             <BaseCheckbox
                 v-model="crossfadeAlbums"
                 data-field="crossfade-albums"
                 :label="t('settings.crossfadeAlbums')"
-                :disabled="saving || crossfade === crossfadeOff"
+                :disabled="saving || cast.connected || crossfade === crossfadeOff"
                 @update:model-value="changeCrossfadeAlbums"
             />
             <BaseSelect

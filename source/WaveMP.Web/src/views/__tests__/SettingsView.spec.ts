@@ -3,7 +3,9 @@ import { flushPromises, mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import SettingsView from '../SettingsView.vue'
+import { FakeCastLayer } from '@/casting/__tests__/fakes'
 import { createWaveMpI18n } from '@/i18n'
+import { castDependencies } from '@/stores/cast'
 import { useHealthStore } from '@/stores/health'
 import { useSessionStore } from '@/stores/session'
 import { appVersion } from '@/version'
@@ -143,6 +145,38 @@ describe('SettingsView playback', () => {
         name: string,
         selector: string,
     ) => wrapper.get<T>(`[data-field="${name}"] ${selector}`)
+
+    it('greys out ReplayGain, equalizer and crossfade while a casting device plays', async () => {
+        const layer = new FakeCastLayer()
+        const createLayer = castDependencies.createLayer
+        castDependencies.createLayer = () => layer
+        try {
+            const { wrapper } = mountView()
+            await flushPromises()
+            expect(wrapper.find('[data-item="cast-effects"]').exists()).toBe(false)
+            expect(field<HTMLInputElement>(wrapper, 'equalizer', 'input').element.disabled).toBe(
+                false,
+            )
+
+            layer.connect()
+            await flushPromises()
+
+            expect(wrapper.get('[data-item="cast-effects"]').text()).toContain('While casting')
+            expect(field<HTMLInputElement>(wrapper, 'equalizer', 'input').element.disabled).toBe(
+                true,
+            )
+            expect(field<HTMLSelectElement>(wrapper, 'crossfade', 'select').element.disabled).toBe(
+                true,
+            )
+            expect(
+                wrapper
+                    .get('[data-field="replay-gain"] [data-part="segmented-control"]')
+                    .attributes('aria-disabled'),
+            ).toBe('true')
+        } finally {
+            castDependencies.createLayer = createLayer
+        }
+    })
 
     it('shows crossfade, album crossfade, sleep timer fade-out and equalizer of the profile', async () => {
         const session = useSessionStore()

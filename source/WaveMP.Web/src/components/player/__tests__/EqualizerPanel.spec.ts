@@ -14,6 +14,7 @@ function mountPanel(
         preampDb: number
         gainsDb: number[]
         available: boolean
+        casting: boolean
     }> = {},
     locale: 'en' | 'de' = 'en',
 ) {
@@ -153,5 +154,11 @@ describe('EqualizerPanel', () => {
 
         expect(wrapper.get('[data-part="alert"]').attributes('data-state')).toBe('info')
         expect(wrapper.get('[data-part="alert"]').text()).toContain('Web Audio')
+    })
+
+    it('says that the equalizer rests while casting', () => {
+        const wrapper = mountPanel({ casting: true })
+
+        expect(wrapper.get('[data-part="alert"]').text()).toContain('While casting')
     })
 })

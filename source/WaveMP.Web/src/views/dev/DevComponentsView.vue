@@ -359,6 +359,41 @@ const transports = computed(() => [
         expanded: false,
     },
     {
+        id: 'casting',
+        label: t('dev.transportStates.casting'),
+        state: {
+            ...idle,
+            ...track.value,
+            playback: 'playing' as const,
+            effects: false,
+            cast: {
+                availability: 'available' as const,
+                connection: 'connected' as const,
+                technology: 'chromecast' as const,
+                device: t('dev.castDevice'),
+                devicesFound: true,
+            },
+        },
+        expanded: false,
+    },
+    {
+        id: 'cast-insecure',
+        label: t('dev.transportStates.castInsecure'),
+        state: {
+            ...idle,
+            ...track.value,
+            playback: 'paused' as const,
+            cast: {
+                availability: 'insecure' as const,
+                connection: 'disconnected' as const,
+                technology: 'chromecast' as const,
+                device: null,
+                devicesFound: false,
+            },
+        },
+        expanded: false,
+    },
+    {
         id: 'expanded',
         label: t('dev.transportStates.expanded'),
         state: { ...idle, ...track.value, playback: 'playing' as const },

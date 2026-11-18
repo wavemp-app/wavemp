@@ -307,6 +307,10 @@
         --_icon: var(--wmp-icon-sleep-timer);
     }
 
+    [data-icon='cast'] {
+        --_icon: var(--wmp-icon-cast);
+    }
+
     [data-icon='fullscreen'] {
         --_icon: var(--wmp-icon-fullscreen);
     }

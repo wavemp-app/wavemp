@@ -30,6 +30,8 @@ function mountStage(
         videoState?: VideoState
         audio?: AnalyserNode | null
         lyrics?: TrackLyrics | null
+        casting?: boolean
+        castNotice?: string
     },
     attrs: Record<string, unknown> = {},
 ) {
@@ -249,6 +251,23 @@ describe('NowPlayingStage', () => {
 
         expect(wrapper.find('[data-part="stage-actions"]').exists()).toBe(false)
         expect(wrapper.find('[data-part="empty-state"]').exists()).toBe(true)
+        wrapper.unmount()
+    })
+
+    it('offers no visualization while casting and names the device that plays', () => {
+        const wrapper = mountStage({
+            track: track(true),
+            mode: 'Visualization',
+            view: 'cover',
+            casting: true,
+            castNotice: 'Playing on Living Room',
+        })
+
+        expect(segment(wrapper, 'visualization').attributes('disabled')).toBeDefined()
+        expect(segment(wrapper, 'visualization').text()).toContain('not available while casting')
+        expect(checked(wrapper).cover).toBe('true')
+        const notice = wrapper.get('[data-part="stage-notice"][data-kind="cast"]')
+        expect(notice.text()).toBe('Playing on Living Room')
         wrapper.unmount()
     })
 })

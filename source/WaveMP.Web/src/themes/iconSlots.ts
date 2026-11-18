@@ -101,6 +101,7 @@ export const iconSlots = {
     compact: { file: fill('corners-in'), area: 'transport' },
     equalizer: { file: fill('faders'), area: 'transport' },
     'sleep-timer': { file: fill('moon'), area: 'transport' },
+    cast: { file: fill('screencast'), area: 'transport' },
     'collapse-player': { file: fill('caret-down'), area: 'transport' },
 
     // General (menus and dialogs)

@@ -45,6 +45,7 @@ const icons: Record<IconStyle, string[]> = {
         'repeat',
         'repeat-once',
         'rows',
+        'screencast',
         'shuffle',
         'skip-back',
         'skip-forward',

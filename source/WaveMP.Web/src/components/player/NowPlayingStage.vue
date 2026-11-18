@@ -24,7 +24,8 @@ import {
  * track, with title, artist and album, or a hint while nothing plays. The views lie on top of each
  * other and fade into each other; the buttons choose the view, the music goes on. The video view
  * stays in the page as long as the track has a video, the lyrics view as long as it has lyrics, so
- * switching back to them is quick.
+ * switching back to them is quick. While a casting device plays, the stage names it, shows the cover
+ * instead of the video (the device shows it) and offers no visualization.
  */
 const props = withDefaults(
     defineProps<{
@@ -49,6 +50,10 @@ const props = withDefaults(
         duration?: number
         /** The exact position of the music right now, in seconds. */
         clock?: () => number
+        /** Whether a casting device plays the music. */
+        casting?: boolean
+        /** The notice while casting, e.g. "Playing on Living Room". */
+        castNotice?: string
     }>(),
     {
         track: undefined,
@@ -62,6 +67,8 @@ const props = withDefaults(
         position: 0,
         duration: 0,
         clock: undefined,
+        casting: false,
+        castNotice: '',
     },
 )
 
@@ -115,6 +122,10 @@ const selected = computed<PlayerViewMode>(() => {
         return PlayerViewModeObject.Cover
     }
 
+    if (props.mode === PlayerViewModeObject.Visualization && props.casting) {
+        return PlayerViewModeObject.Cover
+    }
+
     return props.mode === PlayerViewModeObject.Lyrics && !hasLyrics.value
         ? PlayerViewModeObject.Cover
         : props.mode
@@ -138,7 +149,10 @@ const viewOptions = computed<SegmentOption[]>(() => [
         value: PlayerViewModeObject.Visualization,
         item: 'visualization',
         icon: 'view-visualization',
-        label: t('nowPlaying.viewVisualization'),
+        label: props.casting
+            ? t('cast.unavailableWhileCasting', { name: t('nowPlaying.viewVisualization') })
+            : t('nowPlaying.viewVisualization'),
+        disabled: props.casting,
     },
     {
         value: PlayerViewModeObject.Lyrics,
@@ -224,8 +238,11 @@ const subtitle = computed(() => {
                 />
             </div>
         </div>
-        <p v-if="videoFailed" data-part="stage-notice" role="status">
+        <p v-if="videoFailed && !casting" data-part="stage-notice" role="status">
             {{ t('nowPlaying.videoFailed') }}
+        </p>
+        <p v-if="casting && castNotice" data-part="stage-notice" data-kind="cast" role="status">
+            {{ castNotice }}
         </p>
         <div v-if="track" data-part="stage-info">
             <p data-part="stage-title">{{ track.title }}</p>
