@@ -15,6 +15,7 @@ WaveMP is licensed under the [MIT License](LICENSE). It is built on the open-sou
 | FFmpeg (Alpine package `ffmpeg`) | GPL-2.0-or-later AND LGPL-2.1-or-later | `ffprobe` reads the technical details of media files, `ffmpeg` transcodes songs and videos to HLS and crops and scales covers and the pictures of the profiles; both run as separate processes and are never linked. License texts, notice and build configuration under `/licenses/ffmpeg` |
 | ICU (Alpine packages `icu-libs`, `icu-data-full`) | Unicode-3.0 | Unicode normalization and culture-aware text handling of .NET; `/licenses/icu` |
 | pg_dump (Alpine package `postgresql18-client`) | PostgreSQL | Exports the database (backups); runs as a separate process; `/licenses/postgresql` |
+| su-exec (Alpine package `su-exec`) | MIT | Lets the entrypoint switch from root to the user `PUID` and the group `PGID`; `/licenses/su-exec` |
 | tzdata (Alpine package `tzdata`) | Public domain | Time zones for `TZ` |
 | Intel Media Driver for VA-API (Alpine package `intel-media-driver`, amd64 only) | MIT AND BSD-3-Clause | Hardware transcoding with Intel Quick Sync; `/licenses/intel-media-driver` |
 | Intel VA-API driver for older GPUs (Alpine package `libva-intel-driver`, amd64 only) | MIT | Hardware transcoding on older Intel GPUs; `/licenses/libva-intel-driver` |

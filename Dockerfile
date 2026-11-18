@@ -95,13 +95,14 @@ ENV DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=false
 # to WebP with the libwebp encoder of the Alpine ffmpeg package.
 # pg_dump exports the database into /data/backups, every day and before migrations. Its major
 # version must match the PostgreSQL server of docker-compose.yml (postgres:18); the build fails if
-# the package delivers another one. tzdata lets TZ set the time zone of the daily backup.
-RUN apk add --no-cache ffmpeg icu-data-full icu-libs postgresql18-client tzdata \
+# the package delivers another one. tzdata lets TZ set the time zone of the daily backup. su-exec
+# (MIT) lets the entrypoint switch from root to the user PUID and the group PGID.
+RUN apk add --no-cache ffmpeg icu-data-full icu-libs postgresql18-client su-exec tzdata \
     && pg_dump --version | grep -q '^pg_dump (PostgreSQL) 18\.' \
-    && mkdir -p /licenses/ffmpeg /licenses/icu /licenses/phosphor-icons /licenses/postgresql /licenses/taglibsharp /licenses/wavemp /data /media \
+    && mkdir -p /licenses/ffmpeg /licenses/icu /licenses/phosphor-icons /licenses/postgresql /licenses/su-exec /licenses/taglibsharp /licenses/wavemp /data /media \
     && ffmpeg -hide_banner -version > /licenses/ffmpeg/VERSION \
     && pg_dump --version > /licenses/postgresql/VERSION \
-    && chown "$APP_UID" /data
+    && chown "$APP_UID:$APP_UID" /data
 
 # Hardware transcoding with Intel Quick Sync (amd64 only): the VA-API drivers (iHD for current
 # GPUs, i965 for older ones) and the oneVPL runtime for h264_qsv. They are only used when a render
@@ -117,6 +118,7 @@ COPY THIRD-PARTY-NOTICES.md /licenses/THIRD-PARTY-NOTICES.md
 COPY assets/licenses/ffmpeg/ /licenses/ffmpeg/
 COPY assets/licenses/icu/ /licenses/icu/
 COPY assets/licenses/postgresql/ /licenses/postgresql/
+COPY assets/licenses/su-exec/ /licenses/su-exec/
 COPY assets/licenses/taglibsharp/ /licenses/taglibsharp/
 COPY assets/licenses/intel-media-driver/ /licenses/intel-media-driver/
 COPY assets/licenses/libva-intel-driver/ /licenses/libva-intel-driver/
@@ -131,6 +133,13 @@ COPY --from=web /src/source/WaveMP.Web/node_modules/butterchurn-presets/LICENSE 
 WORKDIR /app
 COPY --from=build /app ./
 
-USER $APP_UID
+# The image starts as root, so that it also works where the folders of the mounts are created as
+# root (Unraid, ZimaOS and CasaOS). The entrypoint hands the top level of the data folder to the
+# user PUID and the group PGID (1654, the user app of the base image, by default) and runs WaveMP
+# as this user with su-exec. Started as another user (user: in compose, --user), it runs WaveMP as
+# that user unchanged.
+COPY --chmod=0755 source/WaveMP.Service/docker-entrypoint.sh /usr/local/bin/wavemp-entrypoint
+ENV PUID=1654 \
+    PGID=1654
 EXPOSE 8080
-ENTRYPOINT ["dotnet", "WaveMP.Service.dll"]
+ENTRYPOINT ["wavemp-entrypoint", "dotnet", "WaveMP.Service.dll"]

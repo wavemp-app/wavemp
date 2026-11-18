@@ -209,11 +209,13 @@ jobs:
       - name: Test the template check
         run: node --test .github/scripts/check-deploy.test.mjs
 
-      # AppID and TZ are set by CasaOS and ZimaOS when they install the app.
+      # AppID, TZ, PUID and PGID are set by CasaOS and ZimaOS when they install the app.
       - name: Validate the compose file of ZimaOS and CasaOS
         env:
           AppID: wavemp
           TZ: Etc/UTC
+          PUID: '1000'
+          PGID: '1000'
         run: docker compose -f deploy/casaos/WaveMP/docker-compose.yml config --quiet
 
   e2e:
@@ -243,6 +245,10 @@ jobs:
           tags: wavemp:dev
           cache-from: type=gha,scope=wavemp-image
           cache-to: type=gha,mode=max,scope=wavemp-image
+
+      # The entrypoint: user and groups after the start as root, with PUID and PGID and with --user.
+      - name: Test the user of the container
+        run: bash tests/WaveMP.E2E/scripts/test-image-user.sh wavemp:dev
 
       # The E2E tests check that the service and the web app report exactly this version.
       - name: Expected version
