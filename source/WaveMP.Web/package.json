@@ -20,7 +20,8 @@
     "icons:sync": "node scripts/sync-icons.ts",
     "format:check": "prettier --check --experimental-cli .",
     "logo:export": "node scripts/export-logo.ts",
-    "avatars:export": "node scripts/export-avatars.ts"
+    "avatars:export": "node scripts/export-avatars.ts",
+    "theme:preview": "node scripts/theme-preview.ts"
   },
   "dependencies": {
     "@microsoft/kiota-abstractions": "^1.0.0-preview.112",
