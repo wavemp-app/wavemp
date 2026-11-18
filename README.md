@@ -148,7 +148,7 @@ The running version is shown under **Settings** and reported by `GET /api/v1/hea
 | `DB_PASSWORD` | Database password, used by both containers | *(required)* |
 | `ADMIN_PIN` | PIN of the built-in admin profile, 4 to 8 digits. Set at every start and cannot be changed in the app while the variable is set; see [Profiles and PINs](#profiles-and-pins) | *(none)* |
 | `MEDIA_PATH` | Media folder inside the container; only change it if you mount your media elsewhere | `/media` |
-| `DATA_PATH` | Data folder inside the container (cache, covers of playlists, pictures of the profiles and the exports of the database); only change it if you mount the volume elsewhere | `/data` |
+| `DATA_PATH` | Data folder inside the container (cache, covers of playlists, pictures of the profiles, keys and the exports of the database); only change it if you mount the volume elsewhere | `/data` |
 | `TZ` | Time zone of the server, for example `Europe/Berlin`; the daily backup runs at its time of day in this zone | `UTC` |
 | `PUID` | User id that WaveMP runs as; see [User and permissions](#user-and-permissions) | `1654` |
 | `PGID` | Group id that WaveMP runs as | `1654` |
@@ -218,6 +218,8 @@ WaveMP keeps everything that is not in the database in the volume mounted at `/d
 
 The folder `playlists` holds the pictures uploaded as covers of playlists, and the folder `avatars` the pictures uploaded for profiles, both as square WebP files in the three sizes; the uploaded originals are not kept. Unlike the cache, they belong in your backup.
 
+The folder `keys` holds the keys WaveMP protects data with that must survive a restart. Only the user that runs WaveMP may open it, because the keys are stored unencrypted; WaveMP creates it on the first start and needs no home folder of its user for it. Keep it in your backup together with the rest of `/data`.
+
 The cache also holds transcoded media in its folder `transcodes`: the segments of the HLS streams of songs and videos your browser cannot play. A part that was transcoded once comes from the cache the next time; like the covers, the segments count towards the size limit and are removed when they were used least recently.
 
 Everything in the cache is created again when it is needed, so it does not have to be backed up. If `/data` cannot be written, WaveMP still works, shows the covers unscaled and skips songs and videos that would need transcoding; the cache page, the transcoding page and the log tell you so.
@@ -228,7 +230,7 @@ WaveMP exports its database every day at 03:00 into the folder `backups` of the 
 
 The exports stay on the same disk as the database, so copy them elsewhere with the backup tool of your choice. Back up:
 
-- the volume `wavemp-data` (mounted at `/data`): the exports of the database in `backups` and the covers of playlists in `playlists`; its folder `cache` can be left out,
+- the volume `wavemp-data` (mounted at `/data`): the exports of the database in `backups`, the covers of playlists in `playlists`, the pictures of the profiles in `avatars` and the keys in `keys`; its folder `cache` can be left out,
 - your media folder, which WaveMP does not back up.
 
 The database volume `wavemp-db` itself does not need to be copied: the exports contain everything in it, while a copy of the files of a running database may be inconsistent.
