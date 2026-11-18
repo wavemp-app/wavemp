@@ -12,11 +12,12 @@ using WaveMP.Data.Repositories;
 namespace WaveMP.Core.Lyrics.Jobs;
 
 /// <summary>
-/// Goes through the tracks that were never looked up and have no lyrics file, oldest first, in batches, and downloads
-/// their lyrics one after another (the requests are spaced by the request interval). If LRCLIB refuses requests or
-/// cannot be reached, the track is tried again after a wait (as long as LRCLIB asks, within the limits of the
-/// options); after the last attempt the run fails, and the next run goes on where it stopped. Switching the download
-/// off stops the run after the current track.
+/// Goes through the tracks without lyrics file that were never looked up, then those whose lookup found no lyrics
+/// longer than <see cref="LyricsOptions.LookUpAgainAfter"/> ago, oldest first, in batches, and downloads their lyrics
+/// one after another (the requests are spaced by the request interval). If LRCLIB refuses requests or cannot be
+/// reached, the track is tried again after a wait (as long as LRCLIB asks, within the limits of the options); after
+/// the last attempt the run fails, and the next run goes on where it stopped. Switching the download off stops the run
+/// after the current track.
 /// </summary>
 internal sealed class LyricsDownloadRunner(
     ILyricsRepository repository,
@@ -40,12 +41,14 @@ internal sealed class LyricsDownloadRunner(
                 "The download of lyrics is switched off in the library settings.");
         }
 
+        DateTimeOffset? lookUpAgainBefore =
+            LookUpAgainBefore(timeProvider.GetUtcNow(), options.Value.LookUpAgainAfter);
         HashSet<Guid> handled = [];
         Counts counts = new();
         while (true)
         {
             IReadOnlyList<LyricsTrackRow> batch =
-                await repository.ListTracksToLookUpAsync(BatchSize, handled, cancellationToken);
+                await repository.ListTracksToLookUpAsync(BatchSize, handled, lookUpAgainBefore, cancellationToken);
             if (batch.Count == 0)
             {
                 break;
@@ -72,6 +75,20 @@ internal sealed class LyricsDownloadRunner(
             counts.NotFound,
             counts.Skipped);
         return counts.ToResult(stopped: false);
+    }
+
+    /// <summary>
+    /// Tracks whose lookup found no lyrics before this time are looked up again; <c>null</c> if no track is looked up
+    /// again (the wait is zero or less, or longer than the time since the earliest possible time).
+    /// </summary>
+    internal static DateTimeOffset? LookUpAgainBefore(DateTimeOffset now, TimeSpan lookUpAgainAfter)
+    {
+        if (lookUpAgainAfter <= TimeSpan.Zero || lookUpAgainAfter > now - DateTimeOffset.MinValue)
+        {
+            return null;
+        }
+
+        return now - lookUpAgainAfter;
     }
 
     /// <summary>

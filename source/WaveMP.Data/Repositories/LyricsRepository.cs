@@ -15,14 +15,31 @@ internal sealed class LyricsRepository(WaveMpDbContext dbContext) : ILyricsRepos
     public async Task<IReadOnlyList<LyricsTrackRow>> ListTracksToLookUpAsync(
         int limit,
         IReadOnlyCollection<Guid> excluded,
+        DateTimeOffset? lookUpAgainBefore,
         CancellationToken cancellationToken = default)
     {
         Guid[] skipped = [.. excluded];
-        IQueryable<Track> tracks = dbContext.Tracks.AsNoTracking()
-            .Where(track => !dbContext.LyricsDownloads.Any(download => download.TrackId == track.Id))
+        IQueryable<Track> candidates = dbContext.Tracks.AsNoTracking();
+        if (lookUpAgainBefore is { } before)
+        {
+            candidates = candidates.Where(track =>
+                !dbContext.LyricsDownloads.Any(download => download.TrackId == track.Id)
+                || dbContext.LyricsDownloads.Any(download => download.TrackId == track.Id
+                    && (download.Status == LyricsDownloadStatus.NotFound
+                        || download.Status == LyricsDownloadStatus.Instrumental)
+                    && download.CheckedAt < before));
+        }
+        else
+        {
+            candidates = candidates.Where(track =>
+                !dbContext.LyricsDownloads.Any(download => download.TrackId == track.Id));
+        }
+
+        IQueryable<Track> tracks = candidates
             .Where(track => !track.Files.Any(file => file.Kind == MediaFileKind.Lyrics))
             .Where(track => !skipped.Contains(track.Id))
-            .OrderBy(track => track.FirstSeenAt)
+            .OrderBy(track => dbContext.LyricsDownloads.Any(download => download.TrackId == track.Id))
+            .ThenBy(track => track.FirstSeenAt)
             .ThenBy(track => track.Id)
             .Take(limit);
         return await Rows(tracks).ToListAsync(cancellationToken);

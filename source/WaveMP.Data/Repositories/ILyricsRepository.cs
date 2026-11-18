@@ -15,14 +15,19 @@ public interface ILyricsRepository
     Task<LyricsTrackRow?> FindTrackAsync(Guid trackId, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Tracks that were never looked up online and have no lyrics file, the ones found first first.
+    /// Tracks without lyrics file to look up online: first those that were never looked up, then those whose last
+    /// lookup found no lyrics (not found or instrumental) before <paramref name="lookUpAgainBefore"/>; within both the
+    /// ones found first first.
     /// </summary>
     /// <param name="limit">Maximum number of tracks.</param>
     /// <param name="excluded">Tracks to leave out, e.g. those a running job already handled.</param>
+    /// <param name="lookUpAgainBefore">Tracks whose lookup found no lyrics before this time are looked up again;
+    /// <c>null</c> looks up no track again.</param>
     /// <param name="cancellationToken">Aborts the query.</param>
     Task<IReadOnlyList<LyricsTrackRow>> ListTracksToLookUpAsync(
         int limit,
         IReadOnlyCollection<Guid> excluded,
+        DateTimeOffset? lookUpAgainBefore,
         CancellationToken cancellationToken = default);
 
     /// <summary>

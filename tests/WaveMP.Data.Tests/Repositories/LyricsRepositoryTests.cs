@@ -93,11 +93,45 @@ public class LyricsRepositoryTests : LibraryDatabaseTests
         await repository.SaveDownloadAsync(
             Download(lookedUp, LyricsDownloadStatus.NotFound, null, LibrarySeed.DefaultTime));
 
-        IReadOnlyList<LyricsTrackRow> rows = await repository.ListTracksToLookUpAsync(10, [excluded.Id]);
-        IReadOnlyList<LyricsTrackRow> first = await repository.ListTracksToLookUpAsync(1, [excluded.Id]);
+        IReadOnlyList<LyricsTrackRow> rows = await repository.ListTracksToLookUpAsync(10, [excluded.Id], null);
+        IReadOnlyList<LyricsTrackRow> first = await repository.ListTracksToLookUpAsync(1, [excluded.Id], null);
 
         rows.Select(row => row.TrackId).Should().Equal(older.Id, newer.Id);
         first.Select(row => row.TrackId).Should().Equal(older.Id);
+    }
+
+    [Test]
+    public async Task ListTracksToLookUpAsync_LookUpAgainBefore_AddsTracksWhoseLookupFoundNothingBeforeAfterTheNewOnes()
+    {
+        DateTimeOffset now = LibrarySeed.DefaultTime.AddDays(100);
+        DateTimeOffset longAgo = now.AddDays(-40);
+        LibrarySeed seed = new();
+        Track fresh = seed.Track("Fresh", firstSeenAt: LibrarySeed.DefaultTime.AddDays(5));
+        Track notFound = seed.Track("Not found", firstSeenAt: LibrarySeed.DefaultTime.AddDays(1));
+        Track instrumental = seed.Track("Instrumental", firstSeenAt: LibrarySeed.DefaultTime);
+        Track recent = seed.Track("Recent");
+        Track saved = seed.Track("Saved");
+        Track notNeeded = seed.Track("Not needed");
+        Track withFile = seed.Track("With file");
+        seed.File($"{withFile.BaseName}.lrc", MediaFileKind.Lyrics, withFile, isPrimary: false);
+        Track excluded = seed.Track("Excluded");
+        await SaveAsync(seed);
+        LyricsRepository repository = new(CreateDbContext());
+        await repository.SaveDownloadAsync(Download(notFound, LyricsDownloadStatus.NotFound, null, longAgo));
+        await repository.SaveDownloadAsync(Download(instrumental, LyricsDownloadStatus.Instrumental, null, longAgo));
+        await repository.SaveDownloadAsync(Download(recent, LyricsDownloadStatus.NotFound, null, now.AddDays(-10)));
+        await repository.SaveDownloadAsync(Download(saved, LyricsDownloadStatus.SavedToDatabase, "Line", longAgo));
+        await repository.SaveDownloadAsync(Download(notNeeded, LyricsDownloadStatus.NotNeeded, null, longAgo));
+        await repository.SaveDownloadAsync(Download(withFile, LyricsDownloadStatus.NotFound, null, longAgo));
+        await repository.SaveDownloadAsync(Download(excluded, LyricsDownloadStatus.NotFound, null, longAgo));
+
+        IReadOnlyList<LyricsTrackRow> rows =
+            await repository.ListTracksToLookUpAsync(10, [excluded.Id], now.AddDays(-30));
+        IReadOnlyList<LyricsTrackRow> withoutAgain = await repository.ListTracksToLookUpAsync(10, [excluded.Id], null);
+
+        rows.Select(row => row.TrackId).Should().Equal(fresh.Id, instrumental.Id, notFound.Id);
+        rows[2].Download.Should().Be(new LyricsDownloadRow(LyricsDownloadStatus.NotFound, null, longAgo));
+        withoutAgain.Select(row => row.TrackId).Should().Equal(fresh.Id);
     }
 
     [Test]

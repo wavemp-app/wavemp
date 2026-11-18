@@ -6,7 +6,8 @@ namespace WaveMP.Core.Lyrics.Jobs;
 public interface ILyricsDownloadRunner
 {
     /// <summary>
-    /// Looks up the lyrics of all tracks that were never looked up and have no lyrics file.
+    /// Looks up the lyrics of all tracks without lyrics file that were never looked up, or whose lookup found no lyrics
+    /// a while ago.
     /// </summary>
     /// <exception cref="WaveMP.Core.Jobs.Runs.JobFailedException">The download is switched off, or LRCLIB cannot be
     /// reached or keeps refusing requests.</exception>

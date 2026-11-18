@@ -25,22 +25,16 @@ public class LyricsDownloadRunnerTests
     public void SetUp()
     {
         _repository = Substitute.For<ILyricsRepository>();
-        _repository.ListTracksToLookUpAsync(Arg.Any<int>(), Arg.Any<IReadOnlyCollection<Guid>>(), Arg.Any<CancellationToken>())
+        _repository.ListTracksToLookUpAsync(
+                Arg.Any<int>(),
+                Arg.Any<IReadOnlyCollection<Guid>>(),
+                Arg.Any<DateTimeOffset?>(),
+                Arg.Any<CancellationToken>())
             .Returns([]);
         _downloader = Substitute.For<ILyricsDownloader>();
         _settings = Substitute.For<ISettingsSnapshot<LibrarySettings>>();
         _settings.Current.Returns(new LibrarySettings { DownloadLyrics = true });
-        _runner = new LyricsDownloadRunner(
-            _repository,
-            _downloader,
-            _settings,
-            Microsoft.Extensions.Options.Options.Create(new LyricsOptions
-            {
-                MaxAttempts = 3,
-                RetryDelay = TimeSpan.Zero,
-            }),
-            TimeProvider.System,
-            NullLogger<LyricsDownloadRunner>.Instance);
+        _runner = Runner(new LyricsOptions { MaxAttempts = 3, RetryDelay = TimeSpan.Zero }, TimeProvider.System);
     }
 
     [Test]
@@ -75,6 +69,7 @@ public class LyricsDownloadRunnerTests
         await _repository.Received().ListTracksToLookUpAsync(
             LyricsDownloadRunner.BatchSize,
             Arg.Is<IReadOnlyCollection<Guid>>(excluded => excluded.Count == 4),
+            Arg.Any<DateTimeOffset?>(),
             Arg.Any<CancellationToken>());
     }
 
@@ -126,6 +121,89 @@ public class LyricsDownloadRunnerTests
         await _downloader.DidNotReceive().DownloadAsync(second, Arg.Any<LyricsDownloadMode>(), Arg.Any<CancellationToken>());
     }
 
+    [Test]
+    public async Task RunAsync_LookUpAgainAfter_AsksForTracksWhoseLookupFoundNothingBeforeThen()
+    {
+        var now = new DateTimeOffset(2026, 11, 18, 12, 0, 0, TimeSpan.Zero);
+        TimeProvider clock = Substitute.For<TimeProvider>();
+        clock.GetUtcNow().Returns(now);
+        LyricsDownloadRunner runner = Runner(new LyricsOptions { LookUpAgainAfter = TimeSpan.FromDays(30) }, clock);
+
+        await runner.RunAsync();
+
+        await _repository.Received(1).ListTracksToLookUpAsync(
+            LyricsDownloadRunner.BatchSize,
+            Arg.Any<IReadOnlyCollection<Guid>>(),
+            now.AddDays(-30),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Test]
+    public async Task RunAsync_LookUpAgainSwitchedOff_AsksForNewTracksOnly()
+    {
+        LyricsDownloadRunner runner = Runner(new LyricsOptions { LookUpAgainAfter = TimeSpan.Zero }, TimeProvider.System);
+
+        await runner.RunAsync();
+
+        await _repository.Received(1).ListTracksToLookUpAsync(
+            LyricsDownloadRunner.BatchSize,
+            Arg.Any<IReadOnlyCollection<Guid>>(),
+            null,
+            Arg.Any<CancellationToken>());
+    }
+
+    [Test]
+    public async Task RunAsync_TrackLookedUpAgain_IsDownloadedOnceAndCounted()
+    {
+        var id = Guid.NewGuid();
+        IReadOnlyList<LyricsTrackRow> again =
+        [
+            Row(id) with
+            {
+                Download = new LyricsDownloadRow(LyricsDownloadStatus.NotFound, null, DateTimeOffset.UnixEpoch),
+            },
+        ];
+        IReadOnlyList<LyricsTrackRow> none = [];
+        _repository.ListTracksToLookUpAsync(
+                Arg.Any<int>(),
+                Arg.Any<IReadOnlyCollection<Guid>>(),
+                Arg.Any<DateTimeOffset?>(),
+                Arg.Any<CancellationToken>())
+            .Returns(again, none);
+        Outcome(id, LyricsDownloadOutcome.SavedToFile);
+
+        LyricsDownloadJobResult result = await _runner.RunAsync();
+
+        result.Should().Be(new LyricsDownloadJobResult(1, 1, 0, 0, false));
+        await _downloader.Received(1).DownloadAsync(id, LyricsDownloadMode.Automatic, Arg.Any<CancellationToken>());
+    }
+
+    [TestCase(30, "2026-10-19T12:00:00Z")]
+    [TestCase(1, "2026-11-17T12:00:00Z")]
+    public void LookUpAgainBefore_Wait_IsTheTimeThatLongAgo(int days, string expected)
+    {
+        var now = new DateTimeOffset(2026, 11, 18, 12, 0, 0, TimeSpan.Zero);
+
+        LyricsDownloadRunner.LookUpAgainBefore(now, TimeSpan.FromDays(days))
+            .Should().Be(DateTimeOffset.Parse(expected, System.Globalization.CultureInfo.InvariantCulture));
+    }
+
+    [Test]
+    public void LookUpAgainBefore_NoOrEndlessWait_IsNull()
+    {
+        var now = new DateTimeOffset(2026, 11, 18, 12, 0, 0, TimeSpan.Zero);
+
+        LyricsDownloadRunner.LookUpAgainBefore(now, TimeSpan.Zero).Should().BeNull();
+        LyricsDownloadRunner.LookUpAgainBefore(now, TimeSpan.FromDays(-1)).Should().BeNull();
+        LyricsDownloadRunner.LookUpAgainBefore(now, TimeSpan.MaxValue).Should().BeNull();
+    }
+
+    [Test]
+    public void LookUpAgainAfter_Default_IsThirtyDays()
+    {
+        new LyricsOptions().LookUpAgainAfter.Should().Be(TimeSpan.FromDays(30));
+    }
+
     [TestCase(null, 30)]
     [TestCase(10, 10)]
     [TestCase(0, 30)]
@@ -141,8 +219,23 @@ public class LyricsDownloadRunnerTests
     private void Batches(params Guid[][] batches)
     {
         IReadOnlyList<LyricsTrackRow>[] rows = [.. batches.Select(batch => (IReadOnlyList<LyricsTrackRow>)[.. batch.Select(Row)])];
-        _repository.ListTracksToLookUpAsync(Arg.Any<int>(), Arg.Any<IReadOnlyCollection<Guid>>(), Arg.Any<CancellationToken>())
+        _repository.ListTracksToLookUpAsync(
+                Arg.Any<int>(),
+                Arg.Any<IReadOnlyCollection<Guid>>(),
+                Arg.Any<DateTimeOffset?>(),
+                Arg.Any<CancellationToken>())
             .Returns(rows[0], [.. rows.Skip(1), []]);
+    }
+
+    private LyricsDownloadRunner Runner(LyricsOptions options, TimeProvider timeProvider)
+    {
+        return new LyricsDownloadRunner(
+            _repository,
+            _downloader,
+            _settings,
+            Microsoft.Extensions.Options.Options.Create(options),
+            timeProvider,
+            NullLogger<LyricsDownloadRunner>.Instance);
     }
 
     private void Outcome(Guid id, LyricsDownloadOutcome outcome)

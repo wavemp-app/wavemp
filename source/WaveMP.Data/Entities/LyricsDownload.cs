@@ -2,8 +2,9 @@ namespace WaveMP.Data.Entities;
 
 /// <summary>
 /// The result of looking up the lyrics of a track in the online lyrics service, one per track. The download job skips
-/// tracks with a result, so every track is looked up once; an admin can look it up again. Lyrics that could not be
-/// saved as <c>.lrc</c> file next to the track (folder not writable) are kept here. Removed with its track.
+/// tracks with a result, except those whose lookup found no lyrics a while ago (not found or instrumental), which it
+/// looks up again; an admin can look up a track again at any time. Lyrics that could not be saved as <c>.lrc</c> file
+/// next to the track (folder not writable) are kept here. Removed with its track.
 /// </summary>
 public class LyricsDownload
 {

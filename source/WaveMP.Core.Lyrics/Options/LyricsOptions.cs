@@ -40,6 +40,13 @@ public sealed class LyricsOptions
     public TimeSpan MaxRetryDelay { get; set; } = TimeSpan.FromMinutes(5);
 
     /// <summary>
+    /// How long the download job waits before it looks up a track again whose lookup found no lyrics (LRCLIB had none
+    /// or listed the track as instrumental), because LRCLIB grows over time. Zero or less never looks such a track up
+    /// again; an admin can still download its lyrics at any time.
+    /// </summary>
+    public TimeSpan LookUpAgainAfter { get; set; } = TimeSpan.FromDays(30);
+
+    /// <summary>
     /// Largest lyrics file that is read, in bytes; larger files are skipped.
     /// </summary>
     public long MaxFileBytes { get; set; } = 1024 * 1024;
