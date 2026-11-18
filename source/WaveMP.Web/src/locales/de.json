@@ -524,6 +524,51 @@
       "confirm": "Entfernen"
     }
   },
+  "scrobbling": {
+    "title": "Scrobbling",
+    "hint": "Meldet die Songs, die dieses Profil hört, an Last.fm oder ListenBrainz: den aktuellen Song als „Läuft gerade“ und jeden Song nach der Hälfte oder spätestens nach 4 Minuten. Songs unter 30 Sekunden werden nicht gemeldet. Ist ein Dienst nicht erreichbar, sendet WaveMP die Songs später.",
+    "list": "Scrobbling-Dienste",
+    "services": {
+      "lastFm": "Last.fm",
+      "listenBrainz": "ListenBrainz"
+    },
+    "states": {
+      "connected": "Verbunden",
+      "notConnected": "Nicht verbunden",
+      "authorizationFailed": "Zugriff entzogen",
+      "unavailable": "Auf dem Server nicht eingerichtet"
+    },
+    "account": "als {name}",
+    "lastScrobbled": "Zuletzt gesendet {time}",
+    "queued": "Warten auf das Senden: {count}",
+    "authorizationFailedHint": "Der Dienst akzeptiert den Zugriff von WaveMP nicht mehr. Verbinde ihn erneut; wartende Songs werden danach gesendet.",
+    "unavailableHint": "Last.fm braucht ein API-Konto auf dem Server (LASTFM_API_KEY und LASTFM_SHARED_SECRET). Frag den Administrator dieses Servers.",
+    "connect": "{service} verbinden",
+    "reconnect": "{service} erneut verbinden",
+    "disconnect": "{service} trennen",
+    "connected": "{service} ist verbunden.",
+    "disconnected": "{service} wurde getrennt.",
+    "tokenRequired": "Bitte gib deinen Token ein.",
+    "loadError": "Die Scrobbling-Dienste konnten nicht geladen werden.",
+    "lastFmTitle": "Last.fm verbinden",
+    "lastFmConnecting": "Last.fm wird verbunden ...",
+    "backToSettings": "Zurück zu den Einstellungen",
+    "tokenDialog": {
+      "title": "ListenBrainz verbinden",
+      "hint": "Kopiere den User Token aus den Einstellungen deines ListenBrainz-Kontos.",
+      "openSettings": "ListenBrainz-Einstellungen öffnen",
+      "token": "User Token",
+      "connect": "Verbinden"
+    },
+    "errors": {
+      "tokenInvalid": "Der Dienst hat den Token nicht akzeptiert. Bitte prüfe ihn und versuche es erneut.",
+      "serviceUnavailable": "Der Dienst ist gerade nicht erreichbar. Bitte versuche es später erneut.",
+      "notConfigured": "Last.fm ist auf diesem Server nicht eingerichtet.",
+      "connectFailed": "Der Dienst konnte nicht verbunden werden.",
+      "disconnectFailed": "Der Dienst konnte nicht getrennt werden.",
+      "lastFmCanceled": "Last.fm hat den Zugriff nicht erlaubt. Es wurde nichts verbunden."
+    }
+  },
   "avatars": {
     "title": "Profilbild",
     "mode": "Art des Bildes",

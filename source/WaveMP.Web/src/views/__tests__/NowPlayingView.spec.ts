@@ -13,6 +13,7 @@ vi.mock('@/player/api', () => ({
     getPlayback: vi.fn(),
     getVideoPlayback: vi.fn(),
     recordPlay: vi.fn(),
+    reportNowPlaying: vi.fn(),
 }))
 
 function track(id: string): Track {

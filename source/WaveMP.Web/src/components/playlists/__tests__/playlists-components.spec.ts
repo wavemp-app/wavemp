@@ -28,7 +28,11 @@ const library = vi.hoisted(() => ({
 
 vi.mock('@/playlists/api', () => api)
 vi.mock('@/library/api', () => library)
-vi.mock('@/player/api', () => ({ getPlayback: vi.fn(), recordPlay: vi.fn() }))
+vi.mock('@/player/api', () => ({
+    getPlayback: vi.fn(),
+    recordPlay: vi.fn(),
+    reportNowPlaying: vi.fn(),
+}))
 
 const AddToPlaylistDialog = (await import('../AddToPlaylistDialog.vue')).default
 const PlaylistCover = (await import('../PlaylistCover.vue')).default

@@ -279,6 +279,14 @@ export const parts = [
     'backup-name',
     'backup-meta',
     'backup-actions',
+
+    // Scrobbling services of the settings page
+    'scrobble-list',
+    'scrobble-item',
+    'scrobble-info',
+    'scrobble-name',
+    'scrobble-meta',
+    'scrobble-actions',
     'file-selection-filters',
     'file-selection-list',
     'file-selection-item',

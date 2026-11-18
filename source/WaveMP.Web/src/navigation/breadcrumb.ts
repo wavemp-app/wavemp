@@ -118,6 +118,10 @@ export function buildBreadcrumb(route: RouteInfo, detailTitle?: string | null): 
             crumbs.push({ id: 'settings', labelKey: 'settings.title', to: { name: 'settings' } })
             crumbs.push({ id: 'settings-pin', labelKey: 'pinSettings.title' })
             break
+        case 'settings-scrobbling-lastfm':
+            crumbs.push({ id: 'settings', labelKey: 'settings.title', to: { name: 'settings' } })
+            crumbs.push({ id: 'settings-scrobbling-lastfm', labelKey: 'scrobbling.lastFmTitle' })
+            break
         case 'admin-track-files':
             crumbs.push({ id: 'admin', labelKey: 'admin.title', to: { name: 'admin' } })
             crumbs.push({

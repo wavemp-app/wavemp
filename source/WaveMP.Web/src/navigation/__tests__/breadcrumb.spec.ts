@@ -39,6 +39,9 @@ describe('buildBreadcrumb', () => {
             'settings',
             'settings-pin',
         ])
+        expect(
+            buildBreadcrumb({ name: 'settings-scrobbling-lastfm', params: {} }).map((c) => c.id),
+        ).toEqual(['music', 'settings', 'settings-scrobbling-lastfm'])
         expect(buildBreadcrumb({ name: 'not-found', params: {} }).map((c) => c.id)).toEqual([
             'music',
             'not-found',

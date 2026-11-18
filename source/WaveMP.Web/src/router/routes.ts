@@ -1,6 +1,7 @@
 import type { RouteRecordRaw } from 'vue-router'
 import EqualizerView from '@/views/EqualizerView.vue'
 import HomeView from '@/views/HomeView.vue'
+import LastFmCallbackView from '@/views/LastFmCallbackView.vue'
 import NotFoundView from '@/views/NotFoundView.vue'
 import NowPlayingView from '@/views/NowPlayingView.vue'
 import PinSettingsView from '@/views/PinSettingsView.vue'
@@ -169,6 +170,11 @@ export function createRoutes(extra: readonly RouteRecordRaw[] = []): RouteRecord
         },
         { path: '/settings', name: 'settings', component: SettingsView },
         { path: '/settings/pin', name: 'settings-pin', component: PinSettingsView },
+        {
+            path: '/settings/scrobbling/last-fm',
+            name: 'settings-scrobbling-lastfm',
+            component: LastFmCallbackView,
+        },
         { path: '/admin', name: 'admin', redirect: { name: 'admin-library' } },
         {
             path: '/admin/library',

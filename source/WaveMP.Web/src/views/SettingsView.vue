@@ -10,6 +10,7 @@ import type { SegmentOption } from '@/components/base/BaseSegmentedControl.vue'
 import BaseSelect, { type SelectOption } from '@/components/base/BaseSelect.vue'
 import AvatarDialog, { type AvatarDialogProfile } from '@/components/profiles/AvatarDialog.vue'
 import ProfileSummary from '@/components/profiles/ProfileSummary.vue'
+import ScrobblingServices from '@/components/profiles/ScrobblingServices.vue'
 import {
     ReplayGainModeObject,
     VisualizationQualityObject,
@@ -37,6 +38,7 @@ const format = useFormat()
 const aboutTitleId = useId()
 const avatarTitleId = useId()
 const pinTitleId = useId()
+const scrobblingTitleId = useId()
 
 const avatarOpen = ref(false)
 
@@ -496,6 +498,11 @@ async function changeSleepTimerFade(value: string): Promise<void> {
                     t('settings.openPin')
                 }}</BaseLink>
             </p>
+        </section>
+        <section data-part="section" data-item="scrobbling" :aria-labelledby="scrobblingTitleId">
+            <h2 :id="scrobblingTitleId" data-part="section-title">{{ t('scrobbling.title') }}</h2>
+            <p data-part="form-note">{{ t('scrobbling.hint') }}</p>
+            <ScrobblingServices />
         </section>
         <section data-part="section" data-item="about" :aria-labelledby="aboutTitleId">
             <h2 :id="aboutTitleId" data-part="section-title">{{ t('settings.about') }}</h2>

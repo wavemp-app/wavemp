@@ -88,4 +88,39 @@ describe('PlayHistoryTracker', () => {
 
         expect(report).not.toHaveBeenCalled()
     })
+
+    it('announces a play once when it starts to advance', () => {
+        const announce = vi.fn().mockResolvedValue(undefined)
+        const tracker = new PlayHistoryTracker(vi.fn(), () => startedAt, announce)
+
+        tracker.start('t1')
+        tracker.progress(0, 60)
+        expect(announce).not.toHaveBeenCalled()
+        listen(tracker, 10, 60)
+        tracker.start('t2')
+        listen(tracker, 5, 60)
+
+        expect(announce.mock.calls).toEqual([['t1'], ['t2']])
+    })
+
+    it('ignores announcements that fail', async () => {
+        const report = vi.fn().mockResolvedValue(undefined)
+        const rejecting = vi.fn().mockRejectedValue(new Error('offline'))
+        const throwing = vi.fn(() => {
+            throw new Error('not mocked')
+        })
+        const first = new PlayHistoryTracker(report, () => startedAt, rejecting)
+        const second = new PlayHistoryTracker(report, () => startedAt, throwing)
+
+        first.start('t1')
+        second.start('t1')
+        listen(first, 59, 60)
+        listen(second, 59, 60)
+        await first.flush()
+        await second.flush()
+
+        expect(rejecting).toHaveBeenCalledOnce()
+        expect(throwing).toHaveBeenCalledOnce()
+        expect(report).toHaveBeenCalledTimes(2)
+    })
 })

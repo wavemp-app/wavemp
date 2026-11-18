@@ -44,6 +44,14 @@ export function getVideoPlayback(
     })
 }
 
+/**
+ * Tells the scrobbling services of the current profile which track is playing now. The server
+ * answers 204 even if no service is connected.
+ */
+export function reportNowPlaying(trackId: string): Promise<void> {
+    return apiClient.api.v1.me.nowPlaying.put({ trackId })
+}
+
 /** Records a play in the history of the current profile. */
 export function recordPlay(trackId: string, playedAt: Date): Promise<PlayHistoryEntry | undefined> {
     return apiClient.api.v1.me.history.post({ trackId, playedAt })

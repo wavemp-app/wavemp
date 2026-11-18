@@ -1,6 +1,8 @@
 // Counts how long the current track is listened to and reports the play to the history once it
 // counts. Reports that fail (offline, server unavailable) are kept while the page is open and sent
-// again with the time the play started, until the server accepts or rejects them.
+// again with the time the play started, until the server accepts or rejects them. When a play starts
+// to advance, the tracker announces the track once (Now Playing of the scrobbling services); that
+// announcement is best effort and never sent again.
 
 import { statusOf } from '@/api/problems'
 import { historyThreshold, listenedBetween } from './scheduling'
@@ -12,6 +14,8 @@ export interface PendingPlay {
 
 export type ReportPlay = (trackId: string, playedAt: Date) => Promise<unknown>
 
+export type AnnouncePlay = (trackId: string) => Promise<unknown>
+
 /** Highest number of failed reports kept; the oldest go first. */
 export const maxPendingPlays = 200
 
@@ -21,12 +25,14 @@ export class PlayHistoryTracker {
     private listened = 0
     private lastPosition = 0
     private reported = false
+    private announced = false
     private readonly pending: PendingPlay[] = []
     private flushing: Promise<void> | null = null
 
     constructor(
         private readonly report: ReportPlay,
         private readonly now: () => Date = () => new Date(),
+        private readonly announce?: AnnouncePlay,
     ) {}
 
     /** A new play of a track starts at the position (usually 0). */
@@ -36,6 +42,7 @@ export class PlayHistoryTracker {
         this.listened = 0
         this.lastPosition = position
         this.reported = false
+        this.announced = false
     }
 
     /** No track plays any more. */
@@ -53,6 +60,11 @@ export class PlayHistoryTracker {
     progress(position: number, duration: number): void {
         this.listened += listenedBetween(this.lastPosition, position)
         this.lastPosition = position
+        if (this.trackId && !this.announced && this.listened > 0) {
+            this.announced = true
+            this.announceSafely(this.trackId)
+        }
+
         if (
             this.trackId &&
             this.startedAt &&
@@ -75,6 +87,18 @@ export class PlayHistoryTracker {
             this.flushing = null
         })
         return this.flushing
+    }
+
+    private announceSafely(trackId: string): void {
+        if (!this.announce) {
+            return
+        }
+
+        try {
+            this.announce(trackId).catch(() => undefined)
+        } catch {
+            // Now Playing is only a hint for the scrobbling services; a failure changes nothing.
+        }
     }
 
     private enqueue(play: PendingPlay): void {

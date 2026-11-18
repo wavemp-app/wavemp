@@ -24,7 +24,7 @@ import {
 } from '@/components/shell/transport'
 import { getLyrics } from '@/lyrics/api'
 import type { TrackLyrics } from '@/lyrics/timing'
-import { getPlayback, getVideoPlayback, recordPlay } from '@/player/api'
+import { getPlayback, getVideoPlayback, recordPlay, reportNowPlaying } from '@/player/api'
 import { crossfadeDuration } from '@/player/crossfade'
 import {
     AudioEngine,
@@ -270,7 +270,11 @@ export const usePlayerStore = defineStore('player', () => {
     let retried: string | null = null
     let artworkHeld: { id: string; version: string | undefined } | null = null
 
-    const history = new PlayHistoryTracker((trackId, playedAt) => recordPlay(trackId, playedAt))
+    const history = new PlayHistoryTracker(
+        (trackId, playedAt) => recordPlay(trackId, playedAt),
+        undefined,
+        (trackId) => reportNowPlaying(trackId),
+    )
 
     const engineEvents: EngineEvents = {
         timeupdate: onTimeUpdate,

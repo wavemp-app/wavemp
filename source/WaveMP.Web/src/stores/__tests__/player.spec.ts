@@ -5,7 +5,7 @@ import type { Track, TrackPlayback, TrackVideoPlayback } from '@/api/generated/m
 import type { EngineEvents } from '@/player/engine'
 import { getLyrics } from '@/lyrics/api'
 import type { TrackLyrics } from '@/lyrics/timing'
-import { getPlayback, getVideoPlayback, recordPlay } from '@/player/api'
+import { getPlayback, getVideoPlayback, recordPlay, reportNowPlaying } from '@/player/api'
 import type { FollowerClock, VideoFollowerEvents } from '@/player/videoFollower'
 import {
     playerDependencies,
@@ -23,6 +23,7 @@ vi.mock('@/player/api', () => ({
     getPlayback: vi.fn(),
     getVideoPlayback: vi.fn(),
     recordPlay: vi.fn(),
+    reportNowPlaying: vi.fn(),
 }))
 
 class FakeEngine implements PlayerEngine {
@@ -119,6 +120,7 @@ describe('player store', () => {
         window.localStorage.clear()
         vi.mocked(getPlayback).mockReset()
         vi.mocked(recordPlay).mockReset().mockResolvedValue(undefined)
+        vi.mocked(reportNowPlaying).mockReset().mockResolvedValue(undefined)
         vi.mocked(getPlayback).mockImplementation((id) => Promise.resolve(direct(id)))
         vi.mocked(getLyrics).mockReset().mockResolvedValue(null)
         playerDependencies.createEngine = (events) => (engine = new FakeEngine(events))
@@ -804,6 +806,20 @@ describe('player store', () => {
 
         expect(recordPlay).toHaveBeenCalledOnce()
         expect(vi.mocked(recordPlay).mock.calls[0]![0]).toBe('a')
+    })
+
+    it('reports the track as Now Playing once it plays', async () => {
+        vi.mocked(getPlayback).mockResolvedValue(direct('a', { durationMilliseconds: 4000 }))
+        const player = usePlayerStore()
+        player.playTracks([track('a', { durationMilliseconds: 4000 })], 0)
+        await flushPromises()
+        expect(reportNowPlaying).not.toHaveBeenCalled()
+
+        engine.events.timeupdate?.(0, 4)
+        engine.events.timeupdate?.(0.25, 4)
+        engine.events.timeupdate?.(0.5, 4)
+
+        expect(reportNowPlaying).toHaveBeenCalledExactlyOnceWith('a')
     })
 
     it('empties the player when the session changes', async () => {

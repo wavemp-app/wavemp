@@ -16,7 +16,11 @@ const covers = vi.hoisted(() => ({
 }))
 
 vi.mock('@/library/api', () => covers)
-vi.mock('@/player/api', () => ({ getPlayback: vi.fn(), recordPlay: vi.fn() }))
+vi.mock('@/player/api', () => ({
+    getPlayback: vi.fn(),
+    recordPlay: vi.fn(),
+    reportNowPlaying: vi.fn(),
+}))
 
 const LibraryCover = (await import('../LibraryCover.vue')).default
 const TileList = (await import('../TileList.vue')).default

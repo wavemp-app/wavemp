@@ -14,6 +14,7 @@ import type {
     PlayerViewMode,
     Scan,
     ScanIssue,
+    ScrobblingService,
     TranscodeJob,
     TranscodingStatus,
     TrackReviewSort,
@@ -75,6 +76,7 @@ import AvatarPresetPicker from '@/components/profiles/AvatarPresetPicker.vue'
 import ProfileAvatar from '@/components/profiles/ProfileAvatar.vue'
 import ProfileSelect from '@/components/profiles/ProfileSelect.vue'
 import ProfileSummary from '@/components/profiles/ProfileSummary.vue'
+import ScrobbleList from '@/components/profiles/ScrobbleList.vue'
 import ReviewActions from '@/components/review/ReviewActions.vue'
 import ReviewBulkBar from '@/components/review/ReviewBulkBar.vue'
 import ReviewFilters from '@/components/review/ReviewFilters.vue'
@@ -588,6 +590,23 @@ const sampleBackupJob: Job = {
         errorCode: 'backup.pg_dump_unavailable',
     },
 }
+const sampleScrobbleServices: ScrobblingService[] = [
+    {
+        service: 'LastFm',
+        isAvailable: true,
+        status: 'Connected',
+        accountName: 'anna',
+        connectedAt: sampleTime,
+        lastScrobbledAt: sampleTime,
+        queuedScrobbles: 2,
+    },
+    {
+        service: 'ListenBrainz',
+        isAvailable: true,
+        status: 'AuthorizationFailed',
+        queuedScrobbles: 5,
+    },
+]
 const sampleBackups: Backup[] = [
     {
         id: 'wavemp-20261116T030000Z-schedule',
@@ -1133,6 +1152,13 @@ const sampleTranscodeJobs = computed<TranscodeJob[]>(() => {
                         deleting="wavemp-20261115T193000Z-manual"
                     />
                     <BackupList :backups="[]" />
+                </section>
+            </div>
+            <div data-part="view" data-view="settings">
+                <section data-part="section" data-item="scrobbling">
+                    <h2 data-part="section-title">{{ t('scrobbling.title') }}</h2>
+                    <ScrobbleList :services="sampleScrobbleServices" busy="LastFm" />
+                    <ScrobbleList :services="[]" />
                 </section>
             </div>
             <div data-part="view" data-view="admin-files">
