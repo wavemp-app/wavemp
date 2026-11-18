@@ -28,6 +28,8 @@ namespace WaveMP.Core.Users.Settings;
 /// Seconds after which the visualization changes its preset, see <see cref="VisualizationSettingsLimits"/>.
 /// </param>
 /// <param name="VisualizationQuality">How much detail the visualization draws.</param>
+/// <param name="ThemeId">Id of the theme of the web app, see <see cref="ThemeIds"/>.</param>
+/// <param name="ThemeAppearance">Which variant of a theme with a light and a dark variant the user sees.</param>
 public sealed record UpdateUserSettingsCommand(
     string? Language = null,
     ReplayGainMode? ReplayGain = null,
@@ -45,4 +47,6 @@ public sealed record UpdateUserSettingsCommand(
     string? VisualizationPreset = null,
     bool? VisualizationAutoChange = null,
     int? VisualizationAutoChangeSeconds = null,
-    VisualizationQuality? VisualizationQuality = null);
+    VisualizationQuality? VisualizationQuality = null,
+    string? ThemeId = null,
+    ThemeAppearance? ThemeAppearance = null);

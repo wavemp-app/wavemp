@@ -34,6 +34,11 @@ public sealed class UpdateUserSettingsDto
     public bool? SidebarCollapsed { get; init; }
 
     /// <summary>
+    /// Changes of the theme of the web app.
+    /// </summary>
+    public UpdateThemeSettingsDto? Theme { get; init; }
+
+    /// <summary>
     /// Changes of the equalizer.
     /// </summary>
     public UpdateEqualizerSettingsDto? Equalizer { get; init; }

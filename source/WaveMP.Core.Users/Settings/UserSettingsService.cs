@@ -47,6 +47,16 @@ internal sealed class UserSettingsService(IUserRepository users) : IUserSettings
             settings.SidebarCollapsed = sidebarCollapsed;
         }
 
+        if (command.ThemeId is { } themeId)
+        {
+            settings.ThemeId = themeId;
+        }
+
+        if (command.ThemeAppearance is { } appearance)
+        {
+            settings.ThemeAppearance = appearance;
+        }
+
         ApplyPlayback(settings, command);
         ApplyVisualization(settings, command);
 
@@ -180,6 +190,16 @@ internal sealed class UserSettingsService(IUserRepository users) : IUserSettings
                 nameof(command),
                 seconds,
                 "The interval of the automatic change is out of range.");
+        }
+
+        if (command.ThemeId is { } themeId && !ThemeIds.IsValid(themeId))
+        {
+            throw new ArgumentOutOfRangeException(nameof(command), themeId, "The theme id is not valid.");
+        }
+
+        if (command.ThemeAppearance is { } appearance && !Enum.IsDefined(appearance))
+        {
+            throw new ArgumentOutOfRangeException(nameof(command), appearance, "Unknown theme appearance.");
         }
 
         if (command.VisualizationQuality is { } quality && !Enum.IsDefined(quality))

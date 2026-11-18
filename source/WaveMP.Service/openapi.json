@@ -13040,6 +13040,33 @@
         },
         "description": "A new app password for Subsonic apps. It is shown this once; the server keeps it encrypted and never returns it again."
       },
+      "ThemeAppearance": {
+        "enum": [
+          "System",
+          "Light",
+          "Dark"
+        ],
+        "type": "string",
+        "description": "Which variant of a theme with a light and a dark variant the profile sees. Themes with one variant ignore it."
+      },
+      "ThemeSettings": {
+        "required": [
+          "id",
+          "appearance"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Id of the theme, e.g. \"midnight\" or \"clear-glass\"; \"midnight\" by default. The ids are not a closed list: the clients know their themes and show their default theme for an id they do not know."
+          },
+          "appearance": {
+            "description": "Which variant of a theme with a light and a dark variant the profile sees; System by default, which follows the light or dark mode of the device.",
+            "$ref": "#/components/schemas/ThemeAppearance"
+          }
+        },
+        "description": "Theme of the web app of the current profile."
+      },
       "Track": {
         "required": [
           "id",
@@ -14379,6 +14406,33 @@
         },
         "description": "Changes the Subsonic access of the current profile. Missing or null values stay unchanged."
       },
+      "UpdateThemeSettings": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "maxLength": 64,
+            "minLength": 1,
+            "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Id of the theme, up to 64 lower-case letters and digits in words separated by single hyphens, e.g. \"clear-glass\". The server keeps any valid id; the clients offer the themes they know."
+          },
+          "appearance": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "Which variant of a theme with a light and a dark variant the profile sees.",
+                "$ref": "#/components/schemas/ThemeAppearance"
+              }
+            ]
+          }
+        },
+        "description": "Changes the theme of the current profile. Missing or null values stay unchanged."
+      },
       "UpdateTrackFileSelection": {
         "type": "object",
         "properties": {
@@ -14707,6 +14761,17 @@
             ],
             "description": "Whether the sidebar of the desktop layout shows only its icons."
           },
+          "theme": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "Changes of the theme of the web app.",
+                "$ref": "#/components/schemas/UpdateThemeSettings"
+              }
+            ]
+          },
           "equalizer": {
             "oneOf": [
               {
@@ -14907,6 +14972,7 @@
           "replayGain",
           "playerViewMode",
           "sidebarCollapsed",
+          "theme",
           "equalizer",
           "crossfade",
           "sleepTimer",
@@ -14929,6 +14995,10 @@
           "sidebarCollapsed": {
             "type": "boolean",
             "description": "Whether the sidebar of the desktop layout shows only its icons; false (expanded) by default. Clients without a sidebar ignore it."
+          },
+          "theme": {
+            "description": "Theme of the web app. Clients without themes ignore it.",
+            "$ref": "#/components/schemas/ThemeSettings"
           },
           "equalizer": {
             "description": "Equalizer of the players.",

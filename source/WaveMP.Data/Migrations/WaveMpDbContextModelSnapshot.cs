@@ -1374,6 +1374,20 @@ namespace WaveMP.Data.Migrations
                         .HasDefaultValue(10)
                         .HasColumnName("sleep_timer_fade_seconds");
 
+                    b.Property<string>("ThemeAppearance")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasDefaultValue("System")
+                        .HasColumnName("theme_appearance");
+
+                    b.Property<string>("ThemeId")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasDefaultValue("midnight")
+                        .HasColumnName("theme_id");
+
                     b.Property<bool>("VisualizationAutoChange")
                         .HasColumnType("boolean")
                         .HasDefaultValue(true)

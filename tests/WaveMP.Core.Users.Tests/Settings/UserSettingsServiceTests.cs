@@ -320,6 +320,72 @@ public class UserSettingsServiceTests
             .SetName("Automatic change 4");
         yield return new TestCaseData(new UpdateUserSettingsCommand(VisualizationAutoChangeSeconds: 601))
             .SetName("Automatic change 601");
+        yield return new TestCaseData(new UpdateUserSettingsCommand(ThemeId: "Clear Glass")).SetName("Theme id");
+        yield return new TestCaseData(new UpdateUserSettingsCommand(ThemeId: "")).SetName("Empty theme id");
+        yield return new TestCaseData(new UpdateUserSettingsCommand(ThemeAppearance: (ThemeAppearance)99))
+            .SetName("Unknown theme appearance");
+    }
+
+    [Test]
+    public async Task GetAsync_UserWithoutSettings_ReturnsTheThemeDefaults()
+    {
+        User user = Given("en");
+        user.Settings = null;
+
+        UserSettings? result = await _service.GetAsync(user.Id);
+
+        result!.ThemeId.Should().Be("midnight");
+        result.ThemeAppearance.Should().Be(ThemeAppearance.System);
+    }
+
+    [Test]
+    public async Task UpdateAsync_WithTheme_SavesItAndKeepsTheOtherSettings()
+    {
+        User user = Given("de");
+
+        UserSettings? result = await _service.UpdateAsync(
+            user.Id,
+            new UpdateUserSettingsCommand(ThemeId: "clear-glass", ThemeAppearance: ThemeAppearance.Dark));
+
+        result!.ThemeId.Should().Be("clear-glass");
+        result.ThemeAppearance.Should().Be(ThemeAppearance.Dark);
+        result.Language.Should().Be("de");
+        await _users.Received(1).UpdateAsync(user, Arg.Any<CancellationToken>());
+    }
+
+    [Test]
+    public async Task UpdateAsync_WithThemeIdOnly_KeepsTheAppearance()
+    {
+        User user = Given("en");
+        user.Settings!.ThemeAppearance = ThemeAppearance.Light;
+
+        UserSettings? result = await _service.UpdateAsync(user.Id, new UpdateUserSettingsCommand(ThemeId: "meadow"));
+
+        result!.ThemeId.Should().Be("meadow");
+        result.ThemeAppearance.Should().Be(ThemeAppearance.Light);
+    }
+
+    [Test]
+    public async Task UpdateAsync_WithoutTheme_KeepsIt()
+    {
+        User user = Given("en");
+        user.Settings!.ThemeId = "accent";
+        user.Settings.ThemeAppearance = ThemeAppearance.Dark;
+
+        UserSettings? result = await _service.UpdateAsync(user.Id, new UpdateUserSettingsCommand(SidebarCollapsed: true));
+
+        result!.ThemeId.Should().Be("accent");
+        result.ThemeAppearance.Should().Be(ThemeAppearance.Dark);
+    }
+
+    [Test]
+    public async Task UpdateAsync_WithAThemeIdNoClientKnows_SavesIt()
+    {
+        User user = Given("en");
+
+        UserSettings? result = await _service.UpdateAsync(user.Id, new UpdateUserSettingsCommand(ThemeId: "uploaded-1"));
+
+        result!.ThemeId.Should().Be("uploaded-1");
     }
 
     [Test]

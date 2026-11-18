@@ -29,6 +29,11 @@ public sealed class UserSettingsDto
     public required bool SidebarCollapsed { get; init; }
 
     /// <summary>
+    /// Theme of the web app. Clients without themes ignore it.
+    /// </summary>
+    public required ThemeSettingsDto Theme { get; init; }
+
+    /// <summary>
     /// Equalizer of the players.
     /// </summary>
     public required EqualizerSettingsDto Equalizer { get; init; }

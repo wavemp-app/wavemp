@@ -15,6 +15,7 @@ public static class SettingsMappingExtensions
             ReplayGain = settings.ReplayGain.ToDto(),
             PlayerViewMode = settings.PlayerViewMode.ToDto(),
             SidebarCollapsed = settings.SidebarCollapsed,
+            Theme = new ThemeSettingsDto { Id = settings.ThemeId, Appearance = settings.ThemeAppearance.ToDto() },
             Equalizer = new EqualizerSettingsDto
             {
                 Enabled = settings.EqualizerEnabled,
@@ -63,7 +64,31 @@ public static class SettingsMappingExtensions
             request.Visualization?.Preset,
             request.Visualization?.AutoChange,
             request.Visualization?.AutoChangeSeconds,
-            request.Visualization?.Quality?.ToEntity());
+            request.Visualization?.Quality?.ToEntity(),
+            request.Theme?.Id,
+            request.Theme?.Appearance?.ToEntity());
+    }
+
+    public static ThemeAppearanceDto ToDto(this ThemeAppearance appearance)
+    {
+        return appearance switch
+        {
+            ThemeAppearance.System => ThemeAppearanceDto.System,
+            ThemeAppearance.Light => ThemeAppearanceDto.Light,
+            ThemeAppearance.Dark => ThemeAppearanceDto.Dark,
+            _ => throw new ArgumentOutOfRangeException(nameof(appearance), appearance, "Unknown theme appearance."),
+        };
+    }
+
+    public static ThemeAppearance ToEntity(this ThemeAppearanceDto appearance)
+    {
+        return appearance switch
+        {
+            ThemeAppearanceDto.System => ThemeAppearance.System,
+            ThemeAppearanceDto.Light => ThemeAppearance.Light,
+            ThemeAppearanceDto.Dark => ThemeAppearance.Dark,
+            _ => throw new ArgumentOutOfRangeException(nameof(appearance), appearance, "Unknown theme appearance."),
+        };
     }
 
     public static VisualizationModuleDto ToDto(this VisualizationModule module)

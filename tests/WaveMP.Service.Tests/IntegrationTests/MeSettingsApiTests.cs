@@ -547,6 +547,96 @@ public class MeSettingsApiTests
         }
     }
 
+    [Test]
+    public async Task GetMySettings_ForNewProfile_ReturnsMidnightWithTheModeOfTheDevice()
+    {
+        (Guid _, HttpClient client) = await CreateProfileAsync();
+        using (client)
+        {
+            HttpResponseMessage response = await client.GetAsync("/api/v1/me/settings");
+
+            (await response.Content.ReadAsStringAsync()).Should()
+                .Contain("\"theme\":{\"id\":\"midnight\",\"appearance\":\"System\"}");
+        }
+    }
+
+    [Test]
+    public async Task UpdateMySettings_WithTheme_KeepsItForTheProfileAndTheOtherSettings()
+    {
+        (Guid profileId, HttpClient client) = await CreateProfileAsync();
+        using (client)
+        {
+            await PatchAsync(client, new { language = "de", sidebarCollapsed = true });
+
+            HttpResponseMessage response = await PatchAsync(
+                client,
+                new { theme = new { id = "clear-glass", appearance = "Dark" } });
+            await PatchAsync(client, new { theme = new { id = "accent" } });
+            using HttpClient otherSession = _factory.CreateAuthorizedClient(
+                (await _anonymous.CreateSessionAsync(profileId)).Token);
+            UserSettingsDto read = await otherSession.GetJsonAsync<UserSettingsDto>("/api/v1/me/settings");
+
+            response.StatusCode.Should().Be(HttpStatusCode.OK);
+            (await response.Content.ReadAsStringAsync()).Should()
+                .Contain("\"theme\":{\"id\":\"clear-glass\",\"appearance\":\"Dark\"}");
+            read.Theme.Id.Should().Be("accent");
+            read.Theme.Appearance.Should().Be(ThemeAppearanceDto.Dark);
+            read.Language.Should().Be("de");
+            read.SidebarCollapsed.Should().BeTrue();
+        }
+    }
+
+    private static IEnumerable<TestCaseData> InvalidThemeSettings()
+    {
+        yield return new TestCaseData(
+                "{\"theme\":{\"id\":\"Clear Glass\"}}",
+                "theme.id",
+                ValidationErrorCodeDto.InvalidFormat,
+                null)
+            .SetArgDisplayNames("IdWithSpace");
+        yield return new TestCaseData(
+                "{\"theme\":{\"id\":\"../midnight\"}}",
+                "theme.id",
+                ValidationErrorCodeDto.InvalidFormat,
+                null)
+            .SetArgDisplayNames("IdWithPath");
+        yield return new TestCaseData(
+                $"{{\"theme\":{{\"id\":\"{new string('a', 65)}\"}}}}",
+                "theme.id",
+                ValidationErrorCodeDto.MaxLength,
+                64)
+            .SetArgDisplayNames("IdTooLong");
+        yield return new TestCaseData(
+                "{\"theme\":{\"appearance\":\"Sepia\"}}",
+                "theme.appearance",
+                ValidationErrorCodeDto.InvalidFormat,
+                null)
+            .SetArgDisplayNames("UnknownAppearance");
+    }
+
+    [TestCaseSource(nameof(InvalidThemeSettings))]
+    public async Task UpdateMySettings_WithInvalidThemeSetting_ReturnsTheCodeAndKeepsTheTheme(
+        string json,
+        string field,
+        ValidationErrorCodeDto code,
+        int? max)
+    {
+        (Guid _, HttpClient client) = await CreateProfileAsync();
+        using (client)
+        {
+            using StringContent body = new(json, Encoding.UTF8, "application/json");
+
+            HttpResponseMessage response = await client.PatchAsync("/api/v1/me/settings", body);
+
+            IReadOnlyList<ValidationErrorDto> errors = await response.ShouldBeValidationProblemAsync();
+            errors.Should().ContainSingle(error => error.Field == field)
+                .Which.Should().BeEquivalentTo(new { Code = code, Max = max });
+            UserSettingsDto read = await client.GetJsonAsync<UserSettingsDto>("/api/v1/me/settings");
+            read.Theme.Id.Should().Be("midnight");
+            read.Theme.Appearance.Should().Be(ThemeAppearanceDto.System);
+        }
+    }
+
     private static IEnumerable<TestCaseData> InvalidPlaybackSettings()
     {
         yield return new TestCaseData(

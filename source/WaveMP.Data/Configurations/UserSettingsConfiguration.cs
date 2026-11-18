@@ -11,6 +11,7 @@ internal sealed class UserSettingsConfiguration : IEntityTypeConfiguration<UserS
     public const int EqualizerPresetMaxLength = 16;
     public const int VisualizationModuleMaxLength = 32;
     public const int VisualizationQualityMaxLength = 16;
+    public const int ThemeAppearanceMaxLength = 16;
 
     public void Configure(EntityTypeBuilder<UserSettings> builder)
     {
@@ -21,6 +22,19 @@ internal sealed class UserSettingsConfiguration : IEntityTypeConfiguration<UserS
         // ChangeLanguageToTag turned them into tags.
         builder.Property(settings => settings.Language)
             .HasMaxLength(UserSettings.LanguageMaxLength);
+
+        // The column defaults give existing rows the defaults of a new profile; the entity always writes its values
+        // (ValueGeneratedNever), so the default of a column never replaces a value set in the code.
+        builder.Property(settings => settings.ThemeId)
+            .HasMaxLength(UserSettings.ThemeIdMaxLength)
+            .HasDefaultValue(UserSettings.DefaultThemeId)
+            .ValueGeneratedNever();
+
+        builder.Property(settings => settings.ThemeAppearance)
+            .HasConversion<string>()
+            .HasMaxLength(ThemeAppearanceMaxLength)
+            .HasDefaultValue(ThemeAppearance.System)
+            .ValueGeneratedNever();
 
         // The column default gives existing rows "Off". The entity always writes its value (ValueGeneratedNever),
         // so the default of the column never replaces a value set in the code.

@@ -25,6 +25,16 @@ public class UserSettings
     /// </summary>
     public const int LanguageMaxLength = 35;
 
+    /// <summary>
+    /// Theme of new users.
+    /// </summary>
+    public const string DefaultThemeId = "midnight";
+
+    /// <summary>
+    /// Longest theme id in <see cref="ThemeId"/>.
+    /// </summary>
+    public const int ThemeIdMaxLength = 64;
+
     public Guid UserId { get; set; }
 
     public User? User { get; set; }
@@ -34,6 +44,17 @@ public class UserSettings
     /// decide which languages they offer.
     /// </summary>
     public string Language { get; set; } = DefaultLanguage;
+
+    /// <summary>
+    /// Id of the theme of the web app, e.g. "midnight" or "clear-glass"; Midnight by default. The clients know the
+    /// themes; a client shows its default theme for an id it does not know.
+    /// </summary>
+    public string ThemeId { get; set; } = DefaultThemeId;
+
+    /// <summary>
+    /// Which variant of a theme with a light and a dark variant the user sees; the mode of the device by default.
+    /// </summary>
+    public ThemeAppearance ThemeAppearance { get; set; } = ThemeAppearance.System;
 
     /// <summary>
     /// Volume normalization of the player; off by default.
