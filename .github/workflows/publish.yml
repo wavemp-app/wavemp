@@ -15,7 +15,7 @@ on:
         description: Docker Hub user with write access to wavemp/wavemp.
         required: true
       DOCKERHUB_TOKEN:
-        description: Docker Hub access token (Read & Write) of that user.
+        description: Docker Hub access token of that user (Read & Write; main.yml needs Read, Write, Delete to also update the description).
         required: true
 
 # No concurrency here: the calling workflows define it.

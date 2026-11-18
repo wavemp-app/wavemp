@@ -1,6 +1,6 @@
 # Tests every push to main and then publishes the image as version <major>.<minor>.<run number>
 # (major and minor from the VersionPrefix in Directory.Build.props) with the tags 1.0.N, 1.0,
-# latest, edge and sha-<commit>.
+# latest, edge and sha-<commit>, and updates the description of the image on Docker Hub.
 name: Main
 
 on:
@@ -65,3 +65,48 @@ jobs:
     secrets:
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
       DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+
+  # Shows the README on the Docker Hub page of wavemp/wavemp once the image is published. Docker Hub
+  # allows 25,000 bytes and no relative links, so it gets a shortened copy with absolute links (see
+  # .github/scripts/dockerhub-description.mjs, checked by test.yml); the short description is the
+  # tagline of the README. Updating the description needs a token with the scope Read, Write,
+  # Delete; a token without it must not fail the run, so the step only warns.
+  dockerhub-description:
+    name: Docker Hub description
+    needs: publish
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Check out
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+
+      - name: Create the Docker Hub description
+        id: description
+        run: node .github/scripts/dockerhub-description.mjs --output "$RUNNER_TEMP/dockerhub-description.md"
+
+      # peter-evans/dockerhub-description (MIT).
+      - name: Update the Docker Hub description
+        id: update
+        continue-on-error: true
+        uses: peter-evans/dockerhub-description@v5
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          repository: wavemp/wavemp
+          short-description: ${{ steps.description.outputs.short-description }}
+          readme-filepath: ${{ runner.temp }}/dockerhub-description.md
+
+      - name: Report a failed update
+        if: steps.update.outcome == 'failure'
+        run: >-
+          echo "::warning title=Docker Hub description not updated::The description of wavemp/wavemp
+          could not be updated. DOCKERHUB_TOKEN needs to be a personal access token with the
+          access permissions 'Read, Write, Delete' (a token with 'Read & Write' is not enough), and
+          DOCKERHUB_USERNAME a user with admin permission for the repository wavemp/wavemp."
