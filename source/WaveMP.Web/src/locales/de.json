@@ -814,7 +814,7 @@
       "coverNames": "Namen ohne Schrägstriche, ohne Punkt am Anfang und mit höchstens 50 Zeichen."
     },
     "downloadLyrics": "Songtexte von LRCLIB herunterladen",
-    "downloadLyricsHint": "Sucht nach jedem Scan die Songtexte neuer Titel ohne Songtext auf lrclib.net und speichert sie neben dem Titel als .lrc-Datei (oder in der Datenbank, wenn der Ordner nicht beschreibbar ist). Dabei werden Titel, Interpreten und Alben deiner Bibliothek an den Dienst gesendet.",
+    "downloadLyricsHint": "Sucht nach jedem Scan die Songtexte neuer Titel ohne Songtext auf lrclib.net und speichert sie neben dem Titel als .lrc-Datei (oder in der Datenbank, wenn der Ordner nicht beschreibbar ist). Titel, für die LRCLIB noch keinen Songtext hat, werden später erneut gesucht. Dabei werden Titel, Interpreten und Alben deiner Bibliothek an den Dienst gesendet.",
     "subsonicDownloads": "Subsonic-Apps dürfen Titel herunterladen",
     "subsonicDownloadsHint": "Erlaubt Subsonic-Apps, die Originaldateien der Titel herunterzuladen, z. B. um sie auf dem Telefon zu behalten. Ohne diese Einstellung können die Apps nur streamen."
   },

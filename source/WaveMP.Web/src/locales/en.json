@@ -814,7 +814,7 @@
       "coverNames": "Use names without slashes, without a leading dot and with at most 50 characters."
     },
     "downloadLyrics": "Download lyrics from LRCLIB",
-    "downloadLyricsHint": "Looks up the lyrics of new songs without lyrics on lrclib.net after each scan and saves them next to the song as .lrc file (or in the database if the folder is not writable). Titles, artists and albums of your library are sent to the service.",
+    "downloadLyricsHint": "Looks up the lyrics of new songs without lyrics on lrclib.net after each scan and saves them next to the song as .lrc file (or in the database if the folder is not writable). Songs that LRCLIB has no lyrics for yet are looked up again later. Titles, artists and albums of your library are sent to the service.",
     "subsonicDownloads": "Subsonic apps may download songs",
     "subsonicDownloadsHint": "Allows Subsonic apps to download the original files of the songs, e.g. to keep them on the phone. Without it, the apps can only stream."
   },
