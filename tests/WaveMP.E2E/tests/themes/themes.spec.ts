@@ -11,11 +11,12 @@ import {
     visitThemeViews,
     type ThemeProfile,
 } from '../../screenshots/themes'
+import { cutStatLabels, formatCutLabels } from '../helpers/labels'
 
 // Screenshot and contrast regression of the shipped themes: every theme and variant shows the
 // views of screenshots/themes.ts on the desktop and on a phone, with a profile of its own that
-// uses the theme. Each view must reach the contrast of WCAG 2.2 AA (screenshots/contrast.ts) and
-// match its baseline in tests/themes/baselines.
+// uses the theme. Each view must reach the contrast of WCAG 2.2 AA (screenshots/contrast.ts), show
+// the labels of its status tiles in full and match its baseline in tests/themes/baselines.
 //
 // The baselines are taken in the Playwright image of the CI (fonts and rendering of Linux), so
 // the screenshots are compared only there (CI) or when E2E_VISUAL=1 asks for it, and only views
@@ -53,6 +54,14 @@ for (const target of shippedThemeTargets()) {
                         .soft(
                             contrast.failures,
                             `Contrast of ${targetKey(target)} on ${view.name}:\n${formatContrastFailures(contrast.failures)}`,
+                        )
+                        .toEqual([])
+
+                    const cut = await cutStatLabels(page)
+                    expect
+                        .soft(
+                            cut,
+                            `Cut off labels of ${targetKey(target)} on ${view.name}:\n${formatCutLabels(cut)}`,
                         )
                         .toEqual([])
 
