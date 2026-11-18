@@ -1,12 +1,25 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="none">
-    <!-- Background of covers without an image (Clear Glass, dark): a soft gradient with a faint disc. -->
+    <!-- Background of covers without an image (Clear Glass, dark): a block of smoked glass with a
+         faint band of light across it and two thin caustic lines. -->
     <defs>
-        <linearGradient id="surface" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0" stop-color="#18191d"/>
-            <stop offset="1" stop-color="#2a2d33"/>
+        <linearGradient id="glass" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#26313d"/>
+            <stop offset="0.55" stop-color="#171f29"/>
+            <stop offset="1" stop-color="#0f151d"/>
+        </linearGradient>
+        <linearGradient id="band" x1="0" y1="1" x2="1" y2="0">
+            <stop offset="0.3" stop-color="#ffffff" stop-opacity="0"/>
+            <stop offset="0.48" stop-color="#ffffff" stop-opacity="0.12"/>
+            <stop offset="0.56" stop-color="#ffffff" stop-opacity="0"/>
+        </linearGradient>
+        <linearGradient id="edge" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#ffffff" stop-opacity="0.45"/>
+            <stop offset="1" stop-color="#5fd0c4" stop-opacity="0.35"/>
         </linearGradient>
     </defs>
-    <rect width="100" height="100" fill="url(#surface)"/>
-    <circle cx="50" cy="50" r="30" fill="none" stroke="#ffffff" stroke-opacity="0.35" stroke-width="2"/>
-    <circle cx="50" cy="50" r="6" fill="#ffffff" fill-opacity="0.35"/>
+    <rect width="100" height="100" fill="url(#glass)"/>
+    <rect width="100" height="100" fill="url(#band)"/>
+    <path d="M-4 78 C 18 64, 30 90, 52 74 S 86 58, 104 70" fill="none" stroke="#c4fff7" stroke-opacity="0.3" stroke-width="0.8"/>
+    <path d="M-4 86 C 20 74, 34 96, 56 82 S 88 70, 104 80" fill="none" stroke="#c4fff7" stroke-opacity="0.18" stroke-width="0.6"/>
+    <rect x="0.5" y="0.5" width="99" height="99" fill="none" stroke="url(#edge)"/>
 </svg>
