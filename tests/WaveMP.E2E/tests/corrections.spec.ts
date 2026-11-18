@@ -26,7 +26,8 @@ async function sessionHeaders(
 interface StoredSettings {
     replayGain: string
     sidebarCollapsed: boolean
-    crossfade: { enabled: boolean; seconds: number }
+    crossfade: { enabled: boolean; seconds: number; albumsGapless: boolean }
+    visualization: { quality: string }
 }
 
 async function storedSettings(
@@ -153,9 +154,6 @@ test.describe('with a profile of its own', () => {
             .poll(async () => (await storedSettings(request, user.id)).replayGain)
             .toBe('Track')
 
-        // The group is disabled until the page has the answer of the save, which can come after
-        // the server stored the mode; a key pressed before that does nothing, so wait for it.
-        await expect(group).not.toHaveAttribute('aria-disabled', 'true')
         await page.keyboard.press('End')
         await expect(segment('album')).toHaveAttribute('aria-checked', 'true')
         await expect
@@ -174,6 +172,93 @@ test.describe('with a profile of its own', () => {
         }))
         expect(variables).toMatchObject({ count: '3', index: '0' })
         expect(variables.width).toBeGreaterThan(0)
+    })
+
+    test('keeps quick keys and clicks in the settings while they are saved', async ({
+        page,
+        request,
+    }) => {
+        // Every save takes a while, so the next key or click comes while one is in flight. The
+        // page saves one change after the other, never two at once.
+        let inFlight = 0
+        let mostInFlight = 0
+        await page.route('**/api/v1/me/settings', async (route) => {
+            if (route.request().method() !== 'PATCH') {
+                await route.continue()
+                return
+            }
+
+            inFlight++
+            mostInFlight = Math.max(mostInFlight, inFlight)
+            await new Promise((resolve) => setTimeout(resolve, 400))
+            try {
+                await route.continue()
+            } finally {
+                inFlight--
+            }
+        })
+        await page.goto('/settings')
+        const field = (name: string) => page.locator(`[data-part='app'] [data-field='${name}']`)
+        const segment = (name: string, item: string) =>
+            field(name).locator(`[data-part='segment'][data-item='${item}']`)
+
+        // Arrow and End pressed one right after the other: the last key wins.
+        await segment('replay-gain', 'off').focus()
+        await page.keyboard.press('ArrowRight')
+        await page.keyboard.press('End')
+        await expect(segment('replay-gain', 'album')).toHaveAttribute('aria-checked', 'true')
+        await expect(segment('replay-gain', 'album')).toBeFocused()
+        await expect(
+            field('replay-gain').locator("[data-part='segmented-control']"),
+        ).not.toHaveAttribute('aria-disabled', 'true')
+
+        await segment('visualization-quality', 'auto').focus()
+        await page.keyboard.press('ArrowRight')
+        await page.keyboard.press('ArrowRight')
+        await page.keyboard.press('ArrowRight')
+        await expect(segment('visualization-quality', 'high')).toHaveAttribute(
+            'aria-checked',
+            'true',
+        )
+        await expect(segment('visualization-quality', 'high')).toBeFocused()
+
+        // Clicks while the previous click is saved.
+        await segment('replay-gain', 'off').click()
+        await segment('replay-gain', 'track').click()
+        await expect(segment('replay-gain', 'track')).toHaveAttribute('aria-checked', 'true')
+
+        // A menu and a checkbox of the same group, changed while the menu is saved.
+        await field('crossfade').locator('select').selectOption('3')
+        await field('crossfade').locator('select').selectOption('8')
+        await field('crossfade-albums').locator('input').uncheck()
+        await expect(field('crossfade').locator('select')).toHaveValue('8')
+
+        await expect
+            .poll(async () => {
+                const settings = await storedSettings(request, user.id)
+                return {
+                    replayGain: settings.replayGain,
+                    quality: settings.visualization.quality,
+                    crossfade: settings.crossfade,
+                }
+            })
+            .toEqual({
+                replayGain: 'Track',
+                quality: 'High',
+                crossfade: { enabled: true, seconds: 8, albumsGapless: false },
+            })
+        await expect.poll(() => inFlight).toBe(0)
+        expect(mostInFlight).toBe(1)
+
+        // The page shows what the server stored.
+        await page.reload()
+        await expect(segment('replay-gain', 'track')).toHaveAttribute('aria-checked', 'true')
+        await expect(segment('visualization-quality', 'high')).toHaveAttribute(
+            'aria-checked',
+            'true',
+        )
+        await expect(field('crossfade').locator('select')).toHaveValue('8')
+        await expect(field('crossfade-albums').locator('input')).not.toBeChecked()
     })
 
     test.describe('in the chromium project', () => {
