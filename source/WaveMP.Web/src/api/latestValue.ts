@@ -2,6 +2,8 @@
 // while the previous one is still being saved). Requests sent in parallel may be committed in any
 // order, so the server could keep an older value. Values are therefore sent one after the other:
 // at most one request is in flight, and of the values chosen meanwhile only the latest follows.
+// Values that are partial changes (e.g. of a group of settings) are merged instead, so a change of
+// one member is not lost when another member changes before it is sent.
 
 /** Result of a value handed to a LatestValueSender. */
 export type LatestValueOutcome<R> =
@@ -20,7 +22,8 @@ export type LatestValueOutcome<R> =
 export interface LatestValueSender<T, R> {
     /**
      * Sends the value now or, while a request is in flight, after it; a newer value replaces one
-     * that still waits. Errors of its own request are passed on.
+     * that still waits (or is merged into it, see createLatestValueSender). Errors of its own
+     * request are passed on.
      */
     send(value: T): Promise<LatestValueOutcome<R>>
     /**
@@ -36,9 +39,14 @@ interface Waiting<T, R> {
     readonly reject: (error: unknown) => void
 }
 
-/** Creates a sender that passes values to `request` one after the other, see LatestValueSender. */
+/**
+ * Creates a sender that passes values to `request` one after the other, see LatestValueSender.
+ * With `merge`, a newer value does not replace a waiting one but is merged into it (the newer value
+ * wins where both say something), e.g. for partial changes of a group of settings.
+ */
 export function createLatestValueSender<T, R>(
     request: (value: T) => Promise<R>,
+    merge?: (waiting: T, newer: T) => T,
 ): LatestValueSender<T, R> {
     let running = false
     let waiting: Waiting<T, R> | null = null
@@ -72,15 +80,15 @@ export function createLatestValueSender<T, R>(
 
     function send(value: T): Promise<LatestValueOutcome<R>> {
         return new Promise((resolve, reject) => {
-            const entry: Waiting<T, R> = { value, resolve, reject }
             if (running) {
+                const merged = waiting && merge ? merge(waiting.value, value) : value
                 waiting?.resolve({ status: 'superseded' })
-                waiting = entry
+                waiting = { value: merged, resolve, reject }
                 return
             }
 
             running = true
-            void run(entry, generation)
+            void run({ value, resolve, reject }, generation)
         })
     }
 

@@ -138,4 +138,25 @@ describe('createLatestValueSender', () => {
         control.answer(1, 'saved Video')
         await expect(next).resolves.toMatchObject({ status: 'sent', latest: true })
     })
+
+    it('merges a newer value into the waiting one when it is given a merge', async () => {
+        const control = controlledRequest()
+        const sender = createLatestValueSender(
+            control.request,
+            (waiting, newer) => `${waiting}+${newer}`,
+        )
+
+        const first = sender.send('seconds')
+        const merged = sender.send('albums')
+        const last = sender.send('enabled')
+        await expect(merged).resolves.toEqual({ status: 'superseded' })
+
+        control.answer(0, 'saved seconds')
+        await first
+        await settle()
+        expect(control.calls).toEqual(['seconds', 'albums+enabled'])
+
+        control.answer(1, 'saved all')
+        await expect(last).resolves.toEqual({ status: 'sent', result: 'saved all', latest: true })
+    })
 })
