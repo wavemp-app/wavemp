@@ -82,6 +82,13 @@ public interface IUserRepository
     Task<bool> SetPinHashAsync(Guid userId, string? pinHash, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Gives every user whose settings name the theme <paramref name="themeId"/> the default theme
+    /// (<see cref="UserSettings.DefaultThemeId"/>), e.g. after the theme was deleted; the appearance stays. Returns the
+    /// number of changed users.
+    /// </summary>
+    Task<int> ResetThemeAsync(string themeId, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// The users among <paramref name="ids"/> that exist and have an uploaded avatar (an avatar that is not one of the
     /// built-in ones).
     /// </summary>

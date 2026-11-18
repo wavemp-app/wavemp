@@ -1,0 +1,175 @@
+/*
+ * Template of a WaveMP theme, theme API version 5.
+ *
+ * A theme is this one CSS file plus its pictures (SVG, PNG or WebP), packed with manifest.json
+ * into a ZIP file that an admin uploads under Administration > Themes. THEMING.md describes every
+ * part, state and variable a theme can use; its section "Custom themes" explains the package.
+ *
+ * Rules for uploaded themes (WaveMP checks them on upload and rejects the package otherwise):
+ *
+ * - Only your own files: every url() is a path relative to this file, for example
+ *   url('images/play-button.svg'). External addresses (http:, https:, data:, //) and paths that
+ *   start with / are rejected, so are @import and @layer. WaveMP rewrites the paths to the
+ *   addresses of the installed files, so they also work inside CSS variables.
+ * - SVG files must not contain scripts, event handlers (onload ...), foreignObject or links to
+ *   other files; WaveMP removes everything else that is not plain drawing (metadata of drawing
+ *   programs, animations, comments).
+ * - The theme has no cascade layer, so its rules always win against the base styles; no
+ *   !important needed.
+ * - Below 64rem the fixed mobile layout applies; a theme changes colors, pictures and fonts there,
+ *   the layout only in @media (width >= 64rem).
+ * - Both variants live in this file: the root element tells the shown one in
+ *   data-theme-variant ('light' or 'dark'); list them in "variants" of manifest.json. Never use
+ *   @media (prefers-color-scheme) for that, the profile may choose another appearance than the
+ *   device.
+ */
+
+/* --- Light variant (the first variant in manifest.json) ------------------------------------- */
+
+:root {
+    /* The palette. Texts need a contrast of 4.5:1 to what lies behind them (WCAG 2.2 AA). */
+    --wmp-color-accent: #5b3dc4;
+    --wmp-color-accent-contrast: #ffffff;
+    --wmp-color-focus: #5b3dc4;
+    --wmp-color-text: #24203a;
+    --wmp-color-text-muted: #5a5470;
+    --wmp-color-text-disabled: #9b96ad;
+    --wmp-color-surface: #ffffff;
+    --wmp-color-surface-raised: #f6f3fd;
+    --wmp-color-border: #d8d0ef;
+    --wmp-color-hover: #efeafc;
+    --wmp-color-selection: #e1d8fa;
+    --wmp-color-selection-text: #24203a;
+    --wmp-favorite-color: #c8245f;
+    --wmp-rating-color: #5b3dc4;
+
+    /* The color of the status bar and the bars of the browser: the top of the header. */
+    --wmp-theme-color: #ece7fa;
+
+    /* Text color and background of each area: a color, a gradient or pictures. */
+    --wmp-header-color: #24203a;
+    --wmp-header-background: linear-gradient(#f3effc, #e6dff8);
+    --wmp-toolbar-background: #ffffff;
+    --wmp-sidebar-background: #f6f3fd;
+    --wmp-transport-background: linear-gradient(#f3effc, #e6dff8);
+    --wmp-bottom-nav-background: #ece7fa;
+
+    /*
+     * Pictures: a path relative to this file. A variable keeps the whole value of the CSS
+     * background shorthand: picture, position, size and repeat.
+     */
+    --wmp-image-cover-placeholder: url('images/cover-placeholder.svg') center / 100% 100%
+        no-repeat;
+    --wmp-image-play-button: url('images/play-button.svg') center / 100% 100% no-repeat;
+    --wmp-image-play-button-hover: url('images/play-button-hover.svg') center / 100% 100%
+        no-repeat;
+
+    /* Shapes and sizes. */
+    --wmp-radius-m: 0.75rem;
+    --wmp-play-button-size: 3.25rem;
+
+    /* Fonts: installed on the device, or font files under a license that allows it. */
+    --wmp-font-family: system-ui, sans-serif;
+}
+
+/* --- Dark variant ---------------------------------------------------------------------------- */
+
+:root[data-theme-variant='dark'] {
+    /* Lets the browser draw scroll bars and form controls dark as well. */
+    color-scheme: dark;
+
+    --wmp-color-accent: #b8a8f0;
+    --wmp-color-accent-contrast: #16131f;
+    --wmp-color-focus: #b8a8f0;
+    --wmp-color-text: #ece8f8;
+    --wmp-color-text-muted: #b3acc9;
+    --wmp-color-text-disabled: #6e6886;
+    --wmp-color-surface: #16131f;
+    --wmp-color-surface-raised: #1c1829;
+    --wmp-color-border: #3a3355;
+    --wmp-color-hover: #262038;
+    --wmp-color-selection: #352c55;
+    --wmp-color-selection-text: #ffffff;
+    --wmp-favorite-color: #ff7aa8;
+    --wmp-rating-color: #b8a8f0;
+
+    --wmp-theme-color: #221d33;
+
+    --wmp-header-color: #ece8f8;
+    --wmp-header-background: linear-gradient(#262038, #1e1a2d);
+    --wmp-toolbar-background: #16131f;
+    --wmp-sidebar-background: #1c1829;
+    --wmp-transport-background: linear-gradient(#262038, #1e1a2d);
+    --wmp-bottom-nav-background: #221d33;
+
+    --wmp-image-cover-placeholder: url('images/cover-placeholder-dark.svg') center / 100% 100%
+        no-repeat;
+}
+
+/* --- Parts ----------------------------------------------------------------------------------- */
+
+/*
+ * Parts are addressed with their data-part attribute, states with data-state and ARIA
+ * attributes. ::before and ::after of every part belong to the theme, for example for a gloss.
+ */
+[data-part='transport'] {
+    border-block-start: 1px solid var(--wmp-color-border);
+}
+
+[data-part='transport'] [data-part='btn-play'] {
+    box-shadow: 0 0.25rem 0.75rem rgb(75 47 174 / 35%);
+}
+
+/* The play button shows its icon in white on the violet orb, in both variants. */
+[data-part='transport'] [data-part='btn-play'] > [data-part='icon'] {
+    --wmp-icon-fill: #ffffff;
+}
+
+/* The active tab gets an underline drawn by the indicator part, which slides to it. */
+[data-part='tabs'] > [data-part='indicator'] {
+    position: absolute;
+    inset-block-end: 0;
+    inset-inline-start: var(--wmp-indicator-x);
+    inline-size: var(--wmp-indicator-width);
+    block-size: 0.1875rem;
+    border-radius: var(--wmp-radius-round);
+    background: var(--wmp-color-accent);
+    transition:
+        inset-inline-start 0.25s ease,
+        inline-size 0.25s ease;
+}
+
+/* Covers get rounded corners everywhere. */
+[data-part='cover'] {
+    border-radius: var(--wmp-radius-m);
+}
+
+/* --- Desktop layout -------------------------------------------------------------------------- */
+
+/*
+ * From 64rem on, the layout belongs to the theme. This example moves the sidebar to the right;
+ * leave the block out to keep the layout of the base.
+ */
+@media (width >= 64rem) {
+    [data-part='app'] {
+        grid-template-areas:
+            'header header'
+            'toolbar toolbar'
+            'content sidebar'
+            'transport transport';
+        grid-template-columns: minmax(0, 1fr) var(--wmp-sidebar-width);
+    }
+
+    [data-part='sidebar'] {
+        border-inline-start: 1px solid var(--wmp-color-border);
+    }
+}
+
+/* --- Preferences of the device ---------------------------------------------------------------- */
+
+/* Movement only for those who want it. */
+@media (prefers-reduced-motion: reduce) {
+    [data-part='tabs'] > [data-part='indicator'] {
+        transition: none;
+    }
+}

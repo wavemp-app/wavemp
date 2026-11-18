@@ -1,0 +1,12 @@
+{
+  "id": "my-theme",
+  "name": "My Theme",
+  "author": "Your Name",
+  "version": "1.0.0",
+  "themeApi": 5,
+  "variants": ["light", "dark"],
+  "previews": {
+    "light": "preview-light.svg",
+    "dark": "preview-dark.svg"
+  }
+}

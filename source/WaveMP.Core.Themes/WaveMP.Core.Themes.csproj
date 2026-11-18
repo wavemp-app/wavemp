@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="WaveMP.Core.Themes.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- IHostEnvironment: a relative data folder is resolved against the content root. -->
+    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\WaveMP.Core.Settings\WaveMP.Core.Settings.csproj" />
+    <ProjectReference Include="..\WaveMP.Data\WaveMP.Data.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!--
+      The template of a theme package (assets/theme-template), embedded as theme-template/<path>; the
+      API hands it out as a ZIP file.
+    -->
+    <EmbeddedResource Include="..\..\assets\theme-template\**\*" LogicalName="theme-template/%(RecursiveDir)%(Filename)%(Extension)" Visible="false" />
+  </ItemGroup>
+
+</Project>

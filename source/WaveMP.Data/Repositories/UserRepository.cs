@@ -134,6 +134,15 @@ internal sealed class UserRepository(WaveMpDbContext dbContext) : IUserRepositor
         return updated > 0;
     }
 
+    public Task<int> ResetThemeAsync(string themeId, CancellationToken cancellationToken = default)
+    {
+        return dbContext.UserSettings
+            .Where(settings => settings.ThemeId == themeId)
+            .ExecuteUpdateAsync(
+                setters => setters.SetProperty(settings => settings.ThemeId, UserSettings.DefaultThemeId),
+                cancellationToken);
+    }
+
     public async Task<IReadOnlySet<Guid>> ListUploadedAvatarIdsAsync(
         IReadOnlyCollection<Guid> ids,
         CancellationToken cancellationToken = default)

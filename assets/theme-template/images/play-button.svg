@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+    <!-- The play button: a violet orb with a gloss on its upper half. -->
+    <defs>
+        <radialGradient id="orb" cx="0.5" cy="0.35" r="0.65">
+            <stop offset="0" stop-color="#8f6ff0"/>
+            <stop offset="1" stop-color="#4b2fae"/>
+        </radialGradient>
+        <linearGradient id="gloss" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#ffffff" stop-opacity="0.7"/>
+            <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+        </linearGradient>
+    </defs>
+    <circle cx="50" cy="50" r="48" fill="url(#orb)"/>
+    <ellipse cx="50" cy="30" rx="34" ry="20" fill="url(#gloss)"/>
+</svg>

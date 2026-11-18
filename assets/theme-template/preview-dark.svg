@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 300">
+    <!-- Preview of the dark variant for the theme picker. Replace it with a screenshot of your theme
+         (480 pixels wide, WebP or PNG) and name it in manifest.json. -->
+    <rect width="480" height="300" fill="#16131f"/>
+    <rect width="480" height="36" fill="#221d33"/>
+    <rect x="12" y="11" width="64" height="14" rx="7" fill="#b8a8f0"/>
+    <rect y="36" width="120" height="216" fill="#1c1829"/>
+    <rect x="12" y="52" width="96" height="10" rx="5" fill="#3a3355"/>
+    <rect x="12" y="72" width="80" height="10" rx="5" fill="#3a3355"/>
+    <rect x="12" y="92" width="88" height="10" rx="5" fill="#3a3355"/>
+    <rect x="140" y="56" width="70" height="70" rx="6" fill="#2d2843"/>
+    <rect x="224" y="56" width="70" height="70" rx="6" fill="#3a3355"/>
+    <rect x="308" y="56" width="70" height="70" rx="6" fill="#2d2843"/>
+    <rect x="392" y="56" width="70" height="70" rx="6" fill="#3a3355"/>
+    <rect x="140" y="136" width="56" height="8" rx="4" fill="#ece8f8"/>
+    <rect x="224" y="136" width="48" height="8" rx="4" fill="#ece8f8"/>
+    <rect x="308" y="136" width="60" height="8" rx="4" fill="#ece8f8"/>
+    <rect x="392" y="136" width="44" height="8" rx="4" fill="#ece8f8"/>
+    <rect y="252" width="480" height="48" fill="#221d33"/>
+    <circle cx="240" cy="276" r="16" fill="#8f6ff0"/>
+</svg>
