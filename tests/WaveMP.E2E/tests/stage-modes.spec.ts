@@ -1,4 +1,11 @@
-import { expect, test, type APIRequestContext, type Locator, type Page } from '@playwright/test'
+import {
+    expect,
+    test,
+    type APIRequestContext,
+    type Locator,
+    type Page,
+    type Request,
+} from '@playwright/test'
 import {
     adminHeaders,
     createUser,
@@ -16,6 +23,12 @@ import { adminStorageState, emptyStorageState } from './helpers/storage'
 //   First Song: audio without a video
 //   Second Song: audio with a video; the video sync test changes its offset and resets it
 // The chosen view belongs to the profile, so the tests that switch it select their own profile.
+
+/**
+ * How long a test waits for the server to store a view. A busy machine (several workers playing
+ * video) can hold the saves of the page back for several seconds.
+ */
+const settleTimeout = 20_000
 
 function part(page: Page, name: string): Locator {
     return page.locator(`[data-part='app'] [data-part='${name}']`)
@@ -94,6 +107,14 @@ async function recordPositions(page: Page): Promise<void> {
 
 function recordedPositions(page: Page): Promise<number[]> {
     return page.evaluate(() => (window as unknown as { e2ePositions: number[] }).e2ePositions)
+}
+
+/** The view a request of the page saves for the profile, if it is such a save. */
+function viewModeOf(request: Request): string | undefined {
+    if (request.method() !== 'PATCH' || new URL(request.url()).pathname !== '/api/v1/me/settings') {
+        return undefined
+    }
+    return request.postDataJSON()?.playerViewMode ?? undefined
 }
 
 async function sessionHeaders(
@@ -219,34 +240,51 @@ test.describe('with a profile of its own', () => {
             page,
             request,
         }) => {
+            // Holds a save back and waits for the answers, which takes longer on a busy machine.
+            test.slow()
             const id = await findTrackId(request, 'Loose Song')
             await playSong(page, id, 'Loose Song')
             await openNowPlaying(page)
             const stage = part(page, 'stage')
             await expect(stage).toHaveAttribute('data-state', 'video', { timeout: 15_000 })
 
-            // The first save is held back, so a second save sent alongside it would be stored
-            // first and then overwritten with the older view.
-            const saved: string[] = []
+            // The first save is held back, so a second save sent alongside it would overtake it,
+            // be stored first and then be overwritten with the older view. `sent` keeps the order
+            // in which the saves go on to the server. They go on from the browser itself
+            // (route.continue): fetching them in the test process took several seconds when the
+            // machine was busy.
+            const sent: string[] = []
             let held = false
             await page.route('**/api/v1/me/settings', async (route) => {
-                const body =
-                    route.request().method() === 'PATCH' ? route.request().postDataJSON() : null
-                if (body?.playerViewMode && !held) {
+                const mode = viewModeOf(route.request())
+                if (mode && !held) {
                     held = true
                     await new Promise((resolve) => setTimeout(resolve, 750))
                 }
-                const response = await route.fetch()
-                if (body?.playerViewMode) {
-                    saved.push(body.playerViewMode)
+                if (mode) {
+                    sent.push(mode)
                 }
-                await route.fulfill({ response })
+                await route.continue()
             })
 
+            // Wait for the answers of both saves instead of polling for a few seconds: under load,
+            // they can take longer than the default timeout of expect.
+            const answered = Promise.all([
+                page.waitForResponse((response) => viewModeOf(response.request()) === 'Cover', {
+                    timeout: settleTimeout,
+                }),
+                page.waitForResponse(
+                    (response) => viewModeOf(response.request()) === 'Visualization',
+                    { timeout: settleTimeout },
+                ),
+            ])
             await viewSegment(page, 'cover').click()
             await viewSegment(page, 'visualization').click()
             await expect(stage).toHaveAttribute('data-state', 'visualization')
-            await expect.poll(() => saved).toEqual(['Cover', 'Visualization'])
+            for (const response of await answered) {
+                expect(response.status()).toBe(200)
+            }
+            expect(sent).toEqual(['Cover', 'Visualization'])
             expect(await storedViewMode(request, user.id)).toBe('Visualization')
 
             await page.unroute('**/api/v1/me/settings')
