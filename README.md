@@ -150,6 +150,8 @@ The running version is shown under **Settings** and reported by `GET /api/v1/hea
 | `MEDIA_PATH` | Media folder inside the container; only change it if you mount your media elsewhere | `/media` |
 | `DATA_PATH` | Data folder inside the container (cache, covers of playlists, pictures of the profiles and the exports of the database); only change it if you mount the volume elsewhere | `/data` |
 | `TZ` | Time zone of the server, for example `Europe/Berlin`; the daily backup runs at its time of day in this zone | `UTC` |
+| `PUID` | User id that WaveMP runs as; see [User and permissions](#user-and-permissions) | `1654` |
+| `PGID` | Group id that WaveMP runs as | `1654` |
 | `Streaming__SignedUrlLifetime` | How long a stream address stays valid after it was handed out, on top of the length of the song | `01:00:00` |
 | `Streaming__MaxSignedUrlLifetime` | Upper limit of that validity, also for very long songs | `1.00:00:00` |
 | `Streaming__HistoryMaxAge` | How old a play may be when a client reports it to the history, for example after it was offline | `7.00:00:00` |
@@ -162,11 +164,30 @@ The running version is shown under **Settings** and reported by `GET /api/v1/hea
 
 Audio, video and other media are streamed through short-lived signed addresses, bound to the song and the profile, because players and casting devices cannot send a login token. The signing key is created on the first start and kept in the database.
 
+### User and permissions
+
+The container starts as root, prepares the data folder and then runs WaveMP as the user `PUID` and the group `PGID`, `1654` (the user `app` of the image) by default. Files WaveMP writes, such as edited tags, the exports of the database and the cache, belong to this user. Set both to a user of your server that may read your media, for example `99` and `100` on Unraid or the ids that `id <user>` prints:
+
+```yaml
+services:
+  wavemp:
+    # ...
+    environment:
+      # ...
+      PUID: "1000"
+      PGID: "1000"
+```
+
+- Before WaveMP starts, the data folder (`/data`) is handed to this user and group, so a folder that your server created as root works without further steps. Only the folder itself changes owner; folders and files inside it stay as they are. If you switch an existing installation to another user, hand the whole folder to it once, for example `sudo chown -R 1000:1000 /path/to/wavemp/data`.
+- Groups added with `group_add` are kept, and the groups of the render devices under `/dev/dri` are added, so [hardware transcoding](#hardware-transcoding-optional) works without `group_add`.
+- `PUID=0` runs WaveMP as root.
+- If you start the container as another user with `user:` (`--user`), as TrueNAS does, WaveMP runs as that user, `PUID` and `PGID` are ignored and the data folder is not changed; it must already be writable for this user.
+
 ### Hardware transcoding (optional)
 
 Songs and videos your browser cannot play are transcoded on the fly by ffmpeg into an HLS stream (H.264 video, AAC sound). Software transcoding always works. On a server with an Intel CPU or GPU with Quick Sync, WaveMP encodes videos on the graphics hardware instead, which needs much less processor power; the image brings the Intel drivers (VA-API and oneVPL, `linux/amd64` only).
 
-Pass the render device into the container and give the container user access to it:
+Pass the render device into the container:
 
 ```yaml
 services:
@@ -174,12 +195,14 @@ services:
     # ...
     devices:
       - /dev/dri:/dev/dri
-    group_add:
-      # Group of the render device on the host: stat -c '%g' /dev/dri/renderD128
-      - "993"
 ```
 
-The container runs as user `1654`, which is not a member of the groups of the host; `group_add` with the numeric group id of the device (usually the group `render`, sometimes `video`) lets it open the device. Check the id with `stat -c '%g' /dev/dri/renderD128` and replace `993` with it.
+WaveMP adds the group of the device (usually the group `render`, sometimes `video`) to its user when the container starts, so the user `PUID` can open it. If you start the container as another user with `user:`, add the group yourself with `group_add` and the numeric group id of the device, which `stat -c '%g' /dev/dri/renderD128` prints on the host:
+
+```yaml
+    group_add:
+      - "993"
+```
 
 On every start, and when the setting changes, WaveMP looks for a render device under `/dev/dri` and tests Quick Sync (QSV) and then VA-API with a short test encode. **Administration > Transcoding** shows the result: the encoder and the device in use, or why the hardware is not used (no render device, test failed). If a transcode on the hardware fails, WaveMP repeats it in software. Set **Hardware acceleration** there to **Off (software only)** to always transcode in software, and choose the device with `Transcoding__RenderDevice` if the server has more than one GPU.
 
@@ -187,7 +210,7 @@ On every start, and when the setting changes, WaveMP looks for a render device u
 
 - Mount the folder **read-only** (`/path/to/your/media:/media:ro`) if WaveMP should never change your files. The metadata editor then shows its fields greyed out with a hint.
 - Mount it **writable** if you want to edit tags from within WaveMP. Changes are only written to audio files, never to videos, and file names stay as they are.
-- The container runs as user `1654` (`app`); your files and folders must be readable for it. To edit tags, the audio files must also be writable for it, for example through a group with write permission that you add to the container with `group_add` in the compose file. No rescan is needed after changing the mount or the permissions: the editor checks the file each time it opens.
+- WaveMP runs as user `1654` by default, or as the user `PUID` and the group `PGID` (see [User and permissions](#user-and-permissions)); your files and folders must be readable for it. To edit tags, the audio files must also be writable for it, for example by running WaveMP as the owner of your media with `PUID` and `PGID`, or through a group with write permission that you add to the container with `group_add` in the compose file. No rescan is needed after changing the mount or the permissions: the editor checks the file each time it opens.
 
 ### Data folder and cache
 
@@ -254,7 +277,7 @@ WaveMP and its database are two templates in Community Applications, `WaveMP` an
 3. Install **WaveMP** with the same **Database password**. **Media** is your share with music and music videos (set the access mode to read only if WaveMP should never change your files), **Data** is `/mnt/user/appdata/wavemp`, which holds the exports of the database in its folder `backups`; include it in your appdata backup.
 4. **Hardware transcoding**: in the advanced view of the template, set **Intel GPU** to `/dev/dri`. The device exists when the driver of the Intel GPU is loaded on the server.
 
-Both containers start with `--restart unless-stopped`, so WaveMP waits for the database by starting again. WaveMP runs as root on Unraid (`--user 0:0` in **Extra Parameters**), because Unraid creates new appdata folders as root; files it writes, such as edited tags, belong to root.
+Both containers start with `--restart unless-stopped`, so WaveMP waits for the database by starting again. WaveMP runs as the user `nobody` (99) and the group `users` (100) of Unraid, set as **User ID** (`PUID`) and **Group ID** (`PGID`) in the advanced view: it starts as root, hands its appdata folder to this user and then runs as it, so files it writes, such as edited tags, belong to `nobody:users` like the other files of your shares. Earlier versions of the template ran WaveMP as root; for such an installation, hand the appdata folder to the new user once in the terminal: `chown -R 99:100 /mnt/user/appdata/wavemp`.
 
 Without the catalog: save both templates into the templates folder of Unraid and add them under **Docker > Add Container > Template**:
 
@@ -272,7 +295,7 @@ Install **WaveMP** from the **App Store**. Before the first start, open the sett
 - **Data**: `/DATA/AppData/wavemp/data` holds the exports of the database in its folder `backups`, `/DATA/AppData/wavemp/db` the database itself.
 - **Hardware transcoding**: add the device `/dev/dri` to the container `wavemp` in the settings of the app (ZimaBoard, ZimaBlade and ZimaCube have Intel graphics).
 
-WaveMP runs as root here, because ZimaOS and CasaOS create the folders of the app as root.
+WaveMP runs as the user of ZimaOS and CasaOS (`PUID` and `PGID`, which the system fills in, usually `1000`): it starts as root, hands its data folder to this user and then runs as it, so files it writes, such as edited tags, belong to this user. Earlier versions of the app ran WaveMP as root; for such an installation, hand the data folder to the new user once in the terminal: `sudo chown -R 1000:1000 /DATA/AppData/wavemp/data`.
 
 Without the store: **App Store > Custom Install** (the plus icon), **Import**, and paste [`deploy/casaos/WaveMP/docker-compose.yml`](deploy/casaos/WaveMP/docker-compose.yml).
 
@@ -620,6 +643,9 @@ cd tests/WaveMP.E2E
 npm install
 npx playwright install chromium
 npm test                                          # E2E_BASE_URL defaults to http://localhost:8080
+
+# User and groups of the image (entrypoint with PUID, PGID, group_add and --user), needs bash and docker
+docker build -t wavemp:dev . && bash tests/WaveMP.E2E/scripts/test-image-user.sh wavemp:dev
 ```
 
 The tests create their media at runtime with ffmpeg (sine tones, test pictures, tags), so ffmpeg and ffprobe must be in the `PATH`, or in the folder named by `FFMPEG_PATH`; without them the media and scan tests fail with a hint. Tests in the category `Media` need ffmpeg only, tests in the category `Integration` the dev database as well (`dotnet test --filter "TestCategory!=Integration"` runs everything else).

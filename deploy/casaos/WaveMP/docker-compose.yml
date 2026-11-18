@@ -3,8 +3,10 @@ services:
   wavemp:
     container_name: wavemp
     image: wavemp/wavemp:1.0.50
-    # CasaOS creates the folders of the bind mounts as root and has no step that hands them to
-    # another user, so WaveMP runs as root here (the image itself runs as user 1654).
+    # CasaOS creates the folders of the bind mounts as root. WaveMP starts as root, hands its data
+    # folder to the user PUID and the group PGID (set by CasaOS and ZimaOS) and runs as them.
+    # user: "0:0" is the default of current images; images before PUID and PGID need it to start
+    # as root, otherwise they run as user 1654, which cannot write the data folder.
     user: "0:0"
     restart: unless-stopped
     depends_on:
@@ -19,6 +21,8 @@ services:
       DB_PASSWORD: casaos
       ADMIN_PIN: ""
       TZ: $TZ
+      PUID: $PUID
+      PGID: $PGID
     ports:
       - target: 8080
         published: "8080"
@@ -50,6 +54,14 @@ services:
           description:
             en_US: Time zone; the daily backup of the database runs at its time of day.
             de_DE: Zeitzone; die tägliche Sicherung der Datenbank läuft zu ihrer Uhrzeit.
+        - container: PUID
+          description:
+            en_US: User that WaveMP runs as and that owns the files it writes. WaveMP hands its data folder to this user at the start.
+            de_DE: Benutzer, als der WaveMP läuft und dem die Dateien gehören, die es schreibt. WaveMP übergibt ihm beim Start seinen Datenordner.
+        - container: PGID
+          description:
+            en_US: Group that WaveMP runs as.
+            de_DE: Gruppe, als die WaveMP läuft.
       ports:
         - container: "8080"
           description:

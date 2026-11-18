@@ -49,9 +49,11 @@ on the CDN of TrueNAS: attach `assets/logo/wavemp-logo-512.png` and the pictures
 
 `wavemp.xml` is the template of WaveMP, `wavemp-db.xml` the one of its PostgreSQL database (the
 official `postgres` image). Both containers join the custom Docker network `wavemp`, so WaveMP
-reaches the database by its container name `wavemp-db`; the database publishes no port. WaveMP runs
-as root (`--user 0:0` in the extra parameters) because Unraid creates the folders of new paths as
-root.
+reaches the database by its container name `wavemp-db`; the database publishes no port. Unraid
+creates the folders of new paths as root, so WaveMP starts as root (`--user 0:0` in the extra
+parameters) and runs as `nobody:users` (`PUID` 99 and `PGID` 100, in the advanced view) after it has
+handed its data folder to them. Images before `PUID` and `PGID` ignore both variables and run as
+root; `--user 0:0` keeps them working, and current images start as root anyway.
 
 To list the templates in Community Applications, submit this repository once as a template
 repository (submission form and policies of Community Applications in the Unraid forum); Community
@@ -66,6 +68,9 @@ the screenshots are copies of `assets/logo/wavemp-logo.svg`, `assets/logo/wavemp
 `assets/screenshots/catalogs/home.png`, `now-playing.png` and `album.png`; the check fails if they
 differ. CasaOS has no hidden or required input fields: the database password is an ordinary
 environment variable (`casaos` by default) that the install tips ask to change in both containers.
+CasaOS creates the folders of the app as root as well: WaveMP starts as root (`user: "0:0"`) and
+runs as the user of the system, which CasaOS and ZimaOS fill into `$PUID` and `$PGID`, after it has
+handed its data folder to it. Images before `PUID` and `PGID` keep running as root.
 
 ## New version
 
