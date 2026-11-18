@@ -1,5 +1,5 @@
 /*
- * Theme "Midnight" for WaveMP, theme API version 4 (see THEMING.md).
+ * Theme "Midnight" for WaveMP, theme API version 5 (see THEMING.md).
  *
  * A dark glass look: a glossy black header and transport bar with round glass buttons and a
  * glowing blue play button, a light toolbar, a white sidebar and a white library list grouped by
@@ -662,7 +662,7 @@ a[data-part="breadcrumb-link"]:hover {
     color: #5f6873;
 }
 
-[data-part="btn-fullscreen"] > [data-part="icon"] {
+[data-part="video-stage"] > [data-part="btn-fullscreen"] > [data-part="icon"] {
     filter: drop-shadow(0 0 3px rgb(90 180 255 / 60%));
 }
 
