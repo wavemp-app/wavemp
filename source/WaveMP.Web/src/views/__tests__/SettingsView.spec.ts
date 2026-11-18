@@ -85,9 +85,96 @@ describe('SettingsView', () => {
         ])
         const label = wrapper.get('[data-field="replay-gain"] > [data-part="label"]')
         expect(replayGain.attributes('aria-labelledby')).toBe(label.attributes('id'))
-        expect(wrapper.get('[data-part="field-hint"]').text()).toBe(
+        expect(wrapper.get('[data-field="language"] [data-part="field-hint"]').text()).toBe(
             'Applies to this profile on all devices.',
         )
+    })
+
+    it('offers the themes as preview tiles in a radio group', () => {
+        const { wrapper } = mountView()
+
+        const picker = wrapper.get('[data-field="theme"] [data-part="theme-picker"]')
+        const label = wrapper.get('[data-field="theme"] > [data-part="label"]')
+        expect(picker.attributes('role')).toBe('radiogroup')
+        expect(picker.attributes('aria-labelledby')).toBe(label.attributes('id'))
+        expect(picker.find('[data-part="indicator"]').exists()).toBe(true)
+        const options = picker.findAll('[data-part="theme-option"]')
+        expect(
+            options.map((option) => [
+                option.attributes('data-item'),
+                option.get('[data-part="label"]').text(),
+                option.attributes('aria-checked'),
+                option.attributes('tabindex'),
+            ]),
+        ).toEqual([
+            ['midnight', 'Midnight', 'true', '0'],
+            ['meadow', 'Meadow', 'false', '-1'],
+            ['daylight', 'Daylight', 'false', '-1'],
+            ['accent', 'Accent', 'false', '-1'],
+            ['pinstripe', 'Pinstripe', 'false', '-1'],
+            ['clear-glass', 'Clear Glass', 'false', '-1'],
+        ])
+        const accent = options[3]!
+        expect(accent.attributes('role')).toBe('radio')
+        expect(accent.attributes('data-variants')).toBe('light dark')
+        expect(accent.get('[data-part="theme-variants"]').text()).toBe('Light and dark')
+        expect(accent.get('[data-part="theme-preview-image"]').attributes('src')).toMatch(
+            /^\/themes\/accent\/preview-(light|dark)\.webp$/,
+        )
+        expect(picker.attributes('style')).toContain('--wmp-active-index: 0')
+    })
+
+    it('switches the theme at once and saves it with clicks and the arrow keys', async () => {
+        const { wrapper, session } = mountView()
+        const updateTheme = vi.spyOn(session, 'updateTheme').mockImplementation(async (change) => {
+            session.theme = { ...session.theme, ...change }
+        })
+        const option = (id: string) => wrapper.get(`[data-part="theme-option"][data-item="${id}"]`)
+
+        await option('accent').trigger('click')
+        await flushPromises()
+        expect(updateTheme).toHaveBeenLastCalledWith({ id: 'accent' })
+        expect(option('accent').attributes('aria-checked')).toBe('true')
+
+        await option('accent').trigger('keydown', { key: 'ArrowRight' })
+        await flushPromises()
+        expect(updateTheme).toHaveBeenLastCalledWith({ id: 'pinstripe' })
+        expect(option('pinstripe').attributes('tabindex')).toBe('0')
+    })
+
+    it('offers the appearance only for themes with a light and a dark variant', async () => {
+        const { wrapper, session } = mountView()
+        const updateTheme = vi.spyOn(session, 'updateTheme').mockImplementation(async (change) => {
+            session.theme = { ...session.theme, ...change }
+        })
+        const appearance = () =>
+            wrapper.get('[data-field="theme-appearance"] [data-part="segmented-control"]')
+
+        expect(appearance().attributes('aria-disabled')).toBe('true')
+        expect(wrapper.get('[data-field="theme-appearance"] [data-part="field-hint"]').text()).toBe(
+            'Midnight has one variant only.',
+        )
+
+        session.theme = { id: 'clear-glass', appearance: 'system' }
+        await flushPromises()
+        expect(appearance().attributes('aria-disabled')).toBeUndefined()
+        expect(
+            appearance()
+                .findAll('[data-part="segment"]')
+                .map((segment) => [
+                    segment.attributes('data-item'),
+                    segment.attributes('aria-checked'),
+                ]),
+        ).toEqual([
+            ['system', 'true'],
+            ['light', 'false'],
+            ['dark', 'false'],
+        ])
+
+        await appearance().get('[data-item="dark"]').trigger('click')
+        await flushPromises()
+        expect(updateTheme).toHaveBeenCalledWith({ appearance: 'dark' })
+        expect(appearance().get('[data-item="dark"]').attributes('aria-checked')).toBe('true')
     })
 
     it('saves a new language at once', async () => {

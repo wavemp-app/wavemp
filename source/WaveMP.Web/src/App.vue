@@ -4,6 +4,7 @@ import { RouterView, useRoute, useRouter } from 'vue-router'
 import AppPage from '@/components/shell/AppPage.vue'
 import AppShell from '@/components/shell/AppShell.vue'
 import { useLocaleSync } from '@/composables/useLocaleSync'
+import { useThemeSync } from '@/composables/useThemeSync'
 import { useSessionStore } from '@/stores/session'
 
 const route = useRoute()
@@ -11,6 +12,7 @@ const router = useRouter()
 const session = useSessionStore()
 
 useLocaleSync()
+useThemeSync()
 
 // The session can end while a page is open (rejected token): then the profile selection opens
 // and leads back to the page afterwards.

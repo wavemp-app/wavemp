@@ -11,6 +11,7 @@ import type { SleepTimerChoice } from './transport'
 import { contentAreaId } from '@/router/scroll'
 import BaseAlert from '@/components/base/BaseAlert.vue'
 import { pageTitleKey } from '@/navigation/breadcrumb'
+import { useCoverColor } from '@/composables/useCoverColor'
 import { useMediaQuery } from '@/composables/useMediaQuery'
 import { useCollectionStore } from '@/stores/collection'
 import { useHealthStore } from '@/stores/health'
@@ -33,6 +34,8 @@ const collection = useCollectionStore()
 const player = usePlayerStore()
 const session = useSessionStore()
 const isDesktop = useMediaQuery(desktopMediaQuery)
+
+useCoverColor()
 
 const sidebarOpen = ref(false)
 /** The desktop sidebar shows only its icons; kept per profile. The mobile drawer is unchanged. */

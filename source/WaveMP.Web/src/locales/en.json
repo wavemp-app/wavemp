@@ -326,6 +326,8 @@
     "title": "Component overview",
     "intro": "Internal page for development. It shows all parts of the theme API in the current theme.",
     "language": "Language",
+    "theme": "Theme",
+    "themeVariant": "Variant",
     "sidebarCollapsed": "Collapsed (desktop)",
     "sections": {
       "buttons": "Buttons",
@@ -442,6 +444,22 @@
     "title": "Settings",
     "language": "Language",
     "languageHint": "Applies to this profile on all devices.",
+    "appearance": "Appearance",
+    "theme": "Theme",
+    "themeHint": "Changes the look of WaveMP at once, on every device of this profile.",
+    "themeVariants": {
+      "light": "Light",
+      "dark": "Dark",
+      "both": "Light and dark"
+    },
+    "themeAppearance": "Light or dark",
+    "themeAppearanceHint": "For themes with a light and a dark variant. System follows the light or dark mode of the device.",
+    "themeAppearanceSingle": "{theme} has one variant only.",
+    "themeAppearances": {
+      "system": "System",
+      "light": "Light",
+      "dark": "Dark"
+    },
     "saveError": "The setting could not be saved.",
     "replayGain": "Volume leveling (ReplayGain)",
     "replayGainHint": "Evens out the volume of songs with their ReplayGain tags. Applies to this profile on all devices.",

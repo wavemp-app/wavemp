@@ -1100,6 +1100,15 @@ export function createSubsonicPasswordFromDiscriminatorValue(parseNode: ParseNod
 /**
  * Creates a new instance of the appropriate class based on discriminator value
  * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {ThemeSettings}
+ */
+// @ts-ignore
+export function createThemeSettingsFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoThemeSettings;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
  * @returns {TrackFileSelection}
  */
 // @ts-ignore
@@ -1357,6 +1366,15 @@ export function createUpdateSleepTimerSettingsFromDiscriminatorValue(parseNode: 
 // @ts-ignore
 export function createUpdateSubsonicAccessFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
     return deserializeIntoUpdateSubsonicAccess;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {UpdateThemeSettings}
+ */
+// @ts-ignore
+export function createUpdateThemeSettingsFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoUpdateThemeSettings;
 }
 /**
  * Creates a new instance of the appropriate class based on discriminator value
@@ -2635,6 +2653,18 @@ export function deserializeIntoSubsonicPassword(subsonicPassword: Partial<Subson
 }
 /**
  * The deserialization information for the current model
+ * @param ThemeSettings The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoThemeSettings(themeSettings: Partial<ThemeSettings> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "appearance": n => { themeSettings.appearance = n.getEnumValue<ThemeAppearance>(ThemeAppearanceObject); },
+        "id": n => { themeSettings.id = n.getStringValue(); },
+    }
+}
+/**
+ * The deserialization information for the current model
  * @param Track The instance to deserialize into.
  * @returns {Record<string, (node: ParseNode) => void>}
  */
@@ -3079,6 +3109,18 @@ export function deserializeIntoUpdateSubsonicAccess(updateSubsonicAccess: Partia
 }
 /**
  * The deserialization information for the current model
+ * @param UpdateThemeSettings The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoUpdateThemeSettings(updateThemeSettings: Partial<UpdateThemeSettings> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "appearance": n => { updateThemeSettings.appearance = n.getEnumValue<ThemeAppearance>(ThemeAppearanceObject); },
+        "id": n => { updateThemeSettings.id = n.getStringValue(); },
+    }
+}
+/**
+ * The deserialization information for the current model
  * @param UpdateTrackFileSelection The instance to deserialize into.
  * @returns {Record<string, (node: ParseNode) => void>}
  */
@@ -3196,6 +3238,7 @@ export function deserializeIntoUpdateUserSettings(updateUserSettings: Partial<Up
         "replayGain": n => { updateUserSettings.replayGain = n.getEnumValue<ReplayGainMode>(ReplayGainModeObject); },
         "sidebarCollapsed": n => { updateUserSettings.sidebarCollapsed = n.getBooleanValue(); },
         "sleepTimer": n => { updateUserSettings.sleepTimer = n.getObjectValue<UpdateSleepTimerSettings>(createUpdateSleepTimerSettingsFromDiscriminatorValue); },
+        "theme": n => { updateUserSettings.theme = n.getObjectValue<UpdateThemeSettings>(createUpdateThemeSettingsFromDiscriminatorValue); },
         "visualization": n => { updateUserSettings.visualization = n.getObjectValue<UpdateVisualizationSettings>(createUpdateVisualizationSettingsFromDiscriminatorValue); },
     }
 }
@@ -3262,6 +3305,7 @@ export function deserializeIntoUserSettings(userSettings: Partial<UserSettings> 
         "replayGain": n => { userSettings.replayGain = n.getEnumValue<ReplayGainMode>(ReplayGainModeObject); },
         "sidebarCollapsed": n => { userSettings.sidebarCollapsed = n.getBooleanValue(); },
         "sleepTimer": n => { userSettings.sleepTimer = n.getObjectValue<SleepTimerSettings>(createSleepTimerSettingsFromDiscriminatorValue); },
+        "theme": n => { userSettings.theme = n.getObjectValue<ThemeSettings>(createThemeSettingsFromDiscriminatorValue); },
         "visualization": n => { userSettings.visualization = n.getObjectValue<VisualizationSettings>(createVisualizationSettingsFromDiscriminatorValue); },
     }
 }
@@ -5680,6 +5724,19 @@ export function serializeSubsonicPassword(writer: SerializationWriter, subsonicP
 /**
  * Serializes information the current object
  * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param ThemeSettings The instance to serialize from.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeThemeSettings(writer: SerializationWriter, themeSettings: Partial<ThemeSettings> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!themeSettings || isSerializingDerivedType) { return; }
+    writer.writeEnumValue<ThemeAppearance>("appearance", themeSettings.appearance);
+    writer.writeStringValue("id", themeSettings.id);
+    writer.writeAdditionalData(themeSettings.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
  * @param Track The instance to serialize from.
  * @param writer Serialization writer to use to serialize this model
  */
@@ -6154,6 +6211,19 @@ export function serializeUpdateSubsonicAccess(writer: SerializationWriter, updat
 /**
  * Serializes information the current object
  * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param UpdateThemeSettings The instance to serialize from.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeUpdateThemeSettings(writer: SerializationWriter, updateThemeSettings: Partial<UpdateThemeSettings> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!updateThemeSettings || isSerializingDerivedType) { return; }
+    writer.writeEnumValue<ThemeAppearance>("appearance", updateThemeSettings.appearance);
+    writer.writeStringValue("id", updateThemeSettings.id);
+    writer.writeAdditionalData(updateThemeSettings.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
  * @param UpdateTrackFileSelection The instance to serialize from.
  * @param writer Serialization writer to use to serialize this model
  */
@@ -6279,6 +6349,7 @@ export function serializeUpdateUserSettings(writer: SerializationWriter, updateU
     writer.writeEnumValue<ReplayGainMode>("replayGain", updateUserSettings.replayGain);
     writer.writeBooleanValue("sidebarCollapsed", updateUserSettings.sidebarCollapsed);
     writer.writeObjectValue<UpdateSleepTimerSettings>("sleepTimer", updateUserSettings.sleepTimer, serializeUpdateSleepTimerSettings);
+    writer.writeObjectValue<UpdateThemeSettings>("theme", updateUserSettings.theme, serializeUpdateThemeSettings);
     writer.writeObjectValue<UpdateVisualizationSettings>("visualization", updateUserSettings.visualization, serializeUpdateVisualizationSettings);
     writer.writeAdditionalData(updateUserSettings.additionalData);
 }
@@ -6349,6 +6420,7 @@ export function serializeUserSettings(writer: SerializationWriter, userSettings:
     writer.writeEnumValue<ReplayGainMode>("replayGain", userSettings.replayGain);
     writer.writeBooleanValue("sidebarCollapsed", userSettings.sidebarCollapsed);
     writer.writeObjectValue<SleepTimerSettings>("sleepTimer", userSettings.sleepTimer, serializeSleepTimerSettings);
+    writer.writeObjectValue<ThemeSettings>("theme", userSettings.theme, serializeThemeSettings);
     writer.writeObjectValue<VisualizationSettings>("visualization", userSettings.visualization, serializeVisualizationSettings);
     writer.writeAdditionalData(userSettings.additionalData);
 }
@@ -6500,6 +6572,20 @@ export interface SubsonicPassword extends AdditionalDataHolder, Parsable {
      * The app password; also the OpenSubsonic API key.
      */
     password?: string | null;
+}
+export type ThemeAppearance = (typeof ThemeAppearanceObject)[keyof typeof ThemeAppearanceObject];
+/**
+ * Theme of the web app of the current profile.
+ */
+export interface ThemeSettings extends AdditionalDataHolder, Parsable {
+    /**
+     * Which variant of a theme with a light and a dark variant the profile sees; System by default, which follows the light or dark mode of the device.
+     */
+    appearance?: ThemeAppearance | null;
+    /**
+     * Id of the theme, e.g. "midnight" or "clear-glass"; "midnight" by default. The ids are not a closed list: the clients know their themes and show their default theme for an id they do not know.
+     */
+    id?: string | null;
 }
 /**
  * A track of the library: all media files with the same base name in one folder.
@@ -7268,6 +7354,19 @@ export interface UpdateSubsonicAccess extends AdditionalDataHolder, Parsable {
     enabled?: boolean | null;
 }
 /**
+ * Changes the theme of the current profile. Missing or null values stay unchanged.
+ */
+export interface UpdateThemeSettings extends AdditionalDataHolder, Parsable {
+    /**
+     * The appearance property
+     */
+    appearance?: ThemeAppearance | null;
+    /**
+     * Id of the theme, up to 64 lower-case letters and digits in words separated by single hyphens, e.g. "clear-glass". The server keeps any valid id; the clients offer the themes they know.
+     */
+    id?: string | null;
+}
+/**
  * The files the admin selects for a track. Replaces the whole selection: a missing or null id leaves the choice of the category to the quality rule. Sending the id of the current selection keeps it, also a missing one.
  */
 export interface UpdateTrackFileSelection extends AdditionalDataHolder, Parsable {
@@ -7436,6 +7535,10 @@ export interface UpdateUserSettings extends AdditionalDataHolder, Parsable {
      */
     sleepTimer?: UpdateSleepTimerSettings | null;
     /**
+     * The theme property
+     */
+    theme?: UpdateThemeSettings | null;
+    /**
      * The visualization property
      */
     visualization?: UpdateVisualizationSettings | null;
@@ -7559,6 +7662,10 @@ export interface UserSettings extends AdditionalDataHolder, Parsable {
      * Sleep timer of the players.
      */
     sleepTimer?: SleepTimerSettings | null;
+    /**
+     * Theme of the web app. Clients without themes ignore it.
+     */
+    theme?: ThemeSettings | null;
     /**
      * Visualization of the Now Playing view.
      */
@@ -8111,6 +8218,14 @@ export const SortDirectionObject = {
 export const StreamProtocolObject = {
     File: "File",
     Hls: "Hls",
+} as const;
+/**
+ * Which variant of a theme with a light and a dark variant the profile sees; System by default, which follows the light or dark mode of the device.
+ */
+export const ThemeAppearanceObject = {
+    System: "System",
+    Light: "Light",
+    Dark: "Dark",
 } as const;
 /**
  * Whether the editor can write the tags.

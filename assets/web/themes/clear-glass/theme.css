@@ -1,0 +1,67 @@
+/*
+ * Theme "Clear Glass" for WaveMP, theme API version 5 (see THEMING.md).
+ *
+ * Starting stylesheet (light and dark): readable colors on the base layout, to be designed with
+ * strongly refracting, transparent glass, large radii, floating bars and controls and the
+ * color of the current cover (--wmp-cover-color).
+ *
+ * The dark variant applies to :root[data-theme-variant='dark'] (THEMING.md, "Variants").
+ *
+ * Rules of the theme API: no @import, no @layer, no external URLs, root-absolute url() only.
+ * Layout rules live in @media (width >= 64rem); below that, the fixed mobile base applies and
+ * this file only provides colors, graphics and fonts.
+ */
+
+:root {
+    --wmp-color-accent: #0a5cc2;
+    --wmp-color-accent-contrast: #ffffff;
+    --wmp-color-focus: #0a5cc2;
+    --wmp-color-text: #16181d;
+    --wmp-color-text-muted: #50555f;
+    --wmp-color-text-disabled: #9aa0aa;
+    --wmp-color-surface: #ffffff;
+    --wmp-color-surface-raised: #f2f4f7;
+    --wmp-color-border: #d5d9e0;
+    --wmp-color-hover: #e8eef7;
+    --wmp-color-selection: #d3e2f7;
+    --wmp-color-selection-text: #16181d;
+    --wmp-color-success: #1e7a3a;
+    --wmp-color-warning: #9a6200;
+    --wmp-color-danger: #b3261e;
+    --wmp-favorite-color: #c2185b;
+    --wmp-rating-color: #9a6200;
+    --wmp-theme-color: #f2f4f7;
+    --wmp-image-cover-placeholder: url('/themes/clear-glass/images/cover-placeholder.svg') center / 100% 100%
+        no-repeat;
+}
+
+:root[data-theme-variant='dark'] {
+    color-scheme: dark;
+
+    --wmp-color-accent: #7fb6ff;
+    --wmp-color-accent-contrast: #000000;
+    --wmp-color-focus: #7fb6ff;
+    --wmp-color-text: #f5f6f8;
+    --wmp-color-text-muted: #b9bec8;
+    --wmp-color-text-disabled: #6f7580;
+    --wmp-color-surface: #1c1d21;
+    --wmp-color-surface-raised: #141518;
+    --wmp-color-border: #3a3d45;
+    --wmp-color-hover: #2a2d34;
+    --wmp-color-selection: #24364f;
+    --wmp-color-selection-text: #f5f6f8;
+    --wmp-color-success: #6fd08a;
+    --wmp-color-warning: #f2c14e;
+    --wmp-color-danger: #ff8a80;
+    --wmp-favorite-color: #ff7aa8;
+    --wmp-rating-color: #f2c14e;
+    --wmp-theme-color: #141518;
+    --wmp-image-cover-placeholder: url('/themes/clear-glass/images/cover-placeholder-dark.svg') center / 100% 100%
+        no-repeat;
+    --wmp-backdrop-color: rgb(0 0 0 / 60%);
+}
+
+/* A line between the header and the page, as an example of a rule for a part. */
+[data-part='header'] {
+    border-block-end: 1px solid var(--wmp-color-border);
+}

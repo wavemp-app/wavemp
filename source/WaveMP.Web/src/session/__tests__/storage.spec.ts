@@ -26,6 +26,7 @@ const session: StoredSession = {
         avatarPresetId: 'leaf',
     },
     language: 'de',
+    theme: { id: 'clear-glass', appearance: 'dark' },
 }
 
 class MemoryStorage implements Storage {
@@ -161,6 +162,23 @@ describe('session storage', () => {
         storage.setItem(sessionStorageKey, JSON.stringify({ ...session, language: 'pt-br' }))
 
         expect(loadStoredSession(now, storage)?.language).toBe('pt-BR')
+    })
+
+    it('keeps the session but forgets a missing or invalid theme', () => {
+        const { theme: _, ...withoutTheme } = session
+        storage.setItem(sessionStorageKey, JSON.stringify(withoutTheme))
+        expect(loadStoredSession(now, storage)?.theme).toBeNull()
+
+        for (const theme of [
+            { id: 'Clear Glass', appearance: 'dark' },
+            { id: 'accent', appearance: 'sepia' },
+            'accent',
+        ]) {
+            storage.setItem(sessionStorageKey, JSON.stringify({ ...session, theme }))
+            const loaded = loadStoredSession(now, storage)
+            expect(loaded?.token).toBe('token')
+            expect(loaded?.theme).toBeNull()
+        }
     })
 
     it('keeps the session but drops an invalid language', () => {

@@ -8,7 +8,9 @@ import { historyEntriesKey } from './router/entries'
 import { createWaveMpI18n } from './i18n'
 import { appLocale } from './i18n/locales'
 import { useSessionStore } from './stores/session'
-import { applyTheme, resolveThemeId } from './themes/themes'
+import { shownTheme } from './composables/useThemeSync'
+import { defaultThemeChoice } from './themes/choice'
+import { applyTheme, darkModeMediaQuery } from './themes/themes'
 
 // The remembered profile is restored before the first navigation, so the route guard knows it.
 const pinia = createPinia()
@@ -20,8 +22,14 @@ session.restore()
 const locale = appLocale(session.isAuthenticated ? session.language : null)
 document.documentElement.lang = locale
 
-// index.html loads the default theme for the first paint; the selection per user follows later.
-applyTheme(resolveThemeId(document.documentElement.dataset.theme))
+// index.html loads the default theme; the remembered theme of the profile replaces it before the
+// first paint of the app (useThemeSync follows changes afterwards).
+const systemDark = window.matchMedia?.(darkModeMediaQuery).matches ?? false
+const firstTheme = shownTheme(
+    session.isAuthenticated ? session.theme : defaultThemeChoice,
+    systemDark,
+)
+applyTheme(firstTheme.id, firstTheme.variant)
 
 const app = createApp(App)
 

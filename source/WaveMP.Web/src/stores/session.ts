@@ -46,6 +46,14 @@ import {
     type StoredSession,
 } from '@/session/storage'
 import {
+    applyThemeChange,
+    defaultThemeChoice,
+    toThemeChoice,
+    toUpdateThemeSettings,
+    type ThemeChange,
+    type ThemeChoice,
+} from '@/themes/choice'
+import {
     applyVisualizationChange,
     defaultVisualizationSettings,
     explicitVisualizationChange,
@@ -85,6 +93,8 @@ export const useSessionStore = defineStore('session', () => {
     const expiresAt = ref<string | null>(null)
     const profile = ref<StoredProfile | null>(null)
     const language = ref<string | null>(null)
+    /** Theme of the profile; the remembered one, otherwise the default theme until loaded. */
+    const theme = ref<ThemeChoice>(defaultThemeChoice)
     /** ReplayGain mode of the profile; Off until the settings are loaded. */
     const replayGain = ref<ReplayGainMode>(ReplayGainModeObject.Off)
     /** What Now Playing shows for the profile; the video until the settings are loaded. */
@@ -125,6 +135,17 @@ export const useSessionStore = defineStore('session', () => {
         apply: (_: string | null, locale: string) => locale,
         request: (locale: string) => patchSettings({ language: locale }),
         read: (settings) => toLocale(settings?.language),
+    })
+    const themeSaver = createSettingSaver({
+        get: () => theme.value,
+        set: (value: ThemeChoice) => {
+            theme.value = value
+            persist()
+        },
+        apply: applyThemeChange,
+        merge: mergeChanges,
+        request: (change: ThemeChange) => patchSettings({ theme: toUpdateThemeSettings(change) }),
+        read: (settings) => toThemeChoice(settings?.theme),
     })
     const replayGainSaver = createSettingSaver({
         get: () => replayGain.value,
@@ -196,6 +217,7 @@ export const useSessionStore = defineStore('session', () => {
         profile.value = session?.profile ?? null
         language.value = session?.language ?? null
         resetProfileSettings()
+        theme.value = session?.theme ?? defaultThemeChoice
         resetPlaybackSettings()
         sessionTokens.current = token.value
     }
@@ -208,7 +230,9 @@ export const useSessionStore = defineStore('session', () => {
         replayGain.value = ReplayGainModeObject.Off
         playerViewMode.value = PlayerViewModeObject.Video
         sidebarCollapsed.value = false
+        theme.value = defaultThemeChoice
         languageSaver.reset()
+        themeSaver.reset()
         replayGainSaver.reset()
         playerViewModeSender.reset()
         sidebarCollapsedSender.reset()
@@ -242,6 +266,7 @@ export const useSessionStore = defineStore('session', () => {
                 expiresAt: expiresAt.value,
                 profile: profile.value,
                 language: language.value,
+                theme: theme.value,
             })
         }
     }
@@ -304,6 +329,7 @@ export const useSessionStore = defineStore('session', () => {
         try {
             const settings = await apiClient.api.v1.me.settings.get()
             language.value = toLocale(settings?.language)
+            theme.value = toThemeChoice(settings?.theme) ?? defaultThemeChoice
             replayGain.value = toReplayGain(settings) ?? ReplayGainModeObject.Off
             playerViewMode.value = toPlayerViewMode(settings) ?? PlayerViewModeObject.Video
             sidebarCollapsed.value = settings?.sidebarCollapsed ?? false
@@ -333,6 +359,7 @@ export const useSessionStore = defineStore('session', () => {
 
             applySession(session)
             language.value = toLocale(settings?.language) ?? language.value
+            theme.value = toThemeChoice(settings?.theme) ?? theme.value
             replayGain.value = toReplayGain(settings) ?? replayGain.value
             playerViewMode.value = toPlayerViewMode(settings) ?? playerViewMode.value
             sidebarCollapsed.value = settings?.sidebarCollapsed ?? sidebarCollapsed.value
@@ -351,6 +378,14 @@ export const useSessionStore = defineStore('session', () => {
      */
     function updateLanguage(locale: string): Promise<void> {
         return languageSaver.save(locale)
+    }
+
+    /**
+     * Shows another theme or appearance at once (no reload) and saves it for the profile like
+     * updateLanguage. Errors are passed on.
+     */
+    function updateTheme(change: ThemeChange): Promise<void> {
+        return themeSaver.save(change)
     }
 
     /** Changes the ReplayGain mode of the profile at once and saves it like updateLanguage. */
@@ -464,6 +499,7 @@ export const useSessionStore = defineStore('session', () => {
         expiresAt,
         profile,
         language,
+        theme,
         replayGain,
         playerViewMode,
         sidebarCollapsed,
@@ -478,6 +514,7 @@ export const useSessionStore = defineStore('session', () => {
         select,
         refresh,
         updateLanguage,
+        updateTheme,
         updateReplayGain,
         updatePlayerViewMode,
         updateSidebarCollapsed,

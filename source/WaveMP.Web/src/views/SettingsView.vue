@@ -12,6 +12,7 @@ import AvatarDialog, { type AvatarDialogProfile } from '@/components/profiles/Av
 import ProfileSummary from '@/components/profiles/ProfileSummary.vue'
 import ScrobblingServices from '@/components/profiles/ScrobblingServices.vue'
 import SubsonicAccess from '@/components/profiles/SubsonicAccess.vue'
+import ThemePicker from '@/components/themes/ThemePicker.vue'
 import {
     ReplayGainModeObject,
     VisualizationQualityObject,
@@ -19,12 +20,15 @@ import {
     type VisualizationQuality,
 } from '@/api/generated/models'
 import { useFormat } from '@/composables/useFormat'
+import { useMediaQuery } from '@/composables/useMediaQuery'
 import { appLocale, isSupportedLocale, languageName, supportedLocales } from '@/i18n/locales'
 import { maxCrossfadeSeconds, type CrossfadeSettings } from '@/player/crossfade'
 import { useCastStore } from '@/stores/cast'
 import { useEqualizerStore } from '@/stores/equalizer'
 import { useHealthStore } from '@/stores/health'
 import { useSessionStore } from '@/stores/session'
+import { isThemeAppearance } from '@/themes/choice'
+import { darkModeMediaQuery, hasVariants, resolveThemeId, themeById, themes } from '@/themes/themes'
 import { appVersion } from '@/version'
 import { autoChangeChoices, type VisualizationSettings } from '@/visualization/settings'
 
@@ -37,6 +41,9 @@ const cast = useCastStore()
 const format = useFormat()
 
 const aboutTitleId = useId()
+const appearanceTitleId = useId()
+const themeLabelId = useId()
+const themeHintId = useId()
 const avatarTitleId = useId()
 const pinTitleId = useId()
 const scrobblingTitleId = useId()
@@ -122,6 +129,35 @@ async function changeLanguage(value: string): Promise<void> {
     }
 
     await save(() => session.updateLanguage(value))
+}
+
+// The theme shows at once (useThemeSync) and is saved in the background like the other settings.
+const systemDark = useMediaQuery(darkModeMediaQuery)
+const themeId = computed(() => resolveThemeId(session.theme.id))
+const chosenTheme = computed(() => themeById(themeId.value))
+const appearanceOptions = computed<SegmentOption[]>(() =>
+    (['system', 'light', 'dark'] as const).map((value) => ({
+        value,
+        label: t(`settings.themeAppearances.${value}`),
+    })),
+)
+/** The appearance only applies to themes with a light and a dark variant. */
+const appearanceHint = computed(() =>
+    hasVariants(chosenTheme.value)
+        ? t('settings.themeAppearanceHint')
+        : t('settings.themeAppearanceSingle', { theme: chosenTheme.value.name }),
+)
+
+async function changeTheme(id: string): Promise<void> {
+    if (id !== session.theme.id) {
+        await save(() => session.updateTheme({ id }))
+    }
+}
+
+async function changeAppearance(value: string): Promise<void> {
+    if (isThemeAppearance(value) && value !== session.theme.appearance) {
+        await save(() => session.updateTheme({ appearance: value }))
+    }
 }
 
 /** Value of the crossfade menu: "off" while the crossfade is off, otherwise its seconds. */
@@ -279,6 +315,34 @@ async function changeSleepTimerFade(value: string): Promise<void> {
             :avatar-version="session.profile.avatarVersion"
         />
         <BaseAlert v-if="error" tone="error" :message="error" />
+        <section data-part="section" data-item="appearance" :aria-labelledby="appearanceTitleId">
+            <h2 :id="appearanceTitleId" data-part="section-title">
+                {{ t('settings.appearance') }}
+            </h2>
+            <div data-part="field" data-field="theme">
+                <span :id="themeLabelId" data-part="label">{{ t('settings.theme') }}</span>
+                <ThemePicker
+                    :model-value="themeId"
+                    :themes="themes"
+                    :labelledby="themeLabelId"
+                    :describedby="themeHintId"
+                    :appearance="session.theme.appearance"
+                    :system-dark="systemDark"
+                    @update:model-value="changeTheme"
+                />
+                <span :id="themeHintId" data-part="field-hint">{{ t('settings.themeHint') }}</span>
+            </div>
+            <BaseSegmentedField
+                :model-value="session.theme.appearance"
+                data-field="theme-appearance"
+                item="theme-appearance"
+                :label="t('settings.themeAppearance')"
+                :options="appearanceOptions"
+                :hint="appearanceHint"
+                :disabled="!hasVariants(chosenTheme)"
+                @update:model-value="changeAppearance"
+            />
+        </section>
         <form data-part="form" @submit.prevent>
             <BaseSelect
                 :model-value="language"

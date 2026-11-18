@@ -13,6 +13,10 @@ import { appIcons } from './scripts/vite-plugin-app-icons.ts'
 // Address of WaveMP.Service during development (see Properties/launchSettings.json).
 const serviceUrl = process.env.WAVEMP_SERVICE_URL ?? 'http://localhost:5080'
 
+// A theme preview server (scripts/theme-preview.ts) shows this theme instead of the theme of the
+// profile and leaves out the overlay of the Vue devtools, which would show in its screenshots.
+const previewTheme = process.env.WAVEMP_PREVIEW_THEME ?? ''
+
 /**
  * Version the web app reports, like the service: WAVEMP_VERSION from the CI (<major>.<minor>.<run
  * number>), otherwise a development build <major>.<minor>.0-dev with the VersionPrefix of
@@ -43,10 +47,11 @@ export default defineConfig({
     publicDir: fileURLToPath(new URL('../../assets/web', import.meta.url)),
     define: {
         __WAVEMP_VERSION__: JSON.stringify(resolveAppVersion()),
+        __WAVEMP_PREVIEW_THEME__: JSON.stringify(previewTheme),
     },
     plugins: [
         vue(),
-        vueDevTools(),
+        ...(previewTheme ? [] : [vueDevTools()]),
         // Favicon, PWA icons and Apple touch icon, generated from the logo during the build (served
         // under /logo and /favicon.ico).
         appIcons({

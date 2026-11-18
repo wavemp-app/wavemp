@@ -1,25 +1,56 @@
 // Registry of the themes shipped with WaveMP. A theme is exactly one CSS file plus graphics under
 // /assets/web/themes/<id>/, served at /themes/<id>/theme.css and loaded with a <link> element.
-// Prepared for steps 30 and 31 (theme selection per user, uploaded themes): applyTheme() switches
-// the theme without reloading the page.
+// applyTheme() switches the theme without reloading the page. Each theme has one or two variants
+// (light and dark in one CSS file); the root element tells the shown variant in
+// data-theme-variant, so the CSS of the theme selects it with [data-theme-variant='dark'].
+// The registry is prepared for uploaded themes (WMP-33): the id of the theme of a profile is any
+// string the API accepts, and an unknown id shows the default theme.
 
 import { themeApiVersion } from './parts'
 
+/** Variant of a theme: themes with both variants follow the appearance of the profile. */
+export type ThemeVariant = 'light' | 'dark'
+
+/** The appearance of a profile: which variant of a theme with both variants it sees. */
+export type ThemeAppearance = 'system' | 'light' | 'dark'
+
 export interface ThemeDefinition {
     readonly id: string
+    /** Name of the theme; a proper name, the same in every language. */
+    readonly name: string
     readonly stylesheet: string
+    /** The variants of the theme; the first one is used where the appearance has no say. */
+    readonly variants: readonly [ThemeVariant, ...ThemeVariant[]]
+}
+
+function builtIn(
+    id: string,
+    name: string,
+    variants: readonly [ThemeVariant, ...ThemeVariant[]],
+): ThemeDefinition {
+    return { id, name, stylesheet: `/themes/${id}/theme.css`, variants }
 }
 
 export const themes = [
-    { id: 'midnight', stylesheet: '/themes/midnight/theme.css' },
+    builtIn('midnight', 'Midnight', ['dark']),
+    builtIn('meadow', 'Meadow', ['light']),
+    builtIn('daylight', 'Daylight', ['light']),
+    builtIn('accent', 'Accent', ['light', 'dark']),
+    builtIn('pinstripe', 'Pinstripe', ['light']),
+    builtIn('clear-glass', 'Clear Glass', ['light', 'dark']),
 ] as const satisfies readonly ThemeDefinition[]
 
 export type ThemeId = (typeof themes)[number]['id']
 
 export const defaultThemeId: ThemeId = 'midnight'
 
+export const defaultThemeAppearance: ThemeAppearance = 'system'
+
 /** Id of the <link> element that loads the theme (set in index.html for the first paint). */
 export const themeLinkId = 'wavemp-theme'
+
+/** Media query of the dark mode of the device, which the appearance "system" follows. */
+export const darkModeMediaQuery = '(prefers-color-scheme: dark)'
 
 export function isThemeId(value: string): value is ThemeId {
     return themes.some((theme) => theme.id === value)
@@ -30,14 +61,45 @@ export function resolveThemeId(candidate?: string | null): ThemeId {
     return candidate && isThemeId(candidate) ? candidate : defaultThemeId
 }
 
+export function themeById(id: string): ThemeDefinition {
+    return themes.find((theme) => theme.id === id) ?? themes[0]
+}
+
+/** Whether the theme has a light and a dark variant, so the appearance of the profile applies. */
+export function hasVariants(theme: ThemeDefinition): boolean {
+    return theme.variants.length > 1
+}
+
 /**
- * Activates a theme: sets data-theme and data-theme-api on <html> and points the theme <link>
- * at its stylesheet. There is always exactly one theme link.
+ * The variant of a theme to show: the variant the appearance asks for if the theme has it ("system"
+ * asks for the mode of the device), otherwise the first variant of the theme.
  */
-export function applyTheme(id: ThemeId, doc: Document = document): void {
-    const theme = themes.find((candidate) => candidate.id === id) ?? themes[0]
+export function resolveThemeVariant(
+    theme: ThemeDefinition,
+    appearance: ThemeAppearance,
+    systemDark: boolean,
+): ThemeVariant {
+    const wanted: ThemeVariant =
+        appearance === 'system' ? (systemDark ? 'dark' : 'light') : appearance
+    return theme.variants.includes(wanted) ? wanted : theme.variants[0]
+}
+
+/** URL of the preview picture of a variant of a theme (shown on the settings page). */
+export function themePreview(theme: ThemeDefinition, variant: ThemeVariant): string {
+    return `/themes/${theme.id}/preview-${variant}.webp`
+}
+
+/**
+ * Activates a theme: sets data-theme, data-theme-variant and data-theme-api on <html> and points
+ * the theme <link> at its stylesheet. There is always exactly one theme link. Without a variant
+ * the first variant of the theme is shown.
+ */
+export function applyTheme(id: string, variant?: ThemeVariant, doc: Document = document): void {
+    const theme = themeById(id)
+    const shown = variant && theme.variants.includes(variant) ? variant : theme.variants[0]
     const root = doc.documentElement
     root.dataset.theme = theme.id
+    root.dataset.themeVariant = shown
     root.dataset.themeApi = String(themeApiVersion)
 
     const links = [...doc.querySelectorAll<HTMLLinkElement>(`link#${themeLinkId}`)]
@@ -55,12 +117,13 @@ export function applyTheme(id: ThemeId, doc: Document = document): void {
 
     if (link.getAttribute('href') !== theme.stylesheet) {
         link.setAttribute('href', theme.stylesheet)
-    }
-
-    // The theme color is known once the stylesheet is loaded; it may already be (index.html).
-    link.addEventListener('load', () => syncThemeColor(doc), { once: true })
-    if (link.sheet) {
+        // The theme color is known once the new stylesheet is loaded.
+        link.addEventListener('load', () => syncThemeColor(doc), { once: true })
+    } else if (link.sheet) {
+        // Same stylesheet (also another variant of it): the color may have changed at once.
         syncThemeColor(doc)
+    } else {
+        link.addEventListener('load', () => syncThemeColor(doc), { once: true })
     }
 }
 

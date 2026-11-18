@@ -1,0 +1,38 @@
+/*
+ * Theme "Daylight" for WaveMP, theme API version 5 (see THEMING.md).
+ *
+ * Starting stylesheet (light): readable colors on the base layout, to be designed with
+ * light glass, sky blue and glossy edges; the light sister of Midnight.
+ *
+ * Rules of the theme API: no @import, no @layer, no external URLs, root-absolute url() only.
+ * Layout rules live in @media (width >= 64rem); below that, the fixed mobile base applies and
+ * this file only provides colors, graphics and fonts.
+ */
+
+:root {
+    --wmp-color-accent: #0b63c4;
+    --wmp-color-accent-contrast: #ffffff;
+    --wmp-color-focus: #0b63c4;
+    --wmp-color-text: #10253f;
+    --wmp-color-text-muted: #4b5b70;
+    --wmp-color-text-disabled: #94a1b2;
+    --wmp-color-surface: #ffffff;
+    --wmp-color-surface-raised: #eaf5fd;
+    --wmp-color-border: #c4dcf0;
+    --wmp-color-hover: #dff0fc;
+    --wmp-color-selection: #c8e4fa;
+    --wmp-color-selection-text: #10253f;
+    --wmp-color-success: #1e7a3a;
+    --wmp-color-warning: #9a6200;
+    --wmp-color-danger: #b3261e;
+    --wmp-favorite-color: #c2185b;
+    --wmp-rating-color: #9a6200;
+    --wmp-theme-color: #eaf5fd;
+    --wmp-image-cover-placeholder: url('/themes/daylight/images/cover-placeholder.svg') center / 100% 100%
+        no-repeat;
+}
+
+/* A line between the header and the page, as an example of a rule for a part. */
+[data-part='header'] {
+    border-block-end: 1px solid var(--wmp-color-border);
+}

@@ -326,6 +326,8 @@
     "title": "Komponentenübersicht",
     "intro": "Interne Seite für die Entwicklung. Sie zeigt alle Parts der Theme-API im aktuellen Theme.",
     "language": "Sprache",
+    "theme": "Design",
+    "themeVariant": "Variante",
     "sidebarCollapsed": "Eingeklappt (Desktop)",
     "sections": {
       "buttons": "Buttons",
@@ -442,6 +444,22 @@
     "title": "Einstellungen",
     "language": "Sprache",
     "languageHint": "Gilt für dieses Profil auf allen Geräten.",
+    "appearance": "Darstellung",
+    "theme": "Design",
+    "themeHint": "Ändert das Aussehen von WaveMP sofort, auf allen Geräten dieses Profils.",
+    "themeVariants": {
+      "light": "Hell",
+      "dark": "Dunkel",
+      "both": "Hell und dunkel"
+    },
+    "themeAppearance": "Hell oder dunkel",
+    "themeAppearanceHint": "Für Designs mit heller und dunkler Variante. System folgt dem hellen oder dunklen Modus des Geräts.",
+    "themeAppearanceSingle": "{theme} hat nur eine Variante.",
+    "themeAppearances": {
+      "system": "System",
+      "light": "Hell",
+      "dark": "Dunkel"
+    },
     "saveError": "Die Einstellung konnte nicht gespeichert werden.",
     "replayGain": "Lautstärkeausgleich (ReplayGain)",
     "replayGainHint": "Gleicht die Lautstärke der Titel mit ihren ReplayGain-Tags an. Gilt für dieses Profil auf allen Geräten.",

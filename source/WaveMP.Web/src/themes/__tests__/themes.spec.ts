@@ -3,7 +3,11 @@ import { themeApiVersion } from '../parts'
 import {
     applyTheme,
     defaultThemeId,
+    hasVariants,
     resolveThemeId,
+    resolveThemeVariant,
+    themeById,
+    themePreview,
     syncThemeColor,
     themeColorVariable,
     themeLinkId,
@@ -23,10 +27,50 @@ describe('resolveThemeId', () => {
         expect(resolveThemeId(undefined)).toBe('midnight')
     })
 
+    it('knows the shipped themes', () => {
+        expect(themes.map((theme) => theme.id)).toEqual([
+            'midnight',
+            'meadow',
+            'daylight',
+            'accent',
+            'pinstripe',
+            'clear-glass',
+        ])
+        expect(resolveThemeId('clear-glass')).toBe('clear-glass')
+        expect(new Set(themes.map((theme) => theme.name)).size).toBe(themes.length)
+    })
+
     it('knows a stylesheet for every theme', () => {
         for (const theme of themes) {
             expect(theme.stylesheet).toBe(`/themes/${theme.id}/theme.css`)
         }
+    })
+})
+
+describe('resolveThemeVariant', () => {
+    const accent = themeById('accent')
+    const midnight = themeById('midnight')
+
+    it('follows the mode of the device for the appearance system', () => {
+        expect(resolveThemeVariant(accent, 'system', true)).toBe('dark')
+        expect(resolveThemeVariant(accent, 'system', false)).toBe('light')
+    })
+
+    it('shows the chosen variant of a theme with both variants', () => {
+        expect(resolveThemeVariant(accent, 'light', true)).toBe('light')
+        expect(resolveThemeVariant(accent, 'dark', false)).toBe('dark')
+    })
+
+    it('shows the only variant of a theme with one variant', () => {
+        expect(hasVariants(midnight)).toBe(false)
+        expect(resolveThemeVariant(midnight, 'light', false)).toBe('dark')
+        expect(resolveThemeVariant(midnight, 'system', false)).toBe('dark')
+        expect(resolveThemeVariant(themeById('daylight'), 'dark', true)).toBe('light')
+    })
+
+    it('knows a preview picture per variant', () => {
+        expect(themePreview(accent, 'dark')).toBe('/themes/accent/preview-dark.webp')
+        expect(themeById('unknown').id).toBe('midnight')
     })
 })
 
@@ -42,14 +86,45 @@ describe('applyTheme', () => {
     }
 
     it('sets the theme and the theme API version on the root element', () => {
-        applyTheme('midnight', doc)
+        applyTheme('midnight', undefined, doc)
 
         expect(doc.documentElement.dataset.theme).toBe('midnight')
         expect(doc.documentElement.dataset.themeApi).toBe(String(themeApiVersion))
     })
 
+    it('sets the variant of the theme on the root element', () => {
+        applyTheme('accent', 'dark', doc)
+        expect(doc.documentElement.dataset.theme).toBe('accent')
+        expect(doc.documentElement.dataset.themeVariant).toBe('dark')
+
+        applyTheme('accent', 'light', doc)
+        expect(doc.documentElement.dataset.themeVariant).toBe('light')
+
+        // A variant the theme does not have, or none, shows its first variant.
+        applyTheme('midnight', 'light', doc)
+        expect(doc.documentElement.dataset.themeVariant).toBe('dark')
+        applyTheme('clear-glass', undefined, doc)
+        expect(doc.documentElement.dataset.themeVariant).toBe('light')
+    })
+
+    it('shows the default theme for an unknown id', () => {
+        applyTheme('uploaded-1', 'dark', doc)
+
+        expect(doc.documentElement.dataset.theme).toBe('midnight')
+        expect(themeLinks()[0]?.getAttribute('href')).toBe('/themes/midnight/theme.css')
+    })
+
+    it('switches the stylesheet without a second link', () => {
+        applyTheme('midnight', undefined, doc)
+        applyTheme('pinstripe', undefined, doc)
+
+        const links = themeLinks()
+        expect(links).toHaveLength(1)
+        expect(links[0]?.getAttribute('href')).toBe('/themes/pinstripe/theme.css')
+    })
+
     it('creates the theme link if it is missing', () => {
-        applyTheme('midnight', doc)
+        applyTheme('midnight', undefined, doc)
 
         const links = themeLinks()
         expect(links).toHaveLength(1)
@@ -66,7 +141,7 @@ describe('applyTheme', () => {
             doc.head.append(link)
         }
 
-        applyTheme('midnight', doc)
+        applyTheme('midnight', undefined, doc)
 
         const links = themeLinks()
         expect(links).toHaveLength(1)

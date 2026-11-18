@@ -5,6 +5,7 @@
 
 import { RoleObject, type Role } from '@/api/generated/models'
 import { canonicalLocale } from '@/i18n/locales'
+import { parseThemeChoice, type ThemeChoice } from '@/themes/choice'
 
 export interface StoredProfile {
     readonly id: string
@@ -29,6 +30,11 @@ export interface StoredSession {
     readonly profile: StoredProfile
     /** Language of the profile; null while it is unknown. */
     readonly language: string | null
+    /**
+     * Theme of the profile, so the next start shows it from the first paint; null while it is
+     * unknown (and for snapshots stored before themes could be chosen).
+     */
+    readonly theme?: ThemeChoice | null
 }
 
 /** Key in localStorage; the version changes if the stored format changes. */
@@ -134,6 +140,7 @@ function toStoredSession(value: unknown, now: Date): StoredSession | null {
         expiresAt: value.expiresAt,
         profile,
         language,
+        theme: parseThemeChoice(value.theme),
     }
 }
 

@@ -1,0 +1,67 @@
+/*
+ * Theme "Accent" for WaveMP, theme API version 5 (see THEMING.md).
+ *
+ * Starting stylesheet (light and dark): readable colors on the base layout, to be designed with
+ * flat surfaces on a blurred background, subtle borders and a short accent line on active
+ * elements through the indicator parts.
+ *
+ * The dark variant applies to :root[data-theme-variant='dark'] (THEMING.md, "Variants").
+ *
+ * Rules of the theme API: no @import, no @layer, no external URLs, root-absolute url() only.
+ * Layout rules live in @media (width >= 64rem); below that, the fixed mobile base applies and
+ * this file only provides colors, graphics and fonts.
+ */
+
+:root {
+    --wmp-color-accent: #005fb8;
+    --wmp-color-accent-contrast: #ffffff;
+    --wmp-color-focus: #005fb8;
+    --wmp-color-text: #1b1b1b;
+    --wmp-color-text-muted: #5c5c5c;
+    --wmp-color-text-disabled: #a0a0a0;
+    --wmp-color-surface: #fbfbfb;
+    --wmp-color-surface-raised: #f3f3f3;
+    --wmp-color-border: #d6d6d6;
+    --wmp-color-hover: #ececec;
+    --wmp-color-selection: #dbe8f6;
+    --wmp-color-selection-text: #1b1b1b;
+    --wmp-color-success: #0f7b0f;
+    --wmp-color-warning: #9d5d00;
+    --wmp-color-danger: #c42b1c;
+    --wmp-favorite-color: #c2185b;
+    --wmp-rating-color: #9d5d00;
+    --wmp-theme-color: #f3f3f3;
+    --wmp-image-cover-placeholder: url('/themes/accent/images/cover-placeholder.svg') center / 100% 100%
+        no-repeat;
+}
+
+:root[data-theme-variant='dark'] {
+    color-scheme: dark;
+
+    --wmp-color-accent: #60cdff;
+    --wmp-color-accent-contrast: #000000;
+    --wmp-color-focus: #60cdff;
+    --wmp-color-text: #ffffff;
+    --wmp-color-text-muted: #c5c5c5;
+    --wmp-color-text-disabled: #787878;
+    --wmp-color-surface: #272727;
+    --wmp-color-surface-raised: #202020;
+    --wmp-color-border: #3d3d3d;
+    --wmp-color-hover: #333333;
+    --wmp-color-selection: #1e3a52;
+    --wmp-color-selection-text: #ffffff;
+    --wmp-color-success: #6ccb5f;
+    --wmp-color-warning: #fce100;
+    --wmp-color-danger: #ff99a4;
+    --wmp-favorite-color: #ff7aa8;
+    --wmp-rating-color: #fce100;
+    --wmp-theme-color: #202020;
+    --wmp-image-cover-placeholder: url('/themes/accent/images/cover-placeholder-dark.svg') center / 100% 100%
+        no-repeat;
+    --wmp-backdrop-color: rgb(0 0 0 / 60%);
+}
+
+/* A line between the header and the page, as an example of a rule for a part. */
+[data-part='header'] {
+    border-block-end: 1px solid var(--wmp-color-border);
+}

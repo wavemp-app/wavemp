@@ -136,6 +136,15 @@ function onMiniPlayer(): void {
                 @update:model-value="emit('seek', $event)"
             />
         </div>
+        <!-- Elapsed time and length for themes with a time display; the slider tells both. -->
+        <span
+            data-part="transport-time"
+            aria-hidden="true"
+            :data-state="idle ? 'empty' : undefined"
+        >
+            <span data-part="time-elapsed">{{ format.duration(state.position) }}</span>
+            <span data-part="time-duration">{{ format.duration(state.duration) }}</span>
+        </span>
         <button
             type="button"
             data-part="now-playing-mini"

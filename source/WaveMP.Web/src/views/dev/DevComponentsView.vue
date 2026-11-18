@@ -45,6 +45,7 @@ import BaseMeter from '@/components/base/BaseMeter.vue'
 import BaseProgress from '@/components/base/BaseProgress.vue'
 import BaseRoundButton from '@/components/base/BaseRoundButton.vue'
 import BaseSearchField from '@/components/base/BaseSearchField.vue'
+import BaseSegmentedControl from '@/components/base/BaseSegmentedControl.vue'
 import BaseSegmentedField from '@/components/base/BaseSegmentedField.vue'
 import BaseSelect from '@/components/base/BaseSelect.vue'
 import BaseSlider from '@/components/base/BaseSlider.vue'
@@ -115,6 +116,8 @@ import type { MissingTagsFilter } from '@/review/inbox'
 import { useReviewStore } from '@/stores/review'
 import { iconSlotNames, iconSlots } from '@/themes/iconSlots'
 import { parts } from '@/themes/parts'
+import ThemePicker from '@/components/themes/ThemePicker.vue'
+import { applyTheme, themeById, themes, type ThemeVariant } from '@/themes/themes'
 import NotFoundView from '@/views/NotFoundView.vue'
 import NowPlayingView from '@/views/NowPlayingView.vue'
 import PlaylistsView from '@/views/PlaylistsView.vue'
@@ -135,6 +138,26 @@ const format = useFormat()
 
 function switchLanguage(locale: string): void {
     setLocale(i18n, locale)
+}
+
+// Theme switch of the overview: shows every part in another theme and variant at once, without
+// saving anything for a profile.
+const devTheme = ref(document.documentElement.dataset.theme ?? themes[0].id)
+const devVariant = ref<string>(document.documentElement.dataset.themeVariant ?? 'dark')
+const devVariantOptions = computed(() =>
+    themeById(devTheme.value).variants.map((variant) => ({
+        value: variant,
+        label: t(`settings.themeVariants.${variant}`),
+    })),
+)
+const devThemeOptions = themes.map((theme) => ({ value: theme.id, label: theme.name }))
+
+function switchTheme(id: string, variant?: string): void {
+    const theme = themeById(id)
+    const shown = theme.variants.find((candidate) => candidate === variant) ?? theme.variants[0]
+    devTheme.value = theme.id
+    devVariant.value = shown
+    applyTheme(theme.id, shown as ThemeVariant)
 }
 
 // Buttons, tabs and tree
@@ -684,6 +707,23 @@ const sampleTranscodeJobs = computed<TranscodeJob[]>(() => {
                     @click="switchLanguage(locale)"
                 />
             </div>
+            <div data-part="dev-theme">
+                <BaseSegmentedControl
+                    :model-value="devTheme"
+                    item="dev-theme"
+                    :label="t('dev.theme')"
+                    :options="devThemeOptions"
+                    @update:model-value="switchTheme($event, devVariant)"
+                />
+                <BaseSegmentedControl
+                    :model-value="devVariant"
+                    item="dev-theme-variant"
+                    :label="t('dev.themeVariant')"
+                    :options="devVariantOptions"
+                    :disabled="devVariantOptions.length < 2"
+                    @update:model-value="switchTheme(devTheme, $event)"
+                />
+            </div>
         </header>
 
         <section data-part="dev-section">
@@ -1008,6 +1048,14 @@ const sampleTranscodeJobs = computed<TranscodeJob[]>(() => {
                     :color="firstProfile.color"
                 />
             </div>
+            <ThemePicker
+                :model-value="devTheme"
+                :themes="themes"
+                :label="t('settings.theme')"
+                appearance="system"
+                :system-dark="devVariant === 'dark'"
+                @update:model-value="switchTheme($event, devVariant)"
+            />
             <form data-part="form" @submit.prevent>
                 <BaseTextField
                     v-model="textFilled"

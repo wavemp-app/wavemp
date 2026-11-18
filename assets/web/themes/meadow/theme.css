@@ -1,0 +1,39 @@
+/*
+ * Theme "Meadow" for WaveMP, theme API version 5 (see THEMING.md).
+ *
+ * Starting stylesheet (light): readable colors on the base layout, to be designed with
+ * strong blue, rounded window edges, glossy gradients, green accents and slightly
+ * three-dimensional buttons.
+ *
+ * Rules of the theme API: no @import, no @layer, no external URLs, root-absolute url() only.
+ * Layout rules live in @media (width >= 64rem); below that, the fixed mobile base applies and
+ * this file only provides colors, graphics and fonts.
+ */
+
+:root {
+    --wmp-color-accent: #2b7a2f;
+    --wmp-color-accent-contrast: #ffffff;
+    --wmp-color-focus: #1f52b0;
+    --wmp-color-text: #14213d;
+    --wmp-color-text-muted: #4a5568;
+    --wmp-color-text-disabled: #8a94a6;
+    --wmp-color-surface: #ffffff;
+    --wmp-color-surface-raised: #eaf1fb;
+    --wmp-color-border: #b8c9e6;
+    --wmp-color-hover: #dde9fa;
+    --wmp-color-selection: #c9dcf7;
+    --wmp-color-selection-text: #14213d;
+    --wmp-color-success: #2b7a2f;
+    --wmp-color-warning: #a66a00;
+    --wmp-color-danger: #b3261e;
+    --wmp-favorite-color: #c2185b;
+    --wmp-rating-color: #a66a00;
+    --wmp-theme-color: #eaf1fb;
+    --wmp-image-cover-placeholder: url('/themes/meadow/images/cover-placeholder.svg') center / 100% 100%
+        no-repeat;
+}
+
+/* A line between the header and the page, as an example of a rule for a part. */
+[data-part='header'] {
+    border-block-end: 1px solid var(--wmp-color-border);
+}

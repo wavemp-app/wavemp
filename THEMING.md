@@ -10,11 +10,13 @@ A theme is exactly one CSS file plus its graphics. The themes shipped with WaveM
 
 The DOM is the same for every theme. Every element a theme can address has a stable `data-part` attribute, for example `data-part="transport"` or `data-part="btn-play"`. States are expressed with `data-state` tokens and ARIA attributes. Icons and labels are always separate child elements (`data-part="icon"`, `data-part="label"`), so the pseudo-elements `::before` and `::after` of all areas and buttons are free for the theme, for example for gloss and glow effects.
 
-The root element carries the active theme and the version of this API:
+The root element carries the active theme, its shown variant and the version of this API:
 
 ```html
-<html lang="en" data-theme="midnight" data-theme-api="5">
+<html lang="en" data-theme="midnight" data-theme-variant="dark" data-theme-api="5">
 ```
+
+Every profile chooses its theme on the settings page; the app switches it at once, without reloading the page. A theme can have a light and a dark variant, see [Variants](#variants).
 
 A theme can change everything: colors, graphics, fonts, sizes and the desktop layout. Only the mobile layout is fixed (see [Responsive layout](#responsive-layout)).
 
@@ -77,6 +79,41 @@ Example of a desktop layout with the sidebar on the right:
     }
 }
 ```
+
+## Variants
+
+A theme has one or two variants, `light` and `dark`, both in its one CSS file. The root element always names the shown variant in `data-theme-variant`, also for a theme with one variant. A theme with both variants follows the appearance of the profile (settings: "Light or dark" with `system`, `light` and `dark`; `system` follows the dark mode of the device); a theme with one variant always shows it. The variants of a shipped theme are listed in its registry entry (`source/WaveMP.Web/src/themes/themes.ts`).
+
+The CSS of the theme selects the dark variant with the attribute, never with `@media (prefers-color-scheme)`, because the profile may choose another appearance than the device:
+
+```css
+:root {
+    --wmp-color-text: #1b1b1b;
+    --wmp-color-surface: #fbfbfb;
+}
+
+:root[data-theme-variant='dark'] {
+    color-scheme: dark;
+    --wmp-color-text: #ffffff;
+    --wmp-color-surface: #272727;
+}
+```
+
+The media features a theme may use are `width` (the layout breakpoint), `prefers-reduced-motion`, `prefers-reduced-transparency: reduce`, `prefers-contrast: more`, `forced-colors: active`, `hover: hover` and `pointer: coarse`; a test checks this for the shipped themes.
+
+Each variant has a preview picture for the theme picker of the settings, `/assets/web/themes/<id>/preview-<variant>.webp` (480 pixels wide, the home page on the desktop), made with `npm run theme:screenshots -- --theme <id> --preview` (see [Checking a theme](#checking-a-theme)).
+
+### Cover color
+
+While a song with a cover is current, the app sets the dominant color of its cover on the root element: `--wmp-cover-color` (for example `rgb(31 92 160)`) and `--wmp-cover-color-contrast` (`#000000` or `#ffffff`, whichever reads better on the cover color). Without a current song or cover both are missing, so a theme always gives a fallback:
+
+```css
+[data-part='transport'] {
+    background: color-mix(in srgb, var(--wmp-cover-color, #8aa4c8) 35%, transparent);
+}
+```
+
+The color changes with the song; a theme can let it fade with `transition` on the property that uses it.
 
 ## Parts
 
@@ -212,6 +249,9 @@ Example of a desktop layout with the sidebar on the right:
 | `cast-status` | `span` | `now-playing-meta` | The casting device that plays ("Playing on ..."), or the one that connects; only while casting |
 | `now-playing-actions` | `div` (`role="group"`) | `transport` | `btn-favorite` and `rating` of the current song; empty (state `empty`) while nothing plays; on mobile only in the full-screen player |
 | `transport-message` | `p` (`role="status"`) | `transport` | Notice of the player, for example that a song was skipped; empty while there is none. The base shows it above the transport bar, outside the grid |
+| `transport-time` | `span` (`aria-hidden="true"`) | `transport` | Elapsed time and length of the current song as text, for a display in the transport bar (the `seek` slider tells them to assistive technology). Hidden by the base and on mobile; a theme shows it with `display` |
+| `time-elapsed` | `span` | `transport-time` | Elapsed time, for example `1:23` |
+| `time-duration` | `span` | `transport-time` | Length of the song, for example `3:45` |
 | `transport-controls` | `div` (`role="group"`) | `transport` | Playback controls |
 | `btn-shuffle` | `button` (`aria-pressed`) | `transport-controls` | Shuffle |
 | `btn-repeat` | `button` (`aria-pressed`) | `transport-controls` | Repeat off, all or one |
@@ -260,6 +300,11 @@ Example of a desktop layout with the sidebar on the right:
 | `pin-keys` | `div` (`role="group"`) | `pin-pad` | The twelve `pin-key`s in the order of a phone keypad: `1` to `9`, `delete`, `0`, `submit` |
 | `pin-key` | `button` (`data-key`) | `pin-keys` | One key with a `label` (the digit, or a visually hidden text for `delete` and `submit`); `delete` and `submit` also carry an `icon` (slots `pin-delete` and `pin-submit`). `submit` is the submit button of `pin-entry` and disabled until 4 digits are entered, `delete` while nothing is entered |
 | `profile-summary` | `div` | `view` | The current profile on the settings page: `avatar` and `label` with the name |
+| `theme-picker` | `div` (`role="radiogroup"`, `aria-labelledby`) | `field` (`data-field="theme"`) | The themes on the settings page as tiles with a preview: an `indicator` and one `theme-option` per theme. One tab stop; the arrow keys, Home and End choose another theme, which shows at once. It carries the runtime variables of an active element |
+| `theme-option` | `button` (`role="radio"`, `aria-checked`) | `theme-picker` | One theme: `theme-preview`, `label` (the name of the theme) and `theme-variants`; `data-item` is the id of the theme, `data-variants` its variants |
+| `theme-preview` | `span` | `theme-option` | Frame of the preview picture; `data-kind` is the variant it shows (the one the profile would see) |
+| `theme-preview-image` | `img` (`alt=""`) | `theme-preview` | Preview picture `/themes/<id>/preview-<variant>.webp`; missing while the picture cannot be loaded |
+| `theme-variants` | `span` | `theme-option` | The variants of the theme as text, for example "Light and dark" |
 | `avatar-editor` | `div` (`data-state`) | `dialog-body` of the `dialog` `avatar` | Changes the picture of a profile: the current `avatar`, a `segmented-control` `avatar-mode` (`segment`s `preset` and `upload`), an `alert` on errors, then `avatar-presets`, or `avatar-crop` with a `form-note` and the `button` `choose-file` |
 | `avatar-presets` | `div` (`role="radiogroup"`, `aria-label`) | `avatar-editor` | Choice of a built-in picture: an `indicator` and one `avatar-preset` per picture; tells the chosen picture with the runtime variables of an active element, see [Active element of a group](#active-element-of-a-group) |
 | `avatar-preset` | `button` (`role="radio"`, `aria-checked`, `data-item`) | `avatar-presets` | One built-in picture (`data-item` is its id, for example `bubble`) with `avatar-preset-image` and a visually hidden `label` |
@@ -383,6 +428,8 @@ The internal component overview (`/dev/components`) uses its own parts starting 
 |---|---|
 | `transport` | `idle`, `playing` or `paused`; additionally `loading` while a song loads or waits for data, and `expanded` while the full-screen player is open (mobile) |
 | `transport-message` | `empty` without a notice, otherwise its kind: `unsupported` (the browser cannot play the song and the server cannot transcode it), `unavailable` (it could not be loaded) or `failed` (it failed to play) |
+| `transport-time` | `empty` without a current song |
+| `theme-preview` | `missing` while the preview picture of the theme cannot be loaded |
 | `btn-play` | `idle`, `playing` or `paused` |
 | `btn-shuffle` | `on` or `off` |
 | `btn-repeat` | `off`, `all` or `one` |
@@ -466,6 +513,7 @@ Every group in which one entry is the active one gives the theme the same means 
 | `color-picker` | selected `color-swatch` |
 | `avatar-presets` | chosen `avatar-preset` |
 | `segmented-control` | checked `segment` |
+| `theme-picker` | checked `theme-option` |
 | `file-choices` | checked `file-choice` |
 
 - The state is an attribute of the entry: `aria-current="page"` and `data-state="active"`, or `aria-checked="true"`.
@@ -517,6 +565,12 @@ The base links states to graphics: buttons use the variables `--wmp-image-<varia
 | `data-variant` | `button` and all `btn-*` parts | `default`, `primary`, `icon`, `round` |
 | `data-variant` | `field` | `checkbox` |
 | `data-icon` | `icon` | Icon slot, see [Icons](#icons) |
+| `data-theme` | root element | Id of the shown theme, for example `midnight` or `clear-glass` |
+| `data-theme-variant` | root element | Shown variant of the theme: `light` or `dark` (see [Variants](#variants)) |
+| `data-variants` | `theme-option` | Variants of the theme, separated by spaces: `light`, `dark` or `light dark` |
+| `data-kind` | `theme-preview` | Variant the preview shows: `light` or `dark` |
+| `data-item` | `theme-option` | Id of the theme |
+| `data-field` | `field` (appearance in the settings) | `theme` (the `theme-picker`), `theme-appearance` (the `segmented-control` `theme-appearance` with the `segment`s `system`, `light` and `dark`; disabled for themes with one variant); the `section` around them has `data-item="appearance"` |
 | `data-orientation` | `slider` | `horizontal`, `vertical`; also as `aria-orientation` on `slider-thumb` |
 | `data-orientation` | `video-stage` | Orientation of the picture of the video as it is shown (rotation applied): `landscape`, `portrait` or `square`; missing while the video has not loaded its size |
 | `data-view` | `view` | `library`, `library-search`, `library-album`, `library-artist`, `library-genre`, `library-year`, `library-track`, `home`, `now-playing`, `playlists`, `playlist`, `recently-played`, `settings`, `equalizer`, `settings-pin`, `settings-scrobbling-lastfm`, `admin-library`, `admin-jobs`, `admin-cache`, `admin-transcoding`, `admin-backups`, `admin-users`, `admin-files`, `admin-track-files`, `admin-review`, `admin-review-track`, `not-found` |
@@ -623,7 +677,7 @@ Text color and background of each area.
 | Variable | Default | Used for |
 |---|---|---|
 | `--wmp-avatar-color` | `#ffffff` | Text color of the initials on `avatar` |
-| `--wmp-profile-secondary-opacity` | `0.55` | Opacity of the built-in admin `profile-tile` with the state `secondary` |
+| `--wmp-profile-secondary-opacity` | `0.7` | Opacity of the built-in admin `profile-tile` with the state `secondary`; its label keeps 4.5:1 at 0.7 on the usual colors |
 
 The background of `avatar` is the color of the profile, `--wmp-profile-color` (see [Runtime variables](#runtime-variables)). The app sets it on the `avatar` element itself, so themes use it in rules for `[data-part='avatar']`, for example `background: linear-gradient(rgb(255 255 255 / 40%), transparent 55%), var(--wmp-profile-color);`. A variable on `:root` that refers to it would not work.
 
@@ -765,15 +819,17 @@ The app sets these variables on single elements. Themes can read them, but never
 | `--wmp-video-aspect-ratio` | `video-stage` | Width divided by the height of the picture of the video, for example `1.7778` or `0.5625`; missing while the video has not loaded its size |
 | `--wmp-line-progress` | the active `lyrics-line` | Share of the line that has passed, between 0 and 1, updated with every frame while the music plays |
 | `--wmp-word-progress` | the active `lyrics-word` | Share of the word that has passed, between 0 and 1, updated with every frame while the music plays |
-| `--wmp-item-count` | `segmented-control`, `tabs`, `bottom-nav`, `admin-nav`, `tree`, `color-picker`, `avatar-presets`, `rating`, `playlist-cover`, `lyrics` | Number of entries of the group: `segment`s, `tab`s, `bottom-nav-item`s, `admin-nav-item`s, visible `tree-item`s, `color-swatch`es, `avatar-preset`s, `rating-star`s, `playlist-cover-slide`s or `lyrics-line`s |
-| `--wmp-active-index` | the same | Index of the active entry, starting at 0: the checked `segment`, the `tab`, `bottom-nav-item` or `admin-nav-item` of the current page, the `tree-item` of the current page among the visible items, the selected `color-swatch`, the chosen `avatar-preset`, the `rating-star` of the rating, the shown `playlist-cover-slide` or the current `lyrics-line` of synchronized lyrics; `-1` without one |
-| `--wmp-indicator-x` | `segmented-control`, `tabs`, `bottom-nav`, `admin-nav`, `tree`, `color-picker`, `avatar-presets` | Distance of the active entry from the left edge of the group (including its scrolled distance), in pixels, for example `84.5px`; `0px` without one |
+| `--wmp-item-count` | `segmented-control`, `theme-picker`, `tabs`, `bottom-nav`, `admin-nav`, `tree`, `color-picker`, `avatar-presets`, `rating`, `playlist-cover`, `lyrics` | Number of entries of the group: `segment`s, `theme-option`s, `tab`s, `bottom-nav-item`s, `admin-nav-item`s, visible `tree-item`s, `color-swatch`es, `avatar-preset`s, `rating-star`s, `playlist-cover-slide`s or `lyrics-line`s |
+| `--wmp-active-index` | the same | Index of the active entry, starting at 0: the checked `segment` or `theme-option`, the `tab`, `bottom-nav-item` or `admin-nav-item` of the current page, the `tree-item` of the current page among the visible items, the selected `color-swatch`, the chosen `avatar-preset`, the `rating-star` of the rating, the shown `playlist-cover-slide` or the current `lyrics-line` of synchronized lyrics; `-1` without one |
+| `--wmp-indicator-x` | `segmented-control`, `theme-picker`, `tabs`, `bottom-nav`, `admin-nav`, `tree`, `color-picker`, `avatar-presets` | Distance of the active entry from the left edge of the group (including its scrolled distance), in pixels, for example `84.5px`; `0px` without one |
 | `--wmp-indicator-y` | the same | Distance of the active entry from the top edge of the group (including its scrolled distance), in pixels; `0px` without one |
 | `--wmp-indicator-width` | the same | Width of the active entry in pixels; `0px` without one or while it is hidden, for example in a collapsed node of the tree |
 | `--wmp-indicator-height` | the same | Height of the active entry in pixels; `0px` without one or while it is hidden |
 | `--wmp-crop-scale` | `avatar-crop` | Width of the chosen picture in widths of `avatar-crop-frame`, at least 1, for example `2.5` |
 | `--wmp-crop-x` | `avatar-crop` | Distance of the left edge of the picture from the left edge of the frame, in widths of the frame (the base moves the picture by minus this value), for example `0.75` |
 | `--wmp-crop-y` | `avatar-crop` | The same for the top edge, in heights of the (square) frame |
+| `--wmp-cover-color` | root element | Dominant color of the cover of the current song, for example `rgb(31 92 160)`; missing without a current song or cover (see [Cover color](#cover-color)) |
+| `--wmp-cover-color-contrast` | root element | `#000000` or `#ffffff`, the one with the higher contrast on `--wmp-cover-color`; missing with it |
 
 ## Icons
 
@@ -940,7 +996,7 @@ The defaults are icons of [Phosphor Icons](https://phosphoricons.com) (MIT) unde
 
 ## Preview
 
-The internal component overview shows all parts in all states, the icon slots and the app at mobile and desktop size side by side. It is only available in the development server:
+The internal component overview shows all parts in all states, the icon slots and the app at mobile and desktop size side by side, with a switch for the theme and its variant. It is only available in the development server:
 
 ```bash
 cd source/WaveMP.Web
@@ -948,6 +1004,66 @@ npm run dev
 ```
 
 Then open `http://localhost:5173/dev/components`.
+
+### Theme previews
+
+A theme preview is a development server that shows one theme, whatever the profile chose, serves `/assets/web` live (a saved `theme.css` shows on the next reload) and passes the API to a running WaveMP instance with a library, by default the development container (`docker compose -f docker-compose.dev.yml up -d --build`, `http://localhost:8080`). Each shipped theme has its own port, so several previews run at the same time:
+
+| Theme | Port |
+|---|---|
+| `midnight` | 5200 |
+| `meadow` | 5201 |
+| `daylight` | 5202 |
+| `accent` | 5203 |
+| `pinstripe` | 5204 |
+| `clear-glass` | 5205 |
+
+```bash
+cd source/WaveMP.Web
+npm run theme:preview -- accent                 # http://localhost:5203, until stopped
+npm run theme:preview -- stop accent            # from another terminal
+npm run theme:preview -- accent --service http://localhost:5080 --port 6003
+```
+
+The preview shows the variant of the color scheme of the browser (`prefers-color-scheme`); the developer tools of the browser switch it (Rendering, "Emulate CSS media feature prefers-color-scheme"). Select any profile on `/profiles`; the built-in admin also sees the administration.
+
+## Checking a theme
+
+The screenshot and contrast check of tests/WaveMP.E2E opens fixed views of the app with a profile of its own per theme and variant (filled with playlists, favorites and plays of the synthetic test media), takes a screenshot of each and checks the contrast:
+
+- desktop (1280 by 800): `profiles`, `home`, `album`, `artists`, `songs-menu` (the songs with an open context menu), `now-playing` (with the cover), `settings` (with the theme picker), `admin` (the transcoding page),
+- phone (Pixel 7): `phone-library`, `phone-now-playing` and `phone-settings`, each with the bottom navigation.
+
+```bash
+cd tests/WaveMP.E2E
+npm ci && npx playwright install chromium     # once
+npm run theme:screenshots -- --theme accent --base-url http://localhost:5203 --out ../../theme-screenshots
+npm run theme:screenshots -- --theme accent --variant dark --views home,now-playing
+npm run theme:screenshots -- --theme accent --preview      # also writes preview-<variant>.webp
+npm run theme:contrast -- --theme accent --base-url http://localhost:5203
+```
+
+Without `--theme` all shipped themes are checked, without `--variant` all variants of a theme, without `--out` the screenshots go to `tests/WaveMP.E2E/theme-screenshots/<id>/<variant>/` (ignored by Git), next to a `contrast.txt`. The base URL is a theme preview or WaveMP itself (the profile then uses the theme from the registry).
+
+### Contrast
+
+Every text must reach the contrast of WCAG 2.2 AA against what is drawn behind it, also on gradients, glass and pictures: 4.5:1, large text (24px, or 18.66px bold) 3:1, icons 3:1. The check compares the color of each visible text and icon with the background at the pixels of its glyphs (a screenshot with and one without all texts and icons) and fails when fewer than 90 % of them reach the ratio; it lists each failure with its ratio, the text and the path of parts, for example:
+
+```text
+[album] 3.12:1 < 4.5:1  text "Play"  detail-info > detail-actions > button[play] > label  (rgb(255 255 255 / 100%))
+```
+
+Exempt like in WCAG are disabled controls and the logo, and also the initials of avatars (the profile chooses their color) and the placeholder glyphs of missing covers (decoration). Texts and icons filled with a gradient or picture cannot be measured; `contrast.txt` lists them for a manual check. Disabled and secondary content (for example the built-in admin with `--wmp-profile-secondary-opacity`) still needs 4.5:1 when it can be used.
+
+### Regression
+
+`npm test` in tests/WaveMP.E2E runs the project `themes` after all other projects: every shipped theme and variant, every view except `profiles`, with the contrast check and a comparison with the baselines in `tests/WaveMP.E2E/tests/themes/baselines`. The baselines are taken in the Playwright image of the CI, so the comparison runs only in the CI (or with `E2E_VISUAL=1`) and only for views with a baseline; locally only the contrast is checked. After a change of a theme, take the baselines again in that image (needs Docker and a running WaveMP with the test media):
+
+```bash
+cd tests/WaveMP.E2E
+npm run test:themes             # compare in the Playwright image of the CI
+npm run test:themes:update      # take the baselines again
+```
 
 ## Versioning
 
@@ -958,6 +1074,7 @@ The themes shipped with WaveMP name the version they are written for in the comm
 ### Changelog
 
 - **Version 5:** visualizations. Changed: the `visualization` is no longer a placeholder: the state `placeholder` is gone, its `icon` and `label` moved into the new `visualization-message`, and the base lays out the `visualization` as a positioned box (no longer a grid) with the background `--wmp-stage-view-background`; themes that styled `visualization > icon` or `visualization > label` have to style `visualization-message > icon` and `visualization-message > label`; `btn-fullscreen` also lies in `visualization-controls`, so theme rules for `btn-fullscreen` that should only apply to the video need `video-stage > btn-fullscreen`. Added: the states `idle`, `loading`, `waiting`, `running`, `paused`, `unsupported`, `failed` and `fullscreen` of `visualization` and its attribute `data-module`; the parts `visualization-canvas`, `visualization-message`, `visualization-controls`, `btn-preset-previous`, `btn-preset-next` and `btn-auto-change` (states `on` and `off`, `aria-pressed`); the values `visualization-preset` and `visualization-auto-change` of `data-field`; the icon slots `preset-previous`, `preset-next` and `auto-change`.
+    - Additions without a version change: more themes and their variants. The themes Meadow (`meadow`), Daylight (`daylight`), Accent (`accent`, light and dark), Pinstripe (`pinstripe`) and Clear Glass (`clear-glass`, light and dark); the attribute `data-theme-variant` on the root element (see [Variants](#variants)); the runtime variables `--wmp-cover-color` and `--wmp-cover-color-contrast` on the root element; the theme picker of the settings (`section` `appearance` with the `field`s `theme` and `theme-appearance`, the parts `theme-picker` with an `indicator` and the runtime variables of an active element, `theme-option` with `data-item` and `data-variants`, `theme-preview` with `data-kind` and the state `missing`, `theme-preview-image` and `theme-variants`); the time display `transport-time` (state `empty`) with `time-elapsed` and `time-duration` in `transport`, hidden by the base. The default of `--wmp-profile-secondary-opacity` is `0.7` instead of `0.55`, so the label of the built-in admin keeps 4.5:1.
     - Additions without a version change: the review inbox of the administration. The entry `btn-review-inbox` of `header` (states `pending`, `empty`, `active`; a `badge` `unreviewed` with the number) without a grid area of its own, the empty cell for it in the base layouts of `header`; the page `data-view="admin-review"` with `review-filters` (the `segmented-control`s `review-filter` and `review-sort`), `review-bulk`, `review-list`, `review-item`, `review-info`, `review-title`, `review-meta` and `review-tags` and their states; the page of a song `data-view="admin-review-track"` with `review-actions`, `review-nav` and the state `finished` of `empty-state`; the tokens `unreviewed`, `reviewed` and `missing-tag` of `badge`, the entry `admin-review` of `admin-nav`, further values of `data-item` and `data-field`, and the icon slots `review-inbox`, `admin-review`, `tags-missing`, `review-done`, `review-skip`, `review-previous` and `review-next`.
     - Additions without a version change: PINs of the profiles. On the profile selection the lock symbol `profile-lock` in `profile-tile` (state `protected`) and the PIN entry `pin-entry` with `pin-entry-title`, `pin-entry-actions` and the digit pad `pin-pad` (`pin-field`, `pin-dots` with `data-count`, `pin-dot`, `pin-keys`, `pin-key` with `data-key`) and their states; the PIN page `data-view="settings-pin"` with the `data-field` values `pin`, `pin-confirmation` and `pin-status`, the `section` `pin` of the settings page, the `badge` token `pin` in `user-meta`, further values of `data-item` and the icon slots `profile-lock`, `pin-delete`, `pin-submit`, `has-pin` and `reset-pin`.
     - Additions without a version change: pictures of the profiles. `avatar-image` in `avatar` and the state `image` of `avatar`; the avatar dialog (`dialog` `avatar`) with `avatar-editor` and its states, the built-in pictures `avatar-presets`, `avatar-preset` and `avatar-preset-image`, the cropping `avatar-crop` (state `dragging`), `avatar-crop-frame`, `avatar-crop-image` and `avatar-crop-preview` with the runtime variables `--wmp-crop-scale`, `--wmp-crop-x` and `--wmp-crop-y`; the `section` `avatar` of the settings page with the `form-note` `avatar-status`, further values of `data-item` and `data-field` and the icon slot `change-avatar`.

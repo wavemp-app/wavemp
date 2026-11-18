@@ -57,6 +57,15 @@
         border: 0;
     }
 
+    /*
+     * Elapsed time and length of the song: hidden by the base, a theme shows it in its desktop
+     * layout, for example on a display beside the title.
+     */
+    [data-part='transport'] > [data-part='transport-time'] {
+        display: none;
+        font-variant-numeric: tabular-nums;
+    }
+
     [data-part='bottom-nav'] {
         color: var(--wmp-bottom-nav-color);
         background: var(--wmp-bottom-nav-background);
@@ -3047,6 +3056,83 @@
     }
 
     [data-part='review-nav'] > [data-field='position'] {
+        color: var(--wmp-color-text-muted);
+        font-size: var(--wmp-font-size-s);
+    }
+
+    /*
+     * Choice of the theme on the settings page: preview tiles in as many columns as fit. The
+     * indicator lies over the chosen tile and is hidden like in the other radio groups.
+     */
+    [data-part='theme-picker'] {
+        position: relative;
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(min(100%, 11rem), 1fr));
+        gap: var(--wmp-space-m);
+    }
+
+    [data-part='theme-picker'] > [data-part='indicator'] {
+        position: absolute;
+        inset-block-start: var(--wmp-indicator-y, 0);
+        left: var(--wmp-indicator-x, 0);
+        display: none;
+        inline-size: var(--wmp-indicator-width, 0);
+        block-size: var(--wmp-indicator-height, 0);
+        pointer-events: none;
+    }
+
+    [data-part='theme-option'] {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        align-content: start;
+        gap: var(--wmp-space-xs);
+        padding: var(--wmp-space-s);
+        border: 1px solid var(--wmp-color-border);
+        border-radius: var(--wmp-radius-m);
+        color: var(--wmp-content-color);
+        background: var(--wmp-color-surface-raised);
+        text-align: start;
+        cursor: pointer;
+    }
+
+    [data-part='theme-option']:hover {
+        background: var(--wmp-color-hover);
+    }
+
+    [data-part='theme-option'][aria-checked='true'] {
+        border-color: var(--wmp-color-accent);
+        box-shadow: 0 0 0 1px var(--wmp-color-accent);
+    }
+
+    [data-part='theme-option']:focus-visible {
+        outline: 2px solid var(--wmp-color-focus);
+        outline-offset: 2px;
+    }
+
+    [data-part='theme-option'][aria-disabled='true'] {
+        cursor: default;
+    }
+
+    [data-part='theme-preview'] {
+        display: block;
+        aspect-ratio: 16 / 10;
+        overflow: hidden;
+        border-radius: var(--wmp-radius-s);
+        background: var(--wmp-image-cover-placeholder);
+    }
+
+    [data-part='theme-preview-image'] {
+        display: block;
+        inline-size: 100%;
+        block-size: 100%;
+        object-fit: cover;
+    }
+
+    [data-part='theme-option'] > [data-part='label'] {
+        font-weight: var(--wmp-font-weight-bold);
+    }
+
+    [data-part='theme-variants'] {
         color: var(--wmp-color-text-muted);
         font-size: var(--wmp-font-size-s);
     }

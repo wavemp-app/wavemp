@@ -231,7 +231,8 @@
             > :is(
                 [data-part='mode-switch'],
                 [data-part='btn-collapse'],
-                [data-part='now-playing-actions']
+                [data-part='now-playing-actions'],
+                [data-part='transport-time']
             ) {
             display: none !important;
         }

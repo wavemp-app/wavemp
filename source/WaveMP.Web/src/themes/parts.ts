@@ -165,6 +165,9 @@ export const parts = [
     'now-playing-artist',
     'now-playing-actions',
     'transport-message',
+    'transport-time',
+    'time-elapsed',
+    'time-duration',
     'transport-controls',
     'btn-shuffle',
     'btn-repeat',
@@ -225,6 +228,11 @@ export const parts = [
     // Profile menu and settings
     'btn-profile',
     'profile-summary',
+    'theme-picker',
+    'theme-option',
+    'theme-preview',
+    'theme-preview-image',
+    'theme-variants',
 
     // Profile administration
     'view-actions',

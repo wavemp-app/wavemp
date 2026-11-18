@@ -29,6 +29,7 @@
     }
 
     [data-part='dev-language'],
+    [data-part='dev-theme'],
     [data-part='dev-samples'] {
         display: flex;
         flex-wrap: wrap;

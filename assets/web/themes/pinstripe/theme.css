@@ -1,0 +1,39 @@
+/*
+ * Theme "Pinstripe" for WaveMP, theme API version 5 (see THEMING.md).
+ *
+ * Starting stylesheet (light): readable colors on the base layout, to be designed with
+ * fine horizontal pinstripes, brushed metal in the header, gel-like round buttons and a
+ * central display for title and progress.
+ *
+ * Rules of the theme API: no @import, no @layer, no external URLs, root-absolute url() only.
+ * Layout rules live in @media (width >= 64rem); below that, the fixed mobile base applies and
+ * this file only provides colors, graphics and fonts.
+ */
+
+:root {
+    --wmp-color-accent: #1a5fb4;
+    --wmp-color-accent-contrast: #ffffff;
+    --wmp-color-focus: #1a5fb4;
+    --wmp-color-text: #1d1d1f;
+    --wmp-color-text-muted: #535358;
+    --wmp-color-text-disabled: #9b9ba1;
+    --wmp-color-surface: #ffffff;
+    --wmp-color-surface-raised: #ececec;
+    --wmp-color-border: #c6c6c8;
+    --wmp-color-hover: #e3e9f3;
+    --wmp-color-selection: #cddbf0;
+    --wmp-color-selection-text: #1d1d1f;
+    --wmp-color-success: #1f7a34;
+    --wmp-color-warning: #965f00;
+    --wmp-color-danger: #c0271d;
+    --wmp-favorite-color: #c2185b;
+    --wmp-rating-color: #965f00;
+    --wmp-theme-color: #ececec;
+    --wmp-image-cover-placeholder: url('/themes/pinstripe/images/cover-placeholder.svg') center / 100% 100%
+        no-repeat;
+}
+
+/* A line between the header and the page, as an example of a rule for a part. */
+[data-part='header'] {
+    border-block-end: 1px solid var(--wmp-color-border);
+}

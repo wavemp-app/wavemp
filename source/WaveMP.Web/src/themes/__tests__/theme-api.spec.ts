@@ -7,7 +7,7 @@ import { describe, expect, it } from 'vitest'
 import { desktopMediaQuery, mobileMediaQuery } from '../breakpoints'
 import { iconSlotNames, iconSlots } from '../iconSlots'
 import { devPartPrefix, parts, themeApiVersion } from '../parts'
-import { themes } from '../themes'
+import { themePreview, themes } from '../themes'
 
 // Not new URL(..., import.meta.url): Vite rewrites that pattern into an asset URL.
 const sourceDirectory = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
@@ -36,6 +36,8 @@ const runtimeVariables = [
     '--wmp-crop-scale',
     '--wmp-crop-x',
     '--wmp-crop-y',
+    '--wmp-cover-color',
+    '--wmp-cover-color-contrast',
 ]
 
 function read(file: string): string {
@@ -209,6 +211,17 @@ describe('breakpoint', () => {
     })
 })
 
+/** Media features a theme may use besides the desktop breakpoint. */
+const themeMediaFeatures = [
+    '(prefers-reduced-motion: reduce)',
+    '(prefers-reduced-motion: no-preference)',
+    '(prefers-reduced-transparency: reduce)',
+    '(prefers-contrast: more)',
+    '(forced-colors: active)',
+    '(hover: hover)',
+    '(pointer: coarse)',
+]
+
 describe('shipped themes', () => {
     for (const theme of themes) {
         describe(theme.id, () => {
@@ -244,10 +257,31 @@ describe('shipped themes', () => {
                 )
                 expect(variables.filter((name) => !known.has(name))).toEqual([])
 
+                // The desktop breakpoint and preferences of the user (not the color scheme: the
+                // variant comes from data-theme-variant), alone or joined with "and".
                 const queries = unique(
                     [...css.matchAll(/@media ([^{]*)\{/g)].map((match) => (match[1] ?? '').trim()),
                 )
-                expect(queries.filter((query) => query !== desktopMediaQuery)).toEqual([])
+                const allowed = new Set([desktopMediaQuery, ...themeMediaFeatures])
+                expect(
+                    queries.filter((query) =>
+                        query.split(/\s+and\s+/).some((condition) => !allowed.has(condition)),
+                    ),
+                ).toEqual([])
+            })
+
+            it('has a preview picture per variant', () => {
+                for (const variant of theme.variants) {
+                    const preview = themePreview(theme, variant)
+                    expect(existsSync(path.join(webAssets, preview)), preview).toBe(true)
+                }
+            })
+
+            it('selects its variants with data-theme-variant only', () => {
+                expect(css).not.toMatch(/prefers-color-scheme/)
+                if (theme.variants.length > 1) {
+                    expect(css).toMatch(/\[data-theme-variant=(['"])dark\1\]/)
+                }
             })
 
             it('names the current version of the theme API in its header comment', () => {
