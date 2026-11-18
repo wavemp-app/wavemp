@@ -1,38 +1,2064 @@
 /*
  * Theme "Daylight" for WaveMP, theme API version 5 (see THEMING.md).
  *
- * Starting stylesheet (light): readable colors on the base layout, to be designed with
- * light glass, sky blue and glossy edges; the light sister of Midnight.
+ * The light sister of Midnight: the same full-bleed bands of split-gradient glass, held up to a
+ * clear noon sky. Header, toolbar and transport bar run across the whole window; each is bright
+ * white glass above a crisp horizon and deeper sky below, with a white rim on top and an azure
+ * edge underneath. The sidebar is a pale frosted column flush with the white content. The play
+ * button is an azure orb; checked options light up in azure gloss. Type follows Midnight: compact,
+ * semibold and deep azure; on the desktop the page title stays for assistive technology only. The
+ * profile selection is open sky with a band of clouds. All graphics in images/ were drawn for this
+ * theme.
  *
  * Rules of the theme API: no @import, no @layer, no external URLs, root-absolute url() only.
  * Layout rules live in @media (width >= 64rem); below that, the fixed mobile base applies and
  * this file only provides colors, graphics and fonts.
  */
 
+/* --- Variables ------------------------------------------------------------------------------ */
+
 :root {
-    --wmp-color-accent: #0b63c4;
+    /*
+     * Palette: sky #cfe9fc, horizon #f3faff, azure #0f6cc7 (accent), deep azure #0b4f94 (titles,
+     * active text), ink #0d2944 (text), mist #415d79 (muted text), aqua #6fd3ff (glints).
+     */
+    --wmp-font-family: system-ui, sans-serif;
+    --wmp-font-weight-bold: 600;
+
+    --wmp-color-accent: #0f6cc7;
     --wmp-color-accent-contrast: #ffffff;
     --wmp-color-focus: #0b63c4;
-    --wmp-color-text: #10253f;
-    --wmp-color-text-muted: #4b5b70;
-    --wmp-color-text-disabled: #94a1b2;
+    --wmp-color-text: #0d2944;
+    --wmp-color-text-muted: #415d79;
+    --wmp-color-text-disabled: #91a5ba;
     --wmp-color-surface: #ffffff;
-    --wmp-color-surface-raised: #eaf5fd;
-    --wmp-color-border: #c4dcf0;
-    --wmp-color-hover: #dff0fc;
-    --wmp-color-selection: #c8e4fa;
-    --wmp-color-selection-text: #10253f;
-    --wmp-color-success: #1e7a3a;
-    --wmp-color-warning: #9a6200;
-    --wmp-color-danger: #b3261e;
-    --wmp-favorite-color: #c2185b;
-    --wmp-rating-color: #9a6200;
-    --wmp-theme-color: #eaf5fd;
-    --wmp-image-cover-placeholder: url('/themes/daylight/images/cover-placeholder.svg') center / 100% 100%
+    --wmp-color-surface-raised: #eef7fe;
+    --wmp-color-border: #b9d6ee;
+    --wmp-color-hover: #e6f4fe;
+    --wmp-color-selection: #cbe6fb;
+    --wmp-color-selection-text: #0b2c4f;
+    --wmp-color-success: #1d7a3c;
+    --wmp-color-warning: #94600a;
+    --wmp-color-danger: #b42a2a;
+    --wmp-favorite-color: #c8245f;
+    --wmp-rating-color: #0f6cc7;
+    --wmp-backdrop-color: rgb(14 48 84 / 38%);
+
+    --wmp-header-color: #0d2944;
+    /* The split gloss of the bands: bright glass, a crisp horizon at half height, deeper sky. */
+    --wmp-header-background: linear-gradient(
+        #ffffff 0%,
+        #e4f3ff 50%,
+        #bfe0fa 50%,
+        #a6d2f5 100%
+    );
+    --wmp-toolbar-color: #0d2944;
+    --wmp-toolbar-background: linear-gradient(
+        #ffffff 0%,
+        #f0f8ff 50%,
+        #dbeefc 50%,
+        #cbe6fa 100%
+    );
+    --wmp-sidebar-color: #0d2944;
+    --wmp-sidebar-background: linear-gradient(90deg, #eaf5fe, #f3f9ff);
+    --wmp-content-color: #0d2944;
+    --wmp-content-background: #ffffff;
+    --wmp-transport-color: #0d2944;
+    --wmp-transport-background: linear-gradient(
+        #ffffff 0%,
+        #e4f3ff 50%,
+        #bfe0fa 50%,
+        #a6d2f5 100%
+    );
+    /* Ice glass with the same horizon, a shade paler than the header. */
+    --wmp-bottom-nav-color: #1f3d5c;
+    --wmp-bottom-nav-background: linear-gradient(
+        #ffffff 0%,
+        #eaf6ff 50%,
+        #c9e5fb 50%,
+        #b4daf7 100%
+    );
+    --wmp-dialog-color: #0d2944;
+    --wmp-dialog-background: #ffffff;
+    --wmp-menu-color: #0d2944;
+    --wmp-menu-background: linear-gradient(#ffffff, #f3f9fe);
+    --wmp-profile-select-color: #0d2944;
+    --wmp-profile-select-background:
+        url('/themes/daylight/images/clouds.svg') bottom / 100% 40% no-repeat,
+        radial-gradient(
+            circle at 86% 0%,
+            rgb(255 255 255 / 95%) 0,
+            rgb(255 251 238 / 70%) 7rem,
+            rgb(255 251 238 / 0%) 26rem
+        ),
+        linear-gradient(#a9d6f7 0%, #cbe7fb 45%, #eef8ff 100%);
+    --wmp-profile-secondary-opacity: 0.75;
+    /* The status bar continues the white top of the header band. */
+    --wmp-theme-color: #ffffff;
+
+    --wmp-image-cover-placeholder: url('/themes/daylight/images/cover-placeholder.svg') center /
+        100% 100% no-repeat;
+    --wmp-image-default-button: linear-gradient(
+        #ffffff,
+        #f3f9fe 50%,
+        #e5f2fc 51%,
+        #eef7fe
+    );
+    --wmp-image-default-button-hover: linear-gradient(
+        #ffffff,
+        #e4f3fe 50%,
+        #cfe8fb 51%,
+        #def0fd
+    );
+    --wmp-image-default-button-active: linear-gradient(#c3e1f8, #d9eefc);
+    --wmp-image-default-button-disabled: #f3f7fb;
+    /* The white label keeps 4.5:1 on every stop of the gloss (THEMING.md, "Contrast"). */
+    --wmp-image-primary-button: linear-gradient(
+        #1f72c9,
+        #176abf 50%,
+        #0f5eb0 51%,
+        #1466ba
+    );
+    --wmp-image-primary-button-hover: linear-gradient(
+        #2075cc,
+        #146ac2 50%,
+        #0c5aab 51%,
+        #1262b6
+    );
+    --wmp-image-primary-button-active: linear-gradient(#0d55a2, #1466ba);
+    --wmp-image-primary-button-disabled: linear-gradient(#c4d8ea, #b6cde2);
+    --wmp-image-icon-button: transparent;
+    --wmp-image-icon-button-hover: radial-gradient(
+        closest-side,
+        rgb(255 255 255 / 95%),
+        rgb(214 236 252 / 70%) 70%,
+        rgb(214 236 252 / 0%)
+    );
+    --wmp-image-icon-button-active: radial-gradient(
+        closest-side,
+        rgb(178 216 246 / 90%),
+        rgb(178 216 246 / 0%)
+    );
+    --wmp-image-icon-button-disabled: transparent;
+    --wmp-image-round-button: url('/themes/daylight/images/glass-button.svg') center / 100% 100%
         no-repeat;
+    --wmp-image-round-button-hover: url('/themes/daylight/images/glass-button-hover.svg') center /
+        100% 100% no-repeat;
+    --wmp-image-round-button-active: url('/themes/daylight/images/glass-button-pressed.svg')
+        center / 100% 100% no-repeat;
+    --wmp-image-round-button-disabled: url('/themes/daylight/images/glass-button.svg') center /
+        100% 100% no-repeat;
+    --wmp-image-play-button: url('/themes/daylight/images/play-button.svg') center / 100% 100%
+        no-repeat;
+    --wmp-image-play-button-hover: url('/themes/daylight/images/play-button-hover.svg') center /
+        100% 100% no-repeat;
+    --wmp-image-play-button-active: url('/themes/daylight/images/play-button-pressed.svg') center /
+        100% 100% no-repeat;
+    --wmp-image-play-button-disabled: url('/themes/daylight/images/play-button.svg') center /
+        100% 100% no-repeat;
+    /* The active tab is white glass that runs down into the white top of the toolbar band. */
+    --wmp-image-tab-active: linear-gradient(#f4faff, #ffffff);
+    --wmp-image-tab-hover: linear-gradient(rgb(255 255 255 / 70%), rgb(255 255 255 / 30%));
+    --wmp-image-slider-thumb: url('/themes/daylight/images/slider-thumb.svg') center / 100% 100%
+        no-repeat;
+    --wmp-slider-track-background: linear-gradient(#bcd7ec, #dcecf9);
+    --wmp-slider-fill-background: linear-gradient(#6fc6fb, #2a8be0 55%, #1466b8);
+    --wmp-progress-track-background: linear-gradient(#c6dcee, #e6f1fa);
+    --wmp-progress-fill-background: linear-gradient(
+        #c8ecff 0%,
+        #5bb6f5 48%,
+        #1f7fd6 52%,
+        #4aa7ee 100%
+    );
+
+    --wmp-stage-view-background: linear-gradient(#0d2a4a, #061528);
+    --wmp-lyrics-color: #0b2c4f;
+    --wmp-lyrics-muted-color: #4d6884;
+
+    --wmp-icon-fill: currentColor;
+    --wmp-radius-s: 0.3125rem;
+    --wmp-radius-m: 0.625rem;
+    --wmp-radius-l: 0.875rem;
+    --wmp-play-button-size: 3.5rem;
+    --wmp-round-button-size: 1.875rem;
+    --wmp-slider-thumb-size: 0.9375rem;
+    --wmp-seek-height: 0.3125rem;
+    --wmp-progress-height: 0.5rem;
 }
 
-/* A line between the header and the page, as an example of a rule for a part. */
+/*
+ * The app rests on the sky: a soft gradient with a warm glow in the upper corner. The safe area at
+ * the top shows the theme color, so the status bar continues the header.
+ */
+[data-part='app'] {
+    background:
+        linear-gradient(var(--wmp-theme-color), var(--wmp-theme-color)) top / 100%
+            env(safe-area-inset-top, 0px) no-repeat,
+        radial-gradient(circle at 100% 0%, rgb(255 253 244 / 80%), rgb(255 253 244 / 0%) 22rem),
+        linear-gradient(#cfe9fc 0%, #e4f3fe 40%, #f3faff 100%);
+}
+
+/* --- Headlines: compact, semibold and deep azure ------------------------------------------- */
+
+[data-part='content-title'],
+[data-part='detail-title'] {
+    color: #0b4f94;
+    font-weight: 600;
+    letter-spacing: -0.005em;
+}
+
+[data-part='shelf-title'],
+[data-part='section-title'] {
+    color: #0b3d72;
+    font-weight: 600;
+}
+
+/* --- Header: a band of split sky gloss with a white rim and an azure edge ------------------- */
+
 [data-part='header'] {
-    border-block-end: 1px solid var(--wmp-color-border);
+    --wmp-icon-fill: #0b4f94;
+
+    border-block-end: 1px solid #7fb6e6;
+    box-shadow: inset 0 1px #ffffff;
+}
+
+[data-part='header'] [data-variant]:not([data-part='btn-favorite']) {
+    --wmp-icon-fill: #0b4f94;
+}
+
+[data-part='logo'] {
+    color: #0b3d72;
+    text-shadow: 0 1px 0 rgb(255 255 255 / 90%);
+}
+
+[data-part='btn-menu'] {
+    color: #0b4f94;
+}
+
+/* Tabs: deep ink on the sky; the active tab rises as a white glass bubble with an azure arrow. */
+[data-part='tab'] {
+    border: 1px solid transparent;
+    border-radius: 0.5rem 0.5rem 0 0;
+    color: #163a5e;
+    font-weight: 600;
+    text-shadow: 0 1px 0 rgb(255 255 255 / 80%);
+}
+
+[data-part='tab']:hover {
+    border-color: rgb(255 255 255 / 70%);
+    color: #0b3d72;
+}
+
+[data-part='tab'][aria-current='page'] {
+    border-color: #7fb6e6;
+    border-block-end-color: transparent;
+    color: #0b4f94;
+    text-shadow: none;
+    box-shadow:
+        inset 0 1px #ffffff,
+        0 -2px 8px rgb(255 255 255 / 60%);
+}
+
+[data-part='tab'][aria-current='page'] > [data-part='indicator'] {
+    inset-block-end: -0.1875rem;
+
+    --wmp-icon-fill: linear-gradient(#2a8be0, #0b4f94);
+
+    filter: drop-shadow(0 1px 0 #ffffff);
+}
+
+[data-part='btn-back'],
+[data-part='btn-forward'] {
+    --wmp-icon-size: 1rem;
+
+    border: 0;
+    color: #0b4f94;
+}
+
+[data-part='btn-back']:disabled,
+[data-part='btn-forward']:disabled {
+    --wmp-icon-fill: #8fa8c0;
+
+    color: #8fa8c0;
+}
+
+[data-part='server-status'] {
+    color: #36526f;
+}
+
+/* The entry of the review inbox reads like a tab; its number is a small azure gloss capsule. */
+[data-part='btn-review-inbox'] {
+    border-radius: 0.5rem;
+    color: #163a5e;
+    font-weight: 600;
+}
+
+[data-part='btn-review-inbox']:is(:hover, [data-state~='active']) {
+    background: linear-gradient(rgb(255 255 255 / 90%), rgb(255 255 255 / 40%));
+    color: #0b4f94;
+    box-shadow: inset 0 0 0 1px #b6d8f1;
+}
+
+[data-part='btn-review-inbox'] > [data-part='badge'][data-state~='unreviewed'] {
+    border: 1px solid #0b4f94;
+    background: linear-gradient(#2076cf 0%, #176abf 48%, #0f5eb0 52%, #1466ba 100%);
+    box-shadow: inset 0 1px rgb(255 255 255 / 50%);
+    color: #ffffff;
+    line-height: 1.125rem;
+}
+
+/* The profile button wears a white ring like a glass bead. */
+[data-part='btn-profile'] {
+    border: 0;
+    padding: 0;
+}
+
+[data-part='btn-profile'] > [data-part='avatar'] {
+    box-shadow:
+        0 0 0 2px #ffffff,
+        0 1px 4px rgb(20 70 120 / 30%);
+}
+
+[data-part='btn-profile']:is(:hover, [aria-expanded='true']) > [data-part='avatar'] {
+    box-shadow:
+        0 0 0 2px #ffffff,
+        0 0 0 4px #6fc3f5,
+        0 0 10px rgb(111 211 255 / 70%);
+}
+
+/* --- Toolbar -------------------------------------------------------------------------------- */
+
+/* The toolbar carries the same gloss as the header, a few shades paler. */
+[data-part='toolbar'] {
+    --wmp-icon-fill: #24476b;
+
+    border-block-end: 1px solid #7fb6e6;
+    box-shadow: inset 0 1px #ffffff;
+}
+
+[data-part='toolbar'] [data-variant] {
+    --wmp-icon-fill: #24476b;
+}
+
+[data-part='toolbar'] :is(button, a):hover:not(:disabled) [data-part='icon'] {
+    --wmp-icon-fill: #0f6cc7;
+}
+
+[data-part='breadcrumb-link'] {
+    color: #163a5e;
+}
+
+[data-part='breadcrumb-link'][aria-current='page'] {
+    color: #0b3d72;
+    font-weight: 600;
+}
+
+a[data-part='breadcrumb-link']:hover {
+    background: rgb(255 255 255 / 70%);
+    color: #0b4f94;
+}
+
+[data-part='breadcrumb-separator'] {
+    --wmp-icon-size: 0.625rem;
+    --wmp-icon-fill: #5a7896;
+
+    margin-inline: 0.125rem;
+}
+
+[data-part='view-switch'],
+[data-part='sort'] {
+    --wmp-icon-size: 1.125rem;
+
+    gap: 0.125rem;
+    border-color: transparent;
+    background: transparent;
+}
+
+[data-part='view-switch'] [data-icon='dropdown'],
+[data-part='sort'] [data-icon='dropdown'] {
+    --wmp-icon-size: 0.625rem;
+}
+
+[data-part='view-switch']:disabled,
+[data-part='sort']:disabled {
+    background: transparent;
+    opacity: 0.5;
+}
+
+[data-part='search'] > [data-part='input'] {
+    border: 1px solid #9cc3e3;
+    border-radius: 999px;
+    background: linear-gradient(#f4f9fd, #ffffff 40%);
+    box-shadow:
+        inset 0 1px 2px rgb(20 70 120 / 14%),
+        0 1px 0 rgb(255 255 255 / 80%);
+    color: #0d2944;
+}
+
+[data-part='search'] > [data-part='input']::placeholder {
+    color: #4d6884;
+}
+
+[data-part='search'] > [data-part='input']:focus {
+    border-color: #2a8be0;
+    outline: none;
+    box-shadow:
+        inset 0 1px 2px rgb(20 70 120 / 14%),
+        0 0 0 3px rgb(111 195 245 / 45%);
+}
+
+[data-part='search'] > [data-part='icon'] {
+    --wmp-icon-fill: #3d5c7b;
+}
+
+/* --- Sidebar: frosted glass with azure duotone icons ----------------------------------------- */
+
+[data-part='sidebar'] {
+    --wmp-icon-fill: linear-gradient(#2a86d6, #0b4f94);
+
+    border-inline-end: 1px solid #bcd8ef;
+}
+
+[data-part='tree-item'] {
+    min-block-size: 1.75rem;
+    border: 1px solid transparent;
+    border-radius: 0.4375rem;
+    color: #163a5e;
+}
+
+[data-part='tree-item']:hover:not([aria-disabled='true']) {
+    border-color: rgb(255 255 255 / 90%);
+    background: linear-gradient(rgb(255 255 255 / 85%), rgb(255 255 255 / 45%));
+}
+
+[data-part='tree-item'][aria-current='page'] {
+    border-color: #8fc2ea;
+    background: linear-gradient(#ffffff 0%, #eaf5fe 48%, #d4ebfc 52%, #e3f2fd 100%);
+    box-shadow:
+        inset 0 1px #ffffff,
+        0 1px 3px rgb(20 90 160 / 15%);
+    color: #0b3d72;
+    font-weight: 600;
+}
+
+[data-part='tree-item'][aria-disabled='true'] [data-part='icon'] {
+    opacity: 0.5;
+}
+
+[data-part='tree-toggle'] {
+    --wmp-icon-fill: #4d6b89;
+}
+
+[data-part='btn-sidebar-toggle'] {
+    --wmp-icon-fill: linear-gradient(#2a86d6, #0b4f94);
+
+    border-color: transparent;
+    background: transparent;
+}
+
+[data-part='sidebar-backdrop'] {
+    backdrop-filter: blur(2px);
+}
+
+/* --- Content -------------------------------------------------------------------------------- */
+
+[data-part='content'] {
+    --wmp-icon-fill: #3f5d7b;
+}
+
+[data-part='placeholder-notice'] {
+    border: 1px solid #bcdaf2;
+    border-radius: var(--wmp-radius-s);
+    background: linear-gradient(#f7fbff, #e9f5fe);
+    color: #24476b;
+}
+
+[data-part='link'] {
+    color: #0f62b8;
+    text-decoration-color: rgb(15 98 184 / 40%);
+    text-underline-offset: 0.15em;
+}
+
+[data-part='link']:hover {
+    color: #0b4f94;
+    text-decoration-color: currentColor;
+}
+
+/* Lists: a pale glass header row; rows light up in sky blue. */
+[data-part='list-header'] {
+    border-block-end: 1px solid #cde2f3;
+    background: linear-gradient(#ffffff, #eef6fd);
+    color: #3d5a77;
+    font-size: var(--wmp-font-size-xs);
+    font-weight: 600;
+}
+
+[data-part='list-column'] + [data-part='list-column'] {
+    padding-inline-start: 0.375rem;
+    border-inline-start: 1px solid #dceaf6;
+}
+
+[data-part='list-group-header'] {
+    border-block-end: 1px solid #c7def1;
+    color: #0b3d72;
+    font-weight: 600;
+}
+
+[data-part='list-group-info'] [data-part='cover'] {
+    border-radius: var(--wmp-radius-s);
+    box-shadow:
+        0 4px 12px rgb(20 70 120 / 22%),
+        0 0 0 1px rgb(20 70 120 / 10%);
+}
+
+[data-part='cover'][data-state~='placeholder'] {
+    --wmp-icon-fill: linear-gradient(#a9d8fa, #3f8fd6);
+}
+
+[data-part='list-group-meta'] {
+    color: #3d5a77;
+}
+
+[data-part='list-group-meta'] > [data-part='meta-item'][data-field='album'] {
+    color: #0b3d72;
+    font-weight: 600;
+}
+
+/* The frame of a row is drawn inside it, so it does not move the cells off their columns. */
+[data-part='list-row'] {
+    border-radius: var(--wmp-radius-s);
+}
+
+[data-part='list-row']:hover {
+    background: #eef7fe;
+    box-shadow: inset 0 0 0 1px #d2e8f9;
+}
+
+[data-part='list-row'][aria-selected='true'] {
+    background: linear-gradient(#e3f2fe, #cbe6fb);
+    box-shadow:
+        inset 0 0 0 1px #8fc2ea,
+        inset 0 1px #ffffff;
+    color: #0b2c4f;
+}
+
+[data-part='list-row'][data-state~='playing'] [data-part='list-cell'][data-column='title'] {
+    color: #0f62b8;
+    font-weight: 600;
+}
+
+[data-part='list-row'][data-state~='video-only'] [data-part='list-cell'][data-column='title'] {
+    color: #1f4c78;
+}
+
+[data-part='badge'] {
+    --wmp-icon-fill: #3f5d7b;
+}
+
+[data-part='badge'][data-state~='video-only'] {
+    --wmp-icon-fill: #0f62b8;
+}
+
+[data-part='empty-state-title'] {
+    color: #0b3d72;
+}
+
+[data-part='empty-state-text'] {
+    color: #3d5a77;
+}
+
+/* Stars of the rating and the heart of a favorite carry a small white glint. */
+[data-part='rating-star'][data-state~='on'] > [data-part='icon'],
+[data-part='btn-favorite'][data-state~='on'] > [data-part='icon'] {
+    filter: drop-shadow(0 1px 0 rgb(255 255 255 / 90%));
+}
+
+[data-part='rating-star'][data-state~='off'] {
+    color: #5c7895;
+}
+
+/* --- Library: tiles, detail pages, files ------------------------------------------------------ */
+
+/* Covers are glossy pictures with a soft sky shadow and a reflection on their upper half. */
+[data-part='tile'] > :is([data-part='cover'], [data-part='playlist-cover']),
+[data-part='detail-header'] > :is([data-part='cover'], [data-part='playlist-cover']) {
+    position: relative;
+    border-radius: var(--wmp-radius-s);
+    box-shadow:
+        0 4px 12px rgb(20 70 120 / 20%),
+        0 0 0 1px rgb(20 70 120 / 10%);
+}
+
+[data-part='tile'] > :is([data-part='cover'], [data-part='playlist-cover'])::after,
+[data-part='detail-header'] > :is([data-part='cover'], [data-part='playlist-cover'])::after {
+    position: absolute;
+    inset: 0 0 52%;
+    border-radius: inherit;
+    border-end-start-radius: 0;
+    border-end-end-radius: 0;
+    background: linear-gradient(rgb(255 255 255 / 34%), rgb(255 255 255 / 6%));
+    content: '';
+    pointer-events: none;
+}
+
+[data-part='tile'] {
+    border: 1px solid transparent;
+    border-radius: var(--wmp-radius-m);
+    transition:
+        background-color 0.15s ease,
+        border-color 0.15s ease;
+}
+
+[data-part='tile']:hover,
+[data-part='tile']:focus-visible {
+    border-color: #cfe6f8;
+    background: linear-gradient(#f6fbff, #e7f4fe);
+}
+
+[data-part='tile']:is(:hover, :focus-visible) > :is([data-part='cover'], [data-part='playlist-cover']) {
+    box-shadow:
+        0 6px 16px rgb(20 90 160 / 26%),
+        0 0 0 1px rgb(15 108 199 / 35%),
+        0 0 12px rgb(111 211 255 / 55%);
+}
+
+[data-part='tile'] > [data-part='cover'] > [data-part='icon'] {
+    --wmp-icon-fill: linear-gradient(#a9d8fa, #3f8fd6);
+}
+
+[data-part='tile-title'] {
+    color: #0d2944;
+    font-weight: 600;
+}
+
+[data-part='tile-subtitle'] {
+    color: #415d79;
+}
+
+[data-part='detail-header'] {
+    padding-block-end: 1rem;
+    border-block-end: 1px solid #d6e8f6;
+}
+
+[data-part='detail-header'] > :is([data-part='cover'], [data-part='playlist-cover']) {
+    box-shadow:
+        0 10px 28px rgb(20 70 120 / 26%),
+        0 0 0 1px rgb(20 70 120 / 10%);
+}
+
+[data-part='detail-header'] > [data-part='cover'] > [data-part='icon'] {
+    --wmp-icon-fill: linear-gradient(#a9d8fa, #3f8fd6);
+}
+
+[data-part='detail-info'] > [data-part='meta-item'] > [data-part='label'] {
+    color: #4a6683;
+}
+
+[data-part='meta-value'] > [data-part='link'] {
+    color: inherit;
+}
+
+[data-part='meta-value'] > [data-part='link']:hover {
+    color: #0f62b8;
+}
+
+/* Actions of a detail page carry an azure icon; the primary button keeps its white icon. */
+[data-part='detail-actions'] :not([data-variant='primary']) > [data-part='icon'] {
+    --wmp-icon-fill: linear-gradient(#2a86d6, #0b4f94);
+}
+
+[data-part='detail-actions'] [data-part='btn-favorite'] > [data-part='icon'] {
+    --wmp-icon-fill: var(--wmp-favorite-color);
+}
+
+/* "Show more" is a glass capsule below the list. */
+[data-part='load-more'] {
+    min-inline-size: 10rem;
+    border-radius: 999px;
+    box-shadow:
+        inset 0 1px #ffffff,
+        0 1px 3px rgb(20 70 120 / 14%);
+}
+
+[data-part='load-more'][data-state~='loading'] {
+    color: #415d79;
+}
+
+/* Files of a song, runs, jobs and panels: white glass sheets with a pale sky edge. */
+:is(
+    [data-part='file-item'],
+    [data-part='user-item'],
+    [data-part='cache-usage'],
+    [data-part='transcoding-status'],
+    [data-part='backup-status'],
+    [data-part='scan-status'],
+    [data-part='stat-item'],
+    [data-part='run-item'],
+    [data-part='job-item'],
+    [data-part='transcode-item'],
+    [data-part='backup-item'],
+    [data-part='scrobble-item'],
+    [data-part='file-selection-item'],
+    [data-part='review-item'],
+    [data-part='disclosure']
+) {
+    border: 1px solid #cfe3f4;
+    border-radius: var(--wmp-radius-m);
+    background: linear-gradient(#ffffff, #f5fafe);
+    box-shadow:
+        inset 0 1px #ffffff,
+        0 1px 3px rgb(20 70 120 / 8%);
+}
+
+:is(
+    [data-part='user-item'],
+    [data-part='run-item'],
+    [data-part='job-item'],
+    [data-part='transcode-item'],
+    [data-part='backup-item'],
+    [data-part='file-selection-item'],
+    [data-part='review-item']
+):hover {
+    border-color: #a9d0ee;
+    background: linear-gradient(#f8fcff, #eaf5fe);
+}
+
+[data-part='file-item'][data-state~='primary'] {
+    border-color: #a9d0ee;
+    background: linear-gradient(#f8fcff, #eaf5fe);
+}
+
+[data-part='file-path'],
+[data-part='issue-path'],
+[data-part='backup-name'],
+[data-part='job-name'],
+[data-part='user-name'],
+[data-part='transcode-title'],
+[data-part='scrobble-name'] {
+    color: #0d2944;
+}
+
+/* Badges: small glass capsules; the color tells the state. */
+[data-part='badge'] {
+    border-radius: 999px;
+}
+
+:is(
+        [data-part='file-meta'],
+        [data-part='user-meta'],
+        [data-part='scan-status'],
+        [data-part='run-item'],
+        [data-part='run-meta'],
+        [data-part='job-meta'],
+        [data-part='transcode-meta'],
+        [data-part='stat-value'],
+        [data-part='backup-meta'],
+        [data-part='scrobble-meta'],
+        [data-part='review-meta'],
+        [data-part='review-tags'],
+        [data-part='file-selection-info']
+    )
+    > [data-part='badge'] {
+    border: 1px solid #c3dbef;
+    background: linear-gradient(#ffffff, #edf5fc);
+    color: #2f4c69;
+}
+
+[data-part='badge']:is(
+    [data-state~='primary'],
+    [data-state~='admin'],
+    [data-state~='running'],
+    [data-state~='queued'],
+    [data-state~='detecting'],
+    [data-state~='selected'],
+    [data-state~='best']
+) {
+    border-color: #8fc2ea;
+    background: linear-gradient(#eef7ff, #d2e9fb);
+    color: #0b3d72;
+}
+
+[data-part='badge']:is(
+    [data-state~='succeeded'],
+    [data-state~='active'],
+    [data-state~='lossless'],
+    [data-state~='connected'],
+    [data-state~='reviewed']
+) {
+    border-color: #a6d9b6;
+    background: linear-gradient(#f3fcf6, #dbf2e3);
+    color: #17502b;
+}
+
+[data-part='badge']:is(
+    [data-state~='failed'],
+    [data-state~='interrupted'],
+    [data-state~='issue'],
+    [data-state~='missing'],
+    [data-state~='authorization-failed'],
+    [data-state~='missing-tag']
+) {
+    border-color: #efbcbc;
+    background: linear-gradient(#fff8f8, #fbe1e1);
+    color: #6a1d1d;
+}
+
+[data-part='badge']:is([data-state~='canceled'], [data-state~='unavailable']) {
+    border-color: #ead39f;
+    background: linear-gradient(#fffbf2, #faeed2);
+    color: #5a3d07;
+}
+
+/* The state of a scrobbling service is a small glass bead in its color (its label stays hidden). */
+[data-part='scrobble-meta'] > [data-part='badge'] {
+    align-self: center;
+    inline-size: 0.875rem;
+    block-size: 0.375rem;
+    padding: 0;
+    border: 0;
+    background: linear-gradient(#c3d3e2, #7f98b1);
+}
+
+[data-part='scrobble-meta'] > [data-part='badge'][data-state~='connected'] {
+    background: linear-gradient(#7fdca0, #1d7a3c);
+}
+
+[data-part='scrobble-meta'] > [data-part='badge'][data-state~='authorization-failed'] {
+    background: linear-gradient(#f39a9a, #b42a2a);
+}
+
+[data-part='scrobble-meta'] > [data-part='badge'][data-state~='unavailable'] {
+    background: linear-gradient(#f3d58c, #94600a);
+}
+
+/* The chosen sort key and direction carry an azure dot. */
+[data-part='menu-item'][aria-checked='true'] {
+    color: #0b2c4f;
+    font-weight: 600;
+}
+
+[data-part='menu-item'][aria-checked='true']::before {
+    inline-size: 0.4375rem;
+    block-size: 0.4375rem;
+    margin-inline-end: 0.125rem;
+    border-radius: 999px;
+    background: radial-gradient(circle at 35% 35%, #bfe9ff, #0f6cc7 70%);
+    box-shadow: 0 0 0 1px rgb(255 255 255 / 80%);
+    content: '';
+}
+
+[data-part='menu-item'][role='menuitemradio'][aria-checked='false'] {
+    padding-inline-start: 1.25rem;
+}
+
+/* --- Buttons and segmented controls ----------------------------------------------------------- */
+
+:where(button, a)[data-variant='default'] {
+    border-color: #a4c9e7;
+    border-radius: var(--wmp-radius-s);
+    box-shadow:
+        inset 0 1px #ffffff,
+        0 1px 2px rgb(20 70 120 / 10%);
+    color: #0d2944;
+}
+
+:where(button, a)[data-variant='default']:hover:not(:disabled, [aria-disabled='true']) {
+    border-color: #6fb0e3;
+}
+
+/* Round glass bubbles (back and forward) carry deep azure arrows wherever they stand. */
+[data-variant='round']:not([data-part='btn-play']) {
+    color: #0b4f94;
+}
+
+:where(button, a)[data-variant='primary'] {
+    border-color: #0b4f94;
+    box-shadow:
+        inset 0 1px rgb(255 255 255 / 45%),
+        0 1px 3px rgb(11 79 148 / 30%);
+}
+
+:where(button, a)[data-variant='primary']:disabled {
+    border-color: #b0c8de;
+    color: #4c6580;
+}
+
+/*
+ * The checked option lights up in azure gloss, like a pressed key in sunlight; the others stay
+ * white glass. The group is one capsule with a pale groove.
+ */
+[data-part='segmented-control'] {
+    padding: 0.125rem;
+    border-radius: calc(var(--wmp-radius-s) + 0.125rem);
+    background: linear-gradient(#d9ebf9, #ecf6fe);
+    box-shadow:
+        inset 0 1px 2px rgb(20 70 120 / 18%),
+        0 1px 0 rgb(255 255 255 / 90%);
+}
+
+[data-part='segment'] {
+    border-color: #b3d3ec;
+    box-shadow: inset 0 1px #ffffff;
+    color: #0d2944;
+}
+
+[data-part='segment'][aria-checked='true']:not(:disabled, [aria-disabled='true']) {
+    border-color: #0b4f94;
+    background: var(--wmp-image-primary-button);
+    box-shadow:
+        inset 0 1px rgb(255 255 255 / 45%),
+        0 1px 3px rgb(11 79 148 / 30%);
+    color: #ffffff;
+}
+
+[data-part='segment'][aria-checked='true']:is(:disabled, [aria-disabled='true']) {
+    background: linear-gradient(#d3e3f1, #c2d6e8);
+    color: #3d5a77;
+}
+
+[data-part='segmented-control'][aria-invalid='true'] {
+    box-shadow:
+        inset 0 1px 2px rgb(20 70 120 / 18%),
+        0 0 0 1px #b42a2a;
+}
+
+[data-part='segmented-control'][aria-invalid='true'] > [data-part='segment'] {
+    border-color: #c63a3a;
+}
+
+[data-part='segment']:disabled:not([aria-checked='true']) {
+    background: linear-gradient(#f7fafd, #eef3f8);
+}
+
+/*
+ * Options that cannot be chosen (e.g. Video and Lyrics without media) fade to the disabled color;
+ * on a narrow stage only their icons are shown, so the icon carries the state.
+ */
+[data-part='segment']:is(:disabled, [aria-disabled='true']):not([aria-checked='true']) {
+    color: var(--wmp-color-text-disabled);
+    box-shadow: none;
+}
+
+[data-part='segment']:is(:disabled, [aria-disabled='true']):not([aria-checked='true'])
+    > [data-part='icon'] {
+    --wmp-icon-fill: var(--wmp-color-text-disabled);
+
+    filter: none;
+}
+
+/* --- Now Playing ------------------------------------------------------------------------------- */
+
+/* A halo in the color of the current cover glows behind the stage like light through glass. */
+[data-part='stage'] {
+    background: radial-gradient(
+        55% 45% at 50% 38%,
+        color-mix(in srgb, var(--wmp-cover-color, #8cc8f2) 30%, transparent),
+        transparent 75%
+    );
+    transition: background 0.6s ease;
+}
+
+[data-part='stage-view'] > [data-part='cover'] {
+    border-radius: var(--wmp-radius-s);
+    box-shadow:
+        0 16px 40px rgb(20 70 120 / 30%),
+        0 0 0 1px rgb(255 255 255 / 70%);
+}
+
+[data-part='stage-title'] {
+    color: #0b3d72;
+    font-weight: 600;
+}
+
+[data-part='stage-subtitle'] {
+    color: #3d5a77;
+}
+
+[data-part='stage-view']:is([data-kind='video'], [data-kind='visualization'], [data-kind='lyrics']) {
+    box-shadow:
+        0 16px 40px rgb(20 70 120 / 30%),
+        0 0 0 1px rgb(255 255 255 / 70%);
+}
+
+[data-part='video-backdrop'] {
+    background:
+        radial-gradient(ellipse at 50% 50%, rgb(111 195 245 / 18%), transparent 70%),
+        linear-gradient(#0d2a4a, #050f1c);
+}
+
+[data-part='video-stage'][data-orientation='portrait'] > [data-part='video-backdrop'] {
+    background:
+        radial-gradient(ellipse 60% 90% at 50% 50%, rgb(111 195 245 / 24%), transparent 75%),
+        linear-gradient(90deg, #06182c, #123a63 50%, #06182c);
+}
+
+/* Lyrics stand in the open sky: deep azure lines on a pale gradient. */
+[data-part='lyrics'] {
+    background:
+        radial-gradient(70% 50% at 50% 0%, rgb(255 255 255 / 85%), rgb(255 255 255 / 0%)),
+        linear-gradient(#cfe9fc, #f3faff);
+}
+
+/* Until the visualization draws: a dusk sky with an azure glow. */
+[data-part='visualization'] {
+    background:
+        radial-gradient(ellipse at 50% 120%, rgb(111 195 245 / 35%), transparent 65%),
+        linear-gradient(#0a2240, #133e6a);
+    color: #d8eeff;
+}
+
+[data-part='visualization-message'] > [data-part='icon'] {
+    --wmp-icon-fill: linear-gradient(#ffffff, #8fd2ff);
+
+    filter: drop-shadow(0 0 6px rgb(111 211 255 / 80%));
+}
+
+/* The controls of the visualization float as a white glass capsule above its bottom edge. */
+[data-part='visualization-controls'] {
+    inset-inline: 50% auto;
+    inset-block-end: 0.75rem;
+    inline-size: max-content;
+    max-inline-size: calc(100% - 1.5rem);
+    padding: 0.25rem 0.5rem;
+    border-radius: 999px;
+    background: linear-gradient(
+        rgb(255 255 255 / 92%) 0%,
+        rgb(240 248 255 / 92%) 48%,
+        rgb(220 238 252 / 92%) 52%,
+        rgb(234 245 254 / 92%) 100%
+    );
+    box-shadow:
+        inset 0 1px #ffffff,
+        0 0 0 1px #9cc6e8,
+        0 4px 14px rgb(5 20 40 / 35%);
+    color: #0d2944;
+    translate: -50% 0;
+}
+
+[data-part='visualization-controls'] > [data-variant='icon'] {
+    --wmp-icon-fill: #0b4f94;
+
+    color: #0b4f94;
+}
+
+[data-part='btn-auto-change'][data-state~='on'] {
+    --wmp-icon-fill: #0f6cc7;
+}
+
+[data-part='btn-auto-change'][data-state~='on'] > [data-part='icon'] {
+    filter: drop-shadow(0 0 3px rgb(111 211 255 / 90%));
+}
+
+[data-part='visualization-controls'] [data-part='select'] {
+    border-radius: 999px;
+}
+
+[data-part='stage-actions'] > [data-part='segmented-control'],
+[data-part='visualization-controls'] > [data-part='segmented-control'] {
+    border-radius: 999px;
+}
+
+:is([data-part='stage-actions'], [data-part='visualization-controls']) [data-part='segment'] {
+    border-radius: 999px;
+    border-color: transparent;
+    background: transparent;
+    box-shadow: none;
+}
+
+:is([data-part='stage-actions'], [data-part='visualization-controls'])
+    [data-part='segment']
+    + [data-part='segment'] {
+    margin-inline-start: 0.125rem;
+}
+
+:is([data-part='stage-actions'], [data-part='visualization-controls'])
+    [data-part='segment']:hover:not(:disabled, [aria-disabled='true'], [aria-checked='true']) {
+    background: rgb(255 255 255 / 85%);
+}
+
+:is([data-part='stage-actions'], [data-part='visualization-controls'])
+    [data-part='segment'][aria-checked='true']:not(:disabled, [aria-disabled='true']) {
+    border-color: #0b4f94;
+    background: var(--wmp-image-primary-button);
+    box-shadow:
+        inset 0 1px rgb(255 255 255 / 45%),
+        0 1px 3px rgb(11 79 148 / 30%);
+}
+
+:is([data-part='stage-actions'], [data-part='visualization-controls'])
+    [data-part='segment']:is(:disabled, [aria-disabled='true']) {
+    background: transparent;
+}
+
+[data-part='stage-notice'] {
+    color: #3d5a77;
+}
+
+/* The queue: the current entry is a lit pane of glass. */
+[data-part='queue'] {
+    border-color: #cfe3f4;
+}
+
+[data-part='queue-item'] {
+    border: 1px solid transparent;
+    border-radius: var(--wmp-radius-s);
+}
+
+[data-part='queue-item']:hover {
+    border-color: #d2e8f9;
+    background: #f1f8fe;
+}
+
+[data-part='queue-item'][data-state~='current'] {
+    border-color: #8fc2ea;
+    background: linear-gradient(#ffffff 0%, #e8f4fe 48%, #d2eafc 52%, #e2f1fd 100%);
+    box-shadow:
+        inset 0 1px #ffffff,
+        0 1px 3px rgb(20 90 160 / 15%);
+    color: #0b2c4f;
+}
+
+[data-part='queue-item'][data-state~='played'] {
+    color: #3d5a77;
+}
+
+/* The base dims artist and duration; their color is dark enough to keep 4.5:1 through it. */
+[data-part='queue-item-artist'],
+[data-part='queue-item-duration'] {
+    color: #1f4060;
+}
+
+[data-part='queue-item-info'] [data-part='cover'] {
+    border-radius: 0.25rem;
+    box-shadow: 0 1px 3px rgb(20 70 120 / 25%);
+}
+
+[data-part='queue-item-actions'] [data-variant] {
+    --wmp-icon-fill: #24476b;
+}
+
+/* --- Transport bar: the header's split sky gloss across the whole window ---------------------- */
+
+[data-part='transport'] {
+    --wmp-color-border: #7fb6e6;
+
+    border-block-start: 1px solid #7fb6e6;
+    box-shadow: inset 0 1px #ffffff;
+}
+
+[data-part='transport'] [data-variant]:not([data-part='btn-favorite'], [data-part='btn-play']) {
+    --wmp-icon-fill: #0b4f94;
+
+    color: #0b4f94;
+}
+
+[data-part='transport'] :is(button, a):hover:not(:disabled) [data-part='icon'],
+[data-part='transport'] [aria-pressed='true'] [data-part='icon'] {
+    --wmp-icon-fill: linear-gradient(#2a8be0, #0b4f94);
+
+    filter: drop-shadow(0 0 3px rgb(111 211 255 / 90%));
+}
+
+[data-part='transport'] [data-variant]:is(:disabled, [aria-disabled='true']) [data-part='icon'] {
+    opacity: 0.45;
+}
+
+[data-part='now-playing-mini'] [data-part='cover'] {
+    border-radius: 0.3125rem;
+    box-shadow:
+        0 0 0 1px rgb(255 255 255 / 90%),
+        0 2px 6px rgb(20 70 120 / 30%);
+}
+
+[data-part='now-playing-title'] {
+    color: #0d2944;
+    font-weight: 600;
+}
+
+/* Full strength: the deeper sky of the band leaves no room for the base's dimming. */
+[data-part='now-playing-artist'] {
+    color: #1f4060;
+    opacity: 1;
+}
+
+[data-part='transport'] [data-part='btn-play'] {
+    --wmp-icon-size: 1.375rem;
+    --wmp-icon-fill: #ffffff;
+
+    color: #ffffff;
+}
+
+[data-part='transport'] [data-part='btn-play'] > [data-part='icon'] {
+    filter: drop-shadow(0 1px 1px rgb(5 40 90 / 45%));
+}
+
+[data-part='btn-play']:disabled [data-part='icon'] {
+    opacity: 0.8;
+}
+
+[data-part='transport'] [data-part='slider-track'] {
+    box-shadow:
+        inset 0 1px 2px rgb(20 70 120 / 30%),
+        0 1px 0 #ffffff;
+}
+
+[data-part='seek'] [data-part='slider-fill'] {
+    box-shadow: 0 0 6px rgb(111 195 245 / 80%);
+}
+
+[data-part='slider-thumb'] {
+    box-shadow: 0 1px 3px rgb(20 70 120 / 35%);
+}
+
+[data-part='volume'][data-state~='muted'] [data-part='slider-fill'] {
+    filter: grayscale(1);
+}
+
+[data-part='transport'] [data-part='rating-star'][data-state~='off'],
+[data-part='transport'] [data-part='btn-favorite'][data-state~='off'] {
+    color: #36526f;
+}
+
+[data-part='transport-time'] {
+    color: #1f4060;
+}
+
+/* The notice of the player is a small white glass label above the transport bar. */
+[data-part='transport'] > [data-part='transport-message']:not([data-state~='empty']) {
+    border-color: #a9cdea;
+    border-radius: var(--wmp-radius-m);
+    background: linear-gradient(#ffffff, #eaf5fe);
+    box-shadow: 0 4px 14px rgb(20 70 120 / 20%);
+    color: #0d2944;
+}
+
+/* Equalizer, sleep timer and casting glow like the pressed toggles. */
+[data-part='btn-equalizer'][data-state~='on'] [data-part='icon'],
+[data-part='btn-sleep-timer'][data-state~='on'] [data-part='icon'],
+[data-part='btn-cast'][data-state~='connected'] [data-part='icon'] {
+    --wmp-icon-fill: linear-gradient(#2a8be0, #0b4f94);
+
+    filter: drop-shadow(0 0 3px rgb(111 211 255 / 90%));
+}
+
+[data-part='sleep-timer-remaining'] {
+    color: #0b4f94;
+    font-size: var(--wmp-font-size-xs);
+    font-weight: 600;
+}
+
+[data-part='sleep-timer'][data-state~='fading'] [data-part='sleep-timer-remaining'] {
+    opacity: 0.75;
+}
+
+[data-part='btn-cast'][data-state~='connecting'] [data-part='icon'] {
+    opacity: 0.6;
+}
+
+[data-part='cast-status'] {
+    color: #0f62b8;
+}
+
+[data-part='cast-hint'] {
+    border-color: #a9cdea;
+    background: linear-gradient(#ffffff, #eaf5fe);
+    box-shadow: 0 4px 14px rgb(20 70 120 / 20%);
+    color: #0d2944;
+}
+
+/* --- Bottom navigation (mobile) --------------------------------------------------------------- */
+
+[data-part='bottom-nav'] {
+    border-block-start: 1px solid #7fb6e6;
+    box-shadow: inset 0 1px #ffffff;
+}
+
+/*
+ * A short azure glint marks the active entry on the top edge. It slides only while the bar is
+ * touched or focused, so it never flies in when the app first measures it.
+ */
+[data-part='bottom-nav'] > [data-part='indicator'] {
+    display: block;
+    inset-block-start: 0;
+    block-size: 3px;
+    margin-inline: calc(var(--wmp-indicator-width, 0px) * 0.25);
+    inline-size: calc(var(--wmp-indicator-width, 0px) * 0.5);
+    border-radius: 0 0 3px 3px;
+    background: linear-gradient(90deg, #6fd3ff, #0f6cc7);
+}
+
+[data-part='bottom-nav']:has([aria-current='page']) > [data-part='indicator'] {
+    box-shadow: 0 0 8px rgb(111 211 255 / 80%);
+}
+
+[data-part='bottom-nav']:is(:hover, :focus-within, :active) > [data-part='indicator'] {
+    transition:
+        left 0.25s ease,
+        margin-inline 0.25s ease,
+        inline-size 0.25s ease;
+}
+
+[data-part='bottom-nav-item'] {
+    --wmp-icon-size: 1.375rem;
+
+    font-weight: 600;
+}
+
+[data-part='bottom-nav-item'] > [data-part='icon'] {
+    --wmp-icon-fill: #2b4866;
+}
+
+[data-part='bottom-nav-item'][aria-current='page'] {
+    color: #0b4f94;
+}
+
+[data-part='bottom-nav-item'][aria-current='page'] > [data-part='icon'] {
+    --wmp-icon-fill: linear-gradient(#2a8be0, #0b4f94);
+
+    filter: drop-shadow(0 0 4px rgb(111 211 255 / 80%));
+}
+
+/* --- Full-screen player (mobile) ------------------------------------------------------------- */
+
+[data-part='transport'][data-state~='expanded'] {
+    --wmp-play-button-size: 4.5rem;
+    --wmp-icon-size: 1.5rem;
+
+    background:
+        url('/themes/daylight/images/clouds.svg') bottom / 100% 22% no-repeat,
+        radial-gradient(
+            80% 45% at 50% 30%,
+            color-mix(in oklab, var(--wmp-cover-color, #8cc8f2) 18%, transparent),
+            transparent 75%
+        ),
+        linear-gradient(#bfe2fa 0%, #e2f2fe 50%, #f4faff 100%);
+    transition: background 0.6s ease;
+}
+
+[data-part='transport'][data-state~='expanded'] [data-part='btn-play'] {
+    --wmp-icon-size: 1.75rem;
+}
+
+[data-part='transport'][data-state~='expanded'] [data-part='now-playing-mini'] [data-part='cover'] {
+    box-shadow:
+        0 16px 40px rgb(20 70 120 / 30%),
+        0 0 0 1px rgb(255 255 255 / 80%);
+}
+
+/* --- Profiles -------------------------------------------------------------------------------- */
+
+/* Glass over the color of the profile; --wmp-profile-color is set on the avatar itself. */
+[data-part='avatar'] {
+    border: 1px solid rgb(10 40 80 / 25%);
+    background:
+        linear-gradient(
+            rgb(255 255 255 / 50%) 0%,
+            rgb(255 255 255 / 14%) 48%,
+            rgb(255 255 255 / 0%) 52%,
+            rgb(255 255 255 / 12%) 100%
+        ),
+        var(--wmp-profile-color);
+    text-shadow: 0 1px 1px rgb(0 0 0 / 35%);
+}
+
+[data-part='profile-select-title'] {
+    color: #0b3d72;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    text-shadow: 0 1px 0 rgb(255 255 255 / 70%);
+}
+
+[data-part='profile-select-hint'] {
+    color: #24476b;
+    opacity: 1;
+}
+
+[data-part='profile-select'] [data-part='empty-state-title'] {
+    color: #0b3d72;
+}
+
+[data-part='profile-select'] [data-part='empty-state-text'] {
+    color: #24476b;
+}
+
+[data-part='profile-tile'] {
+    border: 1px solid transparent;
+    border-radius: var(--wmp-radius-l);
+    transition:
+        background 0.15s ease,
+        border-color 0.15s ease,
+        opacity 0.15s ease;
+}
+
+[data-part='profile-tile'] > [data-part='avatar'] {
+    box-shadow:
+        0 0 0 3px rgb(255 255 255 / 85%),
+        0 8px 20px rgb(20 70 120 / 25%);
+}
+
+[data-part='profile-tile'] > [data-part='label'] {
+    color: #0d2944;
+    font-weight: 600;
+}
+
+[data-part='profile-tile']:is(:hover, :focus-visible):not(:disabled) {
+    border-color: rgb(255 255 255 / 90%);
+    background: linear-gradient(rgb(255 255 255 / 75%), rgb(255 255 255 / 30%));
+    box-shadow: 0 6px 20px rgb(20 90 160 / 15%);
+}
+
+[data-part='profile-tile']:is(:hover, :focus-visible):not(:disabled) > [data-part='avatar'] {
+    box-shadow:
+        0 0 0 3px #ffffff,
+        0 0 0 5px #6fc3f5,
+        0 0 18px rgb(111 211 255 / 75%);
+}
+
+[data-part='profile-tile'][data-state~='current'] > [data-part='avatar'] {
+    box-shadow:
+        0 0 0 3px #ffffff,
+        0 0 0 5px #0f6cc7;
+}
+
+[data-part='profile-lock'] {
+    --wmp-icon-fill: #0b4f94;
+}
+
+[data-part='pin-entry-title'] {
+    color: #0b3d72;
+    font-weight: 600;
+}
+
+[data-part='pin-dot'] {
+    background: radial-gradient(circle at 35% 35%, #bfe9ff, #0f6cc7 70%);
+    box-shadow: 0 0 0 1px rgb(255 255 255 / 80%);
+}
+
+[data-part='pin-key'] {
+    border-color: rgb(255 255 255 / 90%);
+    background: linear-gradient(rgb(255 255 255 / 90%), rgb(234 245 254 / 75%));
+    box-shadow:
+        inset 0 1px #ffffff,
+        0 2px 6px rgb(20 70 120 / 15%);
+    color: #0d2944;
+}
+
+[data-part='profile-summary'] {
+    color: #0d2944;
+}
+
+/* Theme picker: the chosen theme sits in an azure frame with a glint. */
+[data-part='theme-option'] {
+    border-color: #cfe3f4;
+    background: linear-gradient(#ffffff, #f2f8fe);
+    box-shadow: inset 0 1px #ffffff;
+}
+
+[data-part='theme-option']:hover {
+    border-color: #a9d0ee;
+    background: linear-gradient(#f8fcff, #e6f3fe);
+}
+
+[data-part='theme-option'][aria-checked='true'] {
+    border-color: #0f6cc7;
+    background: linear-gradient(#f2f9ff, #dceefd);
+    box-shadow:
+        0 0 0 1px #0f6cc7,
+        0 0 10px rgb(111 195 245 / 50%);
+}
+
+[data-part='theme-preview'] {
+    box-shadow: 0 0 0 1px rgb(20 70 120 / 15%);
+}
+
+[data-part='theme-variants'] {
+    color: #415d79;
+}
+
+/* --- Forms and messages ----------------------------------------------------------------------- */
+
+[data-part='field'] > [data-part='input'],
+[data-part='select'] {
+    border: 1px solid #a4c9e7;
+    border-radius: var(--wmp-radius-s);
+    background: #ffffff;
+    box-shadow: inset 0 1px 2px rgb(20 70 120 / 10%);
+    color: #0d2944;
+}
+
+[data-part='select'] {
+    background: linear-gradient(#ffffff, #eef6fd);
+    box-shadow: inset 0 1px #ffffff;
+}
+
+[data-part='field'] > [data-part='input']:focus,
+[data-part='select']:focus {
+    border-color: #2a8be0;
+    outline: none;
+    box-shadow:
+        inset 0 1px 2px rgb(20 70 120 / 10%),
+        0 0 0 3px rgb(111 195 245 / 45%);
+}
+
+[data-part='field'][data-state~='invalid'] > :is([data-part='input'], [data-part='select']) {
+    border-color: #c63a3a;
+}
+
+[data-part='field-error'] {
+    color: #b42a2a;
+}
+
+[data-part='field-hint'],
+[data-part='form-note'] {
+    color: #415d79;
+}
+
+[data-part='field'] > [data-part='input']:disabled {
+    border-color: #c9d8e6;
+    background: linear-gradient(#f4f7fa, #edf2f6);
+    box-shadow: none;
+    color: #7d91a6;
+}
+
+[data-part='checkbox'] {
+    accent-color: #0f6cc7;
+}
+
+[data-part='alert'] {
+    border: 1px solid #b6d8f1;
+    border-radius: var(--wmp-radius-m);
+    background: linear-gradient(#f7fbff, #e7f4fe);
+    color: #1f4060;
+}
+
+[data-part='alert'][data-state~='error'] {
+    border-color: #efbcbc;
+    background: linear-gradient(#fff8f8, #fde9e9);
+    color: #6a1d1d;
+}
+
+[data-part='alert'][data-state~='success'] {
+    border-color: #b3dfc2;
+    background: linear-gradient(#f5fcf7, #e3f5e9);
+    color: #17502b;
+}
+
+[data-part='alert'] > [data-part='icon'] {
+    --wmp-icon-fill: currentColor;
+}
+
+[data-part='color-swatch'] {
+    border: 1px solid rgb(10 40 80 / 25%);
+    background:
+        linear-gradient(rgb(255 255 255 / 45%), rgb(255 255 255 / 0%) 50%),
+        var(--wmp-swatch-color);
+    box-shadow: inset 0 1px rgb(255 255 255 / 55%);
+}
+
+[data-part='color-swatch'][aria-checked='true'] {
+    box-shadow:
+        inset 0 1px rgb(255 255 255 / 55%),
+        0 0 0 2px #ffffff,
+        0 0 0 4px #0f6cc7,
+        0 0 8px rgb(111 195 245 / 60%);
+}
+
+[data-part='avatar-preset'][aria-checked='true'] {
+    box-shadow:
+        0 0 0 2px #ffffff,
+        0 0 0 4px #0f6cc7;
+}
+
+/* --- Administration ---------------------------------------------------------------------------- */
+
+/* The pages of the administration are glass tabs on a pale rail; the current one is lit. */
+[data-part='admin-nav'] {
+    border-block-end-color: #a9cdea;
+}
+
+[data-part='admin-nav-item'] {
+    border: 1px solid transparent;
+    border-block-end: 0;
+    border-radius: var(--wmp-radius-m) var(--wmp-radius-m) 0 0;
+    color: #24476b;
+}
+
+[data-part='admin-nav-item']:hover {
+    border-color: #cfe3f4;
+    background: linear-gradient(#ffffff, #eef7fe);
+    color: #0b3d72;
+}
+
+[data-part='admin-nav-item'][data-state~='active'] {
+    border-color: #a9cdea;
+    background: linear-gradient(#ffffff 0%, #eef7fe 48%, #dbeefc 52%, #e8f4fe 100%);
+    box-shadow: inset 0 1px #ffffff;
+    color: #0b3d72;
+    font-weight: 600;
+}
+
+[data-part='admin-nav-item'] > [data-part='icon'] {
+    --wmp-icon-fill: linear-gradient(#2a86d6, #0b4f94);
+}
+
+/* An azure line under the current page; it slides only while the rail is in use. */
+[data-part='admin-nav'] > [data-part='indicator'] {
+    display: block;
+    inset-block-start: auto;
+    inset-block-end: 0;
+    block-size: 2px;
+    background: linear-gradient(90deg, #6fd3ff, #0f6cc7);
+}
+
+[data-part='admin-nav']:is(:hover, :focus-within, :active) > [data-part='indicator'] {
+    transition:
+        left 0.25s ease,
+        inline-size 0.25s ease;
+}
+
+[data-part='section-title'] {
+    text-shadow: 0 1px 0 #ffffff;
+}
+
+[data-part='stat-value'] {
+    color: #0b3d72;
+}
+
+[data-part='stat-item'] > [data-part='label'] {
+    color: #3d5a77;
+}
+
+[data-part='progress-track'],
+[data-part='meter-track'] {
+    box-shadow: inset 0 1px 2px rgb(20 70 120 / 25%);
+}
+
+[data-part='progress-fill'],
+[data-part='meter-fill'] {
+    box-shadow: 0 0 6px rgb(111 195 245 / 70%);
+}
+
+[data-part='meter'] {
+    --wmp-progress-height: 0.75rem;
+}
+
+[data-part='disclosure-summary'] {
+    color: #24476b;
+}
+
+[data-part='disclosure'][open] > [data-part='disclosure-summary'] {
+    border-block-end: 1px solid #dbeaf6;
+}
+
+[data-part='job-actions'] [data-part='icon'],
+[data-part='user-actions'] [data-variant='icon'] {
+    --wmp-icon-fill: #24476b;
+}
+
+[data-part='user-actions'] [data-variant='icon']:hover:not(:disabled) [data-part='icon'] {
+    --wmp-icon-fill: #0f6cc7;
+}
+
+[data-part='user-actions'] [data-variant='icon']:disabled [data-part='icon'] {
+    opacity: 0.4;
+}
+
+[data-part='cache-usage'] > [data-part='label']:first-of-type {
+    color: #0b3d72;
+    font-weight: 600;
+}
+
+[data-part='cache-usage'] > [data-part='stat-list'] > [data-part='stat-item'] {
+    box-shadow: none;
+}
+
+[data-part='cache-usage'] > [data-part='button'] [data-part='icon'] {
+    --wmp-icon-fill: #b42a2a;
+}
+
+[data-part='file-choice'] {
+    border-color: #cfe3f4;
+    background: linear-gradient(#ffffff, #f5fafe);
+}
+
+[data-part='file-choice'][aria-checked='true'] {
+    border-color: #0f6cc7;
+    background: linear-gradient(#f2f9ff, #dceefd);
+    box-shadow: 0 0 0 1px #0f6cc7;
+}
+
+[data-part='review-title'],
+[data-part='file-selection-title'] {
+    color: #0f62b8;
+}
+
+/* --- Dialogs and menus ------------------------------------------------------------------------ */
+
+[data-part='dialog'] {
+    border: 1px solid #8fbde3;
+    border-radius: var(--wmp-radius-l);
+    box-shadow:
+        inset 0 0 0 1px rgb(255 255 255 / 80%),
+        0 20px 50px rgb(14 48 84 / 35%);
+}
+
+[data-part='dialog']::backdrop {
+    background: rgb(14 48 84 / 35%);
+    backdrop-filter: blur(3px);
+}
+
+[data-part='dialog-header'] {
+    border-block-end: 1px solid #b6d5ee;
+    background: linear-gradient(#f6fbff 0%, #e1f1fd 47%, #c9e5fa 53%, #d8edfc 100%);
+}
+
+[data-part='dialog-title'] {
+    color: #0b3d72;
+    font-weight: 600;
+}
+
+[data-part='dialog-footer'] {
+    border-block-start: 1px solid #e0edf8;
+}
+
+[data-part='dialog'] :not([data-variant='primary']) > [data-part='icon'],
+[data-part='context-menu'] [data-part='icon'] {
+    --wmp-icon-fill: #24476b;
+}
+
+[data-part='context-menu'] {
+    border: 1px solid #9cc6e8;
+    border-radius: var(--wmp-radius-m);
+    box-shadow:
+        inset 0 1px #ffffff,
+        0 10px 30px rgb(14 48 84 / 25%);
+}
+
+[data-part='menu-item'] {
+    border-radius: var(--wmp-radius-s);
+}
+
+[data-part='menu-item']:is(:hover, :focus-visible):not(:disabled) {
+    background: linear-gradient(#f2f9ff 0%, #e2f1fd 48%, #d0e8fb 52%, #ddeffd 100%);
+    box-shadow: inset 0 0 0 1px #9cc8ee;
+    color: #0b2c4f;
+}
+
+[data-part='menu-separator'] {
+    border-color: #dbeaf6;
+}
+
+/* --- Playlists ---------------------------------------------------------------------------------- */
+
+[data-part='drag-handle'] {
+    --wmp-icon-fill: #6a86a2;
+}
+
+[data-part='list-row']:hover [data-part='drag-handle'] {
+    --wmp-icon-fill: #0f6cc7;
+}
+
+[data-part='playlist-choice'] {
+    border: 1px solid transparent;
+    border-radius: var(--wmp-radius-m);
+}
+
+[data-part='playlist-choice']:hover:not(:disabled),
+[data-part='playlist-choice']:focus-visible {
+    border-color: #cfe6f8;
+    background: linear-gradient(#f6fbff, #e7f4fe);
+}
+
+[data-part='playlist-choice'][data-state~='busy'] {
+    border-color: #8fc2ea;
+    background: linear-gradient(#e3f2fe, #cfe7fb);
+}
+
+[data-part='playlist-choice-count'] {
+    color: #415d79;
+}
+
+/* --- Equalizer: a pale glass console with azure faders --------------------------------------- */
+
+[data-part='equalizer'] {
+    --wmp-slider-thumb-size: 1rem;
+
+    padding: 1rem;
+    border: 1px solid #b6d5ee;
+    border-radius: var(--wmp-radius-l);
+    background:
+        radial-gradient(120% 60% at 50% 0%, rgb(255 255 255 / 90%), rgb(255 255 255 / 0%) 70%),
+        linear-gradient(#f2f9ff, #dfeffc);
+    box-shadow:
+        inset 0 1px #ffffff,
+        0 4px 14px rgb(20 70 120 / 12%);
+}
+
+[data-part='equalizer-bands'] {
+    padding: 0.75rem 0.5rem;
+    border-radius: var(--wmp-radius-m);
+    background: linear-gradient(#ffffff, #f1f8fe);
+    box-shadow:
+        inset 0 1px 3px rgb(20 70 120 / 18%),
+        0 1px 0 #ffffff;
+}
+
+[data-part='equalizer-band'][data-kind='preamp'] {
+    padding-inline-end: 0.5rem;
+    border-inline-end: 1px solid #d3e6f5;
+}
+
+[data-part='equalizer-value'] {
+    color: #0b4f94;
+    font-weight: 600;
+}
+
+[data-part='equalizer-band'] > [data-part='label'],
+[data-part='equalizer-scale'] {
+    color: #3d5a77;
+}
+
+[data-part='equalizer'] [data-part='slider-fill'] {
+    box-shadow: 0 0 6px rgb(111 195 245 / 70%);
+}
+
+[data-part='equalizer'] [data-item='power'][aria-pressed='true'] [data-part='icon'] {
+    filter: drop-shadow(0 0 3px rgb(111 211 255 / 90%));
+}
+
+/* Switched off, only the faders fade; scale and band labels keep their full contrast. */
+[data-part='equalizer'][data-state~='off'] > [data-part='equalizer-bands'] {
+    opacity: 1;
+}
+
+[data-part='equalizer'][data-state~='off'] :is([data-part='slider-fill'], [data-part='slider-thumb']) {
+    opacity: 0.55;
+    filter: grayscale(1);
+    box-shadow: none;
+}
+
+/* --- Accessibility ----------------------------------------------------------------------------- */
+
+:focus-visible {
+    outline-color: var(--wmp-color-focus);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    [data-part='stage'],
+    [data-part='transport'][data-state~='expanded'],
+    [data-part='tile'],
+    [data-part='profile-tile'],
+    [data-part='bottom-nav']:is(:hover, :focus-within, :active) > [data-part='indicator'],
+    [data-part='admin-nav']:is(:hover, :focus-within, :active) > [data-part='indicator'] {
+        transition: none;
+    }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+    [data-part='sidebar'],
+    [data-part='toolbar'] {
+        background: #eef7fe;
+    }
+
+    [data-part='visualization-controls'] {
+        background: #ffffff;
+    }
+
+    [data-part='sidebar-backdrop'],
+    [data-part='dialog']::backdrop {
+        backdrop-filter: none;
+    }
+}
+
+@media (prefers-contrast: more) {
+    :root {
+        --wmp-color-text-muted: #2b4866;
+        --wmp-color-border: #5f86ab;
+    }
+}
+
+/* --- Desktop layout --------------------------------------------------------------------------- */
+
+@media (width >= 64rem) {
+    :root {
+        --wmp-font-size-m: 0.875rem;
+        --wmp-header-height: 3.25rem;
+        --wmp-toolbar-height: 2.5rem;
+        --wmp-sidebar-width: 14rem;
+        --wmp-transport-height: 4.5rem;
+        --wmp-field-height: 1.75rem;
+        --wmp-button-height: 1.75rem;
+        --wmp-list-row-height: 1.75rem;
+        --wmp-cover-size: 9rem;
+        --wmp-cover-size-mini: 2.75rem;
+        --wmp-tile-width: 9.5rem;
+        /* The controls sit in a capsule of white glass on the deeper sky of the transport band. */
+        --wmp-image-transport-controls: linear-gradient(
+            #ffffff 0%,
+            #f2f9ff 50%,
+            #dceefc 50%,
+            #eaf5fe 100%
+        );
+    }
+
+    /*
+     * As in Midnight, the page title stays available to assistive technology only: the tab, the
+     * tree and the breadcrumb already name the page. The logo stays in the header.
+     */
+    [data-part='content-title'] {
+        position: absolute;
+        inline-size: 1px;
+        block-size: 1px;
+        overflow: hidden;
+        clip-path: inset(50%);
+        white-space: nowrap;
+    }
+
+    [data-part='profile-select-title'] {
+        font-size: 1.75rem;
+    }
+
+    [data-part='detail-title'] {
+        font-size: 1.5rem;
+        line-height: 1.2;
+    }
+
+    [data-part='header'] {
+        gap: 1.25rem;
+        padding-inline: 1rem;
+    }
+
+    [data-part='tabs'] {
+        gap: 0.25rem;
+        padding-block-start: 0.5rem;
+    }
+
+    [data-part='tab'] {
+        padding-inline: 1rem;
+    }
+
+    [data-part='tab'] > [data-part='icon'] {
+        display: none;
+    }
+
+    [data-part='toolbar'] {
+        grid-template-columns: minmax(0, 1fr) auto auto 16rem;
+        gap: 0.25rem;
+        padding-inline: 0.75rem 0.875rem;
+    }
+
+    /* The sidebar is a frosted column flush with the white content, parted by a sky line. */
+    [data-part='sidebar'] {
+        padding-block-end: 0.75rem;
+        border-inline-end: 1px solid #b9d6ee;
+    }
+
+    [data-part='view']:is(
+        [data-view='library'],
+        [data-view='library-search'],
+        [data-view='library-album'],
+        [data-view='library-artist'],
+        [data-view='library-genre'],
+        [data-view='library-year'],
+        [data-view='library-track']
+    ) {
+        gap: 0.875rem;
+    }
+
+    [data-part='detail-header'] > :is([data-part='cover'], [data-part='playlist-cover']) {
+        inline-size: 11rem;
+    }
+
+    [data-part='list-group'] {
+        padding-block: 0.5rem 0.75rem;
+    }
+
+    /* Cells keep the padding and separator width of their column headers. */
+    [data-part='list-cell'] + [data-part='list-cell'] {
+        padding-inline-start: calc(0.375rem + 1px);
+    }
+
+    [data-part='list-group-info'] {
+        padding: 0.5rem 1rem 0.5rem 0.25rem;
+    }
+
+    /*
+     * The transport band runs across the whole window; the seek bar lies along its upper edge
+     * from side to side.
+     */
+    [data-part='transport'] {
+        grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+        column-gap: 1rem;
+        padding: 0 0.875rem max(0.375rem, env(safe-area-inset-bottom));
+    }
+
+    [data-part='seek'] {
+        inline-size: auto;
+        margin-inline: -0.875rem;
+    }
+
+    [data-part='seek'] [data-part='slider'] {
+        min-block-size: 0.75rem;
+    }
+
+    [data-part='seek'] [data-part='slider-track'] {
+        block-size: var(--wmp-seek-height);
+        border-radius: 0;
+    }
+
+    [data-part='seek'] [data-part='slider-thumb'] {
+        opacity: 0;
+    }
+
+    [data-part='seek']:hover [data-part='slider-thumb'],
+    [data-part='seek'] [data-part='slider-thumb']:focus-visible {
+        opacity: 1;
+    }
+
+    [data-part='transport-controls'] {
+        gap: 0.375rem;
+        block-size: 2.625rem;
+        padding-inline: 0.875rem;
+        border-radius: 999px;
+        box-shadow:
+            inset 0 1px #ffffff,
+            0 0 0 1px #7fb6e6,
+            0 2px 6px rgb(20 90 160 / 22%);
+    }
+
+    [data-part='transport-controls'] > [data-variant='icon'] {
+        min-inline-size: 1.875rem;
+        min-block-size: 1.875rem;
+        padding: 0;
+        border-radius: 999px;
+    }
+
+    [data-part='btn-play'] {
+        margin-block: -0.625rem;
+        margin-inline: 0.125rem;
+    }
+
+    [data-part='volume'] {
+        inline-size: 5.5rem;
+        margin-inline-start: 0.125rem;
+    }
+
+    [data-part='mode-switch'] {
+        --wmp-icon-size: 1.125rem;
+    }
+
+    [data-part='mode-switch'] > [data-variant='icon'],
+    [data-part='mode-switch'] [data-variant='icon'] {
+        border-radius: 999px;
+    }
+
+    [data-view='now-playing'] > [data-part='queue'] {
+        border-inline-start: 1px solid #dbeaf6;
+    }
+
+    /* Along the top of the transport band the seek bar is a sky groove from edge to edge. */
+    [data-part='transport'] [data-part='seek'] [data-part='slider-track'] {
+        background: linear-gradient(#8fbfe6, #b7d8f2);
+        box-shadow: inset 0 1px 1px rgb(20 70 120 / 25%);
+    }
 }

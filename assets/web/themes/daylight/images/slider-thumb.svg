@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16">
+    <!-- Knob of the sliders (Daylight): a white pearl with an azure ring. -->
+    <defs>
+        <radialGradient id="body" cx="50%" cy="70%" r="60%">
+            <stop offset="0" stop-color="#cfe8fb"/>
+            <stop offset="1" stop-color="#ffffff"/>
+        </radialGradient>
+        <linearGradient id="gloss" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#ffffff" stop-opacity="1"/>
+            <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+        </linearGradient>
+    </defs>
+    <circle cx="8" cy="8" r="7" fill="url(#body)" stroke="#1466b8" stroke-width="1.5"/>
+    <ellipse cx="8" cy="5.5" rx="4.25" ry="2.5" fill="url(#gloss)"/>
+</svg>

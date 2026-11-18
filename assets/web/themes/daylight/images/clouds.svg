@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 320" preserveAspectRatio="xMidYMax slice">
+    <!-- A soft band of fair-weather clouds (Daylight) for the bottom of the profile selection and the full-screen player. -->
+    <defs>
+        <filter id="soft" x="-10%" y="-30%" width="120%" height="160%">
+            <feGaussianBlur stdDeviation="9"/>
+        </filter>
+        <linearGradient id="shade" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#ffffff"/>
+            <stop offset="1" stop-color="#e3f2fd"/>
+        </linearGradient>
+    </defs>
+    <g filter="url(#soft)" fill="url(#shade)">
+        <g opacity="0.55">
+            <ellipse cx="180" cy="250" rx="210" ry="70"/>
+            <ellipse cx="300" cy="215" rx="120" ry="80"/>
+            <ellipse cx="760" cy="240" rx="260" ry="70"/>
+            <ellipse cx="880" cy="200" rx="130" ry="85"/>
+            <ellipse cx="1360" cy="235" rx="250" ry="75"/>
+            <ellipse cx="1260" cy="195" rx="110" ry="70"/>
+        </g>
+        <ellipse cx="60" cy="300" rx="260" ry="70"/>
+        <ellipse cx="420" cy="290" rx="220" ry="80"/>
+        <ellipse cx="520" cy="250" rx="120" ry="80"/>
+        <ellipse cx="1000" cy="300" rx="300" ry="70"/>
+        <ellipse cx="1090" cy="255" rx="140" ry="80"/>
+        <ellipse cx="1520" cy="290" rx="220" ry="85"/>
+        <rect x="0" y="295" width="1600" height="40"/>
+    </g>
+</svg>
