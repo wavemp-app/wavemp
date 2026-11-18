@@ -150,6 +150,19 @@ public class ThemePackageValidatorTests
     }
 
     [Test]
+    public void Validate_SvgWithAStyleSplitAroundCdata_IsRejected()
+    {
+        ThemePackageBuilder builder = new ThemePackageBuilder().With(
+            "images/glass.svg",
+            """<svg xmlns="http://www.w3.org/2000/svg"><style>@imp<![CDATA[ort "https://example.com/a.css";]]></style></svg>""");
+
+        ThemeValidationResult result = Validate(builder);
+
+        result.Theme.Should().BeNull();
+        result.Errors.Should().Contain(new ThemeError(ThemeErrorCode.SvgExternalReference, "images/glass.svg"));
+    }
+
+    [Test]
     public void Validate_BrokenStructure_StopsBeforeTheContent()
     {
         ThemeValidationResult result = Validate(new ThemePackageBuilder()

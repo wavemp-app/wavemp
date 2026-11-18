@@ -170,29 +170,40 @@ internal static partial class SvgSanitizer
             return keep ? node : null;
         }
 
+        // The CSS of a style element is all its text joined (browsers drop comments, processing instructions and
+        // child elements and join the pieces of text around them), so it is checked and written as one text: a rule
+        // split into pieces (e.g. "@imp<![CDATA[ort ...]]>") must not pass a check of each piece on its own.
+        StringBuilder? styleText = keep && name == "style" ? new StringBuilder() : null;
         int depth = reader.Depth;
         while (reader.Read())
         {
             switch (reader.NodeType)
             {
                 case XmlNodeType.EndElement when reader.Depth == depth:
+                    if (styleText is { Length: > 0 })
+                    {
+                        string css = styleText.ToString();
+                        CheckStyle(css);
+                        node.Children.Add(new SvgText(css));
+                    }
+
                     return keep ? node : null;
                 case XmlNodeType.Element:
+                    // Child elements of a style element are read for the checks, but not kept.
                     SvgNode? child = ReadElement(reader, ref elements);
-                    if (child is not null && keep)
+                    if (child is not null && keep && styleText is null)
                     {
                         node.Children.Add(child);
                     }
 
                     break;
                 case XmlNodeType.Text or XmlNodeType.CDATA or XmlNodeType.Whitespace or XmlNodeType.SignificantWhitespace:
-                    if (keep && (_textElements.Contains(name) || string.IsNullOrWhiteSpace(reader.Value)))
+                    if (styleText is not null)
                     {
-                        if (name == "style")
-                        {
-                            CheckStyle(reader.Value);
-                        }
-
+                        styleText.Append(reader.Value);
+                    }
+                    else if (keep && (_textElements.Contains(name) || string.IsNullOrWhiteSpace(reader.Value)))
+                    {
                         node.Children.Add(new SvgText(reader.Value));
                     }
 

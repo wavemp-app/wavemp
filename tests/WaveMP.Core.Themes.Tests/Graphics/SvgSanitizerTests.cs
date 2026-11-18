@@ -135,6 +135,29 @@ public class SvgSanitizerTests
         Rejected(Svg(content)).Should().Be(ThemeErrorCode.SvgExternalReference);
     }
 
+    // Browsers join the text of a style element around CDATA sections, comments, processing instructions and child
+    // elements, so each piece alone looks harmless but the whole loads from elsewhere.
+    [TestCase("<style>@imp<![CDATA[ort \"https://example.com/a.css\";]]></style>")]
+    [TestCase("<style>@imp<!-- split -->ort \"https://example.com/a.css\";</style>")]
+    [TestCase("<style>@imp<g/>ort \"https://example.com/a.css\";</style>")]
+    [TestCase("<style>rect { fill: u<![CDATA[rl(https://example.com/a.svg#g); }]]></style>")]
+    [TestCase("<style>rect { fill: u<desc>x</desc>rl(https://example.com/a.svg#g); }</style>")]
+    [TestCase("<style>rect { fill: u<?split?>rl(https://example.com/a.svg#g); }</style>")]
+    public void Sanitize_StyleSplitIntoPieces_IsCheckedAsAWhole(string content)
+    {
+        Rejected(Svg(content)).Should().Be(ThemeErrorCode.SvgExternalReference);
+    }
+
+    [Test]
+    public void Sanitize_StyleWithPieces_IsWrittenAsOneTextWithoutChildElements()
+    {
+        (string? result, List<ThemeError> errors) = Sanitize(
+            Svg("<style>rect { fill: <![CDATA[#fff]]><!-- c --><g/>; }</style>"));
+
+        errors.Should().BeEmpty();
+        result.Should().Contain("<style>rect { fill: #fff; }</style>");
+    }
+
     [TestCase("<!DOCTYPE svg [<!ENTITY a \"b\">]><svg xmlns=\"http://www.w3.org/2000/svg\">&a;</svg>")]
     [TestCase("<!DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 1.1//EN\" \"http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd\"><svg xmlns=\"http://www.w3.org/2000/svg\"/>")]
     [TestCase("<!doctype svg SYSTEM \"file:///etc/passwd\"><svg xmlns=\"http://www.w3.org/2000/svg\"/>")]
