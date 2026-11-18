@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding.Metadata;
 using Microsoft.AspNetCore.OpenApi;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.Net.Http.Headers;
 using Microsoft.OpenApi;
 using WaveMP.Data.Entities;
 using WaveMP.Service.Dtos;
@@ -106,8 +107,8 @@ public static class ServiceCollectionExtensions
     /// <see cref="JwtTokenIssuer"/>) is authenticated while its session is active, the policy
     /// <see cref="AuthorizationPolicies.Admin"/> for admin endpoints and the policy
     /// <see cref="AuthorizationPolicies.Media"/> for media endpoints, which also accept signed media URLs (see
-    /// <see cref="MediaSignatureAuthenticationHandler"/>). The signing key is loaded on start by
-    /// <see cref="SigningKeyStore.InitializeAsync"/>.
+    /// <see cref="MediaSignatureAuthenticationHandler"/>), together with the CORS policy of these endpoints. The signing
+    /// key is loaded on start by <see cref="SigningKeyStore.InitializeAsync"/>.
     /// </summary>
     public static IServiceCollection AddWaveMpAuthentication(this IServiceCollection services)
     {
@@ -154,6 +155,17 @@ public static class ServiceCollectionExtensions
                     JwtBearerDefaults.AuthenticationScheme,
                     MediaSignatureDefaults.AuthenticationScheme)
                 .RequireAuthenticatedUser());
+
+        // Casting devices load HLS streams and covers from the origin of their receiver (see SignedMediaAttribute).
+        services.AddCors(options => options.AddPolicy(MediaSignatureDefaults.CorsPolicy, policy => policy
+            .AllowAnyOrigin()
+            .WithMethods(HttpMethods.Get, HttpMethods.Head)
+            .WithHeaders(HeaderNames.Range)
+            .WithExposedHeaders(
+                HeaderNames.AcceptRanges,
+                HeaderNames.ContentLength,
+                HeaderNames.ContentRange,
+                HeaderNames.ContentType)));
 
         return services;
     }

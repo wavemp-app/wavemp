@@ -45,7 +45,9 @@ public sealed class TrackVideosController(
     /// the video codec (H.264 only as 8 bit 4:2:0) and the audio codec of the file, otherwise transcoded to H.264 and
     /// AAC as an HLS stream. Videos read by an older version of the scan are transcoded until the next scan. The answer
     /// contains a signed, short-lived stream URL that works without the session token, for example in a video element:
-    /// the file (protocol File) or the HLS master playlist (protocol Hls; null if transcoding is unavailable).
+    /// the file (protocol File) or the HLS master playlist (protocol Hls; null if transcoding is unavailable). For a
+    /// casting device (target Cast), the client sends what the device plays; the URL then stays valid longer, and the
+    /// answer adds a signed URL of the cover.
     /// </summary>
     /// <param name="id">Id of the track.</param>
     /// <param name="videoContainers">The containers the client plays (at most 20, repeated query parameter).</param>
@@ -53,6 +55,7 @@ public sealed class TrackVideosController(
     /// <param name="audioCodecs">The audio codecs the client plays in videos (at most 20, repeated query parameter).
     /// </param>
     /// <param name="cancellationToken">Aborts the request.</param>
+    /// <param name="target">Who plays the stream: the client itself (default) or a casting device.</param>
     /// <response code="200">How the client plays the video.</response>
     /// <response code="400">Too many or invalid values (code <c>request.invalid</c>).</response>
     /// <response code="404">The track does not exist (code <c>track.not_found</c>), has no video (code
@@ -66,8 +69,10 @@ public sealed class TrackVideosController(
         [FromQuery] VideoContainerDto[]? videoContainers,
         [FromQuery] VideoCodecDto[]? videoCodecs,
         [FromQuery] AudioCodecDto[]? audioCodecs,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        [FromQuery] PlaybackTargetDto target = PlaybackTargetDto.Local)
     {
+        this.ValidateEnum<PlaybackTargetDto>(target, nameof(target));
         Validate(videoContainers, nameof(videoContainers));
         Validate(videoCodecs, nameof(videoCodecs));
         Validate(audioCodecs, nameof(audioCodecs));
@@ -87,13 +92,15 @@ public sealed class TrackVideosController(
         }
 
         TimeSpan? duration = result.Source.Duration;
+        MediaUrlTarget urlTarget = target.ToEntity();
         MediaUrl? stream = result.Decision.Method == PlaybackMethod.DirectPlay
-            ? urls.CreateVideoStreamUrl(HttpContext, id, duration)
+            ? urls.CreateVideoStreamUrl(HttpContext, id, duration, urlTarget)
             : transcoding.IsAvailable && duration > TimeSpan.Zero
-                ? urls.CreateHlsMasterUrl(HttpContext, id, HlsMediaDto.Video, duration)
+                ? urls.CreateHlsMasterUrl(HttpContext, id, HlsMediaDto.Video, duration, urlTarget)
                 : null;
+        MediaUrl? cover = urlTarget == MediaUrlTarget.Cast ? urls.CreateCoverUrl(HttpContext, id, duration) : null;
         Response.Headers.CacheControl = "no-store";
-        return Ok(result.Source.ToDto(result.Decision, stream));
+        return Ok(result.Source.ToDto(result.Decision, stream, cover));
     }
 
     /// <summary>

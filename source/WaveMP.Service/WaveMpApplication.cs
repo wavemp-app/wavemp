@@ -73,6 +73,9 @@ public static class WaveMpApplication
         // Before the authentication, so that its empty 401 and 403 responses become Problem Details as well.
         app.UseStatusCodePages();
 
+        // Only the endpoints of signed media URLs have a CORS policy (see SignedMediaAttribute); preflight requests are
+        // answered before the authentication.
+        app.UseCors();
         app.UseAuthentication();
         app.UseAuthorization();
 

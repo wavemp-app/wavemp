@@ -83,4 +83,11 @@ public sealed class TrackVideoPlaybackDto
     /// with it.
     /// </summary>
     public required int OffsetMilliseconds { get; init; }
+
+    /// <summary>
+    /// Signed URL of the cover of the track (path with query, relative to the server), which a casting device shows
+    /// next to the music; only for the target Cast, otherwise null. It is valid as long as the stream URL; for a track
+    /// without a cover it answers 404.
+    /// </summary>
+    public string? CoverUrl { get; init; }
 }

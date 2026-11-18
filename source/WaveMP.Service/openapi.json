@@ -7205,7 +7205,7 @@
         "tags": [
           "Tracks"
         ],
-        "summary": "Returns the cover of a track as picture. By default the cover of its album comes before its own cover; if the preferred cover is missing, the other one is used, and finally the cover of another track of the album. With size, the picture is scaled to fit into a square of 96, 300 or 1000 pixels (the requested size rounded up, at most 1000; never enlarged) and delivered as WebP from the cache; without size, as stored (JPEG, PNG, WebP, GIF or BMP). Every picture carries a strong ETag of its version and size, Last-Modified and Cache-Control: private, no-cache; a request with a matching If-None-Match returns 304.",
+        "summary": "Returns the cover of a track as picture. By default the cover of its album comes before its own cover; if the preferred cover is missing, the other one is used, and finally the cover of another track of the album. With size, the picture is scaled to fit into a square of 96, 300 or 1000 pixels (the requested size rounded up, at most 1000; never enlarged) and delivered as WebP from the cache; without size, as stored (JPEG, PNG, WebP, GIF or BMP). Every picture carries a strong ETag of its version and size, Last-Modified and Cache-Control: private, no-cache; a request with a matching If-None-Match returns 304. Besides the session token, it accepts the signed cover URL of the playback endpoints for casting devices (query uid, sid, exp and sig), because they cannot send a token header.",
         "operationId": "GetTrackCover",
         "parameters": [
           {
@@ -7227,6 +7227,41 @@
               "minimum": 1,
               "type": "integer",
               "format": "int32"
+            }
+          },
+          {
+            "name": "uid",
+            "in": "query",
+            "description": "Signed media URL: id of the user the URL was issued to.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "sid",
+            "in": "query",
+            "description": "Signed media URL: id of the session the URL was issued in.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "exp",
+            "in": "query",
+            "description": "Signed media URL: expiry in Unix seconds.",
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "sig",
+            "in": "query",
+            "description": "Signed media URL: Base64Url-encoded signature.",
+            "schema": {
+              "type": "string"
             }
           }
         ],
@@ -7300,6 +7335,9 @@
         "security": [
           {
             "Bearer": [ ]
+          },
+          {
+            "MediaSignature": [ ]
           }
         ]
       }
@@ -7605,7 +7643,7 @@
         "tags": [
           "TrackStreams"
         ],
-        "summary": "Decides how the client plays the audio of a track: directly, if it supports the format of the file, otherwise transcoded to AAC as an HLS stream (also the sound of tracks that only have a video). The answer contains a signed, short-lived stream URL that works without the session token, for example in an audio element: the file (protocol File) or the HLS master playlist (protocol Hls; null if transcoding is unavailable). It is valid for some time plus the duration of the track and while the session is active; clients ask again for a new one when it has expired. The answer also carries the ReplayGain tags of the file.",
+        "summary": "Decides how the client plays the audio of a track: directly, if it supports the format of the file, otherwise transcoded to AAC as an HLS stream (also the sound of tracks that only have a video). The answer contains a signed, short-lived stream URL that works without the session token, for example in an audio element: the file (protocol File) or the HLS master playlist (protocol Hls; null if transcoding is unavailable). It is valid for some time plus the duration of the track and while the session is active; clients ask again for a new one when it has expired. The answer also carries the ReplayGain tags of the file. For a casting device (target Cast), the client sends the formats of the device; the URL then stays valid longer, and the answer adds a signed URL of the cover.",
         "operationId": "GetTrackPlayback",
         "parameters": [
           {
@@ -7627,6 +7665,15 @@
               "items": {
                 "$ref": "#/components/schemas/AudioFormat"
               }
+            }
+          },
+          {
+            "name": "target",
+            "in": "query",
+            "description": "Who plays the stream: the client itself (default) or a casting device.",
+            "schema": {
+              "default": "Local",
+              "$ref": "#/components/schemas/PlaybackTarget"
             }
           }
         ],
@@ -7939,7 +7986,7 @@
         "tags": [
           "TrackVideos"
         ],
-        "summary": "Decides how the client plays the video of a track from what it supports: directly, if it plays the container, the video codec (H.264 only as 8 bit 4:2:0) and the audio codec of the file, otherwise transcoded to H.264 and AAC as an HLS stream. Videos read by an older version of the scan are transcoded until the next scan. The answer contains a signed, short-lived stream URL that works without the session token, for example in a video element: the file (protocol File) or the HLS master playlist (protocol Hls; null if transcoding is unavailable).",
+        "summary": "Decides how the client plays the video of a track from what it supports: directly, if it plays the container, the video codec (H.264 only as 8 bit 4:2:0) and the audio codec of the file, otherwise transcoded to H.264 and AAC as an HLS stream. Videos read by an older version of the scan are transcoded until the next scan. The answer contains a signed, short-lived stream URL that works without the session token, for example in a video element: the file (protocol File) or the HLS master playlist (protocol Hls; null if transcoding is unavailable). For a casting device (target Cast), the client sends what the device plays; the URL then stays valid longer, and the answer adds a signed URL of the cover.",
         "operationId": "GetTrackVideoPlayback",
         "parameters": [
           {
@@ -7983,6 +8030,15 @@
               "items": {
                 "$ref": "#/components/schemas/AudioCodec"
               }
+            }
+          },
+          {
+            "name": "target",
+            "in": "query",
+            "description": "Who plays the stream: the client itself (default) or a casting device.",
+            "schema": {
+              "default": "Local",
+              "$ref": "#/components/schemas/PlaybackTarget"
             }
           }
         ],
@@ -11402,6 +11458,14 @@
         "type": "string",
         "description": "How a client plays a track."
       },
+      "PlaybackTarget": {
+        "enum": [
+          "Local",
+          "Cast"
+        ],
+        "type": "string",
+        "description": "Who plays the stream of a playback: the client itself or a casting device the client hands the URLs to."
+      },
       "PlayerViewMode": {
         "enum": [
           "Cover",
@@ -12799,6 +12863,13 @@
           "replayGain": {
             "description": "The ReplayGain tags of the audio file.",
             "$ref": "#/components/schemas/ReplayGain"
+          },
+          "coverUrl": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Signed URL of the cover of the track (path with query, relative to the server), which a casting device shows next to the music; only for the target Cast, otherwise null. It is valid as long as the stream URL; for a track without a cover it answers 404."
           }
         },
         "description": "How the client plays the audio of a track, and the signed URL of its stream."
@@ -13163,6 +13234,13 @@
             "type": "integer",
             "description": "Offset of the video against the audio of the track in milliseconds: position of the video = position of the audio + offset; 0 without offset. Clients that play the audio and show the video muted synchronize the video with it.",
             "format": "int32"
+          },
+          "coverUrl": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Signed URL of the cover of the track (path with query, relative to the server), which a casting device shows next to the music; only for the target Cast, otherwise null. It is valid as long as the stream URL; for a track without a cover it answers 404."
           }
         },
         "description": "How the client plays the video of a track, and the signed URL of its stream."

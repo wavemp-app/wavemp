@@ -2614,6 +2614,7 @@ export function deserializeIntoTrackPage(trackPage: Partial<TrackPage> | undefin
 export function deserializeIntoTrackPlayback(trackPlayback: Partial<TrackPlayback> | undefined = {}) : Record<string, (node: ParseNode) => void> {
     return {
         "contentType": n => { trackPlayback.contentType = n.getStringValue(); },
+        "coverUrl": n => { trackPlayback.coverUrl = n.getStringValue(); },
         "durationMilliseconds": n => { trackPlayback.durationMilliseconds = n.getNumberValue(); },
         "expiresAt": n => { trackPlayback.expiresAt = n.getDateValue(); },
         "format": n => { trackPlayback.format = n.getEnumValue<AudioFormat>(AudioFormatObject); },
@@ -2712,6 +2713,7 @@ export function deserializeIntoTrackVideoPlayback(trackVideoPlayback: Partial<Tr
         "audioCodec": n => { trackVideoPlayback.audioCodec = n.getEnumValue<AudioCodec>(AudioCodecObject); },
         "container": n => { trackVideoPlayback.container = n.getEnumValue<VideoContainer>(VideoContainerObject); },
         "contentType": n => { trackVideoPlayback.contentType = n.getStringValue(); },
+        "coverUrl": n => { trackVideoPlayback.coverUrl = n.getStringValue(); },
         "durationMilliseconds": n => { trackVideoPlayback.durationMilliseconds = n.getNumberValue(); },
         "expiresAt": n => { trackVideoPlayback.expiresAt = n.getDateValue(); },
         "hasAudio": n => { trackVideoPlayback.hasAudio = n.getBooleanValue(); },
@@ -3802,6 +3804,7 @@ export interface PinStatus extends AdditionalDataHolder, Parsable {
     isSet?: boolean | null;
 }
 export type PlaybackMethod = (typeof PlaybackMethodObject)[keyof typeof PlaybackMethodObject];
+export type PlaybackTarget = (typeof PlaybackTargetObject)[keyof typeof PlaybackTargetObject];
 export type PlayerViewMode = (typeof PlayerViewModeObject)[keyof typeof PlayerViewModeObject];
 /**
  * A play of a track in the play history of the current profile.
@@ -5516,6 +5519,7 @@ export function serializeTrackPage(writer: SerializationWriter, trackPage: Parti
 export function serializeTrackPlayback(writer: SerializationWriter, trackPlayback: Partial<TrackPlayback> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
     if (!trackPlayback || isSerializingDerivedType) { return; }
     writer.writeStringValue("contentType", trackPlayback.contentType);
+    writer.writeStringValue("coverUrl", trackPlayback.coverUrl);
     writer.writeNumberValue("durationMilliseconds", trackPlayback.durationMilliseconds);
     writer.writeDateValue("expiresAt", trackPlayback.expiresAt);
     writer.writeEnumValue<AudioFormat>("format", trackPlayback.format);
@@ -5621,6 +5625,7 @@ export function serializeTrackVideoPlayback(writer: SerializationWriter, trackVi
     writer.writeEnumValue<AudioCodec>("audioCodec", trackVideoPlayback.audioCodec);
     writer.writeEnumValue<VideoContainer>("container", trackVideoPlayback.container);
     writer.writeStringValue("contentType", trackVideoPlayback.contentType);
+    writer.writeStringValue("coverUrl", trackVideoPlayback.coverUrl);
     writer.writeNumberValue("durationMilliseconds", trackVideoPlayback.durationMilliseconds);
     writer.writeDateValue("expiresAt", trackVideoPlayback.expiresAt);
     writer.writeBooleanValue("hasAudio", trackVideoPlayback.hasAudio);
@@ -6397,6 +6402,10 @@ export interface TrackPlayback extends AdditionalDataHolder, Parsable {
      */
     contentType?: string | null;
     /**
+     * Signed URL of the cover of the track (path with query, relative to the server), which a casting device shows next to the music; only for the target Cast, otherwise null. It is valid as long as the stream URL; for a track without a cover it answers 404.
+     */
+    coverUrl?: string | null;
+    /**
      * Duration of the file in milliseconds, if known.
      */
     durationMilliseconds?: number | null;
@@ -6581,6 +6590,10 @@ export interface TrackVideoPlayback extends AdditionalDataHolder, Parsable {
      * MIME type the stream is delivered with; null without stream.
      */
     contentType?: string | null;
+    /**
+     * Signed URL of the cover of the track (path with query, relative to the server), which a casting device shows next to the music; only for the target Cast, otherwise null. It is valid as long as the stream URL; for a track without a cover it answers 404.
+     */
+    coverUrl?: string | null;
     /**
      * Duration of the video in milliseconds, if known.
      */
@@ -7581,6 +7594,13 @@ export const MetadataTagObject = {
 export const PlaybackMethodObject = {
     DirectPlay: "DirectPlay",
     Transcode: "Transcode",
+} as const;
+/**
+ * Who plays the stream of a playback: the client itself or a casting device the client hands the URLs to.
+ */
+export const PlaybackTargetObject = {
+    Local: "Local",
+    Cast: "Cast",
 } as const;
 /**
  * What the Now Playing view shows; Video by default. Clients keep the choice of the profile with it.

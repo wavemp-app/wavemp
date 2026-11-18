@@ -21,4 +21,10 @@ public enum MediaResource
     /// playlist, the media playlists and all segments share one signature, which the playlists append to each URI.
     /// </summary>
     TrackHls,
+
+    /// <summary>
+    /// The cover of a track (<c>GET /api/v1/tracks/{id}/cover</c>), for casting devices that show it next to the
+    /// music.
+    /// </summary>
+    TrackCover,
 }

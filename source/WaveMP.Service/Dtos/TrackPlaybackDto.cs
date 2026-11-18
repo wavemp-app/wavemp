@@ -56,4 +56,11 @@ public sealed class TrackPlaybackDto
     /// The ReplayGain tags of the audio file.
     /// </summary>
     public required ReplayGainDto ReplayGain { get; init; }
+
+    /// <summary>
+    /// Signed URL of the cover of the track (path with query, relative to the server), which a casting device shows
+    /// next to the music; only for the target Cast, otherwise null. It is valid as long as the stream URL; for a track
+    /// without a cover it answers 404.
+    /// </summary>
+    public string? CoverUrl { get; init; }
 }

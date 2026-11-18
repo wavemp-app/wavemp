@@ -4,14 +4,14 @@
 // @ts-ignore
 import { createProblemDetailsFromDiscriminatorValue, createValidationProblemFromDiscriminatorValue, type ProblemDetails, type ValidationProblem } from '../../../../../models/index.js';
 // @ts-ignore
-import { type BaseRequestBuilder, type Parsable, type ParsableFactory, type RequestConfiguration, type RequestInformation, type RequestsMetadata } from '@microsoft/kiota-abstractions';
+import { type BaseRequestBuilder, type Guid, type Parsable, type ParsableFactory, type RequestConfiguration, type RequestInformation, type RequestsMetadata } from '@microsoft/kiota-abstractions';
 
 /**
  * Builds and executes requests for operations under /api/v1/tracks/{id}/cover
  */
 export interface CoverRequestBuilder extends BaseRequestBuilder<CoverRequestBuilder> {
     /**
-     * Returns the cover of a track as picture. By default the cover of its album comes before its own cover; if the preferred cover is missing, the other one is used, and finally the cover of another track of the album. With size, the picture is scaled to fit into a square of 96, 300 or 1000 pixels (the requested size rounded up, at most 1000; never enlarged) and delivered as WebP from the cache; without size, as stored (JPEG, PNG, WebP, GIF or BMP). Every picture carries a strong ETag of its version and size, Last-Modified and Cache-Control: private, no-cache; a request with a matching If-None-Match returns 304.
+     * Returns the cover of a track as picture. By default the cover of its album comes before its own cover; if the preferred cover is missing, the other one is used, and finally the cover of another track of the album. With size, the picture is scaled to fit into a square of 96, 300 or 1000 pixels (the requested size rounded up, at most 1000; never enlarged) and delivered as WebP from the cache; without size, as stored (JPEG, PNG, WebP, GIF or BMP). Every picture carries a strong ETag of its version and size, Last-Modified and Cache-Control: private, no-cache; a request with a matching If-None-Match returns 304. Besides the session token, it accepts the signed cover URL of the playback endpoints for casting devices (query uid, sid, exp and sig), because they cannot send a token header.
      * @param requestConfiguration Configuration for the request such as headers, query parameters, and middleware options.
      * @returns {Promise<ArrayBuffer>}
      * @throws {ValidationProblem} error when the service returns a 400 status code
@@ -20,25 +20,41 @@ export interface CoverRequestBuilder extends BaseRequestBuilder<CoverRequestBuil
      */
      get(requestConfiguration?: RequestConfiguration<CoverRequestBuilderGetQueryParameters> | undefined) : Promise<ArrayBuffer | undefined>;
     /**
-     * Returns the cover of a track as picture. By default the cover of its album comes before its own cover; if the preferred cover is missing, the other one is used, and finally the cover of another track of the album. With size, the picture is scaled to fit into a square of 96, 300 or 1000 pixels (the requested size rounded up, at most 1000; never enlarged) and delivered as WebP from the cache; without size, as stored (JPEG, PNG, WebP, GIF or BMP). Every picture carries a strong ETag of its version and size, Last-Modified and Cache-Control: private, no-cache; a request with a matching If-None-Match returns 304.
+     * Returns the cover of a track as picture. By default the cover of its album comes before its own cover; if the preferred cover is missing, the other one is used, and finally the cover of another track of the album. With size, the picture is scaled to fit into a square of 96, 300 or 1000 pixels (the requested size rounded up, at most 1000; never enlarged) and delivered as WebP from the cache; without size, as stored (JPEG, PNG, WebP, GIF or BMP). Every picture carries a strong ETag of its version and size, Last-Modified and Cache-Control: private, no-cache; a request with a matching If-None-Match returns 304. Besides the session token, it accepts the signed cover URL of the playback endpoints for casting devices (query uid, sid, exp and sig), because they cannot send a token header.
      * @param requestConfiguration Configuration for the request such as headers, query parameters, and middleware options.
      * @returns {RequestInformation}
      */
      toGetRequestInformation(requestConfiguration?: RequestConfiguration<CoverRequestBuilderGetQueryParameters> | undefined) : RequestInformation;
 }
 /**
- * Returns the cover of a track as picture. By default the cover of its album comes before its own cover; if the preferred cover is missing, the other one is used, and finally the cover of another track of the album. With size, the picture is scaled to fit into a square of 96, 300 or 1000 pixels (the requested size rounded up, at most 1000; never enlarged) and delivered as WebP from the cache; without size, as stored (JPEG, PNG, WebP, GIF or BMP). Every picture carries a strong ETag of its version and size, Last-Modified and Cache-Control: private, no-cache; a request with a matching If-None-Match returns 304.
+ * Returns the cover of a track as picture. By default the cover of its album comes before its own cover; if the preferred cover is missing, the other one is used, and finally the cover of another track of the album. With size, the picture is scaled to fit into a square of 96, 300 or 1000 pixels (the requested size rounded up, at most 1000; never enlarged) and delivered as WebP from the cache; without size, as stored (JPEG, PNG, WebP, GIF or BMP). Every picture carries a strong ETag of its version and size, Last-Modified and Cache-Control: private, no-cache; a request with a matching If-None-Match returns 304. Besides the session token, it accepts the signed cover URL of the playback endpoints for casting devices (query uid, sid, exp and sig), because they cannot send a token header.
  */
 export interface CoverRequestBuilderGetQueryParameters {
+    /**
+     * Signed media URL: expiry in Unix seconds.
+     */
+    exp?: number;
+    /**
+     * Signed media URL: id of the session the URL was issued in.
+     */
+    sid?: Guid;
+    /**
+     * Signed media URL: Base64Url-encoded signature.
+     */
+    sig?: string;
     /**
      * Largest width and height in pixels the client shows the picture with (1 to 4096); the server rounds it up to 96, 300 or 1000.
      */
     size?: number;
+    /**
+     * Signed media URL: id of the user the URL was issued to.
+     */
+    uid?: Guid;
 }
 /**
  * Uri template for the request builder.
  */
-export const CoverRequestBuilderUriTemplate = "{+baseurl}/api/v1/tracks/{id}/cover{?size*}";
+export const CoverRequestBuilderUriTemplate = "{+baseurl}/api/v1/tracks/{id}/cover{?exp*,sid*,sig*,size*,uid*}";
 /**
  * Metadata for all the requests in the request builder.
  */

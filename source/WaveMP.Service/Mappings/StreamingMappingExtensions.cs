@@ -1,6 +1,7 @@
 using WaveMP.Core.Streaming.Decisions;
 using WaveMP.Core.Streaming.Formats;
 using WaveMP.Core.Streaming.Offsets;
+using WaveMP.Core.Streaming.Signatures;
 using WaveMP.Core.Streaming.Sources;
 using WaveMP.Service.Dtos;
 using WaveMP.Service.Signatures;
@@ -16,7 +17,8 @@ public static class StreamingMappingExtensions
     public static TrackPlaybackDto ToDto(
         this StreamSource source,
         PlaybackDecision decision,
-        MediaUrl? stream)
+        MediaUrl? stream,
+        MediaUrl? cover = null)
     {
         return new TrackPlaybackDto
         {
@@ -32,6 +34,7 @@ public static class StreamingMappingExtensions
                 ? (long)Math.Round(duration.TotalMilliseconds)
                 : null,
             ReplayGain = source.ReplayGain.ToDto(),
+            CoverUrl = cover?.Url,
         };
     }
 
@@ -42,7 +45,8 @@ public static class StreamingMappingExtensions
     public static TrackVideoPlaybackDto ToDto(
         this VideoSource source,
         VideoPlaybackDecision decision,
-        MediaUrl? stream)
+        MediaUrl? stream,
+        MediaUrl? cover = null)
     {
         return new TrackVideoPlaybackDto
         {
@@ -63,6 +67,7 @@ public static class StreamingMappingExtensions
                 ? (long)Math.Round(duration.TotalMilliseconds)
                 : null,
             OffsetMilliseconds = source.OffsetMilliseconds,
+            CoverUrl = cover?.Url,
         };
     }
 
@@ -72,6 +77,16 @@ public static class StreamingMappingExtensions
         {
             TrackId = result.TrackId,
             OffsetMilliseconds = result.OffsetMilliseconds,
+        };
+    }
+
+    public static MediaUrlTarget ToEntity(this PlaybackTargetDto target)
+    {
+        return target switch
+        {
+            PlaybackTargetDto.Local => MediaUrlTarget.Local,
+            PlaybackTargetDto.Cast => MediaUrlTarget.Cast,
+            _ => throw new ArgumentOutOfRangeException(nameof(target), target, "Unknown playback target."),
         };
     }
 

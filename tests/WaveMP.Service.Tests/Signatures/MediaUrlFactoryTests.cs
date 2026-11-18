@@ -74,6 +74,73 @@ public class MediaUrlFactoryTests
             + "&exp=1800000000&sig=new");
     }
 
+    [Test]
+    public void CreateCoverUrl_Always_SignsTheCoverForACastingDeviceInTheLargeSize()
+    {
+        var trackId = Guid.Parse("0195f3a0-0000-7000-8000-000000000001");
+        var userId = Guid.Parse("0195f3a0-0000-7000-8000-000000000002");
+        var sessionId = Guid.Parse("0195f3a0-0000-7000-8000-000000000003");
+        var expires = DateTimeOffset.FromUnixTimeSeconds(1_800_000_000);
+        IMediaUrlIssuer issuer = Substitute.For<IMediaUrlIssuer>();
+        issuer.Issue(
+                MediaResource.TrackCover,
+                trackId,
+                userId,
+                sessionId,
+                TimeSpan.FromMinutes(3),
+                MediaUrlTarget.Cast)
+            .Returns(new SignedMediaUrl(
+                new MediaUrlClaims(MediaResource.TrackCover, trackId, userId, sessionId, expires),
+                "cover"));
+        LinkGenerator links = Links($"/api/v1/tracks/{trackId}/cover");
+        MediaUrlFactory factory = new(issuer, links);
+
+        MediaUrl url = factory.CreateCoverUrl(Context("Bearer", userId, sessionId), trackId, TimeSpan.FromMinutes(3));
+
+        url.Url.Should().Be(
+            $"/api/v1/tracks/{trackId}/cover?size=1000&uid=0195f3a0-0000-7000-8000-000000000002"
+            + "&sid=0195f3a0-0000-7000-8000-000000000003&exp=1800000000&sig=cover");
+        url.ExpiresAt.Should().Be(expires);
+    }
+
+    [Test]
+    public void CreateAudioStreamUrl_ForACastingDevice_PassesTheTargetToTheIssuer()
+    {
+        var trackId = Guid.NewGuid();
+        var userId = Guid.NewGuid();
+        var sessionId = Guid.NewGuid();
+        IMediaUrlIssuer issuer = Substitute.For<IMediaUrlIssuer>();
+        issuer.Issue(default, default, default, default, default, default)
+            .ReturnsForAnyArgs(new SignedMediaUrl(
+                new MediaUrlClaims(
+                    MediaResource.TrackAudio,
+                    trackId,
+                    userId,
+                    sessionId,
+                    DateTimeOffset.FromUnixTimeSeconds(1_800_000_000)),
+                "audio"));
+        MediaUrlFactory factory = new(issuer, Links($"/api/v1/tracks/{trackId}/stream"));
+
+        factory.CreateAudioStreamUrl(Context("Bearer", userId, sessionId), trackId, null, MediaUrlTarget.Cast);
+
+        issuer.Received(1).Issue(MediaResource.TrackAudio, trackId, userId, sessionId, null, MediaUrlTarget.Cast);
+    }
+
+    private static LinkGenerator Links(string path)
+    {
+        LinkGenerator links = Substitute.For<LinkGenerator>();
+        links.GetPathByAddress(
+                Arg.Any<HttpContext>(),
+                Arg.Any<string>(),
+                Arg.Any<RouteValueDictionary>(),
+                Arg.Any<RouteValueDictionary?>(),
+                Arg.Any<PathString?>(),
+                Arg.Any<FragmentString>(),
+                Arg.Any<LinkOptions?>())
+            .Returns(path);
+        return links;
+    }
+
     private static DefaultHttpContext Context(string scheme, Guid? userId = null, Guid? sessionId = null)
     {
         ClaimsIdentity identity = new(

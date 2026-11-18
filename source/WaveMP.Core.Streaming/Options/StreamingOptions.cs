@@ -14,6 +14,12 @@ public sealed class StreamingOptions
     public TimeSpan SignedUrlLifetime { get; set; } = TimeSpan.FromHours(1);
 
     /// <summary>
+    /// How long a signed media URL for a casting device stays valid after it was issued, on top of the duration of the
+    /// track. Longer than <see cref="SignedUrlLifetime"/>, because the device keeps the URL while it waits paused.
+    /// </summary>
+    public TimeSpan CastSignedUrlLifetime { get; set; } = TimeSpan.FromHours(6);
+
+    /// <summary>
     /// Upper limit of the validity of a signed media URL, also for very long tracks.
     /// </summary>
     public TimeSpan MaxSignedUrlLifetime { get; set; } = TimeSpan.FromHours(24);

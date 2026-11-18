@@ -83,4 +83,63 @@ public class MediaUrlIssuerTests
 
         url.Claims.ExpiresAt.Should().Be(new DateTimeOffset(2026, 11, 11, 13, 0, 0, TimeSpan.Zero));
     }
+
+    [Test]
+    public void Issue_ForACastingDevice_UsesTheLongerLifetimePlusTheDuration()
+    {
+        SignedMediaUrl url = _issuer.Issue(
+            MediaResource.TrackAudio,
+            _trackId,
+            _userId,
+            _sessionId,
+            TimeSpan.FromMinutes(5),
+            MediaUrlTarget.Cast);
+
+        url.Claims.ExpiresAt.Should().Be(new DateTimeOffset(2026, 11, 11, 18, 5, 0, TimeSpan.Zero));
+        url.Claims.Should().BeEquivalentTo(new
+        {
+            Resource = MediaResource.TrackAudio,
+            TrackId = _trackId,
+            UserId = _userId,
+            SessionId = _sessionId,
+        });
+    }
+
+    [Test]
+    public void Issue_ForACastingDeviceWithVeryLongMedia_IsCappedAtTheMaximumLifetime()
+    {
+        SignedMediaUrl url = _issuer.Issue(
+            MediaResource.TrackHls,
+            _trackId,
+            _userId,
+            _sessionId,
+            TimeSpan.FromHours(20),
+            MediaUrlTarget.Cast);
+
+        url.Claims.ExpiresAt.Should().Be(new DateTimeOffset(2026, 11, 12, 12, 0, 0, TimeSpan.Zero));
+    }
+
+    [Test]
+    public void Issue_ForACastingDeviceWithConfiguredLifetime_UsesTheSetting()
+    {
+        TimeProvider timeProvider = Substitute.For<TimeProvider>();
+        timeProvider.GetUtcNow().Returns(_now);
+        MediaUrlIssuer issuer = new(
+            _signer,
+            timeProvider,
+            Microsoft.Extensions.Options.Options.Create(new StreamingOptions
+            {
+                CastSignedUrlLifetime = TimeSpan.FromHours(2),
+            }));
+
+        SignedMediaUrl url = issuer.Issue(
+            MediaResource.TrackCover,
+            _trackId,
+            _userId,
+            _sessionId,
+            target: MediaUrlTarget.Cast);
+
+        url.Claims.ExpiresAt.Should().Be(new DateTimeOffset(2026, 11, 11, 14, 0, 0, TimeSpan.Zero));
+        url.Claims.Resource.Should().Be(MediaResource.TrackCover);
+    }
 }

@@ -13,11 +13,13 @@ internal sealed class MediaUrlIssuer(
         Guid trackId,
         Guid userId,
         Guid sessionId,
-        TimeSpan? mediaDuration = null)
+        TimeSpan? mediaDuration = null,
+        MediaUrlTarget target = MediaUrlTarget.Local)
     {
         StreamingOptions settings = options.Value;
         TimeSpan duration = mediaDuration is { } value && value > TimeSpan.Zero ? value : TimeSpan.Zero;
-        TimeSpan lifetime = settings.SignedUrlLifetime + duration;
+        TimeSpan buffer = target == MediaUrlTarget.Cast ? settings.CastSignedUrlLifetime : settings.SignedUrlLifetime;
+        TimeSpan lifetime = buffer + duration;
         if (lifetime > settings.MaxSignedUrlLifetime)
         {
             lifetime = settings.MaxSignedUrlLifetime;

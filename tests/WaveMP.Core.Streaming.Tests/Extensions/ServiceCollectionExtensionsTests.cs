@@ -41,6 +41,7 @@ public class ServiceCollectionExtensionsTests
         StreamingOptions options = provider.GetRequiredService<IOptions<StreamingOptions>>().Value;
 
         options.SignedUrlLifetime.Should().Be(TimeSpan.FromHours(1));
+        options.CastSignedUrlLifetime.Should().Be(TimeSpan.FromHours(6));
         options.MaxSignedUrlLifetime.Should().Be(TimeSpan.FromHours(24));
         options.HistoryMaxAge.Should().Be(TimeSpan.FromDays(7));
     }

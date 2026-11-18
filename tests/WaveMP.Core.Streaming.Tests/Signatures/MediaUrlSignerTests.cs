@@ -43,6 +43,7 @@ public class MediaUrlSignerTests
 
     [TestCase(MediaResource.TrackVideo)]
     [TestCase(MediaResource.TrackHls)]
+    [TestCase(MediaResource.TrackCover)]
     public void Verify_OtherKindOfMedia_IsInvalid(MediaResource resource)
     {
         string signature = _signer.Sign(_claims);

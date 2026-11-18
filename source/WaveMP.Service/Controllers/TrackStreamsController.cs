@@ -44,11 +44,14 @@ public sealed class TrackStreamsController(
     /// signed, short-lived stream URL that works without the session token, for example in an audio element: the file
     /// (protocol File) or the HLS master playlist (protocol Hls; null if transcoding is unavailable). It is valid for
     /// some time plus the duration of the track and while the session is active; clients ask again for a new one when
-    /// it has expired. The answer also carries the ReplayGain tags of the file.
+    /// it has expired. The answer also carries the ReplayGain tags of the file. For a casting device (target Cast), the
+    /// client sends the formats of the device; the URL then stays valid longer, and the answer adds a signed URL of the
+    /// cover.
     /// </summary>
     /// <param name="id">Id of the track.</param>
     /// <param name="audioFormats">The audio formats the client plays (1 to 20, repeated query parameter).</param>
     /// <param name="cancellationToken">Aborts the request.</param>
+    /// <param name="target">Who plays the stream: the client itself (default) or a casting device.</param>
     /// <response code="200">How the client plays the track.</response>
     /// <response code="400">Missing, too many or invalid formats (code <c>request.invalid</c>).</response>
     /// <response code="404">The track does not exist (code <c>track.not_found</c>), has neither an audio file nor a
@@ -61,8 +64,10 @@ public sealed class TrackStreamsController(
     public async Task<ActionResult<TrackPlaybackDto>> GetTrackPlaybackAsync(
         Guid id,
         [FromQuery] AudioFormatDto[]? audioFormats,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        [FromQuery] PlaybackTargetDto target = PlaybackTargetDto.Local)
     {
+        this.ValidateEnum<PlaybackTargetDto>(target, nameof(target));
         if (!ValidateFormats(audioFormats, required: true))
         {
             return ValidationProblem();
@@ -75,13 +80,15 @@ public sealed class TrackStreamsController(
         }
 
         TimeSpan? duration = result.Source.Duration;
+        MediaUrlTarget urlTarget = target.ToEntity();
         MediaUrl? stream = result.Decision.Method == PlaybackMethod.DirectPlay
-            ? urls.CreateAudioStreamUrl(HttpContext, id, duration)
+            ? urls.CreateAudioStreamUrl(HttpContext, id, duration, urlTarget)
             : transcoding.IsAvailable && duration > TimeSpan.Zero
-                ? urls.CreateHlsMasterUrl(HttpContext, id, HlsMediaDto.Audio, duration)
+                ? urls.CreateHlsMasterUrl(HttpContext, id, HlsMediaDto.Audio, duration, urlTarget)
                 : null;
+        MediaUrl? cover = urlTarget == MediaUrlTarget.Cast ? urls.CreateCoverUrl(HttpContext, id, duration) : null;
         Response.Headers.CacheControl = "no-store";
-        return Ok(result.Source.ToDto(result.Decision, stream));
+        return Ok(result.Source.ToDto(result.Decision, stream, cover));
     }
 
     /// <summary>

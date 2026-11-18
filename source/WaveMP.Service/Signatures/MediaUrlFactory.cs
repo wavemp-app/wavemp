@@ -8,8 +8,8 @@ using WaveMP.Service.Extensions;
 namespace WaveMP.Service.Signatures;
 
 /// <summary>
-/// Builds the signed media URLs of the API for the user and session of a request: the audio stream, the video stream
-/// and the HLS master playlist. An HLS playlist appends the same signed query to each of its URIs, because the
+/// Builds the signed media URLs of the API for the user and session of a request: the audio stream, the video stream,
+/// the HLS master playlist and, for casting devices, the cover. An HLS playlist appends the same signed query to each of its URIs, because the
 /// signature covers the kind of media and the track, not the path.
 /// </summary>
 public sealed class MediaUrlFactory(IMediaUrlIssuer issuer, LinkGenerator links)
@@ -30,30 +30,59 @@ public sealed class MediaUrlFactory(IMediaUrlIssuer issuer, LinkGenerator links)
     public const string HlsMasterPlaylistRoute = "GetTrackHlsMasterPlaylist";
 
     /// <summary>
+    /// Route name (operation id) of the cover of a track.
+    /// </summary>
+    public const string TrackCoverRoute = "GetTrackCover";
+
+    /// <summary>
     /// Query parameter of the master playlist that selects the media.
     /// </summary>
     public const string HlsMediaParameter = "media";
 
     /// <summary>
-    /// The signed URL of the audio stream of a track, valid for the configured lifetime plus the duration of the track.
+    /// Query parameter of the cover that selects its size.
     /// </summary>
-    public MediaUrl CreateAudioStreamUrl(HttpContext context, Guid trackId, TimeSpan? duration)
+    public const string CoverSizeParameter = "size";
+
+    /// <summary>
+    /// Size of the cover for casting devices: the largest one the server prepares, for TV screens.
+    /// </summary>
+    public const int CastCoverSize = 1000;
+
+    /// <summary>
+    /// The signed URL of the audio stream of a track, valid for the configured lifetime of the target plus the duration
+    /// of the track.
+    /// </summary>
+    public MediaUrl CreateAudioStreamUrl(
+        HttpContext context,
+        Guid trackId,
+        TimeSpan? duration,
+        MediaUrlTarget target = MediaUrlTarget.Local)
     {
-        return Create(context, MediaResource.TrackAudio, StreamTrackRoute, trackId, duration);
+        return Create(context, MediaResource.TrackAudio, StreamTrackRoute, trackId, duration, target: target);
     }
 
     /// <summary>
     /// The signed URL of the video stream of a track.
     /// </summary>
-    public MediaUrl CreateVideoStreamUrl(HttpContext context, Guid trackId, TimeSpan? duration)
+    public MediaUrl CreateVideoStreamUrl(
+        HttpContext context,
+        Guid trackId,
+        TimeSpan? duration,
+        MediaUrlTarget target = MediaUrlTarget.Local)
     {
-        return Create(context, MediaResource.TrackVideo, StreamTrackVideoRoute, trackId, duration);
+        return Create(context, MediaResource.TrackVideo, StreamTrackVideoRoute, trackId, duration, target: target);
     }
 
     /// <summary>
     /// The signed URL of the HLS master playlist of a track for the media (the name of <see cref="HlsMediaDto"/>).
     /// </summary>
-    public MediaUrl CreateHlsMasterUrl(HttpContext context, Guid trackId, HlsMediaDto media, TimeSpan? duration)
+    public MediaUrl CreateHlsMasterUrl(
+        HttpContext context,
+        Guid trackId,
+        HlsMediaDto media,
+        TimeSpan? duration,
+        MediaUrlTarget target = MediaUrlTarget.Local)
     {
         return Create(
             context,
@@ -61,7 +90,28 @@ public sealed class MediaUrlFactory(IMediaUrlIssuer issuer, LinkGenerator links)
             HlsMasterPlaylistRoute,
             trackId,
             duration,
-            QueryString.Create(HlsMediaParameter, media.ToString()));
+            QueryString.Create(HlsMediaParameter, media.ToString()),
+            target);
+    }
+
+    /// <summary>
+    /// The signed URL of the cover of a track in the size for casting devices, valid as long as a stream URL of the
+    /// same target and duration.
+    /// </summary>
+    public MediaUrl CreateCoverUrl(
+        HttpContext context,
+        Guid trackId,
+        TimeSpan? duration,
+        MediaUrlTarget target = MediaUrlTarget.Cast)
+    {
+        return Create(
+            context,
+            MediaResource.TrackCover,
+            TrackCoverRoute,
+            trackId,
+            duration,
+            QueryString.Create(CoverSizeParameter, CastCoverSize.ToString(CultureInfo.InvariantCulture)),
+            target);
     }
 
     /// <summary>
@@ -90,7 +140,7 @@ public sealed class MediaUrlFactory(IMediaUrlIssuer issuer, LinkGenerator links)
 
     /// <summary>
     /// The signed URL of the endpoint <paramref name="routeName"/> (with the route value <c>id</c>) for one kind of
-    /// media of a track. The path includes the path base of the request.
+    /// media of a track and a target. The path includes the path base of the request.
     /// </summary>
     public MediaUrl Create(
         HttpContext context,
@@ -98,10 +148,17 @@ public sealed class MediaUrlFactory(IMediaUrlIssuer issuer, LinkGenerator links)
         string routeName,
         Guid trackId,
         TimeSpan? duration,
-        QueryString query = default)
+        QueryString query = default,
+        MediaUrlTarget target = MediaUrlTarget.Local)
     {
         ClaimsPrincipal user = context.User;
-        SignedMediaUrl signed = issuer.Issue(resource, trackId, user.GetUserId(), user.GetSessionId(), duration);
+        SignedMediaUrl signed = issuer.Issue(
+            resource,
+            trackId,
+            user.GetUserId(),
+            user.GetSessionId(),
+            duration,
+            target);
         string path = links.GetPathByName(context, routeName, new { id = trackId })
             ?? throw new InvalidOperationException($"The route '{routeName}' does not exist.");
         return new MediaUrl(path + query.Add(ToQuery(signed)), signed.Claims.ExpiresAt);

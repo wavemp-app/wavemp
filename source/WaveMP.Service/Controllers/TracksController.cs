@@ -6,6 +6,7 @@ using WaveMP.Core.Collection.Ratings;
 using WaveMP.Core.Library.Covers;
 using WaveMP.Core.Library.Tracks;
 using WaveMP.Core.Scanning.Edits;
+using WaveMP.Core.Streaming.Signatures;
 using WaveMP.Data.Entities;
 using WaveMP.Data.Projections;
 using WaveMP.Data.Queries;
@@ -13,6 +14,7 @@ using WaveMP.Service.Dtos;
 using WaveMP.Service.Extensions;
 using WaveMP.Service.Mappings;
 using WaveMP.Service.Queries;
+using WaveMP.Service.Signatures;
 using WaveMP.Service.Tokens;
 
 namespace WaveMP.Service.Controllers;
@@ -150,7 +152,9 @@ public sealed class TracksController(
     /// size, the picture is scaled to fit into a square of 96, 300 or 1000 pixels (the requested size rounded up, at
     /// most 1000; never enlarged) and delivered as WebP from the cache; without size, as stored (JPEG, PNG, WebP, GIF
     /// or BMP). Every picture carries a strong ETag of its version and size, Last-Modified and
-    /// Cache-Control: private, no-cache; a request with a matching If-None-Match returns 304.
+    /// Cache-Control: private, no-cache; a request with a matching If-None-Match returns 304. Besides the session token, it
+    /// accepts the signed cover URL of the playback endpoints for casting devices (query uid, sid, exp and sig), because
+    /// they cannot send a token header.
     /// </summary>
     /// <param name="id">Id of the track.</param>
     /// <param name="size">Largest width and height in pixels the client shows the picture with (1 to 4096); the
@@ -160,7 +164,9 @@ public sealed class TracksController(
     /// <response code="400">Invalid size (code <c>request.invalid</c>).</response>
     /// <response code="404">The track does not exist (code <c>track.not_found</c>) or has no cover (code
     /// <c>cover.not_found</c>).</response>
-    [HttpGet("{id:guid}/cover", Name = "GetTrackCover")]
+    [HttpGet("{id:guid}/cover", Name = MediaUrlFactory.TrackCoverRoute)]
+    [Authorize(Policy = AuthorizationPolicies.Media)]
+    [SignedMedia(MediaResource.TrackCover)]
     [ProducesResponseType<Stream>(
         StatusCodes.Status200OK,
         ImageFormats.Jpeg,

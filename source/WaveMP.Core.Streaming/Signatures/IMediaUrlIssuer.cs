@@ -7,13 +7,14 @@ namespace WaveMP.Core.Streaming.Signatures;
 public interface IMediaUrlIssuer
 {
     /// <summary>
-    /// Signs one kind of media of a track for a user and session. The URL stays valid for the configured lifetime
-    /// plus <paramref name="mediaDuration"/>, at most for the configured maximum.
+    /// Signs one kind of media of a track for a user and session. The URL stays valid for the configured lifetime of
+    /// the <paramref name="target"/> plus <paramref name="mediaDuration"/>, at most for the configured maximum.
     /// </summary>
     SignedMediaUrl Issue(
         MediaResource resource,
         Guid trackId,
         Guid userId,
         Guid sessionId,
-        TimeSpan? mediaDuration = null);
+        TimeSpan? mediaDuration = null,
+        MediaUrlTarget target = MediaUrlTarget.Local);
 }
