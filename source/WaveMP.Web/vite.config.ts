@@ -48,11 +48,9 @@ export default defineConfig({
         vue(),
         vueDevTools(),
         // Favicon, PWA icons and Apple touch icon, generated from the logo during the build (served
-        // under /logo and /favicon.ico). The placeholder graphics in assets/web/brand are not used
-        // any more and stay out of the build until the folder is deleted.
+        // under /logo and /favicon.ico).
         appIcons({
             logo: fileURLToPath(new URL('../../assets/logo/wavemp-logo.svg', import.meta.url)),
-            excludePublicDirectories: ['brand'],
         }),
         // Precompiles the messages in src/locales, so the app uses the runtime-only build of
         // vue-i18n (no message compiler and no eval at runtime).

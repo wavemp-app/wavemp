@@ -1,9 +1,8 @@
 // Vite plugin that generates the icons of the web app from the logo during the build (and serves
 // them in development): favicon, SVG logo, PWA icons and Apple touch icon, see app-icons.ts. It
-// also adds the icon links to the head of index.html and can leave folders of the public
-// directory out of the build.
+// also adds the icon links to the head of index.html.
 
-import { readFileSync, rmSync } from 'node:fs'
+import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import type { Plugin } from 'vite'
 
@@ -12,11 +11,6 @@ import { createAppIcons, createHeadLinks, type AppIconFile } from './app-icons.t
 export interface AppIconsOptions {
     /** Path of the logo (SVG) all icons are generated from. */
     logo: string
-    /**
-     * Folders of the public directory that are not copied into the build output, relative to it
-     * (e.g. graphics that are not used any more but cannot be deleted yet).
-     */
-    excludePublicDirectories?: string[]
 }
 
 export function appIcons(options: AppIconsOptions): Plugin {
@@ -72,17 +66,6 @@ export function appIcons(options: AppIconsOptions): Plugin {
         generateBundle() {
             for (const icon of getIcons().values()) {
                 this.emitFile({ type: 'asset', fileName: icon.fileName, source: icon.data })
-            }
-        },
-
-        writeBundle(outputOptions) {
-            const outDir = outputOptions.dir
-            if (!outDir) {
-                return
-            }
-
-            for (const directory of options.excludePublicDirectories ?? []) {
-                rmSync(path.join(outDir, directory), { recursive: true, force: true })
             }
         },
     }

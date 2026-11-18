@@ -96,7 +96,7 @@ test('loads the theme Midnight with its graphics and icons', async ({ page }) =>
     const failed: string[] = []
     page.on('response', (response) => {
         const path = new URL(response.url()).pathname
-        if (/^\/(themes|icons|brand)\//.test(path) && response.status() >= 400) {
+        if (/^\/(themes|icons|logo)\//.test(path) && response.status() >= 400) {
             failed.push(`${response.status()} ${path}`)
         }
     })

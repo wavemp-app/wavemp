@@ -1,11 +1,10 @@
 // @vitest-environment node
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
-import os from 'node:os'
+import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { Resvg } from '@resvg/resvg-js'
-import { afterEach, describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 
 import {
     composeIconSvg,
@@ -264,15 +263,6 @@ describe('createHeadLinks', () => {
 })
 
 describe('appIcons (Vite plugin)', () => {
-    let directory: string | undefined
-
-    afterEach(() => {
-        if (directory) {
-            rmSync(directory, { recursive: true, force: true })
-            directory = undefined
-        }
-    })
-
     it('adds the icon links to the head of index.html', () => {
         const plugin = appIcons({ logo: path.join(logoDirectory, 'wavemp-logo.svg') })
         const transform = plugin.transformIndexHtml as unknown as () => {
@@ -282,22 +272,5 @@ describe('appIcons (Vite plugin)', () => {
         expect(transform().map((tag) => tag.attrs.href)).toEqual(
             createHeadLinks().map((link) => link.href),
         )
-    })
-
-    it('removes the excluded folders of the public directory from the build output', () => {
-        directory = mkdtempSync(path.join(os.tmpdir(), 'wavemp-app-icons-'))
-        mkdirSync(path.join(directory, 'brand'))
-        writeFileSync(path.join(directory, 'brand', 'logo.svg'), '<svg/>')
-        mkdirSync(path.join(directory, 'themes'))
-        const plugin = appIcons({
-            logo: path.join(logoDirectory, 'wavemp-logo.svg'),
-            excludePublicDirectories: ['brand'],
-        })
-        const writeBundle = plugin.writeBundle as unknown as (options: { dir?: string }) => void
-
-        writeBundle({ dir: directory })
-
-        expect(existsSync(path.join(directory, 'brand'))).toBe(false)
-        expect(existsSync(path.join(directory, 'themes'))).toBe(true)
     })
 })
