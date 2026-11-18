@@ -258,6 +258,47 @@
     font-size: 0.75rem;
 }
 
+/*
+ * The entry of the review inbox (admins only) reads like a tab and glows on hover and on its own
+ * pages; the number of unreviewed songs is a small glossy blue capsule.
+ */
+[data-part="btn-review-inbox"] {
+    border-radius: 0.25rem;
+    color: #c8ced6;
+    font-weight: 600;
+    text-shadow: 0 1px 0 #000000;
+}
+
+[data-part="btn-review-inbox"]:is(:hover, [data-state~="active"]) {
+    color: #ffffff;
+    text-shadow:
+        0 0 6px rgb(130 205 255 / 90%),
+        0 1px 0 #000000;
+}
+
+[data-part="btn-review-inbox"][data-state~="active"] > [data-part="icon"] {
+    --wmp-icon-fill: linear-gradient(#ffffff 30%, #8fd2ff);
+
+    filter: drop-shadow(0 0 3px #4aa8ff)
+        drop-shadow(0 0 6px rgb(74 168 255 / 60%));
+}
+
+[data-part="btn-review-inbox"] > [data-part="badge"][data-state~="unreviewed"] {
+    border: 1px solid #0a3a7a;
+    background: linear-gradient(
+        #8cccff 0%,
+        #3a93ea 46%,
+        #1664c8 54%,
+        #2a7fe0 100%
+    );
+    box-shadow:
+        inset 0 1px rgb(255 255 255 / 55%),
+        0 0 6px rgb(74 168 255 / 70%);
+    color: #ffffff;
+    line-height: 1.125rem;
+    text-shadow: 0 -1px 0 rgb(0 0 0 / 35%);
+}
+
 /* --- Toolbar ------------------------------------------------------------------------------- */
 
 [data-part="toolbar"] {
@@ -1581,6 +1622,12 @@ a[data-part="breadcrumb-link"]:hover {
         grid-template-columns: auto minmax(0, 1fr) auto auto;
         gap: 1.5rem;
         padding-inline: 0.625rem 1rem;
+    }
+
+    /* The entry of the review inbox (admins only) takes the free cell before the server status. */
+    [data-part="header"]:has(> [data-part="btn-review-inbox"]) {
+        grid-template-areas: "nav-history tabs . server-status btn-profile";
+        grid-template-columns: auto minmax(0, 1fr) auto auto auto;
     }
 
     [data-part="tabs"] {

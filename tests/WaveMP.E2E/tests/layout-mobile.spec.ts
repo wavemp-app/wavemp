@@ -42,6 +42,23 @@ test('shows the bottom navigation instead of tabs, history and sidebar', async (
     }
 })
 
+test('places the review inbox of the admin before the server status', async ({ page }) => {
+    await page.goto('/library/songs')
+
+    const header = await box(part(page, 'header'))
+    const logo = await box(part(page, 'logo'))
+    const inbox = await box(part(page, 'btn-review-inbox'))
+    const status = await box(part(page, 'server-status'))
+    const profile = await box(part(page, 'btn-profile'))
+
+    expect(inbox.y).toBeGreaterThanOrEqual(header.y)
+    expect(inbox.y + inbox.height).toBeLessThanOrEqual(header.y + header.height)
+    expect(inbox.x).toBeGreaterThanOrEqual(logo.x + logo.width)
+    expect(inbox.x + inbox.width).toBeLessThanOrEqual(status.x)
+    expect(status.x + status.width).toBeLessThanOrEqual(profile.x)
+    expect(profile.x + profile.width).toBeLessThanOrEqual(header.x + header.width)
+})
+
 test('opens the sidebar as a drawer', async ({ page }) => {
     await page.goto('/library/songs')
     const sidebar = part(page, 'sidebar')

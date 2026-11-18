@@ -92,6 +92,29 @@ test('arranges the areas like a desktop media player', async ({ page }) => {
     expect(controls.x + controls.width / 2).toBeCloseTo(viewport.width / 2, -1)
 })
 
+test('places the review inbox of the admin between the tabs and the server status', async ({
+    page,
+}) => {
+    await page.goto('/library/songs')
+
+    const header = await box(part(page, 'header'))
+    const tabs = await box(part(page, 'tabs'))
+    const inbox = await box(part(page, 'btn-review-inbox'))
+    const status = await box(part(page, 'server-status'))
+    const profile = await box(part(page, 'btn-profile'))
+
+    // One row: the entry takes the free cell before the server status, the profile button stays last.
+    expect(inbox.y).toBeGreaterThanOrEqual(header.y)
+    expect(inbox.y + inbox.height).toBeLessThanOrEqual(header.y + header.height)
+    expect(inbox.x).toBeGreaterThanOrEqual(tabs.x + tabs.width)
+    expect(inbox.x + inbox.width).toBeLessThanOrEqual(status.x)
+    expect(status.x + status.width).toBeLessThanOrEqual(profile.x)
+    expect(profile.x + profile.width).toBeLessThanOrEqual(header.x + header.width)
+    await expect(
+        part(page, 'btn-review-inbox').locator("[data-part='label']").first(),
+    ).toBeVisible()
+})
+
 test('loads the theme Midnight with its graphics and icons', async ({ page }) => {
     const failed: string[] = []
     page.on('response', (response) => {
