@@ -730,6 +730,121 @@ namespace WaveMP.Data.Migrations
                     b.ToTable("playlist_entries", (string)null);
                 });
 
+            modelBuilder.Entity("WaveMP.Data.Entities.ScrobbleConnection", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("AccountName")
+                        .IsRequired()
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)")
+                        .HasColumnName("account_name");
+
+                    b.Property<DateTimeOffset>("ConnectedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("connected_at");
+
+                    b.Property<DateTimeOffset?>("LastScrobbledAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("last_scrobbled_at");
+
+                    b.Property<string>("ProtectedCredential")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("protected_credential");
+
+                    b.Property<string>("Service")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("service");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("status");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_scrobble_connections");
+
+                    b.HasIndex("UserId", "Service")
+                        .IsUnique()
+                        .HasDatabaseName("ix_scrobble_connections_user_id_service");
+
+                    b.ToTable("scrobble_connections", (string)null);
+                });
+
+            modelBuilder.Entity("WaveMP.Data.Entities.ScrobbleQueueEntry", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Album")
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)")
+                        .HasColumnName("album");
+
+                    b.Property<string>("AlbumArtist")
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)")
+                        .HasColumnName("album_artist");
+
+                    b.Property<string>("Artist")
+                        .IsRequired()
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)")
+                        .HasColumnName("artist");
+
+                    b.Property<int>("Attempts")
+                        .HasColumnType("integer")
+                        .HasColumnName("attempts");
+
+                    b.Property<Guid>("ConnectionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("connection_id");
+
+                    b.Property<TimeSpan?>("Duration")
+                        .HasColumnType("interval")
+                        .HasColumnName("duration");
+
+                    b.Property<DateTimeOffset>("NextAttemptAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("next_attempt_at");
+
+                    b.Property<DateTimeOffset>("PlayedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("played_at");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)")
+                        .HasColumnName("title");
+
+                    b.Property<int?>("TrackNumber")
+                        .HasColumnType("integer")
+                        .HasColumnName("track_number");
+
+                    b.HasKey("Id")
+                        .HasName("pk_scrobble_queue");
+
+                    b.HasIndex("NextAttemptAt")
+                        .HasDatabaseName("ix_scrobble_queue_next_attempt_at");
+
+                    b.HasIndex("ConnectionId", "PlayedAt")
+                        .HasDatabaseName("ix_scrobble_queue_connection_id_played_at");
+
+                    b.ToTable("scrobble_queue", (string)null);
+                });
+
             modelBuilder.Entity("WaveMP.Data.Entities.ServerSecret", b =>
                 {
                     b.Property<string>("Name")
@@ -1410,6 +1525,30 @@ namespace WaveMP.Data.Migrations
                     b.Navigation("Playlist");
 
                     b.Navigation("Track");
+                });
+
+            modelBuilder.Entity("WaveMP.Data.Entities.ScrobbleConnection", b =>
+                {
+                    b.HasOne("WaveMP.Data.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_scrobble_connections_users_user_id");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("WaveMP.Data.Entities.ScrobbleQueueEntry", b =>
+                {
+                    b.HasOne("WaveMP.Data.Entities.ScrobbleConnection", "Connection")
+                        .WithMany()
+                        .HasForeignKey("ConnectionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_scrobble_queue_scrobble_connections_connection_id");
+
+                    b.Navigation("Connection");
                 });
 
             modelBuilder.Entity("WaveMP.Data.Entities.Session", b =>

@@ -40,6 +40,7 @@ COPY source/WaveMP.Core.Lyrics/WaveMP.Core.Lyrics.csproj source/WaveMP.Core.Lyri
 COPY source/WaveMP.Core.Metadata/WaveMP.Core.Metadata.csproj source/WaveMP.Core.Metadata/
 COPY source/WaveMP.Core.Playlists/WaveMP.Core.Playlists.csproj source/WaveMP.Core.Playlists/
 COPY source/WaveMP.Core.Scanning/WaveMP.Core.Scanning.csproj source/WaveMP.Core.Scanning/
+COPY source/WaveMP.Core.Scrobbling/WaveMP.Core.Scrobbling.csproj source/WaveMP.Core.Scrobbling/
 COPY source/WaveMP.Core.Settings/WaveMP.Core.Settings.csproj source/WaveMP.Core.Settings/
 COPY source/WaveMP.Core.Streaming/WaveMP.Core.Streaming.csproj source/WaveMP.Core.Streaming/
 COPY source/WaveMP.Core.Transcoding/WaveMP.Core.Transcoding.csproj source/WaveMP.Core.Transcoding/
@@ -56,6 +57,7 @@ COPY source/WaveMP.Core.Lyrics/ source/WaveMP.Core.Lyrics/
 COPY source/WaveMP.Core.Metadata/ source/WaveMP.Core.Metadata/
 COPY source/WaveMP.Core.Playlists/ source/WaveMP.Core.Playlists/
 COPY source/WaveMP.Core.Scanning/ source/WaveMP.Core.Scanning/
+COPY source/WaveMP.Core.Scrobbling/ source/WaveMP.Core.Scrobbling/
 COPY source/WaveMP.Core.Settings/ source/WaveMP.Core.Settings/
 COPY source/WaveMP.Core.Streaming/ source/WaveMP.Core.Streaming/
 COPY source/WaveMP.Core.Transcoding/ source/WaveMP.Core.Transcoding/

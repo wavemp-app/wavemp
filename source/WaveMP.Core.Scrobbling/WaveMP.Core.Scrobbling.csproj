@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="WaveMP.Core.Scrobbling.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Encrypts the credentials of the scrobbling services; the host provides the keys. -->
+    <PackageReference Include="Microsoft.AspNetCore.DataProtection.Abstractions" />
+    <!-- BackgroundService that sends the queued scrobbles. -->
+    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\WaveMP.Core.Streaming\WaveMP.Core.Streaming.csproj" />
+    <ProjectReference Include="..\WaveMP.Data\WaveMP.Data.csproj" />
+  </ItemGroup>
+
+</Project>

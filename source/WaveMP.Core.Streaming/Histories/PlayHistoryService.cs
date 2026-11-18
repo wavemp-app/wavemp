@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using WaveMP.Core.Streaming.Options;
 using WaveMP.Data.Entities;
@@ -11,7 +12,9 @@ internal sealed class PlayHistoryService(
     IPlayHistoryRepository history,
     ITrackRepository tracks,
     TimeProvider timeProvider,
-    IOptions<StreamingOptions> options) : IPlayHistoryService
+    IOptions<StreamingOptions> options,
+    IEnumerable<IPlayHistoryListener> listeners,
+    ILogger<PlayHistoryService> logger) : IPlayHistoryService
 {
     public async Task<PlayHistoryResult> RecordAsync(
         Guid userId,
@@ -46,7 +49,9 @@ internal sealed class PlayHistoryService(
             return new PlayHistoryResult(PlayHistoryStatus.TrackNotFound, null);
         }
 
-        return new PlayHistoryResult(PlayHistoryStatus.Created, new PlayHistoryItem(entry, track));
+        PlayHistoryItem item = new(entry, track);
+        await NotifyListenersAsync(item, cancellationToken);
+        return new PlayHistoryResult(PlayHistoryStatus.Created, item);
     }
 
     public async Task<Page<PlayHistoryItem>> ListAsync(
@@ -81,6 +86,27 @@ internal sealed class PlayHistoryService(
 
         TrackRow? track = await tracks.FindAsync(entry.TrackId, userId, cancellationToken);
         return track is null ? null : new PlayHistoryItem(entry, track);
+    }
+
+    /// <summary>
+    /// Tells the listeners about the new entry. The entry is saved already, so a failing listener is only logged.
+    /// </summary>
+    private async Task NotifyListenersAsync(PlayHistoryItem item, CancellationToken cancellationToken)
+    {
+        foreach (IPlayHistoryListener listener in listeners)
+        {
+            try
+            {
+                await listener.PlayRecordedAsync(item, cancellationToken);
+            }
+            catch (Exception exception) when (exception is not OperationCanceledException)
+            {
+                logger.LogError(
+                    exception,
+                    "A listener of the play history failed for the entry {EntryId}",
+                    item.Entry.Id);
+            }
+        }
     }
 
     /// <summary>

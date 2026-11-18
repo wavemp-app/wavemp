@@ -1,5 +1,7 @@
 using AwesomeAssertions;
+using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
+using NSubstitute.ExceptionExtensions;
 using WaveMP.Core.Streaming.Histories;
 using WaveMP.Core.Streaming.Options;
 using WaveMP.Data.Entities;
@@ -18,6 +20,7 @@ public class PlayHistoryServiceTests
 
     private IPlayHistoryRepository _history = null!;
     private ITrackRepository _tracks = null!;
+    private IPlayHistoryListener _listener = null!;
     private PlayHistoryService _service = null!;
 
     [SetUp]
@@ -26,6 +29,7 @@ public class PlayHistoryServiceTests
         _history = Substitute.For<IPlayHistoryRepository>();
         _history.AddAsync(Arg.Any<PlayHistoryEntry>(), Arg.Any<CancellationToken>()).Returns(true);
         _tracks = Substitute.For<ITrackRepository>();
+        _listener = Substitute.For<IPlayHistoryListener>();
         _tracks.FindAsync(Arg.Any<Guid>(), Arg.Any<Guid?>(), Arg.Any<CancellationToken>()).Returns((TrackRow?)null);
         TimeProvider timeProvider = Substitute.For<TimeProvider>();
         timeProvider.GetUtcNow().Returns(_now);
@@ -33,7 +37,9 @@ public class PlayHistoryServiceTests
             _history,
             _tracks,
             timeProvider,
-            Microsoft.Extensions.Options.Options.Create(new StreamingOptions()));
+            Microsoft.Extensions.Options.Options.Create(new StreamingOptions()),
+            [_listener],
+            NullLogger<PlayHistoryService>.Instance);
     }
 
     [Test]
@@ -51,6 +57,37 @@ public class PlayHistoryServiceTests
         result.Item.Entry.PlayedAt.Should().Be(start);
         result.Item.Entry.Id.Should().NotBeEmpty();
         await _history.Received(1).AddAsync(result.Item.Entry, Arg.Any<CancellationToken>());
+    }
+
+    [Test]
+    public async Task RecordAsync_Created_TellsTheListeners()
+    {
+        TrackRow track = Track("Song");
+
+        PlayHistoryResult result = await _service.RecordAsync(_userId, track.Id, null);
+
+        await _listener.Received(1).PlayRecordedAsync(result.Item!, Arg.Any<CancellationToken>());
+    }
+
+    [Test]
+    public async Task RecordAsync_ListenerFails_StillReturnsTheEntry()
+    {
+        TrackRow track = Track("Song");
+        _listener.PlayRecordedAsync(Arg.Any<PlayHistoryItem>(), Arg.Any<CancellationToken>())
+            .ThrowsAsync(new InvalidOperationException("broken"));
+
+        PlayHistoryResult result = await _service.RecordAsync(_userId, track.Id, null);
+
+        result.Status.Should().Be(PlayHistoryStatus.Created);
+    }
+
+    [Test]
+    public async Task RecordAsync_UnknownTrack_DoesNotTellTheListeners()
+    {
+        PlayHistoryResult result = await _service.RecordAsync(_userId, Guid.NewGuid(), null);
+
+        result.Status.Should().Be(PlayHistoryStatus.TrackNotFound);
+        await _listener.DidNotReceiveWithAnyArgs().PlayRecordedAsync(default!, default);
     }
 
     [Test]
