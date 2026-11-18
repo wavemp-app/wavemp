@@ -712,6 +712,11 @@ a[data-part="breadcrumb-link"]:hover {
     color: #10253f;
 }
 
+[data-part="queue-item"][data-state~="current"]
+    :is([data-part="queue-item-artist"], [data-part="queue-item-duration"]) {
+    color: #3a4553;
+}
+
 [data-part="queue-item-actions"] [data-part="icon"] {
     --wmp-icon-fill: #6b737e;
 }
@@ -1764,5 +1769,13 @@ a[data-part="breadcrumb-link"]:hover {
 
     [data-part="mode-switch"] {
         --wmp-icon-size: 1.125rem;
+    }
+}
+
+/* No fades on hover for people who prefer less motion. */
+@media (prefers-reduced-motion: reduce) {
+    [data-part="tile"],
+    [data-part="profile-tile"] {
+        transition: none;
     }
 }

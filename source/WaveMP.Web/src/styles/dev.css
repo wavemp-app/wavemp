@@ -67,12 +67,6 @@
         padding: var(--wmp-space-m);
         background: var(--wmp-transport-background);
         color: var(--wmp-transport-color);
-
-        --wmp-icon-fill: linear-gradient(#ffffff 40%, #bfe0ff);
-    }
-
-    [data-part='dev-samples'][data-tone='dark'] [data-variant]:not([data-part='btn-favorite']) {
-        --wmp-icon-fill: linear-gradient(#ffffff 40%, #bfe0ff);
     }
 
     [data-part='dev-samples'][data-tone='dark'] [data-part='tabs'] {
@@ -103,6 +97,11 @@
 
     [data-part='dev-sample'] > [data-part='sidebar'][data-state~='collapsed'] {
         max-inline-size: var(--wmp-sidebar-collapsed-width);
+    }
+
+    /* The stage with its queue needs the whole row, or the queue column covers the stage. */
+    [data-part='dev-sample']:has(> [data-view='now-playing'] > [data-part='queue']) {
+        flex: 1 1 100%;
     }
 
     /* Samples of full pages keep their content height. */

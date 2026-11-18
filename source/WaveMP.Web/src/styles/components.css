@@ -1918,7 +1918,10 @@
         justify-self: center;
         align-self: end;
         margin-inline-start: 0;
-        margin-block-end: calc(var(--_value) * (100% - var(--wmp-slider-thumb-size)));
+        /* A percentage margin resolves against the inline size, so the length comes from the height. */
+        margin-block-end: calc(
+            var(--_value) * (var(--wmp-equalizer-slider-height) - var(--wmp-slider-thumb-size))
+        );
     }
 
     /* --- Transport ----------------------------------------------------------------------- */
@@ -1952,7 +1955,6 @@
 
     [data-part='now-playing-artist'] {
         font-size: var(--wmp-font-size-s);
-        opacity: 0.75;
     }
 
     [data-part='transport-controls'] {
@@ -2080,14 +2082,16 @@
         block-size: var(--wmp-equalizer-slider-height);
         margin-block-start: calc(var(--wmp-font-size-s) * 1.5 + var(--wmp-space-xs));
         font-size: var(--wmp-font-size-s);
+        color: var(--wmp-color-text-muted);
         font-variant-numeric: tabular-nums;
-        opacity: 0.7;
         text-align: end;
         white-space: nowrap;
     }
 
-    [data-part='equalizer'][data-state~='off'] > [data-part='equalizer-bands'] {
-        opacity: 0.6;
+    /* Switched off, only the faders fade; scale, values and band names keep their contrast. */
+    [data-part='equalizer'][data-state~='off']
+        :is([data-part='slider-fill'], [data-part='slider-thumb']) {
+        opacity: 0.5;
     }
 
     /* --- Content views ------------------------------------------------------------------- */
@@ -2587,8 +2591,8 @@
 
     [data-part='queue-item-artist'],
     [data-part='queue-item-duration'] {
+        color: var(--wmp-color-text-muted);
         font-size: var(--wmp-font-size-s);
-        opacity: 0.8;
     }
 
     [data-part='queue-item-duration'] {
