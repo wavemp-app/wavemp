@@ -1,12 +1,59 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="none">
-    <!-- Background of covers without an image (Pinstripe): a soft gradient with a faint disc. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice">
+    <!--
+        Background of covers without an image (Pinstripe): a tile of brushed aluminium with a bevel and
+        a round, backlit window of display glass in the middle, where the theme draws the note in the
+        ink of the display.
+    -->
     <defs>
-        <linearGradient id="surface" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0" stop-color="#f4f4f4"/>
-            <stop offset="1" stop-color="#bdbdbd"/>
+        <linearGradient id="plate" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#eef0f2"/>
+            <stop offset="0.5" stop-color="#d9dde1"/>
+            <stop offset="1" stop-color="#c2c7cd"/>
         </linearGradient>
+        <filter id="brush" x="0" y="0" width="100" height="100" filterUnits="userSpaceOnUse">
+            <feTurbulence type="fractalNoise" baseFrequency="0.004 0.9" numOctaves="3" seed="7" stitchTiles="stitch"/>
+            <feComponentTransfer>
+                <feFuncR type="linear" slope="2.4" intercept="-0.7"/>
+            </feComponentTransfer>
+            <feColorMatrix type="matrix" values="1 0 0 0 0  1 0 0 0 0  1 0 0 0 0  0 0 0 0 0.16"/>
+        </filter>
+        <linearGradient id="sheen" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#ffffff" stop-opacity="0.55"/>
+            <stop offset="0.45" stop-color="#ffffff" stop-opacity="0"/>
+            <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+        </linearGradient>
+        <linearGradient id="bezel" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#3f454c"/>
+            <stop offset="1" stop-color="#6d747c"/>
+        </linearGradient>
+        <radialGradient id="glass" cx="0.5" cy="0.2" r="0.85">
+            <stop offset="0" stop-color="#eef3e3"/>
+            <stop offset="0.7" stop-color="#cfdabd"/>
+            <stop offset="1" stop-color="#b9c7a3"/>
+        </radialGradient>
+        <pattern id="scan" width="4" height="1.5" patternUnits="userSpaceOnUse">
+            <rect width="4" height="0.5" fill="#1e2a1b" fill-opacity="0.05"/>
+        </pattern>
+        <radialGradient id="shade" cx="0.5" cy="0.5" r="0.5">
+            <stop offset="0.82" stop-color="#000000" stop-opacity="0"/>
+            <stop offset="1" stop-color="#000000" stop-opacity="0.22"/>
+        </radialGradient>
+        <clipPath id="window">
+            <circle cx="50" cy="50" r="33"/>
+        </clipPath>
     </defs>
-    <rect width="100" height="100" fill="url(#surface)"/>
-    <circle cx="50" cy="50" r="30" fill="none" stroke="#ffffff" stroke-opacity="0.35" stroke-width="2"/>
-    <circle cx="50" cy="50" r="6" fill="#ffffff" fill-opacity="0.35"/>
+    <rect width="100" height="100" fill="url(#plate)"/>
+    <rect width="100" height="100" filter="url(#brush)"/>
+    <rect width="100" height="100" fill="url(#sheen)"/>
+    <rect x="0.5" y="0.5" width="99" height="99" fill="none" stroke="#ffffff" stroke-opacity="0.7"/>
+    <rect y="99" width="100" height="1" fill="#000000" fill-opacity="0.18"/>
+    <!-- The window: a white lip pressed into the metal, the dark bezel, then the glass. -->
+    <circle cx="50" cy="50.8" r="35.4" fill="#ffffff" fill-opacity="0.75"/>
+    <circle cx="50" cy="50" r="35.2" fill="url(#bezel)"/>
+    <circle cx="50" cy="50" r="33" fill="url(#glass)"/>
+    <g clip-path="url(#window)">
+        <rect width="100" height="100" fill="url(#scan)"/>
+        <path d="M10 10 H90 V36 Q50 46 10 52 Z" fill="#ffffff" fill-opacity="0.22"/>
+        <circle cx="50" cy="50" r="33" fill="url(#shade)"/>
+    </g>
 </svg>

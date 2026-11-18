@@ -1,39 +1,2080 @@
 /*
  * Theme "Pinstripe" for WaveMP, theme API version 5 (see THEMING.md).
  *
- * Starting stylesheet (light): readable colors on the base layout, to be designed with
- * fine horizontal pinstripes, brushed metal in the header, gel-like round buttons and a
- * central display for title and progress.
+ * A light hi-fi look on fine horizontal pinstripes. The transport bar moves to the top of the
+ * window and forms one brushed-metal plate with the header: round gel buttons on the left, a
+ * backlit display in the middle with the title, the progress and the time, the rating and the
+ * player modes on the right. Below the plate, a cool source list on the left and pinstriped
+ * pages with white, striped tables. Selected entries and the play button are deep teal gel.
+ * All graphics in images/ were drawn for this theme.
  *
  * Rules of the theme API: no @import, no @layer, no external URLs, root-absolute url() only.
  * Layout rules live in @media (width >= 64rem); below that, the fixed mobile base applies and
  * this file only provides colors, graphics and fonts.
  */
 
+/* --- Variables ------------------------------------------------------------------------------ */
+
 :root {
-    --wmp-color-accent: #1a5fb4;
+    /* Small, compact type with figures of equal width, as on the labels of a device. */
+    --wmp-font-family: system-ui, sans-serif;
+    --wmp-font-weight-bold: 650;
+
+    --wmp-color-accent: #0b6b75;
     --wmp-color-accent-contrast: #ffffff;
-    --wmp-color-focus: #1a5fb4;
-    --wmp-color-text: #1d1d1f;
-    --wmp-color-text-muted: #535358;
-    --wmp-color-text-disabled: #9b9ba1;
+    --wmp-color-focus: #0a6570;
+    --wmp-color-text: #1d2126;
+    --wmp-color-text-muted: #4d535b;
+    --wmp-color-text-disabled: #8e949b;
     --wmp-color-surface: #ffffff;
-    --wmp-color-surface-raised: #ececec;
-    --wmp-color-border: #c6c6c8;
-    --wmp-color-hover: #e3e9f3;
-    --wmp-color-selection: #cddbf0;
-    --wmp-color-selection-text: #1d1d1f;
-    --wmp-color-success: #1f7a34;
-    --wmp-color-warning: #965f00;
-    --wmp-color-danger: #c0271d;
-    --wmp-favorite-color: #c2185b;
-    --wmp-rating-color: #965f00;
-    --wmp-theme-color: #ececec;
-    --wmp-image-cover-placeholder: url('/themes/pinstripe/images/cover-placeholder.svg') center / 100% 100%
+    --wmp-color-surface-raised: #eceef1;
+    --wmp-color-border: #b4bac1;
+    --wmp-color-hover: #e2f0f1;
+    --wmp-color-selection: #0f707c;
+    --wmp-color-selection-text: #ffffff;
+    --wmp-color-success: #23743a;
+    --wmp-color-warning: #8a5a00;
+    --wmp-color-danger: #b3261e;
+    --wmp-favorite-color: #b8235a;
+    --wmp-rating-color: #0b6b75;
+    --wmp-backdrop-color: rgb(30 34 40 / 45%);
+
+    /* Fine horizontal pinstripes: the paper of the pages, the toolbar and the dialogs. */
+    --wmp-header-color: #1d2126;
+    --wmp-header-background:
+        url('/themes/pinstripe/images/brushed-metal.svg') 0 0 / 640px 160px repeat,
+        linear-gradient(#dfe2e6, #ced2d7);
+    --wmp-toolbar-color: #1d2126;
+    --wmp-toolbar-background: repeating-linear-gradient(#f7f8f9 0 2px, #eceef1 2px 4px);
+    --wmp-sidebar-color: #1d2126;
+    --wmp-sidebar-background: linear-gradient(90deg, #dbe0e6, #e2e7ec);
+    --wmp-content-color: #1d2126;
+    --wmp-content-background: repeating-linear-gradient(#f7f8f9 0 2px, #edeff2 2px 4px);
+    --wmp-transport-color: #1d2126;
+    --wmp-transport-background:
+        url('/themes/pinstripe/images/brushed-metal.svg') 0 0 / 640px 160px repeat,
+        linear-gradient(#f2f3f5, #dfe2e6);
+    --wmp-bottom-nav-color: #1d2126;
+    --wmp-bottom-nav-background:
+        url('/themes/pinstripe/images/brushed-metal.svg') 0 0 / 640px 160px repeat,
+        linear-gradient(#e6e9ec, #c9cdd3);
+    --wmp-dialog-color: #1d2126;
+    --wmp-dialog-background: repeating-linear-gradient(#f8f9fa 0 2px, #eef0f2 2px 4px);
+    --wmp-menu-color: #1d2126;
+    --wmp-menu-background: rgb(250 251 252 / 97%);
+    --wmp-profile-select-color: #1d2126;
+    --wmp-profile-select-background:
+        radial-gradient(70% 45% at 50% 0%, rgb(255 255 255 / 85%), rgb(255 255 255 / 0%)),
+        repeating-linear-gradient(#f5f6f7 0 2px, #e7e9ec 2px 4px);
+    --wmp-profile-secondary-opacity: 0.75;
+    /* The status bar continues the top of the metal plate. */
+    --wmp-theme-color: #f2f3f5;
+
+    --wmp-image-cover-placeholder: url('/themes/pinstripe/images/cover-placeholder.svg') center /
+        100% 100% no-repeat;
+
+    /* Buttons: silver gel capsules; the primary one is deep teal gel. */
+    --wmp-image-default-button: linear-gradient(#ffffff 0%, #f1f3f5 45%, #dee2e6 55%, #eef0f3 100%);
+    --wmp-image-default-button-hover: linear-gradient(
+        #fbffff 0%,
+        #e7f4f5 45%,
+        #cfe6e9 55%,
+        #e3f2f3 100%
+    );
+    --wmp-image-default-button-active: linear-gradient(#bfc5cc, #d7dbe0 60%, #e4e7ea);
+    --wmp-image-default-button-disabled: #eef0f2;
+    /* The white label keeps 4.5:1 on every stop of the gel (THEMING.md, "Contrast"). */
+    --wmp-image-primary-button: linear-gradient(#137b87 0%, #0f707c 45%, #09606b 55%, #0d6d78 100%);
+    --wmp-image-primary-button-hover: linear-gradient(
+        #117884 0%,
+        #0c6a76 45%,
+        #075965 55%,
+        #0b6772 100%
+    );
+    --wmp-image-primary-button-active: linear-gradient(#064e57, #0a5f6a);
+    --wmp-image-primary-button-disabled: linear-gradient(#c3d2d5, #b3c3c6);
+    --wmp-image-icon-button: transparent;
+    --wmp-image-icon-button-hover: rgb(11 107 117 / 10%);
+    --wmp-image-icon-button-active: rgb(11 107 117 / 18%);
+    --wmp-image-icon-button-disabled: transparent;
+    --wmp-image-round-button: url('/themes/pinstripe/images/gel-button.svg') center / 100% 100%
         no-repeat;
+    --wmp-image-round-button-hover: url('/themes/pinstripe/images/gel-button-hover.svg') center /
+        100% 100% no-repeat;
+    --wmp-image-round-button-active: url('/themes/pinstripe/images/gel-button-pressed.svg') center /
+        100% 100% no-repeat;
+    --wmp-image-round-button-disabled: url('/themes/pinstripe/images/gel-button.svg') center / 100%
+        100% no-repeat;
+    --wmp-image-play-button: url('/themes/pinstripe/images/play-gel.svg') center / 100% 100%
+        no-repeat;
+    --wmp-image-play-button-hover: url('/themes/pinstripe/images/play-gel-hover.svg') center / 100%
+        100% no-repeat;
+    --wmp-image-play-button-active: url('/themes/pinstripe/images/play-gel-pressed.svg') center /
+        100% 100% no-repeat;
+    --wmp-image-play-button-disabled: url('/themes/pinstripe/images/gel-button.svg') center / 100%
+        100% no-repeat;
+    --wmp-image-tab-active: transparent;
+    --wmp-image-tab-hover: transparent;
+    --wmp-image-slider-thumb: url('/themes/pinstripe/images/slider-thumb.svg') center / 100% 100%
+        no-repeat;
+    --wmp-slider-track-background: linear-gradient(#8d939b, #c4c9cf);
+    --wmp-slider-fill-background: linear-gradient(#2a96a2, #0b6b75);
+    --wmp-progress-track-background: linear-gradient(#c3c8ce, #e4e7ea);
+    --wmp-progress-fill-background: linear-gradient(
+        #4cb8c3 0%,
+        #168592 48%,
+        #0b6b75 52%,
+        #1a8b98 100%
+    );
+
+    --wmp-stage-view-background: #1b1e22;
+
+    --wmp-radius-s: 0.25rem;
+    --wmp-radius-m: 0.375rem;
+    --wmp-radius-l: 0.625rem;
+    --wmp-play-button-size: 3rem;
+    --wmp-round-button-size: 1.875rem;
+    --wmp-slider-thumb-size: 0.875rem;
+    --wmp-seek-height: 0.1875rem;
+
+    font-variant-numeric: tabular-nums;
 }
 
-/* A line between the header and the page, as an example of a rule for a part. */
+/* --- Brushed metal: header, transport bar, bottom navigation ----------------------------------- */
+
+[data-part='header'],
+[data-part='transport'],
+[data-part='bottom-nav'] {
+    --wmp-icon-fill: #2b3036;
+    --wmp-color-text-disabled: #6c727a;
+
+    text-shadow: 0 1px 0 rgb(255 255 255 / 55%);
+}
+
+:where([data-part='header'], [data-part='transport'], [data-part='bottom-nav'])
+    [data-variant]:not([data-part='btn-favorite'], [data-part='btn-play']) {
+    --wmp-icon-fill: #2b3036;
+}
+
+/* Lit symbols: teal gel light for pressed toggles and the current page. */
+[data-part='transport']
+    [aria-pressed='true']:not([data-part='btn-favorite'], [data-part='rating-star'])
+    [data-part='icon'],
+[data-part='bottom-nav'] [aria-current='page'] [data-part='icon'] {
+    --wmp-icon-fill: linear-gradient(#0a6570, #053f46);
+
+    filter: drop-shadow(0 0 3px rgb(64 200 214 / 55%));
+}
+
 [data-part='header'] {
-    border-block-end: 1px solid var(--wmp-color-border);
+    border-block-end: 1px solid #7d848c;
+    box-shadow: 0 1px 0 rgb(0 0 0 / 8%);
+}
+
+[data-part='logo'] {
+    color: #1d2126;
+}
+
+[data-part='btn-menu'] {
+    color: #1d2126;
+}
+
+[data-part='btn-back'],
+[data-part='btn-forward'] {
+    --wmp-icon-size: 0.875rem;
+
+    border: 0;
+    color: #2b3036;
+}
+
+[data-part='btn-back']:disabled,
+[data-part='btn-forward']:disabled {
+    --wmp-icon-fill: #8a9098;
+
+    color: #8a9098;
+}
+
+[data-part='tab'] {
+    color: #1d2126;
+    font-weight: var(--wmp-font-weight-bold);
+}
+
+/* The arrow below the active tab is not used; the sliding gel pane marks it. */
+[data-part='tab'] > [data-part='indicator'] {
+    display: none;
+}
+
+[data-part='tab'][aria-current='page'] > [data-part='indicator'] {
+    display: none;
+}
+
+[data-part='server-status'] {
+    color: #1d2126;
+    font-size: var(--wmp-font-size-xs);
+}
+
+[data-part='btn-profile'] {
+    border: 0;
+}
+
+[data-part='btn-profile']:is(:hover, [aria-expanded='true']) > [data-part='avatar'] {
+    box-shadow:
+        inset 0 1px rgb(255 255 255 / 60%),
+        0 0 0 2px #ffffff,
+        0 0 0 3px #0b6b75;
+}
+
+/* The entry of the review inbox (admins only): ink on metal, a teal gel bead with the number. */
+[data-part='btn-review-inbox'] {
+    border-radius: var(--wmp-radius-round);
+    color: #1d2126;
+    font-weight: var(--wmp-font-weight-bold);
+}
+
+[data-part='btn-review-inbox']:hover,
+[data-part='btn-review-inbox'][data-state~='active'] {
+    background: rgb(255 255 255 / 35%);
+    box-shadow: inset 0 1px 2px rgb(0 0 0 / 20%);
+}
+
+[data-part='btn-review-inbox'] > [data-part='badge'][data-state~='unreviewed'] {
+    border: 1px solid #053f46;
+    border-radius: var(--wmp-radius-round);
+    background: linear-gradient(#137b87, #0a5f6a);
+    box-shadow: inset 0 1px rgb(255 255 255 / 40%);
+    color: #ffffff;
+    text-shadow: none;
+}
+
+/* --- Toolbar ------------------------------------------------------------------------------- */
+
+[data-part='toolbar'] {
+    --wmp-icon-fill: #3a4047;
+
+    border-block-end: 1px solid #b4bac1;
+}
+
+[data-part='toolbar'] [data-variant] {
+    --wmp-icon-fill: #3a4047;
+}
+
+[data-part='toolbar'] :is(button, a):hover:not(:disabled) [data-part='icon'] {
+    --wmp-icon-fill: #0b6b75;
+}
+
+[data-part='breadcrumb-link'] {
+    color: #1d2126;
+}
+
+[data-part='breadcrumb-link'][aria-current='page'] {
+    font-weight: var(--wmp-font-weight-bold);
+}
+
+a[data-part='breadcrumb-link']:hover {
+    background: transparent;
+    color: #0b6b75;
+    text-decoration: underline;
+}
+
+[data-part='breadcrumb-separator'] {
+    --wmp-icon-size: 0.625rem;
+    --wmp-icon-fill: #6a7078;
+}
+
+[data-part='view-switch'],
+[data-part='sort'] {
+    --wmp-icon-size: 1.125rem;
+
+    gap: 0.125rem;
+}
+
+[data-part='view-switch'] [data-icon='dropdown'],
+[data-part='sort'] [data-icon='dropdown'] {
+    --wmp-icon-size: 0.625rem;
+}
+
+[data-part='view-switch']:disabled,
+[data-part='sort']:disabled {
+    opacity: 0.6;
+}
+
+/* The search is a recessed capsule. */
+[data-part='search'] > [data-part='input'] {
+    border: 1px solid #959ca4;
+    border-radius: var(--wmp-radius-round);
+    background: #ffffff;
+    box-shadow: inset 0 1px 2px rgb(0 0 0 / 22%);
+}
+
+[data-part='search'] > [data-part='input']:focus {
+    border-color: #0b6b75;
+    outline: none;
+    box-shadow:
+        inset 0 1px 2px rgb(0 0 0 / 22%),
+        0 0 0 3px rgb(26 150 163 / 45%);
+}
+
+[data-part='search'] > [data-part='icon'] {
+    --wmp-icon-fill: #4d535b;
+}
+
+/* --- Sidebar: a cool source list ------------------------------------------------------------- */
+
+[data-part='sidebar'] {
+    --wmp-icon-fill: #4a5a66;
+
+    border-inline-end: 1px solid #9ea5ad;
+}
+
+[data-part='tree-item'] {
+    border-radius: 0;
+}
+
+[data-part='tree'] > [data-part='tree-node'] > [data-part='tree-item'],
+[data-part='tree-node'] > [data-part='tree-item'][aria-expanded] {
+    color: #3f454c;
+    font-weight: var(--wmp-font-weight-bold);
+}
+
+[data-part='tree-item']:hover:not([aria-disabled='true']) {
+    background: rgb(255 255 255 / 55%);
+}
+
+/* The current entry is a bar of teal gel across the whole list. */
+[data-part='tree-item'][aria-current='page'] {
+    --wmp-icon-fill: #ffffff;
+
+    background: linear-gradient(#147b87, #0b6672);
+    box-shadow:
+        inset 0 1px rgb(255 255 255 / 30%),
+        inset 0 -1px rgb(0 0 0 / 25%);
+    color: #ffffff;
+    text-shadow: 0 -1px 0 rgb(0 0 0 / 30%);
+}
+
+[data-part='tree-item'][aria-current='page'] [data-part='tree-toggle'] {
+    --wmp-icon-fill: #ffffff;
+
+    color: #ffffff;
+}
+
+[data-part='tree-item']:focus-visible {
+    outline-offset: -3px;
+}
+
+[data-part='tree-item'][aria-current='page']:focus-visible {
+    outline-color: #ffffff;
+}
+
+[data-part='tree-toggle'] {
+    --wmp-icon-fill: #5c636b;
+}
+
+[data-part='btn-sidebar-toggle'] {
+    --wmp-icon-fill: #4a5a66;
+}
+
+/* --- Content: pinstriped pages, white striped tables ------------------------------------------- */
+
+[data-part='content'] {
+    --wmp-icon-fill: #4d535b;
+}
+
+[data-part='content-title'] {
+    color: #1d2126;
+    letter-spacing: -0.01em;
+    text-shadow: 0 1px 0 #ffffff;
+}
+
+[data-part='placeholder-notice'] {
+    border: 1px solid #b4bac1;
+    border-radius: var(--wmp-radius-s);
+    background: #ffffff;
+    color: #3c4249;
+}
+
+/* The list lies on the page as a white table with a framed head and alternating rows. */
+[data-part='list'] {
+    border: 1px solid #a9b0b8;
+    border-radius: var(--wmp-radius-s);
+    background: #ffffff;
+    box-shadow: 0 1px 2px rgb(0 0 0 / 10%);
+}
+
+[data-part='list-header'] {
+    border-block-end: 1px solid #a9b0b8;
+    border-start-start-radius: var(--wmp-radius-s);
+    border-start-end-radius: var(--wmp-radius-s);
+    background: linear-gradient(#fbfbfc, #e3e6ea);
+    color: #3c4249;
+    font-size: var(--wmp-font-size-xs);
+    font-weight: var(--wmp-font-weight-bold);
+}
+
+[data-part='list-column'] + [data-part='list-column'] {
+    padding-inline-start: 0.375rem;
+    border-inline-start: 1px solid #c9ced4;
+}
+
+[data-part='list-group-header'] {
+    border-block-end: 1px solid #c9ced4;
+    color: #1d2126;
+}
+
+[data-part='list-group'] + [data-part='list-group'] {
+    border-block-start: 1px solid #dde1e5;
+}
+
+[data-part='list-group-info'] [data-part='cover'] {
+    box-shadow:
+        0 2px 5px rgb(0 0 0 / 25%),
+        0 0 0 1px rgb(0 0 0 / 15%);
+}
+
+/* Covers without an image: display glass set in brushed aluminium, the note in display ink. */
+[data-part='cover'][data-state~='placeholder'] {
+    --wmp-icon-fill: linear-gradient(#3b4c35, #1e2a1b);
+}
+
+[data-part='list-group-meta'] {
+    color: #4d535b;
+}
+
+[data-part='list-group-meta'] > [data-part='meta-item'][data-field='album'] {
+    color: #1d2126;
+    font-weight: var(--wmp-font-weight-bold);
+}
+
+[data-part='list-row']:nth-child(even) {
+    background: #eef3f7;
+}
+
+[data-part='list-row']:hover {
+    background: #dfeff0;
+}
+
+[data-part='list-row'][aria-selected='true'] {
+    --wmp-icon-fill: #ffffff;
+    --wmp-favorite-color: #ffffff;
+    --wmp-rating-color: #ffffff;
+
+    background: linear-gradient(#147b87, #0b6672);
+    color: #ffffff;
+}
+
+[data-part='list-row'][data-state~='playing'] [data-part='list-cell'][data-column='title'] {
+    color: #0b6b75;
+}
+
+[data-part='list-row'][aria-selected='true']
+    :is([data-part='rating-star'], [data-part='btn-favorite'], [data-part='badge']) {
+    --wmp-icon-fill: #ffffff;
+}
+
+[data-part='list-row'][aria-selected='true'][data-state~='playing']
+    [data-part='list-cell'][data-column='title'] {
+    color: #ffffff;
+}
+
+[data-part='list-row'][data-state~='video-only'] [data-part='list-cell'][data-column='title'] {
+    color: #2e4a57;
+}
+
+[data-part='badge'] {
+    --wmp-icon-fill: #4d535b;
+}
+
+[data-part='badge'][data-state~='video-only'] {
+    --wmp-icon-fill: #0b6b75;
+}
+
+[data-part='empty-state-title'] {
+    color: #1d2126;
+}
+
+[data-part='empty-state-text'] {
+    color: #4d535b;
+}
+
+[data-part='link'] {
+    color: #0b6b75;
+}
+
+[data-part='link']:hover {
+    color: #064f57;
+}
+
+[data-part='shelf-title'],
+[data-part='section-title'] {
+    color: #1d2126;
+    text-shadow: 0 1px 0 #ffffff;
+}
+
+/* --- Library: tiles, detail pages, files ------------------------------------------------------- */
+
+/* Covers are prints on the paper: a white mat and a soft shadow. */
+[data-part='tile'] > :is([data-part='cover'], [data-part='playlist-cover']),
+[data-part='detail-header'] > :is([data-part='cover'], [data-part='playlist-cover']) {
+    border-radius: 0.125rem;
+    box-shadow:
+        0 0 0 1px rgb(0 0 0 / 18%),
+        0 3px 8px rgb(0 0 0 / 22%);
+}
+
+[data-part='tile'] {
+    border: 1px solid transparent;
+    border-radius: var(--wmp-radius-m);
+}
+
+[data-part='tile']:hover,
+[data-part='tile']:focus-visible {
+    border-color: #b4c9cc;
+    background: rgb(255 255 255 / 70%);
+}
+
+[data-part='tile'] > [data-part='cover'] > [data-part='icon'],
+[data-part='detail-header'] > [data-part='cover'] > [data-part='icon'] {
+    --wmp-icon-fill: linear-gradient(#3b4c35, #1e2a1b);
+}
+
+[data-part='tile-title'] {
+    color: #1d2126;
+    font-weight: var(--wmp-font-weight-bold);
+}
+
+[data-part='tile-subtitle'] {
+    color: #4d535b;
+}
+
+[data-part='detail-header'] {
+    padding-block-end: var(--wmp-space-m);
+    border-block-end: 1px solid #c3c8ce;
+}
+
+[data-part='detail-title'] {
+    color: #1d2126;
+    letter-spacing: -0.015em;
+    text-shadow: 0 1px 0 #ffffff;
+}
+
+[data-part='detail-info'] > [data-part='meta-item'] > [data-part='label'] {
+    color: #4d535b;
+}
+
+[data-part='meta-value'] > [data-part='link'] {
+    color: inherit;
+}
+
+[data-part='meta-value'] > [data-part='link']:hover {
+    color: #0b6b75;
+}
+
+[data-part='detail-actions'] :not([data-variant='primary']) > [data-part='icon'] {
+    --wmp-icon-fill: #0b6b75;
+}
+
+[data-part='load-more'] {
+    min-inline-size: 10rem;
+    border-color: #8e959d;
+    border-radius: var(--wmp-radius-round);
+}
+
+[data-part='load-more'][data-state~='loading'] {
+    color: #4d535b;
+}
+
+/* --- Buttons and segmented controls ------------------------------------------------------------- */
+
+:where(button, a)[data-variant='default'],
+:where(button, a)[data-variant='primary'] {
+    border-radius: var(--wmp-radius-round);
+    box-shadow:
+        inset 0 1px rgb(255 255 255 / 70%),
+        0 1px 1px rgb(0 0 0 / 12%);
+}
+
+:where(button, a)[data-variant='default'] {
+    border-color: #8e959d;
+}
+
+:where(button, a)[data-variant='primary'] {
+    border-color: #064a52;
+    box-shadow:
+        inset 0 1px rgb(255 255 255 / 30%),
+        0 1px 1px rgb(0 0 0 / 15%);
+}
+
+:where(button, a)[data-variant='default']:active:not(:disabled),
+:where(button, a)[data-variant='default'][aria-pressed='true']:not(:disabled) {
+    box-shadow: inset 0 1px 3px rgb(0 0 0 / 30%);
+}
+
+:where(button, a)[data-variant='default']:disabled {
+    border-color: #c3c8ce;
+    box-shadow: none;
+}
+
+[data-variant='round'] {
+    border: 0;
+}
+
+[data-part='btn-favorite'] {
+    border-radius: var(--wmp-radius-round);
+}
+
+/*
+ * Segmented controls are one silver gel capsule with fine grooves between the segments; the checked
+ * segment is a pressed pane of graphite gel with a white label. Only the outer ends are round.
+ */
+[data-part='segmented-control'] {
+    border: 1px solid #8e959d;
+    border-radius: var(--wmp-radius-round);
+    background: var(--wmp-image-default-button);
+    box-shadow:
+        inset 0 1px rgb(255 255 255 / 80%),
+        0 1px 1px rgb(0 0 0 / 12%);
+}
+
+[data-part='segmented-control'][aria-invalid='true'] {
+    border-color: var(--wmp-color-danger);
+}
+
+[data-part='segment'] {
+    --_image: transparent;
+    --_image-hover: rgb(11 107 117 / 12%);
+    --_image-disabled: transparent;
+
+    margin: 0;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+}
+
+[data-part='segment'] + [data-part='segment'] {
+    margin-inline-start: 0;
+    border-inline-start: 1px solid rgb(0 0 0 / 16%);
+}
+
+/* The groove beside the checked segment turns into its dark edge. */
+[data-part='segment'][aria-checked='true'] + [data-part='segment'] {
+    border-inline-start-color: #2b3036;
+}
+
+[data-part='segment']:focus-visible {
+    outline-offset: -3px;
+}
+
+[data-part='segment']:first-of-type {
+    border-start-start-radius: var(--wmp-radius-round);
+    border-end-start-radius: var(--wmp-radius-round);
+    padding-inline-start: var(--wmp-space-l);
+}
+
+[data-part='segment']:last-of-type {
+    border-start-end-radius: var(--wmp-radius-round);
+    border-end-end-radius: var(--wmp-radius-round);
+    padding-inline-end: var(--wmp-space-l);
+}
+
+[data-part='segment'][aria-checked='true'] {
+    --wmp-icon-fill: #ffffff;
+
+    border-color: #2b3036;
+    background: linear-gradient(#5b6168 0%, #464c53 50%, #33383e 52%, #3d4249 100%);
+    box-shadow: inset 0 1px 3px rgb(0 0 0 / 55%);
+    color: #ffffff;
+    text-shadow: 0 -1px 0 rgb(0 0 0 / 40%);
+}
+
+[data-part='segment'][aria-checked='true']:is(:disabled, [aria-disabled='true']) {
+    background: linear-gradient(#8a9097, #737980);
+    color: #ffffff;
+}
+
+/* Disabled segments show it in the icon too; on a narrow stage the icon is all that shows. */
+[data-part='segment']:is(:disabled, [aria-disabled='true']):not([aria-checked='true']) {
+    --wmp-icon-fill: var(--wmp-color-text-disabled);
+
+    color: var(--wmp-color-text-disabled);
+    text-shadow: none;
+}
+
+/* --- Now Playing: stage, lyrics, visualization, queue --------------------------------------------- */
+
+[data-part='stage-view'] > [data-part='cover'] {
+    box-shadow:
+        0 0 0 1px rgb(0 0 0 / 18%),
+        0 0.75rem 2rem rgb(0 0 0 / 28%);
+}
+
+[data-part='stage-title'] {
+    color: #1d2126;
+    text-shadow: 0 1px 0 #ffffff;
+}
+
+[data-part='stage-subtitle'],
+[data-part='stage-notice'] {
+    color: #4d535b;
+}
+
+[data-part='stage-view']:is(
+    [data-kind='video'],
+    [data-kind='visualization'],
+    [data-kind='lyrics']
+) {
+    border-radius: var(--wmp-radius-s);
+    box-shadow:
+        0 0 0 1px #5d636b,
+        0 0.5rem 1.5rem rgb(0 0 0 / 25%);
+}
+
+[data-part='video-backdrop'] {
+    background: linear-gradient(#24282d, #141619);
+}
+
+[data-part='video-stage'][data-orientation='portrait'] > [data-part='video-backdrop'] {
+    background:
+        repeating-linear-gradient(rgb(255 255 255 / 3%) 0 2px, rgb(255 255 255 / 0%) 2px 4px),
+        linear-gradient(90deg, #141619, #2a2f35 50%, #141619);
+}
+
+[data-part='lyrics'] {
+    background:
+        repeating-linear-gradient(rgb(255 255 255 / 2.5%) 0 2px, rgb(255 255 255 / 0%) 2px 4px),
+        linear-gradient(#262a2f, #16181b);
+}
+
+[data-part='visualization'] {
+    background:
+        radial-gradient(ellipse at 50% 120%, rgb(26 150 163 / 30%), transparent 65%),
+        linear-gradient(#22262b, #121417);
+    color: #d9e9eb;
+}
+
+[data-part='visualization-message'] > [data-part='icon'] {
+    --wmp-icon-fill: linear-gradient(#e9fbfc, #7fd8e0);
+}
+
+/* The controls of the visualization float as a small metal capsule above its bottom edge. */
+[data-part='visualization-controls'] {
+    inset-inline: 50% auto;
+    inset-block-end: 0.75rem;
+    inline-size: max-content;
+    max-inline-size: calc(100% - 1.5rem);
+    padding: 0.25rem 0.5rem;
+    border: 1px solid #6c737b;
+    border-radius: var(--wmp-radius-round);
+    background:
+        url('/themes/pinstripe/images/brushed-metal.svg') 0 0 / 640px 160px repeat,
+        linear-gradient(#eceef1, #c9cdd3);
+    box-shadow:
+        inset 0 1px rgb(255 255 255 / 75%),
+        0 3px 10px rgb(0 0 0 / 45%);
+    color: #1d2126;
+    translate: -50% 0;
+}
+
+[data-part='visualization-controls'] > [data-variant='icon'] {
+    --wmp-icon-fill: #2b3036;
+
+    color: #2b3036;
+}
+
+[data-part='btn-auto-change'][data-state~='on'] {
+    --wmp-icon-fill: linear-gradient(#0a6570, #053f46);
+}
+
+[data-part='visualization-controls'] [data-part='select'] {
+    border-radius: var(--wmp-radius-round);
+}
+
+[data-part='video-stage'] > [data-part='btn-fullscreen'] {
+    --wmp-icon-fill: #ffffff;
+
+    color: #ffffff;
+}
+
+/* Rating and heart. */
+[data-part='rating-star'][data-state~='off'] {
+    --wmp-icon-fill: #6a7078;
+}
+
+[data-part='btn-favorite'][data-state~='off'] {
+    --wmp-icon-fill: #6a7078;
+}
+
+[data-part='queue'] {
+    background: #ffffff;
+}
+
+[data-part='queue-item'] {
+    border-radius: 0;
+}
+
+[data-part='queue-item']:nth-child(even) {
+    background: #eef3f7;
+}
+
+[data-part='queue-item']:hover {
+    background: #dfeff0;
+}
+
+[data-part='queue-item'][data-state~='played'] {
+    color: #4d535b;
+}
+
+[data-part='queue-item'][data-state~='current'] {
+    --wmp-icon-fill: #ffffff;
+
+    background: linear-gradient(#147b87, #0b6672);
+    color: #ffffff;
+}
+
+[data-part='queue-item'][data-state~='current']
+    :is([data-part='queue-item-artist'], [data-part='queue-item-duration']) {
+    color: #ffffff;
+}
+
+[data-part='queue-item'][data-state~='current'] [data-variant='icon'] {
+    --wmp-icon-fill: #ffffff;
+
+    color: #ffffff;
+}
+
+[data-part='queue-item'][data-state~='current'] [data-variant='icon']:disabled {
+    --wmp-icon-fill: rgb(255 255 255 / 55%);
+}
+
+[data-part='queue-item-info'] [data-part='cover'] {
+    box-shadow: 0 0 0 1px rgb(0 0 0 / 18%);
+}
+
+[data-part='queue-item-artist'],
+[data-part='queue-item-duration'] {
+    color: #4d535b;
+    opacity: 1;
+}
+
+/* Notices of the player: a small metal label. */
+[data-part='transport'] > [data-part='transport-message']:not([data-state~='empty']) {
+    border-color: #7d848c;
+    background: linear-gradient(#fdfdfd, #e6e9ec);
+    box-shadow: 0 4px 12px rgb(0 0 0 / 22%);
+    color: #1d2126;
+    text-shadow: none;
+}
+
+/* --- Transport ---------------------------------------------------------------------------------- */
+
+[data-part='transport'] {
+    border-block-start-color: #9aa1a9;
+}
+
+[data-part='now-playing-title'] {
+    font-weight: var(--wmp-font-weight-bold);
+}
+
+[data-part='now-playing-mini'] [data-part='cover'] {
+    border-radius: 0.125rem;
+    box-shadow: 0 0 0 1px rgb(0 0 0 / 30%);
+}
+
+[data-part='transport'] [data-variant='icon'] {
+    border-radius: var(--wmp-radius-round);
+    color: #2b3036;
+}
+
+[data-part='transport'] [data-variant]:is(:disabled, [aria-disabled='true']) [data-part='icon'] {
+    opacity: 0.45;
+}
+
+[data-part='transport'] [data-part='btn-play'] {
+    --wmp-icon-size: 1.25rem;
+    --wmp-icon-fill: #ffffff;
+
+    color: #ffffff;
+    text-shadow: none;
+}
+
+[data-part='transport'] [data-part='btn-play'] > [data-part='icon'] {
+    filter: drop-shadow(0 -1px 0 rgb(0 0 0 / 35%));
+}
+
+/* While nothing can play, the play button turns to silver gel with a gray symbol. */
+[data-part='transport'] [data-part='btn-play']:disabled {
+    --wmp-icon-fill: #6c727a;
+}
+
+[data-part='transport'] [data-part='btn-play']:disabled > [data-part='icon'] {
+    opacity: 1;
+    filter: none;
+}
+
+[data-part='volume'][data-state~='muted'] [data-part='slider-fill'] {
+    filter: grayscale(1);
+}
+
+[data-part='sleep-timer-remaining'] {
+    color: #0b5f68;
+    font-weight: var(--wmp-font-weight-bold);
+}
+
+[data-part='btn-equalizer'][data-state~='on'] [data-part='icon'],
+[data-part='btn-sleep-timer'][data-state~='on'] [data-part='icon'],
+[data-part='btn-cast'][data-state~='connected'] [data-part='icon'] {
+    --wmp-icon-fill: linear-gradient(#0a6570, #053f46);
+
+    filter: drop-shadow(0 0 3px rgb(64 200 214 / 55%));
+}
+
+[data-part='btn-cast'][data-state~='connecting'] [data-part='icon'] {
+    opacity: 0.6;
+}
+
+[data-part='cast-status'] {
+    color: #0b5f68;
+}
+
+[data-part='cast-hint'] {
+    border-color: #7d848c;
+    background: linear-gradient(#fdfdfd, #e6e9ec);
+    box-shadow: 0 4px 12px rgb(0 0 0 / 22%);
+    color: #1d2126;
+    text-shadow: none;
+}
+
+/*
+ * The display: a backlit pane of pale green-gray glass in a dark bezel, with fine scan lines.
+ * On phones it frames the mini player; on the desktop it is the middle of the metal plate.
+ */
+[data-part='now-playing-mini'] {
+    isolation: isolate;
+    color: #1e2a1b;
+    text-shadow: none;
+}
+
+[data-part='now-playing-mini']::before {
+    position: absolute;
+    inset: -0.25rem -0.375rem -0.25rem -0.3125rem;
+    z-index: -1;
+    border: 1px solid #4c535b;
+    border-radius: var(--wmp-radius-m);
+    background:
+        repeating-linear-gradient(rgb(30 42 27 / 4%) 0 1px, rgb(30 42 27 / 0%) 1px 3px),
+        radial-gradient(120% 140% at 50% 0%, #e6edd8, #c9d5b6 75%);
+    box-shadow:
+        inset 0 2px 4px rgb(0 0 0 / 35%),
+        0 1px 0 rgb(255 255 255 / 70%);
+    content: '';
+}
+
+[data-part='now-playing-artist'] {
+    color: #3a4935;
+    opacity: 1;
+}
+
+[data-part='now-playing-mini'][data-state~='empty'] [data-part='now-playing-title'] {
+    color: #3a4935;
+    font-weight: var(--wmp-font-weight-normal);
+}
+
+[data-part='now-playing-mini'][data-state~='empty'] [data-part='cover'] {
+    --wmp-icon-fill: #4f5f49;
+
+    background: transparent;
+    box-shadow: none;
+}
+
+/* --- Bottom navigation (mobile) ----------------------------------------------------------------- */
+
+[data-part='bottom-nav'] {
+    border-block-start-color: #8a9098;
+    box-shadow: inset 0 1px rgb(255 255 255 / 70%);
+}
+
+[data-part='bottom-nav-item'] {
+    --wmp-icon-size: 1.375rem;
+
+    color: #2b3036;
+    font-weight: var(--wmp-font-weight-bold);
+}
+
+[data-part='bottom-nav-item'][aria-current='page'] {
+    color: #063f46;
+}
+
+/* The current entry sits in a pressed well of the metal. */
+[data-part='bottom-nav'] > [data-part='indicator'] {
+    display: block;
+    margin: 0.3125rem 0.375rem;
+    inline-size: calc(var(--wmp-indicator-width) - 0.75rem);
+    block-size: calc(var(--wmp-indicator-height) - 0.625rem);
+    border-radius: var(--wmp-radius-l);
+    background: linear-gradient(rgb(0 0 0 / 13%), rgb(0 0 0 / 5%));
+    box-shadow:
+        inset 0 1px 3px rgb(0 0 0 / 35%),
+        0 1px 0 rgb(255 255 255 / 70%);
+}
+
+/*
+ * The wells slide only while the pointer, a finger or the keyboard is in the group, so a page that
+ * opens finds them at their place instead of flying in from the corner. A group without a current
+ * entry shows no well.
+ */
+:is([data-part='tabs'], [data-part='bottom-nav']):is(:hover, :focus-within, :active)
+    > [data-part='indicator'] {
+    transition:
+        left 0.25s ease,
+        inline-size 0.25s ease;
+}
+
+:is([data-part='tabs'], [data-part='bottom-nav']):not(:has([aria-current='page']))
+    > [data-part='indicator'] {
+    display: none;
+}
+
+/* --- Full-screen player (mobile) ---------------------------------------------------------------- */
+
+[data-part='transport'][data-state~='expanded'] {
+    --wmp-play-button-size: 4.25rem;
+    --wmp-round-button-size: 2.75rem;
+
+    background:
+        url('/themes/pinstripe/images/brushed-metal.svg') 0 0 / 640px 160px repeat,
+        linear-gradient(#f0f2f4, #c7ccd2);
+}
+
+[data-part='transport'][data-state~='expanded'] [data-part='btn-play'] {
+    --wmp-icon-size: 1.75rem;
+}
+
+[data-part='transport'][data-state~='expanded'] [data-part='now-playing-mini']::before {
+    display: none;
+}
+
+[data-part='transport'][data-state~='expanded'] [data-part='now-playing-mini'] [data-part='cover'] {
+    box-shadow:
+        0 0 0 1px rgb(0 0 0 / 20%),
+        0 0.75rem 2rem rgb(0 0 0 / 30%);
+}
+
+/* In the full-screen player the display holds title and artist below the cover. */
+[data-part='transport'][data-state~='expanded'] [data-part='now-playing-meta'] {
+    padding: 0.5rem 1.25rem;
+    border: 1px solid #4c535b;
+    border-radius: var(--wmp-radius-m);
+    background:
+        repeating-linear-gradient(rgb(30 42 27 / 4%) 0 1px, rgb(30 42 27 / 0%) 1px 3px),
+        radial-gradient(120% 140% at 50% 0%, #e6edd8, #c9d5b6 75%);
+    box-shadow:
+        inset 0 2px 4px rgb(0 0 0 / 35%),
+        0 1px 0 rgb(255 255 255 / 70%);
+}
+
+/* --- Profiles ----------------------------------------------------------------------------------- */
+
+/* Gel over the color of the profile; --wmp-profile-color is set on the avatar itself. */
+[data-part='avatar'] {
+    background:
+        linear-gradient(
+            rgb(255 255 255 / 50%),
+            rgb(255 255 255 / 8%) 50%,
+            rgb(255 255 255 / 0%) 51%
+        ),
+        radial-gradient(90% 55% at 50% 100%, rgb(255 255 255 / 35%), rgb(255 255 255 / 0%)),
+        var(--wmp-profile-color);
+    box-shadow:
+        inset 0 1px rgb(255 255 255 / 60%),
+        inset 0 0 0 1px rgb(0 0 0 / 25%);
+    text-shadow: 0 1px 1px rgb(0 0 0 / 40%);
+}
+
+/*
+ * The first screen: logo and question on a plate of brushed metal, the profiles below it as small
+ * backlit displays. The plate lies behind the first two rows of the page; the logo and the title
+ * keep their places.
+ */
+[data-part='profile-select']::before {
+    grid-row: 1 / 3;
+    grid-column: 1;
+    align-self: stretch;
+    justify-self: center;
+    inline-size: min(100%, 30rem);
+    margin-block: -1.125rem -1rem;
+    border: 1px solid #7d848c;
+    border-radius: var(--wmp-radius-l);
+    background:
+        url('/themes/pinstripe/images/brushed-metal.svg') 0 0 / 640px 160px repeat,
+        linear-gradient(#f4f5f7, #d6dade 55%, #c8ccd2);
+    box-shadow:
+        inset 0 1px rgb(255 255 255 / 90%),
+        inset 0 -1px rgb(0 0 0 / 10%),
+        0 1px 0 rgb(255 255 255 / 80%),
+        0 0.5rem 1.25rem rgb(0 0 0 / 18%);
+    content: '';
+}
+
+[data-part='profile-select'] > [data-part='logo'] {
+    grid-row: 1;
+    grid-column: 1;
+    text-shadow: 0 1px 0 rgb(255 255 255 / 70%);
+}
+
+[data-part='profile-select-title'] {
+    grid-row: 2;
+    grid-column: 1;
+    color: #1d2126;
+    letter-spacing: -0.01em;
+    text-shadow: 0 1px 0 rgb(255 255 255 / 70%);
+}
+
+[data-part='profile-select-hint'] {
+    color: #4d535b;
+    opacity: 1;
+}
+
+/* Each profile is a pane of display glass in a dark bezel, the name in display ink. */
+[data-part='profile-tile'] {
+    border: 1px solid #4c535b;
+    border-radius: var(--wmp-radius-m);
+    background:
+        linear-gradient(165deg, rgb(255 255 255 / 30%) 0 34%, rgb(255 255 255 / 0%) 34%),
+        repeating-linear-gradient(rgb(30 42 27 / 4%) 0 1px, rgb(30 42 27 / 0%) 1px 3px),
+        radial-gradient(120% 120% at 50% 0%, #e8efda, #c6d2b2 80%);
+    box-shadow:
+        inset 0 2px 5px rgb(0 0 0 / 38%),
+        inset 0 0 0 1px rgb(255 255 255 / 25%),
+        0 1px 0 rgb(255 255 255 / 80%);
+}
+
+[data-part='profile-tile'] > [data-part='label'] {
+    color: #1e2a1b;
+    font-weight: var(--wmp-font-weight-bold);
+}
+
+[data-part='profile-tile'] > [data-part='avatar'] {
+    box-shadow:
+        inset 0 1px rgb(255 255 255 / 60%),
+        inset 0 0 0 1px rgb(0 0 0 / 25%),
+        0 3px 8px rgb(0 0 0 / 22%);
+}
+
+/* The pane under the pointer lights up. */
+[data-part='profile-tile']:is(:hover, :focus-visible):not(:disabled) {
+    border-color: #0b6b75;
+    background:
+        linear-gradient(165deg, rgb(255 255 255 / 35%) 0 34%, rgb(255 255 255 / 0%) 34%),
+        repeating-linear-gradient(rgb(30 42 27 / 4%) 0 1px, rgb(30 42 27 / 0%) 1px 3px),
+        radial-gradient(120% 120% at 50% 0%, #f3f8ea, #d3dec0 80%);
+    box-shadow:
+        inset 0 2px 5px rgb(0 0 0 / 30%),
+        inset 0 0 0 1px rgb(255 255 255 / 35%),
+        0 0 0 1px #0b6b75,
+        0 0 10px rgb(64 200 214 / 45%);
+}
+
+[data-part='profile-tile']:is(:hover, :focus-visible):not(:disabled) > [data-part='avatar'] {
+    box-shadow:
+        inset 0 1px rgb(255 255 255 / 60%),
+        inset 0 0 0 1px rgb(0 0 0 / 25%),
+        0 0 0 3px #ffffff,
+        0 0 0 5px #0b6b75,
+        0 3px 10px rgb(0 0 0 / 25%);
+}
+
+[data-part='profile-tile'][data-state~='current'] > [data-part='avatar'] {
+    box-shadow:
+        inset 0 1px rgb(255 255 255 / 60%),
+        0 0 0 2px #0b6b75;
+}
+
+[data-part='profile-summary'] {
+    color: #1d2126;
+}
+
+/* --- Forms and messages ------------------------------------------------------------------------- */
+
+[data-part='field'] > [data-part='input'],
+[data-part='select'] {
+    border: 1px solid #959ca4;
+    border-radius: var(--wmp-radius-s);
+    background: #ffffff;
+    box-shadow: inset 0 1px 2px rgb(0 0 0 / 15%);
+}
+
+[data-part='select'] {
+    background: linear-gradient(#ffffff, #eceef1);
+    box-shadow: inset 0 1px #ffffff;
+}
+
+[data-part='field'] > [data-part='input']:focus,
+[data-part='select']:focus {
+    border-color: #0b6b75;
+    outline: none;
+    box-shadow:
+        inset 0 1px 2px rgb(0 0 0 / 15%),
+        0 0 0 3px rgb(26 150 163 / 45%);
+}
+
+[data-part='field'][data-state~='invalid'] > :is([data-part='input'], [data-part='select']) {
+    border-color: #b3261e;
+}
+
+[data-part='field-error'] {
+    color: #b3261e;
+}
+
+[data-part='field'] > [data-part='input']:disabled {
+    border-color: #c3c8ce;
+    background: #eef0f2;
+    box-shadow: none;
+    color: #6c727a;
+}
+
+[data-part='field'] > [data-part='label'] {
+    color: #1d2126;
+    font-weight: var(--wmp-font-weight-bold);
+}
+
+[data-part='field-hint'],
+[data-part='form-note'] {
+    color: #4d535b;
+}
+
+[data-part='checkbox'] {
+    accent-color: #0b6b75;
+}
+
+[data-part='alert'] {
+    border: 1px solid #a9c4c8;
+    border-radius: var(--wmp-radius-s);
+    background: #f2f9f9;
+    color: #1f3b3f;
+}
+
+[data-part='alert'][data-state~='error'] {
+    border-color: #e0aaa6;
+    background: #fdf3f2;
+    color: #5f1a15;
+}
+
+[data-part='alert'][data-state~='success'] {
+    border-color: #a9d2b4;
+    background: #f1f9f3;
+    color: #1b4426;
+}
+
+[data-part='alert'] > [data-part='icon'] {
+    --wmp-icon-fill: currentColor;
+}
+
+[data-part='color-swatch'] {
+    border: 1px solid rgb(0 0 0 / 35%);
+    background:
+        linear-gradient(rgb(255 255 255 / 50%), rgb(255 255 255 / 0%) 50%), var(--wmp-swatch-color);
+    box-shadow: inset 0 1px rgb(255 255 255 / 55%);
+}
+
+[data-part='color-swatch'][aria-checked='true'] {
+    box-shadow:
+        inset 0 1px rgb(255 255 255 / 55%),
+        0 0 0 2px #ffffff,
+        0 0 0 4px #1d2126;
+}
+
+/* Theme picker: each preview is a print on the paper; the chosen one sits in a teal frame. */
+[data-part='theme-option'] {
+    border-color: #a9b0b8;
+    border-radius: var(--wmp-radius-m);
+    background: #ffffff;
+    box-shadow: 0 1px 2px rgb(0 0 0 / 10%);
+}
+
+[data-part='theme-option']:hover {
+    background: #f4fafa;
+}
+
+[data-part='theme-option'][aria-checked='true'] {
+    border-color: #0b6b75;
+    background: #e6f3f4;
+    box-shadow:
+        0 0 0 1px #0b6b75,
+        0 1px 3px rgb(0 0 0 / 15%);
+}
+
+[data-part='theme-preview'] {
+    box-shadow: 0 0 0 1px rgb(0 0 0 / 15%);
+}
+
+[data-part='theme-variants'] {
+    color: #4d535b;
+}
+
+/* --- Panels: administration, settings, files ------------------------------------------------------ */
+
+[data-part='user-item'],
+[data-part='file-item'],
+[data-part='cache-usage'],
+[data-part='transcoding-status'],
+[data-part='scan-status'],
+[data-part='backup-status'],
+[data-part='stat-item'],
+[data-part='run-item'],
+[data-part='job-item'],
+[data-part='transcode-item'],
+[data-part='backup-item'],
+[data-part='scrobble-item'],
+[data-part='file-selection-item'],
+[data-part='review-item'],
+[data-part='file-choice'],
+[data-part='disclosure'] {
+    border: 1px solid #b4bac1;
+    border-radius: var(--wmp-radius-s);
+    background: #ffffff;
+    box-shadow: 0 1px 2px rgb(0 0 0 / 8%);
+}
+
+[data-part='stat-item'] {
+    background: linear-gradient(#ffffff, #f2f4f6);
+}
+
+:is([data-part='cache-usage'], [data-part='transcoding-status'], [data-part='backup-status'])
+    [data-part='stat-item'] {
+    box-shadow: none;
+}
+
+[data-part='stat-item'] > [data-part='label'] {
+    color: #4d535b;
+}
+
+[data-part='stat-value'] {
+    color: #1d2126;
+}
+
+[data-part='file-choice'][aria-checked='true'] {
+    border-color: #0b6b75;
+    box-shadow: 0 0 0 1px #0b6b75;
+}
+
+[data-part='file-path'],
+[data-part='issue-path'],
+[data-part='user-name'],
+[data-part='job-name'],
+[data-part='backup-name'],
+[data-part='scrobble-name'],
+[data-part='transcode-title'] {
+    color: #1d2126;
+}
+
+/* Badges are small engraved metal tags; states take the tint of their meaning. */
+[data-part='badge']:is(
+    [data-part='file-meta'] > *,
+    [data-part='user-meta'] > *,
+    [data-part='scan-status'] > *,
+    [data-part='run-item'] > *,
+    [data-part='run-meta'] > *,
+    [data-part='job-meta'] > *,
+    [data-part='transcode-meta'] > *,
+    [data-part='stat-value'] > *,
+    [data-part='backup-meta'] > *,
+    [data-part='scrobble-meta'] > *,
+    [data-part='review-meta'] > *,
+    [data-part='review-tags'] > *
+) {
+    grid-auto-flow: column;
+    align-items: center;
+    gap: 0.25rem;
+    border: 1px solid #a9b0b8;
+    border-radius: var(--wmp-radius-round);
+    background: linear-gradient(#ffffff, #e6e9ec);
+    color: #3c4249;
+}
+
+[data-part='badge']:is(
+    [data-state~='running'],
+    [data-state~='queued'],
+    [data-state~='detecting'],
+    [data-state~='primary'],
+    [data-state~='admin'],
+    [data-state~='active'],
+    [data-state~='selected']
+) {
+    border-color: #6fa8af;
+    background: linear-gradient(#f2fbfb, #d3ebee);
+    color: #0a4b53;
+}
+
+[data-part='badge']:is(
+    [data-state~='succeeded'],
+    [data-state~='lossless'],
+    [data-state~='connected'],
+    [data-state~='reviewed']
+) {
+    border-color: #8fc39d;
+    background: linear-gradient(#f5fbf6, #d9eedf);
+    color: #1b4426;
+}
+
+[data-part='badge']:is(
+    [data-state~='failed'],
+    [data-state~='interrupted'],
+    [data-state~='issue'],
+    [data-state~='missing'],
+    [data-state~='authorization-failed'],
+    [data-state~='missing-tag']
+) {
+    border-color: #d99a95;
+    background: linear-gradient(#fff7f6, #f7dcda);
+    color: #5f1a15;
+}
+
+[data-part='badge'][data-state~='canceled'] {
+    border-color: #d4b77a;
+    background: linear-gradient(#fffaf0, #f4e6c6);
+    color: #4f3500;
+}
+
+[data-part='user-actions'] [data-variant='icon'],
+[data-part='queue-item-actions'] [data-variant='icon'] {
+    --wmp-icon-fill: #4d535b;
+}
+
+[data-part='user-actions'] [data-variant='icon']:hover:not(:disabled) [data-part='icon'],
+[data-part='queue-item-actions'] [data-variant='icon']:hover:not(:disabled) [data-part='icon'] {
+    --wmp-icon-fill: #0b6b75;
+}
+
+[data-part='job-actions'] [data-part='icon'],
+[data-part='admin-nav-item'] > [data-part='icon'] {
+    --wmp-icon-fill: #0b6b75;
+}
+
+[data-part='admin-nav-item'][data-state~='active'] > [data-part='icon'] {
+    --wmp-icon-fill: #ffffff;
+}
+
+/* Navigation of the administration: a row of silver tabs on a groove, the current one pressed in. */
+[data-part='admin-nav'] {
+    border-block-end: 1px solid #a9b0b8;
+}
+
+[data-part='admin-nav-item'] {
+    border: 1px solid #a9b0b8;
+    border-block-end: 0;
+    border-radius: var(--wmp-radius-m) var(--wmp-radius-m) 0 0;
+    background: linear-gradient(#ffffff, #f1f3f5 45%, #dee2e6 55%, #eef0f3);
+    color: #2b3036;
+}
+
+[data-part='admin-nav-item']:hover {
+    background: linear-gradient(#fbffff, #e7f4f5 45%, #cfe6e9 55%, #e3f2f3);
+    color: #1d2126;
+}
+
+[data-part='admin-nav-item'][data-state~='active'] {
+    --wmp-icon-fill: #ffffff;
+
+    border-color: #2b3036;
+    background: linear-gradient(#5b6168 0%, #464c53 50%, #33383e 52%, #3d4249 100%);
+    color: #ffffff;
+    text-shadow: 0 -1px 0 rgb(0 0 0 / 40%);
+}
+
+[data-part='disclosure-summary'] {
+    color: #2b3036;
+}
+
+[data-part='disclosure'][open] > [data-part='disclosure-summary'] {
+    border-block-end: 1px solid #dde1e5;
+}
+
+[data-part='progress-track'],
+[data-part='meter-track'] {
+    box-shadow: inset 0 1px 2px rgb(0 0 0 / 30%);
+}
+
+[data-part='meter'] {
+    --wmp-progress-height: 0.75rem;
+}
+
+[data-part='cache-usage'] > [data-part='button'] [data-part='icon'] {
+    --wmp-icon-fill: #b3261e;
+}
+
+/* --- Dialogs and menus ------------------------------------------------------------------------- */
+
+[data-part='dialog'] {
+    border: 1px solid #6c737b;
+    border-radius: var(--wmp-radius-l);
+    box-shadow: 0 1.25rem 3rem rgb(0 0 0 / 40%);
+}
+
+/* The title bar of a dialog is a strip of the metal plate. */
+[data-part='dialog-header'] {
+    border-block-end: 1px solid #7d848c;
+    background:
+        url('/themes/pinstripe/images/brushed-metal.svg') 0 0 / 640px 160px repeat,
+        linear-gradient(#eceef1, #cdd1d6);
+    text-shadow: 0 1px 0 rgb(255 255 255 / 55%);
+}
+
+[data-part='dialog-title'] {
+    color: #1d2126;
+}
+
+[data-part='dialog'] :not([data-variant='primary']) > [data-part='icon'],
+[data-part='context-menu'] [data-part='icon'] {
+    --wmp-icon-fill: #3a4047;
+}
+
+[data-part='context-menu'] {
+    border: 1px solid #959ca4;
+    border-radius: var(--wmp-radius-m);
+    box-shadow: 0 0.5rem 1.5rem rgb(0 0 0 / 25%);
+}
+
+/* The entry under the pointer is a bar of teal gel. */
+[data-part='menu-item']:is(:hover, :focus-visible):not(:disabled) {
+    --wmp-icon-fill: #ffffff;
+
+    background: linear-gradient(#147b87, #0b6672);
+    color: #ffffff;
+}
+
+[data-part='context-menu']
+    [data-part='menu-item']:is(:hover, :focus-visible):not(:disabled)
+    [data-part='icon'] {
+    --wmp-icon-fill: #ffffff;
+}
+
+[data-part='menu-item'][aria-checked='true'] {
+    font-weight: var(--wmp-font-weight-bold);
+}
+
+[data-part='menu-item'][aria-checked='true']::before {
+    inline-size: 0.4375rem;
+    block-size: 0.4375rem;
+    margin-inline-end: 0.125rem;
+    border-radius: var(--wmp-radius-round);
+    background: radial-gradient(circle at 35% 30%, #8fe3ea, #0b6b75 70%);
+    content: '';
+}
+
+[data-part='menu-item'][role='menuitemradio'][aria-checked='false'] {
+    padding-inline-start: 1.25rem;
+}
+
+[data-part='menu-separator'] {
+    border-color: #d3d7dc;
+}
+
+/* --- Playlists ------------------------------------------------------------------------------- */
+
+[data-part='drag-handle'] {
+    --wmp-icon-fill: #7d838a;
+}
+
+[data-part='list-row']:hover [data-part='drag-handle'] {
+    --wmp-icon-fill: #0b6b75;
+}
+
+[data-part='playlist-choice'] {
+    border: 1px solid transparent;
+    border-radius: var(--wmp-radius-s);
+}
+
+[data-part='playlist-choice']:hover:not(:disabled),
+[data-part='playlist-choice']:focus-visible {
+    border-color: #b4c9cc;
+    background: #ffffff;
+}
+
+[data-part='playlist-choice-count'] {
+    color: #4d535b;
+}
+
+/* --- PIN entry -------------------------------------------------------------------------------- */
+
+[data-part='pin-dot'] {
+    background: radial-gradient(circle at 35% 30%, #4cb8c3, #0b6b75 70%);
+}
+
+[data-part='pin-key'] {
+    border-color: #8e959d;
+}
+
+/* --- Equalizer: a metal console with display readouts ------------------------------------------ */
+
+[data-part='equalizer'] {
+    padding: 1rem;
+    border: 1px solid #7d848c;
+    border-radius: var(--wmp-radius-l);
+    background:
+        url('/themes/pinstripe/images/brushed-metal.svg') 0 0 / 640px 160px repeat,
+        linear-gradient(#eceef1, #c9cdd3);
+    box-shadow:
+        inset 0 1px rgb(255 255 255 / 75%),
+        0 2px 6px rgb(0 0 0 / 18%);
+    color: #1d2126;
+    text-shadow: 0 1px 0 rgb(255 255 255 / 55%);
+}
+
+[data-part='equalizer'] [data-item='power'][aria-pressed='true'] [data-part='icon'] {
+    --wmp-icon-fill: linear-gradient(#0a6570, #053f46);
+}
+
+[data-part='equalizer-bands'] {
+    padding: 0.75rem 0.5rem;
+    border: 1px solid #8a9098;
+    border-radius: var(--wmp-radius-m);
+    background: linear-gradient(#c3c8ce, #d9dde1);
+    box-shadow: inset 0 1px 3px rgb(0 0 0 / 30%);
+}
+
+[data-part='equalizer-band'][data-kind='preamp'] {
+    padding-inline-end: 0.5rem;
+    border-inline-end: 1px solid rgb(0 0 0 / 15%);
+}
+
+[data-part='equalizer-value'] {
+    padding: 0 0.25rem;
+    border: 1px solid #4c535b;
+    border-radius: 0.1875rem;
+    background: linear-gradient(#e6edd8, #c9d5b6);
+    box-shadow: inset 0 1px 2px rgb(0 0 0 / 30%);
+    color: #1e2a1b;
+    font-variant-numeric: tabular-nums;
+    text-shadow: none;
+}
+
+[data-part='equalizer-band'] > [data-part='label'],
+[data-part='equalizer-scale'] {
+    color: #2b3036;
+}
+
+[data-part='equalizer'][data-state~='off'] [data-part='slider-fill'] {
+    filter: grayscale(1);
+}
+
+/* --- Focus ------------------------------------------------------------------------------------- */
+
+:focus-visible {
+    outline-color: var(--wmp-color-focus);
+}
+
+/* --- Reduced motion and transparency ---------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+    :is([data-part='tabs'], [data-part='bottom-nav']):is(:hover, :focus-within, :active)
+        > [data-part='indicator'] {
+        transition: none;
+    }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+    :root {
+        --wmp-menu-background: #fafbfc;
+    }
+}
+
+/* --- Desktop layout --------------------------------------------------------------------------- */
+
+@media (width >= 64rem) {
+    :root {
+        --wmp-font-size-xs: 0.6875rem;
+        --wmp-font-size-s: 0.75rem;
+        --wmp-font-size-m: 0.8125rem;
+        --wmp-font-size-l: 1rem;
+        --wmp-font-size-xl: 1.3125rem;
+        --wmp-header-height: 2.5rem;
+        --wmp-toolbar-height: 2.25rem;
+        --wmp-sidebar-width: 13rem;
+        --wmp-transport-height: 4.5rem;
+        --wmp-field-height: 1.625rem;
+        --wmp-button-height: 1.625rem;
+        --wmp-list-row-height: 1.5rem;
+        --wmp-list-columns: 2.25rem minmax(0, 2fr) 4rem minmax(0, 1.4fr) 5.75rem 1.75rem;
+        --wmp-list-columns-playlist: 1.5rem 2.25rem minmax(0, 2fr) 4rem minmax(0, 1.4fr)
+            minmax(0, 1.4fr) 5.75rem 1.75rem;
+        --wmp-list-columns-recently-played: 2.25rem minmax(0, 2fr) 4rem minmax(0, 1.4fr)
+            minmax(0, 1.4fr) 8.5rem 5.75rem 1.75rem;
+        --wmp-list-group-info-width: 11rem;
+        --wmp-cover-size: 9rem;
+        --wmp-cover-size-mini: 2.125rem;
+        --wmp-play-button-size: 2.875rem;
+        --wmp-round-button-size: 1.75rem;
+    }
+
+    /*
+     * One metal plate across the top: the transport bar with the display, then the header with
+     * the tabs. The source list runs down the left side; the toolbar heads the page only.
+     */
+    [data-part='app'] {
+        grid-template-areas:
+            'transport transport'
+            'header header'
+            'sidebar toolbar'
+            'sidebar content';
+        grid-template-columns: var(--wmp-sidebar-width) minmax(0, 1fr);
+        grid-template-rows: auto auto auto minmax(0, 1fr);
+        padding-block-end: env(safe-area-inset-bottom);
+    }
+
+    /* Logo and page title stay available to assistive technology only. */
+    [data-part='logo'],
+    [data-part='content-title'] {
+        position: absolute;
+        inline-size: 1px;
+        block-size: 1px;
+        overflow: hidden;
+        clip-path: inset(50%);
+        white-space: nowrap;
+    }
+
+    /* The profile selection has no header, so it shows the logo. */
+    [data-part='profile-select'] > [data-part='logo'] {
+        position: static;
+        inline-size: auto;
+        block-size: auto;
+        overflow: visible;
+        clip-path: none;
+    }
+
+    /* Transport bar: controls, display, rating and modes. */
+    [data-part='transport'] {
+        grid-template-areas:
+            'transport-controls now-playing-mini now-playing-mini now-playing-mini now-playing-actions'
+            'transport-controls time-elapsed seek time-duration mode-switch';
+        grid-template-columns:
+            minmax(max-content, 1fr) auto minmax(14rem, 26rem) auto
+            minmax(max-content, 1fr);
+        grid-template-rows: auto auto;
+        align-items: center;
+        column-gap: 0;
+        min-block-size: var(--wmp-transport-height);
+        padding: 0.5rem 1rem 0.4375rem;
+        border-block-start: 0;
+        box-shadow: inset 0 1px rgb(255 255 255 / 80%);
+    }
+
+    /* The bezel and glass of the display, behind its parts; the backlight takes a hint of the cover. */
+    [data-part='transport']::before {
+        grid-column: 2 / 5;
+        grid-row: 1 / 3;
+        align-self: stretch;
+        margin-inline: 1.25rem;
+        border: 1px solid #4c535b;
+        border-radius: var(--wmp-radius-m);
+        background:
+            linear-gradient(172deg, rgb(255 255 255 / 30%) 0 38%, rgb(255 255 255 / 0%) 38%),
+            repeating-linear-gradient(rgb(30 42 27 / 4%) 0 1px, rgb(30 42 27 / 0%) 1px 3px),
+            radial-gradient(
+                120% 160% at 50% 0%,
+                #e8efda,
+                color-mix(in srgb, var(--wmp-cover-color, #c6d2b2) 14%, #c6d2b2) 80%
+            );
+        box-shadow:
+            inset 0 2px 5px rgb(0 0 0 / 38%),
+            inset 0 0 0 1px rgb(255 255 255 / 25%),
+            0 1px 0 rgb(255 255 255 / 80%);
+        content: '';
+    }
+
+    [data-part='transport'] > [data-part='transport-controls'] {
+        justify-self: start;
+    }
+
+    [data-part='transport'] > [data-part='now-playing-mini'] {
+        justify-content: center;
+        justify-self: stretch;
+        margin: 0.375rem 2rem 0;
+    }
+
+    /* On the desktop the bezel of the plate is the display; the mini player needs none. */
+    [data-part='transport'] > [data-part='now-playing-mini']::before {
+        display: none;
+    }
+
+    [data-part='now-playing-meta'] {
+        line-height: 1.25;
+    }
+
+    [data-part='transport'] > [data-part='now-playing-actions'] {
+        grid-area: now-playing-actions;
+        justify-self: end;
+        --wmp-icon-size: 1rem;
+    }
+
+    [data-part='transport'] > [data-part='mode-switch'] {
+        grid-area: mode-switch;
+        justify-self: end;
+        --wmp-icon-size: 1.125rem;
+    }
+
+    [data-part='transport'] > [data-part='seek'] {
+        --wmp-slider-track-background: linear-gradient(#a9b691, #bfcba8);
+        --wmp-slider-fill-background: linear-gradient(#34452f, #1e2a1b);
+        --wmp-image-slider-thumb: radial-gradient(circle, #1e2a1b 0 45%, rgb(30 42 27 / 0%) 50%);
+
+        inline-size: auto;
+        margin-block-end: 0.5rem;
+    }
+
+    [data-part='transport'] > [data-part='seek'] [data-part='slider-track'] {
+        block-size: 0.3125rem;
+        border-radius: 0.125rem;
+        box-shadow: inset 0 1px 1px rgb(0 0 0 / 30%);
+    }
+
+    [data-part='transport'] > [data-part='seek'] [data-part='slider'][data-state~='disabled'] {
+        opacity: 0.6;
+    }
+
+    /* The time reads on the display beside the progress: elapsed at the start, length at the end. */
+    [data-part='transport'] > [data-part='transport-time'] {
+        display: contents;
+    }
+
+    [data-part='time-elapsed'],
+    [data-part='time-duration'] {
+        margin-block-end: 0.5rem;
+        color: #1e2a1b;
+        font-size: var(--wmp-font-size-xs);
+        font-weight: var(--wmp-font-weight-bold);
+        font-variant-numeric: tabular-nums;
+        letter-spacing: 0.02em;
+        text-shadow: none;
+    }
+
+    [data-part='time-elapsed'] {
+        grid-area: time-elapsed;
+        justify-self: end;
+        margin-inline: 2rem 0.625rem;
+    }
+
+    [data-part='time-duration'] {
+        grid-area: time-duration;
+        justify-self: start;
+        margin-inline: 0.625rem 2rem;
+    }
+
+    /*
+     * An idle display shows no progress and no time, only "Nothing playing" in the middle of the
+     * glass, as a switched-on device without a disc.
+     */
+    [data-part='transport-time'][data-state~='empty'] > *,
+    [data-part='transport']:has(> [data-part='transport-time'][data-state~='empty'])
+        > [data-part='seek'] {
+        visibility: hidden;
+    }
+
+    [data-part='transport']:has(> [data-part='transport-time'][data-state~='empty'])
+        > [data-part='now-playing-mini'] {
+        grid-row: 1 / 3;
+        align-self: center;
+        margin-block: 0;
+    }
+
+    /* While nothing plays, the modes take the whole height beside the display. */
+    [data-part='transport']:has(> [data-part='now-playing-actions'][data-state~='empty'])
+        > [data-part='mode-switch'] {
+        grid-row: 1 / 3;
+    }
+
+    [data-part='transport-controls'] {
+        gap: 0.25rem;
+    }
+
+    [data-part='transport-controls'] > [data-variant='icon'] {
+        min-inline-size: 1.625rem;
+        min-block-size: 1.625rem;
+        padding: 0;
+    }
+
+    /* Previous, stop and next are round gel buttons beside the play button. */
+    [data-part='transport-controls']
+        > :is([data-part='btn-prev'], [data-part='btn-next'], [data-part='btn-stop']) {
+        --wmp-image-icon-button: url('/themes/pinstripe/images/gel-button.svg') center / 100% 100%
+            no-repeat;
+        --wmp-image-icon-button-hover: url('/themes/pinstripe/images/gel-button-hover.svg') center /
+            100% 100% no-repeat;
+        --wmp-image-icon-button-active: url('/themes/pinstripe/images/gel-button-pressed.svg')
+            center / 100% 100% no-repeat;
+        --wmp-image-icon-button-disabled: url('/themes/pinstripe/images/gel-button.svg') center /
+            100% 100% no-repeat;
+        --wmp-icon-size: 0.875rem;
+
+        inline-size: 2rem;
+        block-size: 2rem;
+        border-radius: var(--wmp-radius-round);
+    }
+
+    [data-part='btn-play'] {
+        margin-inline: 0.125rem;
+    }
+
+    [data-part='volume'] {
+        inline-size: 5rem;
+        margin-inline-start: 0.125rem;
+    }
+
+    /* The notice of the player shows below the plate, over the page. */
+    [data-part='transport'] > [data-part='transport-message'] {
+        inset-block: calc(100% + 2.75rem) auto;
+        inset-inline: auto 1rem;
+        max-inline-size: 28rem;
+    }
+
+    [data-part='cast-hint'] {
+        inset-block: 100% auto;
+        margin: var(--wmp-space-xs) 0 0;
+    }
+
+    /* Header: history at the start, the tabs as one capsule in the middle, status and profile. */
+    [data-part='header'] {
+        grid-template-areas: 'nav-history . btn-review-inbox server-status btn-profile';
+        grid-template-columns: auto minmax(0, 1fr) auto auto auto;
+        gap: 0.75rem;
+        padding-inline: 1rem;
+        border-block-start: 1px solid rgb(0 0 0 / 10%);
+        box-shadow:
+            inset 0 1px rgb(255 255 255 / 60%),
+            0 1px 0 rgb(0 0 0 / 8%);
+    }
+
+    [data-part='header']:has(> [data-part='btn-review-inbox']) {
+        grid-template-areas: 'nav-history . btn-review-inbox server-status btn-profile';
+        grid-template-columns: auto minmax(0, 1fr) auto auto auto;
+    }
+
+    [data-part='header'] > [data-part='btn-review-inbox'] {
+        grid-area: btn-review-inbox;
+    }
+
+    [data-part='header'] > [data-part='tabs'] {
+        grid-row: 1;
+        grid-column: 1 / -1;
+        justify-self: center;
+        align-self: center;
+    }
+
+    [data-part='nav-history'] {
+        gap: 0.25rem;
+    }
+
+    [data-part='tabs'] {
+        gap: 0;
+        block-size: 1.625rem;
+        border: 1px solid #6c737b;
+        border-radius: var(--wmp-radius-round);
+        background: linear-gradient(#ffffff 0%, #f1f3f5 45%, #dee2e6 55%, #eef0f3 100%);
+        box-shadow:
+            inset 0 1px #ffffff,
+            0 1px 0 rgb(255 255 255 / 55%);
+    }
+
+    [data-part='tab'] {
+        padding-inline: 1rem;
+        border-radius: var(--wmp-radius-round);
+        font-size: var(--wmp-font-size-s);
+    }
+
+    [data-part='tab'] + [data-part='tab'] {
+        border-inline-start: 1px solid rgb(0 0 0 / 12%);
+    }
+
+    [data-part='tab'] > [data-part='icon'] {
+        display: none;
+    }
+
+    [data-part='tab']:hover:not([aria-current='page']) {
+        color: #0b5f68;
+    }
+
+    [data-part='tab'][aria-current='page'] {
+        color: #ffffff;
+        text-shadow: 0 -1px 0 rgb(0 0 0 / 45%);
+    }
+
+    [data-part='tab'][aria-current='page'] + [data-part='tab'],
+    [data-part='tab']:has(+ [data-part='tab'][aria-current='page']) {
+        border-color: transparent;
+    }
+
+    /* The current tab is a pressed pane of graphite gel that slides between the tabs. */
+    [data-part='tabs'] > [data-part='indicator'] {
+        display: block;
+        margin: 0.125rem;
+        inline-size: calc(var(--wmp-indicator-width) - 0.25rem);
+        block-size: calc(var(--wmp-indicator-height) - 0.25rem);
+        border-radius: var(--wmp-radius-round);
+        background: linear-gradient(#5b6168 0%, #464c53 50%, #33383e 52%, #3d4249 100%);
+        box-shadow:
+            inset 0 1px 3px rgb(0 0 0 / 55%),
+            0 1px 0 rgb(255 255 255 / 40%);
+    }
+
+    /* Toolbar above the page. */
+    [data-part='toolbar'] {
+        grid-template-columns: minmax(0, 1fr) auto auto 15rem;
+        gap: 0.25rem;
+        padding-inline: 0.75rem;
+    }
+
+    [data-part='sidebar'] {
+        font-size: var(--wmp-font-size-s);
+    }
+
+    [data-part='tree'] {
+        padding-block: 0.25rem;
+    }
+
+    [data-part='tree-item'] {
+        min-block-size: 1.5rem;
+    }
+
+    [data-part='view']:is(
+        [data-view='library'],
+        [data-view='library-search'],
+        [data-view='library-album'],
+        [data-view='library-artist'],
+        [data-view='library-genre'],
+        [data-view='library-year'],
+        [data-view='library-track']
+    ) {
+        gap: 0.75rem;
+        padding: 0.75rem 1rem 1rem;
+    }
+
+    [data-part='detail-header'] > :is([data-part='cover'], [data-part='playlist-cover']) {
+        inline-size: 11rem;
+    }
+
+    [data-part='list-group'] {
+        padding-block: 0.5rem 0.75rem;
+    }
+
+    /*
+     * Cells keep the padding and the separator width of their column headers, so their text
+     * starts at the same place (the column headers are shown on the desktop only).
+     */
+    [data-part='list-cell'] + [data-part='list-cell'] {
+        padding-inline-start: calc(0.375rem + 1px);
+    }
+
+    [data-part='list-group-info'] {
+        padding: 0.5rem 1rem 0.5rem 0.5rem;
+    }
+
+    [data-part='profile-select'] > [data-part='profile-list'] {
+        margin-block-start: 0.75rem;
+    }
+
+    [data-part='profile-tile'] {
+        padding: 0.875rem 0.75rem 0.625rem;
+    }
+
+    [data-view='now-playing'] > [data-part='queue'] {
+        border-inline-start: 1px solid #a9b0b8;
+    }
 }
