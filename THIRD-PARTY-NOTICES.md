@@ -32,6 +32,7 @@ NuGet packages of the service and its libraries (`source/`), shipped in the imag
 |---|---|---|
 | `EFCore.NamingConventions` | Apache-2.0 | snake_case names of tables and columns |
 | `Microsoft.AspNetCore.Authentication.JwtBearer` | MIT | Session tokens; includes `Microsoft.IdentityModel.*` and `System.IdentityModel.Tokens.Jwt` (MIT) |
+| `Microsoft.AspNetCore.DataProtection.Abstractions` | MIT | Encrypts the credentials of the scrobbling services |
 | `Microsoft.AspNetCore.OpenApi` | MIT | OpenAPI document; includes `Microsoft.OpenApi` (MIT) |
 | `Microsoft.EntityFrameworkCore.Design` | MIT | Database migrations at development time (not shipped) |
 | `Microsoft.EntityFrameworkCore.Relational` | MIT | Database access; includes Entity Framework Core (MIT) |

@@ -9,6 +9,9 @@ services:
       DB_PASSWORD: ${DB_PASSWORD:?Please set DB_PASSWORD in .env}
       # Optional: PIN of the built-in admin profile (4 to 8 digits), see the README.
       ADMIN_PIN: ${ADMIN_PIN:-}
+      # Optional: API account of Last.fm for scrobbling, see the README.
+      LASTFM_API_KEY: ${LASTFM_API_KEY:-}
+      LASTFM_SHARED_SECRET: ${LASTFM_SHARED_SECRET:-}
       # Optional: user and group id that WaveMP runs as (1654 by default), see the README.
       PUID: ${PUID:-1654}
       PGID: ${PGID:-1654}

@@ -33,6 +33,7 @@ WaveMP brings back the glossy, glassy look of the classic desktop media players 
 - **Lyrics.** Synchronized lyrics follow the music line by line or word by word, from `.lrc` files, from the tags of your files or, if you switch it on, downloaded from LRCLIB.
 - **Plays almost anything.** Formats your browser supports are streamed directly; everything else is transcoded on the fly with ffmpeg. Intel Quick Sync is supported for hardware acceleration.
 - **Casting.** Send the music, or the music video, to a Chromecast from Chrome and Edge or to an AirPlay device from Safari, while the queue and the controls stay in WaveMP.
+- **Scrobbling.** Each profile can send what it listens to to Last.fm or ListenBrainz. Scrobbles wait in the database while a service is down and are sent later.
 - **Easy setup.** One compose file, one password, your media folder. That's it.
 - **Daily backups.** The database is exported every day and before every update, and the last exports are kept next to your other data.
 - **Open API.** A documented REST API (OpenAPI) for building your own clients. Native apps are planned.
@@ -148,6 +149,8 @@ The running version is shown under **Settings** and reported by `GET /api/v1/hea
 |---|---|---|
 | `DB_PASSWORD` | Database password, used by both containers | *(required)* |
 | `ADMIN_PIN` | PIN of the built-in admin profile, 4 to 8 digits. Set at every start and cannot be changed in the app while the variable is set; see [Profiles and PINs](#profiles-and-pins) | *(none)* |
+| `LASTFM_API_KEY` | API key of your Last.fm API account, needed to scrobble to Last.fm; see [Scrobbling](#scrobbling) | *(none)* |
+| `LASTFM_SHARED_SECRET` | Shared secret of the same Last.fm API account | *(none)* |
 | `MEDIA_PATH` | Media folder inside the container; only change it if you mount your media elsewhere | `/media` |
 | `DATA_PATH` | Data folder inside the container (cache, covers of playlists, pictures of the profiles, keys and the exports of the database); only change it if you mount the volume elsewhere | `/data` |
 | `TZ` | Time zone of the server, for example `Europe/Berlin`; the daily backup runs at its time of day in this zone | `UTC` |
@@ -162,6 +165,8 @@ The running version is shown under **Settings** and reported by `GET /api/v1/hea
 | `Avatars__MaxUploadBytes` | Largest picture in bytes that can be uploaded as the picture of a profile | `10485760` (10 MB) |
 | `Lyrics__RequestInterval` | Shortest time between two requests to LRCLIB while lyrics are downloaded | `00:00:01` |
 | `Lyrics__LrclibUrl` | Address of LRCLIB, for example of a mirror you host yourself | `https://lrclib.net/` |
+| `Scrobbling__MaxAge` | How long a scrobble waits in the queue while a service cannot be reached before it is dropped | `14.00:00:00` |
+| `Scrobbling__MaxRetryDelay` | Longest pause between two attempts to reach a scrobbling service | `01:00:00` |
 | `Transcoding__RenderDevice` | Render device for hardware transcoding, for example `/dev/dri/renderD129` on a server with more than one GPU; by default the first device under `/dev/dri` | *(first device)* |
 
 Audio, video and other media are streamed through short-lived signed addresses, bound to the song and the profile, because players and casting devices cannot send a login token. The signing key is created on the first start and kept in the database. Casting devices load these addresses themselves, so the server answers them with CORS headers for any origin; the signature remains the only access check.
@@ -442,6 +447,7 @@ A number at the start of a file name is only a track number inside an album fold
 21. **Crossfade.** Under **Settings**, **Crossfade** lets one song fade into the next for up to twelve seconds when the queue moves on by itself. Off plays the songs without gaps. The crossfade button in the transport bar, between repeat and stop (in the expanded player on smartphones), switches the crossfade on and off with one click and shows whether it is on; it keeps the length set under **Settings** (five seconds until you choose one). Like the setting, the switch is stored with your profile and applies on all devices. **Do not crossfade songs of the same album** (on by default) keeps live and concept albums gapless. Equalizer and crossfade need Web Audio, which current browsers offer; without it, WaveMP plays without them.
 22. **Sleep timer.** The moon button in the transport bar stops the music after 15 to 120 minutes, at the end of the current song or at the end of the queue; the button shows the remaining time, and **Off** cancels it. Shortly before the stop the music fades out (ten seconds by default, set under **Settings > Sleep timer fade-out**), then the player pauses. The timer runs on the device that plays and is not stored.
 23. **Cast.** The cast button in the transport bar (in the expanded player on smartphones) opens the device selection of your browser: Chrome and Edge show your Chromecast devices and TVs with Chromecast built in, Safari on Mac, iPhone and iPad shows its AirPlay menu. Choose a device, and the current song goes on there at the same position; the transport bar and **Now Playing** show **Playing on** with the name of the device (AirPlay does not tell the name). The device shows title, artist, album and cover; with the **Video** view chosen, it plays the music video of the song. The queue stays in WaveMP, and play, pause, seek, skip and the volume slider control the device. Songs the device cannot play are transcoded by the server. While casting, the device plays the music as it is: the equalizer, crossfade, volume leveling (ReplayGain) and the visualization are greyed out. Open the device selection again to stop casting; the song then waits paused in the browser at the same position. Chromecast needs WaveMP to be opened over HTTPS (see [Quick Start](#quick-start)); without it the button is greyed out and says so. Other browsers, such as Firefox, show no cast button. For Chromecast, the browser loads the Cast SDK from Google (`www.gstatic.com`) when WaveMP starts; the casting device itself must reach your WaveMP server under the same address as your browser.
+24. **Scrobble.** Under **Settings > Scrobbling**, connect your profile to Last.fm or ListenBrainz, and the songs you listen to are sent there; the page shows for each service whether it is connected, as which account, when the last song was sent and how many songs are still waiting. See [Scrobbling](#scrobbling).
 
 ### Profiles and PINs
 
@@ -456,6 +462,27 @@ ADMIN_PIN=482913
 WaveMP sets this PIN at every start; while the variable is set, the PIN of the admin profile cannot be changed or removed in the app, and a new value signs the admin profile out on all devices. If the value is not 4 to 8 digits, WaveMP does not start and says why in its log. After you remove the variable, the last PIN stays and can be changed in the app again. Forgot the PIN of the admin profile? Set a new one with `ADMIN_PIN` and restart.
 
 A PIN keeps other people in your household out of a profile; it is not a login. Do not expose WaveMP to the internet without protection, for example a reverse proxy with authentication or a VPN.
+
+### Scrobbling
+
+Every profile can send the songs it listens to to [Last.fm](https://www.last.fm) and [ListenBrainz](https://listenbrainz.org). Connect a service under **Settings > Scrobbling**:
+
+- **ListenBrainz:** **Connect ListenBrainz** asks for your user token, which you find in the [settings of your ListenBrainz account](https://listenbrainz.org/settings/).
+- **Last.fm:** **Connect Last.fm** takes you to Last.fm, where you allow WaveMP to scrobble; Last.fm then sends you back to WaveMP. This needs an API account of the server (see below); without one, Last.fm is shown as not set up.
+
+While a song plays, WaveMP reports it as "Now Playing". Once you have listened to half of it, or to 4 minutes of longer songs, the play is scrobbled; songs shorter than 30 seconds are never scrobbled. The server keeps every scrobble in a queue in its database and sends it in the background, so nothing is lost when a service is down or WaveMP restarts: it tries again after a minute, then after longer and longer pauses of up to an hour. Scrobbles older than 14 days are dropped, because Last.fm no longer accepts them. If a service no longer accepts the access of WaveMP, for example because you revoked it, the settings show **Access revoked**; connect the service again, and the waiting scrobbles are sent. **Disconnect** removes the connection together with the scrobbles that were not sent yet. WaveMP stores the session of Last.fm and the token of ListenBrainz encrypted with the keys in the data folder and never shows them again.
+
+**Last.fm API account.** Last.fm needs an API account for each installation:
+
+1. Sign in to Last.fm and [create an API account](https://www.last.fm/api/account/create). Enter a name (for example `WaveMP at home`) and a short description; the callback URL can stay empty, because WaveMP sends its own.
+2. Last.fm shows an **API key** and a **Shared secret**. Put both into your `.env` file:
+
+   ```env
+   LASTFM_API_KEY=your-api-key
+   LASTFM_SHARED_SECRET=your-shared-secret
+   ```
+
+3. Pass them on to the container (the `docker-compose.yml` of the Quick Start already does) and restart WaveMP.
 
 ## Platforms
 
