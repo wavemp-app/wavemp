@@ -39,7 +39,10 @@ function list(value: string | undefined): string[] {
         .filter(Boolean)
 }
 
-/** The preview picture of the theme picker: the home page, scaled down, as WebP. */
+/**
+ * The preview picture of the theme picker: the artist overview, scaled down, as WebP. It shows the
+ * chrome of the theme and its own cover placeholders instead of the colorful test covers.
+ */
 async function writePreview(page: Page, target: ThemeTarget, png: Buffer): Promise<void> {
     const webp = await page.evaluate(async (data) => {
         const image = new Image()
@@ -78,7 +81,7 @@ for (const target of targets) {
                 if (tasks.has('screenshots')) {
                     writeFileSync(path.join(directory, `${view.name}.png`), png)
                 }
-                if (tasks.has('preview') && view.name === 'home') {
+                if (tasks.has('preview') && view.name === 'artists') {
                     await writePreview(page, target, png)
                 }
                 if (tasks.has('contrast')) {
