@@ -1,9 +1,10 @@
 // Check of the templates for the app catalogs in deploy/, used locally and in CI.
 //
-// Usage (from any directory): node .github/scripts/check-deploy.mjs
+// Usage (from any directory):
+//   node .github/scripts/check-deploy.mjs [--release <1.0.N>] [--digest <sha256:...>]
 //
-// The templates are updated by hand for every new version (see deploy/README.md). This check makes
-// sure that they stay installable and consistent:
+// The templates are raised by hand to the version of every milestone release (see deploy/README.md).
+// This check makes sure that they stay installable and consistent:
 // - every image has a fixed version, never latest, edge or only a major version,
 // - all templates use the same version of WaveMP and the same version of PostgreSQL, whose major
 //   version matches docker-compose.yml (pg_dump in the image must match the server),
@@ -12,7 +13,10 @@
 // - every address of a file of this repository (icons, screenshots, template URLs) points to a file
 //   that exists,
 // - the icon and the screenshots in the CasaOS folder are exact copies of their sources in assets/.
-// Exits with 0 if everything is fine, otherwise with 1.
+// With --release (used by the release workflow, release.yml) every template must name exactly this
+// version of WaveMP. With --digest every pinned digest of WaveMP must be this digest of the published
+// image, and at least one template (TrueNAS) must pin it.
+// Exits with 0 if everything is fine, otherwise with 1 (also for unknown or invalid arguments).
 
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import path from 'node:path'
@@ -48,6 +52,37 @@ const wavempVersionPattern = /^\d+\.\d+\.\d+$/
 const postgresVersionPattern = /^(\d+)\.\d+(?:-[0-9a-z.]+)?$/
 // A tag with at least major and minor version (images of the catalogs, e.g. their helpers).
 const fixedVersionPattern = /^v?\d+\.\d+/
+
+/** The version of a release (1.0.N), also given as its tag (v1.0.N). Throws for anything else. */
+export function parseReleaseVersion(value) {
+    const version = String(value ?? '').replace(/^v/, '')
+    if (!wavempVersionPattern.test(version)) {
+        throw new Error(`The release "${value}" is not a version of the form 1.0.N or v1.0.N.`)
+    }
+    return version
+}
+
+/** Reads the options of the command line: --release <1.0.N> and --digest <sha256:...>. */
+export function parseArguments(argv) {
+    const options = { release: null, digest: null }
+    for (let index = 0; index < argv.length; index += 2) {
+        const name = argv[index]
+        const value = argv[index + 1]
+        if (name === '--release' && value !== undefined) {
+            options.release = parseReleaseVersion(value)
+        } else if (name === '--digest' && value !== undefined) {
+            if (!digestPattern.test(value)) {
+                throw new Error(`The digest "${value}" is not of the form sha256:<64 hex digits>.`)
+            }
+            options.digest = value
+        } else {
+            throw new Error(
+                `Unknown argument ${name}. Usage: check-deploy.mjs [--release <1.0.N>] [--digest <sha256:...>]`,
+            )
+        }
+    }
+    return options
+}
 
 /**
  * Splits an image reference (repository:tag@digest) into its parts. A port in the registry
@@ -217,8 +252,13 @@ export function readPostgresMajor(root) {
     return image?.tag ? (/^(\d+)/.exec(image.tag)?.[1] ?? null) : null
 }
 
-/** Checks all templates below deploy/ and returns the problems found, as readable lines. */
-export function findDeployProblems(root = repositoryRoot) {
+/**
+ * Checks all templates below deploy/ and returns the problems found, as readable lines.
+ * options.release is the version the templates must name (1.0.N), options.digest the digest of its
+ * published image (see parseArguments).
+ */
+export function findDeployProblems(root = repositoryRoot, options = {}) {
+    const { release = null, digest = null } = options
     const problems = []
     const files = listFiles(root, 'deploy')
     if (files.length === 0) {
@@ -234,6 +274,7 @@ export function findDeployProblems(root = repositoryRoot) {
         .flatMap((file) => findImages(file, contents.get(file)))
     const wavempVersions = new Set()
     const postgresVersions = new Set()
+    let pinnedWavempDigests = 0
     for (const image of images) {
         const where = `${image.file}:${image.line}`
         if (image.digest !== null && !digestPattern.test(image.digest)) {
@@ -250,6 +291,14 @@ export function findDeployProblems(root = repositoryRoot) {
                 )
             }
             wavempVersions.add(image.tag)
+            if (image.digest !== null) {
+                pinnedWavempDigests += 1
+                if (digest && image.digest !== digest) {
+                    problems.push(
+                        `${where}: ${image.repository}:${image.tag} pins ${image.digest}, but the published image is ${digest}`,
+                    )
+                }
+            }
         } else if (postgresRepositories.has(image.repository)) {
             if (!postgresVersionPattern.test(image.tag)) {
                 problems.push(
@@ -268,6 +317,16 @@ export function findDeployProblems(root = repositoryRoot) {
         problems.push(
             `deploy/ uses different versions of WaveMP: ${[...wavempVersions].join(', ')}`,
         )
+    }
+    if (release) {
+        for (const version of wavempVersions) {
+            if (version !== release) {
+                problems.push(`deploy/ uses WaveMP ${version}, but the release is ${release}`)
+            }
+        }
+    }
+    if (digest && pinnedWavempDigests === 0) {
+        problems.push(`deploy/ pins no digest of WaveMP; pin ${digest} (TrueNAS)`)
     }
     if (postgresVersions.size > 1) {
         problems.push(
@@ -336,12 +395,23 @@ export function findDeployProblems(root = repositoryRoot) {
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-    const problems = findDeployProblems()
+    let options
+    try {
+        options = parseArguments(process.argv.slice(2))
+    } catch (error) {
+        console.error(error.message)
+        process.exit(1)
+    }
+    const problems = findDeployProblems(repositoryRoot, options)
     if (problems.length > 0) {
         for (const problem of problems) {
             console.error(problem)
         }
         process.exit(1)
     }
-    console.log('The templates in deploy/ are consistent.')
+    console.log(
+        options.release
+            ? `The templates in deploy/ are consistent and name the release ${options.release}.`
+            : 'The templates in deploy/ are consistent.',
+    )
 }

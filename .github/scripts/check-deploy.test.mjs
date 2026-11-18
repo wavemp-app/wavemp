@@ -13,11 +13,14 @@ import {
     findDeployProblems,
     findImages,
     findXmlProblem,
+    parseArguments,
     parseImage,
+    parseReleaseVersion,
     repositoryRoot,
 } from './check-deploy.mjs'
 
 const digest = `sha256:${'a'.repeat(64)}`
+const otherDigest = `sha256:${'b'.repeat(64)}`
 const temporaryDirectory = mkdtempSync(path.join(os.tmpdir(), 'wavemp-check-deploy-'))
 let fixture
 
@@ -102,6 +105,35 @@ describe('parseImage', () => {
             tag: null,
             digest: null,
         })
+    })
+})
+
+describe('parseReleaseVersion', () => {
+    test('accepts a version and the tag of a release', () => {
+        assert.equal(parseReleaseVersion('1.0.66'), '1.0.66')
+        assert.equal(parseReleaseVersion('v1.0.66'), '1.0.66')
+    })
+
+    test('rejects anything else', () => {
+        for (const value of ['', '1.0', 'latest', '1.0.66-dev', 'version1.0.66', undefined]) {
+            assert.throws(() => parseReleaseVersion(value), /is not a version/)
+        }
+    })
+})
+
+describe('parseArguments', () => {
+    test('reads the release and the digest', () => {
+        assert.deepEqual(parseArguments([]), { release: null, digest: null })
+        assert.deepEqual(parseArguments(['--release', 'v1.0.7', '--digest', digest]), {
+            release: '1.0.7',
+            digest,
+        })
+    })
+
+    test('rejects unknown arguments, missing values and an invalid digest', () => {
+        assert.throws(() => parseArguments(['--version', '1.0.7']), /Unknown argument --version/)
+        assert.throws(() => parseArguments(['--release']), /Unknown argument --release/)
+        assert.throws(() => parseArguments(['--digest', 'sha256:123']), /is not of the form/)
     })
 })
 
@@ -218,6 +250,40 @@ describe('findDeployProblems', () => {
             'deploy/casaos/WaveMP/docker-compose.yml: x-casaos version 1.0.6 is not 1.0.7',
             'deploy/truenas/wavemp/app.yaml: app_version 1.0.6 is not 1.0.7',
         ])
+    })
+
+    test('accepts templates that name the release and pin its digest', () => {
+        assert.deepEqual(findDeployProblems(fixture, { release: '1.0.7', digest }), [])
+    })
+
+    test('reports templates that do not name the release', () => {
+        assert.deepEqual(findDeployProblems(fixture, { release: '1.0.8' }), [
+            'deploy/ uses WaveMP 1.0.7, but the release is 1.0.8',
+        ])
+    })
+
+    test('reports every version that is not the release', () => {
+        write('deploy/unraid/wavemp.xml', unraidTemplate('wavemp/wavemp:1.0.8'))
+
+        const problems = findDeployProblems(fixture, { release: '1.0.8' })
+
+        assert.ok(problems.includes('deploy/ uses WaveMP 1.0.7, but the release is 1.0.8'))
+        assert.ok(!problems.some((problem) => /WaveMP 1\.0\.8, but/.test(problem)))
+    })
+
+    test('reports a pinned digest that is not the one of the published image', () => {
+        assert.deepEqual(findDeployProblems(fixture, { release: '1.0.7', digest: otherDigest }), [
+            `deploy/truenas/wavemp/ix_values.yaml:3: wavemp/wavemp:1.0.7 pins ${digest}, but the published image is ${otherDigest}`,
+        ])
+    })
+
+    test('reports templates that pin no digest of WaveMP', () => {
+        write('deploy/truenas/wavemp/ix_values.yaml', truenasValues('1.0.7'))
+
+        assert.deepEqual(findDeployProblems(fixture, { digest }), [
+            `deploy/ pins no digest of WaveMP; pin ${digest} (TrueNAS)`,
+        ])
+        assert.deepEqual(findDeployProblems(fixture), [])
     })
 
     test('reports a template that is not well-formed XML', () => {
