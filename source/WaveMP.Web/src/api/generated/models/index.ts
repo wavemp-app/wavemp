@@ -342,6 +342,15 @@ export interface CacheUsage extends AdditionalDataHolder, Parsable {
      */
     transcodes?: CacheAreaUsage | null;
 }
+/**
+ * Connects a scrobbling service to the current profile.
+ */
+export interface ConnectScrobblingService extends AdditionalDataHolder, Parsable {
+    /**
+     * Last.fm: the token Last.fm appended to the callback URL after the user allowed access. ListenBrainz: the personal user token from the settings of ListenBrainz. 1 to 256 characters.
+     */
+    token?: string | null;
+}
 export type CoverPriority = (typeof CoverPriorityObject)[keyof typeof CoverPriorityObject];
 /**
  * The cover rule of an album or a track and the priority that applies to it.
@@ -513,6 +522,15 @@ export function createCacheSettingsFromDiscriminatorValue(parseNode: ParseNode |
 // @ts-ignore
 export function createCacheUsageFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
     return deserializeIntoCacheUsage;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {ConnectScrobblingService}
+ */
+// @ts-ignore
+export function createConnectScrobblingServiceFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoConnectScrobblingService;
 }
 /**
  * Creates a new instance of the appropriate class based on discriminator value
@@ -997,6 +1015,24 @@ export function createScanStatisticsFromDiscriminatorValue(parseNode: ParseNode 
 /**
  * Creates a new instance of the appropriate class based on discriminator value
  * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {Scrobbling}
+ */
+// @ts-ignore
+export function createScrobblingFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoScrobbling;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {ScrobblingService}
+ */
+// @ts-ignore
+export function createScrobblingServiceFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoScrobblingService;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
  * @returns {SearchResult}
  */
 // @ts-ignore
@@ -1258,6 +1294,15 @@ export function createUpdateEqualizerSettingsFromDiscriminatorValue(parseNode: P
 // @ts-ignore
 export function createUpdateLibrarySettingsFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
     return deserializeIntoUpdateLibrarySettings;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {UpdateNowPlaying}
+ */
+// @ts-ignore
+export function createUpdateNowPlayingFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoUpdateNowPlaying;
 }
 /**
  * Creates a new instance of the appropriate class based on discriminator value
@@ -1716,6 +1761,17 @@ export function deserializeIntoCacheUsage(cacheUsage: Partial<CacheUsage> | unde
         "maxSizeBytes": n => { cacheUsage.maxSizeBytes = n.getNumberValue(); },
         "sizeBytes": n => { cacheUsage.sizeBytes = n.getNumberValue(); },
         "transcodes": n => { cacheUsage.transcodes = n.getObjectValue<CacheAreaUsage>(createCacheAreaUsageFromDiscriminatorValue); },
+    }
+}
+/**
+ * The deserialization information for the current model
+ * @param ConnectScrobblingService The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoConnectScrobblingService(connectScrobblingService: Partial<ConnectScrobblingService> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "token": n => { connectScrobblingService.token = n.getStringValue(); },
     }
 }
 /**
@@ -2448,6 +2504,35 @@ export function deserializeIntoScanStatistics(scanStatistics: Partial<ScanStatis
 }
 /**
  * The deserialization information for the current model
+ * @param Scrobbling The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoScrobbling(scrobbling: Partial<Scrobbling> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "services": n => { scrobbling.services = n.getCollectionOfObjectValues<ScrobblingService>(createScrobblingServiceFromDiscriminatorValue); },
+    }
+}
+/**
+ * The deserialization information for the current model
+ * @param ScrobblingService The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoScrobblingService(scrobblingService: Partial<ScrobblingService> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "accountName": n => { scrobblingService.accountName = n.getStringValue(); },
+        "authorizationUrl": n => { scrobblingService.authorizationUrl = n.getStringValue(); },
+        "connectedAt": n => { scrobblingService.connectedAt = n.getDateValue(); },
+        "isAvailable": n => { scrobblingService.isAvailable = n.getBooleanValue(); },
+        "lastScrobbledAt": n => { scrobblingService.lastScrobbledAt = n.getDateValue(); },
+        "queuedScrobbles": n => { scrobblingService.queuedScrobbles = n.getNumberValue(); },
+        "service": n => { scrobblingService.service = n.getEnumValue<ScrobbleService>(ScrobbleServiceObject); },
+        "status": n => { scrobblingService.status = n.getEnumValue<ScrobbleConnectionStatus>(ScrobbleConnectionStatusObject); },
+    }
+}
+/**
+ * The deserialization information for the current model
  * @param SearchResult The instance to deserialize into.
  * @returns {Record<string, (node: ParseNode) => void>}
  */
@@ -2881,6 +2966,17 @@ export function deserializeIntoUpdateLibrarySettings(updateLibrarySettings: Part
         "imageExtensions": n => { updateLibrarySettings.imageExtensions = n.getCollectionOfPrimitiveValues<string>("string"); },
         "scanIntervalMinutes": n => { updateLibrarySettings.scanIntervalMinutes = n.getNumberValue(); },
         "videoExtensions": n => { updateLibrarySettings.videoExtensions = n.getCollectionOfPrimitiveValues<string>("string"); },
+    }
+}
+/**
+ * The deserialization information for the current model
+ * @param UpdateNowPlaying The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoUpdateNowPlaying(updateNowPlaying: Partial<UpdateNowPlaying> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "trackId": n => { updateNowPlaying.trackId = n.getGuidValue(); },
     }
 }
 /**
@@ -4297,6 +4393,54 @@ export interface ScanStatistics extends AdditionalDataHolder, Parsable {
      */
     tracksUpdated?: number | null;
 }
+export type ScrobbleConnectionStatus = (typeof ScrobbleConnectionStatusObject)[keyof typeof ScrobbleConnectionStatusObject];
+export type ScrobbleService = (typeof ScrobbleServiceObject)[keyof typeof ScrobbleServiceObject];
+/**
+ * The scrobbling of the current profile: every supported service with its state, Last.fm first.
+ */
+export interface Scrobbling extends AdditionalDataHolder, Parsable {
+    /**
+     * The services property
+     */
+    services?: ScrobblingService[] | null;
+}
+/**
+ * The state of a scrobbling service for the current profile. The credentials are never returned.
+ */
+export interface ScrobblingService extends AdditionalDataHolder, Parsable {
+    /**
+     * Name of the account at the service; null if not connected.
+     */
+    accountName?: string | null;
+    /**
+     * Last.fm only, while available: the page of the web authentication with the API key of the server. The client adds its callback URL as parameter `cb` and opens it; null otherwise.
+     */
+    authorizationUrl?: string | null;
+    /**
+     * When the service was connected; null if not connected.
+     */
+    connectedAt?: Date | null;
+    /**
+     * True if the service can be connected. Last.fm needs the API account of the server (environment variables LASTFM_API_KEY and LASTFM_SHARED_SECRET); ListenBrainz is always available.
+     */
+    isAvailable?: boolean | null;
+    /**
+     * When the service accepted scrobbles the last time; null before the first.
+     */
+    lastScrobbledAt?: Date | null;
+    /**
+     * Scrobbles that wait to be sent, e.g. while the service cannot be reached.
+     */
+    queuedScrobbles?: number | null;
+    /**
+     * An online service that played songs are reported to (scrobbling).
+     */
+    service?: ScrobbleService | null;
+    /**
+     * Whether the profile is connected to a scrobbling service.
+     */
+    status?: ScrobbleConnectionStatus | null;
+}
 /**
  * The artists, albums and tracks that match a search text, each sorted by relevance (best first).
  */
@@ -4562,6 +4706,18 @@ export function serializeCacheUsage(writer: SerializationWriter, cacheUsage: Par
     writer.writeNumberValue("sizeBytes", cacheUsage.sizeBytes);
     writer.writeObjectValue<CacheAreaUsage>("transcodes", cacheUsage.transcodes, serializeCacheAreaUsage);
     writer.writeAdditionalData(cacheUsage.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param ConnectScrobblingService The instance to serialize from.
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeConnectScrobblingService(writer: SerializationWriter, connectScrobblingService: Partial<ConnectScrobblingService> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!connectScrobblingService || isSerializingDerivedType) { return; }
+    writer.writeStringValue("token", connectScrobblingService.token);
+    writer.writeAdditionalData(connectScrobblingService.additionalData);
 }
 /**
  * Serializes information the current object
@@ -5343,6 +5499,37 @@ export function serializeScanStatistics(writer: SerializationWriter, scanStatist
 /**
  * Serializes information the current object
  * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param Scrobbling The instance to serialize from.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeScrobbling(writer: SerializationWriter, scrobbling: Partial<Scrobbling> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!scrobbling || isSerializingDerivedType) { return; }
+    writer.writeCollectionOfObjectValues<ScrobblingService>("services", scrobbling.services, serializeScrobblingService);
+    writer.writeAdditionalData(scrobbling.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param ScrobblingService The instance to serialize from.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeScrobblingService(writer: SerializationWriter, scrobblingService: Partial<ScrobblingService> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!scrobblingService || isSerializingDerivedType) { return; }
+    writer.writeStringValue("accountName", scrobblingService.accountName);
+    writer.writeStringValue("authorizationUrl", scrobblingService.authorizationUrl);
+    writer.writeDateValue("connectedAt", scrobblingService.connectedAt);
+    writer.writeBooleanValue("isAvailable", scrobblingService.isAvailable);
+    writer.writeDateValue("lastScrobbledAt", scrobblingService.lastScrobbledAt);
+    writer.writeNumberValue("queuedScrobbles", scrobblingService.queuedScrobbles);
+    writer.writeEnumValue<ScrobbleService>("service", scrobblingService.service);
+    writer.writeEnumValue<ScrobbleConnectionStatus>("status", scrobblingService.status);
+    writer.writeAdditionalData(scrobblingService.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
  * @param SearchResult The instance to serialize from.
  * @param writer Serialization writer to use to serialize this model
  */
@@ -5805,6 +5992,18 @@ export function serializeUpdateLibrarySettings(writer: SerializationWriter, upda
     writer.writeNumberValue("scanIntervalMinutes", updateLibrarySettings.scanIntervalMinutes);
     writer.writeCollectionOfPrimitiveValues<string>("videoExtensions", updateLibrarySettings.videoExtensions);
     writer.writeAdditionalData(updateLibrarySettings.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param UpdateNowPlaying The instance to serialize from.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeUpdateNowPlaying(writer: SerializationWriter, updateNowPlaying: Partial<UpdateNowPlaying> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!updateNowPlaying || isSerializingDerivedType) { return; }
+    writer.writeGuidValue("trackId", updateNowPlaying.trackId);
+    writer.writeAdditionalData(updateNowPlaying.additionalData);
 }
 /**
  * Serializes information the current object
@@ -6880,6 +7079,15 @@ export interface UpdateLibrarySettings extends AdditionalDataHolder, Parsable {
     videoExtensions?: string[] | null;
 }
 /**
+ * The track the current profile starts to listen to.
+ */
+export interface UpdateNowPlaying extends AdditionalDataHolder, Parsable {
+    /**
+     * Id of the track.
+     */
+    trackId?: Guid | null;
+}
+/**
  * Changes a playlist. Missing or null values stay unchanged.
  */
 export interface UpdatePlaylist extends AdditionalDataHolder, Parsable {
@@ -7484,7 +7692,7 @@ export const HealthStatusObject = {
     Unhealthy: "Unhealthy",
 } as const;
 /**
- * What an HLS stream of a track carries.
+ * Video with sound or sound only.
  */
 export const HlsMediaObject = {
     Audio: "Audio",
@@ -7688,6 +7896,10 @@ export const ProblemCodeObject = {
     LyricsInstrumental: "lyrics.instrumental",
     LyricsService_unavailable: "lyrics.service_unavailable",
     LyricsRate_limited: "lyrics.rate_limited",
+    ScrobblingNot_configured: "scrobbling.not_configured",
+    ScrobblingToken_invalid: "scrobbling.token_invalid",
+    ScrobblingService_unavailable: "scrobbling.service_unavailable",
+    ScrobblingNot_connected: "scrobbling.not_connected",
 } as const;
 /**
  * Whether the players even out the volume with the ReplayGain tags; Off by default.
@@ -7720,6 +7932,21 @@ export const ScanPhaseObject = {
     Discovering: "Discovering",
     Processing: "Processing",
     CleaningUp: "CleaningUp",
+} as const;
+/**
+ * Whether the profile is connected to a scrobbling service.
+ */
+export const ScrobbleConnectionStatusObject = {
+    NotConnected: "NotConnected",
+    Connected: "Connected",
+    AuthorizationFailed: "AuthorizationFailed",
+} as const;
+/**
+ * An online service that played songs are reported to (scrobbling).
+ */
+export const ScrobbleServiceObject = {
+    LastFm: "LastFm",
+    ListenBrainz: "ListenBrainz",
 } as const;
 export const SortDirectionObject = {
     Asc: "Asc",

@@ -9,6 +9,7 @@ using WaveMP.Core.Metadata.Extensions;
 using WaveMP.Core.Metadata.Options;
 using WaveMP.Core.Playlists.Extensions;
 using WaveMP.Core.Scanning.Extensions;
+using WaveMP.Core.Scrobbling.Extensions;
 using WaveMP.Core.Settings.Extensions;
 using WaveMP.Core.Streaming.Extensions;
 using WaveMP.Core.Transcoding.Extensions;
@@ -60,6 +61,7 @@ public static class WaveMpApplication
         builder.Services.AddWaveMpPlaylists();
         builder.Services.AddWaveMpCollection();
         builder.Services.AddWaveMpStreaming();
+        builder.Services.AddWaveMpScrobbling();
         builder.Services.AddWaveMpTranscoding();
         builder.Services.AddWaveMpBackups();
         builder.Services.AddWaveMpDataProtection();

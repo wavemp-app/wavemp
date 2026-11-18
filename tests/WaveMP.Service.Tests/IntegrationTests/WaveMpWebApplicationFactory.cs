@@ -9,6 +9,7 @@ using Microsoft.Extensions.Logging;
 using NSubstitute;
 using WaveMP.Core.Backups.Exports;
 using WaveMP.Core.Lyrics.Downloads;
+using WaveMP.Core.Scrobbling.Clients;
 using WaveMP.Data;
 using WaveMP.Service.Tests.IntegrationTests.Fakes;
 using WaveMP.Testing.Databases;
@@ -46,13 +47,23 @@ namespace WaveMP.Service.Tests.IntegrationTests;
 /// Replaces the client of the online lyrics service LRCLIB, so no test sends requests to it; if <c>null</c>, a
 /// substitute that finds nothing.
 /// </param>
+/// <param name="lastFm">
+/// Replaces the client of Last.fm, so no test sends requests to it; if <c>null</c>, a substitute that cannot be
+/// reached.
+/// </param>
+/// <param name="listenBrainz">
+/// Replaces the client of ListenBrainz, so no test sends requests to it; if <c>null</c>, a substitute that cannot be
+/// reached.
+/// </param>
 public sealed class WaveMpWebApplicationFactory(
     string? databaseName = null,
     bool freshDatabase = false,
     string? mediaPath = null,
     FakeDatabaseExporter? exporter = null,
     IReadOnlyDictionary<string, string?>? settings = null,
-    ILrclibClient? lrclib = null) : WebApplicationFactory<Program>
+    ILrclibClient? lrclib = null,
+    ILastFmClient? lastFm = null,
+    IListenBrainzClient? listenBrainz = null) : WebApplicationFactory<Program>
 {
     public const string TestDatabaseName = "wavemp_tests";
 
@@ -76,6 +87,16 @@ public sealed class WaveMpWebApplicationFactory(
     /// The simulated online lyrics service LRCLIB.
     /// </summary>
     public ILrclibClient Lrclib { get; } = lrclib ?? CreateLrclib();
+
+    /// <summary>
+    /// The simulated Last.fm.
+    /// </summary>
+    public ILastFmClient LastFm { get; } = lastFm ?? CreateLastFm();
+
+    /// <summary>
+    /// The simulated ListenBrainz.
+    /// </summary>
+    public IListenBrainzClient ListenBrainz { get; } = listenBrainz ?? CreateListenBrainz();
 
     /// <summary>
     /// The errors the service logged.
@@ -132,6 +153,10 @@ public sealed class WaveMpWebApplicationFactory(
             services.AddSingleton<IDatabaseExporter>(Exporter);
             services.RemoveAll<ILrclibClient>();
             services.AddSingleton(Lrclib);
+            services.RemoveAll<ILastFmClient>();
+            services.AddSingleton(LastFm);
+            services.RemoveAll<IListenBrainzClient>();
+            services.AddSingleton(ListenBrainz);
         });
     }
 
@@ -155,6 +180,31 @@ public sealed class WaveMpWebApplicationFactory(
         }
 
         return host;
+    }
+
+    /// <summary>
+    /// A Last.fm that cannot be reached.
+    /// </summary>
+    public static ILastFmClient CreateLastFm()
+    {
+        ILastFmClient client = Substitute.For<ILastFmClient>();
+        client.GetSessionAsync(default!, default).ReturnsForAnyArgs(ScrobbleAuthorization.Unavailable);
+        client.UpdateNowPlayingAsync(default!, default!, default).ReturnsForAnyArgs(ScrobbleSendStatus.Unavailable);
+        client.ScrobbleAsync(default!, default!, default).ReturnsForAnyArgs(ScrobbleSendStatus.Unavailable);
+        return client;
+    }
+
+    /// <summary>
+    /// A ListenBrainz that cannot be reached.
+    /// </summary>
+    public static IListenBrainzClient CreateListenBrainz()
+    {
+        IListenBrainzClient client = Substitute.For<IListenBrainzClient>();
+        client.ValidateTokenAsync(default!, default).ReturnsForAnyArgs(ScrobbleAuthorization.Unavailable);
+        client.SubmitPlayingNowAsync(default!, default!, default)
+            .ReturnsForAnyArgs(ScrobbleSendStatus.Unavailable);
+        client.SubmitListensAsync(default!, default!, default).ReturnsForAnyArgs(ScrobbleSendStatus.Unavailable);
+        return client;
     }
 
     private static ILrclibClient CreateLrclib()

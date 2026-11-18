@@ -10,11 +10,15 @@ import { HistoryRequestBuilderNavigationMetadata, HistoryRequestBuilderRequestsM
 // @ts-ignore
 import { HomeRequestBuilderRequestsMetadata, type HomeRequestBuilder } from './home/index.js';
 // @ts-ignore
+import { NowPlayingRequestBuilderRequestsMetadata, type NowPlayingRequestBuilder } from './nowPlaying/index.js';
+// @ts-ignore
 import { PinRequestBuilderRequestsMetadata, type PinRequestBuilder } from './pin/index.js';
 // @ts-ignore
 import { PlaylistsRequestBuilderNavigationMetadata, PlaylistsRequestBuilderRequestsMetadata, type PlaylistsRequestBuilder } from './playlists/index.js';
 // @ts-ignore
 import { RecentlyPlayedRequestBuilderRequestsMetadata, type RecentlyPlayedRequestBuilder } from './recentlyPlayed/index.js';
+// @ts-ignore
+import { ScrobblingRequestBuilderNavigationMetadata, ScrobblingRequestBuilderRequestsMetadata, type ScrobblingRequestBuilder } from './scrobbling/index.js';
 // @ts-ignore
 import { SettingsRequestBuilderRequestsMetadata, type SettingsRequestBuilder } from './settings/index.js';
 // @ts-ignore
@@ -41,6 +45,10 @@ export interface MeRequestBuilder extends BaseRequestBuilder<MeRequestBuilder> {
      */
     get home(): HomeRequestBuilder;
     /**
+     * The nowPlaying property
+     */
+    get nowPlaying(): NowPlayingRequestBuilder;
+    /**
      * The pin property
      */
     get pin(): PinRequestBuilder;
@@ -52,6 +60,10 @@ export interface MeRequestBuilder extends BaseRequestBuilder<MeRequestBuilder> {
      * The recentlyPlayed property
      */
     get recentlyPlayed(): RecentlyPlayedRequestBuilder;
+    /**
+     * The scrobbling property
+     */
+    get scrobbling(): ScrobblingRequestBuilder;
     /**
      * The settings property
      */
@@ -79,6 +91,9 @@ export const MeRequestBuilderNavigationMetadata: Record<Exclude<keyof MeRequestB
     home: {
         requestsMetadata: HomeRequestBuilderRequestsMetadata,
     },
+    nowPlaying: {
+        requestsMetadata: NowPlayingRequestBuilderRequestsMetadata,
+    },
     pin: {
         requestsMetadata: PinRequestBuilderRequestsMetadata,
     },
@@ -88,6 +103,10 @@ export const MeRequestBuilderNavigationMetadata: Record<Exclude<keyof MeRequestB
     },
     recentlyPlayed: {
         requestsMetadata: RecentlyPlayedRequestBuilderRequestsMetadata,
+    },
+    scrobbling: {
+        requestsMetadata: ScrobblingRequestBuilderRequestsMetadata,
+        navigationMetadata: ScrobblingRequestBuilderNavigationMetadata,
     },
     settings: {
         requestsMetadata: SettingsRequestBuilderRequestsMetadata,

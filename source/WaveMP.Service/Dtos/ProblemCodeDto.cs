@@ -356,4 +356,29 @@ public enum ProblemCodeDto
     /// </summary>
     [JsonStringEnumMemberName("lyrics.rate_limited")]
     LyricsRateLimited,
+
+    /// <summary>
+    /// The scrobbling service cannot be connected because the server has no API account for it: Last.fm needs the
+    /// environment variables LASTFM_API_KEY and LASTFM_SHARED_SECRET (409).
+    /// </summary>
+    [JsonStringEnumMemberName("scrobbling.not_configured")]
+    ScrobblingNotConfigured,
+
+    /// <summary>
+    /// The scrobbling service did not accept the token: wrong, expired or not authorized by the user (422).
+    /// </summary>
+    [JsonStringEnumMemberName("scrobbling.token_invalid")]
+    ScrobblingTokenInvalid,
+
+    /// <summary>
+    /// The scrobbling service cannot be reached, e.g. without an internet connection; try again later (503).
+    /// </summary>
+    [JsonStringEnumMemberName("scrobbling.service_unavailable")]
+    ScrobblingServiceUnavailable,
+
+    /// <summary>
+    /// The profile has not connected this scrobbling service (404).
+    /// </summary>
+    [JsonStringEnumMemberName("scrobbling.not_connected")]
+    ScrobblingNotConnected,
 }

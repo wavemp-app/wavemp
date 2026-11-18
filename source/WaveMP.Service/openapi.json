@@ -5148,6 +5148,278 @@
         ]
       }
     },
+    "/api/v1/me/scrobbling": {
+      "get": {
+        "tags": [
+          "Scrobbling"
+        ],
+        "summary": "Returns every scrobbling service with its state for the current profile.",
+        "operationId": "GetMyScrobbling",
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "The services, Last.fm first.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Scrobbling"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/api/v1/me/scrobbling/{service}": {
+      "put": {
+        "tags": [
+          "Scrobbling"
+        ],
+        "summary": "Connects a scrobbling service to the current profile, or replaces its connection (e.g. after the service rejected the old one). Last.fm: the token Last.fm passed to the callback URL of the web authentication. ListenBrainz: the personal user token. The server checks the token with the service and stores the credentials encrypted; queued scrobbles are sent again from now on.",
+        "operationId": "ConnectMyScrobblingService",
+        "parameters": [
+          {
+            "name": "service",
+            "in": "path",
+            "description": "The service.",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/ScrobbleService"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "The token.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConnectScrobblingService"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConnectScrobblingService"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "The connected service.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScrobblingService"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is invalid (code `request.invalid`), e.g. an unknown service or no token.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The profile was deleted in the meantime (code `user.not_found`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The server has no API account for the service (code `scrobbling.not_configured`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "The service did not accept the token (code `scrobbling.token_invalid`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The service cannot be reached (code `scrobbling.service_unavailable`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "Scrobbling"
+        ],
+        "summary": "Disconnects a scrobbling service from the current profile. The stored credentials and the scrobbles that still wait for the service are deleted. The access of WaveMP can additionally be revoked in the settings of the service.",
+        "operationId": "DisconnectMyScrobblingService",
+        "parameters": [
+          {
+            "name": "service",
+            "in": "path",
+            "description": "The service.",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/ScrobbleService"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "The service is disconnected."
+          },
+          "400": {
+            "description": "An unknown service (code `request.invalid`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The service is not connected (code `scrobbling.not_connected`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/api/v1/me/now-playing": {
+      "put": {
+        "tags": [
+          "Scrobbling"
+        ],
+        "summary": "Reports the track the current profile starts to listen to as \"Now Playing\" to every connected scrobbling service. Clients send it when the playback of a track starts. Tracks shorter than 30 seconds, tracks without artist and profiles without a connected service are accepted without a report; failures of a service are not reported to the client, since \"Now Playing\" is not repeated.",
+        "operationId": "UpdateMyNowPlaying",
+        "requestBody": {
+          "description": "The track.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateNowPlaying"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateNowPlaying"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "Accepted."
+          },
+          "400": {
+            "description": "The request is invalid (code `request.invalid`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The track does not exist (code `track.not_found`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
     "/api/v1/search": {
       "get": {
         "tags": [
@@ -10042,6 +10314,21 @@
         },
         "description": "The space the cache uses, in total and per area, and its size limit."
       },
+      "ConnectScrobblingService": {
+        "required": [
+          "token"
+        ],
+        "type": "object",
+        "properties": {
+          "token": {
+            "maxLength": 256,
+            "minLength": 0,
+            "type": "string",
+            "description": "Last.fm: the token Last.fm appended to the callback URL after the user allowed access. ListenBrainz: the personal user token from the settings of ListenBrainz. 1 to 256 characters."
+          }
+        },
+        "description": "Connects a scrobbling service to the current profile."
+      },
       "CoverPriority": {
         "enum": [
           "AlbumFirst",
@@ -11781,7 +12068,11 @@
           "lyrics.download_not_found",
           "lyrics.instrumental",
           "lyrics.service_unavailable",
-          "lyrics.rate_limited"
+          "lyrics.rate_limited",
+          "scrobbling.not_configured",
+          "scrobbling.token_invalid",
+          "scrobbling.service_unavailable",
+          "scrobbling.not_connected"
         ],
         "type": "string",
         "description": "Machine-readable code of a problem, part of every Problem Details response. Clients translate it."
@@ -12328,6 +12619,96 @@
           }
         },
         "description": "What a scan found and changed; the totals count the whole library after the scan."
+      },
+      "ScrobbleConnectionStatus": {
+        "enum": [
+          "NotConnected",
+          "Connected",
+          "AuthorizationFailed"
+        ],
+        "type": "string",
+        "description": "Whether the profile is connected to a scrobbling service."
+      },
+      "ScrobbleService": {
+        "enum": [
+          "LastFm",
+          "ListenBrainz"
+        ],
+        "type": "string",
+        "description": "An online service that played songs are reported to (scrobbling)."
+      },
+      "Scrobbling": {
+        "required": [
+          "services"
+        ],
+        "type": "object",
+        "properties": {
+          "services": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ScrobblingService"
+            }
+          }
+        },
+        "description": "The scrobbling of the current profile: every supported service with its state, Last.fm first."
+      },
+      "ScrobblingService": {
+        "required": [
+          "service",
+          "isAvailable",
+          "status",
+          "queuedScrobbles"
+        ],
+        "type": "object",
+        "properties": {
+          "service": {
+            "$ref": "#/components/schemas/ScrobbleService"
+          },
+          "isAvailable": {
+            "type": "boolean",
+            "description": "True if the service can be connected. Last.fm needs the API account of the server (environment variables LASTFM_API_KEY and LASTFM_SHARED_SECRET); ListenBrainz is always available."
+          },
+          "status": {
+            "$ref": "#/components/schemas/ScrobbleConnectionStatus"
+          },
+          "accountName": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Name of the account at the service; null if not connected."
+          },
+          "connectedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "When the service was connected; null if not connected.",
+            "format": "date-time"
+          },
+          "lastScrobbledAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "When the service accepted scrobbles the last time; null before the first.",
+            "format": "date-time"
+          },
+          "queuedScrobbles": {
+            "type": "integer",
+            "description": "Scrobbles that wait to be sent, e.g. while the service cannot be reached.",
+            "format": "int32"
+          },
+          "authorizationUrl": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Last.fm only, while available: the page of the web authentication with the API key of the server. The client adds its callback URL as parameter `cb` and opens it; null otherwise.",
+            "format": "uri"
+          }
+        },
+        "description": "The state of a scrobbling service for the current profile. The credentials are never returned."
       },
       "SearchResult": {
         "required": [
@@ -13676,6 +14057,20 @@
         },
         "description": "Changes the settings of the media library. Missing or null values stay unchanged."
       },
+      "UpdateNowPlaying": {
+        "required": [
+          "trackId"
+        ],
+        "type": "object",
+        "properties": {
+          "trackId": {
+            "type": "string",
+            "description": "Id of the track.",
+            "format": "uuid"
+          }
+        },
+        "description": "The track the current profile starts to listen to."
+      },
       "UpdatePlaylist": {
         "type": "object",
         "properties": {
@@ -14621,6 +15016,9 @@
     },
     {
       "name": "Scans"
+    },
+    {
+      "name": "Scrobbling"
     },
     {
       "name": "Search"
