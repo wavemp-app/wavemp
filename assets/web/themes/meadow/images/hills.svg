@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 120" preserveAspectRatio="none">
+    <!-- Meadow: three rolling hills, drawn for this theme. Stretches to any width. -->
+    <defs>
+        <linearGradient id="back" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#a6dd84"/>
+            <stop offset="1" stop-color="#6cbb4c"/>
+        </linearGradient>
+        <linearGradient id="middle" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#6ec552"/>
+            <stop offset="1" stop-color="#3e9a2e"/>
+        </linearGradient>
+        <linearGradient id="front" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#43a434"/>
+            <stop offset="1" stop-color="#25771d"/>
+        </linearGradient>
+    </defs>
+    <path d="M0 62 C 70 30, 170 34, 250 58 S 410 34, 480 46 V120 H0 Z" fill="url(#back)"/>
+    <path d="M0 62 C 70 30, 170 34, 250 58 S 410 34, 480 46" fill="none" stroke="#ffffff" stroke-opacity="0.45" stroke-width="2"/>
+    <path d="M0 90 C 100 62, 210 68, 310 86 S 440 74, 480 80 V120 H0 Z" fill="url(#middle)"/>
+    <path d="M0 90 C 100 62, 210 68, 310 86 S 440 74, 480 80" fill="none" stroke="#d8f5c4" stroke-opacity="0.5" stroke-width="1.5"/>
+    <path d="M0 110 C 120 94, 250 98, 340 108 S 450 102, 480 104 V120 H0 Z" fill="url(#front)"/>
+    <g fill="#ffffff" fill-opacity="0.85">
+        <circle cx="62" cy="99" r="1.6"/>
+        <circle cx="70" cy="102" r="1.2"/>
+        <circle cx="188" cy="81" r="1.4"/>
+        <circle cx="402" cy="88" r="1.5"/>
+    </g>
+    <g fill="#ffe36b">
+        <circle cx="132" cy="104" r="1.5"/>
+        <circle cx="290" cy="82" r="1.3"/>
+        <circle cx="356" cy="109" r="1.6"/>
+        <circle cx="440" cy="85" r="1.2"/>
+    </g>
+</svg>

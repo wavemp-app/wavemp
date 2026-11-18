@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+    <!-- Knob of the sliders: a green bead in a white rim. Drawn for this theme. -->
+    <defs>
+        <radialGradient id="bead" cx="0.5" cy="0.7" r="0.6">
+            <stop offset="0" stop-color="#5cc24a"/>
+            <stop offset="1" stop-color="#1d6c18"/>
+        </radialGradient>
+        <linearGradient id="rim" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#ffffff"/>
+            <stop offset="1" stop-color="#b8c9e8"/>
+        </linearGradient>
+    </defs>
+    <circle cx="10" cy="10" r="9.5" fill="url(#rim)"/>
+    <circle cx="10" cy="10" r="7" fill="url(#bead)"/>
+    <ellipse cx="10" cy="6.4" rx="4.4" ry="2.6" fill="#ffffff" fill-opacity="0.6"/>
+</svg>
