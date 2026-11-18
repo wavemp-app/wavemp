@@ -11,7 +11,7 @@ import { type BaseRequestBuilder, type Parsable, type ParsableFactory, type Requ
  */
 export interface NowPlayingRequestBuilder extends BaseRequestBuilder<NowPlayingRequestBuilder> {
     /**
-     * Reports the track the current profile starts to listen to as "Now Playing" to every connected scrobbling service. Clients send it when the playback of a track starts. Tracks shorter than 30 seconds, tracks without artist and profiles without a connected service are accepted without a report; failures of a service are not reported to the client, since "Now Playing" is not repeated.
+     * Reports the track the current profile starts to listen to as "Now Playing" to every connected scrobbling service. Clients send it when the playback of a track starts. Tracks shorter than 30 seconds, tracks without artist and profiles without a connected service are accepted without a report; failures of a service are not reported to the client, since "Now Playing" is not repeated. The track also shows in "Now Playing" of the Subsonic API (getNowPlaying).
      * @param body The track the current profile starts to listen to.
      * @param requestConfiguration Configuration for the request such as headers, query parameters, and middleware options.
      * @throws {ValidationProblem} error when the service returns a 400 status code
@@ -20,7 +20,7 @@ export interface NowPlayingRequestBuilder extends BaseRequestBuilder<NowPlayingR
      */
      put(body: UpdateNowPlaying, requestConfiguration?: RequestConfiguration<object> | undefined) : Promise<void>;
     /**
-     * Reports the track the current profile starts to listen to as "Now Playing" to every connected scrobbling service. Clients send it when the playback of a track starts. Tracks shorter than 30 seconds, tracks without artist and profiles without a connected service are accepted without a report; failures of a service are not reported to the client, since "Now Playing" is not repeated.
+     * Reports the track the current profile starts to listen to as "Now Playing" to every connected scrobbling service. Clients send it when the playback of a track starts. Tracks shorter than 30 seconds, tracks without artist and profiles without a connected service are accepted without a report; failures of a service are not reported to the client, since "Now Playing" is not repeated. The track also shows in "Now Playing" of the Subsonic API (getNowPlaying).
      * @param body The track the current profile starts to listen to.
      * @param requestConfiguration Configuration for the request such as headers, query parameters, and middleware options.
      * @returns {RequestInformation}

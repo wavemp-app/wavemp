@@ -1082,6 +1082,24 @@ export function createSleepTimerSettingsFromDiscriminatorValue(parseNode: ParseN
 /**
  * Creates a new instance of the appropriate class based on discriminator value
  * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {SubsonicAccess}
+ */
+// @ts-ignore
+export function createSubsonicAccessFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoSubsonicAccess;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {SubsonicPassword}
+ */
+// @ts-ignore
+export function createSubsonicPasswordFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoSubsonicPassword;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
  * @returns {TrackFileSelection}
  */
 // @ts-ignore
@@ -1330,6 +1348,15 @@ export function createUpdatePlaylistFromDiscriminatorValue(parseNode: ParseNode 
 // @ts-ignore
 export function createUpdateSleepTimerSettingsFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
     return deserializeIntoUpdateSleepTimerSettings;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {UpdateSubsonicAccess}
+ */
+// @ts-ignore
+export function createUpdateSubsonicAccessFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoUpdateSubsonicAccess;
 }
 /**
  * Creates a new instance of the appropriate class based on discriminator value
@@ -2110,6 +2137,7 @@ export function deserializeIntoLibrarySettings(librarySettings: Partial<LibraryS
         "fileWatcherEnabled": n => { librarySettings.fileWatcherEnabled = n.getBooleanValue(); },
         "imageExtensions": n => { librarySettings.imageExtensions = n.getCollectionOfPrimitiveValues<string>("string"); },
         "scanIntervalMinutes": n => { librarySettings.scanIntervalMinutes = n.getNumberValue(); },
+        "subsonicDownloads": n => { librarySettings.subsonicDownloads = n.getBooleanValue(); },
         "videoExtensions": n => { librarySettings.videoExtensions = n.getCollectionOfPrimitiveValues<string>("string"); },
     }
 }
@@ -2582,6 +2610,31 @@ export function deserializeIntoSleepTimerSettings(sleepTimerSettings: Partial<Sl
 }
 /**
  * The deserialization information for the current model
+ * @param SubsonicAccess The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoSubsonicAccess(subsonicAccess: Partial<SubsonicAccess> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "enabled": n => { subsonicAccess.enabled = n.getBooleanValue(); },
+        "hasPassword": n => { subsonicAccess.hasPassword = n.getBooleanValue(); },
+        "passwordCreatedAt": n => { subsonicAccess.passwordCreatedAt = n.getDateValue(); },
+    }
+}
+/**
+ * The deserialization information for the current model
+ * @param SubsonicPassword The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoSubsonicPassword(subsonicPassword: Partial<SubsonicPassword> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "access": n => { subsonicPassword.access = n.getObjectValue<SubsonicAccess>(createSubsonicAccessFromDiscriminatorValue); },
+        "password": n => { subsonicPassword.password = n.getStringValue(); },
+    }
+}
+/**
+ * The deserialization information for the current model
  * @param Track The instance to deserialize into.
  * @returns {Record<string, (node: ParseNode) => void>}
  */
@@ -2965,6 +3018,7 @@ export function deserializeIntoUpdateLibrarySettings(updateLibrarySettings: Part
         "fileWatcherEnabled": n => { updateLibrarySettings.fileWatcherEnabled = n.getBooleanValue(); },
         "imageExtensions": n => { updateLibrarySettings.imageExtensions = n.getCollectionOfPrimitiveValues<string>("string"); },
         "scanIntervalMinutes": n => { updateLibrarySettings.scanIntervalMinutes = n.getNumberValue(); },
+        "subsonicDownloads": n => { updateLibrarySettings.subsonicDownloads = n.getBooleanValue(); },
         "videoExtensions": n => { updateLibrarySettings.videoExtensions = n.getCollectionOfPrimitiveValues<string>("string"); },
     }
 }
@@ -3010,6 +3064,17 @@ export function deserializeIntoUpdatePlaylistEntry(updatePlaylistEntry: Partial<
 export function deserializeIntoUpdateSleepTimerSettings(updateSleepTimerSettings: Partial<UpdateSleepTimerSettings> | undefined = {}) : Record<string, (node: ParseNode) => void> {
     return {
         "fadeSeconds": n => { updateSleepTimerSettings.fadeSeconds = n.getNumberValue(); },
+    }
+}
+/**
+ * The deserialization information for the current model
+ * @param UpdateSubsonicAccess The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoUpdateSubsonicAccess(updateSubsonicAccess: Partial<UpdateSubsonicAccess> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "enabled": n => { updateSubsonicAccess.enabled = n.getBooleanValue(); },
     }
 }
 /**
@@ -3695,6 +3760,10 @@ export interface LibrarySettings extends AdditionalDataHolder, Parsable {
      * Minutes between two periodic scans (15 to 1440). The periodic scan always runs.
      */
     scanIntervalMinutes?: number | null;
+    /**
+     * Whether Subsonic apps may download the original files of the tracks (endpoint download of the Subsonic API under /rest). Off by default; streaming is always allowed.
+     */
+    subsonicDownloads?: boolean | null;
     /**
      * Extensions of video files, lower case without dot.
      */
@@ -5079,6 +5148,7 @@ export function serializeLibrarySettings(writer: SerializationWriter, librarySet
     writer.writeBooleanValue("fileWatcherEnabled", librarySettings.fileWatcherEnabled);
     writer.writeCollectionOfPrimitiveValues<string>("imageExtensions", librarySettings.imageExtensions);
     writer.writeNumberValue("scanIntervalMinutes", librarySettings.scanIntervalMinutes);
+    writer.writeBooleanValue("subsonicDownloads", librarySettings.subsonicDownloads);
     writer.writeCollectionOfPrimitiveValues<string>("videoExtensions", librarySettings.videoExtensions);
     writer.writeAdditionalData(librarySettings.additionalData);
 }
@@ -5583,6 +5653,33 @@ export function serializeSleepTimerSettings(writer: SerializationWriter, sleepTi
 /**
  * Serializes information the current object
  * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param SubsonicAccess The instance to serialize from.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeSubsonicAccess(writer: SerializationWriter, subsonicAccess: Partial<SubsonicAccess> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!subsonicAccess || isSerializingDerivedType) { return; }
+    writer.writeBooleanValue("enabled", subsonicAccess.enabled);
+    writer.writeBooleanValue("hasPassword", subsonicAccess.hasPassword);
+    writer.writeDateValue("passwordCreatedAt", subsonicAccess.passwordCreatedAt);
+    writer.writeAdditionalData(subsonicAccess.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param SubsonicPassword The instance to serialize from.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeSubsonicPassword(writer: SerializationWriter, subsonicPassword: Partial<SubsonicPassword> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!subsonicPassword || isSerializingDerivedType) { return; }
+    writer.writeObjectValue<SubsonicAccess>("access", subsonicPassword.access, serializeSubsonicAccess);
+    writer.writeStringValue("password", subsonicPassword.password);
+    writer.writeAdditionalData(subsonicPassword.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
  * @param Track The instance to serialize from.
  * @param writer Serialization writer to use to serialize this model
  */
@@ -5990,6 +6087,7 @@ export function serializeUpdateLibrarySettings(writer: SerializationWriter, upda
     writer.writeBooleanValue("fileWatcherEnabled", updateLibrarySettings.fileWatcherEnabled);
     writer.writeCollectionOfPrimitiveValues<string>("imageExtensions", updateLibrarySettings.imageExtensions);
     writer.writeNumberValue("scanIntervalMinutes", updateLibrarySettings.scanIntervalMinutes);
+    writer.writeBooleanValue("subsonicDownloads", updateLibrarySettings.subsonicDownloads);
     writer.writeCollectionOfPrimitiveValues<string>("videoExtensions", updateLibrarySettings.videoExtensions);
     writer.writeAdditionalData(updateLibrarySettings.additionalData);
 }
@@ -6040,6 +6138,18 @@ export function serializeUpdateSleepTimerSettings(writer: SerializationWriter, u
     if (!updateSleepTimerSettings || isSerializingDerivedType) { return; }
     writer.writeNumberValue("fadeSeconds", updateSleepTimerSettings.fadeSeconds);
     writer.writeAdditionalData(updateSleepTimerSettings.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param UpdateSubsonicAccess The instance to serialize from.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeUpdateSubsonicAccess(writer: SerializationWriter, updateSubsonicAccess: Partial<UpdateSubsonicAccess> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!updateSubsonicAccess || isSerializingDerivedType) { return; }
+    writer.writeBooleanValue("enabled", updateSubsonicAccess.enabled);
+    writer.writeAdditionalData(updateSubsonicAccess.additionalData);
 }
 /**
  * Serializes information the current object
@@ -6361,6 +6471,36 @@ export interface SleepTimerSettings extends AdditionalDataHolder, Parsable {
 }
 export type SortDirection = (typeof SortDirectionObject)[keyof typeof SortDirectionObject];
 export type StreamProtocol = (typeof StreamProtocolObject)[keyof typeof StreamProtocolObject];
+/**
+ * The Subsonic access of the current profile: whether Subsonic apps may sign in and whether an app password exists. The app password itself is only returned once, when it is created. Apps sign in with the name of the profile and the app password at the address of the server.
+ */
+export interface SubsonicAccess extends AdditionalDataHolder, Parsable {
+    /**
+     * True if Subsonic apps may sign in as the profile; off by default. While it is off, every sign-in fails.
+     */
+    enabled?: boolean | null;
+    /**
+     * True if the profile has an app password.
+     */
+    hasPassword?: boolean | null;
+    /**
+     * When the app password was created; null without one.
+     */
+    passwordCreatedAt?: Date | null;
+}
+/**
+ * A new app password for Subsonic apps. It is shown this once; the server keeps it encrypted and never returns it again.
+ */
+export interface SubsonicPassword extends AdditionalDataHolder, Parsable {
+    /**
+     * The Subsonic access with the new password.
+     */
+    access?: SubsonicAccess | null;
+    /**
+     * The app password; also the OpenSubsonic API key.
+     */
+    password?: string | null;
+}
 /**
  * A track of the library: all media files with the same base name in one folder.
  */
@@ -7074,6 +7214,10 @@ export interface UpdateLibrarySettings extends AdditionalDataHolder, Parsable {
      */
     scanIntervalMinutes?: number | null;
     /**
+     * Allows or forbids Subsonic apps to download the original files of the tracks.
+     */
+    subsonicDownloads?: boolean | null;
+    /**
      * Extensions of video files; an extension may only be in one list.
      */
     videoExtensions?: string[] | null;
@@ -7113,6 +7257,15 @@ export interface UpdateSleepTimerSettings extends AdditionalDataHolder, Parsable
      * Seconds the sleep timer fades out the music before it stops, from 1 to 60.
      */
     fadeSeconds?: number | null;
+}
+/**
+ * Changes the Subsonic access of the current profile. Missing or null values stay unchanged.
+ */
+export interface UpdateSubsonicAccess extends AdditionalDataHolder, Parsable {
+    /**
+     * True allows Subsonic apps to sign in with the app password, false forbids it.
+     */
+    enabled?: boolean | null;
 }
 /**
  * The files the admin selects for a track. Replaces the whole selection: a missing or null id leaves the choice of the category to the quality rule. Sending the id of the current selection keeps it, also a missing one.
@@ -7692,7 +7845,7 @@ export const HealthStatusObject = {
     Unhealthy: "Unhealthy",
 } as const;
 /**
- * Video with sound or sound only.
+ * What an HLS stream of a track carries.
  */
 export const HlsMediaObject = {
     Audio: "Audio",

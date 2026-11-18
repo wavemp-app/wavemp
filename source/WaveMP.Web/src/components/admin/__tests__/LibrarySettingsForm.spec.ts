@@ -15,6 +15,7 @@ const settings = {
     albumCoverNames: ['cover', 'folder'],
     coverPriority: 'AlbumFirst' as const,
     downloadLyrics: false,
+    subsonicDownloads: false,
 }
 
 async function mountForm(current = settings) {
@@ -85,6 +86,7 @@ describe('LibrarySettingsForm', () => {
             albumCoverNames: ['cover', 'folder'],
             coverPriority: 'AlbumFirst',
             downloadLyrics: false,
+            subsonicDownloads: false,
         })
         expect(wrapper.get('[data-part="alert"][data-state="success"]').text()).toBe(
             'The settings are saved.',
@@ -132,6 +134,23 @@ describe('LibrarySettingsForm', () => {
         await flushPromises()
 
         expect(update).toHaveBeenCalledWith(expect.objectContaining({ downloadLyrics: true }))
+        wrapper.unmount()
+    })
+
+    it('allows Subsonic apps to download songs', async () => {
+        const { wrapper, update } = await mountForm()
+        update.mockResolvedValue({ ...settings, subsonicDownloads: true })
+
+        const field = wrapper.get('[data-field="subsonic-downloads"]')
+        expect(field.text()).toContain('Subsonic apps may download songs')
+        const checkbox = field.get('input[type="checkbox"]')
+        expect((checkbox.element as HTMLInputElement).checked).toBe(false)
+
+        await checkbox.setValue(true)
+        await wrapper.get('form').trigger('submit')
+        await flushPromises()
+
+        expect(update).toHaveBeenCalledWith(expect.objectContaining({ subsonicDownloads: true }))
         wrapper.unmount()
     })
 

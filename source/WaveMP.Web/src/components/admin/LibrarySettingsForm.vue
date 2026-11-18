@@ -26,8 +26,8 @@ type Field = 'interval' | 'audio' | 'video' | 'images' | 'coverNames' | 'coverPr
 
 /**
  * Settings of the library: scan interval, file watcher, extension lists, album cover names, the
- * global cover rule and the download of lyrics (off by default, because it sends the titles of the
- * library to an online service). A changed cover rule loads the covers of albums and songs again.
+ * global cover rule, the download of lyrics (off by default, because it sends the titles of the
+ * library to an online service) and whether Subsonic apps may download the original files. A changed cover rule loads the covers of albums and songs again.
  */
 const { t } = useI18n()
 const format = useFormat()
@@ -42,6 +42,7 @@ const images = ref('')
 const coverNames = ref('')
 const coverPriority = ref<string>('AlbumFirst')
 const downloadLyrics = ref(false)
+const subsonicDownloads = ref(false)
 const saving = ref(false)
 const saved = ref(false)
 const failed = ref(false)
@@ -85,6 +86,7 @@ function show(settings: LibrarySettings | null): void {
     coverNames.value = formatList(settings.albumCoverNames)
     coverPriority.value = coverPriorityOf(settings.coverPriority)
     downloadLyrics.value = settings.downloadLyrics ?? false
+    subsonicDownloads.value = settings.subsonicDownloads ?? false
 }
 
 const coverPriorityOptions = computed<SegmentOption[]>(() =>
@@ -130,6 +132,7 @@ async function save(): Promise<void> {
             albumCoverNames: parseList(coverNames.value),
             coverPriority: coverPriorityOf(coverPriority.value as CoverPriority),
             downloadLyrics: downloadLyrics.value,
+            subsonicDownloads: subsonicDownloads.value,
         })
         if (result && result.coverPriority !== previousPriority) {
             // Albums and songs without a rule of their own may show another cover now.
@@ -236,6 +239,13 @@ onMounted(async () => {
             data-field="download-lyrics"
             :label="t('adminLibrary.downloadLyrics')"
             :hint="t('adminLibrary.downloadLyricsHint')"
+            :disabled="saving"
+        />
+        <BaseCheckbox
+            v-model="subsonicDownloads"
+            data-field="subsonic-downloads"
+            :label="t('adminLibrary.subsonicDownloads')"
+            :hint="t('adminLibrary.subsonicDownloadsHint')"
             :disabled="saving"
         />
         <BaseAlert v-if="saved" tone="success" :message="t('adminLibrary.saved')" />

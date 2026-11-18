@@ -569,6 +569,33 @@
       "lastFmCanceled": "Last.fm did not allow the access. Nothing was connected."
     }
   },
+  "subsonic": {
+    "title": "Subsonic apps",
+    "hint": "Play your library in apps for the Subsonic API, e.g. Symfonium on Android or play:Sub and Substreamer on iPhone and iPad. Sign in in the app with the address of this server, the name of this profile and an app password.",
+    "enabled": "Allow Subsonic apps",
+    "enabledHint": "While this is off, no Subsonic app can sign in as this profile, even with the app password.",
+    "server": "Server address",
+    "userName": "User name",
+    "password": "App password",
+    "passwordNone": "Not created yet",
+    "passwordSet": "Created",
+    "passwordCreatedAt": "Created on {date}",
+    "newPassword": "New app password",
+    "newPasswordHint": "Enter this password in the app now. It is only shown this once; if you lose it, create a new one.",
+    "copy": "Copy password",
+    "copied": "The password was copied. It is only shown this once.",
+    "createPassword": "Create app password",
+    "renewPassword": "Create new app password",
+    "revokePassword": "Revoke app password",
+    "revoked": "The app password was revoked. Subsonic apps can no longer sign in.",
+    "loadError": "The Subsonic access could not be loaded.",
+    "errors": {
+      "saveFailed": "The Subsonic access could not be changed.",
+      "createFailed": "The app password could not be created.",
+      "revokeFailed": "The app password could not be revoked.",
+      "copyFailed": "The password could not be copied. Please copy it by hand."
+    }
+  },
   "avatars": {
     "title": "Profile picture",
     "mode": "Kind of picture",
@@ -768,7 +795,9 @@
       "coverNames": "Use names without slashes, without a leading dot and with at most 50 characters."
     },
     "downloadLyrics": "Download lyrics from LRCLIB",
-    "downloadLyricsHint": "Looks up the lyrics of new songs without lyrics on lrclib.net after each scan and saves them next to the song as .lrc file (or in the database if the folder is not writable). Titles, artists and albums of your library are sent to the service."
+    "downloadLyricsHint": "Looks up the lyrics of new songs without lyrics on lrclib.net after each scan and saves them next to the song as .lrc file (or in the database if the folder is not writable). Titles, artists and albums of your library are sent to the service.",
+    "subsonicDownloads": "Subsonic apps may download songs",
+    "subsonicDownloadsHint": "Allows Subsonic apps to download the original files of the songs, e.g. to keep them on the phone. Without it, the apps can only stream."
   },
   "adminFiles": {
     "title": "File selection",

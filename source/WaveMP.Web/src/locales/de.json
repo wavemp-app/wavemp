@@ -569,6 +569,33 @@
       "lastFmCanceled": "Last.fm hat den Zugriff nicht erlaubt. Es wurde nichts verbunden."
     }
   },
+  "subsonic": {
+    "title": "Subsonic-Apps",
+    "hint": "Spiele deine Bibliothek in Apps für die Subsonic-API ab, z. B. Symfonium unter Android oder play:Sub und Substreamer auf iPhone und iPad. Melde dich in der App mit der Adresse dieses Servers, dem Namen dieses Profils und einem App-Passwort an.",
+    "enabled": "Subsonic-Apps erlauben",
+    "enabledHint": "Solange dies aus ist, kann sich keine Subsonic-App als dieses Profil anmelden, auch nicht mit dem App-Passwort.",
+    "server": "Serveradresse",
+    "userName": "Benutzername",
+    "password": "App-Passwort",
+    "passwordNone": "Noch nicht erstellt",
+    "passwordSet": "Erstellt",
+    "passwordCreatedAt": "Erstellt am {date}",
+    "newPassword": "Neues App-Passwort",
+    "newPasswordHint": "Gib dieses Passwort jetzt in der App ein. Es wird nur dieses eine Mal angezeigt; wenn du es verlierst, erstelle ein neues.",
+    "copy": "Passwort kopieren",
+    "copied": "Das Passwort wurde kopiert. Es wird nur dieses eine Mal angezeigt.",
+    "createPassword": "App-Passwort erstellen",
+    "renewPassword": "Neues App-Passwort erstellen",
+    "revokePassword": "App-Passwort widerrufen",
+    "revoked": "Das App-Passwort wurde widerrufen. Subsonic-Apps können sich nicht mehr anmelden.",
+    "loadError": "Der Subsonic-Zugang konnte nicht geladen werden.",
+    "errors": {
+      "saveFailed": "Der Subsonic-Zugang konnte nicht geändert werden.",
+      "createFailed": "Das App-Passwort konnte nicht erstellt werden.",
+      "revokeFailed": "Das App-Passwort konnte nicht widerrufen werden.",
+      "copyFailed": "Das Passwort konnte nicht kopiert werden. Bitte kopiere es von Hand."
+    }
+  },
   "avatars": {
     "title": "Profilbild",
     "mode": "Art des Bildes",
@@ -768,7 +795,9 @@
       "coverNames": "Namen ohne Schrägstriche, ohne Punkt am Anfang und mit höchstens 50 Zeichen."
     },
     "downloadLyrics": "Songtexte von LRCLIB herunterladen",
-    "downloadLyricsHint": "Sucht nach jedem Scan die Songtexte neuer Titel ohne Songtext auf lrclib.net und speichert sie neben dem Titel als .lrc-Datei (oder in der Datenbank, wenn der Ordner nicht beschreibbar ist). Dabei werden Titel, Interpreten und Alben deiner Bibliothek an den Dienst gesendet."
+    "downloadLyricsHint": "Sucht nach jedem Scan die Songtexte neuer Titel ohne Songtext auf lrclib.net und speichert sie neben dem Titel als .lrc-Datei (oder in der Datenbank, wenn der Ordner nicht beschreibbar ist). Dabei werden Titel, Interpreten und Alben deiner Bibliothek an den Dienst gesendet.",
+    "subsonicDownloads": "Subsonic-Apps dürfen Titel herunterladen",
+    "subsonicDownloadsHint": "Erlaubt Subsonic-Apps, die Originaldateien der Titel herunterzuladen, z. B. um sie auf dem Telefon zu behalten. Ohne diese Einstellung können die Apps nur streamen."
   },
   "adminFiles": {
     "title": "Dateiauswahl",

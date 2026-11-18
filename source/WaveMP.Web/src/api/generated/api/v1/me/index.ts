@@ -22,6 +22,8 @@ import { ScrobblingRequestBuilderNavigationMetadata, ScrobblingRequestBuilderReq
 // @ts-ignore
 import { SettingsRequestBuilderRequestsMetadata, type SettingsRequestBuilder } from './settings/index.js';
 // @ts-ignore
+import { SubsonicRequestBuilderNavigationMetadata, SubsonicRequestBuilderRequestsMetadata, type SubsonicRequestBuilder } from './subsonic/index.js';
+// @ts-ignore
 import { type BaseRequestBuilder, type KeysToExcludeForNavigationMetadata, type NavigationMetadata } from '@microsoft/kiota-abstractions';
 
 /**
@@ -68,6 +70,10 @@ export interface MeRequestBuilder extends BaseRequestBuilder<MeRequestBuilder> {
      * The settings property
      */
     get settings(): SettingsRequestBuilder;
+    /**
+     * The subsonic property
+     */
+    get subsonic(): SubsonicRequestBuilder;
 }
 /**
  * Uri template for the request builder.
@@ -110,6 +116,10 @@ export const MeRequestBuilderNavigationMetadata: Record<Exclude<keyof MeRequestB
     },
     settings: {
         requestsMetadata: SettingsRequestBuilderRequestsMetadata,
+    },
+    subsonic: {
+        requestsMetadata: SubsonicRequestBuilderRequestsMetadata,
+        navigationMetadata: SubsonicRequestBuilderNavigationMetadata,
     },
 };
 /* tslint:enable */
