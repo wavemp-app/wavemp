@@ -34,6 +34,7 @@ WaveMP brings back the glossy, glassy look of the classic desktop media players 
 - **Plays almost anything.** Formats your browser supports are streamed directly; everything else is transcoded on the fly with ffmpeg. Intel Quick Sync is supported for hardware acceleration.
 - **Casting.** Send the music, or the music video, to a Chromecast from Chrome and Edge or to an AirPlay device from Safari, while the queue and the controls stay in WaveMP.
 - **Scrobbling.** Each profile can send what it listens to to Last.fm or ListenBrainz. Scrobbles wait in the database while a service is down and are sent later.
+- **Subsonic apps.** Play your library on the phone with apps for the Subsonic API, such as Symfonium, play:Sub or Substreamer, with your favorites, ratings, playlists and plays. Each profile switches the access on and signs in with its own app password.
 - **Easy setup.** One compose file, one password, your media folder. That's it.
 - **Daily backups.** The database is exported every day and before every update, and the last exports are kept next to your other data.
 - **Open API.** A documented REST API (OpenAPI) for building your own clients. Native apps are planned.
@@ -448,6 +449,7 @@ A number at the start of a file name is only a track number inside an album fold
 22. **Sleep timer.** The moon button in the transport bar stops the music after 15 to 120 minutes, at the end of the current song or at the end of the queue; the button shows the remaining time, and **Off** cancels it. Shortly before the stop the music fades out (ten seconds by default, set under **Settings > Sleep timer fade-out**), then the player pauses. The timer runs on the device that plays and is not stored.
 23. **Cast.** The cast button in the transport bar (in the expanded player on smartphones) opens the device selection of your browser: Chrome and Edge show your Chromecast devices and TVs with Chromecast built in, Safari on Mac, iPhone and iPad shows its AirPlay menu. Choose a device, and the current song goes on there at the same position; the transport bar and **Now Playing** show **Playing on** with the name of the device (AirPlay does not tell the name). The device shows title, artist, album and cover; with the **Video** view chosen, it plays the music video of the song. The queue stays in WaveMP, and play, pause, seek, skip and the volume slider control the device. Songs the device cannot play are transcoded by the server. While casting, the device plays the music as it is: the equalizer, crossfade, volume leveling (ReplayGain) and the visualization are greyed out. Open the device selection again to stop casting; the song then waits paused in the browser at the same position. Chromecast needs WaveMP to be opened over HTTPS (see [Quick Start](#quick-start)); without it the button is greyed out and says so. Other browsers, such as Firefox, show no cast button. For Chromecast, the browser loads the Cast SDK from Google (`www.gstatic.com`) when WaveMP starts; the casting device itself must reach your WaveMP server under the same address as your browser.
 24. **Scrobble.** Under **Settings > Scrobbling**, connect your profile to Last.fm or ListenBrainz, and the songs you listen to are sent there; the page shows for each service whether it is connected, as which account, when the last song was sent and how many songs are still waiting. See [Scrobbling](#scrobbling).
+25. **Use Subsonic apps.** Under **Settings > Subsonic apps**, allow Subsonic apps and create an app password; then sign in in the app with the address of the server, the name of your profile and that password. See [Subsonic apps](#subsonic-apps).
 
 ### Profiles and PINs
 
@@ -483,6 +485,28 @@ While a song plays, WaveMP reports it as "Now Playing". Once you have listened t
    ```
 
 3. Pass them on to the container (the `docker-compose.yml` of the Quick Start already does) and restart WaveMP.
+
+### Subsonic apps
+
+WaveMP speaks the Subsonic API (version 1.16.1 with the OpenSubsonic extensions), so you can play your library with apps made for Subsonic and Navidrome servers, for example:
+
+- **Android:** Symfonium
+- **iPhone and iPad:** play:Sub and Substreamer
+
+Other Subsonic apps work as well, as long as they use the ID3-based browsing of artists and albums (all current apps do).
+
+**Set up a profile:**
+
+1. Open **Settings > Subsonic apps** in WaveMP and switch on **Allow Subsonic apps**. The access is off for every profile until it switches it on, and while it is off, no app can sign in as the profile.
+2. Choose **Create app password**. WaveMP shows the password once; enter it in the app right away. The app password is not your PIN: each profile has its own, WaveMP stores it encrypted with the keys in the data folder and never shows it again. **Create new app password** replaces it (apps with the old one have to sign in again), **Revoke app password** stops all apps of the profile.
+3. In the app, add a Subsonic (or Navidrome) server with:
+   - **Server address:** the address you open WaveMP with, for example `http://nas.local:8080` (the app adds `/rest` itself),
+   - **User name:** the name of your profile, as shown in the profile selection (upper and lower case do not matter),
+   - **Password:** the app password.
+
+The apps see the same library as the web app, with the favorites, ratings, playlists and play history of the profile; plays from the apps are scrobbled to Last.fm and ListenBrainz like plays in the web app, and **Now Playing** in the apps shows what the profiles play in the apps and in the web app. Formats a phone usually plays (MP3, FLAC, AAC/M4A, Ogg, Opus, WAV) are streamed as they are; other formats, the sound of music videos and songs above the bitrate limit an app asks for are transcoded on the fly with ffmpeg (MP3 by default, Opus or AAC if the app asks for them). Downloads of the original files for offline use are off by default; an admin allows them for all profiles under **Administration > Library** with **Subsonic apps may download songs**. Without it, apps can still keep transcoded songs in their own cache if they offer that. Administration through the Subsonic API (users, scans, settings) is not available; WaveMP is administered in the web app.
+
+Apps outside your home network need to reach WaveMP; as with the web app, use a VPN or a reverse proxy with HTTPS instead of opening the port to the internet. Apps send the app password with every request (as a token or, with some apps, as a parameter of the address), so use HTTPS when they connect over the internet.
 
 ## Platforms
 
@@ -564,6 +588,7 @@ This builds the image from source and starts WaveMP on `http://localhost:8080`. 
 | `source/WaveMP.Core.Transcoding` | Transcoding with ffmpeg: HLS playlists and segments in the cache, the ffmpeg processes with their limit and clean-up, and the detection of the hardware acceleration (Intel Quick Sync through QSV or VA-API) |
 | `source/WaveMP.Core.Playlists` | Playlists of the profiles with their entries and covers (uploads under `/data/playlists`) and the list of recently played tracks |
 | `source/WaveMP.Core.Backups` | Exports of the database with pg_dump into `/data/backups`: the daily backup job, manual exports, the number of kept exports and the export before migrations |
+| `source/WaveMP.Core.Subsonic` | The Subsonic API under `/rest` for Subsonic apps: app passwords of the profiles, sign-in, answers in XML and JSON, streams with transcoding, covers and the "Now Playing" list |
 | `source/WaveMP.Core.Caching` | Cache under `/data/cache`: scaled covers (WebP with ffmpeg), their preparation after scans and changes of a cover rule, size limit and clean-up of the files used least recently |
 | `source/WaveMP.Data` | EF Core with PostgreSQL (DbContext, entities, repositories, migrations) |
 | `source/WaveMP.Web` | Vue 3 web app |
