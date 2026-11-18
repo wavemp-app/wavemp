@@ -49,3 +49,5 @@ Thumbs.db
 
 # Claude Code (local)
 .claude/settings.local.json
+# Screenshots of theme checks (npm run theme:screenshots in tests/WaveMP.E2E)
+**/theme-screenshots/

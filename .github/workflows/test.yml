@@ -320,7 +320,9 @@ jobs:
 
       # Runs in the official Playwright image, which brings the browser and its system packages
       # (installing them with --with-deps needs the Ubuntu package mirror, which is not always
-      # reachable from the runners). Host network, so localhost:8080 reaches the app. The image is
+      # reachable from the runners). Host network, so localhost:8080 reaches the app. The whole
+      # checkout is mounted: the theme regression (tests/themes) reads the theme registry of the web
+      # app and compares with the baselines in tests/themes/baselines. The image is
       # pinned by digest, so its tag must be updated together with @playwright/test; the check
       # below fails the job if the two versions differ.
       - name: E2E tests
@@ -338,7 +340,7 @@ jobs:
           docker run --rm --init --ipc host --network host \
             --user "$(id -u):$(id -g)" --env HOME=/tmp \
             --env CI --env E2E_BASE_URL --env E2E_EXPECTED_VERSION --env E2E_EXPECTED_TRACKS \
-            --volume "$PWD:/e2e" --workdir /e2e \
+            --volume "$GITHUB_WORKSPACE:/repo" --workdir /repo/tests/WaveMP.E2E \
             "$PLAYWRIGHT_IMAGE" npm test
 
       - name: Show container logs

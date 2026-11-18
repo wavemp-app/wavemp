@@ -5,6 +5,14 @@ import { adminStorageState } from './tests/helpers/storage'
 const deviceSpecs = /[\\/]devices[\\/].*\.spec\.ts$/
 
 /**
+ * The screenshot and contrast regression of the shipped themes (tests/themes). It runs after all
+ * other projects, so no other spec changes the library while it takes its screenshots, and keeps
+ * its baselines without the name of the platform: they are taken in the Playwright image of the
+ * CI only (npm run test:themes:update).
+ */
+const themeSpecs = /[\\/]themes[\\/].*\.spec\.ts$/
+
+/**
  * The visualization spec draws WebGL 2 in software (SwiftShader), and two drawings at once take too
  * much of the CPU. So it runs in a project of its own with one worker, which draws on the desktop
  * and on a phone one after another (see the spec), instead of in "chromium" and "mobile" at once.
@@ -35,7 +43,7 @@ function device(name: string, descriptor: string) {
  * session (see tests/helpers/storage.ts). "chromium" (desktop) and "mobile" (phone) run all specs
  * except tests/devices and the visualization spec; "visualization" runs the visualization spec on
  * the desktop and on a phone in one worker; "iphone", "ipad" and "ipad-landscape" run
- * tests/devices.
+ * tests/devices; "themes" checks the shipped themes after all of them (tests/themes).
  */
 export default defineConfig({
     testDir: './tests',
@@ -48,16 +56,23 @@ export default defineConfig({
         trace: 'on-first-retry',
     },
     projects: [
-        { name: 'setup', testMatch: /.*\.setup\.ts/, use: { ...devices['Desktop Chrome'] } },
+        {
+            name: 'setup',
+            testMatch: /.*\.setup\.ts/,
+            use: { ...devices['Desktop Chrome'] },
+        },
         {
             name: 'chromium',
-            testIgnore: [deviceSpecs, visualizationSpec],
-            use: { ...devices['Desktop Chrome'], storageState: adminStorageState },
+            testIgnore: [deviceSpecs, visualizationSpec, themeSpecs],
+            use: {
+                ...devices['Desktop Chrome'],
+                storageState: adminStorageState,
+            },
             dependencies: ['setup'],
         },
         {
             name: 'mobile',
-            testIgnore: [deviceSpecs, visualizationSpec],
+            testIgnore: [deviceSpecs, visualizationSpec, themeSpecs],
             use: { ...devices['Pixel 7'], storageState: adminStorageState },
             dependencies: ['setup'],
         },
@@ -66,11 +81,28 @@ export default defineConfig({
             testMatch: visualizationSpec,
             fullyParallel: false,
             workers: 1,
-            use: { ...devices['Desktop Chrome'], storageState: adminStorageState },
+            use: {
+                ...devices['Desktop Chrome'],
+                storageState: adminStorageState,
+            },
             dependencies: ['setup'],
         },
         device('iphone', 'iPhone 13'),
         device('ipad', 'iPad Pro 11'),
         device('ipad-landscape', 'iPad Pro 11 landscape'),
+        {
+            name: 'themes',
+            testMatch: themeSpecs,
+            snapshotPathTemplate: '{testDir}/themes/baselines/{arg}{ext}',
+            use: { ...devices['Desktop Chrome'] },
+            dependencies: [
+                'chromium',
+                'mobile',
+                'visualization',
+                'iphone',
+                'ipad',
+                'ipad-landscape',
+            ],
+        },
     ],
 })

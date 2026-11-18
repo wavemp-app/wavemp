@@ -10,7 +10,9 @@
   "include": [
     "playwright.config.ts",
     "playwright.screenshots.config.ts",
+    "playwright.themes.config.ts",
     "tests/**/*.ts",
-    "screenshots/**/*.ts"
+    "screenshots/**/*.ts",
+    "scripts/**/*.ts"
   ]
 }

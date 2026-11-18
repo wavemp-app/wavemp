@@ -40,7 +40,7 @@ WaveMP brings back the glossy, glassy look of the classic desktop media players 
 - **Open API.** A documented REST API (OpenAPI) for building your own clients. Native apps are planned.
 - **Installable as an app (PWA)** on desktop and mobile devices.
 - **Your language.** English and German are built in, more languages come from the community through [Weblate](https://hosted.weblate.org/engage/wavemp/). A language appears in WaveMP as soon as its translation exists; texts that are not translated yet are shown in English. See [Translations](#translations).
-- **Themes.** The look is a theme: one CSS file plus graphics, from colors to the complete desktop layout. WaveMP ships with the dark glass theme *Midnight*; see [THEMING.md](THEMING.md) for writing your own.
+- **Themes.** The look is a theme: one CSS file plus graphics, from colors to the complete desktop layout. WaveMP ships with six themes: *Midnight* (the default), *Meadow*, *Daylight*, *Accent*, *Pinstripe* and *Clear Glass*. Every profile picks its theme in the settings, from tiles with a preview, and the app switches at once. *Accent* and *Clear Glass* come in a light and a dark variant; "Light or dark" in the settings follows the device or keeps one of them. *Clear Glass* takes on the color of the cover that is playing. See [THEMING.md](THEMING.md) for writing your own.
 
 ## Screenshots
 
@@ -627,7 +627,9 @@ In Git Bash on Windows, prefix the command with `MSYS_NO_PATHCONV=1` and use `$(
 
 The backups need `pg_dump` of PostgreSQL 18, which the image contains. Without it on the development machine, manual and daily backups fail with a notice on the backup page; the export before migrations is turned off in development (`Backups:BeforeMigrations` in `appsettings.Development.json`). Set `Backups__PgDumpPath` to use a `pg_dump` outside the `PATH`.
 
-The development server also serves an internal component overview at `http://localhost:5173/dev/components`: all parts of the theme API in all states and the app at mobile and desktop size. It is not part of the production build.
+The development server also serves an internal component overview at `http://localhost:5173/dev/components`: all parts of the theme API in all states, with a switch for the theme and its variant, and the app at mobile and desktop size. It is not part of the production build.
+
+For work on a theme, `npm run theme:preview -- <theme>` in `source/WaveMP.Web` starts a preview of one theme on its own port (5200 to 5205) against the development container, and `npm run theme:screenshots` and `npm run theme:contrast` in `tests/WaveMP.E2E` take screenshots of fixed views and check the contrast (WCAG 2.2 AA). `npm test` there also compares every shipped theme with its baselines; `npm run test:themes:update` takes them again in the Playwright image of the CI. See [THEMING.md](THEMING.md#checking-a-theme).
 
 The Phosphor icons in `assets/web/icons` are copied from the npm package `@phosphor-icons/core`. To add an icon, add it to the list in `source/WaveMP.Web/scripts/sync-icons.ts` and run `npm run icons:sync` in `source/WaveMP.Web`.
 
