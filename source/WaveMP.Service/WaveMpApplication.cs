@@ -64,6 +64,7 @@ public static class WaveMpApplication
         builder.Services.AddWaveMpScrobbling();
         builder.Services.AddWaveMpTranscoding();
         builder.Services.AddWaveMpBackups();
+        builder.Services.AddWaveMpSubsonicApi();
         builder.Services.AddWaveMpDataProtection();
         builder.Services.AddWaveMpAuthentication();
         builder.Services.AddHealthChecks()
@@ -75,8 +76,8 @@ public static class WaveMpApplication
         // Before the authentication, so that its empty 401 and 403 responses become Problem Details as well.
         app.UseStatusCodePages();
 
-        // Only the endpoints of signed media URLs have a CORS policy (see SignedMediaAttribute); preflight requests are
-        // answered before the authentication.
+        // Only the endpoints of signed media URLs (see SignedMediaAttribute) and the Subsonic API have a CORS policy;
+        // preflight requests are answered before the authentication.
         app.UseCors();
         app.UseAuthentication();
         app.UseAuthorization();

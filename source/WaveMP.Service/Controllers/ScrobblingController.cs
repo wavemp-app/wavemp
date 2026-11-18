@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using WaveMP.Core.Scrobbling.Connections;
 using WaveMP.Core.Scrobbling.Plays;
+using WaveMP.Core.Subsonic.NowPlaying;
 using WaveMP.Service.Dtos;
 using WaveMP.Service.Extensions;
 using WaveMP.Service.Mappings;
@@ -20,7 +21,8 @@ namespace WaveMP.Service.Controllers;
 [ProducesResponseType<ProblemDetails>(StatusCodes.Status401Unauthorized, "application/problem+json")]
 public sealed class ScrobblingController(
     IScrobbleConnectionService connections,
-    INowPlayingService nowPlaying) : ControllerBase
+    INowPlayingService nowPlaying,
+    ISubsonicNowPlayingRegistry nowPlayingRegistry) : ControllerBase
 {
     /// <summary>
     /// Returns every scrobbling service with its state for the current profile.
@@ -124,7 +126,8 @@ public sealed class ScrobblingController(
     /// Reports the track the current profile starts to listen to as "Now Playing" to every connected scrobbling
     /// service. Clients send it when the playback of a track starts. Tracks shorter than 30 seconds, tracks without
     /// artist and profiles without a connected service are accepted without a report; failures of a service are not
-    /// reported to the client, since "Now Playing" is not repeated.
+    /// reported to the client, since "Now Playing" is not repeated. The track also shows in "Now Playing" of the
+    /// Subsonic API (getNowPlaying).
     /// </summary>
     /// <param name="request">The track.</param>
     /// <param name="cancellationToken">Aborts the request.</param>
@@ -140,9 +143,14 @@ public sealed class ScrobblingController(
         UpdateNowPlayingDto request,
         CancellationToken cancellationToken)
     {
-        NowPlayingStatus status = await nowPlaying.ReportAsync(User.GetUserId(), request.TrackId, cancellationToken);
-        return status == NowPlayingStatus.TrackNotFound
-            ? this.Problem(ProblemCodeDto.TrackNotFound, StatusCodes.Status404NotFound)
-            : NoContent();
+        Guid userId = User.GetUserId();
+        NowPlayingStatus status = await nowPlaying.ReportAsync(userId, request.TrackId, cancellationToken);
+        if (status == NowPlayingStatus.TrackNotFound)
+        {
+            return this.Problem(ProblemCodeDto.TrackNotFound, StatusCodes.Status404NotFound);
+        }
+
+        nowPlayingRegistry.Report(userId, request.TrackId, playerName: null);
+        return NoContent();
     }
 }

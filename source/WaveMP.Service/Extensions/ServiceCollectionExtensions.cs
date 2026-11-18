@@ -13,7 +13,9 @@ using Microsoft.AspNetCore.OpenApi;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.Net.Http.Headers;
 using Microsoft.OpenApi;
+using WaveMP.Core.Subsonic.Extensions;
 using WaveMP.Data.Entities;
+using WaveMP.Service.Areas.Subsonic;
 using WaveMP.Service.Dtos;
 using WaveMP.Service.Filters;
 using WaveMP.Service.Keys;
@@ -167,6 +169,26 @@ public static class ServiceCollectionExtensions
                 HeaderNames.ContentRange,
                 HeaderNames.ContentType)));
 
+        return services;
+    }
+
+    /// <summary>
+    /// Registers the Subsonic API for Subsonic apps (see <see cref="Areas.Subsonic.Controllers.SubsonicController"/>)
+    /// with its CORS policy <see cref="SubsonicDefaults.CorsPolicy"/>: web-based Subsonic apps call it from their own
+    /// origin and sign in with parameters, not with cookies.
+    /// </summary>
+    public static IServiceCollection AddWaveMpSubsonicApi(this IServiceCollection services)
+    {
+        services.AddWaveMpSubsonic();
+        services.AddCors(options => options.AddPolicy(SubsonicDefaults.CorsPolicy, policy => policy
+            .AllowAnyOrigin()
+            .WithMethods(HttpMethods.Get, HttpMethods.Post, HttpMethods.Head)
+            .AllowAnyHeader()
+            .WithExposedHeaders(
+                HeaderNames.AcceptRanges,
+                HeaderNames.ContentLength,
+                HeaderNames.ContentRange,
+                HeaderNames.ContentType)));
         return services;
     }
 

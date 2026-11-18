@@ -52,4 +52,9 @@ public sealed class UpdateLibrarySettingsDto
     /// Switches the download of lyrics from LRCLIB on or off; switching it on starts the job lyrics-download.
     /// </summary>
     public bool? DownloadLyrics { get; init; }
+
+    /// <summary>
+    /// Allows or forbids Subsonic apps to download the original files of the tracks.
+    /// </summary>
+    public bool? SubsonicDownloads { get; init; }
 }

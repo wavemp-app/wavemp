@@ -43,6 +43,7 @@ COPY source/WaveMP.Core.Scanning/WaveMP.Core.Scanning.csproj source/WaveMP.Core.
 COPY source/WaveMP.Core.Scrobbling/WaveMP.Core.Scrobbling.csproj source/WaveMP.Core.Scrobbling/
 COPY source/WaveMP.Core.Settings/WaveMP.Core.Settings.csproj source/WaveMP.Core.Settings/
 COPY source/WaveMP.Core.Streaming/WaveMP.Core.Streaming.csproj source/WaveMP.Core.Streaming/
+COPY source/WaveMP.Core.Subsonic/WaveMP.Core.Subsonic.csproj source/WaveMP.Core.Subsonic/
 COPY source/WaveMP.Core.Transcoding/WaveMP.Core.Transcoding.csproj source/WaveMP.Core.Transcoding/
 COPY source/WaveMP.Core.Users/WaveMP.Core.Users.csproj source/WaveMP.Core.Users/
 COPY source/WaveMP.Data/WaveMP.Data.csproj source/WaveMP.Data/
@@ -60,6 +61,7 @@ COPY source/WaveMP.Core.Scanning/ source/WaveMP.Core.Scanning/
 COPY source/WaveMP.Core.Scrobbling/ source/WaveMP.Core.Scrobbling/
 COPY source/WaveMP.Core.Settings/ source/WaveMP.Core.Settings/
 COPY source/WaveMP.Core.Streaming/ source/WaveMP.Core.Streaming/
+COPY source/WaveMP.Core.Subsonic/ source/WaveMP.Core.Subsonic/
 COPY source/WaveMP.Core.Transcoding/ source/WaveMP.Core.Transcoding/
 COPY source/WaveMP.Core.Users/ source/WaveMP.Core.Users/
 COPY source/WaveMP.Data/ source/WaveMP.Data/

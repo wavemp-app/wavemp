@@ -47,4 +47,10 @@ public sealed class LibrarySettingsDto
     /// default, because titles, artists and albums of the library are sent to the service.
     /// </summary>
     public required bool DownloadLyrics { get; init; }
+
+    /// <summary>
+    /// Whether Subsonic apps may download the original files of the tracks (endpoint download of the Subsonic API under
+    /// /rest). Off by default; streaming is always allowed.
+    /// </summary>
+    public required bool SubsonicDownloads { get; init; }
 }

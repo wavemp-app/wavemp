@@ -5360,7 +5360,7 @@
         "tags": [
           "Scrobbling"
         ],
-        "summary": "Reports the track the current profile starts to listen to as \"Now Playing\" to every connected scrobbling service. Clients send it when the playback of a track starts. Tracks shorter than 30 seconds, tracks without artist and profiles without a connected service are accepted without a report; failures of a service are not reported to the client, since \"Now Playing\" is not repeated.",
+        "summary": "Reports the track the current profile starts to listen to as \"Now Playing\" to every connected scrobbling service. Clients send it when the playback of a track starts. Tracks shorter than 30 seconds, tracks without artist and profiles without a connected service are accepted without a report; failures of a service are not reported to the client, since \"Now Playing\" is not repeated. The track also shows in \"Now Playing\" of the Subsonic API (getNowPlaying).",
         "operationId": "UpdateMyNowPlaying",
         "requestBody": {
           "description": "The track.",
@@ -6108,6 +6108,195 @@
                 }
               }
             }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/api/v1/me/subsonic": {
+      "get": {
+        "tags": [
+          "SubsonicAccess"
+        ],
+        "summary": "Returns the Subsonic access of the current profile. The app password is never returned.",
+        "operationId": "GetMySubsonicAccess",
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "The Subsonic access.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubsonicAccess"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      },
+      "patch": {
+        "tags": [
+          "SubsonicAccess"
+        ],
+        "summary": "Switches the Subsonic access of the current profile on or off. Missing or null values stay unchanged.",
+        "operationId": "UpdateMySubsonicAccess",
+        "requestBody": {
+          "description": "The changes.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateSubsonicAccess"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateSubsonicAccess"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "The changed Subsonic access.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubsonicAccess"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is invalid (code `request.invalid`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The profile was deleted in the meantime (code `user.not_found`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/api/v1/me/subsonic/password": {
+      "post": {
+        "tags": [
+          "SubsonicAccess"
+        ],
+        "summary": "Creates a new app password for the current profile; it replaces the earlier one at once, so apps signed in with it must sign in again. The password is returned this once. It is also the OpenSubsonic API key.",
+        "operationId": "CreateMySubsonicPassword",
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "The new app password; Location points to the Subsonic access.",
+            "headers": {
+              "Location": {
+                "description": "Address of the created resource.",
+                "required": true,
+                "schema": {
+                  "type": "string",
+                  "format": "uri-reference"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubsonicPassword"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The profile was deleted in the meantime (code `user.not_found`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "SubsonicAccess"
+        ],
+        "summary": "Revokes the app password of the current profile; Subsonic apps can no longer sign in until a new one is created. Without a password, nothing changes.",
+        "operationId": "DeleteMySubsonicPassword",
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "The app password is revoked."
           }
         },
         "security": [
@@ -11328,7 +11517,8 @@
           "imageExtensions",
           "albumCoverNames",
           "coverPriority",
-          "downloadLyrics"
+          "downloadLyrics",
+          "subsonicDownloads"
         ],
         "type": "object",
         "properties": {
@@ -11376,6 +11566,10 @@
           "downloadLyrics": {
             "type": "boolean",
             "description": "Downloads the lyrics of tracks without lyrics from the online lyrics database LRCLIB (lrclib.net): new tracks after scans, all tracks when it is switched on, and single tracks on request (DownloadTrackLyrics). Off by default, because titles, artists and albums of the library are sent to the service."
+          },
+          "subsonicDownloads": {
+            "type": "boolean",
+            "description": "Whether Subsonic apps may download the original files of the tracks (endpoint download of the Subsonic API under /rest). Off by default; streaming is always allowed."
           }
         },
         "description": "Settings of the media library."
@@ -12802,6 +12996,50 @@
         "type": "string",
         "description": "How the stream of `streamUrl` is delivered."
       },
+      "SubsonicAccess": {
+        "required": [
+          "enabled",
+          "hasPassword"
+        ],
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "description": "True if Subsonic apps may sign in as the profile; off by default. While it is off, every sign-in fails."
+          },
+          "hasPassword": {
+            "type": "boolean",
+            "description": "True if the profile has an app password."
+          },
+          "passwordCreatedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "When the app password was created; null without one.",
+            "format": "date-time"
+          }
+        },
+        "description": "The Subsonic access of the current profile: whether Subsonic apps may sign in and whether an app password exists. The app password itself is only returned once, when it is created. Apps sign in with the name of the profile and the app password at the address of the server."
+      },
+      "SubsonicPassword": {
+        "required": [
+          "password",
+          "access"
+        ],
+        "type": "object",
+        "properties": {
+          "password": {
+            "type": "string",
+            "description": "The app password; also the OpenSubsonic API key."
+          },
+          "access": {
+            "description": "The Subsonic access with the new password.",
+            "$ref": "#/components/schemas/SubsonicAccess"
+          }
+        },
+        "description": "A new app password for Subsonic apps. It is shown this once; the server keeps it encrypted and never returns it again."
+      },
       "Track": {
         "required": [
           "id",
@@ -14053,6 +14291,13 @@
               "boolean"
             ],
             "description": "Switches the download of lyrics from LRCLIB on or off; switching it on starts the job lyrics-download."
+          },
+          "subsonicDownloads": {
+            "type": [
+              "null",
+              "boolean"
+            ],
+            "description": "Allows or forbids Subsonic apps to download the original files of the tracks."
           }
         },
         "description": "Changes the settings of the media library. Missing or null values stay unchanged."
@@ -14120,6 +14365,19 @@
           }
         },
         "description": "Changes the sleep timer of the current profile. Missing or null values stay unchanged."
+      },
+      "UpdateSubsonicAccess": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": [
+              "null",
+              "boolean"
+            ],
+            "description": "True allows Subsonic apps to sign in with the app password, false forbids it."
+          }
+        },
+        "description": "Changes the Subsonic access of the current profile. Missing or null values stay unchanged."
       },
       "UpdateTrackFileSelection": {
         "type": "object",
@@ -15028,6 +15286,9 @@
     },
     {
       "name": "Settings"
+    },
+    {
+      "name": "SubsonicAccess"
     },
     {
       "name": "TrackFileSelections"
