@@ -135,19 +135,26 @@ export function splitSections(markdown) {
  * The absolute address of a link target of the README, or null if it is absolute already. Relative
  * paths are taken from the repository root, where the README is; the path of every file is passed to
  * onFile, so the caller can check that it exists.
+ *
+ * location describes another Markdown file of the repository (used for the release notes):
+ * directory is its folder, from which relative paths are taken, ref the branch or tag the addresses
+ * point to, and page the address of the file itself, for anchors.
  */
-export function absoluteUrl(target, onFile = () => {}) {
+export function absoluteUrl(target, onFile = () => {}, location = {}) {
+    const { directory = '', ref = githubBranch, page = readmeUrl } = location
     if (target === '' || schemePattern.test(target) || target.startsWith('//')) {
         return null
     }
     if (target.startsWith('#')) {
-        return `${readmeUrl}${target}`
+        return `${page}${target}`
     }
     const suffixStart = target.search(/[?#]/)
     const filePart = suffixStart >= 0 ? target.slice(0, suffixStart) : target
     const suffix = suffixStart >= 0 ? target.slice(suffixStart) : ''
     const isDirectory = filePart.endsWith('/')
-    const normalized = path.posix.normalize(filePart.startsWith('/') ? `.${filePart}` : filePart)
+    const normalized = path.posix.normalize(
+        filePart.startsWith('/') ? `.${filePart}` : path.posix.join(directory || '.', filePart),
+    )
     if (normalized === '..' || normalized.startsWith('../')) {
         throw new Error(`The link ${target} points outside of the repository.`)
     }
@@ -158,12 +165,12 @@ export function absoluteUrl(target, onFile = () => {}) {
     onFile(decodeURIComponent(filePath))
     const extension = path.posix.extname(filePath).slice(1).toLowerCase()
     if (!isDirectory && imageExtensions.has(extension)) {
-        return `https://raw.githubusercontent.com/${githubRepository}/${githubBranch}/${filePath}${suffix}`
+        return `https://raw.githubusercontent.com/${githubRepository}/${ref}/${filePath}${suffix}`
     }
     if (isDirectory) {
-        return `${readmeUrl}/tree/${githubBranch}/${filePath}/${suffix}`
+        return `${readmeUrl}/tree/${ref}/${filePath}/${suffix}`
     }
-    return `${readmeUrl}/blob/${githubBranch}/${filePath}${suffix}`
+    return `${readmeUrl}/blob/${ref}/${filePath}${suffix}`
 }
 
 /** Replaces the relative link targets in a piece of Markdown text without code. */
@@ -206,11 +213,11 @@ function convertText(text, convert) {
 }
 
 /**
- * Turns the relative links and images of Markdown into absolute addresses (see absoluteUrl), except
- * in fenced code blocks and inline code.
+ * Turns the relative links and images of Markdown into absolute addresses (see absoluteUrl, also for
+ * location), except in fenced code blocks and inline code.
  */
-export function convertLinks(markdown, onFile = () => {}) {
-    const convert = (target) => absoluteUrl(target, onFile)
+export function convertLinks(markdown, onFile = () => {}, location = {}) {
+    const convert = (target) => absoluteUrl(target, onFile, location)
     const result = []
     forEachLine(markdown.split('\n'), (line, inFence) => {
         if (inFence) {

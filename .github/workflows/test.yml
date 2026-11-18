@@ -1,6 +1,6 @@
 # Builds and tests everything: .NET with unit, media and integration tests, the web app, the
-# license check, the templates of the app catalogs (deploy/), the Docker Hub description and the
-# Docker image with the E2E tests. Called by pull-request.yml and main.yml.
+# license check, the templates of the app catalogs (deploy/), the Docker Hub description, the text of
+# the releases and the Docker image with the E2E tests. Called by pull-request.yml and main.yml.
 #
 # All Docker images are pinned by the digest of their multi-arch index (image:tag@sha256:...); the
 # tag only documents the version. Resolve a new digest with docker buildx imagetools inspect.
@@ -202,7 +202,8 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
 
       # Fixed versions, the same version everywhere, well-formed XML, existing files and up to date
-      # copies of the icon and the screenshots (see deploy/README.md).
+      # copies of the icon and the screenshots (see deploy/README.md). That the templates name the
+      # version of a release is checked by release.yml before it creates the release.
       - name: Check the templates in deploy
         run: node .github/scripts/check-deploy.mjs
 
@@ -240,6 +241,11 @@ jobs:
 
       - name: Test the Docker Hub description
         run: node --test .github/scripts/dockerhub-description.test.mjs
+
+      # The text of the GitHub release that release.yml creates from docs/releases (same link
+      # conversion, at the tag of the release); also checks that the links of all release notes work.
+      - name: Test the text of the releases
+        run: node --test .github/scripts/release-notes.test.mjs
 
   e2e:
     name: Docker image and E2E tests

@@ -1,0 +1,143 @@
+# Creates the GitHub release v<version> of a milestone, started by hand as the last step of a
+# milestone release (see "Release of a milestone" in deploy/README.md):
+#
+#   gh workflow run release.yml --ref main -f version=1.0.N -f milestone=5
+#
+# version is the image published by the CI run of the commit with the release notes, milestone the
+# number of docs/releases/release-m<milestone>.md. Before anything is created, the workflow checks
+# that
+# - it runs on main, the tag v<version> does not exist yet and the release notes exist with links
+#   to existing files only,
+# - the image <version> is published on Docker Hub and GHCR with the same digest,
+# - the commit it runs on contains the commit the image was built from and differs from it only in
+#   deploy/, so the tag marks exactly the source of the image,
+# - every template in deploy/ names <version> and pins the digest of the published image
+#   (check-deploy.mjs --release --digest).
+# If one check fails, nothing is created: fix the templates, push, wait for green CI and start the
+# workflow again. The release is created on the commit the workflow runs on (the commit that raised
+# the templates), with the release notes as its text; their relative links and images point to the
+# files at the tag (release-notes.mjs). Releases created with the GITHUB_TOKEN trigger no other
+# workflow.
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version of the release, 1.0.N (the image published by the CI run of the release notes commit).
+        type: string
+        required: true
+      milestone:
+        description: Number of the milestone, for example 5 for docs/releases/release-m5.md.
+        type: string
+        required: true
+
+permissions:
+  contents: read
+
+# One release at a time; a second start waits instead of cancelling the first.
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+env:
+  DOCKERHUB_IMAGE: docker.io/wavemp/wavemp
+  GHCR_IMAGE: ghcr.io/wavemp-app/wavemp
+
+jobs:
+  release:
+    name: Check the templates and create the release
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - name: Check the inputs
+        env:
+          VERSION: ${{ inputs.version }}
+          MILESTONE: ${{ inputs.milestone }}
+        run: |
+          if [[ "$GITHUB_REF" != "refs/heads/main" ]]; then
+            echo "::error::Releases are created from main, not from $GITHUB_REF."
+            exit 1
+          fi
+          if [[ ! "$VERSION" =~ ^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]; then
+            echo "::error::Version '$VERSION' is not of the form <major>.<minor>.<run number>."
+            exit 1
+          fi
+          if [[ ! "$MILESTONE" =~ ^[1-9][0-9]*$ ]]; then
+            echo "::error::Milestone '$MILESTONE' is not the number of a milestone."
+            exit 1
+          fi
+
+      # The whole history and the tags, for the comparison with the commit of the image.
+      - name: Check out
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+
+      - name: Check the tag
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          if git rev-parse --quiet --verify "refs/tags/v$VERSION" > /dev/null; then
+            echo "::error::The tag v$VERSION exists already."
+            exit 1
+          fi
+
+      - name: Create the text of the release from the release notes
+        env:
+          VERSION: ${{ inputs.version }}
+          MILESTONE: ${{ inputs.milestone }}
+        run: >-
+          node .github/scripts/release-notes.mjs --milestone "$MILESTONE" --tag "v$VERSION"
+          --output "$RUNNER_TEMP/release-notes.md"
+
+      - name: Check the published image
+        id: image
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          digest=$(docker buildx imagetools inspect "$DOCKERHUB_IMAGE:$VERSION" --format '{{ .Manifest.Digest }}')
+          ghcr_digest=$(docker buildx imagetools inspect "$GHCR_IMAGE:$VERSION" --format '{{ .Manifest.Digest }}')
+          if [[ "$digest" != "$ghcr_digest" ]]; then
+            echo "::error::$DOCKERHUB_IMAGE:$VERSION ($digest) and $GHCR_IMAGE:$VERSION ($ghcr_digest) differ."
+            exit 1
+          fi
+          revision=$(docker buildx imagetools inspect "$DOCKERHUB_IMAGE:$VERSION" \
+            --format '{{ index .Manifest.Annotations "org.opencontainers.image.revision" }}')
+          if [[ ! "$revision" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "::error::$DOCKERHUB_IMAGE:$VERSION names no commit (annotation org.opencontainers.image.revision)."
+            exit 1
+          fi
+          if ! git merge-base --is-ancestor "$revision" HEAD; then
+            echo "::error::$GITHUB_SHA does not contain $revision, the commit of $VERSION."
+            exit 1
+          fi
+          changed=$(git diff --name-only "$revision" HEAD -- . ':(exclude)deploy' | paste -sd ' ')
+          if [[ -n "$changed" ]]; then
+            echo "::error::Since $revision, the commit of $VERSION, more than deploy/ has changed: $changed"
+            exit 1
+          fi
+          echo "digest=$digest" >> "$GITHUB_OUTPUT"
+          echo "$VERSION ($digest) was built from $revision."
+
+      - name: Check the templates in deploy
+        env:
+          VERSION: ${{ inputs.version }}
+          DIGEST: ${{ steps.image.outputs.digest }}
+        run: node .github/scripts/check-deploy.mjs --release "$VERSION" --digest "$DIGEST"
+
+      - name: Create the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ inputs.version }}
+        run: >-
+          gh release create "v$VERSION" --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA"
+          --title "WaveMP $VERSION" --notes-file "$RUNNER_TEMP/release-notes.md"
