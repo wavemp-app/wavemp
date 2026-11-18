@@ -98,6 +98,14 @@ Packages for building, checking and testing the web app (not shipped):
 | `vue-eslint-parser` | MIT | Lint of Vue components |
 | `vue-tsc` | MIT | Type check of Vue components |
 
+## Loaded at runtime
+
+Software the web app loads from its publisher while it runs; it is neither part of this repository nor of the image.
+
+| Component | License | Use |
+|---|---|---|
+| Google Cast Web Sender SDK (`https://www.gstatic.com/cv/js/sender/v1/cast_sender.js`) | Proprietary, provided by Google under the [Google APIs Terms of Service](https://developers.google.com/terms) and the [Google Cast SDK Additional Developer Terms of Service](https://developers.google.com/cast/docs/terms) | Casting to Chromecast in Chrome and Edge, with the Default Media Receiver of Google. The browser loads it from Google, which allows no other source; it is only loaded in browsers that can cast to Chromecast, and only over HTTPS |
+
 ## Tests and tools
 
 Packages and tools for tests, code generation and the license check (not shipped).

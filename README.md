@@ -32,6 +32,7 @@ WaveMP brings back the glossy, glassy look of the classic desktop media players 
 - **Visualizations.** Classic Milkdrop presets plus WaveMP's own styles, *A-Force* and *BlackCap*.
 - **Lyrics.** Synchronized lyrics follow the music line by line or word by word, from `.lrc` files, from the tags of your files or, if you switch it on, downloaded from LRCLIB.
 - **Plays almost anything.** Formats your browser supports are streamed directly; everything else is transcoded on the fly with ffmpeg. Intel Quick Sync is supported for hardware acceleration.
+- **Casting.** Send the music, or the music video, to a Chromecast from Chrome and Edge or to an AirPlay device from Safari, while the queue and the controls stay in WaveMP.
 - **Easy setup.** One compose file, one password, your media folder. That's it.
 - **Daily backups.** The database is exported every day and before every update, and the last exports are kept next to your other data.
 - **Open API.** A documented REST API (OpenAPI) for building your own clients. Native apps are planned.
@@ -123,7 +124,7 @@ docker compose up -d
 
 Open `http://<your-server>:8080` and select the **Admin** profile to set up your library. WaveMP scans your media folder one minute after the start and then every six hours; changes are also picked up within seconds by watching the folder.
 
-WaveMP can be installed as an app (PWA). Browsers require HTTPS for that, except on `localhost`, for example behind a reverse proxy with TLS. Casting to Chromecast devices, which is planned, will need HTTPS as well.
+WaveMP can be installed as an app (PWA). Browsers require HTTPS for that, except on `localhost`, for example behind a reverse proxy with TLS. Casting to Chromecast devices needs HTTPS as well; AirPlay works without it.
 
 ### Image tags
 
@@ -153,6 +154,7 @@ The running version is shown under **Settings** and reported by `GET /api/v1/hea
 | `PUID` | User id that WaveMP runs as; see [User and permissions](#user-and-permissions) | `1654` |
 | `PGID` | Group id that WaveMP runs as | `1654` |
 | `Streaming__SignedUrlLifetime` | How long a stream address stays valid after it was handed out, on top of the length of the song | `01:00:00` |
+| `Streaming__CastSignedUrlLifetime` | The same for stream and cover addresses handed to a casting device, which may load a song again long after it started, for example after a pause | `06:00:00` |
 | `Streaming__MaxSignedUrlLifetime` | Upper limit of that validity, also for very long songs | `1.00:00:00` |
 | `Streaming__HistoryMaxAge` | How old a play may be when a client reports it to the history, for example after it was offline | `7.00:00:00` |
 | `Pins__MaxFailedAttempts` | Wrong PINs in a row after which a profile is locked | `5` |
@@ -162,7 +164,7 @@ The running version is shown under **Settings** and reported by `GET /api/v1/hea
 | `Lyrics__LrclibUrl` | Address of LRCLIB, for example of a mirror you host yourself | `https://lrclib.net/` |
 | `Transcoding__RenderDevice` | Render device for hardware transcoding, for example `/dev/dri/renderD129` on a server with more than one GPU; by default the first device under `/dev/dri` | *(first device)* |
 
-Audio, video and other media are streamed through short-lived signed addresses, bound to the song and the profile, because players and casting devices cannot send a login token. The signing key is created on the first start and kept in the database.
+Audio, video and other media are streamed through short-lived signed addresses, bound to the song and the profile, because players and casting devices cannot send a login token. The signing key is created on the first start and kept in the database. Casting devices load these addresses themselves, so the server answers them with CORS headers for any origin; the signature remains the only access check.
 
 ### User and permissions
 
@@ -439,6 +441,7 @@ A number at the start of a file name is only a track number inside an album fold
 20. **Shape the sound.** The equalizer button in the transport bar (in the expanded player on smartphones) opens the **Equalizer** below **Now Playing**: switch it on, choose a preset (Flat, Rock, Pop, Jazz, Classical, Dance, Bass, Treble, Vocal) or move the ten bands from 31 Hz to 16 kHz and the preamp, by mouse, finger or arrow keys. Moving a band turns the preset into your own curve (**Custom**), which is kept when you try another preset; **Reset** goes back to Flat. The equalizer applies at once, is stored with your profile and applies on all devices; **Settings** switches it on and off as well.
 21. **Crossfade.** Under **Settings**, **Crossfade** lets one song fade into the next for up to twelve seconds when the queue moves on by itself. Off plays the songs without gaps. The crossfade button in the transport bar, between repeat and stop (in the expanded player on smartphones), switches the crossfade on and off with one click and shows whether it is on; it keeps the length set under **Settings** (five seconds until you choose one). Like the setting, the switch is stored with your profile and applies on all devices. **Do not crossfade songs of the same album** (on by default) keeps live and concept albums gapless. Equalizer and crossfade need Web Audio, which current browsers offer; without it, WaveMP plays without them.
 22. **Sleep timer.** The moon button in the transport bar stops the music after 15 to 120 minutes, at the end of the current song or at the end of the queue; the button shows the remaining time, and **Off** cancels it. Shortly before the stop the music fades out (ten seconds by default, set under **Settings > Sleep timer fade-out**), then the player pauses. The timer runs on the device that plays and is not stored.
+23. **Cast.** The cast button in the transport bar (in the expanded player on smartphones) opens the device selection of your browser: Chrome and Edge show your Chromecast devices and TVs with Chromecast built in, Safari on Mac, iPhone and iPad shows its AirPlay menu. Choose a device, and the current song goes on there at the same position; the transport bar and **Now Playing** show **Playing on** with the name of the device (AirPlay does not tell the name). The device shows title, artist, album and cover; with the **Video** view chosen, it plays the music video of the song. The queue stays in WaveMP, and play, pause, seek, skip and the volume slider control the device. Songs the device cannot play are transcoded by the server. While casting, the device plays the music as it is: the equalizer, crossfade, volume leveling (ReplayGain) and the visualization are greyed out. Open the device selection again to stop casting; the song then waits paused in the browser at the same position. Chromecast needs WaveMP to be opened over HTTPS (see [Quick Start](#quick-start)); without it the button is greyed out and says so. Other browsers, such as Firefox, show no cast button. For Chromecast, the browser loads the Cast SDK from Google (`www.gstatic.com`) when WaveMP starts; the casting device itself must reach your WaveMP server under the same address as your browser.
 
 ### Profiles and PINs
 
@@ -657,6 +660,8 @@ The integration tests host the service in memory with `WebApplicationFactory` an
 The E2E tests first select the built-in admin profile once (project `setup`) and store the browser state in `tests/WaveMP.E2E/playwright/.auth/` (not committed); most tests start with this session. Tests that switch profiles create their own profiles through the API and delete them afterwards.
 
 The projects `chromium` (desktop) and `mobile` (phone) run all specs except `tests/devices` and `tests/visualization.spec.ts`; the project `visualization` runs the visualization tests on the desktop and on a phone one after another in a single worker, because two visualizations drawn in software at the same time take too much of the CPU; the projects `iphone`, `ipad` and `ipad-landscape` run the specs in `tests/devices` with the viewport, touch and mobile emulation of an iPhone and an iPad in portrait and landscape (in Chromium, the only browser the setup installs). `npx playwright test --project=ipad` runs one of them.
+
+Casting is tested with simulated devices (the unit tests in `source/WaveMP.Web/src/casting` and the integration tests of the cast addresses in `CastingApiTests`). To try it with real devices, open WaveMP over HTTPS (for example behind a reverse proxy with a certificate) under an address the devices reach, play a song and choose a device with the cast button: a Chromecast from Chrome or Edge on the same network, an AirPlay device (Apple TV, HomePod or an AirPlay speaker) from Safari. Check that the song goes on at its position with its cover, that pause, seek, skip and volume act on the device, that the next song of the queue follows, that the **Video** view casts the music video, that a FLAC or ALAC song plays (transcoded if the device needs it) and that ending the session leaves the song paused in the browser. Without HTTPS, Chrome shows the greyed out button with its hint.
 
 If you set `WAVEMP_PORT` in `.env`, point the E2E tests at it, for example `E2E_BASE_URL=http://localhost:8081 npm test`.
 
