@@ -1,7 +1,7 @@
 images:
   image:
     repository: wavemp/wavemp
-    tag: "1.0.66@sha256:9b5c655b85efba0d2d7253d05d1f28857e64d92eb1f7d21f0923b90c964db6c7"
+    tag: "1.0.72@sha256:c83b77c9e4eb1087e3b2aa80fa9796a509924c94c5fc1685bce1d31162098741"
   container_utils_image:
     repository: ghcr.io/truenas/containers/container-utils
     tag: "1.1.2@sha256:6ddfdc314af9d18cfacb836ad266ef0ed91fecaa3686b20be72e464972860c08"
