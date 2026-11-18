@@ -6306,6 +6306,516 @@
         ]
       }
     },
+    "/api/v1/themes/{id}/files/{name}": {
+      "get": {
+        "tags": [
+          "ThemeFiles"
+        ],
+        "summary": "Returns a file of an uploaded theme with its content type, as `stylesheetUrl` and `previews` of the theme and the addresses in its CSS name it. The name of every file is a hash of its content, so the response is cached for a year (Cache-Control: public, max-age=31536000, immutable) and carries the hash as strong ETag; a request with a matching If-None-Match returns 304.",
+        "operationId": "GetThemeFile",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Id of the theme.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "name",
+            "in": "path",
+            "description": "Name of the file: 32 hexadecimal digits and the extension css, svg, png or webp.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The file.",
+            "content": {
+              "text/css": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "image/svg+xml": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "image/png": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "image/webp": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The theme does not exist or has no such file (code `theme.file_not_found`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/themes": {
+      "get": {
+        "tags": [
+          "Themes"
+        ],
+        "summary": "Lists the uploaded themes by name.",
+        "operationId": "ListThemes",
+        "parameters": [
+          {
+            "name": "offset",
+            "in": "query",
+            "description": "Number of themes to skip.",
+            "schema": {
+              "maximum": 2147483647,
+              "minimum": 0,
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Maximum number of themes of the page.",
+            "schema": {
+              "maximum": 100,
+              "minimum": 1,
+              "type": "integer",
+              "format": "int32",
+              "default": 50
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "One page of uploaded themes.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ThemePage"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid paging parameters (code `request.invalid`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblem"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "Themes"
+        ],
+        "summary": "Installs a theme package, sent as the raw bytes of a ZIP file (10 MiB at most by default). The package is checked completely: its structure and limits, the manifest and its theme API version, the CSS file (no `@import`, only relative paths to pictures of the package) and the pictures (SVG files are cleaned). A rejected package returns every problem at once. Admins only.",
+        "operationId": "InstallTheme",
+        "requestBody": {
+          "content": {
+            "application/zip": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "The installed theme; Location names it.",
+            "headers": {
+              "Location": {
+                "description": "Address of the created resource.",
+                "required": true,
+                "schema": {
+                  "type": "string",
+                  "format": "uri-reference"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Theme"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The profile is no admin (code `auth.forbidden`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "A theme with the id of the manifest is already installed (code `theme.already_installed`); replace it with PUT instead.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "The package is too large (code `theme.too_large`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "The upload is no ZIP file (code `theme.unsupported_format`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "The package was rejected (code `theme.invalid`, the reasons in `errors`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ThemeProblem"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The folder of the themes cannot be written (code `service.unavailable`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/api/v1/themes/{id}": {
+      "get": {
+        "tags": [
+          "Themes"
+        ],
+        "summary": "Returns an uploaded theme.",
+        "operationId": "GetTheme",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Id of the theme.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "The theme.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Theme"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "There is no uploaded theme with this id (code `theme.not_found`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "Themes"
+        ],
+        "summary": "Replaces an uploaded theme with a new version of its package, sent as the raw bytes of a ZIP file; the id in its manifest must be the id of the theme. The package is checked like a new one. Profiles that chose the theme keep it and see the new version. Admins only.",
+        "operationId": "ReplaceTheme",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Id of the theme.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/zip": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "The replaced theme.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Theme"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The profile is no admin (code `auth.forbidden`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "There is no uploaded theme with this id (code `theme.not_found`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "The package is too large (code `theme.too_large`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "The upload is no ZIP file (code `theme.unsupported_format`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "The package was rejected (code `theme.invalid`, the reasons in `errors`), e.g. because its manifest names another id (`manifest.id_mismatch`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ThemeProblem"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The folder of the themes cannot be written (code `service.unavailable`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "Themes"
+        ],
+        "summary": "Deletes an uploaded theme. Profiles that chose it get the default theme. Admins only.",
+        "operationId": "DeleteTheme",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Id of the theme.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "The theme is deleted."
+          },
+          "403": {
+            "description": "The profile is no admin (code `auth.forbidden`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "There is no uploaded theme with this id (code `theme.not_found`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/api/v1/theme-template": {
+      "get": {
+        "tags": [
+          "ThemeTemplate"
+        ],
+        "summary": "Returns the template as ZIP file (`wavemp-theme-template.zip`), written for the theme API of this server. Carries a strong ETag; a request with a matching If-None-Match returns 304.",
+        "operationId": "GetThemeTemplate",
+        "responses": {
+          "200": {
+            "description": "The template.",
+            "content": {
+              "application/zip": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/tracks/{id}/file-selection": {
       "get": {
         "tags": [
@@ -12266,7 +12776,13 @@
           "scrobbling.not_configured",
           "scrobbling.token_invalid",
           "scrobbling.service_unavailable",
-          "scrobbling.not_connected"
+          "scrobbling.not_connected",
+          "theme.not_found",
+          "theme.file_not_found",
+          "theme.invalid",
+          "theme.too_large",
+          "theme.unsupported_format",
+          "theme.already_installed"
         ],
         "type": "string",
         "description": "Machine-readable code of a problem, part of every Problem Details response. Clients translate it."
@@ -13040,6 +13556,71 @@
         },
         "description": "A new app password for Subsonic apps. It is shown this once; the server keeps it encrypted and never returns it again."
       },
+      "Theme": {
+        "required": [
+          "id",
+          "name",
+          "author",
+          "version",
+          "themeApi",
+          "variants",
+          "stylesheetUrl",
+          "previews",
+          "sizeBytes",
+          "installedAt"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Id of the theme from its manifest: lowercase letters, digits and single hyphens. Profiles choose it in their settings (`theme.id`)."
+          },
+          "name": {
+            "type": "string"
+          },
+          "author": {
+            "type": "string"
+          },
+          "version": {
+            "type": "string",
+            "description": "Version of the theme as its author names it, e.g. `1.2.0`."
+          },
+          "themeApi": {
+            "type": "integer",
+            "description": "Version of the theme API the theme is written for.",
+            "format": "int32"
+          },
+          "variants": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ThemeVariant"
+            },
+            "description": "The variants of the theme, one or both; the first one is shown where the appearance of a profile has no say."
+          },
+          "stylesheetUrl": {
+            "type": "string",
+            "description": "Address of the CSS file of the theme, relative to the root of the server. It needs no session; its content never changes, a new version of the theme has a new address."
+          },
+          "previews": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ThemePreview"
+            },
+            "description": "The preview picture of each variant."
+          },
+          "sizeBytes": {
+            "type": "integer",
+            "description": "Size of all files of the theme in bytes.",
+            "format": "int64"
+          },
+          "installedAt": {
+            "type": "string",
+            "description": "When this version of the theme was installed.",
+            "format": "date-time"
+          }
+        },
+        "description": "A theme an admin uploaded. The themes shipped with WaveMP are part of the clients and not listed here."
+      },
       "ThemeAppearance": {
         "enum": [
           "System",
@@ -13048,6 +13629,204 @@
         ],
         "type": "string",
         "description": "Which variant of a theme with a light and a dark variant the profile sees. Themes with one variant ignore it."
+      },
+      "ThemeError": {
+        "required": [
+          "code"
+        ],
+        "type": "object",
+        "properties": {
+          "code": {
+            "$ref": "#/components/schemas/ThemeErrorCode"
+          },
+          "path": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The file in the package the error concerns, e.g. `images/play.svg`; missing for the package as a whole."
+          },
+          "line": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "description": "The line in that file, from 1, if known.",
+            "format": "int32"
+          },
+          "field": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The member of `manifest.json` the error concerns, e.g. `themeApi` or `previews.dark`."
+          },
+          "file": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "A further file, e.g. the missing file an address of the CSS file names."
+          },
+          "min": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "description": "Lower limit, e.g. the oldest supported version of the theme API for `manifest.unsupported_api_version`.",
+            "format": "int64"
+          },
+          "max": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "description": "Upper limit, e.g. the newest supported version of the theme API, the most bytes for `package.too_large` and `file.too_large` or the most entries for `package.too_many_entries`.",
+            "format": "int64"
+          }
+        },
+        "description": "One reason why a theme package is rejected."
+      },
+      "ThemeErrorCode": {
+        "enum": [
+          "package.corrupt",
+          "package.too_many_entries",
+          "package.too_large",
+          "file.too_large",
+          "file.invalid_path",
+          "file.duplicate_path",
+          "file.unsupported_type",
+          "manifest.missing",
+          "manifest.invalid_json",
+          "manifest.missing_field",
+          "manifest.invalid_field",
+          "manifest.reserved_id",
+          "manifest.id_mismatch",
+          "manifest.unsupported_api_version",
+          "manifest.preview_missing",
+          "css.missing",
+          "css.multiple",
+          "css.invalid_encoding",
+          "css.syntax_error",
+          "css.import",
+          "css.layer",
+          "css.at_rule_not_allowed",
+          "css.external_url",
+          "css.absolute_url",
+          "css.invalid_url",
+          "css.missing_file",
+          "svg.invalid",
+          "svg.entity",
+          "svg.script",
+          "svg.event_handler",
+          "svg.foreign_object",
+          "svg.external_reference",
+          "image.invalid"
+        ],
+        "type": "string",
+        "description": "Why a theme package is rejected. Clients translate it; the members of ThemeErrorDto named in brackets carry the details."
+      },
+      "ThemePage": {
+        "required": [
+          "items",
+          "offset",
+          "limit",
+          "total"
+        ],
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Theme"
+            },
+            "description": "Items of the page, at most limit."
+          },
+          "offset": {
+            "type": "integer",
+            "description": "Number of items skipped before this page.",
+            "format": "int32"
+          },
+          "limit": {
+            "type": "integer",
+            "description": "Maximum number of items of the page, as requested.",
+            "format": "int32"
+          },
+          "total": {
+            "type": "integer",
+            "description": "Number of items of the whole collection.",
+            "format": "int32"
+          }
+        },
+        "description": "One page of a collection."
+      },
+      "ThemePreview": {
+        "required": [
+          "variant",
+          "url"
+        ],
+        "type": "object",
+        "properties": {
+          "variant": {
+            "$ref": "#/components/schemas/ThemeVariant"
+          },
+          "url": {
+            "type": "string",
+            "description": "Address of the picture (SVG, PNG or WebP), relative to the root of the server. It needs no session and never changes its content."
+          }
+        },
+        "description": "The preview picture of one variant of a theme."
+      },
+      "ThemeProblem": {
+        "required": [
+          "errors",
+          "code"
+        ],
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "title": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "status": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "detail": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "instance": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ThemeError"
+            },
+            "description": "The errors, at least one and at most 50, by file and line."
+          },
+          "code": {
+            "$ref": "#/components/schemas/ProblemCode"
+          }
+        },
+        "description": "Problem Details (RFC 9457) of a rejected theme package (422, code `theme.invalid`). Instead of texts, every error names a machine-readable code with the file, line and limits it concerns; clients translate them."
       },
       "ThemeSettings": {
         "required": [
@@ -13066,6 +13845,14 @@
           }
         },
         "description": "Theme of the web app of the current profile."
+      },
+      "ThemeVariant": {
+        "enum": [
+          "Light",
+          "Dark"
+        ],
+        "type": "string",
+        "description": "A variant of a theme."
       },
       "Track": {
         "required": [
@@ -15359,6 +16146,15 @@
     },
     {
       "name": "SubsonicAccess"
+    },
+    {
+      "name": "ThemeFiles"
+    },
+    {
+      "name": "Themes"
+    },
+    {
+      "name": "ThemeTemplate"
     },
     {
       "name": "TrackFileSelections"

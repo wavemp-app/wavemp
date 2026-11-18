@@ -12,6 +12,7 @@ using WaveMP.Core.Scanning.Extensions;
 using WaveMP.Core.Scrobbling.Extensions;
 using WaveMP.Core.Settings.Extensions;
 using WaveMP.Core.Streaming.Extensions;
+using WaveMP.Core.Themes.Extensions;
 using WaveMP.Core.Transcoding.Extensions;
 using WaveMP.Core.Users.Extensions;
 using WaveMP.Core.Users.Pins;
@@ -64,6 +65,7 @@ public static class WaveMpApplication
         builder.Services.AddWaveMpScrobbling();
         builder.Services.AddWaveMpTranscoding();
         builder.Services.AddWaveMpBackups();
+        builder.Services.AddWaveMpThemes();
         builder.Services.AddWaveMpSubsonicApi();
         builder.Services.AddWaveMpDataProtection();
         builder.Services.AddWaveMpAuthentication();
@@ -72,6 +74,8 @@ public static class WaveMpApplication
 
         WebApplication app = builder.Build();
 
+        // First, so that every response outside the API carries the policy, also error pages.
+        app.UseWaveMpContentSecurityPolicy();
         app.UseExceptionHandler();
         // Before the authentication, so that its empty 401 and 403 responses become Problem Details as well.
         app.UseStatusCodePages();
@@ -139,6 +143,7 @@ public static class WaveMpApplication
         await app.Services.InitializeWaveMpCacheAsync(cancellationToken);
         await app.Services.InitializeWaveMpPlaylistsAsync(cancellationToken);
         await app.Services.InitializeWaveMpAvatarsAsync(cancellationToken);
+        await app.Services.InitializeWaveMpThemesAsync(cancellationToken);
         DataProtectionKeys.PrepareFolder(
             DataProtectionKeys.ResolveFolder(app.Configuration, app.Environment),
             app.Logger);

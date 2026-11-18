@@ -37,6 +37,7 @@ public static class ServiceCollectionExtensions
     [
         nameof(ProblemDetails),
         RemoveDtoSuffix(nameof(ValidationProblemDto))!,
+        RemoveDtoSuffix(nameof(ThemeProblemDto))!,
     ];
 
     /// <summary>

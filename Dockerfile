@@ -44,6 +44,7 @@ COPY source/WaveMP.Core.Scrobbling/WaveMP.Core.Scrobbling.csproj source/WaveMP.C
 COPY source/WaveMP.Core.Settings/WaveMP.Core.Settings.csproj source/WaveMP.Core.Settings/
 COPY source/WaveMP.Core.Streaming/WaveMP.Core.Streaming.csproj source/WaveMP.Core.Streaming/
 COPY source/WaveMP.Core.Subsonic/WaveMP.Core.Subsonic.csproj source/WaveMP.Core.Subsonic/
+COPY source/WaveMP.Core.Themes/WaveMP.Core.Themes.csproj source/WaveMP.Core.Themes/
 COPY source/WaveMP.Core.Transcoding/WaveMP.Core.Transcoding.csproj source/WaveMP.Core.Transcoding/
 COPY source/WaveMP.Core.Users/WaveMP.Core.Users.csproj source/WaveMP.Core.Users/
 COPY source/WaveMP.Data/WaveMP.Data.csproj source/WaveMP.Data/
@@ -62,12 +63,15 @@ COPY source/WaveMP.Core.Scrobbling/ source/WaveMP.Core.Scrobbling/
 COPY source/WaveMP.Core.Settings/ source/WaveMP.Core.Settings/
 COPY source/WaveMP.Core.Streaming/ source/WaveMP.Core.Streaming/
 COPY source/WaveMP.Core.Subsonic/ source/WaveMP.Core.Subsonic/
+COPY source/WaveMP.Core.Themes/ source/WaveMP.Core.Themes/
 COPY source/WaveMP.Core.Transcoding/ source/WaveMP.Core.Transcoding/
 COPY source/WaveMP.Core.Users/ source/WaveMP.Core.Users/
 COPY source/WaveMP.Data/ source/WaveMP.Data/
 COPY source/WaveMP.Service/ source/WaveMP.Service/
 # The built-in avatars, embedded into WaveMP.Core.Users.
 COPY assets/avatars/ assets/avatars/
+# The template for own themes, embedded into WaveMP.Core.Themes.
+COPY assets/theme-template/ assets/theme-template/
 # The built web app becomes part of the service's static assets.
 COPY --from=web /src/source/WaveMP.Web/dist/ source/WaveMP.Service/wwwroot/
 # Version of CI images (1.0.N); empty means a development build, see Directory.Build.props.

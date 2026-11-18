@@ -381,4 +381,40 @@ public enum ProblemCodeDto
     /// </summary>
     [JsonStringEnumMemberName("scrobbling.not_connected")]
     ScrobblingNotConnected,
+
+    /// <summary>
+    /// There is no uploaded theme with this id (404).
+    /// </summary>
+    [JsonStringEnumMemberName("theme.not_found")]
+    ThemeNotFound,
+
+    /// <summary>
+    /// The theme has no file with this name (404).
+    /// </summary>
+    [JsonStringEnumMemberName("theme.file_not_found")]
+    ThemeFileNotFound,
+
+    /// <summary>
+    /// The theme package was rejected; the member <c>errors</c> lists every reason (422).
+    /// </summary>
+    [JsonStringEnumMemberName("theme.invalid")]
+    ThemeInvalid,
+
+    /// <summary>
+    /// The theme package is larger than allowed (413).
+    /// </summary>
+    [JsonStringEnumMemberName("theme.too_large")]
+    ThemeTooLarge,
+
+    /// <summary>
+    /// The upload is no ZIP file (415).
+    /// </summary>
+    [JsonStringEnumMemberName("theme.unsupported_format")]
+    ThemeUnsupportedFormat,
+
+    /// <summary>
+    /// A theme with the id of the manifest is already installed; replace it with PUT instead (409).
+    /// </summary>
+    [JsonStringEnumMemberName("theme.already_installed")]
+    ThemeAlreadyInstalled,
 }
