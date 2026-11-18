@@ -1,6 +1,6 @@
 # Builds and tests everything: .NET with unit, media and integration tests, the web app, the
-# license check, the templates of the app catalogs (deploy/) and the Docker image with the E2E
-# tests. Called by pull-request.yml and main.yml.
+# license check, the templates of the app catalogs (deploy/), the Docker Hub description and the
+# Docker image with the E2E tests. Called by pull-request.yml and main.yml.
 #
 # All Docker images are pinned by the digest of their multi-arch index (image:tag@sha256:...); the
 # tag only documents the version. Resolve a new digest with docker buildx imagetools inspect.
@@ -217,6 +217,29 @@ jobs:
           PUID: '1000'
           PGID: '1000'
         run: docker compose -f deploy/casaos/WaveMP/docker-compose.yml config --quiet
+
+  dockerhub-description:
+    name: Docker Hub description
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Check out
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      # The copy of the README that main.yml sends to Docker Hub: within the limits of Docker Hub,
+      # with absolute links, and every linked file of the repository exists.
+      - name: Create the Docker Hub description
+        run: node .github/scripts/dockerhub-description.mjs --output "$RUNNER_TEMP/dockerhub-description.md"
+
+      - name: Test the Docker Hub description
+        run: node --test .github/scripts/dockerhub-description.test.mjs
 
   e2e:
     name: Docker image and E2E tests
