@@ -22,16 +22,20 @@ function track(hasVideo: boolean): Track {
     }
 }
 
-function mountStage(props: {
-    track?: Track
-    mode?: PlayerViewMode
-    view?: StageView
-    videoState?: VideoState
-    audio?: AnalyserNode | null
-    lyrics?: TrackLyrics | null
-}) {
+function mountStage(
+    props: {
+        track?: Track
+        mode?: PlayerViewMode
+        view?: StageView
+        videoState?: VideoState
+        audio?: AnalyserNode | null
+        lyrics?: TrackLyrics | null
+    },
+    attrs: Record<string, unknown> = {},
+) {
     return mount(NowPlayingStage, {
         props,
+        attrs,
         global: { plugins: [createPinia(), createWaveMpI18n('en')] },
         attachTo: document.body,
     })
@@ -100,7 +104,13 @@ describe('NowPlayingStage', () => {
     })
 
     it('keeps the video in the page while the cover or the visualization is shown', async () => {
-        const wrapper = mountStage({ track: track(true), mode: 'Video', view: 'video' })
+        // The wrapper forgets its recorded events when it is unmounted, including the ones emitted
+        // while unmounting, so a listener records the detach that happens then.
+        const detached = vi.fn()
+        const wrapper = mountStage(
+            { track: track(true), mode: 'Video', view: 'video' },
+            { onDetachVideo: detached },
+        )
         const element = wrapper.get('[data-part="video"]').element as HTMLVideoElement
 
         expect(wrapper.get('[data-part="stage"]').attributes('data-state')).toBe('video')
@@ -119,9 +129,11 @@ describe('NowPlayingStage', () => {
         expect(viewState(wrapper, 'visualization')).toBe('active')
         expect(wrapper.emitted('attachVideo')).toHaveLength(1)
         expect(wrapper.emitted('detachVideo')).toBeUndefined()
+        expect(detached).not.toHaveBeenCalled()
 
         wrapper.unmount()
-        expect(wrapper.emitted('detachVideo')).toEqual([[element]])
+        expect(detached).toHaveBeenCalledOnce()
+        expect(detached).toHaveBeenCalledWith(element)
     })
 
     it('keeps the cover while the video loads, with the video checked', () => {
