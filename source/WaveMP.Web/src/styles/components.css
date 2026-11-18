@@ -1125,8 +1125,13 @@
         margin: 0;
     }
 
+    /* Each tile spans two rows of the list and shares them (subgrid): a label that wraps moves the
+       values of its whole row down, so the labels and the values of a row stay aligned. */
     [data-part='stat-item'] {
         display: grid;
+        grid-row: span 2;
+        grid-template-rows: subgrid;
+        grid-template-columns: minmax(0, 1fr);
         gap: 0.125rem;
         min-inline-size: 0;
         padding: var(--wmp-space-s) var(--wmp-space-m);
@@ -1135,19 +1140,22 @@
         background: var(--wmp-color-surface);
     }
 
+    /* Labels wrap between words and hyphenate long words in the language of the document (for
+       example "Hardwarebeschleunigung"), so they are never cut off. */
     [data-part='stat-item'] > [data-part='label'] {
-        overflow: hidden;
         color: var(--wmp-color-text-muted);
         font-size: var(--wmp-font-size-s);
-        text-overflow: ellipsis;
-        white-space: nowrap;
+        overflow-wrap: break-word;
+        hyphens: auto;
     }
 
+    /* A value without spaces, such as the address of the server, breaks anywhere. */
     [data-part='stat-value'] {
         margin: 0;
         font-size: var(--wmp-font-size-l);
         font-weight: var(--wmp-font-weight-bold);
         font-variant-numeric: tabular-nums;
+        overflow-wrap: anywhere;
     }
 
     [data-part='run-list'],
