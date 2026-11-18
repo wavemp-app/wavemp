@@ -3,6 +3,10 @@ using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.DataProtection.KeyManagement;
+using Microsoft.AspNetCore.DataProtection.Repositories;
+using Microsoft.AspNetCore.DataProtection.XmlEncryption;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding.Metadata;
 using Microsoft.AspNetCore.OpenApi;
@@ -11,6 +15,7 @@ using Microsoft.OpenApi;
 using WaveMP.Data.Entities;
 using WaveMP.Service.Dtos;
 using WaveMP.Service.Filters;
+using WaveMP.Service.Keys;
 using WaveMP.Service.OpenApiTransformers;
 using WaveMP.Service.Problems;
 using WaveMP.Service.Signatures;
@@ -149,6 +154,40 @@ public static class ServiceCollectionExtensions
                     JwtBearerDefaults.AuthenticationScheme,
                     MediaSignatureDefaults.AuthenticationScheme)
                 .RequireAuthenticatedUser());
+
+        return services;
+    }
+
+    /// <summary>
+    /// Registers ASP.NET Core Data Protection (used by the authentication of the framework and for secrets that must
+    /// survive a restart) with its keys in the folder <c>keys</c> of the data folder, see
+    /// <see cref="DataProtectionKeys"/>. The keys are stored unencrypted on purpose (<see cref="NullXmlEncryptor"/>):
+    /// Linux has no key protection of the operating system like DPAPI on Windows, and a certificate to encrypt them
+    /// would have to lie next to them. Without a home folder of the user that runs WaveMP, the defaults of the
+    /// framework would keep the keys in memory only and warn at every start. The folder is prepared on start by
+    /// <see cref="DataProtectionKeys.PrepareFolder"/>.
+    /// </summary>
+    public static IServiceCollection AddWaveMpDataProtection(this IServiceCollection services)
+    {
+        services.AddDataProtection()
+            .SetApplicationName(DataProtectionKeys.ApplicationName);
+        // Like PersistKeysToFileSystem, but with the data folder from the configuration of the host, which the
+        // integration tests only set when the host is built.
+        services.AddOptions<KeyManagementOptions>()
+            .Configure<IConfiguration, IServiceProvider>((options, configuration, provider) =>
+            {
+                string folder = DataProtectionKeys.ResolveFolder(
+                    configuration,
+                    provider.GetService<IHostEnvironment>());
+                options.XmlRepository = new FileSystemXmlRepository(
+                    new DirectoryInfo(folder),
+                    provider.GetRequiredService<ILoggerFactory>());
+                options.XmlEncryptor = new NullXmlEncryptor(provider);
+            });
+        // The null encryptor warns that it does not encrypt every time it stores a key. That is the decision above,
+        // so only its errors are logged. Its category logs nothing else, unlike the key manager, whose other
+        // warnings stay.
+        services.AddLogging(logging => logging.AddFilter(typeof(NullXmlEncryptor).FullName, LogLevel.Error));
 
         return services;
     }

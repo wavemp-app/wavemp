@@ -18,6 +18,7 @@ using WaveMP.Data;
 using WaveMP.Data.Extensions;
 using WaveMP.Data.Options;
 using WaveMP.Service.Extensions;
+using WaveMP.Service.Keys;
 using WaveMP.Service.Tokens;
 
 namespace WaveMP.Service;
@@ -61,6 +62,7 @@ public static class WaveMpApplication
         builder.Services.AddWaveMpStreaming();
         builder.Services.AddWaveMpTranscoding();
         builder.Services.AddWaveMpBackups();
+        builder.Services.AddWaveMpDataProtection();
         builder.Services.AddWaveMpAuthentication();
         builder.Services.AddHealthChecks()
             .AddDbContextCheck<WaveMpDbContext>("database");
@@ -91,9 +93,9 @@ public static class WaveMpApplication
     /// <summary>
     /// Validates the database and PIN configuration, exports the database and applies pending migrations, creates the
     /// built-in admin profile on the first start and applies <c>ADMIN_PIN</c> to it, loads the keys that sign the
-    /// session tokens and the media URLs and the server settings, prepares the cache folder, and plans the background
-    /// jobs (they start to run once the application has started). Returns <c>false</c> if the configuration is invalid
-    /// or the export before the migrations failed; the reason is logged.
+    /// session tokens and the media URLs and the server settings, prepares the cache folder and the folder of the Data
+    /// Protection keys, and plans the background jobs (they start to run once the application has started). Returns
+    /// <c>false</c> if the configuration is invalid or the export before the migrations failed; the reason is logged.
     /// </summary>
     public static async Task<bool> InitializeAsync(WebApplication app, CancellationToken cancellationToken = default)
     {
@@ -131,6 +133,9 @@ public static class WaveMpApplication
         await app.Services.InitializeWaveMpCacheAsync(cancellationToken);
         await app.Services.InitializeWaveMpPlaylistsAsync(cancellationToken);
         await app.Services.InitializeWaveMpAvatarsAsync(cancellationToken);
+        DataProtectionKeys.PrepareFolder(
+            DataProtectionKeys.ResolveFolder(app.Configuration, app.Environment),
+            app.Logger);
         await app.Services.InitializeWaveMpJobsAsync(cancellationToken);
 
         string mediaFolder = app.Services.GetRequiredService<IOptions<MediaLibraryOptions>>().Value.RootPath;
