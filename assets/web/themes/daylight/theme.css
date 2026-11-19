@@ -803,7 +803,7 @@ a[data-part='breadcrumb-link']:hover {
     color: #6a1d1d;
 }
 
-[data-part='badge']:is([data-state~='canceled'], [data-state~='unavailable']) {
+[data-part='badge']:is([data-state~='canceled'], [data-state~='unavailable'], [data-state~='outdated']) {
     border-color: #ead39f;
     background: linear-gradient(#fffbf2, #faeed2);
     color: #5a3d07;

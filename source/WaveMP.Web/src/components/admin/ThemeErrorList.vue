@@ -10,11 +10,13 @@ import {
 import { useFormat } from '@/composables/useFormat'
 
 /**
- * Why the server rejected a theme package: one entry per problem with its place (file and line)
- * and its message.
+ * Why the server rejected a theme package, or why an installed theme no longer passes its checks:
+ * one entry per problem with its place (file and line) and its message.
  */
 const props = defineProps<{
     errors: readonly ThemePackageError[]
+    /** Accessible name of the list; by default the problems of an uploaded package. */
+    label?: string
 }>()
 
 const { t } = useI18n()
@@ -37,7 +39,7 @@ const rows = computed(() =>
 </script>
 
 <template>
-    <ul data-part="theme-errors" :aria-label="t('adminThemes.errorList')">
+    <ul data-part="theme-errors" :aria-label="label ?? t('adminThemes.errorList')">
         <li v-for="row in rows" :key="row.key" data-part="theme-error" :data-item="row.code">
             <span v-if="row.location" data-part="theme-error-location">{{ row.location }}</span>
             <span data-part="theme-error-message">{{ row.message }}</span>

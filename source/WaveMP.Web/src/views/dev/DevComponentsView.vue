@@ -657,8 +657,8 @@ const sampleBackups: Backup[] = [
         trigger: 'Migration',
     },
 ]
-const sampleThemeFile = (hash: string, extension: string) =>
-    `/api/v1/themes/aurora/files/${hash.repeat(32)}.${extension}`
+const sampleThemeFile = (hash: string, extension: string, id = 'aurora') =>
+    `/api/v1/themes/${id}/files/${hash.repeat(32)}.${extension}`
 const sampleThemes: Theme[] = [
     {
         id: 'aurora',
@@ -674,6 +674,25 @@ const sampleThemes: Theme[] = [
         ],
         sizeBytes: 182_000,
         installedAt: sampleTime,
+        status: 'Current',
+        problems: [],
+    },
+    {
+        id: 'borealis',
+        name: 'Borealis',
+        author: 'WaveMP',
+        version: '0.9.0',
+        themeApi: 5,
+        variants: ['Dark'],
+        stylesheetUrl: sampleThemeFile('d', 'css', 'borealis'),
+        previews: [{ variant: 'Dark', url: sampleThemeFile('e', 'png', 'borealis') }],
+        sizeBytes: 96_000,
+        installedAt: sampleTime,
+        status: 'Outdated',
+        problems: [
+            { code: 'svg.not_cleaned', path: 'images/play.svg' },
+            { code: 'css.at_rule_not_allowed', path: 'theme.css', line: 48 },
+        ],
     },
 ]
 const sampleThemeErrors: ThemePackageError[] = [

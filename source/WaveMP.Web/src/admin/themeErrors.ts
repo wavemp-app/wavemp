@@ -1,6 +1,7 @@
-// Why the server rejected a theme package. The server sends a code per problem plus the file, the
-// line, the member of manifest.json and the limits it concerns (ThemeProblem, 422 theme.invalid);
-// the web app translates them. Pure functions only.
+// Why the server rejected a theme package or why an installed theme is outdated. The server
+// sends a code per problem plus the file, the line, the member of manifest.json and the limits it
+// concerns (ThemeProblem, 422 theme.invalid, or Theme.problems); the web app translates them.
+// Pure functions only.
 
 import {
     ThemeErrorCodeObject,
@@ -37,7 +38,15 @@ function number(value: unknown): number | undefined {
 
 /** The problems of a rejected theme package, empty for other errors. */
 export function themeErrorsOf(error: unknown): ThemePackageError[] {
-    const errors = (error as ThemeProblem | null | undefined)?.errors
+    return toThemePackageErrors((error as ThemeProblem | null | undefined)?.errors)
+}
+
+/**
+ * Problems as the server sends them, in a rejected package (ThemeProblem.errors) or for an
+ * installed theme that no longer passes the checks of the server (Theme.problems); empty for
+ * anything else.
+ */
+export function toThemePackageErrors(errors: unknown): ThemePackageError[] {
     if (!Array.isArray(errors)) {
         return []
     }

@@ -1252,6 +1252,7 @@
             [data-part='transcode-meta'],
             [data-part='backup-meta'],
             [data-part='scrobble-meta'],
+            [data-part='theme-meta'],
             [data-part='stat-value'],
             [data-part='file-meta']
         )
@@ -1273,6 +1274,7 @@
             [data-part='job-meta'],
             [data-part='transcode-meta'],
             [data-part='backup-meta'],
+            [data-part='theme-meta'],
             [data-part='stat-value'],
             [data-part='file-meta']
         )
@@ -1301,7 +1303,7 @@
         --_badge-color: var(--wmp-color-danger);
     }
 
-    [data-part='badge'][data-state~='canceled'] {
+    [data-part='badge']:is([data-state~='canceled'], [data-state~='outdated']) {
         --_badge-color: var(--wmp-color-warning);
     }
 
@@ -3171,6 +3173,18 @@
         border: 1px solid var(--wmp-color-border);
         border-radius: var(--wmp-radius-m);
         background: var(--wmp-color-surface);
+    }
+
+    /* The problems of an outdated theme take a row of their own below its info and its buttons. */
+    [data-part='theme-problems'] {
+        display: grid;
+        flex: 1 1 100%;
+        gap: var(--wmp-space-s);
+        min-inline-size: 0;
+    }
+
+    [data-part='theme-problems'] > [data-part='form-note'] {
+        margin: 0;
     }
 
     [data-part='theme-error-location'] {

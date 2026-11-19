@@ -1634,7 +1634,7 @@ a[data-part='breadcrumb-link']:hover {
     color: var(--wmp-color-danger);
 }
 
-[data-part='badge']:is([data-state~='canceled'], [data-state~='unavailable']) {
+[data-part='badge']:is([data-state~='canceled'], [data-state~='unavailable'], [data-state~='outdated']) {
     border-color: color-mix(in srgb, var(--wmp-color-warning), transparent 50%);
     color: var(--wmp-color-warning);
 }

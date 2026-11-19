@@ -1138,6 +1138,9 @@
     "by": "by {author}",
     "version": "Version {version}",
     "installedAt": "Installed on {date}",
+    "outdated": "Outdated",
+    "outdatedHint": "This version of WaveMP checks themes more strictly than the one that installed this theme. Profiles still see the theme as it is. Fix these problems and upload a new version:",
+    "problemList": "Problems of {name}",
     "replace": "Upload a new version of {name}",
     "delete": "Delete {name}",
     "installed": "The theme {name} is installed. Every profile can now choose it in the settings.",
@@ -1199,6 +1202,7 @@
       },
       "svg": {
         "invalid": "The file is no valid SVG picture.",
+        "notCleaned": "The picture contains elements or attributes that WaveMP now removes from SVG pictures. Upload the theme again to clean it.",
         "entity": "SVG pictures cannot contain a DOCTYPE or entities.",
         "script": "SVG pictures cannot contain scripts.",
         "eventHandler": "SVG pictures cannot contain event handlers such as onload.",

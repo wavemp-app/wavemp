@@ -1362,7 +1362,7 @@ a[data-part="breadcrumb-link"]:hover {
     color: #5c1f1f;
 }
 
-[data-part="badge"][data-state~="canceled"] {
+[data-part="badge"]:is([data-state~="canceled"], [data-state~="outdated"]) {
     border-color: #ecd09a;
     background: linear-gradient(#fffbf2, #faecd0);
     color: #5a3d07;

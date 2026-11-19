@@ -6,6 +6,7 @@ import {
     themeErrorMessageKey,
     themeErrorParameters,
     themeErrorsOf,
+    toThemePackageErrors,
 } from '../themeErrors'
 
 type Messages = { [key: string]: unknown }
@@ -34,6 +35,19 @@ describe('theme errors', () => {
             { code: 'manifest.unsupported_api_version', field: 'themeApi', min: 5, max: 6 },
             { code: null },
         ])
+    })
+
+    it('are read from the problems of an outdated theme', () => {
+        expect(
+            toThemePackageErrors([
+                { code: 'svg.not_cleaned', path: 'images/glass.svg' },
+                { code: 'manifest.unsupported_api_version', field: 'themeApi', min: 6, max: 7 },
+            ]),
+        ).toEqual([
+            { code: 'svg.not_cleaned', path: 'images/glass.svg' },
+            { code: 'manifest.unsupported_api_version', field: 'themeApi', min: 6, max: 7 },
+        ])
+        expect(toThemePackageErrors(undefined)).toEqual([])
     })
 
     it('are empty for other errors', () => {

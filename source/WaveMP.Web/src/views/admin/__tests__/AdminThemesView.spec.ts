@@ -25,6 +25,8 @@ const aurora: Theme = {
     ],
     sizeBytes: 2_000_000,
     installedAt: new Date('2026-11-18T12:00:00Z'),
+    status: 'Current',
+    problems: [],
 }
 
 async function mountView(themes: Theme[] | null = [aurora]) {
@@ -83,9 +85,45 @@ describe('AdminThemesView', () => {
         expect(item.get('[data-part="theme-name"]').text()).toBe('Aurora')
         expect(item.get('[data-part="theme-meta"]').text()).toContain('by Someone')
         expect(item.get('[data-part="theme-meta"]').text()).toContain('Version 1.2.0')
+        expect(item.attributes('data-state')).toBeUndefined()
+        expect(item.find('[data-part="badge"]').exists()).toBe(false)
+        expect(item.find('[data-part="theme-problems"]').exists()).toBe(false)
         expect(item.get('[data-part="theme-preview-image"]').attributes('src')).toBe(
             file('b', 'png'),
         )
+        wrapper.unmount()
+    })
+
+    it('marks an outdated theme and lists its problems', async () => {
+        const outdated: Theme = {
+            ...aurora,
+            status: 'Outdated',
+            problems: [
+                { code: 'svg.script', path: 'images/glass.svg' },
+                { code: 'css.import', path: 'theme.css', line: 12 },
+            ],
+        }
+        const { wrapper } = await mountView([outdated])
+
+        const first = wrapper.find('[data-part="theme-item"]')
+        expect(first.attributes('data-state')).toBe('outdated')
+        expect(first.get('[data-part="badge"][data-state="outdated"]').text()).toBe('Outdated')
+        const problems = first.get('[data-part="theme-problems"]')
+        expect(problems.get('[data-part="form-note"]').text()).toContain(
+            'checks themes more strictly',
+        )
+        expect(problems.get('[data-part="theme-errors"]').attributes('aria-label')).toBe(
+            'Problems of Aurora',
+        )
+        const errors = problems.findAll('[data-part="theme-error"]')
+        expect(errors.map((error) => error.attributes('data-item'))).toEqual([
+            'svg.script',
+            'css.import',
+        ])
+        expect(errors[1]!.get('[data-part="theme-error-location"]').text()).toBe(
+            'theme.css, line 12',
+        )
+
         wrapper.unmount()
     })
 

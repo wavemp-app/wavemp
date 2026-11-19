@@ -1138,6 +1138,9 @@
     "by": "von {author}",
     "version": "Version {version}",
     "installedAt": "Installiert am {date}",
+    "outdated": "Veraltet",
+    "outdatedHint": "Diese Version von WaveMP prüft Designs strenger als die, mit der dieses Design installiert wurde. Profile sehen das Design weiterhin so, wie es ist. Behebe diese Probleme und lade eine neue Version hoch:",
+    "problemList": "Probleme von {name}",
     "replace": "Neue Version von {name} hochladen",
     "delete": "{name} löschen",
     "installed": "Das Design {name} ist installiert. Jedes Profil kann es jetzt in den Einstellungen wählen.",
@@ -1199,6 +1202,7 @@
       },
       "svg": {
         "invalid": "Die Datei ist kein gültiges SVG-Bild.",
+        "notCleaned": "Das Bild enthält Elemente oder Attribute, die WaveMP inzwischen aus SVG-Bildern entfernt. Lade das Design erneut hoch, um es zu bereinigen.",
         "entity": "SVG-Bilder können keinen DOCTYPE und keine Entities enthalten.",
         "script": "SVG-Bilder können keine Skripte enthalten.",
         "eventHandler": "SVG-Bilder können keine Event-Handler wie onload enthalten.",

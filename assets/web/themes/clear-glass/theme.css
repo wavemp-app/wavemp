@@ -1120,7 +1120,12 @@ a[data-part='breadcrumb-link']:hover {
     color: #8a1a12;
 }
 
-[data-part='badge']:is([data-state~='canceled'], [data-state~='missing-tag'], [data-state~='unavailable']) {
+[data-part='badge']:is(
+    [data-state~='canceled'],
+    [data-state~='missing-tag'],
+    [data-state~='unavailable'],
+    [data-state~='outdated']
+) {
     background: rgb(138 83 0 / 10%);
     box-shadow: inset 0 0 0 1px rgb(138 83 0 / 35%);
     color: #6b4100;
@@ -1161,7 +1166,12 @@ a[data-part='breadcrumb-link']:hover {
 }
 
 :root[data-theme-variant='dark']
-    [data-part='badge']:is([data-state~='canceled'], [data-state~='missing-tag'], [data-state~='unavailable']) {
+    [data-part='badge']:is(
+        [data-state~='canceled'],
+        [data-state~='missing-tag'],
+        [data-state~='unavailable'],
+        [data-state~='outdated']
+    ) {
     background: rgb(242 196 92 / 14%);
     box-shadow: inset 0 0 0 1px rgb(242 196 92 / 40%);
     color: #f8dda0;

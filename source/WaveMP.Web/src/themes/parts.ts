@@ -293,6 +293,7 @@ export const parts = [
     'theme-name',
     'theme-meta',
     'theme-actions',
+    'theme-problems',
     'theme-errors',
     'theme-error',
     'theme-error-location',

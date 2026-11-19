@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import type { Theme } from '@/api/generated/models'
+import { ThemeStatusObject, type Theme } from '@/api/generated/models'
+import { toThemePackageErrors } from '@/admin/themeErrors'
+import ThemeErrorList from '@/components/admin/ThemeErrorList.vue'
 import BaseButton from '@/components/base/BaseButton.vue'
 import { useFormat } from '@/composables/useFormat'
 import { toThemeDefinition } from '@/themes/custom'
@@ -9,7 +11,9 @@ import { hasVariants, themePreview } from '@/themes/themes'
 
 /**
  * The uploaded themes with their preview, author, version, size and installation date; each with
- * a button to upload a new version and one to delete it.
+ * a button to upload a new version and one to delete it. A theme that no longer passes the checks
+ * of the server (the server checks installed themes again on every start) is marked as outdated
+ * and lists its problems.
  */
 const props = withDefaults(
     defineProps<{
@@ -39,6 +43,7 @@ const rows = computed(() =>
         }
 
         const variant = definition.variants[0]
+        const outdated = theme.status === ThemeStatusObject.Outdated
         return [
             {
                 theme,
@@ -52,6 +57,12 @@ const rows = computed(() =>
                 installedAt: theme.installedAt
                     ? format.date(theme.installedAt, { dateStyle: 'medium' })
                     : '',
+                outdated,
+                problems: outdated ? toThemePackageErrors(theme.problems) : [],
+                state:
+                    [props.busy === definition.id ? 'busy' : '', outdated ? 'outdated' : '']
+                        .filter(Boolean)
+                        .join(' ') || undefined,
             },
         ]
     }),
@@ -73,7 +84,7 @@ function previewFailed(preview: string): void {
             data-part="theme-item"
             :data-item="row.definition.id"
             :data-variants="row.variants"
-            :data-state="busy === row.definition.id ? 'busy' : undefined"
+            :data-state="row.state"
         >
             <span
                 data-part="theme-preview"
@@ -93,6 +104,9 @@ function previewFailed(preview: string): void {
             <div data-part="theme-info">
                 <span data-part="theme-name">{{ row.definition.name }}</span>
                 <span data-part="theme-meta">
+                    <span v-if="row.outdated" data-part="badge" data-state="outdated">
+                        <span data-part="label">{{ t('adminThemes.outdated') }}</span>
+                    </span>
                     <span data-part="label">{{
                         t('adminThemes.by', { author: row.theme.author ?? '' })
                     }}</span>
@@ -122,6 +136,13 @@ function previewFailed(preview: string): void {
                     :label="t('adminThemes.delete', { name: row.definition.name })"
                     :disabled="disabled || busy !== null"
                     @click="emit('delete', row.theme)"
+                />
+            </div>
+            <div v-if="row.outdated" data-part="theme-problems">
+                <p data-part="form-note">{{ t('adminThemes.outdatedHint') }}</p>
+                <ThemeErrorList
+                    :errors="row.problems"
+                    :label="t('adminThemes.problemList', { name: row.definition.name })"
                 />
             </div>
         </li>

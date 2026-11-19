@@ -1543,7 +1543,7 @@ a[data-part='breadcrumb-link']:hover {
     color: #5c1218;
 }
 
-[data-part='badge']:is([data-state~='canceled'], [data-state~='unavailable']) {
+[data-part='badge']:is([data-state~='canceled'], [data-state~='unavailable'], [data-state~='outdated']) {
     border-color: #dcc077;
     background: linear-gradient(#fffcf0, #fbefc9);
     color: #4a3500;
