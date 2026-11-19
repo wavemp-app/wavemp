@@ -15,6 +15,12 @@ export type RepeatMode = 'off' | 'all' | 'one'
  */
 export type PlayerMessage = 'unsupported' | 'unavailable' | 'failed'
 
+/** The notice after the player took over the state of another device. */
+export interface TransportResume {
+    /** Name of the device the state comes from, e.g. "Firefox · Windows". */
+    readonly device: string
+}
+
 export interface TransportState {
     playback: PlaybackState
     /** The track is being loaded or waits for data. */

@@ -227,6 +227,20 @@
             display: none !important;
         }
 
+        /* "Continue listening from": across the width above the mini player. */
+        [data-part='transport'] > [data-part='resume-notice'] {
+            position: absolute !important;
+            inset-block: auto 100% !important;
+            inset-inline: var(--wmp-space-s) !important;
+            display: flex !important;
+            max-inline-size: none !important;
+        }
+
+        /* The full-screen player has its own play button; the notice waits until it collapses. */
+        [data-part='transport'][data-state~='expanded'] > [data-part='resume-notice'] {
+            display: none !important;
+        }
+
         [data-part='transport']
             > :is(
                 [data-part='mode-switch'],

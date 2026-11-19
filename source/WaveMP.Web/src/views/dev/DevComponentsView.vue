@@ -428,6 +428,13 @@ const transports = computed(() => [
         expanded: false,
     },
     {
+        id: 'resume',
+        label: t('dev.transportStates.resume'),
+        state: { ...idle, ...track.value, playback: 'paused' as const, position: 42 },
+        expanded: false,
+        resume: { device: t('dev.resumeDevice') },
+    },
+    {
         id: 'sleep-timer',
         label: t('dev.transportStates.sleepTimer'),
         state: {
@@ -1684,7 +1691,11 @@ const sampleTranscodeJobs = computed<TranscodeJob[]>(() => {
             <h2 data-part="dev-section-title">{{ t('dev.sections.transport') }}</h2>
             <div v-for="transport in transports" :key="transport.id" data-part="dev-sample">
                 <p data-part="dev-sample-title">{{ transport.label }}</p>
-                <AppTransport :state="transport.state" :expanded="transport.expanded" />
+                <AppTransport
+                    :state="transport.state"
+                    :expanded="transport.expanded"
+                    :resume="transport.resume"
+                />
             </div>
         </section>
 

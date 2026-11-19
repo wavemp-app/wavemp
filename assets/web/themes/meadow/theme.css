@@ -1094,6 +1094,28 @@ a[data-part='breadcrumb-link']:hover {
     box-shadow: 0 0.25rem 0.75rem rgb(16 40 110 / 30%);
 }
 
+/* "Continue listening from" is the same pale yellow balloon. */
+[data-part='transport'] > [data-part='resume-notice'] {
+    --wmp-icon-fill: #6b5300;
+
+    border-color: #c9a93b;
+    border-radius: var(--wmp-radius-s);
+    background: linear-gradient(#fffef3, #fff6c8);
+    color: #3d2f00;
+    box-shadow: 0 0.25rem 0.75rem rgb(16 40 110 / 30%);
+}
+
+[data-part='resume-notice'] > [data-part='btn-resume'] {
+    --wmp-icon-fill: currentColor;
+}
+
+/* The icons of the transport are white; on the balloon the close icon is dark. */
+[data-part='transport'] > [data-part='resume-notice'] > [data-part='btn-dismiss-resume'] {
+    --wmp-icon-fill: #6b5300;
+
+    color: #3d2f00;
+}
+
 [data-part='cast-hint'] {
     border-color: #c9a93b;
     border-radius: var(--wmp-radius-s);

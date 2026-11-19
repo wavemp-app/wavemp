@@ -1243,6 +1243,28 @@ a[data-part='breadcrumb-link']:hover {
     color: #0d2944;
 }
 
+/* "Continue listening from" is the same white glass label, with a blue device icon. */
+[data-part='transport'] > [data-part='resume-notice'] {
+    --wmp-icon-fill: linear-gradient(#2a8be0, #0b4f94);
+
+    border-color: #a9cdea;
+    border-radius: var(--wmp-radius-m);
+    background: linear-gradient(#ffffff, #eaf5fe);
+    box-shadow: 0 4px 14px rgb(20 70 120 / 20%);
+    color: #0d2944;
+}
+
+[data-part='resume-device'] {
+    color: #0b4f94;
+}
+
+/* The button to continue is a primary button, also inside the transport. */
+[data-part='transport'] > [data-part='resume-notice'] > [data-part='btn-resume'] {
+    --wmp-icon-fill: #ffffff;
+
+    color: #ffffff;
+}
+
 /* Equalizer, sleep timer and casting glow like the pressed toggles. */
 [data-part='btn-equalizer'][data-state~='on'] [data-part='icon'],
 [data-part='btn-sleep-timer'][data-state~='on'] [data-part='icon'],

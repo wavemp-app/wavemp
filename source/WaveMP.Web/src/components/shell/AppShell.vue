@@ -24,6 +24,7 @@ import { useHealthStore } from '@/stores/health'
 import { useMiniPlayerStore } from '@/stores/miniPlayer'
 import { usePageTitleStore } from '@/stores/pageTitle'
 import { usePlayerStore } from '@/stores/player'
+import { useResumeStore } from '@/stores/resume'
 import { useSessionStore } from '@/stores/session'
 import { useShortcutsStore } from '@/stores/shortcuts'
 import { shortcutRegistry } from '@/shortcuts/defaults'
@@ -49,6 +50,7 @@ const collection = useCollectionStore()
 const contextMenu = useContextMenuStore()
 
 const player = usePlayerStore()
+const resume = useResumeStore()
 const session = useSessionStore()
 const miniPlayer = useMiniPlayerStore()
 const isDesktop = useMediaQuery(desktopMediaQuery)
@@ -229,6 +231,7 @@ onUnmounted(() => {
             :state="player.state"
             :expanded="playerExpanded"
             :compact="miniPlayer.isOpen"
+            :resume="resume.notice"
             @play="player.play"
             @pause="player.pause"
             @stop="player.stop"
@@ -248,6 +251,8 @@ onUnmounted(() => {
             @compact="toggleCompact"
             @expand="expandPlayer"
             @collapse="collapsePlayer"
+            @resume="resume.resume"
+            @dismiss-resume="resume.dismiss"
         />
         <AppBottomNav />
         <ContextMenuHost />

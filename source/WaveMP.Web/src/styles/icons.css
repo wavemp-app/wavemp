@@ -331,6 +331,10 @@
         --_icon: var(--wmp-icon-cast);
     }
 
+    [data-icon='resume-device'] {
+        --_icon: var(--wmp-icon-resume-device);
+    }
+
     [data-icon='fullscreen'] {
         --_icon: var(--wmp-icon-fullscreen);
     }

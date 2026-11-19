@@ -1449,6 +1449,23 @@ a[data-part='breadcrumb-link']:hover {
     backdrop-filter: var(--acc-blur);
 }
 
+/* "Continue listening from": a floating card like the menus; the device icon carries the accent. */
+[data-part='transport'] > [data-part='resume-notice'] {
+    --wmp-icon-fill: var(--acc-line);
+
+    border-color: var(--acc-hairline);
+    border-radius: var(--wmp-radius-m);
+    background: var(--wmp-menu-background);
+    color: var(--wmp-menu-color);
+    box-shadow: var(--acc-shadow-float);
+    -webkit-backdrop-filter: var(--acc-blur);
+    backdrop-filter: var(--acc-blur);
+}
+
+[data-part='resume-notice'] > [data-part='btn-resume'] {
+    --wmp-icon-fill: currentColor;
+}
+
 [data-part='cast-hint'] {
     border-color: var(--acc-hairline);
     border-radius: var(--wmp-radius-m);

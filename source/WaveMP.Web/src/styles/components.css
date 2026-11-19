@@ -58,6 +58,53 @@
     }
 
     /*
+     * "Continue listening from <device>": the player took over the state of another device. A bar
+     * above the transport with the icon, the text and the buttons to continue and to dismiss.
+     */
+    [data-part='transport'] > [data-part='resume-notice'] {
+        position: absolute;
+        inset-block-end: 100%;
+        inset-inline-start: var(--wmp-space-s);
+        z-index: 2;
+        display: flex;
+        align-items: center;
+        gap: var(--wmp-space-s);
+        max-inline-size: calc(100% - 2 * var(--wmp-space-s));
+        margin: 0 0 var(--wmp-space-xs);
+        padding: var(--wmp-space-xs) var(--wmp-space-xs) var(--wmp-space-xs) var(--wmp-space-s);
+        color: var(--wmp-color-text);
+        font-size: var(--wmp-font-size-s);
+        background: var(--wmp-color-surface-raised);
+        border: 1px solid var(--wmp-color-border);
+        border-radius: var(--wmp-radius-s);
+    }
+
+    [data-part='resume-notice'] > [data-part='icon'] {
+        flex: none;
+    }
+
+    /* Narrow screens wrap the text to two lines, so the name of the device stays readable. */
+    [data-part='resume-notice'] > [data-part='label'] {
+        display: -webkit-box;
+        flex: 1 1 auto;
+        min-inline-size: 0;
+        overflow: hidden;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+        line-clamp: 2;
+    }
+
+    [data-part='resume-device'] {
+        font-weight: 600;
+        white-space: nowrap;
+    }
+
+    [data-part='resume-notice'] > [data-part='btn-resume'],
+    [data-part='resume-notice'] > [data-part='btn-dismiss-resume'] {
+        flex: none;
+    }
+
+    /*
      * Elapsed time and length of the song: hidden by the base, a theme shows it in its desktop
      * layout, for example on a display beside the title.
      */

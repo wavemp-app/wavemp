@@ -761,6 +761,20 @@ a[data-part="breadcrumb-link"]:hover {
     box-shadow: 0 0.25rem 1rem rgb(0 0 0 / 35%);
 }
 
+/* "Continue listening from" is the same dark glass label; the device icon glows blue. */
+[data-part="transport"] > [data-part="resume-notice"] {
+    --wmp-icon-fill: linear-gradient(#bfe6ff, #4fb4f5);
+
+    color: #eef4fa;
+    background: linear-gradient(rgb(40 46 54 / 95%), rgb(14 17 21 / 95%));
+    border-color: rgb(255 255 255 / 18%);
+    box-shadow: 0 0.25rem 1rem rgb(0 0 0 / 35%);
+}
+
+[data-part="resume-notice"] > [data-part="btn-resume"] {
+    --wmp-icon-fill: currentColor;
+}
+
 /* --- Library: tiles, detail pages, files ------------------------------------------------------- */
 
 /* Covers are glossy pictures with a soft shadow; a light reflection lies on their upper half. */

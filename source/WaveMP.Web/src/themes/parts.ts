@@ -209,6 +209,10 @@ export const parts = [
     'cast',
     'btn-cast',
     'cast-hint',
+    'resume-notice',
+    'resume-device',
+    'btn-resume',
+    'btn-dismiss-resume',
     'cast-status',
     'btn-collapse',
 

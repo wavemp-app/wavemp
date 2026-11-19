@@ -870,6 +870,21 @@ a[data-part='breadcrumb-link']:hover {
     text-shadow: none;
 }
 
+/* "Continue listening from" is a metal label as well. */
+[data-part='transport'] > [data-part='resume-notice'] {
+    --wmp-icon-fill: linear-gradient(#5b6470, #2b3138);
+
+    border-color: #7d848c;
+    background: linear-gradient(#fdfdfd, #e6e9ec);
+    box-shadow: 0 4px 12px rgb(0 0 0 / 22%);
+    color: #1d2126;
+    text-shadow: none;
+}
+
+[data-part='resume-notice'] > [data-part='btn-resume'] {
+    --wmp-icon-fill: currentColor;
+}
+
 /* --- Transport ---------------------------------------------------------------------------------- */
 
 [data-part='transport'] {
@@ -1939,6 +1954,12 @@ a[data-part='breadcrumb-link']:hover {
         inset-block: calc(100% + 2.75rem) auto;
         inset-inline: auto 1rem;
         max-inline-size: 28rem;
+    }
+
+    [data-part='transport'] > [data-part='resume-notice'] {
+        inset-block: calc(100% + 2.75rem) auto;
+        inset-inline: auto 1rem;
+        margin: 0;
     }
 
     [data-part='cast-hint'] {

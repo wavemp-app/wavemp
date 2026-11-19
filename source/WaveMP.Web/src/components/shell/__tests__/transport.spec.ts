@@ -132,6 +132,36 @@ describe('AppTransport', () => {
         expect(message.text()).toContain('cannot be played')
     })
 
+    it('shows no notice to continue from another device by default', () => {
+        expect(mountTransport().find('[data-part="resume-notice"]').exists()).toBe(false)
+    })
+
+    it('offers to continue the state of another device', async () => {
+        const wrapper = mount(AppTransport, {
+            props: {
+                state: { ...idle, trackId: 't1', title: 'Song', playback: 'paused' },
+                resume: { device: 'Firefox · Windows' },
+            },
+            global: { plugins: [createWaveMpI18n('en'), createPinia()] },
+        })
+        const notice = wrapper.get('[data-part="resume-notice"]')
+
+        expect(notice.attributes('role')).toBe('status')
+        expect(notice.get('[data-part="icon"]').attributes('data-icon')).toBe('resume-device')
+        expect(notice.get(':scope > [data-part="label"]').text()).toBe(
+            'Continue listening from Firefox · Windows',
+        )
+        expect(notice.get('[data-part="resume-device"]').text()).toBe('Firefox · Windows')
+
+        await notice.get('[data-part="btn-resume"]').trigger('click')
+        await notice.get('[data-part="btn-dismiss-resume"]').trigger('click')
+
+        expect(wrapper.emitted('resume')).toHaveLength(1)
+        expect(wrapper.emitted('dismissResume')).toHaveLength(1)
+        expect(notice.get('[data-part="btn-resume"] [data-part="label"]').text()).toBe('Continue')
+        expect(notice.get('[data-part="btn-dismiss-resume"]').attributes('title')).toBe('Dismiss')
+    })
+
     it('shows the pause icon while playing', () => {
         const wrapper = mountTransport({
             playback: 'playing',

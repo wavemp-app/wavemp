@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useI18n } from 'vue-i18n'
+import { I18nT, useI18n } from 'vue-i18n'
 import BaseButton from '@/components/base/BaseButton.vue'
+import BaseIcon from '@/components/base/BaseIcon.vue'
 import BaseCover from '@/components/base/BaseCover.vue'
 import BaseSlider from '@/components/base/BaseSlider.vue'
 import FavoriteButton from '@/components/collection/FavoriteButton.vue'
@@ -18,6 +19,7 @@ import {
     transportStateTokens,
     type PlayerMessage,
     type SleepTimerChoice,
+    type TransportResume,
     type TransportState,
 } from './transport'
 
@@ -35,8 +37,10 @@ const props = withDefaults(
         expanded?: boolean
         /** Whether the mini player (compact mode) is open. */
         compact?: boolean
+        /** The state of another device was taken over: the notice to continue from there. */
+        resume?: TransportResume | null
     }>(),
-    { expanded: false, compact: false },
+    { expanded: false, compact: false, resume: null },
 )
 
 const emit = defineEmits<{
@@ -60,6 +64,9 @@ const emit = defineEmits<{
     showNowPlaying: []
     expand: []
     collapse: []
+    /** Plays the state taken over from another device. */
+    resume: []
+    dismissResume: []
 }>()
 
 const { t } = useI18n()
@@ -192,6 +199,28 @@ function onMiniPlayer(): void {
         >
             {{ messageText }}
         </p>
+        <div v-if="resume" data-part="resume-notice" role="status">
+            <BaseIcon name="resume-device" />
+            <I18nT keypath="player.resume.from" tag="span" data-part="label" scope="global">
+                <template #device>
+                    <span data-part="resume-device">{{ resume.device }}</span>
+                </template>
+            </I18nT>
+            <BaseButton
+                part="btn-resume"
+                variant="primary"
+                icon="play"
+                :label="t('player.resume.continue')"
+                @click="emit('resume')"
+            />
+            <BaseButton
+                part="btn-dismiss-resume"
+                variant="icon"
+                icon="close"
+                :label="t('player.resume.dismiss')"
+                @click="emit('dismissResume')"
+            />
+        </div>
         <div data-part="transport-controls" role="group" :aria-label="t('player.controls')">
             <BaseButton
                 part="btn-shuffle"

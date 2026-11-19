@@ -26,6 +26,7 @@ const icons: Record<IconStyle, string[]> = {
         'caret-right',
         'corners-in',
         'corners-out',
+        'devices',
         'dots-three-outline',
         'faders',
         'guitar',

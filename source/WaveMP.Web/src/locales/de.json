@@ -146,7 +146,13 @@
     "sleepTimerEndOfQueue": "Am Ende der Warteschlange",
     "sleepTimerRemaining": "Stoppt in {time}",
     "sleepTimerEndOfTrackShort": "Titelende",
-    "sleepTimerEndOfQueueShort": "Warteschlangenende"
+    "sleepTimerEndOfQueueShort": "Warteschlangenende",
+    "resume": {
+      "label": "Weiterhören",
+      "from": "Weiterhören von {device}",
+      "continue": "Fortsetzen",
+      "dismiss": "Ausblenden"
+    }
   },
   "compactPlayer": {
     "label": "Miniplayer",
@@ -584,6 +590,7 @@
       "muted": "Stumm",
       "loading": "Laden",
       "message": "Hinweis (Format nicht unterstützt)",
+      "resume": "Weiterhören von einem anderen Gerät",
       "expanded": "Erweitert (mobiler Vollbild-Player)",
       "sleepTimer": "Sleep-Timer läuft",
       "crossfade": "Überblenden an",
@@ -592,6 +599,7 @@
       "castInsecure": "Streamen ohne HTTPS"
     },
     "castDevice": "Wohnzimmer",
+    "resumeDevice": "Safari · iPhone",
     "table": {
       "part": "Part",
       "slot": "Slot",
