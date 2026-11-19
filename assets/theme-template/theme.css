@@ -1,8 +1,9 @@
 /*
  * Template of a WaveMP theme, theme API version 5.
  *
- * A theme is this one CSS file plus its pictures (SVG, PNG or WebP), packed with manifest.json
- * into a ZIP file that an admin uploads under Administration > Themes. THEMING.md describes every
+ * A theme is this one CSS file plus its pictures (SVG, PNG or WebP) and, if it needs them, its
+ * fonts (WOFF2), packed with manifest.json into a ZIP file that an admin uploads under
+ * Administration > Themes. THEMING.md describes every
  * part, state and variable a theme can use; its section "Custom themes" explains the package.
  *
  * Rules for uploaded themes (WaveMP checks them on upload and rejects the package otherwise):
@@ -11,6 +12,9 @@
  *   url('images/play-button.svg'). External addresses (http:, https:, data:, //) and paths that
  *   start with / are rejected, so are @import and @layer. WaveMP rewrites the paths to the
  *   addresses of the installed files, so they also work inside CSS variables.
+ * - Fonts are WOFF2 files of the package, named in @font-face with a path relative to this file
+ *   (see the example below). Ship a font only if its license allows it, for example the SIL Open
+ *   Font License, and put its license text into the package (for example OFL.txt).
  * - SVG files must not contain scripts, event handlers (onload ...), foreignObject or links to
  *   other files; WaveMP removes everything else that is not plain drawing (metadata of drawing
  *   programs, animations, comments).
@@ -22,6 +26,18 @@
  *   data-theme-variant ('light' or 'dark'); list them in "variants" of manifest.json. Never use
  *   @media (prefers-color-scheme) for that, the profile may choose another appearance than the
  *   device.
+ */
+
+/*
+ * An own font: put the WOFF2 file into the package, for example as fonts/my-font.woff2, remove the
+ * comment around this rule and name the font in --wmp-font-family below.
+ *
+ * @font-face {
+ *     font-family: 'My Font';
+ *     src: url('fonts/my-font.woff2') format('woff2');
+ *     font-weight: 100 900;
+ *     font-display: swap;
+ * }
  */
 
 /* --- Light variant (the first variant in manifest.json) ------------------------------------- */
@@ -68,7 +84,10 @@
     --wmp-radius-m: 0.75rem;
     --wmp-play-button-size: 3.25rem;
 
-    /* Fonts: installed on the device, or font files under a license that allows it. */
+    /*
+     * Fonts: installed on the device, or WOFF2 files of the package under a license that allows
+     * it, for example 'My Font', system-ui, sans-serif.
+     */
     --wmp-font-family: system-ui, sans-serif;
 }
 

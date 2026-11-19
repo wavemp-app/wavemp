@@ -164,7 +164,7 @@ The running version is shown under **Settings** and reported by `GET /api/v1/hea
 | `Pins__MaxFailedAttempts` | Wrong PINs in a row after which a profile is locked | `5` |
 | `Pins__LockoutDuration` | How long a profile stays locked after too many wrong PINs | `00:05:00` |
 | `Avatars__MaxUploadBytes` | Largest picture in bytes that can be uploaded as the picture of a profile | `10485760` (10 MB) |
-| `Themes__MaxUploadBytes` | Largest theme package (ZIP file) in bytes that admins can upload; `Themes__MaxUnpackedBytes`, `Themes__MaxFileBytes`, `Themes__MaxStylesheetBytes` and `Themes__MaxEntries` limit its content, see [THEMING.md](THEMING.md#uploaded-themes) | `10485760` (10 MB) |
+| `Themes__MaxUploadBytes` | Largest theme package (ZIP file) in bytes that admins can upload; `Themes__MaxUnpackedBytes`, `Themes__MaxFileBytes`, `Themes__MaxStylesheetBytes`, `Themes__MaxFontBytes` and `Themes__MaxEntries` limit its content, see [THEMING.md](THEMING.md#uploaded-themes) | `10485760` (10 MB) |
 | `Lyrics__RequestInterval` | Shortest time between two requests to LRCLIB while lyrics are downloaded | `00:00:01` |
 | `Lyrics__LrclibUrl` | Address of LRCLIB, for example of a mirror you host yourself | `https://lrclib.net/` |
 | `Lyrics__LookUpAgainAfter` | How long WaveMP waits before it looks up the lyrics of a song again that LRCLIB had no lyrics for (or listed as instrumental); `00:00:00` never looks such a song up again | `30.00:00:00` |

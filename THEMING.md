@@ -6,7 +6,7 @@ This document describes how themes change the look of the WaveMP web app: the pa
 
 ## Overview
 
-A theme is exactly one CSS file plus its graphics. The themes shipped with WaveMP live in `/assets/web/themes/<id>/` and are served as `/themes/<id>/theme.css`, their graphics under `/themes/<id>/images/`. Admins can upload further themes as ZIP packages, see [Uploaded themes](#uploaded-themes). The app loads the active theme with a `<link id="wavemp-theme">` element.
+A theme is exactly one CSS file plus its graphics (an uploaded theme also its fonts). The themes shipped with WaveMP live in `/assets/web/themes/<id>/` and are served as `/themes/<id>/theme.css`, their graphics under `/themes/<id>/images/`. Admins can upload further themes as ZIP packages, see [Uploaded themes](#uploaded-themes). The app loads the active theme with a `<link id="wavemp-theme">` element.
 
 The DOM is the same for every theme. Every element a theme can address has a stable `data-part` attribute, for example `data-part="transport"` or `data-part="btn-play"`. States are expressed with `data-state` tokens and ARIA attributes. Icons and labels are always separate child elements (`data-part="icon"`, `data-part="label"`), so the pseudo-elements `::before` and `::after` of all areas and buttons are free for the theme, for example for gloss and glow effects.
 
@@ -1007,7 +1007,7 @@ The defaults are icons of [Phosphor Icons](https://phosphoricons.com) (MIT) unde
 
     The base already does this for buttons with `data-variant="icon"` or `"round"`; they show their label as tooltip.
 - Keep the focus outline (`:focus-visible`) visible; `--wmp-color-focus` sets its color.
-- Fonts: use fonts that are installed on the device or ship font files only under a license that allows it.
+- Fonts: use fonts that are installed on the device or ship font files only under a license that allows it (see [Fonts of an uploaded theme](#fonts-of-an-uploaded-theme)).
 - Graphics: only own graphics or graphics under a compatible license. No logos, icons or other assets of third-party products.
 - Do not set `display` on `context-menu` or `dialog` without `:popover-open` or `[open]`, otherwise they stay visible when closed.
 
@@ -1095,8 +1095,9 @@ A theme package is a ZIP file with these files:
 | `manifest.json` | Description of the theme, see [Manifest](#manifest) |
 | Exactly one `.css` file | The theme, saved as UTF-8; any name and folder, for example `theme.css` |
 | `.svg`, `.png`, `.webp` files | The pictures the CSS uses and the previews |
+| `.woff2` files | Fonts the CSS uses in `@font-face`, see [Fonts of an uploaded theme](#fonts-of-an-uploaded-theme) |
 
-The files may lie in a single folder of the ZIP file, as when a folder is compressed. `README`, `LICENSE` and other `.md` and `.txt` files are allowed but not installed, nor are `__MACOSX`, `.DS_Store`, `Thumbs.db` and `desktop.ini`. Every other file is rejected, for example scripts, HTML, fonts, JPEG pictures and nested archives.
+The files may lie in a single folder of the ZIP file, as when a folder is compressed. `README`, `LICENSE` and other `.md` and `.txt` files are allowed but not installed, nor are `__MACOSX`, `.DS_Store`, `Thumbs.db` and `desktop.ini`. Every other file is rejected, for example scripts, HTML, fonts in other formats than WOFF2 (TTF, OTF, WOFF), JPEG pictures and nested archives.
 
 Paths consist of letters, digits, `.`, `_` and `-`, separated by `/`; at most five levels and 200 characters, and no two paths that differ only in upper and lower case. The default limits:
 
@@ -1106,6 +1107,7 @@ Paths consist of letters, digits, `.`, `_` and `-`, separated by `/`; at most fi
 | Size of all files once unpacked | 32 MiB | `Themes__MaxUnpackedBytes` |
 | Size of a file | 5 MiB | `Themes__MaxFileBytes` |
 | Size of the CSS file | 1 MiB | `Themes__MaxStylesheetBytes` |
+| Size of a font file | 2 MiB | `Themes__MaxFontBytes` |
 | Number of entries | 256 | `Themes__MaxEntries` |
 
 ### Manifest
@@ -1138,13 +1140,36 @@ Comments, trailing commas and further members (for example `description`) are al
 
 The CSS file works like the CSS file of a shipped theme, see [Cascade](#cascade) and [Variants](#variants). These rules keep a theme from loading anything from elsewhere:
 
-- Pictures are named with paths relative to the CSS file, for example `url('images/play.svg')`, also in variables and in `image-set()`. The server replaces each path with the address of the installed file; a path to a file that is not a picture of the package is rejected. `url('#id')` (a reference into the document) stays as it is.
+- Pictures and fonts are named with paths relative to the CSS file, for example `url('images/play.svg')` or `src: url('fonts/display.woff2') format('woff2')`, also in variables and in `image-set()`. The server replaces each path with the address of the installed file; a path to a file that is neither a picture nor a font of the package is rejected. `url('#id')` (a reference into the document) stays as it is.
 - No addresses with a scheme (`https:`, `data:`, `blob:`, `javascript:` and so on), no `//`, no addresses that start with `/`, no queries such as `?v=1` and no paths outside the package. `url()`, `src()`, `image()` and `image-set()` cannot take their address from `var()`, `attr()` or `env()`. The server reads the CSS file like a browser, so escapes such as `u\72l(` and comments do not hide an address.
-- No `@import`: everything is in the one CSS file. No `@layer`: the theme stays outside the layers of the base. No `@namespace` or `@document`. Allowed are `@charset`, `@media`, `@supports`, `@container`, `@keyframes`, `@font-face`, `@property`, `@starting-style`, `@scope`, `@counter-style`, `@font-feature-values`, `@font-palette-values`, `@view-transition` and `@page`. A package cannot contain font files, so `@font-face` can only name installed fonts with `local()`.
+- No `@import`: everything is in the one CSS file. No `@layer`: the theme stays outside the layers of the base. No `@namespace` or `@document`. Allowed are `@charset`, `@media`, `@supports`, `@container`, `@keyframes`, `@font-face`, `@property`, `@starting-style`, `@scope`, `@counter-style`, `@font-feature-values`, `@font-palette-values`, `@view-transition` and `@page`. `@font-face` names the fonts of the package, or fonts installed on the device with `local()`.
 
 ### Pictures of an uploaded theme
 
 SVG files are cleaned on upload: the server reads them without a document type definition and writes them again with only the elements and attributes of drawings. Comments, metadata of drawing programs and animations are removed. Rejected are scripts, event handlers such as `onload`, `foreignObject` and HTML, `DOCTYPE` and entities, and references outside the picture: an SVG file may only reference its own elements (`#id`) and embed PNG, JPEG, WebP or GIF pictures as `data:image/...;base64`. PNG and WebP files must contain a picture of their format.
+
+### Fonts of an uploaded theme
+
+A theme can ship its own fonts as WOFF2 files, the format every browser that runs WaveMP supports. Convert TTF and OTF files to WOFF2 first, for example with `fonttools ttLib.woff2 compress my-font.ttf`; other font formats are rejected. Name each font in an `@font-face` rule with a path relative to the CSS file:
+
+```css
+@font-face {
+    font-family: 'My Theme Sans';
+    src: url('fonts/my-theme-sans.woff2') format('woff2');
+    font-weight: 100 900;
+    font-display: swap;
+}
+
+:root {
+    --wmp-font-family: 'My Theme Sans', system-ui, sans-serif;
+}
+```
+
+The server checks every font on upload: the WOFF2 signature, the font format inside it (TrueType, CFF or a font collection), the length the header names, which must be the length of the file, and the size of the file (at most `Themes__MaxFontBytes`, 2 MiB by default). The browser checks the tables of the font again before it draws with it. Keep fonts small: every device loads them with the theme, so a subset with only the characters the theme needs (for example Latin) is better than a complete font. `font-display: swap` shows the text in the next font of the list until the font is loaded.
+
+Fonts are installed and served like the pictures, from the server itself; the Content Security Policy of the web app (`font-src 'self'`) blocks fonts from anywhere else.
+
+**License:** the theme author is responsible for the license of every font in the package. Only ship fonts whose license allows to embed them and to pass them on, for example fonts under the SIL Open Font License (OFL) or the Apache License 2.0. Many commercial fonts and fonts of operating systems do not allow that. Put the license text of each font into the package, for example as `OFL.txt` or `fonts/LICENSE.txt`: text files are allowed in a package and stay with the theme package that is passed on, but are not installed. Mention the fonts and their licenses in the README of the theme as well.
 
 ### Installation
 
@@ -1164,7 +1189,7 @@ A rejected package lists every problem at once, with the file and the line it co
 | `file.too_large` | A file is larger than allowed once unpacked |
 | `file.invalid_path` | A path is absolute, leaves the package, is too deep or too long, or has other characters |
 | `file.duplicate_path` | A path appears twice, also when only upper and lower case differ |
-| `file.unsupported_type` | A file of a type a theme cannot contain |
+| `file.unsupported_type` | A file of a type a theme cannot contain, also a font in another format than WOFF2 |
 | `manifest.missing` | No `manifest.json` |
 | `manifest.invalid_json` | `manifest.json` is no valid JSON object or names a member twice |
 | `manifest.missing_field` | A required member is missing |
@@ -1183,7 +1208,7 @@ A rejected package lists every problem at once, with the file and the line it co
 | `css.external_url` | An external address (a scheme or `//`) |
 | `css.absolute_url` | An address that starts with `/` |
 | `css.invalid_url` | An empty address, a query, a path outside the package or an address from `var()`, `attr()` or `env()` |
-| `css.missing_file` | A path to a file that is not a picture of the package |
+| `css.missing_file` | A path to a file that is neither a picture nor a font of the package |
 | `svg.invalid` | No well-formed SVG document |
 | `svg.entity` | A `DOCTYPE` or entities |
 | `svg.script` | A script |
@@ -1191,6 +1216,7 @@ A rejected package lists every problem at once, with the file and the line it co
 | `svg.foreign_object` | `foreignObject` or HTML |
 | `svg.external_reference` | A reference outside the picture |
 | `image.invalid` | A PNG or WebP file without a picture of its format |
+| `font.invalid` | A WOFF2 file that is no WOFF2 font, or whose header names another length than the file has |
 
 ## Versioning
 
@@ -1201,6 +1227,7 @@ The themes shipped with WaveMP name the version they are written for in the comm
 ### Changelog
 
 - **Version 5:** visualizations. Changed: the `visualization` is no longer a placeholder: the state `placeholder` is gone, its `icon` and `label` moved into the new `visualization-message`, and the base lays out the `visualization` as a positioned box (no longer a grid) with the background `--wmp-stage-view-background`; themes that styled `visualization > icon` or `visualization > label` have to style `visualization-message > icon` and `visualization-message > label`; `btn-fullscreen` also lies in `visualization-controls`, so theme rules for `btn-fullscreen` that should only apply to the video need `video-stage > btn-fullscreen`. Added: the states `idle`, `loading`, `waiting`, `running`, `paused`, `unsupported`, `failed` and `fullscreen` of `visualization` and its attribute `data-module`; the parts `visualization-canvas`, `visualization-message`, `visualization-controls`, `btn-preset-previous`, `btn-preset-next` and `btn-auto-change` (states `on` and `off`, `aria-pressed`); the values `visualization-preset` and `visualization-auto-change` of `data-field`; the icon slots `preset-previous`, `preset-next` and `auto-change`.
+    - Additions without a version change: fonts in uploaded themes. A theme package can contain WOFF2 fonts for `@font-face` (see [Fonts of an uploaded theme](#fonts-of-an-uploaded-theme)), with the limit `Themes__MaxFontBytes` and the code `font.invalid`.
     - Additions without a version change: more themes and their variants. The themes Meadow (`meadow`), Daylight (`daylight`), Accent (`accent`, light and dark), Pinstripe (`pinstripe`) and Clear Glass (`clear-glass`, light and dark); the attribute `data-theme-variant` on the root element (see [Variants](#variants)); the runtime variables `--wmp-cover-color` and `--wmp-cover-color-contrast` on the root element; the theme picker of the settings (`section` `appearance` with the `field`s `theme` and `theme-appearance`, the parts `theme-picker` with an `indicator` and the runtime variables of an active element, `theme-option` with `data-item` and `data-variants`, `theme-preview` with `data-kind` and the state `missing`, `theme-preview-image` and `theme-variants`); the time display `transport-time` (state `empty`) with `time-elapsed` and `time-duration` in `transport`, hidden by the base. The default of `--wmp-profile-secondary-opacity` is `0.7` instead of `0.55`, so the label of the built-in admin keeps 4.5:1. Fixes of the base: the knob of a vertical `slider` (the bands of the `equalizer`) sits at the level of its fill, measured against `--wmp-equalizer-slider-height` (before, it stayed near the bottom); `now-playing-artist`, `queue-item-artist`, `queue-item-duration` and `equalizer-scale` are no longer dimmed with `opacity`, the last three take `--wmp-color-text-muted` instead; an `equalizer` in the state `off` fades only the `slider-fill`s and `slider-thumb`s of its bands, no longer the whole `equalizer-bands`, so scale, values and band names keep their contrast.
     - Additions without a version change: the review inbox of the administration. The entry `btn-review-inbox` of `header` (states `pending`, `empty`, `active`; a `badge` `unreviewed` with the number) without a grid area of its own, the empty cell for it in the base layouts of `header`; the page `data-view="admin-review"` with `review-filters` (the `segmented-control`s `review-filter` and `review-sort`), `review-bulk`, `review-list`, `review-item`, `review-info`, `review-title`, `review-meta` and `review-tags` and their states; the page of a song `data-view="admin-review-track"` with `review-actions`, `review-nav` and the state `finished` of `empty-state`; the tokens `unreviewed`, `reviewed` and `missing-tag` of `badge`, the entry `admin-review` of `admin-nav`, further values of `data-item` and `data-field`, and the icon slots `review-inbox`, `admin-review`, `tags-missing`, `review-done`, `review-skip`, `review-previous` and `review-next`.
     - Additions without a version change: PINs of the profiles. On the profile selection the lock symbol `profile-lock` in `profile-tile` (state `protected`) and the PIN entry `pin-entry` with `pin-entry-title`, `pin-entry-actions` and the digit pad `pin-pad` (`pin-field`, `pin-dots` with `data-count`, `pin-dot`, `pin-keys`, `pin-key` with `data-key`) and their states; the PIN page `data-view="settings-pin"` with the `data-field` values `pin`, `pin-confirmation` and `pin-status`, the `section` `pin` of the settings page, the `badge` token `pin` in `user-meta`, further values of `data-item` and the icon slots `profile-lock`, `pin-delete`, `pin-submit`, `has-pin` and `reset-pin`.
