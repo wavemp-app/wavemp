@@ -18,6 +18,10 @@ import { LyricsRequestBuilderNavigationMetadata, LyricsRequestBuilderRequestsMet
 // @ts-ignore
 import { MetadataRequestBuilderRequestsMetadata, type MetadataRequestBuilder } from './metadata/index.js';
 // @ts-ignore
+import { OnlineMatchesRequestBuilderRequestsMetadata, type OnlineMatchesRequestBuilder } from './onlineMatches/index.js';
+// @ts-ignore
+import { OnlineMetadataRequestBuilderRequestsMetadata, type OnlineMetadataRequestBuilder } from './onlineMetadata/index.js';
+// @ts-ignore
 import { PlaybackRequestBuilderRequestsMetadata, type PlaybackRequestBuilder } from './playback/index.js';
 // @ts-ignore
 import { RatingRequestBuilderRequestsMetadata, type RatingRequestBuilder } from './rating/index.js';
@@ -62,6 +66,14 @@ export interface TracksItemRequestBuilder extends BaseRequestBuilder<TracksItemR
      * The metadata property
      */
     get metadata(): MetadataRequestBuilder;
+    /**
+     * The onlineMatches property
+     */
+    get onlineMatches(): OnlineMatchesRequestBuilder;
+    /**
+     * The onlineMetadata property
+     */
+    get onlineMetadata(): OnlineMetadataRequestBuilder;
     /**
      * The playback property
      */
@@ -127,6 +139,12 @@ export const TracksItemRequestBuilderNavigationMetadata: Record<Exclude<keyof Tr
     },
     metadata: {
         requestsMetadata: MetadataRequestBuilderRequestsMetadata,
+    },
+    onlineMatches: {
+        requestsMetadata: OnlineMatchesRequestBuilderRequestsMetadata,
+    },
+    onlineMetadata: {
+        requestsMetadata: OnlineMetadataRequestBuilderRequestsMetadata,
     },
     playback: {
         requestsMetadata: PlaybackRequestBuilderRequestsMetadata,

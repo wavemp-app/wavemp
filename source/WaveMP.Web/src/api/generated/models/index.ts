@@ -123,6 +123,32 @@ export interface AlbumReference extends AdditionalDataHolder, Parsable {
 }
 export type AlbumSort = (typeof AlbumSortObject)[keyof typeof AlbumSortObject];
 /**
+ * The fields of a match the admin applies to an album.
+ */
+export interface ApplyAlbumOnlineMetadata extends AdditionalDataHolder, Parsable {
+    /**
+     * The release whose front cover becomes the cover of the album; null for none.
+     */
+    coverReleaseId?: Guid | null;
+    /**
+     * The tags property
+     */
+    tags?: UpdateAlbumTags | null;
+}
+/**
+ * The fields of a match the admin applies to a song.
+ */
+export interface ApplyTrackOnlineMetadata extends AdditionalDataHolder, Parsable {
+    /**
+     * The release whose front cover becomes the cover, following the cover rules; null for none.
+     */
+    coverReleaseId?: Guid | null;
+    /**
+     * The tags property
+     */
+    tags?: UpdateTrackMetadata | null;
+}
+/**
  * An artist of the library.
  */
 export interface Artist extends AdditionalDataHolder, Parsable {
@@ -470,6 +496,24 @@ export function createAlbumPageFromDiscriminatorValue(parseNode: ParseNode | und
 // @ts-ignore
 export function createAlbumReferenceFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
     return deserializeIntoAlbumReference;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {ApplyAlbumOnlineMetadata}
+ */
+// @ts-ignore
+export function createApplyAlbumOnlineMetadataFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoApplyAlbumOnlineMetadata;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {ApplyTrackOnlineMetadata}
+ */
+// @ts-ignore
+export function createApplyTrackOnlineMetadataFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoApplyTrackOnlineMetadata;
 }
 /**
  * Creates a new instance of the appropriate class based on discriminator value
@@ -941,6 +985,87 @@ export function createMediaSourceFromDiscriminatorValue(parseNode: ParseNode | u
 // @ts-ignore
 export function createMediaSourcePageFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
     return deserializeIntoMediaSourcePage;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {OnlineAlbumApplyResult}
+ */
+// @ts-ignore
+export function createOnlineAlbumApplyResultFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoOnlineAlbumApplyResult;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {OnlineAlbumMatches}
+ */
+// @ts-ignore
+export function createOnlineAlbumMatchesFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoOnlineAlbumMatches;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {OnlineAlbumMatch}
+ */
+// @ts-ignore
+export function createOnlineAlbumMatchFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoOnlineAlbumMatch;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {OnlineAlbumValues}
+ */
+// @ts-ignore
+export function createOnlineAlbumValuesFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoOnlineAlbumValues;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {OnlineMetadataSettings}
+ */
+// @ts-ignore
+export function createOnlineMetadataSettingsFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoOnlineMetadataSettings;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {OnlineRelease}
+ */
+// @ts-ignore
+export function createOnlineReleaseFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoOnlineRelease;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {OnlineTrackApplyResult}
+ */
+// @ts-ignore
+export function createOnlineTrackApplyResultFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoOnlineTrackApplyResult;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {OnlineTrackMatches}
+ */
+// @ts-ignore
+export function createOnlineTrackMatchesFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoOnlineTrackMatches;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {OnlineTrackMatch}
+ */
+// @ts-ignore
+export function createOnlineTrackMatchFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoOnlineTrackMatch;
 }
 /**
  * Creates a new instance of the appropriate class based on discriminator value
@@ -1506,6 +1631,15 @@ export function createTranscodingStatusFromDiscriminatorValue(parseNode: ParseNo
 /**
  * Creates a new instance of the appropriate class based on discriminator value
  * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {UpdateAlbumTags}
+ */
+// @ts-ignore
+export function createUpdateAlbumTagsFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoUpdateAlbumTags;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
  * @returns {UpdateAutoplaySettings}
  */
 // @ts-ignore
@@ -1592,6 +1726,15 @@ export function createUpdateMediaSourceFromDiscriminatorValue(parseNode: ParseNo
 // @ts-ignore
 export function createUpdateNowPlayingFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
     return deserializeIntoUpdateNowPlaying;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {UpdateOnlineMetadataSettings}
+ */
+// @ts-ignore
+export function createUpdateOnlineMetadataSettingsFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoUpdateOnlineMetadataSettings;
 }
 /**
  * Creates a new instance of the appropriate class based on discriminator value
@@ -1909,6 +2052,30 @@ export function deserializeIntoAlbumReference(albumReference: Partial<AlbumRefer
         "id": n => { albumReference.id = n.getGuidValue(); },
         "isCompilation": n => { albumReference.isCompilation = n.getBooleanValue(); },
         "title": n => { albumReference.title = n.getStringValue(); },
+    }
+}
+/**
+ * The deserialization information for the current model
+ * @param ApplyAlbumOnlineMetadata The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoApplyAlbumOnlineMetadata(applyAlbumOnlineMetadata: Partial<ApplyAlbumOnlineMetadata> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "coverReleaseId": n => { applyAlbumOnlineMetadata.coverReleaseId = n.getGuidValue(); },
+        "tags": n => { applyAlbumOnlineMetadata.tags = n.getObjectValue<UpdateAlbumTags>(createUpdateAlbumTagsFromDiscriminatorValue); },
+    }
+}
+/**
+ * The deserialization information for the current model
+ * @param ApplyTrackOnlineMetadata The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoApplyTrackOnlineMetadata(applyTrackOnlineMetadata: Partial<ApplyTrackOnlineMetadata> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "coverReleaseId": n => { applyTrackOnlineMetadata.coverReleaseId = n.getGuidValue(); },
+        "tags": n => { applyTrackOnlineMetadata.tags = n.getObjectValue<UpdateTrackMetadata>(createUpdateTrackMetadataFromDiscriminatorValue); },
     }
 }
 /**
@@ -2605,6 +2772,136 @@ export function deserializeIntoMediaSourcePage(mediaSourcePage: Partial<MediaSou
         "limit": n => { mediaSourcePage.limit = n.getNumberValue(); },
         "offset": n => { mediaSourcePage.offset = n.getNumberValue(); },
         "total": n => { mediaSourcePage.total = n.getNumberValue(); },
+    }
+}
+/**
+ * The deserialization information for the current model
+ * @param OnlineAlbumApplyResult The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoOnlineAlbumApplyResult(onlineAlbumApplyResult: Partial<OnlineAlbumApplyResult> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "albumId": n => { onlineAlbumApplyResult.albumId = n.getGuidValue(); },
+        "cover": n => { onlineAlbumApplyResult.cover = n.getEnumValue<OnlineCoverOutcome>(OnlineCoverOutcomeObject); },
+        "tracksSkipped": n => { onlineAlbumApplyResult.tracksSkipped = n.getNumberValue(); },
+        "tracksWritten": n => { onlineAlbumApplyResult.tracksWritten = n.getNumberValue(); },
+    }
+}
+/**
+ * The deserialization information for the current model
+ * @param OnlineAlbumMatch The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoOnlineAlbumMatch(onlineAlbumMatch: Partial<OnlineAlbumMatch> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "agreement": n => { onlineAlbumMatch.agreement = n.getNumberValue(); },
+        "release": n => { onlineAlbumMatch.release = n.getObjectValue<OnlineRelease>(createOnlineReleaseFromDiscriminatorValue); },
+        "values": n => { onlineAlbumMatch.values = n.getObjectValue<OnlineAlbumValues>(createOnlineAlbumValuesFromDiscriminatorValue); },
+    }
+}
+/**
+ * The deserialization information for the current model
+ * @param OnlineAlbumMatches The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoOnlineAlbumMatches(onlineAlbumMatches: Partial<OnlineAlbumMatches> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "current": n => { onlineAlbumMatches.current = n.getObjectValue<OnlineAlbumValues>(createOnlineAlbumValuesFromDiscriminatorValue); },
+        "editableTrackCount": n => { onlineAlbumMatches.editableTrackCount = n.getNumberValue(); },
+        "matches": n => { onlineAlbumMatches.matches = n.getCollectionOfObjectValues<OnlineAlbumMatch>(createOnlineAlbumMatchFromDiscriminatorValue); },
+        "trackCount": n => { onlineAlbumMatches.trackCount = n.getNumberValue(); },
+    }
+}
+/**
+ * The deserialization information for the current model
+ * @param OnlineAlbumValues The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoOnlineAlbumValues(onlineAlbumValues: Partial<OnlineAlbumValues> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "album": n => { onlineAlbumValues.album = n.getStringValue(); },
+        "albumArtist": n => { onlineAlbumValues.albumArtist = n.getStringValue(); },
+        "genre": n => { onlineAlbumValues.genre = n.getStringValue(); },
+        "year": n => { onlineAlbumValues.year = n.getNumberValue(); },
+    }
+}
+/**
+ * The deserialization information for the current model
+ * @param OnlineMetadataSettings The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoOnlineMetadataSettings(onlineMetadataSettings: Partial<OnlineMetadataSettings> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "coverArtArchiveUrl": n => { onlineMetadataSettings.coverArtArchiveUrl = n.getStringValue(); },
+        "enabled": n => { onlineMetadataSettings.enabled = n.getBooleanValue(); },
+        "musicBrainzRequestIntervalMilliseconds": n => { onlineMetadataSettings.musicBrainzRequestIntervalMilliseconds = n.getNumberValue(); },
+        "musicBrainzUrl": n => { onlineMetadataSettings.musicBrainzUrl = n.getStringValue(); },
+    }
+}
+/**
+ * The deserialization information for the current model
+ * @param OnlineRelease The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoOnlineRelease(onlineRelease: Partial<OnlineRelease> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "country": n => { onlineRelease.country = n.getStringValue(); },
+        "date": n => { onlineRelease.date = n.getStringValue(); },
+        "format": n => { onlineRelease.format = n.getStringValue(); },
+        "id": n => { onlineRelease.id = n.getGuidValue(); },
+        "trackCount": n => { onlineRelease.trackCount = n.getNumberValue(); },
+    }
+}
+/**
+ * The deserialization information for the current model
+ * @param OnlineTrackApplyResult The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoOnlineTrackApplyResult(onlineTrackApplyResult: Partial<OnlineTrackApplyResult> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "cover": n => { onlineTrackApplyResult.cover = n.getEnumValue<OnlineCoverOutcome>(OnlineCoverOutcomeObject); },
+        "metadata": n => { onlineTrackApplyResult.metadata = n.getObjectValue<TrackMetadata>(createTrackMetadataFromDiscriminatorValue); },
+    }
+}
+/**
+ * The deserialization information for the current model
+ * @param OnlineTrackMatch The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoOnlineTrackMatch(onlineTrackMatch: Partial<OnlineTrackMatch> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "agreement": n => { onlineTrackMatch.agreement = n.getNumberValue(); },
+        "album": n => { onlineTrackMatch.album = n.getStringValue(); },
+        "albumArtist": n => { onlineTrackMatch.albumArtist = n.getStringValue(); },
+        "artist": n => { onlineTrackMatch.artist = n.getStringValue(); },
+        "discNumber": n => { onlineTrackMatch.discNumber = n.getNumberValue(); },
+        "durationMilliseconds": n => { onlineTrackMatch.durationMilliseconds = n.getNumberValue(); },
+        "genre": n => { onlineTrackMatch.genre = n.getStringValue(); },
+        "recordingId": n => { onlineTrackMatch.recordingId = n.getGuidValue(); },
+        "release": n => { onlineTrackMatch.release = n.getObjectValue<OnlineRelease>(createOnlineReleaseFromDiscriminatorValue); },
+        "title": n => { onlineTrackMatch.title = n.getStringValue(); },
+        "trackNumber": n => { onlineTrackMatch.trackNumber = n.getNumberValue(); },
+        "year": n => { onlineTrackMatch.year = n.getNumberValue(); },
+    }
+}
+/**
+ * The deserialization information for the current model
+ * @param OnlineTrackMatches The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoOnlineTrackMatches(onlineTrackMatches: Partial<OnlineTrackMatches> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "current": n => { onlineTrackMatches.current = n.getObjectValue<TrackMetadata>(createTrackMetadataFromDiscriminatorValue); },
+        "matches": n => { onlineTrackMatches.matches = n.getCollectionOfObjectValues<OnlineTrackMatch>(createOnlineTrackMatchFromDiscriminatorValue); },
     }
 }
 /**
@@ -3518,6 +3815,20 @@ export function deserializeIntoTranscodingStatus(transcodingStatus: Partial<Tran
 }
 /**
  * The deserialization information for the current model
+ * @param UpdateAlbumTags The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoUpdateAlbumTags(updateAlbumTags: Partial<UpdateAlbumTags> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "album": n => { updateAlbumTags.album = n.getStringValue(); },
+        "albumArtist": n => { updateAlbumTags.albumArtist = n.getStringValue(); },
+        "genre": n => { updateAlbumTags.genre = n.getStringValue(); },
+        "year": n => { updateAlbumTags.year = n.getNumberValue(); },
+    }
+}
+/**
+ * The deserialization information for the current model
  * @param UpdateAutoplaySettings The instance to deserialize into.
  * @returns {Record<string, (node: ParseNode) => void>}
  */
@@ -3641,6 +3952,20 @@ export function deserializeIntoUpdateMediaSource(updateMediaSource: Partial<Upda
 export function deserializeIntoUpdateNowPlaying(updateNowPlaying: Partial<UpdateNowPlaying> | undefined = {}) : Record<string, (node: ParseNode) => void> {
     return {
         "trackId": n => { updateNowPlaying.trackId = n.getGuidValue(); },
+    }
+}
+/**
+ * The deserialization information for the current model
+ * @param UpdateOnlineMetadataSettings The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoUpdateOnlineMetadataSettings(updateOnlineMetadataSettings: Partial<UpdateOnlineMetadataSettings> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "coverArtArchiveUrl": n => { updateOnlineMetadataSettings.coverArtArchiveUrl = n.getStringValue(); },
+        "enabled": n => { updateOnlineMetadataSettings.enabled = n.getBooleanValue(); },
+        "musicBrainzRequestIntervalMilliseconds": n => { updateOnlineMetadataSettings.musicBrainzRequestIntervalMilliseconds = n.getNumberValue(); },
+        "musicBrainzUrl": n => { updateOnlineMetadataSettings.musicBrainzUrl = n.getStringValue(); },
     }
 }
 /**
@@ -4652,6 +4977,213 @@ export interface MediaSourcePage extends AdditionalDataHolder, Parsable {
 }
 export type MetadataTag = (typeof MetadataTagObject)[keyof typeof MetadataTagObject];
 /**
+ * The result of applying a match to an album.
+ */
+export interface OnlineAlbumApplyResult extends AdditionalDataHolder, Parsable {
+    /**
+     * Id of the album afterwards: a new title or album artist makes the songs another album.
+     */
+    albumId?: Guid | null;
+    /**
+     * Where the cover was stored.
+     */
+    cover?: OnlineCoverOutcome | null;
+    /**
+     * Number of songs that kept their tags: without audio file or not writable.
+     */
+    tracksSkipped?: number | null;
+    /**
+     * Number of songs whose tags were written.
+     */
+    tracksWritten?: number | null;
+}
+/**
+ * A release of MusicBrainz that may be the album, with the tags it suggests.
+ */
+export interface OnlineAlbumMatch extends AdditionalDataHolder, Parsable {
+    /**
+     * How well the match agrees with the album, 0 to 100: title, album artist and number of songs compared.
+     */
+    agreement?: number | null;
+    /**
+     * The release.
+     */
+    release?: OnlineRelease | null;
+    /**
+     * The tags it suggests.
+     */
+    values?: OnlineAlbumValues | null;
+}
+/**
+ * The matches of an album in MusicBrainz, the best first, next to its current tags.
+ */
+export interface OnlineAlbumMatches extends AdditionalDataHolder, Parsable {
+    /**
+     * The current tags of the album in the library.
+     */
+    current?: OnlineAlbumValues | null;
+    /**
+     * Number of songs whose audio file can be written; the others keep their tags.
+     */
+    editableTrackCount?: number | null;
+    /**
+     * The matches, the best first (at most 10 by default); empty if MusicBrainz knows none.
+     */
+    matches?: OnlineAlbumMatch[] | null;
+    /**
+     * Number of songs of the album.
+     */
+    trackCount?: number | null;
+}
+/**
+ * The tags of an album.
+ */
+export interface OnlineAlbumValues extends AdditionalDataHolder, Parsable {
+    /**
+     * The album property
+     */
+    album?: string | null;
+    /**
+     * The albumArtist property
+     */
+    albumArtist?: string | null;
+    /**
+     * The genre property
+     */
+    genre?: string | null;
+    /**
+     * The year property
+     */
+    year?: number | null;
+}
+export type OnlineCoverOutcome = (typeof OnlineCoverOutcomeObject)[keyof typeof OnlineCoverOutcomeObject];
+export type OnlineCoverSize = (typeof OnlineCoverSizeObject)[keyof typeof OnlineCoverSizeObject];
+/**
+ * Settings of the online search for album info: tags from MusicBrainz and covers from the Cover Art Archive.
+ */
+export interface OnlineMetadataSettings extends AdditionalDataHolder, Parsable {
+    /**
+     * Address of the Cover Art Archive (default `https://coverartarchive.org`); no trailing slash.
+     */
+    coverArtArchiveUrl?: string | null;
+    /**
+     * Whether admins may search album info online. Off by default; while it is off, WaveMP sends no request to either service.
+     */
+    enabled?: boolean | null;
+    /**
+     * Shortest time between two requests to MusicBrainz in milliseconds (0 to 60,000, default 1,000). Applies to an own mirror; musicbrainz.org always gets at least one second.
+     */
+    musicBrainzRequestIntervalMilliseconds?: number | null;
+    /**
+     * Address of MusicBrainz (default `https://musicbrainz.org`), e.g. an own mirror; no trailing slash.
+     */
+    musicBrainzUrl?: string | null;
+}
+/**
+ * A release of MusicBrainz with what tells it apart from other releases of the same album.
+ */
+export interface OnlineRelease extends AdditionalDataHolder, Parsable {
+    /**
+     * Country of the release as ISO 3166-1 code, e.g. `GB`; `XW` stands for worldwide.
+     */
+    country?: string | null;
+    /**
+     * Date of the release: `YYYY`, `YYYY-MM` or `YYYY-MM-DD`.
+     */
+    date?: string | null;
+    /**
+     * Format of its first medium as MusicBrainz names it, e.g. `CD` or `Digital Media`.
+     */
+    format?: string | null;
+    /**
+     * The MusicBrainz id (MBID) of the release; its cover comes from `GET /api/v1/online-releases/{id}/cover`.
+     */
+    id?: Guid | null;
+    /**
+     * Number of tracks on all media.
+     */
+    trackCount?: number | null;
+}
+/**
+ * The result of applying a match to a song.
+ */
+export interface OnlineTrackApplyResult extends AdditionalDataHolder, Parsable {
+    /**
+     * Where the cover was stored.
+     */
+    cover?: OnlineCoverOutcome | null;
+    /**
+     * The metadata of the song read again after writing.
+     */
+    metadata?: TrackMetadata | null;
+}
+/**
+ * A recording of MusicBrainz on one of its releases that may be the song, with the tags it suggests.
+ */
+export interface OnlineTrackMatch extends AdditionalDataHolder, Parsable {
+    /**
+     * How well the match agrees with the song, 0 to 100: title, artist, album and duration compared with the song.
+     */
+    agreement?: number | null;
+    /**
+     * The album property
+     */
+    album?: string | null;
+    /**
+     * The albumArtist property
+     */
+    albumArtist?: string | null;
+    /**
+     * The artist property
+     */
+    artist?: string | null;
+    /**
+     * The discNumber property
+     */
+    discNumber?: number | null;
+    /**
+     * Length of the recording in milliseconds, if known.
+     */
+    durationMilliseconds?: number | null;
+    /**
+     * The genre property
+     */
+    genre?: string | null;
+    /**
+     * The MusicBrainz id (MBID) of the recording.
+     */
+    recordingId?: Guid | null;
+    /**
+     * The release property
+     */
+    release?: OnlineRelease | null;
+    /**
+     * The title property
+     */
+    title?: string | null;
+    /**
+     * The trackNumber property
+     */
+    trackNumber?: number | null;
+    /**
+     * The year property
+     */
+    year?: number | null;
+}
+/**
+ * The matches of a song in MusicBrainz, the best first, next to its current tags.
+ */
+export interface OnlineTrackMatches extends AdditionalDataHolder, Parsable {
+    /**
+     * The current tags of the song and whether they can be written.
+     */
+    current?: TrackMetadata | null;
+    /**
+     * The matches, the best first (at most 10 by default); empty if MusicBrainz knows none.
+     */
+    matches?: OnlineTrackMatch[] | null;
+}
+/**
  * Whether a profile is protected by a PIN. The PIN itself is never returned.
  */
 export interface PinStatus extends AdditionalDataHolder, Parsable {
@@ -5362,6 +5894,32 @@ export function serializeAlbumReference(writer: SerializationWriter, albumRefere
     writer.writeBooleanValue("isCompilation", albumReference.isCompilation);
     writer.writeStringValue("title", albumReference.title);
     writer.writeAdditionalData(albumReference.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param ApplyAlbumOnlineMetadata The instance to serialize from.
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeApplyAlbumOnlineMetadata(writer: SerializationWriter, applyAlbumOnlineMetadata: Partial<ApplyAlbumOnlineMetadata> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!applyAlbumOnlineMetadata || isSerializingDerivedType) { return; }
+    writer.writeGuidValue("coverReleaseId", applyAlbumOnlineMetadata.coverReleaseId);
+    writer.writeObjectValue<UpdateAlbumTags>("tags", applyAlbumOnlineMetadata.tags, serializeUpdateAlbumTags);
+    writer.writeAdditionalData(applyAlbumOnlineMetadata.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param ApplyTrackOnlineMetadata The instance to serialize from.
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeApplyTrackOnlineMetadata(writer: SerializationWriter, applyTrackOnlineMetadata: Partial<ApplyTrackOnlineMetadata> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!applyTrackOnlineMetadata || isSerializingDerivedType) { return; }
+    writer.writeGuidValue("coverReleaseId", applyTrackOnlineMetadata.coverReleaseId);
+    writer.writeObjectValue<UpdateTrackMetadata>("tags", applyTrackOnlineMetadata.tags, serializeUpdateTrackMetadata);
+    writer.writeAdditionalData(applyTrackOnlineMetadata.additionalData);
 }
 /**
  * Serializes information the current object
@@ -6108,6 +6666,145 @@ export function serializeMediaSourcePage(writer: SerializationWriter, mediaSourc
     writer.writeNumberValue("offset", mediaSourcePage.offset);
     writer.writeNumberValue("total", mediaSourcePage.total);
     writer.writeAdditionalData(mediaSourcePage.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param OnlineAlbumApplyResult The instance to serialize from.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeOnlineAlbumApplyResult(writer: SerializationWriter, onlineAlbumApplyResult: Partial<OnlineAlbumApplyResult> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!onlineAlbumApplyResult || isSerializingDerivedType) { return; }
+    writer.writeGuidValue("albumId", onlineAlbumApplyResult.albumId);
+    writer.writeEnumValue<OnlineCoverOutcome>("cover", onlineAlbumApplyResult.cover);
+    writer.writeNumberValue("tracksSkipped", onlineAlbumApplyResult.tracksSkipped);
+    writer.writeNumberValue("tracksWritten", onlineAlbumApplyResult.tracksWritten);
+    writer.writeAdditionalData(onlineAlbumApplyResult.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param OnlineAlbumMatch The instance to serialize from.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeOnlineAlbumMatch(writer: SerializationWriter, onlineAlbumMatch: Partial<OnlineAlbumMatch> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!onlineAlbumMatch || isSerializingDerivedType) { return; }
+    writer.writeNumberValue("agreement", onlineAlbumMatch.agreement);
+    writer.writeObjectValue<OnlineRelease>("release", onlineAlbumMatch.release, serializeOnlineRelease);
+    writer.writeObjectValue<OnlineAlbumValues>("values", onlineAlbumMatch.values, serializeOnlineAlbumValues);
+    writer.writeAdditionalData(onlineAlbumMatch.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param OnlineAlbumMatches The instance to serialize from.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeOnlineAlbumMatches(writer: SerializationWriter, onlineAlbumMatches: Partial<OnlineAlbumMatches> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!onlineAlbumMatches || isSerializingDerivedType) { return; }
+    writer.writeObjectValue<OnlineAlbumValues>("current", onlineAlbumMatches.current, serializeOnlineAlbumValues);
+    writer.writeNumberValue("editableTrackCount", onlineAlbumMatches.editableTrackCount);
+    writer.writeCollectionOfObjectValues<OnlineAlbumMatch>("matches", onlineAlbumMatches.matches, serializeOnlineAlbumMatch);
+    writer.writeNumberValue("trackCount", onlineAlbumMatches.trackCount);
+    writer.writeAdditionalData(onlineAlbumMatches.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param OnlineAlbumValues The instance to serialize from.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeOnlineAlbumValues(writer: SerializationWriter, onlineAlbumValues: Partial<OnlineAlbumValues> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!onlineAlbumValues || isSerializingDerivedType) { return; }
+    writer.writeStringValue("album", onlineAlbumValues.album);
+    writer.writeStringValue("albumArtist", onlineAlbumValues.albumArtist);
+    writer.writeStringValue("genre", onlineAlbumValues.genre);
+    writer.writeNumberValue("year", onlineAlbumValues.year);
+    writer.writeAdditionalData(onlineAlbumValues.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param OnlineMetadataSettings The instance to serialize from.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeOnlineMetadataSettings(writer: SerializationWriter, onlineMetadataSettings: Partial<OnlineMetadataSettings> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!onlineMetadataSettings || isSerializingDerivedType) { return; }
+    writer.writeStringValue("coverArtArchiveUrl", onlineMetadataSettings.coverArtArchiveUrl);
+    writer.writeBooleanValue("enabled", onlineMetadataSettings.enabled);
+    writer.writeNumberValue("musicBrainzRequestIntervalMilliseconds", onlineMetadataSettings.musicBrainzRequestIntervalMilliseconds);
+    writer.writeStringValue("musicBrainzUrl", onlineMetadataSettings.musicBrainzUrl);
+    writer.writeAdditionalData(onlineMetadataSettings.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param OnlineRelease The instance to serialize from.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeOnlineRelease(writer: SerializationWriter, onlineRelease: Partial<OnlineRelease> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!onlineRelease || isSerializingDerivedType) { return; }
+    writer.writeStringValue("country", onlineRelease.country);
+    writer.writeStringValue("date", onlineRelease.date);
+    writer.writeStringValue("format", onlineRelease.format);
+    writer.writeGuidValue("id", onlineRelease.id);
+    writer.writeNumberValue("trackCount", onlineRelease.trackCount);
+    writer.writeAdditionalData(onlineRelease.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param OnlineTrackApplyResult The instance to serialize from.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeOnlineTrackApplyResult(writer: SerializationWriter, onlineTrackApplyResult: Partial<OnlineTrackApplyResult> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!onlineTrackApplyResult || isSerializingDerivedType) { return; }
+    writer.writeEnumValue<OnlineCoverOutcome>("cover", onlineTrackApplyResult.cover);
+    writer.writeObjectValue<TrackMetadata>("metadata", onlineTrackApplyResult.metadata, serializeTrackMetadata);
+    writer.writeAdditionalData(onlineTrackApplyResult.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param OnlineTrackMatch The instance to serialize from.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeOnlineTrackMatch(writer: SerializationWriter, onlineTrackMatch: Partial<OnlineTrackMatch> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!onlineTrackMatch || isSerializingDerivedType) { return; }
+    writer.writeNumberValue("agreement", onlineTrackMatch.agreement);
+    writer.writeStringValue("album", onlineTrackMatch.album);
+    writer.writeStringValue("albumArtist", onlineTrackMatch.albumArtist);
+    writer.writeStringValue("artist", onlineTrackMatch.artist);
+    writer.writeNumberValue("discNumber", onlineTrackMatch.discNumber);
+    writer.writeNumberValue("durationMilliseconds", onlineTrackMatch.durationMilliseconds);
+    writer.writeStringValue("genre", onlineTrackMatch.genre);
+    writer.writeGuidValue("recordingId", onlineTrackMatch.recordingId);
+    writer.writeObjectValue<OnlineRelease>("release", onlineTrackMatch.release, serializeOnlineRelease);
+    writer.writeStringValue("title", onlineTrackMatch.title);
+    writer.writeNumberValue("trackNumber", onlineTrackMatch.trackNumber);
+    writer.writeNumberValue("year", onlineTrackMatch.year);
+    writer.writeAdditionalData(onlineTrackMatch.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param OnlineTrackMatches The instance to serialize from.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeOnlineTrackMatches(writer: SerializationWriter, onlineTrackMatches: Partial<OnlineTrackMatches> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!onlineTrackMatches || isSerializingDerivedType) { return; }
+    writer.writeObjectValue<TrackMetadata>("current", onlineTrackMatches.current, serializeTrackMetadata);
+    writer.writeCollectionOfObjectValues<OnlineTrackMatch>("matches", onlineTrackMatches.matches, serializeOnlineTrackMatch);
+    writer.writeAdditionalData(onlineTrackMatches.additionalData);
 }
 /**
  * Serializes information the current object
@@ -7081,6 +7778,21 @@ export function serializeTranscodingStatus(writer: SerializationWriter, transcod
 /**
  * Serializes information the current object
  * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param UpdateAlbumTags The instance to serialize from.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeUpdateAlbumTags(writer: SerializationWriter, updateAlbumTags: Partial<UpdateAlbumTags> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!updateAlbumTags || isSerializingDerivedType) { return; }
+    writer.writeStringValue("album", updateAlbumTags.album);
+    writer.writeStringValue("albumArtist", updateAlbumTags.albumArtist);
+    writer.writeStringValue("genre", updateAlbumTags.genre);
+    writer.writeNumberValue("year", updateAlbumTags.year);
+    writer.writeAdditionalData(updateAlbumTags.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
  * @param UpdateAutoplaySettings The instance to serialize from.
  * @param writer Serialization writer to use to serialize this model
  */
@@ -7214,6 +7926,21 @@ export function serializeUpdateNowPlaying(writer: SerializationWriter, updateNow
     if (!updateNowPlaying || isSerializingDerivedType) { return; }
     writer.writeGuidValue("trackId", updateNowPlaying.trackId);
     writer.writeAdditionalData(updateNowPlaying.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param UpdateOnlineMetadataSettings The instance to serialize from.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeUpdateOnlineMetadataSettings(writer: SerializationWriter, updateOnlineMetadataSettings: Partial<UpdateOnlineMetadataSettings> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!updateOnlineMetadataSettings || isSerializingDerivedType) { return; }
+    writer.writeStringValue("coverArtArchiveUrl", updateOnlineMetadataSettings.coverArtArchiveUrl);
+    writer.writeBooleanValue("enabled", updateOnlineMetadataSettings.enabled);
+    writer.writeNumberValue("musicBrainzRequestIntervalMilliseconds", updateOnlineMetadataSettings.musicBrainzRequestIntervalMilliseconds);
+    writer.writeStringValue("musicBrainzUrl", updateOnlineMetadataSettings.musicBrainzUrl);
+    writer.writeAdditionalData(updateOnlineMetadataSettings.additionalData);
 }
 /**
  * Serializes information the current object
@@ -8557,6 +9284,27 @@ export interface TranscodingStatus extends AdditionalDataHolder, Parsable {
     runningJobs?: number | null;
 }
 /**
+ * Changes the album tags of the songs of an album. Missing members stay unchanged; null or an empty text removes the value from the tags.
+ */
+export interface UpdateAlbumTags extends AdditionalDataHolder, Parsable {
+    /**
+     * New album.
+     */
+    album?: string | null;
+    /**
+     * New album artist; replaces all album artists of the files.
+     */
+    albumArtist?: string | null;
+    /**
+     * New genre; replaces all genres of the files.
+     */
+    genre?: string | null;
+    /**
+     * New year.
+     */
+    year?: number | null;
+}
+/**
  * Changes the autoplay of the current profile. Missing or null values stay unchanged.
  */
 export interface UpdateAutoplaySettings extends AdditionalDataHolder, Parsable {
@@ -8713,6 +9461,27 @@ export interface UpdateNowPlaying extends AdditionalDataHolder, Parsable {
      * Id of the track.
      */
     trackId?: Guid | null;
+}
+/**
+ * Changes the settings of the online search for album info. Missing or null values stay unchanged.
+ */
+export interface UpdateOnlineMetadataSettings extends AdditionalDataHolder, Parsable {
+    /**
+     * Address of the Cover Art Archive: an absolute http or https address without query; a trailing slash is removed.
+     */
+    coverArtArchiveUrl?: string | null;
+    /**
+     * Switches the online search on or off.
+     */
+    enabled?: boolean | null;
+    /**
+     * Shortest time between two requests to MusicBrainz in milliseconds; musicbrainz.org always gets at least one second.
+     */
+    musicBrainzRequestIntervalMilliseconds?: number | null;
+    /**
+     * Address of MusicBrainz: an absolute http or https address without query; a trailing slash is removed.
+     */
+    musicBrainzUrl?: string | null;
 }
 /**
  * Changes a playlist. Missing or null values stay unchanged.
@@ -9466,6 +10235,22 @@ export const MetadataTagObject = {
     Genre: "Genre",
 } as const;
 /**
+ * Where the cover was stored.
+ */
+export const OnlineCoverOutcomeObject = {
+    None: "None",
+    MediaFolder: "MediaFolder",
+    DataFolder: "DataFolder",
+    NotSaved: "NotSaved",
+} as const;
+/**
+ * Size of the preview of a cover from the Cover Art Archive.
+ */
+export const OnlineCoverSizeObject = {
+    Small: "Small",
+    Large: "Large",
+} as const;
+/**
  * Direct play or transcoding.
  */
 export const PlaybackMethodObject = {
@@ -9580,6 +10365,9 @@ export const ProblemCodeObject = {
     SourceName_taken: "source.name_taken",
     SourcePath_not_found: "source.path_not_found",
     SourcePath_overlaps: "source.path_overlaps",
+    LookupDisabled: "lookup.disabled",
+    LookupUnavailable: "lookup.unavailable",
+    LookupCover_not_found: "lookup.cover_not_found",
 } as const;
 /**
  * Whether the players even out the volume with the ReplayGain tags; Off by default.

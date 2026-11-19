@@ -8,6 +8,10 @@ import { CoverRequestBuilderRequestsMetadata, type CoverRequestBuilder } from '.
 // @ts-ignore
 import { CoverRuleRequestBuilderNavigationMetadata, CoverRuleRequestBuilderRequestsMetadata, type CoverRuleRequestBuilder } from './coverRule/index.js';
 // @ts-ignore
+import { OnlineMatchesRequestBuilderRequestsMetadata, type OnlineMatchesRequestBuilder } from './onlineMatches/index.js';
+// @ts-ignore
+import { OnlineMetadataRequestBuilderRequestsMetadata, type OnlineMetadataRequestBuilder } from './onlineMetadata/index.js';
+// @ts-ignore
 import { TracksRequestBuilderRequestsMetadata, type TracksRequestBuilder } from './tracks/index.js';
 // @ts-ignore
 import { type BaseRequestBuilder, type KeysToExcludeForNavigationMetadata, type NavigationMetadata, type Parsable, type ParsableFactory, type RequestConfiguration, type RequestInformation, type RequestsMetadata } from '@microsoft/kiota-abstractions';
@@ -24,6 +28,14 @@ export interface AlbumsItemRequestBuilder extends BaseRequestBuilder<AlbumsItemR
      * The coverRule property
      */
     get coverRule(): CoverRuleRequestBuilder;
+    /**
+     * The onlineMatches property
+     */
+    get onlineMatches(): OnlineMatchesRequestBuilder;
+    /**
+     * The onlineMetadata property
+     */
+    get onlineMetadata(): OnlineMetadataRequestBuilder;
     /**
      * The tracks property
      */
@@ -57,6 +69,12 @@ export const AlbumsItemRequestBuilderNavigationMetadata: Record<Exclude<keyof Al
     coverRule: {
         requestsMetadata: CoverRuleRequestBuilderRequestsMetadata,
         navigationMetadata: CoverRuleRequestBuilderNavigationMetadata,
+    },
+    onlineMatches: {
+        requestsMetadata: OnlineMatchesRequestBuilderRequestsMetadata,
+    },
+    onlineMetadata: {
+        requestsMetadata: OnlineMetadataRequestBuilderRequestsMetadata,
     },
     tracks: {
         requestsMetadata: TracksRequestBuilderRequestsMetadata,
