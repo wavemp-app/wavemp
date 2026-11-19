@@ -10,6 +10,7 @@ import type {
     CacheUsage,
     FileSelectionFilter,
     FileSelectionSort,
+    LibraryIssueSort,
     Job,
     MediaSource,
     PlayerViewMode,
@@ -33,6 +34,9 @@ import CacheUsagePanel from '@/components/admin/CacheUsage.vue'
 import FileChoiceGroup from '@/components/admin/FileChoiceGroup.vue'
 import FileSelectionFilters from '@/components/admin/FileSelectionFilters.vue'
 import FileSelectionList from '@/components/admin/FileSelectionList.vue'
+import LibraryCheckStatus from '@/components/admin/LibraryCheckStatus.vue'
+import LibraryIssueFilters from '@/components/admin/LibraryIssueFilters.vue'
+import LibraryIssueList from '@/components/admin/LibraryIssueList.vue'
 import JobList from '@/components/admin/JobList.vue'
 import MediaSourceList from '@/components/admin/MediaSourceList.vue'
 import ScanHistory from '@/components/admin/ScanHistory.vue'
@@ -129,6 +133,7 @@ import { stageViewOf } from '@/player/videoSync'
 import { initialCrop, type AvatarCrop } from '@/profiles/avatarCrop'
 import { profileColorOptions } from '@/profiles/presentation'
 import type { MissingTagsFilter } from '@/review/inbox'
+import type { LibraryIssueFilter } from '@/admin/libraryIssues'
 import { useReviewStore } from '@/stores/review'
 import { iconSlotNames, iconSlots } from '@/themes/iconSlots'
 import { parts } from '@/themes/parts'
@@ -140,6 +145,8 @@ import PlaylistsView from '@/views/PlaylistsView.vue'
 import {
     sampleFileSelection,
     sampleFileSummaries,
+    sampleLibraryIssues,
+    sampleLibraryIssueSummary,
     sampleFiles,
     sampleLyrics,
     sampleLyricsPosition,
@@ -243,6 +250,11 @@ const smartRules = [
 ]
 const files = sampleFiles()
 const fileSummaries = computed(() => sampleFileSummaries(t))
+const libraryIssues = computed(() => sampleLibraryIssues(t))
+const libraryIssueSummary = sampleLibraryIssueSummary()
+const issueSearch = ref('')
+const issueFilter = ref<LibraryIssueFilter>('all')
+const issueSort = ref<LibraryIssueSort>('Path')
 const fileSelection = sampleFileSelection()
 const onlineMatches = computed(() => sampleOnlineMatches(t))
 const onlineCurrent = computed(() => sampleOnlineCurrent(t))
@@ -1471,6 +1483,22 @@ const sampleTranscodeJobs = computed<TranscodeJob[]>(() => {
                         v-model:sort="fileSort"
                     />
                     <FileSelectionList :items="fileSummaries" :label="t('adminFiles.listLabel')" />
+                </section>
+            </div>
+            <div data-part="view" data-view="admin-checks">
+                <section data-part="section" data-item="check-status">
+                    <h2 data-part="section-title">{{ t('adminChecks.title') }}</h2>
+                    <LibraryCheckStatus :summary="libraryIssueSummary" :job="null" />
+                </section>
+                <section data-part="section" data-item="issues">
+                    <h2 data-part="section-title">{{ t('adminChecks.issuesTitle') }}</h2>
+                    <LibraryIssueFilters
+                        v-model:search="issueSearch"
+                        v-model:filter="issueFilter"
+                        v-model:sort="issueSort"
+                        :summary="libraryIssueSummary"
+                    />
+                    <LibraryIssueList :items="libraryIssues" :label="t('adminChecks.listLabel')" />
                 </section>
             </div>
             <div data-part="view" data-view="admin-review">

@@ -392,6 +392,17 @@ export const parts = [
     'review-actions',
     'review-nav',
 
+    // Library check of the administration
+    'library-check-status',
+    'library-issue-filters',
+    'library-issue-list',
+    'library-issue-item',
+    'library-issue-info',
+    'library-issue-meta',
+    'library-issue-title',
+    'library-issue-detail',
+    'library-issue-actions',
+
     // Base components
     'button',
     'icon',

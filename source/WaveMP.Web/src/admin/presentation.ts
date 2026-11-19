@@ -226,6 +226,10 @@ const jobNames: Record<string, JobPresentation> = {
         labelKey: 'adminJobs.names.lyricsDownload',
         scheduleKey: 'adminJobs.afterScanWhenLyricsOn',
     },
+    'library-check': {
+        labelKey: 'adminJobs.names.libraryCheck',
+        scheduleKey: 'adminJobs.afterScan',
+    },
 }
 
 /** Message key of the name of a job; unknown jobs are shown with their id. */

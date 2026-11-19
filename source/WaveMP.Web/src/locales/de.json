@@ -957,7 +957,8 @@
       "backups": "Sicherungen",
       "profiles": "Profile",
       "review": "Prüfen",
-      "themes": "Designs"
+      "themes": "Designs",
+      "checks": "Kontrolle"
     }
   },
   "adminLibrary": {
@@ -1177,6 +1178,79 @@
       "saveFailed": "Die Auswahl konnte nicht gespeichert werden."
     }
   },
+  "adminChecks": {
+    "title": "Bibliothekskontrolle",
+    "issuesTitle": "Probleme",
+    "hint": "Die Kontrolle läuft nach jedem Scan. Änderungen an Titeln erscheinen hier nach der nächsten Kontrolle.",
+    "checkNow": "Jetzt kontrollieren",
+    "checking": "Kontrolliere …",
+    "never": "Noch nicht",
+    "alreadyRunning": "Die Bibliothekskontrolle läuft bereits.",
+    "runError": "Die Bibliothekskontrolle konnte nicht gestartet werden.",
+    "loadError": "Das Ergebnis der Bibliothekskontrolle konnte nicht geladen werden.",
+    "listError": "Die Probleme konnten nicht geladen werden.",
+    "empty": "Die letzte Kontrolle hat keine Probleme gefunden.",
+    "unchecked": "Die Bibliothek wurde noch nicht kontrolliert. Kontrolliere sie jetzt oder starte einen Scan.",
+    "noMatches": "Keine Probleme passen zum Filter.",
+    "listLabel": "Probleme der Bibliothek",
+    "actionsLabel": "{title} beheben",
+    "search": "Probleme durchsuchen",
+    "searchPlaceholder": "Titel, Interpret, Album oder Ordner",
+    "filterLabel": "Anzeigen",
+    "sortLabel": "Sortieren nach",
+    "stats": {
+      "label": "Bibliothekskontrolle",
+      "status": "Status",
+      "checkedAt": "Letzte Kontrolle",
+      "tracks": "Kontrollierte Titel",
+      "problems": "Probleme",
+      "hints": "Hinweise"
+    },
+    "states": {
+      "queued": "Wartet auf den Start",
+      "running": "Kontrolliert"
+    },
+    "filters": {
+      "all": "Alle",
+      "unreadableFile": "Unlesbar",
+      "missingTags": "Fehlende Tags",
+      "unknownAlbum": "Ohne Album",
+      "missingCover": "Ohne Cover",
+      "possibleDuplicate": "Duplikate",
+      "videoWithoutAudio": "Nur Video",
+      "audioWithoutVideo": "Nur Audio"
+    },
+    "types": {
+      "unreadableFile": "Unlesbare Datei",
+      "missingTags": "Fehlende Tags",
+      "unknownAlbum": "Unbekanntes Album",
+      "missingCover": "Kein Cover",
+      "possibleDuplicate": "Mögliches Duplikat",
+      "videoWithoutAudio": "Video ohne Audio",
+      "audioWithoutVideo": "Audio ohne Video",
+      "unknown": "Anderes Problem"
+    },
+    "details": {
+      "missingTags": "Fehlende Tags: {tags}",
+      "unknownAlbum": "Der Titel gehört zu keinem Album.",
+      "missingCover": "Weder der Ordner noch die Dateien haben ein Cover.",
+      "possibleDuplicate": "Gleicher Interpret und Titel, ähnliche Länge wie",
+      "videoWithoutAudio": "Nur ein Video, keine Audiodatei mit gleichem Namen.",
+      "audioWithoutVideo": "Nur eine Audiodatei, kein Video mit gleichem Namen.",
+      "unknown": "Diese App kennt dieses Problem noch nicht."
+    },
+    "sorts": {
+      "path": "Ordner",
+      "artist": "Interpret",
+      "title": "Titel",
+      "detectedAt": "Neueste"
+    },
+    "actions": {
+      "editMetadata": "Metadaten bearbeiten",
+      "searchOnline": "Online suchen",
+      "showFiles": "Dateien anzeigen"
+    }
+  },
   "reviewInbox": {
     "title": "Prüf-Eingang",
     "button": "Prüfen",
@@ -1247,7 +1321,8 @@
       "libraryScan": "Bibliotheks-Scan",
       "coverCache": "Cover vorbereiten",
       "databaseBackup": "Datenbanksicherung",
-      "lyricsDownload": "Songtexte herunterladen"
+      "lyricsDownload": "Songtexte herunterladen",
+      "libraryCheck": "Bibliothekskontrolle"
     },
     "lastRun": "Zuletzt {date}",
     "duration": "Dauer {duration}",

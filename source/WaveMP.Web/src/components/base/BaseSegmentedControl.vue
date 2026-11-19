@@ -12,6 +12,8 @@ export interface SegmentOption {
     readonly item?: string
     readonly icon?: IconSlotName
     readonly disabled?: boolean
+    /** A badge after the label, e.g. the number of entries of a filter; its tokens as data-state. */
+    readonly badge?: { readonly text: string; readonly state: string }
 }
 
 /**
@@ -115,6 +117,9 @@ async function onKeydown(event: KeyboardEvent): Promise<void> {
         >
             <BaseIcon v-if="option.icon" :name="option.icon" />
             <span data-part="label">{{ option.label }}</span>
+            <span v-if="option.badge" data-part="badge" :data-state="option.badge.state">
+                <span data-part="label">{{ option.badge.text }}</span>
+            </span>
         </button>
     </div>
 </template>

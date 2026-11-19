@@ -34,6 +34,7 @@ describe('AdminNav', () => {
             'Library',
             'Files',
             'Review',
+            'Check',
             'Jobs',
             'Cache',
             'Transcoding',
@@ -45,6 +46,7 @@ describe('AdminNav', () => {
             '/admin/library',
             '/admin/files',
             '/admin/review',
+            '/admin/checks',
             '/admin/jobs',
             '/admin/cache',
             '/admin/transcoding',
@@ -53,8 +55,8 @@ describe('AdminNav', () => {
             '/admin/users',
         ])
         expect(items.map((item) => item.attributes('data-item'))).toContain('admin-cache')
-        expect(items[3]!.attributes('aria-current')).toBe('page')
-        expect(items[3]!.attributes('data-state')).toBe('active')
+        expect(items[4]!.attributes('aria-current')).toBe('page')
+        expect(items[4]!.attributes('data-state')).toBe('active')
         expect(items[0]!.attributes('aria-current')).toBeUndefined()
     })
 })

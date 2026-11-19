@@ -69,6 +69,7 @@ export const iconSlots = {
     'admin-themes': { file: regular('palette'), area: 'content' },
     'admin-files': { file: regular('files'), area: 'content' },
     'admin-review': { file: regular('tray'), area: 'content' },
+    'admin-checks': { file: regular('stethoscope'), area: 'content' },
     'tags-missing': { file: regular('warning'), area: 'content' },
     album: { file: fill('vinyl-record'), area: 'content' },
     artist: { file: fill('microphone-stage'), area: 'content' },

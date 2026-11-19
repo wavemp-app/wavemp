@@ -126,6 +126,7 @@ const icons: Record<IconStyle, string[]> = {
         'shuffle',
         'skip-forward',
         'star',
+        'stethoscope',
         'subtitles',
         'swap',
         'trash',

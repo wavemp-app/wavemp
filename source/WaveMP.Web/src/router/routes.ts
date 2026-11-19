@@ -11,6 +11,7 @@ import SettingsView from '@/views/SettingsView.vue'
 import AdminBackupsView from '@/views/admin/AdminBackupsView.vue'
 import AdminThemesView from '@/views/admin/AdminThemesView.vue'
 import AdminCacheView from '@/views/admin/AdminCacheView.vue'
+import AdminChecksView from '@/views/admin/AdminChecksView.vue'
 import AdminJobsView from '@/views/admin/AdminJobsView.vue'
 import AdminFilesView from '@/views/admin/AdminFilesView.vue'
 import AdminLibraryView from '@/views/admin/AdminLibraryView.vue'
@@ -230,6 +231,12 @@ export function createRoutes(extra: readonly RouteRecordRaw[] = []): RouteRecord
             component: AdminReviewTrackView,
             props: true,
             meta: { admin: true },
+        },
+        {
+            path: '/admin/checks',
+            name: 'admin-checks',
+            component: AdminChecksView,
+            meta: { admin: true, keepAlive: true },
         },
         {
             path: '/admin/jobs',

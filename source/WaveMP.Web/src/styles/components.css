@@ -1235,7 +1235,8 @@
 
     [data-part='cache-usage'],
     [data-part='transcoding-status'],
-    [data-part='backup-status'] {
+    [data-part='backup-status'],
+    [data-part='library-check-status'] {
         display: grid;
         gap: var(--wmp-space-m);
         min-inline-size: 0;
@@ -1245,12 +1246,18 @@
         background: var(--wmp-color-surface);
     }
 
-    :is([data-part='cache-usage'], [data-part='transcoding-status'], [data-part='backup-status'])
+    :is(
+            [data-part='cache-usage'],
+            [data-part='transcoding-status'],
+            [data-part='backup-status'],
+            [data-part='library-check-status']
+        )
         > [data-part='label'] {
         overflow-wrap: anywhere;
     }
 
-    :is([data-part='cache-usage'], [data-part='backup-status']) > [data-part='button'] {
+    :is([data-part='cache-usage'], [data-part='backup-status'], [data-part='library-check-status'])
+        > [data-part='button'] {
         justify-self: start;
     }
 
@@ -1390,7 +1397,9 @@
             [data-part='scrobble-meta'],
             [data-part='theme-meta'],
             [data-part='stat-value'],
-            [data-part='file-meta']
+            [data-part='file-meta'],
+            [data-part='library-issue-meta'],
+            [data-part='segment']
         )
         > [data-part='badge'] {
         --_badge-color: var(--wmp-color-text-muted);
@@ -1412,7 +1421,9 @@
             [data-part='backup-meta'],
             [data-part='theme-meta'],
             [data-part='stat-value'],
-            [data-part='file-meta']
+            [data-part='file-meta'],
+            [data-part='library-issue-meta'],
+            [data-part='segment']
         )
         > [data-part='badge']
         > [data-part='label'] {
@@ -2086,6 +2097,146 @@
     [data-part='file-selection-title']:hover {
         color: var(--wmp-color-accent);
         text-decoration: underline;
+    }
+
+    /* --- Library check ------------------------------------------------------------------- */
+
+    [data-part='library-issue-filters'] {
+        display: grid;
+        justify-items: start;
+        gap: var(--wmp-space-s);
+        min-inline-size: 0;
+    }
+
+    [data-part='library-issue-filters'] > [data-part='search'] {
+        inline-size: min(100%, 24rem);
+    }
+
+    /* Seven kinds of problem: the group scrolls sideways on narrow screens instead of widening the
+       page. */
+    [data-part='library-issue-filters'] > [data-part='segmented-control'] {
+        overflow-x: auto;
+    }
+
+    /* The number of problems of a filter: a round count after the label. */
+    [data-part='segment'] > [data-part='badge'][data-state~='count'] {
+        margin-inline-start: var(--wmp-space-xs);
+        border-radius: var(--wmp-radius-round);
+        font-variant-numeric: tabular-nums;
+    }
+
+    /* A filter with problems shows its count in the color of the segment's text. */
+    [data-part='segment'] > [data-part='badge'][data-state~='count']:not([data-state~='empty']) {
+        --_badge-color: currentcolor;
+    }
+
+    [data-part='library-issue-list'] {
+        display: grid;
+        gap: var(--wmp-space-s);
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
+    /* A problem: the color of its severity marks its start edge, its links wrap below it on narrow
+       screens. */
+    [data-part='library-issue-item'] {
+        --_issue-color: var(--wmp-color-warning);
+
+        display: flex;
+        flex-wrap: wrap;
+        align-items: start;
+        justify-content: space-between;
+        gap: var(--wmp-space-s) var(--wmp-space-m);
+        min-inline-size: 0;
+        padding: var(--wmp-space-s) var(--wmp-space-m);
+        border: 1px solid var(--wmp-color-border);
+        border-inline-start: 4px solid var(--_issue-color);
+        border-radius: var(--wmp-radius-m);
+        background: var(--wmp-color-surface);
+    }
+
+    [data-part='library-issue-item'][data-item='unreadable-file'] {
+        --_issue-color: var(--wmp-color-danger);
+    }
+
+    [data-part='library-issue-item'][data-state~='hint'] {
+        --_issue-color: var(--wmp-color-text-muted);
+    }
+
+    [data-part='library-issue-info'] {
+        display: grid;
+        flex: 1 1 18rem;
+        gap: var(--wmp-space-xs);
+        min-inline-size: 0;
+    }
+
+    [data-part='library-issue-info'] > [data-part='label'] {
+        color: var(--wmp-color-text-muted);
+        font-size: var(--wmp-font-size-s);
+    }
+
+    [data-part='library-issue-meta'] {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: var(--wmp-space-xs) var(--wmp-space-s);
+        color: var(--wmp-color-text-muted);
+        font-size: var(--wmp-font-size-s);
+    }
+
+    /* The badge takes the color of the severity on its border; its text keeps the color of the text,
+       so it stays readable on every surface. */
+    [data-part='library-issue-meta'] > [data-part='badge'] {
+        --_badge-color: var(--_issue-color);
+
+        color: var(--wmp-color-text);
+    }
+
+    [data-part='library-issue-meta'] > [data-part='label'] {
+        font-variant-numeric: tabular-nums;
+    }
+
+    [data-part='library-issue-title'] {
+        justify-self: start;
+        color: inherit;
+        font-weight: var(--wmp-font-weight-bold);
+        overflow-wrap: anywhere;
+    }
+
+    [data-part='library-issue-title']:hover {
+        color: var(--wmp-color-accent);
+        text-decoration: underline;
+    }
+
+    [data-part='library-issue-info'] > [data-part='file-path'] {
+        font-weight: normal;
+        color: var(--wmp-color-text-muted);
+        font-size: var(--wmp-font-size-s);
+    }
+
+    [data-part='library-issue-detail'] {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        gap: 0 var(--wmp-space-xs);
+        min-inline-size: 0;
+        margin: 0;
+    }
+
+    [data-part='library-issue-detail'] > :is([data-part='file-path'], [data-field]) {
+        color: var(--wmp-color-text-muted);
+        font-size: var(--wmp-font-size-s);
+        font-weight: normal;
+    }
+
+    [data-part='library-issue-actions'] {
+        display: flex;
+        flex: 0 1 auto;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: var(--wmp-space-xs) var(--wmp-space-m);
+        font-size: var(--wmp-font-size-s);
     }
 
     [data-part='file-choices'] {

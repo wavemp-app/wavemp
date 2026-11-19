@@ -957,7 +957,8 @@
       "backups": "Backups",
       "profiles": "Profiles",
       "review": "Review",
-      "themes": "Themes"
+      "themes": "Themes",
+      "checks": "Check"
     }
   },
   "adminLibrary": {
@@ -1177,6 +1178,79 @@
       "saveFailed": "The selection could not be saved."
     }
   },
+  "adminChecks": {
+    "title": "Library check",
+    "issuesTitle": "Problems",
+    "hint": "The check runs after every scan. Changes to songs show here after the next check.",
+    "checkNow": "Check now",
+    "checking": "Checking…",
+    "never": "Not yet",
+    "alreadyRunning": "The library check is already running.",
+    "runError": "The library check could not be started.",
+    "loadError": "The result of the library check could not be loaded.",
+    "listError": "The problems could not be loaded.",
+    "empty": "The last check found no problems.",
+    "unchecked": "The library has not been checked yet. Check it now or start a scan.",
+    "noMatches": "No problems match the filter.",
+    "listLabel": "Problems of the library",
+    "actionsLabel": "Fix {title}",
+    "search": "Search problems",
+    "searchPlaceholder": "Title, artist, album or folder",
+    "filterLabel": "Show",
+    "sortLabel": "Sort by",
+    "stats": {
+      "label": "Library check",
+      "status": "Status",
+      "checkedAt": "Last check",
+      "tracks": "Songs checked",
+      "problems": "Problems",
+      "hints": "Hints"
+    },
+    "states": {
+      "queued": "Waiting to start",
+      "running": "Checking"
+    },
+    "filters": {
+      "all": "All",
+      "unreadableFile": "Unreadable",
+      "missingTags": "Missing tags",
+      "unknownAlbum": "No album",
+      "missingCover": "No cover",
+      "possibleDuplicate": "Duplicates",
+      "videoWithoutAudio": "Video only",
+      "audioWithoutVideo": "Audio only"
+    },
+    "types": {
+      "unreadableFile": "Unreadable file",
+      "missingTags": "Missing tags",
+      "unknownAlbum": "Unknown album",
+      "missingCover": "No cover",
+      "possibleDuplicate": "Possible duplicate",
+      "videoWithoutAudio": "Video without audio",
+      "audioWithoutVideo": "Audio without video",
+      "unknown": "Other problem"
+    },
+    "details": {
+      "missingTags": "Missing tags: {tags}",
+      "unknownAlbum": "The song belongs to no album.",
+      "missingCover": "Neither the folder nor the files have a cover.",
+      "possibleDuplicate": "Same artist and title, similar length as",
+      "videoWithoutAudio": "Only a video, no audio file with the same name.",
+      "audioWithoutVideo": "Only an audio file, no video with the same name.",
+      "unknown": "This app does not know this problem yet."
+    },
+    "sorts": {
+      "path": "Folder",
+      "artist": "Artist",
+      "title": "Title",
+      "detectedAt": "Newest"
+    },
+    "actions": {
+      "editMetadata": "Edit metadata",
+      "searchOnline": "Search online",
+      "showFiles": "Show files"
+    }
+  },
   "reviewInbox": {
     "title": "Review inbox",
     "button": "Review",
@@ -1247,7 +1321,8 @@
       "libraryScan": "Library scan",
       "coverCache": "Prepare covers",
       "databaseBackup": "Database backup",
-      "lyricsDownload": "Download lyrics"
+      "lyricsDownload": "Download lyrics",
+      "libraryCheck": "Library check"
     },
     "lastRun": "Last run {date}",
     "duration": "took {duration}",

@@ -207,6 +207,10 @@
         --_icon: var(--wmp-icon-admin-review);
     }
 
+    [data-icon='admin-checks'] {
+        --_icon: var(--wmp-icon-admin-checks);
+    }
+
     [data-icon='tags-missing'] {
         --_icon: var(--wmp-icon-tags-missing);
     }

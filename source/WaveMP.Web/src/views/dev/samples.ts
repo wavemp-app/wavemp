@@ -3,6 +3,8 @@
 // Covers are marked as missing, so the overview never calls the API.
 
 import type {
+    LibraryIssue,
+    LibraryIssueSummary,
     MediaFile,
     Track,
     TrackFileSelection,
@@ -204,6 +206,88 @@ export function sampleFiles(): MediaFile[] {
 }
 
 /** Songs of the file selection: one with a selected audio file and a missing cover, one plain. */
+/** The result of a library check: every kind of problem once, the duplicate with its twin. */
+export function sampleLibraryIssueSummary(): LibraryIssueSummary {
+    return {
+        checkedAt: new Date(Date.UTC(2026, 10, 19, 8, 30)),
+        trackCount: 1240,
+        problemCount: 12,
+        hintCount: 31,
+        counts: [
+            { type: 'UnreadableFile', severity: 'Problem', count: 1 },
+            { type: 'MissingTags', severity: 'Problem', count: 4 },
+            { type: 'UnknownAlbum', severity: 'Problem', count: 3 },
+            { type: 'MissingCover', severity: 'Problem', count: 2 },
+            { type: 'PossibleDuplicate', severity: 'Problem', count: 2 },
+            { type: 'VideoWithoutAudio', severity: 'Hint', count: 0 },
+            { type: 'AudioWithoutVideo', severity: 'Hint', count: 31 },
+        ],
+    }
+}
+
+export function sampleLibraryIssues(t: Translate): LibraryIssue[] {
+    const artist = { id: 'artist-1', name: t('placeholders.artist', { number: 1 }) }
+    const album = { id: 'album-1', title: t('placeholders.album', { number: 1 }) }
+    const track = (number: number, directoryPath: string, values = {}) => ({
+        id: `sample-track-${number}`,
+        title: t('placeholders.track', { number }),
+        artist,
+        album,
+        sourceId: 'source-1',
+        sourceName: 'Music',
+        directoryPath,
+        baseName: `0${number} - Song`,
+        durationMilliseconds: 201_000 + number * 1_000,
+        hasAudio: true,
+        hasVideo: false,
+        ...values,
+    })
+    const detectedAt = new Date(Date.UTC(2026, 10, 19, 8, 30))
+    return [
+        {
+            id: 'sample-issue-tags',
+            type: 'MissingTags',
+            severity: 'Problem',
+            detectedAt,
+            track: track(2, 'Artist/Album', { album: null }),
+            missingTags: ['Album', 'Year'],
+        },
+        {
+            id: 'sample-issue-duplicate',
+            type: 'PossibleDuplicate',
+            severity: 'Problem',
+            detectedAt,
+            track: track(3, 'Artist/Album'),
+            missingTags: [],
+            relatedTrack: track(3, 'Artist/Best Of'),
+        },
+        {
+            id: 'sample-issue-unreadable',
+            type: 'UnreadableFile',
+            severity: 'Problem',
+            detectedAt,
+            track: track(4, 'Artist/Album'),
+            file: {
+                id: 'sample-file',
+                sourceId: 'source-1',
+                sourceName: 'Music',
+                relativePath: 'Artist/Album/04 - Song.flac',
+                kind: 'Audio',
+            },
+            fileIssue: 'file.probe_failed',
+            missingTags: [],
+        },
+        {
+            id: 'sample-issue-hint',
+            type: 'AudioWithoutVideo',
+            severity: 'Hint',
+            detectedAt,
+            track: track(5, 'Artist/Album'),
+            missingTags: [],
+        },
+    ]
+}
+
 export function sampleFileSummaries(t: Translate): TrackFileSummary[] {
     return [
         {
