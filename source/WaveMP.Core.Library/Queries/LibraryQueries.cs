@@ -24,7 +24,8 @@ internal static class LibraryQueries
             LibraryQueryDefaults.Direction(sort, request.Direction),
             search,
             request.UserId,
-            IsMyMusic(request.UserId, request.MyMusic));
+            IsMyMusic(request.UserId, request.MyMusic),
+            request.SourceId);
     }
 
     public static AlbumListQuery ToQuery(AlbumListRequest request)
@@ -41,7 +42,8 @@ internal static class LibraryQueries
             MetadataText.Normalize(request.Genre),
             request.Year,
             request.UserId,
-            IsMyMusic(request.UserId, request.MyMusic));
+            IsMyMusic(request.UserId, request.MyMusic),
+            request.SourceId);
     }
 
     /// <param name="request">The request of the client.</param>
@@ -67,7 +69,8 @@ internal static class LibraryQueries
             request.HasAudio,
             request.HasVideo,
             request.UserId,
-            IsMyMusic(request.UserId, request.MyMusic));
+            IsMyMusic(request.UserId, request.MyMusic),
+            SourceId: request.SourceId);
     }
 
     public static GenreListQuery ToQuery(GenreListRequest request)

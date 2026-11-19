@@ -7,8 +7,8 @@ using WaveMP.Core.Metadata.Files;
 namespace WaveMP.Core.Lyrics.Files;
 
 /// <summary>
-/// Lyrics files of the media folder, found through <see cref="IMediaFileLocator"/>, so a path never leaves the media
-/// folder.
+/// Lyrics files of the media sources, found through <see cref="IMediaFileLocator"/>, so a path never leaves the folder
+/// of its source.
 /// </summary>
 internal sealed class LyricsFileStore(
     IMediaFileLocator locator,
@@ -17,9 +17,12 @@ internal sealed class LyricsFileStore(
 {
     private static readonly UTF8Encoding _utf8 = new(encoderShouldEmitUTF8Identifier: false);
 
-    public async Task<string?> ReadAsync(string relativePath, CancellationToken cancellationToken = default)
+    public async Task<string?> ReadAsync(
+        Guid sourceId,
+        string relativePath,
+        CancellationToken cancellationToken = default)
     {
-        if (!locator.TryGetFullPath(relativePath, out string path))
+        if (!locator.TryGetFullPath(sourceId, relativePath, out string path))
         {
             return null;
         }
@@ -42,11 +45,12 @@ internal sealed class LyricsFileStore(
     }
 
     public async Task<LyricsFileWriteStatus> CreateAsync(
+        Guid sourceId,
         string relativePath,
         string text,
         CancellationToken cancellationToken = default)
     {
-        if (!locator.TryGetFullPath(relativePath, out string path))
+        if (!locator.TryGetFullPath(sourceId, relativePath, out string path))
         {
             return LyricsFileWriteStatus.NotWritable;
         }

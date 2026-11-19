@@ -121,7 +121,7 @@ internal sealed class LyricsDownloader(
         CancellationToken cancellationToken)
     {
         string path = LyricsFilePathOf(track);
-        LyricsFileWriteStatus written = await files.CreateAsync(path, text, cancellationToken);
+        LyricsFileWriteStatus written = await files.CreateAsync(track.SourceId, path, text, cancellationToken);
         if (written == LyricsFileWriteStatus.Exists)
         {
             return new LyricsDownloadResult(LyricsDownloadOutcome.LyricsFileExists);
@@ -170,7 +170,11 @@ internal sealed class LyricsDownloader(
     {
         try
         {
-            await scanner.RefreshFolderAsync(track.DirectoryPath, [path], CancellationToken.None);
+            await scanner.RefreshFolderAsync(
+                track.SourceId,
+                track.DirectoryPath,
+                [path],
+                CancellationToken.None);
         }
         catch (Exception exception)
         {

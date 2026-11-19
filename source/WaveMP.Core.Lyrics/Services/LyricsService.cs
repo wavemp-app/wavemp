@@ -37,7 +37,7 @@ internal sealed class LyricsService(
     internal async Task<TrackLyrics?> FindAsync(LyricsTrackRow track, CancellationToken cancellationToken)
     {
         if (track.LyricsFilePath is { } path
-            && await files.ReadAsync(path, cancellationToken) is { } text
+            && await files.ReadAsync(track.SourceId, path, cancellationToken) is { } text
             && LrcParser.Parse(text) is { IsEmpty: false } fromFile)
         {
             return new TrackLyrics(fromFile, LyricsSource.File);
@@ -60,7 +60,7 @@ internal sealed class LyricsService(
         foreach (string? relativePath in (string?[])[track.AudioFilePath, track.VideoFilePath])
         {
             if (relativePath is not null
-                && locator.TryGetFullPath(relativePath, out string path)
+                && locator.TryGetFullPath(track.SourceId, relativePath, out string path)
                 && tagReader.Read(path) is { } tags
                 && TagLyricsParser.Parse(tags) is { IsEmpty: false } document)
             {

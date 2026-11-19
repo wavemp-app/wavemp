@@ -166,7 +166,7 @@ internal sealed class StreamService(ITrackRepository tracks, IMediaFileLocator l
         [System.Diagnostics.CodeAnalysis.NotNullWhen(true)] out FileInfo? info)
     {
         info = null;
-        if (!locator.TryGetFullPath(file.RelativePath, out fullPath))
+        if (!locator.TryGetFullPath(file.SourceId, file.RelativePath, out fullPath))
         {
             return false;
         }

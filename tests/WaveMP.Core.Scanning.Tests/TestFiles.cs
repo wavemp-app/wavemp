@@ -21,6 +21,7 @@ internal static class TestFiles
         MediaFile file = new()
         {
             Id = Guid.NewGuid(),
+            SourceId = MediaSource.DefaultId,
             RelativePath = relativePath,
             DirectoryPath = slash < 0 ? string.Empty : relativePath[..slash],
             FileName = fileName,

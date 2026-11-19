@@ -23,15 +23,17 @@ public sealed class LibraryWriter(ILibraryScanRepository library)
     private const int GenreMaxLength = 128;
 
     /// <summary>
-    /// Updates the files of a changed folder with the metadata read for its new and changed files, and its tracks.
+    /// Updates the files of a changed folder of a source with the metadata read for its new and changed files, and its
+    /// tracks.
     /// </summary>
     public async Task<FolderWriteResult> WriteFolderAsync(
+        Guid sourceId,
         DirectoryPlan plan,
         IReadOnlyDictionary<string, MediaFileMetadata> metadata,
         DateTimeOffset now,
         CancellationToken cancellationToken = default)
     {
-        StoredFolder stored = await library.LoadFolderAsync(plan.RelativePath, cancellationToken);
+        StoredFolder stored = await library.LoadFolderAsync(sourceId, plan.RelativePath, cancellationToken);
         var storedFiles = stored.Files.ToDictionary(
             file => file.RelativePath,
             StringComparer.Ordinal);
@@ -44,7 +46,7 @@ public sealed class LibraryWriter(ILibraryScanRepository library)
             {
                 if (file is null)
                 {
-                    file = CreateFile(discovered, plan.RelativePath, now);
+                    file = CreateFile(sourceId, discovered, plan.RelativePath, now);
                     library.Add(file);
                 }
 
@@ -63,6 +65,7 @@ public sealed class LibraryWriter(ILibraryScanRepository library)
         }
 
         FolderWriteResult result = await WriteTracksAsync(
+            sourceId,
             plan.RelativePath,
             FolderProcessor.Process(plan.RelativePath, files, ChoicesOf(stored.Tracks, files)),
             stored.Tracks,
@@ -77,12 +80,14 @@ public sealed class LibraryWriter(ILibraryScanRepository library)
     /// changed the file selection of one of its tracks.
     /// </summary>
     public async Task<FolderWriteResult> RewriteFolderAsync(
+        Guid sourceId,
         string directoryPath,
         DateTimeOffset now,
         CancellationToken cancellationToken = default)
     {
-        StoredFolder stored = await library.LoadFolderAsync(directoryPath, cancellationToken);
+        StoredFolder stored = await library.LoadFolderAsync(sourceId, directoryPath, cancellationToken);
         FolderWriteResult result = await WriteTracksAsync(
+            sourceId,
             directoryPath,
             FolderProcessor.Process(directoryPath, stored.Files, ChoicesOf(stored.Tracks, stored.Files)),
             stored.Tracks,
@@ -164,6 +169,7 @@ public sealed class LibraryWriter(ILibraryScanRepository library)
     }
 
     private async Task<FolderWriteResult> WriteTracksAsync(
+        Guid sourceId,
         string directoryPath,
         ProcessedFolder folder,
         IReadOnlyList<Track> storedTracks,
@@ -187,6 +193,7 @@ public sealed class LibraryWriter(ILibraryScanRepository library)
                 track = new Track
                 {
                     Id = Guid.CreateVersion7(now),
+                    SourceId = sourceId,
                     DirectoryPath = directoryPath,
                     BaseName = processed.Group.BaseName,
                     NormalizedBaseName = processed.Group.NormalizedBaseName,
@@ -439,12 +446,17 @@ public sealed class LibraryWriter(ILibraryScanRepository library)
         return changed;
     }
 
-    private static MediaFile CreateFile(DiscoveredFile discovered, string directoryPath, DateTimeOffset now)
+    private static MediaFile CreateFile(
+        Guid sourceId,
+        DiscoveredFile discovered,
+        string directoryPath,
+        DateTimeOffset now)
     {
         string baseName = MediaKindClassifier.BaseNameOf(discovered.FileName);
         return new MediaFile
         {
             Id = Guid.CreateVersion7(now),
+            SourceId = sourceId,
             RelativePath = discovered.RelativePath,
             DirectoryPath = directoryPath,
             FileName = discovered.FileName,

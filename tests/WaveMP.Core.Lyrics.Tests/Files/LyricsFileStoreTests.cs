@@ -5,6 +5,7 @@ using NSubstitute;
 using WaveMP.Core.Lyrics.Files;
 using WaveMP.Core.Lyrics.Options;
 using WaveMP.Core.Metadata.Files;
+using WaveMP.Data.Entities;
 using WaveMP.Testing.Files;
 
 namespace WaveMP.Core.Lyrics.Tests.Files;
@@ -20,16 +21,16 @@ public class LyricsFileStoreTests
     {
         _media = new TemporaryDirectory();
         IMediaFileLocator locator = Substitute.For<IMediaFileLocator>();
-        locator.TryGetFullPath(Arg.Any<string>(), out Arg.Any<string>())
+        locator.TryGetFullPath(MediaSource.DefaultId, Arg.Any<string>(), out Arg.Any<string>())
             .Returns(call =>
             {
-                string relative = call.ArgAt<string>(0);
+                string relative = call.ArgAt<string>(1);
                 if (relative.Contains("..", StringComparison.Ordinal))
                 {
                     return false;
                 }
 
-                call[1] = _media.Combine(relative);
+                call[2] = _media.Combine(relative);
                 return true;
             });
         _store = new LyricsFileStore(
@@ -49,7 +50,7 @@ public class LyricsFileStoreTests
     {
         await File.WriteAllTextAsync(_media.Combine("Song.lrc"), "[00:01.00]Hello", new UTF8Encoding(true));
 
-        string? text = await _store.ReadAsync("Song.lrc");
+        string? text = await _store.ReadAsync(MediaSource.DefaultId, "Song.lrc");
 
         text.Should().Be("[00:01.00]Hello");
     }
@@ -59,15 +60,15 @@ public class LyricsFileStoreTests
     {
         await File.WriteAllTextAsync(_media.Combine("Large.lrc"), new string('x', 101));
 
-        (await _store.ReadAsync("Missing.lrc")).Should().BeNull();
-        (await _store.ReadAsync("Large.lrc")).Should().BeNull();
-        (await _store.ReadAsync("../Other.lrc")).Should().BeNull();
+        (await _store.ReadAsync(MediaSource.DefaultId, "Missing.lrc")).Should().BeNull();
+        (await _store.ReadAsync(MediaSource.DefaultId, "Large.lrc")).Should().BeNull();
+        (await _store.ReadAsync(MediaSource.DefaultId, "../Other.lrc")).Should().BeNull();
     }
 
     [Test]
     public async Task CreateAsync_NewFile_WritesUtf8WithoutByteOrderMark()
     {
-        LyricsFileWriteStatus status = await _store.CreateAsync("Song.lrc", "[00:01.00]Grüße");
+        LyricsFileWriteStatus status = await _store.CreateAsync(MediaSource.DefaultId, "Song.lrc", "[00:01.00]Grüße");
 
         status.Should().Be(LyricsFileWriteStatus.Created);
         byte[] bytes = await File.ReadAllBytesAsync(_media.Combine("Song.lrc"));
@@ -79,7 +80,7 @@ public class LyricsFileStoreTests
     {
         await File.WriteAllTextAsync(_media.Combine("Song.lrc"), "Own lyrics");
 
-        LyricsFileWriteStatus status = await _store.CreateAsync("Song.lrc", "Downloaded");
+        LyricsFileWriteStatus status = await _store.CreateAsync(MediaSource.DefaultId, "Song.lrc", "Downloaded");
 
         status.Should().Be(LyricsFileWriteStatus.Exists);
         (await File.ReadAllTextAsync(_media.Combine("Song.lrc"))).Should().Be("Own lyrics");
@@ -88,7 +89,7 @@ public class LyricsFileStoreTests
     [Test]
     public async Task CreateAsync_MissingFolderOrPathOutsideTheMediaFolder_IsNotWritable()
     {
-        (await _store.CreateAsync("Gone/Song.lrc", "Lyrics")).Should().Be(LyricsFileWriteStatus.NotWritable);
-        (await _store.CreateAsync("../Song.lrc", "Lyrics")).Should().Be(LyricsFileWriteStatus.NotWritable);
+        (await _store.CreateAsync(MediaSource.DefaultId, "Gone/Song.lrc", "Lyrics")).Should().Be(LyricsFileWriteStatus.NotWritable);
+        (await _store.CreateAsync(MediaSource.DefaultId, "../Song.lrc", "Lyrics")).Should().Be(LyricsFileWriteStatus.NotWritable);
     }
 }

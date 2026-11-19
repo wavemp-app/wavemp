@@ -11,25 +11,60 @@ namespace WaveMP.Core.Scanning.Tests.Plans;
 public class PlanTests
 {
     private static readonly DateTimeOffset _time = new(2026, 11, 1, 10, 0, 0, TimeSpan.Zero);
+    private static readonly Guid _music = new("00000000-0000-0000-0000-00000000000a");
+    private static readonly Guid _videos = new("00000000-0000-0000-0000-00000000000b");
 
     [Test]
     public void ScanScope_WithNestedFolders_KeepsOnlyTheOuterOnes()
     {
-        var scope = ScanScope.Of(["Artist/Album", "Artist", "Other\\Album/", "Artist/Album/CD1", "Other/Album"]);
+        var scope = ScanScope.Of(
+            _music,
+            ["Artist/Album", "Artist", "Other\\Album/", "Artist/Album/CD1", "Other/Album"]);
 
-        scope.Directories.Should().Equal("Artist", "Other/Album");
+        scope.DirectoriesOf(_music).Should().Equal("Artist", "Other/Album");
         scope.IsFull.Should().BeFalse();
-        scope.Contains("Artist/Album").Should().BeTrue();
-        scope.Contains("Artists").Should().BeFalse();
+        scope.Contains(_music, "Artist/Album").Should().BeTrue();
+        scope.Contains(_music, "Artists").Should().BeFalse();
     }
 
     [TestCase("")]
     [TestCase("/")]
     [TestCase(".")]
-    public void ScanScope_WithTheMediaFolder_IsAFullScan(string root)
+    public void ScanScope_WithTheFolderOfTheSource_CoversTheWholeSource(string root)
     {
-        ScanScope.Of(["Artist", root]).IsFull.Should().BeTrue();
-        ScanScope.Of([]).IsFull.Should().BeTrue();
+        var scope = ScanScope.Of(_music, ["Artist", root]);
+
+        scope.IsFull.Should().BeFalse();
+        scope.DirectoriesOf(_music).Should().Equal(string.Empty);
+        scope.Contains(_music, "Anything/Deep").Should().BeTrue();
+        ScanScope.Of(_music, []).DirectoriesOf(_music).Should().Equal(string.Empty);
+    }
+
+    [Test]
+    public void ScanScope_FoldersOfSeveralSources_KeepsThemApart()
+    {
+        var scope = ScanScope.Of(
+        [
+            new SourceFolder(_videos, "Clips"),
+            new SourceFolder(_music, "Artist"),
+            new SourceFolder(_videos, "Clips/Live"),
+        ]);
+
+        scope.SourceIds.Should().BeEquivalentTo([_music, _videos]);
+        scope.Folders.Should().Equal(new SourceFolder(_music, "Artist"), new SourceFolder(_videos, "Clips"));
+        scope.Contains(_videos, "Artist").Should().BeFalse();
+        scope.Contains(_music, "Clips").Should().BeFalse();
+        scope.DirectoriesOf(Guid.NewGuid()).Should().BeNull();
+    }
+
+    [Test]
+    public void ScanScope_Full_CoversEverySource()
+    {
+        ScanScope.Full.IsFull.Should().BeTrue();
+        ScanScope.Full.DirectoriesOf(_videos).Should().Equal(string.Empty);
+        ScanScope.Full.Contains(_music, "Artist").Should().BeTrue();
+        ScanScope.OfSources([_videos]).DirectoriesOf(_videos).Should().Equal(string.Empty);
+        ScanScope.OfSources([_videos]).DirectoriesOf(_music).Should().BeNull();
     }
 
     [Test]

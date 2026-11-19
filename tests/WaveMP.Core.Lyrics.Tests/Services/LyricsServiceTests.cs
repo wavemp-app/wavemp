@@ -28,10 +28,10 @@ public class LyricsServiceTests
         _files = Substitute.For<ILyricsFileStore>();
         _tags = Substitute.For<ILyricsTagReader>();
         IMediaFileLocator locator = Substitute.For<IMediaFileLocator>();
-        locator.TryGetFullPath(Arg.Any<string>(), out Arg.Any<string>())
+        locator.TryGetFullPath(MediaSource.DefaultId, Arg.Any<string>(), out Arg.Any<string>())
             .Returns(call =>
             {
-                call[1] = "/media/" + call.ArgAt<string>(0);
+                call[2] = "/media/" + call.ArgAt<string>(1);
                 return true;
             });
         _service = new LyricsService(_repository, _files, _tags, locator);
@@ -59,7 +59,7 @@ public class LyricsServiceTests
     public async Task GetAsync_LyricsFile_WinsOverAllOtherSources()
     {
         Track(Row(lyricsFile: "Band/Song.lrc", download: Stored("[00:01.00]Downloaded")));
-        _files.ReadAsync("Band/Song.lrc", Arg.Any<CancellationToken>()).Returns("[00:01.00]From file");
+        _files.ReadAsync(MediaSource.DefaultId, "Band/Song.lrc", Arg.Any<CancellationToken>()).Returns("[00:01.00]From file");
         _tags.Read(Arg.Any<string>()).Returns(new TagLyrics([], "From tags"));
 
         LyricsResult result = await _service.GetAsync(_trackId);
@@ -72,7 +72,7 @@ public class LyricsServiceTests
     public async Task GetAsync_EmptyOrUnreadableLyricsFile_FallsBackToTheDownload()
     {
         Track(Row(lyricsFile: "Band/Song.lrc", download: Stored("Downloaded line")));
-        _files.ReadAsync("Band/Song.lrc", Arg.Any<CancellationToken>()).Returns("[ar:Artist]");
+        _files.ReadAsync(MediaSource.DefaultId, "Band/Song.lrc", Arg.Any<CancellationToken>()).Returns("[ar:Artist]");
 
         LyricsResult result = await _service.GetAsync(_trackId);
 
@@ -121,6 +121,7 @@ public class LyricsServiceTests
     {
         return new LyricsTrackRow(
             _trackId,
+            MediaSource.DefaultId,
             "Band",
             "Song",
             "Song",

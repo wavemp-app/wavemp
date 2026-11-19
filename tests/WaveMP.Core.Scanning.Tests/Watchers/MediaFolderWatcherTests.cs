@@ -6,8 +6,9 @@ using NSubstitute;
 using WaveMP.Core.Jobs.Definitions;
 using WaveMP.Core.Jobs.Runs;
 using WaveMP.Core.Jobs.Services;
-using WaveMP.Core.Metadata.Options;
+using WaveMP.Core.Metadata.Sources;
 using WaveMP.Core.Scanning.Options;
+using WaveMP.Core.Scanning.Plans;
 using WaveMP.Core.Scanning.Watchers;
 using WaveMP.Core.Settings.Groups;
 using WaveMP.Core.Settings.Snapshots;
@@ -23,8 +24,13 @@ namespace WaveMP.Core.Scanning.Tests.Watchers;
 public class MediaFolderWatcherTests
 {
     private static readonly TimeSpan _wait = TimeSpan.FromSeconds(10);
+    private static readonly JsonSerializerOptions _payloadOptions = new(JsonSerializerDefaults.Web);
+    private static readonly Guid _music = Guid.NewGuid();
+    private static readonly Guid _videos = Guid.NewGuid();
 
     private TemporaryDirectory _media = null!;
+    private TemporaryDirectory _clips = null!;
+    private FakeSourceCatalog _sources = null!;
     private IJobService _jobs = null!;
     private JobRunTracker _tracker = null!;
     private ISettingsSnapshot<LibrarySettings> _settings = null!;
@@ -37,6 +43,9 @@ public class MediaFolderWatcherTests
         _media = new TemporaryDirectory();
         _media.CreateDirectory("Artist/Album");
         _media.CreateDirectory("Other");
+        _clips = new TemporaryDirectory();
+        _clips.CreateDirectory("Live");
+        _sources = new FakeSourceCatalog([new MediaSourceInfo(_music, "Music", _media.Path, true, true)]);
         _jobs = Substitute.For<IJobService>();
         _jobs.StartRunAsync(Arg.Any<JobRunRequest>(), Arg.Any<CancellationToken>())
             .Returns(call => JobRunStartResult.Success(new JobRun
@@ -52,7 +61,7 @@ public class MediaFolderWatcherTests
         _settings.Current.Returns(new LibrarySettings());
         _services = new ServiceCollection().AddScoped(_ => _jobs).BuildServiceProvider();
         _watcher = new MediaFolderWatcher(
-            Microsoft.Extensions.Options.Options.Create(new MediaLibraryOptions { RootPath = _media.Path }),
+            _sources,
             Microsoft.Extensions.Options.Options.Create(new ScanOptions
             {
                 WatcherDebounce = TimeSpan.FromMilliseconds(300),
@@ -72,6 +81,7 @@ public class MediaFolderWatcherTests
         _watcher.Dispose();
         await _services.DisposeAsync();
         _media.Dispose();
+        _clips.Dispose();
     }
 
     [Test]
@@ -84,7 +94,7 @@ public class MediaFolderWatcherTests
         await Task.Delay(TimeSpan.FromSeconds(1));
 
         request.Trigger.Should().Be(JobRunTrigger.FileWatcher);
-        JsonSerializer.Deserialize<string[]>(request.Payload!).Should().Equal("Artist/Album");
+        Folders(request).Should().Equal(new SourceFolder(_music, "Artist/Album"));
         StartedRequests().Should().ContainSingle();
     }
 
@@ -99,7 +109,7 @@ public class MediaFolderWatcherTests
         await File.WriteAllTextAsync(_media.Combine("Other/notes.txt"), "ignored");
         JobRunRequest request = await WaitForStartAsync();
 
-        JsonSerializer.Deserialize<string[]>(request.Payload!).Should().BeEquivalentTo("Artist/Album", "Other");
+        Folders(request).Should().BeEquivalentTo([new SourceFolder(_music, "Artist/Album"), new SourceFolder(_music, "Other")]);
         StartedRequests().Should().ContainSingle();
     }
 
@@ -158,7 +168,64 @@ public class MediaFolderWatcherTests
         JobRunRequest request = await WaitForStartAsync();
 
         whileRunning.Should().Be(0);
-        JsonSerializer.Deserialize<string[]>(request.Payload!).Should().Equal("Other");
+        Folders(request).Should().Equal(new SourceFolder(_music, "Other"));
+    }
+
+    [Test]
+    public async Task SeveralSources_AreWatchedEachWithItsOwnFolders()
+    {
+        _sources.Set(
+            new MediaSourceInfo(_music, "Music", _media.Path, true, true),
+            new MediaSourceInfo(_videos, "Videos", _clips.Path, true, false));
+        await _watcher.StartAsync(CancellationToken.None);
+
+        await File.WriteAllTextAsync(_media.Combine("Other/song.mp3"), "audio");
+        await File.WriteAllTextAsync(_clips.Combine("Live/clip.mkv"), "video");
+        JobRunRequest request = await WaitForStartAsync();
+
+        _watcher.IsWatchingSource(_videos).Should().BeTrue();
+        Folders(request).Should().BeEquivalentTo([new SourceFolder(_music, "Other"), new SourceFolder(_videos, "Live")]);
+    }
+
+    [Test]
+    public async Task DeactivatedSource_IsNotWatched()
+    {
+        _sources.Set(
+            new MediaSourceInfo(_music, "Music", _media.Path, true, true),
+            new MediaSourceInfo(_videos, "Videos", _clips.Path, false, false));
+        await _watcher.StartAsync(CancellationToken.None);
+
+        await File.WriteAllTextAsync(_clips.Combine("Live/clip.mkv"), "video");
+        await Task.Delay(TimeSpan.FromSeconds(2));
+
+        _watcher.IsWatchingSource(_music).Should().BeTrue();
+        _watcher.IsWatchingSource(_videos).Should().BeFalse();
+        StartedRequests().Should().BeEmpty();
+    }
+
+    [Test]
+    public async Task SourcesChange_WatchesTheNewSourcesAndStopsWatchingRemovedOnes()
+    {
+        await _watcher.StartAsync(CancellationToken.None);
+
+        await _sources.ChangeAsync(new MediaSourceInfo(_videos, "Videos", _clips.Path, true, false));
+        await File.WriteAllTextAsync(_clips.Combine("Live/clip.mkv"), "video");
+        JobRunRequest request = await WaitForStartAsync();
+
+        _watcher.IsWatchingSource(_music).Should().BeFalse();
+        _watcher.IsWatchingSource(_videos).Should().BeTrue();
+        Folders(request).Should().Equal(new SourceFolder(_videos, "Live"));
+    }
+
+    [Test]
+    public async Task QueueSource_ScansTheWholeSource()
+    {
+        await _watcher.StartAsync(CancellationToken.None);
+
+        _watcher.QueueSource(_music);
+        JobRunRequest request = await WaitForStartAsync();
+
+        Folders(request).Should().Equal(new SourceFolder(_music, string.Empty));
     }
 
     [Test]
@@ -184,6 +251,11 @@ public class MediaFolderWatcherTests
         await stop.Should().NotThrowAsync();
     }
 
+    private static SourceFolder[] Folders(JobRunRequest request)
+    {
+        return JsonSerializer.Deserialize<SourceFolder[]>(request.Payload!, _payloadOptions)!;
+    }
+
     private List<JobRunRequest> StartedRequests()
     {
         return [.. _jobs.ReceivedCalls()
@@ -200,5 +272,37 @@ public class MediaFolderWatcherTests
         }
 
         return StartedRequests()[0];
+    }
+
+    /// <summary>
+    /// Sources that a test sets and changes.
+    /// </summary>
+    private sealed class FakeSourceCatalog(IReadOnlyList<MediaSourceInfo> sources) : IMediaSourceCatalog
+    {
+        public event EventHandler? Changed;
+
+        public IReadOnlyList<MediaSourceInfo> Sources { get; private set; } = sources;
+
+        public MediaSourceInfo? Find(Guid id)
+        {
+            return Sources.FirstOrDefault(source => source.Id == id);
+        }
+
+        public Task RefreshAsync(CancellationToken cancellationToken = default)
+        {
+            Changed?.Invoke(this, EventArgs.Empty);
+            return Task.CompletedTask;
+        }
+
+        public void Set(params MediaSourceInfo[] sources)
+        {
+            Sources = sources;
+        }
+
+        public Task ChangeAsync(params MediaSourceInfo[] sources)
+        {
+            Set(sources);
+            return RefreshAsync();
+        }
     }
 }

@@ -51,6 +51,7 @@ public class CoverCacheKeyTests
             null,
             true,
             CoverSource.Embedded,
+            MediaSource.DefaultId,
             "Album/Song.mp3",
             null,
             99,

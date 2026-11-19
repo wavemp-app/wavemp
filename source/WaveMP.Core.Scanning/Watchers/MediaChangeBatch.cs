@@ -3,16 +3,15 @@ using WaveMP.Core.Scanning.Plans;
 namespace WaveMP.Core.Scanning.Watchers;
 
 /// <summary>
-/// Collects the folders changed in the media folder until they are scanned: once no change came in for the debounce
+/// Collects the folders changed in the media sources until they are scanned: once no change came in for the debounce
 /// time, at the latest after the maximum delay since the first change. Not thread-safe.
 /// </summary>
 public sealed class MediaChangeBatch
 {
-    private readonly HashSet<string> _directories = new(StringComparer.Ordinal);
+    private readonly HashSet<SourceFolder> _folders = [];
     private DateTimeOffset? _lastChange;
-    private bool _full;
 
-    public bool IsEmpty => !_full && _directories.Count == 0;
+    public bool IsEmpty => _folders.Count == 0;
 
     /// <summary>
     /// When the first change of the batch came in.
@@ -20,21 +19,20 @@ public sealed class MediaChangeBatch
     public DateTimeOffset? FirstChange { get; private set; }
 
     /// <summary>
-    /// Adds a changed folder (relative path).
+    /// Adds a changed folder of a source (relative path; empty for the whole source).
     /// </summary>
-    public void Add(string directory, DateTimeOffset now)
+    public void Add(Guid sourceId, string directory, DateTimeOffset now)
     {
-        _directories.Add(ScanScope.Normalize(directory));
+        _folders.Add(new SourceFolder(sourceId, ScanScope.Normalize(directory)));
         Touch(now);
     }
 
     /// <summary>
-    /// Asks for a scan of the whole media folder, e.g. because the watcher missed events.
+    /// Asks for a scan of a whole source, e.g. because the watcher missed events or the source is new.
     /// </summary>
-    public void RequestFull(DateTimeOffset now)
+    public void RequestSource(Guid sourceId, DateTimeOffset now)
     {
-        _full = true;
-        Touch(now);
+        Add(sourceId, string.Empty, now);
     }
 
     public bool IsDue(DateTimeOffset now, TimeSpan debounce, TimeSpan maxDelay)
@@ -47,7 +45,7 @@ public sealed class MediaChangeBatch
     /// </summary>
     public ScanScope Take()
     {
-        ScanScope scope = _full ? ScanScope.Full : ScanScope.Of(_directories);
+        var scope = ScanScope.Of(_folders);
         Clear();
         return scope;
     }
@@ -57,23 +55,26 @@ public sealed class MediaChangeBatch
     /// </summary>
     public void Restore(ScanScope scope, DateTimeOffset firstChange)
     {
-        if (scope.IsFull)
-        {
-            _full = true;
-        }
-        else
-        {
-            _directories.UnionWith(scope.Directories);
-        }
-
+        _folders.UnionWith(scope.Folders);
         FirstChange = FirstChange is { } first && first < firstChange ? first : firstChange;
         _lastChange ??= firstChange;
     }
 
+    /// <summary>
+    /// Leaves out the folders of sources that are no longer watched.
+    /// </summary>
+    public void Keep(IReadOnlySet<Guid> sourceIds)
+    {
+        _folders.RemoveWhere(folder => !sourceIds.Contains(folder.SourceId));
+        if (IsEmpty)
+        {
+            Clear();
+        }
+    }
+
     public void Clear()
     {
-        _directories.Clear();
-        _full = false;
+        _folders.Clear();
         FirstChange = null;
         _lastChange = null;
     }

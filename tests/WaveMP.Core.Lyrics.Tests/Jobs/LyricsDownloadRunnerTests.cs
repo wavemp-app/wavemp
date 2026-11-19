@@ -246,6 +246,6 @@ public class LyricsDownloadRunnerTests
 
     private static LyricsTrackRow Row(Guid id)
     {
-        return new LyricsTrackRow(id, "Band", "Song", "Song", "Band", "Album", null, null, "Band/Song.mp3", null, null);
+        return new LyricsTrackRow(id, MediaSource.DefaultId, "Band", "Song", "Song", "Band", "Album", null, null, "Band/Song.mp3", null, null);
     }
 }

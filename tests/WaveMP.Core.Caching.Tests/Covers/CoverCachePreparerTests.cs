@@ -166,6 +166,7 @@ public class CoverCachePreparerTests
             null,
             true,
             CoverSource.File,
+            MediaSource.DefaultId,
             "Album/cover.jpg",
             "image/jpeg",
             100,

@@ -193,6 +193,7 @@ public class CoverChoicesTests
             trackId is null ? null : $"Track {number}",
             true,
             CoverSource.File,
+            MediaSource.DefaultId,
             "Album/picture.jpg",
             "image/jpeg",
             100,

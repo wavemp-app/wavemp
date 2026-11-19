@@ -27,16 +27,16 @@ public class StreamServiceTests
         _media = new TemporaryDirectory();
         _tracks = Substitute.For<ITrackRepository>();
         _locator = Substitute.For<IMediaFileLocator>();
-        _locator.TryGetFullPath(Arg.Any<string>(), out Arg.Any<string>()).Returns(call =>
+        _locator.TryGetFullPath(MediaSource.DefaultId, Arg.Any<string>(), out Arg.Any<string>()).Returns(call =>
         {
-            string relative = call.ArgAt<string>(0);
+            string relative = call.ArgAt<string>(1);
             if (relative.Contains("..", StringComparison.Ordinal))
             {
-                call[1] = string.Empty;
+                call[2] = string.Empty;
                 return false;
             }
 
-            call[1] = _media.Combine(relative);
+            call[2] = _media.Combine(relative);
             return true;
         });
         _service = new StreamService(_tracks, _locator);
@@ -428,6 +428,7 @@ public class StreamServiceTests
         return new MediaFile
         {
             Id = Guid.NewGuid(),
+            SourceId = MediaSource.DefaultId,
             RelativePath = relativePath,
             DirectoryPath = string.Empty,
             FileName = fileName,

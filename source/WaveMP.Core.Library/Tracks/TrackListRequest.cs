@@ -21,6 +21,7 @@ namespace WaveMP.Core.Library.Tracks;
 /// <param name="UserId">The profile whose favorites and ratings the tracks carry and to whom <paramref name="MyMusic"/>
 /// and the sort key <see cref="TrackSortField.Rating"/> refer.</param>
 /// <param name="MyMusic">Only tracks of the "my music" of the profile; ignored without a profile.</param>
+/// <param name="SourceId">Only tracks of this media source.</param>
 public sealed record TrackListRequest(
     int Offset,
     int Limit,
@@ -34,4 +35,5 @@ public sealed record TrackListRequest(
     bool? HasAudio = null,
     bool? HasVideo = null,
     Guid? UserId = null,
-    bool MyMusic = false);
+    bool MyMusic = false,
+    Guid? SourceId = null);

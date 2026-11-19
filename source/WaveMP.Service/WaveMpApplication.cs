@@ -6,7 +6,6 @@ using WaveMP.Core.Jobs.Extensions;
 using WaveMP.Core.Library.Extensions;
 using WaveMP.Core.Lyrics.Extensions;
 using WaveMP.Core.Metadata.Extensions;
-using WaveMP.Core.Metadata.Options;
 using WaveMP.Core.Playlists.Extensions;
 using WaveMP.Core.Scanning.Extensions;
 using WaveMP.Core.Scrobbling.Extensions;
@@ -104,8 +103,9 @@ public static class WaveMpApplication
     /// Validates the database and PIN configuration, exports the database and applies pending migrations, creates the
     /// built-in admin profile on the first start and applies <c>ADMIN_PIN</c> to it, loads the keys that sign the
     /// session tokens and the media URLs and the server settings, prepares the cache folder and the folder of the Data
-    /// Protection keys, and plans the background jobs (they start to run once the application has started). Returns
-    /// <c>false</c> if the configuration is invalid or the export before the migrations failed; the reason is logged.
+    /// Protection keys, loads the media sources, and plans the background jobs (they start to run once the application
+    /// has started). Returns <c>false</c> if the configuration is invalid or the export before the migrations failed;
+    /// the reason is logged.
     /// </summary>
     public static async Task<bool> InitializeAsync(WebApplication app, CancellationToken cancellationToken = default)
     {
@@ -147,16 +147,8 @@ public static class WaveMpApplication
         DataProtectionKeys.PrepareFolder(
             DataProtectionKeys.ResolveFolder(app.Configuration, app.Environment),
             app.Logger);
+        await app.Services.InitializeWaveMpMediaSourcesAsync(cancellationToken);
         await app.Services.InitializeWaveMpJobsAsync(cancellationToken);
-
-        string mediaFolder = app.Services.GetRequiredService<IOptions<MediaLibraryOptions>>().Value.RootPath;
-        if (!Directory.Exists(mediaFolder))
-        {
-            app.Logger.LogWarning(
-                "The media folder {MediaFolder} does not exist; mount it or set MEDIA_PATH",
-                mediaFolder);
-        }
-
         return true;
     }
 }

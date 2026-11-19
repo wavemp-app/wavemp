@@ -21,6 +21,9 @@ namespace WaveMP.Core.Scanning.Tests.Jobs;
 [TestFixture]
 public class LibraryScanJobTests
 {
+    private static readonly Guid _source = Guid.NewGuid();
+    private static readonly Guid _otherSource = Guid.NewGuid();
+
     [Test]
     public void LibraryScanJob_Always_DisallowsConcurrentExecution()
     {
@@ -40,13 +43,19 @@ public class LibraryScanJobTests
         context.FireInstanceId.Returns("fire-1");
         context.MergedJobDataMap.Returns(new JobDataMap
         {
-            [JobDataKeys.Payload] = LibraryScanJob.CreatePayload(ScanScope.Of(["Artist/Album", "Other"])),
+            [JobDataKeys.Payload] = LibraryScanJob.CreatePayload(ScanScope.Of(
+            [
+                new SourceFolder(_source, "Artist/Album"),
+                new SourceFolder(_source, "Other"),
+                new SourceFolder(_otherSource, string.Empty),
+            ])),
         });
 
         await CreateJob(scanner, Substitute.For<IJobService>(), tracker).Execute(context, CancellationToken.None);
 
         await scanner.Received(1).ScanAsync(
-            Arg.Is<ScanScope>(scope => scope.Directories.SequenceEqual(new[] { "Artist/Album", "Other" })),
+            Arg.Is<ScanScope>(scope => scope.DirectoriesOf(_source)!.SequenceEqual(new[] { "Artist/Album", "Other" })
+                && scope.DirectoriesOf(_otherSource)!.SequenceEqual(new[] { string.Empty })),
             runId,
             Arg.Any<CancellationToken>());
         context.Received().Result = result;
@@ -64,7 +73,7 @@ public class LibraryScanJobTests
         scanner.ScanAsync(Arg.Any<ScanScope>(), Arg.Any<Guid>(), Arg.Any<CancellationToken>())
             .Returns(new ScanResult(new ScanStatistics { FilesAdded = filesAdded, IsPartial = !full }, []));
         IJobService jobs = Substitute.For<IJobService>();
-        IJobExecutionContext context = ContextFor(full ? null : ScanScope.Of(["Artist/Album"]));
+        IJobExecutionContext context = ContextFor(full ? null : ScanScope.Of(_source, ["Artist/Album"]));
 
         await CreateJob(scanner, jobs).Execute(context, CancellationToken.None);
 
@@ -85,7 +94,7 @@ public class LibraryScanJobTests
         scanner.ScanAsync(Arg.Any<ScanScope>(), Arg.Any<Guid>(), Arg.Any<CancellationToken>())
             .Returns(new ScanResult(new ScanStatistics { FilesAdded = changed ? 1 : 0, IsPartial = true }, []));
         IJobService jobs = Substitute.For<IJobService>();
-        IJobExecutionContext context = ContextFor(ScanScope.Of(["Artist/Album"]));
+        IJobExecutionContext context = ContextFor(ScanScope.Of(_source, ["Artist/Album"]));
 
         await CreateJob(scanner, jobs, settings: new LibrarySettings { DownloadLyrics = downloadLyrics })
             .Execute(context, CancellationToken.None);
@@ -118,6 +127,8 @@ public class LibraryScanJobTests
     [TestCase("")]
     [TestCase("not json")]
     [TestCase("[]")]
+    [TestCase("[\"Artist\"]")]
+    [TestCase("[{\"sourceId\":\"019a0000-0000-7000-8000-000000000001\"}]")]
     public void ReadScope_WithoutUsablePayload_IsAFullScan(string? payload)
     {
         JobDataMap data = payload is null ? [] : new JobDataMap { [JobDataKeys.Payload] = payload };

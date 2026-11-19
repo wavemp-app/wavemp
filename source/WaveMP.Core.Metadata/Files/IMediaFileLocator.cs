@@ -1,14 +1,14 @@
 namespace WaveMP.Core.Metadata.Files;
 
 /// <summary>
-/// Finds the files of the media folder by the relative paths the library stores.
+/// Finds the files of the media sources by the source and the relative path the library stores.
 /// </summary>
 public interface IMediaFileLocator
 {
     /// <summary>
-    /// The absolute path of a file of the media folder from its path relative to the media folder (with <c>/</c> as
-    /// separator). Returns <c>false</c> for rooted paths and for paths that leave the media folder (for example with
-    /// <c>..</c>). Does not check whether the file exists.
+    /// The absolute path of a file of a media source from its path relative to the folder of the source (with
+    /// <c>/</c> as separator). Returns <c>false</c> for unknown sources, rooted paths and paths that leave the folder
+    /// of the source (for example with <c>..</c>). Does not check whether the file exists.
     /// </summary>
-    bool TryGetFullPath(string relativePath, out string fullPath);
+    bool TryGetFullPath(Guid sourceId, string relativePath, out string fullPath);
 }

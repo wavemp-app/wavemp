@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using WaveMP.Core.Jobs.Extensions;
 using WaveMP.Core.Jobs.Runs;
 using WaveMP.Core.Metadata.Extensions;
+using WaveMP.Core.Metadata.Sources;
 using WaveMP.Core.Scanning.Extensions;
 using WaveMP.Core.Scanning.Plans;
 using WaveMP.Core.Scanning.Scans;
@@ -50,6 +51,12 @@ public class LibraryScannerTests
         await using WaveMpDbContext dbContext = _database.CreateDbContext();
         await dbContext.Database.ExecuteSqlRawAsync(
             "TRUNCATE covers, media_files, tracks, albums, artists RESTART IDENTITY CASCADE");
+        await dbContext.MediaSources.Where(source => source.Id != MediaSource.DefaultId).ExecuteDeleteAsync();
+        await dbContext.MediaSources
+            .Where(source => source.Id == MediaSource.DefaultId)
+            .ExecuteUpdateAsync(setters => setters
+                .SetProperty(source => source.Path, (string?)null)
+                .SetProperty(source => source.IsActive, true));
         _media = new TemporaryDirectory();
         _services = CreateServices(_media.Path);
     }
@@ -413,6 +420,143 @@ public class LibraryScannerTests
     }
 
     [Test]
+    public async Task Scan_SeveralSources_KeepsTheFilesOfEachSourceApart()
+    {
+        using TemporaryDirectory videos = new();
+        await AudioAsync("Band/Song.mp3");
+        await TestMediaGenerator.CreateAudioAsync(videos.Combine("Band/Song.mp3"), AudioFormat.Mp3);
+        await TestMediaGenerator.CreateVideoAsync(videos.Combine("Band/Song.mkv"), VideoFormat.Mkv, 320, 240);
+        MediaSource second = await AddSourceAsync("Videos", videos.Path);
+
+        ScanResult result = await ScanAsync();
+
+        result.Statistics.IsPartial.Should().BeFalse();
+        result.Statistics.TracksAdded.Should().Be(2);
+        result.Issues.Should().BeEmpty();
+        await using WaveMpDbContext db = _database.CreateDbContext();
+        List<Track> tracks = await db.Tracks.Include(track => track.Files).ToListAsync();
+        tracks.Should().HaveCount(2);
+        Track first = tracks.Single(track => track.SourceId == MediaSource.DefaultId);
+        first.HasVideo.Should().BeFalse();
+        first.Files.Should().ContainSingle().Which.SourceId.Should().Be(MediaSource.DefaultId);
+        Track other = tracks.Single(track => track.SourceId == second.Id);
+        other.HasVideo.Should().BeTrue();
+        other.Files.Should().HaveCount(2).And.OnlyContain(file => file.SourceId == second.Id);
+        other.DirectoryPath.Should().Be("Band");
+    }
+
+    [Test]
+    public async Task Scan_ScopeOfOneSource_LeavesTheOtherSourcesAlone()
+    {
+        using TemporaryDirectory videos = new();
+        await AudioAsync("Band/Song.mp3");
+        await TestMediaGenerator.CreateAudioAsync(videos.Combine("Clip.mp3"), AudioFormat.Mp3);
+        MediaSource second = await AddSourceAsync("Videos", videos.Path);
+        await ScanAsync();
+        File.Delete(_media.Combine("Band/Song.mp3"));
+        await TestMediaGenerator.CreateAudioAsync(videos.Combine("New.mp3"), AudioFormat.Mp3);
+
+        ScanResult result = await ScanAsync(ScanScope.OfSources([second.Id]));
+
+        result.Statistics.IsPartial.Should().BeTrue();
+        result.Statistics.FilesAdded.Should().Be(1);
+        result.Statistics.FilesRemoved.Should().Be(0);
+        await using WaveMpDbContext db = _database.CreateDbContext();
+        (await db.Tracks.Select(track => track.BaseName).OrderBy(name => name).ToListAsync())
+            .Should().Equal("Clip", "New", "Song");
+    }
+
+    [Test]
+    public async Task Scan_SourceWithAMissingFolder_IsSkippedWithAnIssueAndTheOthersAreScanned()
+    {
+        await AudioAsync("Song.mp3");
+        MediaSource missing = await AddSourceAsync("Gone", _media.Combine("../missing-" + Guid.NewGuid().ToString("N")));
+
+        ScanResult result = await ScanAsync();
+
+        result.Statistics.TracksAdded.Should().Be(1);
+        result.Issues.Should().ContainSingle().Which.Should().Be(
+            new ScanIssue(string.Empty, ScanIssueCode.SourceNotFound, missing.Id, "Gone"));
+    }
+
+    [Test]
+    public async Task Scan_EmptySourceWithALibrary_IsSkippedAndKeepsItsTracks()
+    {
+        using TemporaryDirectory videos = new();
+        await AudioAsync("Song.mp3");
+        await TestMediaGenerator.CreateAudioAsync(videos.Combine("Clip.mp3"), AudioFormat.Mp3);
+        MediaSource second = await AddSourceAsync("Videos", videos.Path);
+        await ScanAsync();
+        File.Delete(videos.Combine("Clip.mp3"));
+
+        ScanResult result = await ScanAsync();
+
+        result.Issues.Should().ContainSingle().Which.Code.Should().Be(ScanIssueCode.SourceEmpty);
+        await using WaveMpDbContext db = _database.CreateDbContext();
+        (await db.Tracks.CountAsync(track => track.SourceId == second.Id)).Should().Be(1);
+    }
+
+    [Test]
+    public async Task Scan_DeactivatedSource_IsNotScannedAndKeepsItsTracks()
+    {
+        using TemporaryDirectory videos = new();
+        await AudioAsync("Song.mp3");
+        await TestMediaGenerator.CreateAudioAsync(videos.Combine("Clip.mp3"), AudioFormat.Mp3);
+        MediaSource second = await AddSourceAsync("Videos", videos.Path);
+        await ScanAsync();
+        Directory.Delete(videos.Path, recursive: true);
+        await SetActiveAsync(second.Id, false);
+
+        ScanResult result = await ScanAsync();
+
+        result.Issues.Should().BeEmpty();
+        await using WaveMpDbContext db = _database.CreateDbContext();
+        (await db.Tracks.CountAsync(track => track.SourceId == second.Id)).Should().Be(1);
+    }
+
+    [Test]
+    public async Task Scan_NoActiveSource_FailsWithNoMediaSources()
+    {
+        await SetActiveAsync(MediaSource.DefaultId, false);
+
+        Func<Task> act = () => ScanAsync();
+
+        (await act.Should().ThrowAsync<JobFailedException>()).Which.Code.Should().Be(JobErrorCode.NoMediaSources);
+    }
+
+    [Test]
+    public async Task Scan_AllSourcesFail_FailsWithTheFirstProblem()
+    {
+        await AddSourceAsync("Gone", _media.Combine("../missing-" + Guid.NewGuid().ToString("N")));
+        await using ServiceProvider services = CreateServices(_media.Combine("missing"));
+
+        Func<Task> act = () => ScanAsync(services: services);
+
+        (await act.Should().ThrowAsync<JobFailedException>()).Which.Code
+            .Should().Be(JobErrorCode.MediaFolderNotFound);
+    }
+
+    [Test]
+    public async Task RefreshFolder_OtherSource_ReadsTheFolderOfThatSource()
+    {
+        using TemporaryDirectory videos = new();
+        await AudioAsync("Band/Song.mp3");
+        MediaSource second = await AddSourceAsync("Videos", videos.Path);
+        await ScanAsync();
+        await TestMediaGenerator.CreateAudioAsync(videos.Combine("Band/Song.mp3"), AudioFormat.Mp3);
+
+        await using (AsyncServiceScope serviceScope = _services.CreateAsyncScope())
+        {
+            ILibraryScanner scanner = serviceScope.ServiceProvider.GetRequiredService<ILibraryScanner>();
+            (await scanner.RefreshFolderAsync(second.Id, "Band", ["Band/Song.mp3"])).Should().BeTrue();
+        }
+
+        await using WaveMpDbContext db = _database.CreateDbContext();
+        (await db.MediaFiles.Select(file => file.SourceId).ToListAsync())
+            .Should().BeEquivalentTo([MediaSource.DefaultId, second.Id]);
+    }
+
+    [Test]
     public async Task Scan_ReadOnlyAudioAndVideo_AreNotWritable()
     {
         await AudioAsync("Locked.mp3");
@@ -459,7 +603,7 @@ public class LibraryScannerTests
         await AudioAsync("One/new.mp3");
         await AudioAsync("Two/ignored.mp3");
         Directory.Delete(_media.Combine("Three"), recursive: true);
-        ScanResult result = await ScanAsync(ScanScope.Of(["One", "Three"]));
+        ScanResult result = await ScanAsync(ScanScope.Of(MediaSource.DefaultId, ["One", "Three"]));
 
         result.Statistics.IsPartial.Should().BeTrue();
         result.Statistics.FilesAdded.Should().Be(1);
@@ -688,7 +832,7 @@ public class LibraryScannerTests
     {
         await using AsyncServiceScope serviceScope = _services.CreateAsyncScope();
         ILibraryScanner scanner = serviceScope.ServiceProvider.GetRequiredService<ILibraryScanner>();
-        return await scanner.RefreshFolderAsync(folder, changedFiles);
+        return await scanner.RefreshFolderAsync(MediaSource.DefaultId, folder, changedFiles);
     }
 
     /// <summary>
@@ -726,6 +870,43 @@ public class LibraryScannerTests
     private Task ImageAsync(string relativePath, int width, int height)
     {
         return TestMediaGenerator.CreateImageAsync(_media.Combine(relativePath), width, height);
+    }
+
+    /// <summary>
+    /// Adds a source to the database and lets the catalog of <see cref="_services"/> see it.
+    /// </summary>
+    private async Task<MediaSource> AddSourceAsync(string name, string path)
+    {
+        MediaSource source = new()
+        {
+            Id = Guid.CreateVersion7(),
+            Name = name,
+            NormalizedName = name.ToUpperInvariant(),
+            Path = Path.GetFullPath(path),
+            IsActive = true,
+            CreatedAt = DateTimeOffset.UtcNow,
+            UpdatedAt = DateTimeOffset.UtcNow,
+        };
+        await using (WaveMpDbContext db = _database.CreateDbContext())
+        {
+            db.MediaSources.Add(source);
+            await db.SaveChangesAsync();
+        }
+
+        await _services.GetRequiredService<IMediaSourceCatalog>().RefreshAsync();
+        return source;
+    }
+
+    private async Task SetActiveAsync(Guid sourceId, bool isActive)
+    {
+        await using (WaveMpDbContext db = _database.CreateDbContext())
+        {
+            await db.MediaSources
+                .Where(source => source.Id == sourceId)
+                .ExecuteUpdateAsync(setters => setters.SetProperty(source => source.IsActive, isActive));
+        }
+
+        await _services.GetRequiredService<IMediaSourceCatalog>().RefreshAsync();
     }
 
     private static ServiceProvider CreateServices(string mediaPath)

@@ -70,20 +70,21 @@ public class TrackMetadataEditorTests
         _tracks.FindAsync(_trackId, Arg.Any<Guid?>(), Arg.Any<CancellationToken>()).Returns(Row());
         _repository = Substitute.For<ITrackMetadataRepository>();
         _repository.FindEditTargetAsync(_trackId, Arg.Any<CancellationToken>())
-            .Returns(_ => new TrackEditTarget(_trackId, Directory, _audio));
+            .Returns(_ => new TrackEditTarget(_trackId, MediaSource.DefaultId, Directory, _audio));
         _tagWriter = Substitute.For<ITagWriter>();
         _tagWriter.ReadSnapshot(_fullPath).Returns(new TagSnapshotResult(TagReadStatus.Read, _snapshot));
         _tagWriter.Write(_fullPath, MediaFileKind.Audio, Arg.Any<TagChanges>()).Returns(TagWriteStatus.Written);
         _writeAccess = Substitute.For<IFileWriteAccess>();
         _writeAccess.IsWritable(_fullPath).Returns(true);
         _locator = Substitute.For<IMediaFileLocator>();
-        _locator.TryGetFullPath(AudioPath, out Arg.Any<string>()).Returns(call =>
+        _locator.TryGetFullPath(MediaSource.DefaultId, AudioPath, out Arg.Any<string>()).Returns(call =>
         {
-            call[1] = _fullPath;
+            call[2] = _fullPath;
             return true;
         });
         _scanner = Substitute.For<ILibraryScanner>();
         _scanner.RefreshFolderAsync(
+                Arg.Any<Guid>(),
                 Arg.Any<string>(),
                 Arg.Any<IReadOnlyCollection<string>>(),
                 Arg.Any<CancellationToken>())
@@ -141,7 +142,7 @@ public class TrackMetadataEditorTests
     public async Task GetAsync_VideoOnly_IsNoAudioWithTheValuesOfTheLibrary()
     {
         _repository.FindEditTargetAsync(_trackId, Arg.Any<CancellationToken>())
-            .Returns(new TrackEditTarget(_trackId, Directory, null));
+            .Returns(new TrackEditTarget(_trackId, MediaSource.DefaultId, Directory, null));
 
         TrackMetadata? metadata = await _editor.GetAsync(_trackId);
 
@@ -182,7 +183,7 @@ public class TrackMetadataEditorTests
     public async Task UpdateAsync_VideoOnly_FailsWithNoAudioAndWritesNothing()
     {
         _repository.FindEditTargetAsync(_trackId, Arg.Any<CancellationToken>())
-            .Returns(new TrackEditTarget(_trackId, Directory, null));
+            .Returns(new TrackEditTarget(_trackId, MediaSource.DefaultId, Directory, null));
 
         TrackMetadataResult result = await _editor.UpdateAsync(_trackId, TitleChange("New"));
 
@@ -213,7 +214,7 @@ public class TrackMetadataEditorTests
         result.Error.Should().Be(TrackMetadataError.NotWritable);
         await _repository.Received(1).SetWritableAsync(_audio.Id, false, Arg.Any<CancellationToken>());
         _tagWriter.ReceivedCalls().Should().BeEmpty();
-        await _scanner.DidNotReceiveWithAnyArgs().RefreshFolderAsync(default!, default!, default);
+        await _scanner.DidNotReceiveWithAnyArgs().RefreshFolderAsync(default, default!, default!, default);
     }
 
     [Test]
@@ -225,7 +226,7 @@ public class TrackMetadataEditorTests
         result.Metadata!.Title.Should().Be("Tag Title");
         _tagWriter.ReceivedCalls().Should().BeEmpty();
         await _repository.DidNotReceiveWithAnyArgs().AddTagBackupAsync(default!, default);
-        await _scanner.DidNotReceiveWithAnyArgs().RefreshFolderAsync(default!, default!, default);
+        await _scanner.DidNotReceiveWithAnyArgs().RefreshFolderAsync(default, default!, default!, default);
     }
 
     [Test]
@@ -252,6 +253,7 @@ public class TrackMetadataEditorTests
             _repository.AddTagBackupAsync(Arg.Any<TagBackup>(), Arg.Any<CancellationToken>());
             _tagWriter.Write(_fullPath, MediaFileKind.Audio, Arg.Any<TagChanges>());
             _scanner.RefreshFolderAsync(
+                MediaSource.DefaultId,
                 Directory,
                 Arg.Is<IReadOnlyCollection<string>>(files => files.SequenceEqual(new[] { AudioPath })),
                 CancellationToken.None);
@@ -294,7 +296,7 @@ public class TrackMetadataEditorTests
         result.Error.Should().Be(TrackMetadataError.NotWritable);
         await _repository.Received(1).AddTagBackupAsync(Arg.Any<TagBackup>(), Arg.Any<CancellationToken>());
         await _repository.Received(1).SetWritableAsync(_audio.Id, false, Arg.Any<CancellationToken>());
-        await _scanner.DidNotReceiveWithAnyArgs().RefreshFolderAsync(default!, default!, default);
+        await _scanner.DidNotReceiveWithAnyArgs().RefreshFolderAsync(default, default!, default!, default);
     }
 
     [Test]
@@ -393,6 +395,7 @@ public class TrackMetadataEditorTests
 
         result.IsSuccess.Should().BeTrue();
         await _scanner.Received(1).RefreshFolderAsync(
+            MediaSource.DefaultId,
             Directory,
             Arg.Any<IReadOnlyCollection<string>>(),
             CancellationToken.None);

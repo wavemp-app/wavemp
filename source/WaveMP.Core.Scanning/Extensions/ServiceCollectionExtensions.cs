@@ -7,6 +7,7 @@ using WaveMP.Core.Scanning.Jobs;
 using WaveMP.Core.Scanning.Options;
 using WaveMP.Core.Scanning.Scans;
 using WaveMP.Core.Scanning.Selections;
+using WaveMP.Core.Scanning.Sources;
 using WaveMP.Core.Scanning.Watchers;
 using WaveMP.Core.Scanning.Writers;
 using WaveMP.Core.Settings.Groups;
@@ -34,6 +35,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IScanService, ScanService>();
         services.AddScoped<ITrackMetadataEditor, TrackMetadataEditor>();
         services.AddScoped<IFileSelectionService, FileSelectionService>();
+        services.AddScoped<IMediaSourceService, MediaSourceService>();
 
         services.AddWaveMpJob<LibraryScanJob>(JobIds.LibraryScan);
         services.AddSingleton<IJobScheduleProvider, LibraryScanScheduleProvider>();

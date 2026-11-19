@@ -14,6 +14,7 @@ namespace WaveMP.Core.Library.Artists;
 /// <param name="UserId">The profile whose favorites the artists carry and to whom <paramref name="MyMusic"/> refers.
 /// </param>
 /// <param name="MyMusic">Only artists with tracks of the "my music" of the profile; ignored without a profile.</param>
+/// <param name="SourceId">Only artists with tracks of this media source.</param>
 public sealed record ArtistListRequest(
     int Offset,
     int Limit,
@@ -21,4 +22,5 @@ public sealed record ArtistListRequest(
     SortDirection? Direction = null,
     string? Search = null,
     Guid? UserId = null,
-    bool MyMusic = false);
+    bool MyMusic = false,
+    Guid? SourceId = null);

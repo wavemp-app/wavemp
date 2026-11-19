@@ -13,8 +13,8 @@ using WaveMP.Data.Entities;
 namespace WaveMP.Core.Scanning.Jobs;
 
 /// <summary>
-/// The library scan as background job: scans the whole media folder, or the folders named in the payload (a JSON
-/// list of relative paths, sent by the file watcher). Never runs in parallel to itself; every run is built in a
+/// The library scan as background job: scans all active media sources, or the folders named in the payload (a JSON
+/// list of folders of sources, sent by the file watcher and after the admin added or changed a source). Never runs in parallel to itself; every run is built in a
 /// dependency injection scope of its own. The result becomes part of the run history. After a full scan, and after a
 /// partial scan that changed files, it starts the job <see cref="JobIds.CoverCache"/>, which prepares the covers of
 /// the changed library, and, if the download of lyrics is switched on, the job <see cref="JobIds.LyricsDownload"/>,
@@ -28,6 +28,8 @@ public sealed class LibraryScanJob(
     ISettingsSnapshot<LibrarySettings> settings,
     ILogger<LibraryScanJob> logger) : IJob
 {
+    private static readonly JsonSerializerOptions _payloadOptions = new(JsonSerializerDefaults.Web);
+
     public async ValueTask Execute(IJobExecutionContext context, CancellationToken cancellationToken)
     {
         Guid runId = tracker.FindRunId(context.FireInstanceId) ?? Guid.CreateVersion7();
@@ -46,7 +48,7 @@ public sealed class LibraryScanJob(
     }
 
     /// <summary>
-    /// The folders of the payload, or the whole media folder.
+    /// The folders of the payload, or all active sources.
     /// </summary>
     internal static ScanScope ReadScope(JobDataMap data)
     {
@@ -57,8 +59,10 @@ public sealed class LibraryScanJob(
 
         try
         {
-            string[]? directories = JsonSerializer.Deserialize<string[]>(json);
-            return directories is { Length: > 0 } ? ScanScope.Of(directories) : ScanScope.Full;
+            SourceFolder[]? folders = JsonSerializer.Deserialize<SourceFolder[]>(json, _payloadOptions);
+            return folders is { Length: > 0 } && folders.All(folder => folder is { Path: not null })
+                ? ScanScope.Of(folders)
+                : ScanScope.Full;
         }
         catch (JsonException)
         {
@@ -71,7 +75,7 @@ public sealed class LibraryScanJob(
     /// </summary>
     public static string CreatePayload(ScanScope scope)
     {
-        return JsonSerializer.Serialize(scope.Directories);
+        return JsonSerializer.Serialize(scope.Folders, _payloadOptions);
     }
 
     /// <summary>

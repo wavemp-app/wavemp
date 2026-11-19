@@ -91,7 +91,11 @@ internal sealed class TrackMetadataEditor(
         if (!normalized.IsEmpty)
         {
             // The file is written: the library follows it even if the client is gone by now.
-            await scanner.RefreshFolderAsync(target.DirectoryPath, [audio.RelativePath], CancellationToken.None);
+            await scanner.RefreshFolderAsync(
+                target.SourceId,
+                target.DirectoryPath,
+                [audio.RelativePath],
+                CancellationToken.None);
             await TakeOverSpellingAsync(normalized.Artist);
             await TakeOverSpellingAsync(normalized.AlbumArtist);
         }
@@ -160,7 +164,7 @@ internal sealed class TrackMetadataEditor(
         }
 
         if (audio.Issue is MediaFileIssue.TagsUnreadable or MediaFileIssue.Unreadable
-            || !locator.TryGetFullPath(audio.RelativePath, out string fullPath)
+            || !locator.TryGetFullPath(audio.SourceId, audio.RelativePath, out string fullPath)
             || !File.Exists(fullPath))
         {
             return (TrackMetadataStatus.NotWritable, null);

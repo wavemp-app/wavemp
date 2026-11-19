@@ -27,10 +27,10 @@ public class CoverSourceReaderTests
         _media = new TemporaryDirectory();
         _pictures = Substitute.For<IEmbeddedPictureReader>();
         IMediaFileLocator locator = Substitute.For<IMediaFileLocator>();
-        locator.TryGetFullPath(Arg.Any<string>(), out _).Returns(call =>
+        locator.TryGetFullPath(MediaSource.DefaultId, Arg.Any<string>(), out _).Returns(call =>
         {
-            string relative = call.ArgAt<string>(0);
-            call[1] = _media.Combine(relative);
+            string relative = call.ArgAt<string>(1);
+            call[2] = _media.Combine(relative);
             return !relative.StartsWith("..", StringComparison.Ordinal);
         });
         _reader = new CoverSourceReader(locator, _pictures, NullLogger<CoverSourceReader>.Instance);
@@ -109,6 +109,7 @@ public class CoverSourceReaderTests
             null,
             true,
             CoverSource.File,
+            MediaSource.DefaultId,
             relativePath,
             "image/jpeg",
             100,

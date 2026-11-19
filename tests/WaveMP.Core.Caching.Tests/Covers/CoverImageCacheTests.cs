@@ -308,6 +308,7 @@ public class CoverImageCacheTests
             null,
             true,
             CoverSource.File,
+            MediaSource.DefaultId,
             "Album/cover.png",
             "image/png",
             _png.Length,

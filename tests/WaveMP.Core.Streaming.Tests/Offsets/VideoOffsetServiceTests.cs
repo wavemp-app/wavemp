@@ -130,6 +130,7 @@ public class VideoOffsetServiceTests
             ? new MediaFile
             {
                 Id = Guid.NewGuid(),
+                SourceId = MediaSource.DefaultId,
                 RelativePath = "Song.mkv",
                 DirectoryPath = string.Empty,
                 FileName = "Song.mkv",

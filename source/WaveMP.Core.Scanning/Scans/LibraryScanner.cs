@@ -2,9 +2,9 @@ using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using WaveMP.Core.Jobs.Runs;
-using WaveMP.Core.Metadata.Options;
 using WaveMP.Core.Metadata.Probes;
 using WaveMP.Core.Metadata.Readers;
+using WaveMP.Core.Metadata.Sources;
 using WaveMP.Core.Scanning.Discoveries;
 using WaveMP.Core.Scanning.Options;
 using WaveMP.Core.Scanning.Plans;
@@ -17,12 +17,13 @@ using WaveMP.Data.Repositories;
 namespace WaveMP.Core.Scanning.Scans;
 
 /// <summary>
-/// Scans the media folder: checks the folder and ffprobe, walks the folders of the scope, compares them with the
-/// library, reads new and changed files in parallel, writes every changed folder at once, removes folders that are
-/// gone and finally updates album covers, removes artists and albums without tracks and counts the library.
-/// A full scan that finds no files at all while the library has files fails and changes nothing, so an unmounted
-/// media folder never empties the library. Reading and writing a folder and the clean-up hold the
-/// <see cref="LibraryWriteLock"/>, so other writers wait at most for one folder.
+/// Scans the media sources: checks ffprobe and the folder of every source of the scope, walks the folders of the
+/// scope, compares them with the library, reads new and changed files in parallel, writes every changed folder at once,
+/// removes folders that are gone and finally updates album covers, removes artists and albums without tracks and counts
+/// the library. A source whose folder is missing or unreadable, or whose full scan finds no files at all while the
+/// library has files of it, is skipped with an issue and its library stays unchanged, so an unmounted folder never
+/// empties the library; if every source of the scan is skipped, the scan fails. Reading and writing a folder and the
+/// clean-up hold the <see cref="LibraryWriteLock"/>, so other writers wait at most for one folder.
 /// </summary>
 internal sealed class LibraryScanner(
     ILibraryScanRepository library,
@@ -32,7 +33,7 @@ internal sealed class LibraryScanner(
     IMediaProber prober,
     ISettingsSnapshot<LibrarySettings> settings,
     IScanProgressTracker progress,
-    IOptions<MediaLibraryOptions> mediaLibrary,
+    IMediaSourceCatalog sources,
     IOptions<ScanOptions> options,
     TimeProvider timeProvider,
     ILogger<LibraryScanner> logger) : ILibraryScanner
@@ -54,20 +55,27 @@ internal sealed class LibraryScanner(
     }
 
     public async Task<bool> RefreshFolderAsync(
+        Guid sourceId,
         string directoryPath,
         IReadOnlyCollection<string> changedFiles,
         CancellationToken cancellationToken = default)
     {
         string directory = ScanScope.Normalize(directoryPath);
-        string root = mediaLibrary.Value.RootPath;
         ScanOptions scanOptions = options.Value;
         LibrarySettings librarySettings = settings.Current;
+        if (sources.Find(sourceId) is not { } source)
+        {
+            logger.LogWarning("The media source {SourceId} does not exist; nothing was read again", sourceId);
+            return false;
+        }
+
         IssueCollector issues = new(scanOptions.MaxIssuesPerScan);
+        string root = source.RootPath;
 
         using IDisposable _ = await writeLock.AcquireAsync(cancellationToken);
         if (!Directory.Exists(root))
         {
-            logger.LogWarning("The media folder {MediaFolder} does not exist; nothing was read again", root);
+            logger.LogWarning("The folder {Folder} of the media source does not exist; nothing was read again", root);
             return false;
         }
 
@@ -76,7 +84,7 @@ internal sealed class LibraryScanner(
             directory,
             new MediaKindClassifier(librarySettings),
             scanOptions.MaxPathBytes,
-            path => issues.Add(path, ScanIssueCode.PathTooLong),
+            path => issues.Add(source, path, ScanIssueCode.PathTooLong),
             cancellationToken);
         if (discovered is null)
         {
@@ -84,7 +92,10 @@ internal sealed class LibraryScanner(
             return false;
         }
 
-        IReadOnlyList<MediaFileSnapshot> stored = await library.GetFolderSnapshotsAsync(directory, cancellationToken);
+        IReadOnlyList<MediaFileSnapshot> stored = await library.GetFolderSnapshotsAsync(
+            sourceId,
+            directory,
+            cancellationToken);
         ScanPlan plan = ScanPlanner.Plan(
             [discovered],
             stored,
@@ -96,13 +107,14 @@ internal sealed class LibraryScanner(
         }
 
         IReadOnlyDictionary<string, MediaFileMetadata> read = await ReadAsync(
-            root,
+            source,
             changed.FilesToRead,
             scanOptions.MetadataParallelism,
             issues,
             null,
             cancellationToken);
         FolderWriteResult written = await writer.WriteFolderAsync(
+            sourceId,
             changed,
             read,
             timeProvider.GetUtcNow(),
@@ -116,9 +128,10 @@ internal sealed class LibraryScanner(
         }
 
         logger.LogInformation(
-            "Folder {Folder} read again: {FilesRead} files read, {FilesRemoved} removed; {TracksAdded} tracks added, "
-            + "{TracksUpdated} updated, {TracksRemoved} removed",
+            "Folder {Folder} of the media source {Source} read again: {FilesRead} files read, {FilesRemoved} removed; "
+            + "{TracksAdded} tracks added, {TracksUpdated} updated, {TracksRemoved} removed",
             directory,
+            source.Name,
             changed.FilesToRead.Count,
             changed.Removed,
             written.TracksAdded,
@@ -129,97 +142,150 @@ internal sealed class LibraryScanner(
 
     private async Task<ScanResult> RunAsync(ScanScope scope, CancellationToken cancellationToken)
     {
-        string root = mediaLibrary.Value.RootPath;
         ScanOptions scanOptions = options.Value;
         LibrarySettings librarySettings = settings.Current;
         IssueCollector issues = new(scanOptions.MaxIssuesPerScan);
+
+        MediaSourceInfo[] targets = [.. sources.Sources
+            .Where(source => source.IsActive && scope.DirectoriesOf(source.Id) is not null)];
+        if (scope.IsFull && targets.Length == 0)
+        {
+            throw new JobFailedException(JobErrorCode.NoMediaSources, "There is no active media source to scan.");
+        }
 
         if (!await prober.IsAvailableAsync(cancellationToken))
         {
             throw new JobFailedException(JobErrorCode.ProbeUnavailable, "ffprobe cannot be started.");
         }
 
-        CheckMediaFolder(root);
-        logger.LogInformation(
-            "Scanning {Scope} of the media folder {MediaFolder}",
-            scope.IsFull ? "all folders" : string.Join(", ", scope.Directories),
-            root);
-
         MediaKindClassifier classifier = new(librarySettings);
-        List<DiscoveredDirectory> discovered = [];
-        foreach (string directory in scope.Directories)
+        List<(MediaSourceInfo Source, ScanPlan Plan)> plans = [];
+        List<JobFailedException> failures = [];
+        int directoriesFound = 0;
+        int filesFound = 0;
+        foreach (MediaSourceInfo source in targets)
         {
-            discovered.AddRange(MediaFolderWalker.Walk(
-                root,
-                directory,
-                classifier,
-                scanOptions.MaxPathBytes,
-                path => issues.Add(path, ScanIssueCode.PathTooLong),
-                cancellationToken));
-            progress.Discovered(discovered.Count, discovered.Sum(item => item.Files.Count));
+            IReadOnlyList<string> directories = scope.DirectoriesOf(source.Id)!;
+            bool isWholeSource = directories is [{ Length: 0 }];
+            try
+            {
+                CheckSourceFolder(source);
+            }
+            catch (JobFailedException exception)
+            {
+                failures.Add(exception);
+                issues.Add(source, string.Empty, IssueOf(exception.Code));
+                logger.LogWarning("The media source {Source} is skipped: {Reason}", source.Name, exception.Message);
+                continue;
+            }
+
+            logger.LogInformation(
+                "Scanning {Scope} of the media source {Source} in {Folder}",
+                isWholeSource ? "all folders" : string.Join(", ", directories),
+                source.Name,
+                source.RootPath);
+
+            List<DiscoveredDirectory> discovered = [];
+            foreach (string directory in directories)
+            {
+                discovered.AddRange(MediaFolderWalker.Walk(
+                    source.RootPath,
+                    directory,
+                    classifier,
+                    scanOptions.MaxPathBytes,
+                    path => issues.Add(source, path, ScanIssueCode.PathTooLong),
+                    cancellationToken));
+                progress.Discovered(
+                    directoriesFound + discovered.Count,
+                    filesFound + discovered.Sum(item => item.Files.Count));
+            }
+
+            IReadOnlyList<MediaFileSnapshot> stored = await library.GetFileSnapshotsAsync(
+                source.Id,
+                isWholeSource ? null : directories,
+                cancellationToken);
+            ScanPlan plan = ScanPlanner.Plan(discovered, stored, ScannerVersions.MetadataOf);
+            if (isWholeSource && plan.FilesFound == 0 && stored.Count > 0)
+            {
+                JobFailedException empty = new(
+                    JobErrorCode.MediaFolderEmpty,
+                    $"The folder {source.RootPath} of the media source {source.Name} has no media files, but the "
+                    + $"library has {stored.Count}. Nothing was removed; check that the folder is mounted.");
+                failures.Add(empty);
+                issues.Add(source, string.Empty, ScanIssueCode.SourceEmpty);
+                logger.LogWarning("The media source {Source} is skipped: {Reason}", source.Name, empty.Message);
+                continue;
+            }
+
+            directoriesFound += plan.DirectoriesFound;
+            filesFound += plan.FilesFound;
+            plans.Add((source, plan));
         }
 
-        IReadOnlyList<MediaFileSnapshot> stored = await library.GetFileSnapshotsAsync(
-            scope.IsFull ? null : scope.Directories,
-            cancellationToken);
-        ScanPlan plan = ScanPlanner.Plan(discovered, stored, ScannerVersions.MetadataOf);
-        if (scope.IsFull && plan.FilesFound == 0 && stored.Count > 0)
+        // A scan that could scan none of its sources fails with the reason of the first one.
+        if (failures.Count > 0 && plans.Count == 0)
         {
-            throw new JobFailedException(
-                JobErrorCode.MediaFolderEmpty,
-                $"The media folder {root} has no media files, but the library has {stored.Count}. Nothing was "
-                + "removed; check that the media folder is mounted.");
+            throw failures[0];
         }
 
         progress.Planned(
-            plan.ChangedDirectories.Count,
-            plan.ChangedDirectories.Sum(directory => directory.FilesToRead.Count));
+            plans.Sum(item => item.Plan.ChangedDirectories.Count),
+            plans.Sum(item => item.Plan.ChangedDirectories.Sum(directory => directory.FilesToRead.Count)));
 
         int tracksAdded = 0;
         int tracksUpdated = 0;
         int tracksRemoved = 0;
-        foreach (DirectoryPlan directory in plan.ChangedDirectories)
+        foreach ((MediaSourceInfo source, ScanPlan plan) in plans)
         {
-            FolderWriteResult written;
-            using (await writeLock.AcquireAsync(cancellationToken))
+            foreach (DirectoryPlan directory in plan.ChangedDirectories)
             {
-                IReadOnlyDictionary<string, MediaFileMetadata> read;
-                try
+                FolderWriteResult written;
+                using (await writeLock.AcquireAsync(cancellationToken))
                 {
-                    read = await ReadAsync(
-                        root,
-                        directory.FilesToRead,
-                        scanOptions.MetadataParallelism,
-                        issues,
-                        progress,
+                    IReadOnlyDictionary<string, MediaFileMetadata> read;
+                    try
+                    {
+                        read = await ReadAsync(
+                            source,
+                            directory.FilesToRead,
+                            scanOptions.MetadataParallelism,
+                            issues,
+                            progress,
+                            cancellationToken);
+                    }
+                    catch (ProbeUnavailableException exception)
+                    {
+                        throw new JobFailedException(JobErrorCode.ProbeUnavailable, exception.Message, exception);
+                    }
+
+                    written = await writer.WriteFolderAsync(
+                        source.Id,
+                        directory,
+                        read,
+                        timeProvider.GetUtcNow(),
                         cancellationToken);
                 }
-                catch (ProbeUnavailableException exception)
-                {
-                    throw new JobFailedException(JobErrorCode.ProbeUnavailable, exception.Message, exception);
-                }
 
-                written = await writer.WriteFolderAsync(
-                    directory,
-                    read,
-                    timeProvider.GetUtcNow(),
-                    cancellationToken);
+                tracksAdded += written.TracksAdded;
+                tracksUpdated += written.TracksUpdated;
+                tracksRemoved += written.TracksRemoved;
+                progress.DirectoryProcessed();
             }
-
-            tracksAdded += written.TracksAdded;
-            tracksUpdated += written.TracksUpdated;
-            tracksRemoved += written.TracksRemoved;
-            progress.DirectoryProcessed();
         }
 
         progress.CleaningUp();
-        bool changed = plan.ChangedDirectories.Count > 0 || plan.DeletedDirectories.Count > 0;
+        bool changed = plans.Any(item =>
+            item.Plan.ChangedDirectories.Count > 0 || item.Plan.DeletedDirectories.Count > 0);
         using (await writeLock.AcquireAsync(cancellationToken))
         {
-            (int _, int deletedTracks) = await library.DeleteDirectoriesAsync(
-                plan.DeletedDirectories,
-                cancellationToken);
-            tracksRemoved += deletedTracks;
+            foreach ((MediaSourceInfo source, ScanPlan plan) in plans)
+            {
+                (int _, int deletedTracks) = await library.DeleteDirectoriesAsync(
+                    source.Id,
+                    plan.DeletedDirectories,
+                    cancellationToken);
+                tracksRemoved += deletedTracks;
+            }
 
             if (changed)
             {
@@ -234,15 +300,17 @@ internal sealed class LibraryScanner(
         }
 
         LibraryTotals totals = await library.CountLibraryAsync(cancellationToken);
+        ScanPlan[] all = [.. plans.Select(item => item.Plan)];
         ScanStatistics statistics = new()
         {
-            DirectoriesScanned = plan.DirectoriesFound,
-            DirectoriesChanged = plan.ChangedDirectories.Count + plan.DeletedDirectories.Count,
-            FilesFound = plan.FilesFound,
-            FilesAdded = plan.ChangedDirectories.Sum(directory => directory.Added),
-            FilesUpdated = plan.ChangedDirectories.Sum(directory => directory.Updated),
-            FilesRemoved = plan.ChangedDirectories.Sum(directory => directory.Removed) + plan.FilesInDeletedDirectories,
-            FilesUnchanged = plan.FilesUnchanged,
+            DirectoriesScanned = all.Sum(plan => plan.DirectoriesFound),
+            DirectoriesChanged = all.Sum(plan => plan.ChangedDirectories.Count + plan.DeletedDirectories.Count),
+            FilesFound = all.Sum(plan => plan.FilesFound),
+            FilesAdded = all.Sum(plan => plan.ChangedDirectories.Sum(directory => directory.Added)),
+            FilesUpdated = all.Sum(plan => plan.ChangedDirectories.Sum(directory => directory.Updated)),
+            FilesRemoved = all.Sum(plan =>
+                plan.ChangedDirectories.Sum(directory => directory.Removed) + plan.FilesInDeletedDirectories),
+            FilesUnchanged = all.Sum(plan => plan.FilesUnchanged),
             FilesFailed = issues.Count,
             TracksAdded = tracksAdded,
             TracksUpdated = tracksUpdated,
@@ -265,13 +333,14 @@ internal sealed class LibraryScanner(
         return new ScanResult(statistics, issues.Listed);
     }
 
-    private static void CheckMediaFolder(string root)
+    private static void CheckSourceFolder(MediaSourceInfo source)
     {
+        string root = source.RootPath;
         if (!Directory.Exists(root))
         {
             throw new JobFailedException(
                 JobErrorCode.MediaFolderNotFound,
-                $"The media folder {root} does not exist.");
+                $"The folder {root} of the media source {source.Name} does not exist.");
         }
 
         try
@@ -283,18 +352,25 @@ internal sealed class LibraryScanner(
         {
             throw new JobFailedException(
                 JobErrorCode.MediaFolderUnreadable,
-                $"The media folder {root} cannot be read.",
+                $"The folder {root} of the media source {source.Name} cannot be read.",
                 exception);
         }
     }
 
+    private static ScanIssueCode IssueOf(JobErrorCode code)
+    {
+        return code == JobErrorCode.MediaFolderUnreadable
+            ? ScanIssueCode.SourceUnreadable
+            : ScanIssueCode.SourceNotFound;
+    }
+
     /// <summary>
-    /// Reads the files in parallel. Problems of files are collected; <paramref name="progressTracker"/> (the progress
-    /// of a scan run) learns about every file read.
+    /// Reads the files of a source in parallel. Problems of files are collected; <paramref name="progressTracker"/>
+    /// (the progress of a scan run) learns about every file read.
     /// </summary>
     /// <exception cref="ProbeUnavailableException">ffprobe cannot be started.</exception>
     private async Task<IReadOnlyDictionary<string, MediaFileMetadata>> ReadAsync(
-        string root,
+        MediaSourceInfo source,
         IReadOnlyList<DiscoveredFile> files,
         int parallelism,
         IssueCollector issues,
@@ -310,11 +386,11 @@ internal sealed class LibraryScanner(
 
         await Parallel.ForEachAsync(files, parallelOptions, async (file, token) =>
         {
-            string path = Path.Combine(root, MediaFolderWalker.ToSystemPath(file.RelativePath));
+            string path = Path.Combine(source.RootPath, MediaFolderWalker.ToSystemPath(file.RelativePath));
             MediaFileMetadata metadata = await reader.ReadAsync(path, file.Kind, token);
             if (metadata.Issue is { } issue)
             {
-                issues.Add(file.RelativePath, issue switch
+                issues.Add(source, file.RelativePath, issue switch
                 {
                     MediaFileIssue.TagsUnreadable => ScanIssueCode.TagsUnreadable,
                     MediaFileIssue.ProbeFailed => ScanIssueCode.ProbeFailed,
@@ -345,19 +421,21 @@ internal sealed class LibraryScanner(
             {
                 lock (_lock)
                 {
-                    return [.. _listed.OrderBy(issue => issue.Path, StringComparer.Ordinal)];
+                    return [.. _listed
+                        .OrderBy(issue => issue.SourceName, StringComparer.Ordinal)
+                        .ThenBy(issue => issue.Path, StringComparer.Ordinal)];
                 }
             }
         }
 
-        public void Add(string path, ScanIssueCode code)
+        public void Add(MediaSourceInfo source, string path, ScanIssueCode code)
         {
             lock (_lock)
             {
                 Count++;
                 if (_listed.Count < maxListed)
                 {
-                    _listed.Add(new ScanIssue(path, code));
+                    _listed.Add(new ScanIssue(path, code, source.Id, source.Name));
                 }
             }
         }

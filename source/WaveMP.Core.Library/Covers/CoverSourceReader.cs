@@ -17,7 +17,7 @@ internal sealed class CoverSourceReader(
         CoverCandidateRow candidate,
         CancellationToken cancellationToken = default)
     {
-        if (!locator.TryGetFullPath(candidate.RelativePath, out string path))
+        if (!locator.TryGetFullPath(candidate.SourceId, candidate.RelativePath, out string path))
         {
             logger.LogDebug("Skipping the cover {CoverId}: its path leaves the media folder", candidate.CoverId);
             return null;

@@ -5,7 +5,7 @@ using Microsoft.Extensions.Options;
 using WaveMP.Core.Jobs.Definitions;
 using WaveMP.Core.Jobs.Runs;
 using WaveMP.Core.Jobs.Services;
-using WaveMP.Core.Metadata.Options;
+using WaveMP.Core.Metadata.Sources;
 using WaveMP.Core.Scanning.Discoveries;
 using WaveMP.Core.Scanning.Jobs;
 using WaveMP.Core.Scanning.Options;
@@ -18,12 +18,14 @@ using WaveMP.Data.Entities;
 namespace WaveMP.Core.Scanning.Watchers;
 
 /// <summary>
-/// Watches the media folder for new, changed and deleted media files and scans the changed folders shortly after
-/// (debounced). File system events are unreliable on network shares, so the periodic scan always stays active. While
-/// a scan runs, the changes are kept and scanned afterwards. Switched on and off by the library settings.
+/// Watches the folders of the active media sources for new, changed and deleted media files and scans the changed
+/// folders shortly after (debounced). File system events are unreliable on network shares, so the periodic scan always
+/// stays active. While a scan runs, the changes are kept and scanned afterwards. Switched on and off by the library
+/// settings; follows the changes of the sources. Also scans sources the admin added or changed once no scan runs
+/// (<see cref="QueueSource"/>), whether the watcher is on or not.
 /// </summary>
 public sealed class MediaFolderWatcher(
-    IOptions<MediaLibraryOptions> mediaLibrary,
+    IMediaSourceCatalog sources,
     IOptions<ScanOptions> options,
     ISettingsSnapshot<LibrarySettings> settings,
     IServiceScopeFactory scopeFactory,
@@ -34,11 +36,12 @@ public sealed class MediaFolderWatcher(
     private readonly Lock _lock = new();
     private readonly MediaChangeBatch _batch = new();
     private readonly CancellationTokenSource _stopping = new();
-    private FileSystemWatcher? _watcher;
+    private readonly Dictionary<Guid, FileSystemWatcher> _watchers = [];
+    private bool _enabled;
     private Task? _loop;
 
     /// <summary>
-    /// Whether the watcher is watching the media folder.
+    /// Whether the watcher watches the folder of at least one source.
     /// </summary>
     public bool IsWatching
     {
@@ -46,13 +49,25 @@ public sealed class MediaFolderWatcher(
         {
             lock (_lock)
             {
-                return _watcher is not null;
+                return _watchers.Count > 0;
             }
+        }
+    }
+
+    /// <summary>
+    /// Whether the watcher watches the folder of the source.
+    /// </summary>
+    public bool IsWatchingSource(Guid sourceId)
+    {
+        lock (_lock)
+        {
+            return _watchers.ContainsKey(sourceId);
         }
     }
 
     public Task StartAsync(CancellationToken cancellationToken)
     {
+        sources.Changed += OnSourcesChanged;
         if (settings.Current.FileWatcherEnabled)
         {
             Enable();
@@ -64,6 +79,7 @@ public sealed class MediaFolderWatcher(
 
     public async Task StopAsync(CancellationToken cancellationToken)
     {
+        sources.Changed -= OnSourcesChanged;
         Disable();
         await _stopping.CancelAsync();
         if (_loop is not null)
@@ -77,16 +93,27 @@ public sealed class MediaFolderWatcher(
         LibrarySettings current,
         CancellationToken cancellationToken)
     {
-        if (current.FileWatcherEnabled && !IsWatching)
+        if (current.FileWatcherEnabled && !_enabled)
         {
             Enable();
         }
-        else if (!current.FileWatcherEnabled && IsWatching)
+        else if (!current.FileWatcherEnabled && _enabled)
         {
             Disable();
         }
 
         return ValueTask.CompletedTask;
+    }
+
+    /// <summary>
+    /// Scans a whole source as soon as no scan runs, e.g. after the admin added it and a scan was already running.
+    /// </summary>
+    public void QueueSource(Guid sourceId)
+    {
+        lock (_lock)
+        {
+            _batch.RequestSource(sourceId, timeProvider.GetUtcNow());
+        }
     }
 
     /// <summary>
@@ -97,17 +124,73 @@ public sealed class MediaFolderWatcher(
     /// </summary>
     public void Dispose()
     {
+        sources.Changed -= OnSourcesChanged;
         Disable();
         _stopping.Cancel();
     }
 
+    private void OnSourcesChanged(object? sender, EventArgs e)
+    {
+        lock (_lock)
+        {
+            if (!_enabled)
+            {
+                return;
+            }
+        }
+
+        // Watches the active sources again: new and changed folders, none of deactivated or removed sources.
+        Enable();
+    }
+
     private void Enable()
     {
-        string root = mediaLibrary.Value.RootPath;
+        IReadOnlyList<MediaSourceInfo> active;
+        try
+        {
+            active = [.. sources.Sources.Where(source => source.IsActive)];
+        }
+        catch (Exception exception)
+        {
+            // E.g. without a database while the OpenAPI document is generated at build time.
+            logger.LogWarning(
+                "The media sources cannot be loaded, the file watcher is off: {Reason}",
+                exception.Message);
+            return;
+        }
+
+        List<(Guid Id, FileSystemWatcher Watcher)> created = [];
+        foreach (MediaSourceInfo source in active)
+        {
+            if (Watch(source) is { } watcher)
+            {
+                created.Add((source.Id, watcher));
+            }
+        }
+
+        lock (_lock)
+        {
+            DisposeWatchers();
+            foreach ((Guid id, FileSystemWatcher watcher) in created)
+            {
+                _watchers[id] = watcher;
+            }
+
+            _enabled = true;
+            _batch.Keep(active.Select(source => source.Id).ToHashSet());
+        }
+    }
+
+    private FileSystemWatcher? Watch(MediaSourceInfo source)
+    {
+        string root = source.RootPath;
         if (!Directory.Exists(root))
         {
-            logger.LogWarning("The media folder {MediaFolder} does not exist; the file watcher is off", root);
-            return;
+            logger.LogWarning(
+                "The folder {Folder} of the media source {Source} does not exist; it is not watched",
+                root,
+                source.Name);
+            return null;
         }
 
         try
@@ -121,24 +204,21 @@ public sealed class MediaFolderWatcher(
                     | NotifyFilters.Size,
                 InternalBufferSize = 64 * 1024,
             };
-            watcher.Created += (_, change) => OnChanged(change.FullPath, change.ChangeType);
-            watcher.Changed += (_, change) => OnChanged(change.FullPath, change.ChangeType);
-            watcher.Deleted += (_, change) => OnChanged(change.FullPath, change.ChangeType);
+            watcher.Created += (_, change) => OnChanged(source, change.FullPath, change.ChangeType);
+            watcher.Changed += (_, change) => OnChanged(source, change.FullPath, change.ChangeType);
+            watcher.Deleted += (_, change) => OnChanged(source, change.FullPath, change.ChangeType);
             watcher.Renamed += (_, change) =>
             {
-                OnChanged(change.OldFullPath, WatcherChangeTypes.Deleted);
-                OnChanged(change.FullPath, WatcherChangeTypes.Created);
+                OnChanged(source, change.OldFullPath, WatcherChangeTypes.Deleted);
+                OnChanged(source, change.FullPath, WatcherChangeTypes.Created);
             };
-            watcher.Error += (_, error) => OnError(error.GetException());
+            watcher.Error += (_, error) => OnError(source, error.GetException());
             watcher.EnableRaisingEvents = true;
-
-            lock (_lock)
-            {
-                _watcher?.Dispose();
-                _watcher = watcher;
-            }
-
-            logger.LogInformation("Watching the media folder {MediaFolder} for changes", root);
+            logger.LogInformation(
+                "Watching the folder {Folder} of the media source {Source} for changes",
+                root,
+                source.Name);
+            return watcher;
         }
         catch (Exception exception) when (exception is IOException
             or ArgumentException
@@ -146,7 +226,12 @@ public sealed class MediaFolderWatcher(
             or PlatformNotSupportedException)
         {
             // E.g. the inotify limits of Linux; the periodic scan still finds the changes.
-            logger.LogWarning(exception, "The file watcher cannot watch {MediaFolder}; it is off", root);
+            logger.LogWarning(
+                exception,
+                "The file watcher cannot watch {Folder} of the media source {Source}; it is not watched",
+                root,
+                source.Name);
+            return null;
         }
     }
 
@@ -154,16 +239,25 @@ public sealed class MediaFolderWatcher(
     {
         lock (_lock)
         {
-            _watcher?.Dispose();
-            _watcher = null;
+            DisposeWatchers();
+            _enabled = false;
             _batch.Clear();
         }
     }
 
-    private void OnChanged(string fullPath, WatcherChangeTypes change)
+    private void DisposeWatchers()
     {
-        string root = mediaLibrary.Value.RootPath;
-        string relative = ScanScope.Normalize(Path.GetRelativePath(root, fullPath));
+        foreach (FileSystemWatcher watcher in _watchers.Values)
+        {
+            watcher.Dispose();
+        }
+
+        _watchers.Clear();
+    }
+
+    private void OnChanged(MediaSourceInfo source, string fullPath, WatcherChangeTypes change)
+    {
+        string relative = ScanScope.Normalize(Path.GetRelativePath(source.RootPath, fullPath));
         if (relative.StartsWith("..", StringComparison.Ordinal) || IgnoredNames.IsIgnoredPath(relative))
         {
             return;
@@ -182,21 +276,24 @@ public sealed class MediaFolderWatcher(
         int slash = relative.LastIndexOf('/');
         lock (_lock)
         {
-            if (_watcher is not null)
+            if (_watchers.ContainsKey(source.Id))
             {
-                _batch.Add(slash < 0 ? string.Empty : relative[..slash], timeProvider.GetUtcNow());
+                _batch.Add(source.Id, slash < 0 ? string.Empty : relative[..slash], timeProvider.GetUtcNow());
             }
         }
     }
 
-    private void OnError(Exception exception)
+    private void OnError(MediaSourceInfo source, Exception exception)
     {
-        logger.LogWarning(exception, "The file watcher missed changes; the whole media folder is scanned");
+        logger.LogWarning(
+            exception,
+            "The file watcher missed changes; the whole media source {Source} is scanned",
+            source.Name);
         lock (_lock)
         {
-            if (_watcher is not null)
+            if (_watchers.ContainsKey(source.Id))
             {
-                _batch.RequestFull(timeProvider.GetUtcNow());
+                _batch.RequestSource(source.Id, timeProvider.GetUtcNow());
             }
         }
     }
@@ -250,7 +347,7 @@ public sealed class MediaFolderWatcher(
                 new JobRunRequest(
                     JobIds.LibraryScan,
                     JobRunTrigger.FileWatcher,
-                    scope.IsFull ? null : LibraryScanJob.CreatePayload(scope)),
+                    LibraryScanJob.CreatePayload(scope)),
                 cancellationToken);
         }
         catch
@@ -267,7 +364,7 @@ public sealed class MediaFolderWatcher(
 
         logger.LogInformation(
             "Changes in {Folders} found by the file watcher, scan {RunId} started",
-            scope.IsFull ? "the media folder" : string.Join(", ", scope.Directories),
+            string.Join(", ", scope.Folders.Select(folder => $"{folder.SourceId}:{folder.Path}")),
             result.Run.Id);
     }
 
@@ -275,10 +372,7 @@ public sealed class MediaFolderWatcher(
     {
         lock (_lock)
         {
-            if (_watcher is not null)
-            {
-                _batch.Restore(scope, firstChange);
-            }
+            _batch.Restore(scope, firstChange);
         }
     }
 }

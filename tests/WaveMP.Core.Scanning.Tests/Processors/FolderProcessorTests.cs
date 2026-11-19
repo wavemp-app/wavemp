@@ -166,9 +166,9 @@ public class FolderProcessorTests
         var single = Guid.NewGuid();
         AlbumFolder[] folders =
         [
-            new(album, "Band/Double/CD1"),
-            new(album, "Band/Double/CD2"),
-            new(single, "Band/Single"),
+            new(album, MediaSource.DefaultId, "Band/Double/CD1"),
+            new(album, MediaSource.DefaultId, "Band/Double/CD2"),
+            new(single, MediaSource.DefaultId, "Band/Single"),
         ];
         AlbumCoverImage folderJpg = Image("Band/Single/folder.jpg", 500);
         AlbumCoverImage coverJpg = Image("Band/Single/cover.jpg", 100);
@@ -216,6 +216,7 @@ public class FolderProcessorTests
         string name = path[(slash + 1)..];
         return new AlbumCoverImage(
             Guid.NewGuid(),
+            MediaSource.DefaultId,
             path,
             path[..slash],
             FileGrouper.NormalizeBaseName(name[..name.LastIndexOf('.')]),
