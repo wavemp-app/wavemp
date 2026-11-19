@@ -9,14 +9,42 @@
  * Rules of the theme API: no @import, no @layer, no external URLs, root-absolute url() only.
  * Layout rules live in @media (width >= 64rem); below that, the fixed mobile base applies and
  * this file only provides colors, graphics and fonts.
+ *
+ * The font is Selawik (fonts/, SIL Open Font License 1.1, license text in fonts/OFL.txt), shipped
+ * unchanged, so Midnight looks the same on every system; system-ui is only the fallback for
+ * characters Selawik does not have.
  */
+
+/* --- Font ----------------------------------------------------------------------------------- */
+
+@font-face {
+    font-family: "Selawik";
+    src: url("/themes/midnight/fonts/selawik-regular.woff2") format("woff2");
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "Selawik";
+    src: url("/themes/midnight/fonts/selawik-semibold.woff2") format("woff2");
+    font-style: normal;
+    font-weight: 600;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "Selawik";
+    src: url("/themes/midnight/fonts/selawik-bold.woff2") format("woff2");
+    font-style: normal;
+    font-weight: 700;
+    font-display: swap;
+}
 
 /* --- Variables ------------------------------------------------------------------------------ */
 
 :root {
-    --wmp-font-family:
-        "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, Roboto,
-        "Helvetica Neue", Arial, sans-serif;
+    --wmp-font-family: "Selawik", system-ui, sans-serif;
 
     --wmp-color-accent: #1f6fd6;
     --wmp-color-accent-contrast: #ffffff;

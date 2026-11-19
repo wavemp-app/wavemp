@@ -133,6 +133,8 @@ COPY assets/licenses/libva-intel-driver/ /licenses/libva-intel-driver/
 COPY assets/licenses/onevpl-intel-gpu/ /licenses/onevpl-intel-gpu/
 COPY assets/licenses/intel-gmmlib/ /licenses/intel-gmmlib/
 COPY assets/web/icons/phosphor/LICENSE /licenses/phosphor-icons/LICENSE
+# The font Selawik of the theme Midnight (SIL Open Font License 1.1).
+COPY assets/web/themes/midnight/fonts/OFL.txt /licenses/selawik/OFL.txt
 # The visualization bundles butterchurn and its preset pack (both MIT) into the web app; their
 # license texts come from the installed npm packages, so they always match the bundled version.
 COPY --from=web /src/source/WaveMP.Web/node_modules/butterchurn/LICENSE /licenses/butterchurn/LICENSE

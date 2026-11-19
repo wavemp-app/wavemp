@@ -6,7 +6,7 @@ This document describes how themes change the look of the WaveMP web app: the pa
 
 ## Overview
 
-A theme is exactly one CSS file plus its graphics (an uploaded theme also its fonts). The themes shipped with WaveMP live in `/assets/web/themes/<id>/` and are served as `/themes/<id>/theme.css`, their graphics under `/themes/<id>/images/`. Admins can upload further themes as ZIP packages, see [Uploaded themes](#uploaded-themes). The app loads the active theme with a `<link id="wavemp-theme">` element.
+A theme is exactly one CSS file plus its graphics and, if it brings its own, its fonts. The themes shipped with WaveMP live in `/assets/web/themes/<id>/` and are served as `/themes/<id>/theme.css`, their graphics under `/themes/<id>/images/` and their fonts (WOFF2, with the license text) under `/themes/<id>/fonts/`; Midnight, for example, ships the font Selawik (SIL Open Font License 1.1), so it looks the same on every system. Admins can upload further themes as ZIP packages, see [Uploaded themes](#uploaded-themes). The app loads the active theme with a `<link id="wavemp-theme">` element.
 
 The DOM is the same for every theme. Every element a theme can address has a stable `data-part` attribute, for example `data-part="transport"` or `data-part="btn-play"`. States are expressed with `data-state` tokens and ARIA attributes. Icons and labels are always separate child elements (`data-part="icon"`, `data-part="label"`), so the pseudo-elements `::before` and `::after` of all areas and buttons are free for the theme, for example for gloss and glow effects.
 

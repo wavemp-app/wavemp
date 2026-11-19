@@ -245,8 +245,39 @@ describe('shipped themes', () => {
                 )
                 expect(urls.length).toBeGreaterThan(0)
                 for (const url of urls) {
-                    expect(url, url).toMatch(new RegExp(`^/themes/${theme.id}/images/`))
+                    expect(url, url).toMatch(
+                        new RegExp(`^/themes/${theme.id}/(?:images/|fonts/[^/]+\\.woff2$)`),
+                    )
                     expect(existsSync(path.join(webAssets, url)), url).toBe(true)
+                }
+            })
+
+            it('ships its fonts as WOFF2 in @font-face rules, with their license', () => {
+                const fontsDirectory = path.join(webAssets, 'themes', theme.id, 'fonts')
+                const fontUrls = [...css.matchAll(/url\(\s*['"]?([^'")]+\.woff2)['"]?\s*\)/g)].map(
+                    (match) => match[1] ?? '',
+                )
+                const fontFaces = [...css.matchAll(/@font-face\s*\{([^}]*)\}/g)].map(
+                    (match) => match[1] ?? '',
+                )
+                if (!existsSync(fontsDirectory)) {
+                    expect(fontUrls).toEqual([])
+                    expect(fontFaces).toEqual([])
+                    return
+                }
+                const files = readdirSync(fontsDirectory)
+                const fontFiles = files.filter((name) => name !== 'OFL.txt')
+                expect(files, 'license text of the fonts').toContain('OFL.txt')
+                expect(fontFiles.filter((name) => !name.endsWith('.woff2'))).toEqual([])
+                // Every shipped font is used by exactly one @font-face rule, and every rule names
+                // its family, weight and font-display.
+                expect(fontUrls.map((url) => path.posix.basename(url)).sort()).toEqual(
+                    fontFiles.sort(),
+                )
+                for (const fontFace of fontFaces) {
+                    expect(fontFace).toMatch(/font-family:\s*["'][^"']+["']/)
+                    expect(fontFace).toMatch(/font-weight:\s*\d+/)
+                    expect(fontFace).toMatch(/font-display:\s*swap/)
                 }
             })
 
@@ -302,4 +333,18 @@ describe('shipped themes', () => {
             })
         })
     }
+})
+
+describe('font of Midnight', () => {
+    it('is the shipped Selawik, with system-ui and sans-serif as fallbacks only', () => {
+        const css = readCss(path.join(webAssets, 'themes', 'midnight', 'theme.css'))
+        const family = /--wmp-font-family:\s*([^;]+);/.exec(css)?.[1]?.replace(/\s+/g, ' ')
+        expect(family).toBe('"Selawik", system-ui, sans-serif')
+        // Regular, Semibold and Bold, the weights the base styles and the theme use.
+        const weights = [...css.matchAll(/@font-face\s*\{([^}]*)\}/g)]
+            .filter((match) => /font-family:\s*"Selawik"/.test(match[1] ?? ''))
+            .map((match) => /font-weight:\s*(\d+)/.exec(match[1] ?? '')?.[1])
+        expect(weights).toEqual(['400', '600', '700'])
+        expect(css).not.toMatch(/Segoe UI/)
+    })
 })

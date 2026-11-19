@@ -4,7 +4,7 @@ WaveMP is licensed under the [MIT License](LICENSE). It is built on the open-sou
 
 - **Packages** (NuGet and npm): every package that a project of this repository uses directly, with its license. The packages they depend on in turn are not listed one by one; the [license check](README.md#license-check) makes sure that every one of them, down to the last transitive dependency, has a license allowed by `.github/license-policy.json`: MIT-compatible licenses only, never GPL or AGPL. The license check also fails if a direct dependency is missing here or if this file lists a package that no project uses any more.
 - **Docker image**: the programs and libraries the image brings besides WaveMP itself. Their license texts are shipped in the image under `/licenses`, together with the license of WaveMP (`/licenses/wavemp`) and this file (`/licenses/THIRD-PARTY-NOTICES.md`).
-- **Graphics**: icons from other sources. Everything else under `assets/` was created for WaveMP and is licensed under its MIT license; see [assets/LICENSES.md](assets/LICENSES.md).
+- **Graphics and fonts**: icons and fonts from other sources. Everything else under `assets/` was created for WaveMP and is licensed under its MIT license; see [assets/LICENSES.md](assets/LICENSES.md).
 
 ## Docker image
 
@@ -129,8 +129,9 @@ Packages and tools for tests, code generation and the license check (not shipped
 | `spdx-expression-parse` | MIT | License check: reads license expressions |
 | `spdx-whitelisted` | MIT | License check: compares license expressions with the policy |
 
-## Graphics
+## Graphics and fonts
 
 | Component | License | Use |
 |---|---|---|
 | Phosphor Icons (npm package `@phosphor-icons/core` 2.1.1, unchanged) | MIT | Icons of the web app in `assets/web/icons/phosphor`; license text under `/licenses/phosphor-icons` |
+| Selawik 1.01 (https://github.com/microsoft/Selawik, WOFF2 files of the release, unchanged) | OFL-1.1 | Font of the theme Midnight (Regular, Semibold and Bold) in `assets/web/themes/midnight/fonts`, the open-source substitute of Microsoft for Segoe UI; license text in `assets/web/themes/midnight/fonts/OFL.txt` and under `/licenses/selawik` |
