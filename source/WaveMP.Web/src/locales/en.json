@@ -1128,7 +1128,7 @@
   "adminThemes": {
     "title": "Themes",
     "uploadTitle": "Upload a theme",
-    "uploadHint": "A theme is a ZIP file with a manifest.json, exactly one CSS file and SVG, PNG or WebP pictures. THEMING.md describes how to build one; the template is a commented example to start from.",
+    "uploadHint": "A theme is a ZIP file with a manifest.json, exactly one CSS file, SVG, PNG or WebP pictures and, if it needs them, fonts as WOFF2 files. THEMING.md describes how to build one; the template is a commented example to start from.",
     "template": "Download the template",
     "upload": "Upload theme",
     "themesTitle": "Uploaded themes",
@@ -1172,7 +1172,7 @@
         "tooLarge": "The file is larger than {max} once unpacked.",
         "invalidPath": "The path is not allowed. Use relative paths of letters, digits, dots, hyphens and underscores, at most five folders deep.",
         "duplicatePath": "The path appears twice, also when only upper and lower case differ.",
-        "unsupportedType": "A theme cannot contain this kind of file. Allowed are manifest.json, one CSS file and SVG, PNG and WebP pictures."
+        "unsupportedType": "A theme cannot contain this kind of file. Allowed are manifest.json, one CSS file, SVG, PNG and WebP pictures and WOFF2 fonts."
       },
       "manifest": {
         "missing": "The package has no manifest.json.",
@@ -1195,7 +1195,7 @@
         "externalUrl": "Themes cannot load anything from other servers or from data: addresses.",
         "absoluteUrl": "Use a path relative to the CSS file instead of an address starting with a slash.",
         "invalidUrl": "The address is invalid: empty, with a query, outside of the package or built with var(), attr() or env().",
-        "missingFile": "The file {file} is not in the package or is no picture."
+        "missingFile": "The file {file} is not in the package or is neither a picture nor a font."
       },
       "svg": {
         "invalid": "The file is no valid SVG picture.",
@@ -1207,6 +1207,9 @@
       },
       "image": {
         "invalid": "The file contains no picture of the format its extension names."
+      },
+      "font": {
+        "invalid": "The file is no WOFF2 font. Convert other font formats to WOFF2."
       },
       "unknown": "The package has a problem this version of the app does not know."
     }

@@ -1128,7 +1128,7 @@
   "adminThemes": {
     "title": "Designs",
     "uploadTitle": "Design hochladen",
-    "uploadHint": "Ein Design ist eine ZIP-Datei mit einer manifest.json, genau einer CSS-Datei und Bildern im Format SVG, PNG oder WebP. THEMING.md beschreibt, wie man eines baut; die Vorlage ist ein kommentiertes Beispiel zum Einstieg.",
+    "uploadHint": "Ein Design ist eine ZIP-Datei mit einer manifest.json, genau einer CSS-Datei, Bildern im Format SVG, PNG oder WebP und, falls es sie braucht, Schriften als WOFF2-Dateien. THEMING.md beschreibt, wie man eines baut; die Vorlage ist ein kommentiertes Beispiel zum Einstieg.",
     "template": "Vorlage herunterladen",
     "upload": "Design hochladen",
     "themesTitle": "Hochgeladene Designs",
@@ -1172,7 +1172,7 @@
         "tooLarge": "Die Datei ist entpackt größer als {max}.",
         "invalidPath": "Der Pfad ist nicht erlaubt. Verwende relative Pfade aus Buchstaben, Ziffern, Punkten, Binde- und Unterstrichen, höchstens fünf Ordner tief.",
         "duplicatePath": "Der Pfad kommt doppelt vor, auch wenn sich nur Groß- und Kleinschreibung unterscheiden.",
-        "unsupportedType": "Ein Design kann diese Art von Datei nicht enthalten. Erlaubt sind manifest.json, eine CSS-Datei und Bilder im Format SVG, PNG und WebP."
+        "unsupportedType": "Ein Design kann diese Art von Datei nicht enthalten. Erlaubt sind manifest.json, eine CSS-Datei, Bilder im Format SVG, PNG und WebP und Schriften im Format WOFF2."
       },
       "manifest": {
         "missing": "Das Paket hat keine manifest.json.",
@@ -1195,7 +1195,7 @@
         "externalUrl": "Designs können nichts von anderen Servern oder aus data:-Adressen laden.",
         "absoluteUrl": "Verwende einen Pfad relativ zur CSS-Datei statt einer Adresse, die mit einem Schrägstrich beginnt.",
         "invalidUrl": "Die Adresse ist ungültig: leer, mit Query, außerhalb des Pakets oder mit var(), attr() oder env() gebaut.",
-        "missingFile": "Die Datei {file} ist nicht im Paket oder kein Bild."
+        "missingFile": "Die Datei {file} ist nicht im Paket oder weder ein Bild noch eine Schrift."
       },
       "svg": {
         "invalid": "Die Datei ist kein gültiges SVG-Bild.",
@@ -1207,6 +1207,9 @@
       },
       "image": {
         "invalid": "Die Datei enthält kein Bild in dem Format, das ihre Endung nennt."
+      },
+      "font": {
+        "invalid": "Die Datei ist keine Schrift im Format WOFF2. Wandle andere Schriftformate in WOFF2 um."
       },
       "unknown": "Das Paket hat ein Problem, das diese Version der App nicht kennt."
     }
