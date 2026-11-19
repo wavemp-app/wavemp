@@ -9,6 +9,7 @@ import { getHome } from '@/collection/api'
 import { favoriteTile, homeRowLimit, playableTracks, withIds } from '@/collection/home'
 import { useLibraryTiles } from '@/composables/useLibraryTiles'
 import { usePlayerStore } from '@/stores/player'
+import { usePlaylistsStore } from '@/stores/playlists'
 import { useSessionStore } from '@/stores/session'
 
 /**
@@ -20,6 +21,7 @@ import { useSessionStore } from '@/stores/session'
 const { t } = useI18n()
 const tiles = useLibraryTiles()
 const player = usePlayerStore()
+const playlists = usePlaylistsStore()
 const session = useSessionStore()
 
 const home = ref<Home | null>(null)
@@ -31,8 +33,13 @@ const recentlyPlayed = computed(() =>
 )
 const topRated = computed(() => withIds(home.value?.topRated?.items ?? []))
 
+// A playlist renamed, given a cover or deleted since (e.g. in its context menu) shows its state in
+// the store of the playlists, once that is loaded.
 const playlistTiles = computed(() =>
-    withIds(home.value?.playlists?.items ?? []).map((playlist) => tiles.playlist(playlist)),
+    withIds(home.value?.playlists?.items ?? []).flatMap((playlist) => {
+        const known = playlists.status === 'ready' ? playlists.find(playlist.id!) : playlist
+        return known ? [tiles.playlist(known)] : []
+    }),
 )
 const recentlyPlayedTiles = computed(() => recentlyPlayed.value.map((track) => tiles.track(track)))
 const recentlyAddedTiles = computed(() =>

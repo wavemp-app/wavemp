@@ -1434,18 +1434,55 @@
       "rating": "Rating"
     }
   },
-  "trackMenu": {
-    "label": "Song actions",
-    "details": "Show details",
-    "album": "Go to album",
-    "artist": "Go to artist",
-    "editMetadata": "Edit metadata",
+  "contextMenu": {
+    "more": "More options",
+    "labels": {
+      "song": "Song actions",
+      "songs": "Actions for {count} songs",
+      "album": "Album actions",
+      "artist": "Artist actions",
+      "playlist": "Playlist actions",
+      "queueEntry": "Queue entry actions",
+      "nowPlaying": "Now Playing actions"
+    },
     "play": "Play",
+    "shuffle": "Shuffle",
     "playNext": "Play next",
     "addToQueue": "Add to queue",
     "addToPlaylist": "Add to playlist",
     "addFavorite": "Add to favorites",
-    "removeFavorite": "Remove from favorites"
+    "removeFavorite": "Remove from favorites",
+    "rate": "Rate",
+    "rating": {
+      "none": "No rating",
+      "one": "1 star",
+      "two": "2 stars",
+      "three": "3 stars",
+      "four": "4 stars",
+      "five": "5 stars"
+    },
+    "details": "Show details",
+    "album": "Go to album",
+    "artist": "Go to artist",
+    "watchVideo": "Watch video",
+    "editMetadata": "Edit metadata",
+    "showFiles": "Show files",
+    "moveUp": "Move up",
+    "moveDown": "Move down",
+    "removeFromPlaylist": "Remove from playlist",
+    "removeFromQueue": "Remove from queue",
+    "rename": "Rename",
+    "changeCover": "Change cover",
+    "deletePlaylist": "Delete playlist",
+    "viewCover": "Cover",
+    "viewVideo": "Video",
+    "viewVisualization": "Visualization",
+    "viewLyrics": "Lyrics",
+    "fullscreen": "Full screen",
+    "exitFullscreen": "Exit full screen",
+    "errors": {
+      "loadFailed": "The songs could not be loaded. Please try again."
+    }
   },
   "collection": {
     "favorite": "Favorite",

@@ -10,10 +10,12 @@ import AppTransport from './AppTransport.vue'
 import type { SleepTimerChoice } from './transport'
 import { contentAreaId } from '@/router/scroll'
 import BaseAlert from '@/components/base/BaseAlert.vue'
+import ContextMenuHost from '@/components/menus/ContextMenuHost.vue'
 import { pageTitleKey } from '@/navigation/breadcrumb'
 import { useCoverColor } from '@/composables/useCoverColor'
 import { useMediaQuery } from '@/composables/useMediaQuery'
 import { useCollectionStore } from '@/stores/collection'
+import { useContextMenuStore } from '@/stores/contextMenu'
 import { useHealthStore } from '@/stores/health'
 import { usePageTitleStore } from '@/stores/pageTitle'
 import { usePlayerStore } from '@/stores/player'
@@ -30,6 +32,7 @@ const router = useRouter()
 const health = useHealthStore()
 const pageTitle = usePageTitleStore()
 const collection = useCollectionStore()
+const contextMenu = useContextMenuStore()
 
 const player = usePlayerStore()
 const session = useSessionStore()
@@ -102,14 +105,15 @@ function onKeydown(event: KeyboardEvent): void {
     }
 }
 
-// Navigating closes the drawer and the full-screen player and dismisses the error of a favorite or a
-// rating.
+// Navigating closes the drawer and the full-screen player and dismisses the error of a favorite, a
+// rating or a context menu action.
 watch(
     () => route.fullPath,
     () => {
         sidebarOpen.value = false
         playerExpanded.value = false
         collection.clearError()
+        contextMenu.clearError()
     },
 )
 
@@ -154,6 +158,7 @@ onUnmounted(() => {
                     )
                 "
             />
+            <BaseAlert v-if="contextMenu.error" tone="error" :message="t(contextMenu.error)" />
             <slot />
         </main>
         <AppTransport
@@ -178,5 +183,6 @@ onUnmounted(() => {
             @collapse="collapsePlayer"
         />
         <AppBottomNav />
+        <ContextMenuHost />
     </div>
 </template>

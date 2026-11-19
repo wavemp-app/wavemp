@@ -43,6 +43,7 @@ import {
     insertNext,
     jumpTo,
     move,
+    moveNext,
     nextIndex,
     playTracks,
     previousIndex,
@@ -732,6 +733,12 @@ export const usePlayerStore = defineStore('player', () => {
         forgetPrepared()
     }
 
+    /** Moves an entry of the queue right after the current one. */
+    function moveItemNext(key: string): void {
+        queue.value = moveNext(queue.value, key)
+        forgetPrepared()
+    }
+
     function clearQueue(): void {
         queue.value = clearUpcoming(queue.value)
         forgetPrepared()
@@ -1277,6 +1284,7 @@ export const usePlayerStore = defineStore('player', () => {
         playItem,
         removeItem,
         moveItem,
+        moveItemNext,
         clearQueue,
         play,
         pause,

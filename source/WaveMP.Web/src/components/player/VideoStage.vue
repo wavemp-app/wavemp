@@ -101,6 +101,9 @@ onBeforeUnmount(() => {
 
     emit('detach', element)
 })
+
+/** Full screen for the context menu of the stage. */
+defineExpose({ fullscreen, fullscreenAvailable, toggleFullscreen })
 </script>
 
 <template>

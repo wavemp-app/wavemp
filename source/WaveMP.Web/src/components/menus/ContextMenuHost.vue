@@ -1,0 +1,258 @@
+<script setup lang="ts">
+import { computed, nextTick, ref, shallowRef, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { useRoute, useRouter } from 'vue-router'
+import { PlayerViewModeObject, type Playlist, type Track } from '@/api/generated/models'
+import { fetchAllPages } from '@/api/paging'
+import { problemCodeOf, statusOf } from '@/api/problems'
+import BaseContextMenu, { type MenuItem } from '@/components/base/BaseContextMenu.vue'
+import AddToPlaylistDialog from '@/components/playlists/AddToPlaylistDialog.vue'
+import PlaylistDeleteDialog from '@/components/playlists/PlaylistDeleteDialog.vue'
+import PlaylistEditDialog from '@/components/playlists/PlaylistEditDialog.vue'
+import { listAlbumTracks, listTracks } from '@/library/api'
+import { groupTracksByAlbum, groupTracksByDisc } from '@/library/grouping'
+import { registerDefaultMenuActions } from '@/menus/actions'
+import { resolveMenu, runMenuAction, type ResolvedMenuEntry } from '@/menus/registry'
+import type { MenuServices, MenuTarget, TrackSource } from '@/menus/targets'
+import { listPlaylistEntries, uploadPlaylistCover } from '@/playlists/api'
+import {
+    coverFailureKey,
+    coverProblemKey,
+    coverUploadProblem,
+    coverUploadTypes,
+} from '@/playlists/presentation'
+import { useCollectionStore } from '@/stores/collection'
+import { useContextMenuStore } from '@/stores/contextMenu'
+import { usePlayerStore } from '@/stores/player'
+import { usePlaylistsStore } from '@/stores/playlists'
+import { useSessionStore } from '@/stores/session'
+
+/**
+ * The one context menu of the app (see src/menus): it opens for the target an element hands to
+ * the store and shows the entries registered for its type, and it holds the dialogs its entries
+ * open (add to a playlist, rename or delete a playlist) and the file choice of a playlist cover.
+ */
+registerDefaultMenuActions()
+
+const { t } = useI18n()
+const router = useRouter()
+const route = useRoute()
+const store = useContextMenuStore()
+const player = usePlayerStore()
+const collection = useCollectionStore()
+const session = useSessionStore()
+const playlists = usePlaylistsStore()
+
+const menu = ref<InstanceType<typeof BaseContextMenu> | null>(null)
+const target = shallowRef<MenuTarget | null>(null)
+const addingTrackIds = ref<readonly string[]>([])
+const adding = ref(false)
+const playlist = ref<Playlist | null>(null)
+const renaming = ref(false)
+const deleting = ref(false)
+const deleteBusy = ref(false)
+const deleteError = ref<string | null>(null)
+const coverInput = ref<HTMLInputElement | null>(null)
+const acceptedTypes = coverUploadTypes.join(',')
+
+async function tracksOf(source: TrackSource): Promise<Track[]> {
+    if (source.kind === 'album') {
+        const tracks = await fetchAllPages((offset, limit) =>
+            listAlbumTracks(source.id, { offset, limit }),
+        )
+        return groupTracksByDisc(tracks, '').flatMap((group) => group.tracks)
+    }
+
+    if (source.kind === 'artist') {
+        const tracks = await fetchAllPages((offset, limit) =>
+            listTracks({ offset, limit, artistId: source.id }),
+        )
+        return groupTracksByAlbum(tracks).flatMap((group) => group.tracks)
+    }
+
+    const entries = await fetchAllPages((offset, limit) =>
+        listPlaylistEntries(source.id, offset, limit),
+    )
+    return entries.flatMap((entry) => (entry.track ? [entry.track] : []))
+}
+
+const services: MenuServices = {
+    get isAdmin() {
+        return session.isAdmin
+    },
+    playTracks: (tracks, start, options) => player.playTracks(tracks, start, options),
+    playNext: (tracks) => player.playNext(tracks),
+    addToQueue: (tracks) => player.addToQueue(tracks),
+    isFavorite: (type, id, fallback) => collection.isFavorite(type, id, fallback),
+    setFavorite: (type, id, value) => void collection.setFavorite(type, id, value),
+    ratingOf: (id, fallback) => collection.ratingOf(id, fallback),
+    rate: (id, rating) => void collection.rate(id, rating),
+    navigate: (to) => void router.push(to),
+    addToPlaylist(trackIds) {
+        addingTrackIds.value = trackIds
+        adding.value = true
+    },
+    watchVideo(track) {
+        player.playTracks([track], 0)
+        player.selectViewMode(PlayerViewModeObject.Video)
+        void router.push({ name: 'now-playing' })
+    },
+    tracksOf,
+    renamePlaylist(value) {
+        playlist.value = value
+        renaming.value = true
+    },
+    changePlaylistCover(value) {
+        playlist.value = value
+        coverInput.value?.click()
+    },
+    deletePlaylist(value) {
+        playlist.value = value
+        deleteError.value = null
+        deleting.value = true
+    },
+    queue: {
+        playNext: (key) => player.moveItemNext(key),
+        move: (key, offset) => player.moveItem(key, offset),
+        remove: (key) => player.removeItem(key),
+    },
+}
+
+function toItem(entry: ResolvedMenuEntry, count: number): MenuItem {
+    return {
+        id: entry.id,
+        separator: entry.separator,
+        label: entry.labelKey ? t(entry.labelKey, { count }) : undefined,
+        icon: entry.icon,
+        disabled: entry.disabled,
+        checked: entry.checked,
+        children: entry.children?.map((child) => toItem(child, count)),
+    }
+}
+
+const songCount = computed(() => (target.value?.type === 'song' ? target.value.tracks.length : 1))
+
+const items = computed<MenuItem[]>(() =>
+    target.value
+        ? resolveMenu(target.value, services).map((entry) => toItem(entry, songCount.value))
+        : [],
+)
+
+const label = computed(() => {
+    switch (target.value?.type) {
+        case 'song':
+            return songCount.value > 1
+                ? t('contextMenu.labels.songs', { count: songCount.value })
+                : t('contextMenu.labels.song')
+        case 'album':
+            return t('contextMenu.labels.album')
+        case 'artist':
+            return t('contextMenu.labels.artist')
+        case 'playlist':
+            return t('contextMenu.labels.playlist')
+        case 'queue-entry':
+            return t('contextMenu.labels.queueEntry')
+        case 'now-playing':
+            return t('contextMenu.labels.nowPlaying')
+        default:
+            return t('contextMenu.labels.song')
+    }
+})
+
+watch(
+    () => store.request,
+    async (request) => {
+        if (!request) {
+            return
+        }
+
+        target.value = request.target
+        await nextTick()
+        await menu.value?.openAt(request.x, request.y)
+    },
+)
+
+async function choose(id: string): Promise<void> {
+    const current = target.value
+    if (!current) {
+        return
+    }
+
+    store.clearError()
+    try {
+        await runMenuAction(current, id, services)
+    } catch {
+        store.fail('contextMenu.errors.loadFailed')
+    }
+}
+
+async function uploadCover(event: Event): Promise<void> {
+    const input = event.target as HTMLInputElement
+    const file = input.files?.[0]
+    input.value = ''
+    const id = playlist.value?.id
+    if (!file || !id) {
+        return
+    }
+
+    store.clearError()
+    const problem = coverUploadProblem(file)
+    if (problem) {
+        store.fail(coverProblemKey(problem))
+        return
+    }
+
+    try {
+        playlists.apply(await uploadPlaylistCover(id, await file.arrayBuffer(), file.type))
+    } catch (failure) {
+        store.fail(coverFailureKey(problemCodeOf(failure)))
+    }
+}
+
+/** After deleting, the page of the playlist (if shown) leads back to the overview. */
+function leaveDeleted(id: string): void {
+    deleting.value = false
+    if (route.name === 'playlist' && route.params.id === id) {
+        void router.push({ name: 'playlists' })
+    }
+}
+
+async function confirmDelete(): Promise<void> {
+    const id = playlist.value?.id
+    if (!id) {
+        return
+    }
+
+    deleteBusy.value = true
+    deleteError.value = null
+    try {
+        await playlists.remove(id)
+        leaveDeleted(id)
+    } catch (failure) {
+        if (statusOf(failure) === 404) {
+            playlists.forget(id)
+            leaveDeleted(id)
+        } else {
+            deleteError.value = t('playlists.errors.deleteFailed')
+        }
+    } finally {
+        deleteBusy.value = false
+    }
+}
+</script>
+
+<template>
+    <BaseContextMenu ref="menu" :items="items" :label="label" @select="choose" />
+    <!-- The dialogs exist only while they are open, so the pages do not hold them all the time. -->
+    <AddToPlaylistDialog v-if="adding" v-model:open="adding" :track-ids="addingTrackIds" />
+    <PlaylistEditDialog v-if="renaming" v-model:open="renaming" :playlist="playlist" />
+    <PlaylistDeleteDialog
+        v-if="deleting"
+        v-model:open="deleting"
+        :playlist="playlist"
+        :busy="deleteBusy"
+        :error="deleteError"
+        @confirm="confirmDelete"
+    />
+    <input ref="coverInput" type="file" :accept="acceptedTypes" hidden @change="uploadCover" />
+</template>

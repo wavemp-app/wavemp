@@ -1434,18 +1434,55 @@
       "rating": "Bewertung"
     }
   },
-  "trackMenu": {
-    "label": "Aktionen für den Titel",
-    "details": "Details anzeigen",
-    "album": "Zum Album",
-    "artist": "Zum Interpreten",
-    "editMetadata": "Metadaten bearbeiten",
+  "contextMenu": {
+    "more": "Weitere Optionen",
+    "labels": {
+      "song": "Aktionen für den Titel",
+      "songs": "Aktionen für {count} Titel",
+      "album": "Aktionen für das Album",
+      "artist": "Aktionen für den Interpreten",
+      "playlist": "Aktionen für die Playlist",
+      "queueEntry": "Aktionen für den Eintrag der Warteschlange",
+      "nowPlaying": "Aktionen für die Wiedergabe"
+    },
     "play": "Abspielen",
+    "shuffle": "Zufällig abspielen",
     "playNext": "Als Nächstes abspielen",
     "addToQueue": "Zur Warteschlange hinzufügen",
     "addToPlaylist": "Zur Playlist hinzufügen",
     "addFavorite": "Zu Favoriten hinzufügen",
-    "removeFavorite": "Aus Favoriten entfernen"
+    "removeFavorite": "Aus Favoriten entfernen",
+    "rate": "Bewerten",
+    "rating": {
+      "none": "Keine Bewertung",
+      "one": "1 Stern",
+      "two": "2 Sterne",
+      "three": "3 Sterne",
+      "four": "4 Sterne",
+      "five": "5 Sterne"
+    },
+    "details": "Details anzeigen",
+    "album": "Zum Album",
+    "artist": "Zum Interpreten",
+    "watchVideo": "Video ansehen",
+    "editMetadata": "Metadaten bearbeiten",
+    "showFiles": "Dateien anzeigen",
+    "moveUp": "Nach oben",
+    "moveDown": "Nach unten",
+    "removeFromPlaylist": "Aus der Playlist entfernen",
+    "removeFromQueue": "Aus der Warteschlange entfernen",
+    "rename": "Umbenennen",
+    "changeCover": "Cover ändern",
+    "deletePlaylist": "Playlist löschen",
+    "viewCover": "Cover",
+    "viewVideo": "Video",
+    "viewVisualization": "Visualisierung",
+    "viewLyrics": "Songtext",
+    "fullscreen": "Vollbild",
+    "exitFullscreen": "Vollbild beenden",
+    "errors": {
+      "loadFailed": "Die Titel konnten nicht geladen werden. Bitte versuche es erneut."
+    }
   },
   "collection": {
     "favorite": "Favorit",

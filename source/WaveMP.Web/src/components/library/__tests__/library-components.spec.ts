@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
+import { defineComponent, h } from 'vue'
 import { createPinia, setActivePinia } from 'pinia'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import type { Track } from '@/api/generated/models'
@@ -8,6 +9,7 @@ import { groupTracksByAlbum } from '@/library/grouping'
 import { createRoutes } from '@/router/routes'
 import { getPlayback } from '@/player/api'
 import { playerDependencies, usePlayerStore } from '@/stores/player'
+import { useContextMenuStore } from '@/stores/contextMenu'
 import { useSessionStore } from '@/stores/session'
 
 const covers = vi.hoisted(() => ({
@@ -26,6 +28,24 @@ const LibraryCover = (await import('../LibraryCover.vue')).default
 const TileList = (await import('../TileList.vue')).default
 const TrackFileList = (await import('../TrackFileList.vue')).default
 const TrackGroupList = (await import('../TrackGroupList.vue')).default
+const ContextMenuHost = (await import('@/components/menus/ContextMenuHost.vue')).default
+
+/** A list together with the context menu of the app, as in the shell. */
+const TrackGroupListWithMenu = defineComponent({
+    inheritAttrs: false,
+    setup(_, { attrs }) {
+        return () => [h(TrackGroupList as never, attrs), h(ContextMenuHost)]
+    },
+})
+
+/** Ids of the entries of the open menu, disabled ones marked with a minus. */
+function menuEntries(): string[] {
+    const menu = document.querySelector('[data-part="context-menu"]')!
+    return [...menu.querySelectorAll(':scope > [data-part="menu-item"]')].map(
+        (item) =>
+            `${(item as HTMLButtonElement).disabled ? '-' : ''}${item.getAttribute('data-item')}`,
+    )
+}
 
 const alpha = { id: 'alpha', name: 'Alpha Band' }
 const album = { id: 'first', title: 'First Album', artist: alpha, isCompilation: false }
@@ -133,7 +153,7 @@ describe('TrackGroupList', () => {
     })
 
     it('puts a track next or at the end of the queue from its menu', async () => {
-        const { wrapper } = await mountWith(TrackGroupList, {
+        const { wrapper } = await mountWith(TrackGroupListWithMenu, {
             groups: groupTracksByAlbum(tracks),
             label: 'Songs',
         })
@@ -221,7 +241,7 @@ describe('TrackGroupList', () => {
     })
 
     it('opens the menu of a track with a right click and leads to its details', async () => {
-        const { wrapper, router } = await mountWith(TrackGroupList, {
+        const { wrapper, router } = await mountWith(TrackGroupListWithMenu, {
             groups: groupTracksByAlbum(tracks),
             label: 'Songs',
         })
@@ -232,28 +252,25 @@ describe('TrackGroupList', () => {
         })
         await flushPromises()
 
-        const menu = document.querySelector('[data-part="context-menu"]')!
-        expect(
-            [...menu.querySelectorAll('[data-part="menu-item"]')].map((item) =>
-                item.getAttribute('data-item'),
-            ),
-        ).toEqual([
+        expect(menuEntries()).toEqual([
             'play',
             'play-next',
             'add-to-queue',
             'add-to-playlist',
             'favorite',
+            'rate',
             'details',
             'album',
             'artist',
+            '-watch-video',
         ])
-        ;(menu.querySelector('[data-item="details"]') as HTMLElement).click()
+        ;(document.querySelector('[data-item="details"]') as HTMLElement).click()
         await flushPromises()
         expect(router.currentRoute.value.fullPath).toBe('/library/tracks/opening')
         wrapper.unmount()
     })
 
-    it('offers admins to edit the metadata on the page of the track', async () => {
+    it('offers admins to edit the metadata and to show the files of the track', async () => {
         useSessionStore().$patch({
             token: 'token',
             expiresAt: new Date(Date.now() + 60_000).toISOString(),
@@ -266,7 +283,7 @@ describe('TrackGroupList', () => {
                 isBuiltIn: true,
             },
         })
-        const { wrapper, router } = await mountWith(TrackGroupList, {
+        const { wrapper, router } = await mountWith(TrackGroupListWithMenu, {
             groups: groupTracksByAlbum(tracks),
             label: 'Songs',
         })
@@ -277,20 +294,28 @@ describe('TrackGroupList', () => {
         })
         await flushPromises()
 
-        const menu = document.querySelector('[data-part="context-menu"]')!
-        expect(
-            [...menu.querySelectorAll('[data-part="menu-item"]')].map((item) =>
-                item.getAttribute('data-item'),
-            ),
-        ).toEqual(['add-to-playlist', 'favorite', 'details', 'edit-metadata'])
-        ;(menu.querySelector('[data-item="edit-metadata"]') as HTMLElement).click()
+        expect(menuEntries()).toEqual([
+            '-play',
+            '-play-next',
+            '-add-to-queue',
+            'add-to-playlist',
+            'favorite',
+            'rate',
+            'details',
+            '-album',
+            '-artist',
+            '-watch-video',
+            'edit-metadata',
+            'show-files',
+        ])
+        ;(document.querySelector('[data-item="edit-metadata"]') as HTMLElement).click()
         await flushPromises()
         expect(router.currentRoute.value.fullPath).toBe('/library/tracks/clip?edit=metadata')
         wrapper.unmount()
     })
 
-    it('opens the menu with the keyboard and leaves out missing album and artist', async () => {
-        const { wrapper } = await mountWith(TrackGroupList, {
+    it('opens the menu with the keyboard and greys out what the track lacks', async () => {
+        const { wrapper } = await mountWith(TrackGroupListWithMenu, {
             groups: groupTracksByAlbum(tracks),
             label: 'Songs',
         })
@@ -301,10 +326,63 @@ describe('TrackGroupList', () => {
         })
         await flushPromises()
 
-        const items = [...document.querySelectorAll('[data-part="menu-item"]')].map((item) =>
-            item.getAttribute('data-item'),
-        )
-        expect(items).toEqual(['add-to-playlist', 'favorite', 'details'])
+        expect(menuEntries()).toEqual([
+            '-play',
+            '-play-next',
+            '-add-to-queue',
+            'add-to-playlist',
+            'favorite',
+            'rate',
+            'details',
+            '-album',
+            '-artist',
+            '-watch-video',
+        ])
+        wrapper.unmount()
+    })
+
+    it('applies the menu to all rows chosen with Ctrl and Shift', async () => {
+        const { wrapper } = await mountWith(TrackGroupListWithMenu, {
+            groups: groupTracksByAlbum(tracks),
+            label: 'Songs',
+        })
+        const player = usePlayerStore()
+        const rows = wrapper.findAll('[data-part="list-row"]')
+
+        await rows[0]!.trigger('click')
+        await rows[2]!.trigger('click', { shiftKey: true })
+        await rows[1]!.trigger('click', { ctrlKey: true })
+        expect(rows.map((row) => row.attributes('aria-selected'))).toEqual([
+            'true',
+            'false',
+            'true',
+        ])
+        expect(wrapper.get('[data-part="list"]').attributes('aria-multiselectable')).toBe('true')
+
+        await rows[1]!.trigger('click', { ctrlKey: true })
+        await rows[0]!.trigger('contextmenu', { clientX: 10, clientY: 20 })
+        await flushPromises()
+
+        expect(menuEntries()).toEqual([
+            'play',
+            'play-next',
+            'add-to-queue',
+            'add-to-playlist',
+            'favorite',
+            'rate',
+            '-details',
+            '-album',
+            '-artist',
+            '-watch-video',
+        ])
+        expect(
+            document.querySelector('[data-part="context-menu"]')!.getAttribute('aria-label'),
+        ).toBe('Actions for 3 songs')
+        ;(document.querySelector('[data-item="add-to-queue"]') as HTMLElement).click()
+        await flushPromises()
+
+        // The track without audio stays out of the queue.
+        expect(player.queue.items.map((item) => item.track.id)).toEqual(['opening', 'closing'])
         wrapper.unmount()
     })
 
@@ -348,6 +426,53 @@ describe('TileList', () => {
         expect(tile.get('[data-part="cover"] [data-part="icon"]').attributes('data-icon')).toBe(
             'artist',
         )
+        wrapper.unmount()
+    })
+})
+
+describe('TileList menus', () => {
+    beforeEach(() => {
+        setActivePinia(createPinia())
+    })
+
+    it('opens the menu of a tile by right click, keyboard and its button', async () => {
+        const album = { id: 'first', title: 'First Album', trackCount: 2 }
+        const { wrapper, router } = await mountWith(TileList, {
+            label: 'Albums',
+            tiles: [
+                {
+                    id: 'first',
+                    kind: 'album',
+                    title: 'First Album',
+                    to: { name: 'library-album', params: { id: 'first' } },
+                    menu: { type: 'album', album },
+                },
+                {
+                    id: 'Rock',
+                    kind: 'genre',
+                    title: 'Rock',
+                    to: { name: 'library-genre', params: { genre: 'Rock' } },
+                },
+            ],
+        })
+        const menu = useContextMenuStore()
+        const [withMenu, without] = wrapper.findAll('[data-part="tile-item"]')
+
+        expect(withMenu!.find('[data-part="btn-item-menu"]').exists()).toBe(true)
+        expect(without!.find('[data-part="btn-item-menu"]').exists()).toBe(false)
+
+        await withMenu!.trigger('contextmenu', { clientX: 3, clientY: 4 })
+        expect(menu.request).toMatchObject({ target: { type: 'album', album }, x: 3, y: 4 })
+
+        await without!.trigger('contextmenu')
+        await without!.get('[data-part="tile"]').trigger('keydown', { key: 'ContextMenu' })
+        expect(menu.request?.sequence).toBe(1)
+
+        await withMenu!.get('[data-part="tile"]').trigger('keydown', { key: 'ContextMenu' })
+        await withMenu!.get('[data-part="btn-item-menu"]').trigger('click')
+        expect(menu.request?.sequence).toBe(3)
+        await flushPromises()
+        expect(router.currentRoute.value.fullPath).toBe('/library/songs')
         wrapper.unmount()
     })
 })

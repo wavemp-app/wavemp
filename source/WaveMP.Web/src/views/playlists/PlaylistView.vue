@@ -12,7 +12,6 @@ import { fetchAllPages } from '@/api/paging'
 import { problemCodeOf, statusOf } from '@/api/problems'
 import BaseAlert from '@/components/base/BaseAlert.vue'
 import BaseButton from '@/components/base/BaseButton.vue'
-import type { MenuItem } from '@/components/base/BaseContextMenu.vue'
 import BaseLink from '@/components/base/BaseLink.vue'
 import DetailHeader from '@/components/library/DetailHeader.vue'
 import MetaItem from '@/components/library/MetaItem.vue'
@@ -33,7 +32,13 @@ import {
     removePlaylistEntry,
     uploadPlaylistCover,
 } from '@/playlists/api'
-import { coverUploadProblem, coverUploadTypes, moveItem } from '@/playlists/presentation'
+import {
+    coverFailureKey,
+    coverProblemKey,
+    coverUploadProblem,
+    coverUploadTypes,
+    moveItem,
+} from '@/playlists/presentation'
 import { usePlayerStore } from '@/stores/player'
 import { usePlaylistsStore } from '@/stores/playlists'
 
@@ -150,48 +155,22 @@ function move(from: number, to: number): void {
     void change(() => movePlaylistEntry(props.id, entryId, to), 'playlists.errors.moveFailed')
 }
 
-function remove(index: number): void {
-    const entry = entries.value[index]
-    if (!entry?.id) {
+/** Removes the entries at the indexes, one after the other. */
+function remove(indexes: readonly number[]): void {
+    const removed = new Set(indexes)
+    const entryIds = entries.value
+        .filter((entry, position) => removed.has(position) && entry.id)
+        .map((entry) => entry.id!)
+    if (entryIds.length === 0) {
         return
     }
 
-    entries.value = entries.value.filter((_, position) => position !== index)
-    const entryId = entry.id
-    void change(() => removePlaylistEntry(props.id, entryId), 'playlists.errors.removeFailed')
-}
-
-function extraItems(_row: PlaylistTrackRow, index: number): MenuItem[] {
-    return [
-        {
-            id: 'move-up',
-            label: t('playlists.moveUp'),
-            icon: 'move-up',
-            disabled: index === 0 || busy.value,
-        },
-        {
-            id: 'move-down',
-            label: t('playlists.moveDown'),
-            icon: 'move-down',
-            disabled: index === rows.value.length - 1 || busy.value,
-        },
-        {
-            id: 'remove-from-playlist',
-            label: t('playlists.removeEntry'),
-            icon: 'remove-from-playlist',
-            disabled: busy.value,
-        },
-    ]
-}
-
-function onExtra(id: string, _row: PlaylistTrackRow, index: number): void {
-    if (id === 'move-up') {
-        move(index, index - 1)
-    } else if (id === 'move-down') {
-        move(index, index + 1)
-    } else if (id === 'remove-from-playlist') {
-        remove(index)
-    }
+    entries.value = entries.value.filter((_, position) => !removed.has(position))
+    void change(async () => {
+        for (const entryId of entryIds) {
+            await removePlaylistEntry(props.id, entryId)
+        }
+    }, 'playlists.errors.removeFailed')
 }
 
 function play(shuffle: boolean): void {
@@ -200,21 +179,6 @@ function play(shuffle: boolean): void {
 
 function chooseCover(): void {
     coverInput.value?.click()
-}
-
-function coverFailure(failure: unknown): string {
-    switch (problemCodeOf(failure)) {
-        case ProblemCodeObject.CoverUnsupported_format:
-            return t('playlists.errors.coverType')
-        case ProblemCodeObject.CoverToo_large:
-            return t('playlists.errors.coverSize')
-        case ProblemCodeObject.CoverUnreadable:
-            return t('playlists.errors.coverUnreadable')
-        case ProblemCodeObject.PlaylistNot_found:
-            return t('playlists.errors.notFound')
-        default:
-            return t('playlists.errors.coverFailed')
-    }
 }
 
 async function uploadCover(event: Event): Promise<void> {
@@ -227,9 +191,7 @@ async function uploadCover(event: Event): Promise<void> {
 
     const problem = coverUploadProblem(file)
     if (problem) {
-        error.value = t(
-            problem === 'type' ? 'playlists.errors.coverType' : 'playlists.errors.coverSize',
-        )
+        error.value = t(coverProblemKey(problem))
         return
     }
 
@@ -238,7 +200,7 @@ async function uploadCover(event: Event): Promise<void> {
     try {
         setPlaylist(await uploadPlaylistCover(props.id, await file.arrayBuffer(), file.type))
     } catch (failure) {
-        error.value = coverFailure(failure)
+        error.value = t(coverFailureKey(problemCodeOf(failure)))
     } finally {
         busy.value = false
     }
@@ -376,10 +338,9 @@ onActivated(() => {
                 :rows="rows"
                 :label="playlist.name ?? ''"
                 sortable
-                :extra-items="extraItems"
                 :state="busy ? 'busy' : undefined"
                 @move="move"
-                @extra="onExtra"
+                @remove="remove"
             />
             <PlaylistEditDialog v-model:open="renaming" :playlist="playlist" @saved="renamed" />
             <PlaylistDeleteDialog

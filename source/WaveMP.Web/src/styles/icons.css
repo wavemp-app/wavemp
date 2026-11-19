@@ -335,6 +335,10 @@
         --_icon: var(--wmp-icon-auto-change);
     }
 
+    [data-icon='item-menu'] {
+        --_icon: var(--wmp-icon-item-menu);
+    }
+
     [data-icon='collapse-player'] {
         --_icon: var(--wmp-icon-collapse-player);
     }
@@ -433,6 +437,22 @@
 
     [data-icon='go-to-artist'] {
         --_icon: var(--wmp-icon-go-to-artist);
+    }
+
+    [data-icon='watch-video'] {
+        --_icon: var(--wmp-icon-watch-video);
+    }
+
+    [data-icon='show-files'] {
+        --_icon: var(--wmp-icon-show-files);
+    }
+
+    [data-icon='rate'] {
+        --_icon: var(--wmp-icon-rate);
+    }
+
+    [data-icon='submenu'] {
+        --_icon: var(--wmp-icon-submenu);
     }
 
     [data-icon='play-now'] {

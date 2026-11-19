@@ -86,6 +86,7 @@ export const iconSlots = {
     'preset-previous': { file: fill('caret-left'), area: 'content' },
     'preset-next': { file: fill('caret-right'), area: 'content' },
     'auto-change': { file: fill('timer'), area: 'content' },
+    'item-menu': { file: fill('dots-three-outline'), area: 'content' },
 
     // Transport
     shuffle: { file: fill('shuffle'), area: 'transport' },
@@ -130,6 +131,10 @@ export const iconSlots = {
     'review-next': { file: regular('caret-right'), area: 'general' },
     'go-to-album': { file: regular('vinyl-record'), area: 'general' },
     'go-to-artist': { file: regular('microphone-stage'), area: 'general' },
+    'watch-video': { file: regular('monitor-play'), area: 'general' },
+    'show-files': { file: regular('files'), area: 'general' },
+    rate: { file: regular('star'), area: 'general' },
+    submenu: { file: regular('caret-right'), area: 'general' },
     'play-now': { file: regular('play'), area: 'general' },
     'play-next': { file: regular('queue'), area: 'general' },
     'add-to-queue': { file: regular('list-plus'), area: 'general' },

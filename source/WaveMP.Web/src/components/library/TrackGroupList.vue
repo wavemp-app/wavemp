@@ -10,16 +10,18 @@ import FavoriteButton from '@/components/collection/FavoriteButton.vue'
 import RatingStars from '@/components/collection/RatingStars.vue'
 import LibraryCover from './LibraryCover.vue'
 import MetaItem from './MetaItem.vue'
-import TrackMenu from './TrackMenu.vue'
+import ItemMenuButton from '@/components/menus/ItemMenuButton.vue'
 import { useFormat } from '@/composables/useFormat'
 import type { TrackGroup } from '@/library/grouping'
 import { artistLabelKey, durationSeconds, trackRowState } from '@/library/presentation'
+import { useContextMenuStore } from '@/stores/contextMenu'
 import { usePlayerStore } from '@/stores/player'
 
 /**
  * Tracks grouped by album (or by disc on the album page), with cover and details of each group.
- * Details link to the pages of album, artist, genre and year; the context menu of a row plays or
- * queues the track and leads to the track, its album and its artist. The columns rating and favorite
+ * Details link to the pages of album, artist, genre and year; the context menu of a row (right
+ * click, long press, the button "More options" or the keyboard) applies to all selected tracks
+ * (Ctrl and Shift with a click choose several). The columns rating and favorite
  * show the stars and the heart of the profile; a click changes them. A double click, Enter or a tap
  * on a touch screen plays the tracks of the list from the row on; the playing track is marked.
  */
@@ -45,7 +47,9 @@ const selected = defineModel<string | undefined>('selected', { default: undefine
 
 const { t } = useI18n()
 const format = useFormat()
-const menu = ref<InstanceType<typeof TrackMenu> | null>(null)
+const contextMenu = useContextMenuStore()
+/** Ids of the selected tracks. */
+const selection = ref<readonly string[]>([])
 const player = usePlayerStore()
 const playingId = computed(() => player.state.trackId)
 
@@ -100,10 +104,23 @@ function trackArtist(track: Track): string {
 const allTracks = computed(() => props.groups.flatMap((group) => group.tracks))
 
 function openMenu(rowId: string, x: number, y: number): void {
-    const track = allTracks.value.find((item) => item.id === rowId)
-    if (track) {
-        void menu.value?.open(track, x, y)
+    const chosen = new Set(selection.value.includes(rowId) ? selection.value : [rowId])
+    const tracks = allTracks.value.filter((item) => item.id && chosen.has(item.id))
+    const track = tracks.length === 1 ? tracks[0] : undefined
+    if (tracks.length > 0) {
+        contextMenu.open(
+            { type: 'song', tracks, playFrom: track ? () => playFrom(track) : undefined },
+            x,
+            y,
+        )
     }
+}
+
+/** The button "More options" of a row: its menu, for the row alone. */
+function openRowMenu(rowId: string, x: number, y: number): void {
+    selected.value = rowId
+    selection.value = [rowId]
+    openMenu(rowId, x, y)
 }
 
 /** Plays the tracks of the list from the track on; video-only tracks are left out. */
@@ -126,12 +143,14 @@ function activate(rowId: string): void {
 <template>
     <BaseList
         v-model:selected="selected"
+        v-model:selection="selection"
         :columns="columns"
         :groups="listGroups"
         :label="label"
         :state="state"
         row-menu
         activate-on-tap
+        multi-select
         @row-menu="openMenu"
         @row-activate="activate"
     >
@@ -216,14 +235,18 @@ function activate(rowId: string): void {
                 :rating="row.track.rating"
                 :focusable="false"
             />
-            <FavoriteButton
-                v-else-if="column.id === 'favorite'"
-                type="Track"
-                :id="row.track.id ?? ''"
-                :favorite="row.track.isFavorite"
-                :focusable="false"
-            />
+            <template v-else-if="column.id === 'favorite'">
+                <FavoriteButton
+                    type="Track"
+                    :id="row.track.id ?? ''"
+                    :favorite="row.track.isFavorite"
+                    :focusable="false"
+                />
+                <ItemMenuButton
+                    :focusable="false"
+                    @open="(x: number, y: number) => openRowMenu(row.id, x, y)"
+                />
+            </template>
         </template>
     </BaseList>
-    <TrackMenu ref="menu" @play="playFrom" />
 </template>

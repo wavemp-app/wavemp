@@ -8,6 +8,7 @@ import {
     insertNext,
     jumpTo,
     move,
+    moveNext,
     nextIndex,
     playTracks,
     previousIndex,
@@ -120,6 +121,23 @@ describe('editing', () => {
 
         expect(move(queue, a!.key, -1)).toBe(queue)
         expect(move(queue, d!.key, 1)).toBe(queue)
+    })
+
+    it('moves an entry right after the current one', () => {
+        const queue = playTracks(abcd, 1, false)
+        const [a, b, c, d] = queue.items
+
+        const later = moveNext(queue, d!.key)
+        expect(ids(later)).toEqual(['a', 'b', 'd', 'c'])
+        expect(currentItem(later)?.track.id).toBe('b')
+
+        const earlier = moveNext(queue, a!.key)
+        expect(ids(earlier)).toEqual(['b', 'a', 'c', 'd'])
+        expect(currentItem(earlier)?.track.id).toBe('b')
+
+        expect(moveNext(queue, b!.key)).toBe(queue)
+        expect(moveNext(queue, c!.key)).toBe(queue)
+        expect(moveNext(queue, 'unknown')).toBe(queue)
     })
 
     it('clears all but the current entry', () => {

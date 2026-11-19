@@ -1,7 +1,11 @@
 // Pure helpers of the playlists: the order of entries, the slides of a cover made of track covers
 // and the checks of a picture before it is uploaded as cover.
 
-import { PlaylistCoverKindObject, type PlaylistCover } from '@/api/generated/models'
+import {
+    PlaylistCoverKindObject,
+    ProblemCodeObject,
+    type PlaylistCover,
+} from '@/api/generated/models'
 
 /** Longest name of a playlist (the API checks it as well). */
 export const playlistNameMaxLength = 100
@@ -27,6 +31,27 @@ export function coverUploadProblem(file: {
     }
 
     return file.size > maxCoverUploadBytes ? 'size' : null
+}
+
+/** i18n key of a problem found before uploading a cover. */
+export function coverProblemKey(problem: CoverUploadProblem): string {
+    return problem === 'type' ? 'playlists.errors.coverType' : 'playlists.errors.coverSize'
+}
+
+/** i18n key of a failed upload of a cover, by the code of the problem the API returned. */
+export function coverFailureKey(code: string | null | undefined): string {
+    switch (code) {
+        case ProblemCodeObject.CoverUnsupported_format:
+            return 'playlists.errors.coverType'
+        case ProblemCodeObject.CoverToo_large:
+            return 'playlists.errors.coverSize'
+        case ProblemCodeObject.CoverUnreadable:
+            return 'playlists.errors.coverUnreadable'
+        case ProblemCodeObject.PlaylistNot_found:
+            return 'playlists.errors.notFound'
+        default:
+            return 'playlists.errors.coverFailed'
+    }
 }
 
 /** A copy of the list with the item at from moved to to; indexes outside the list change nothing. */

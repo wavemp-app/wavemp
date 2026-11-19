@@ -6,7 +6,8 @@ import { artistLabelKey } from '@/library/presentation'
 
 /**
  * Tiles of the library lists: albums with cover and album artist, artists, songs with cover and
- * artist, genres, years and playlists.
+ * artist, genres, years and playlists. Albums, artists, songs and playlists bring their context
+ * menu.
  */
 export function useLibraryTiles() {
     const { t } = useI18n()
@@ -25,6 +26,7 @@ export function useLibraryTiles() {
             subtitle: key ? t(key) : (item.artist?.name ?? ''),
             to: { name: 'library-album', params: { id: item.id ?? '' } },
             cover: { id: item.id ?? '', available: item.hasCover ?? false },
+            menu: item.id ? { type: 'album', album: item } : undefined,
         }
     }
 
@@ -35,6 +37,7 @@ export function useLibraryTiles() {
             title: item.name ?? '',
             subtitle: songs(item.trackCount),
             to: { name: 'library-artist', params: { id: item.id ?? '' } },
+            menu: item.id ? { type: 'artist', artist: item } : undefined,
         }
     }
 
@@ -47,6 +50,7 @@ export function useLibraryTiles() {
             subtitle: key ? t(key) : (item.artist?.name ?? ''),
             to: { name: 'library-track', params: { id: item.id ?? '' } },
             cover: { kind: 'track', id: item.id ?? '', available: item.hasCover ?? false },
+            menu: item.id ? { type: 'song', tracks: [item] } : undefined,
         }
     }
 
@@ -58,6 +62,7 @@ export function useLibraryTiles() {
             subtitle: songs(item.trackCount),
             to: { name: 'playlist', params: { id: item.id ?? '' } },
             playlistCover: { id: item.id ?? '', cover: item.cover },
+            menu: item.id ? { type: 'playlist', playlist: item } : undefined,
         }
     }
 

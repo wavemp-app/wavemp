@@ -159,6 +159,23 @@ export function move(queue: Queue, key: string, offset: -1 | 1): Queue {
     return { ...queue, items, index }
 }
 
+/**
+ * Moves an entry right after the current one, so it plays next. The current entry and the entry
+ * that plays next already stay where they are.
+ */
+export function moveNext(queue: Queue, key: string): Queue {
+    const from = queue.items.findIndex((item) => item.key === key)
+    if (from < 0 || from === queue.index || from === queue.index + 1) {
+        return queue
+    }
+
+    const item = queue.items[from]!
+    const rest = queue.items.filter((_, at) => at !== from)
+    const index = from < queue.index ? queue.index - 1 : queue.index
+    const items = [...rest.slice(0, index + 1), item, ...rest.slice(index + 1)]
+    return { ...queue, items, index }
+}
+
 /** Removes all entries but the current one. */
 export function clearUpcoming(queue: Queue): Queue {
     const current = currentItem(queue)

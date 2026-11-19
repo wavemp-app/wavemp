@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
-import { createPinia } from 'pinia'
+import { createPinia, setActivePinia } from 'pinia'
+import { useContextMenuStore } from '@/stores/contextMenu'
 import type { PlayerViewMode, Track } from '@/api/generated/models'
 import { createWaveMpI18n } from '@/i18n'
 import type { TrackLyrics } from '@/lyrics/timing'
@@ -88,6 +89,44 @@ describe('NowPlayingStage', () => {
             video: 'false',
             visualization: 'false',
         })
+        wrapper.unmount()
+    })
+
+    it('opens its context menu with the views and the full screen', async () => {
+        const pinia = createPinia()
+        setActivePinia(pinia)
+        const wrapper = mount(NowPlayingStage, {
+            props: { track: track(true), mode: 'Video', view: 'cover' },
+            global: { plugins: [pinia, createWaveMpI18n('en')] },
+            attachTo: document.body,
+        })
+        const menu = useContextMenuStore()
+
+        await wrapper.get('[data-part="stage-views"]').trigger('contextmenu', {
+            clientX: 30,
+            clientY: 40,
+        })
+        const target = menu.request?.target
+        expect(target).toMatchObject({
+            type: 'now-playing',
+            selected: 'Video',
+            views: [
+                { mode: 'Cover', available: true },
+                { mode: 'Video', available: true },
+                { mode: 'Visualization', available: true },
+                { mode: 'Lyrics', available: false },
+            ],
+            fullscreen: { available: false, active: false },
+        })
+        if (target?.type === 'now-playing') {
+            target.selectView('Cover')
+        }
+        expect(wrapper.emitted('selectMode')).toEqual([['Cover']])
+
+        await wrapper
+            .get('[data-part="stage-actions"] [data-part="btn-item-menu"]')
+            .trigger('click')
+        expect(menu.request?.sequence).toBe(2)
         wrapper.unmount()
     })
 

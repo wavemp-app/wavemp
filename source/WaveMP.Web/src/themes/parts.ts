@@ -362,6 +362,8 @@ export const parts = [
     'context-menu',
     'menu-item',
     'menu-separator',
+    'submenu-indicator',
+    'btn-item-menu',
     'alert',
 ] as const
 

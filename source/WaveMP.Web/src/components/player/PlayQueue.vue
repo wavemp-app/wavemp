@@ -3,17 +3,21 @@ import { computed, ref, useId } from 'vue'
 import { useI18n } from 'vue-i18n'
 import BaseButton from '@/components/base/BaseButton.vue'
 import LibraryCover from '@/components/library/LibraryCover.vue'
+import ItemMenuButton from '@/components/menus/ItemMenuButton.vue'
+import { useContextMenuTrigger } from '@/composables/useContextMenuTrigger'
 import { useFormat } from '@/composables/useFormat'
 import { useKeepInView } from '@/composables/useKeepInView'
 import { artistLabelKey, durationSeconds } from '@/library/presentation'
 import type { Track } from '@/api/generated/models'
 import { visibleQueueEntries, type QueueItem } from '@/player/queue'
+import { useContextMenuStore } from '@/stores/contextMenu'
 
 /**
  * The queue: the last played entries, the current one and all that follow, each with its cover.
  * Every entry plays when it is chosen, and its buttons move it up and down or remove it. The
- * current entry cannot be removed, and clearing keeps it. Where the queue scrolls itself (beside
- * the stage on the desktop), it keeps the current entry in view.
+ * current entry cannot be removed, and clearing keeps it. The context menu of an entry (right
+ * click, long press, the button "More options" or the keyboard) also plays it next. Where the
+ * queue scrolls itself (beside the stage on the desktop), it keeps the current entry in view.
  */
 const props = defineProps<{
     items: readonly QueueItem[]
@@ -39,6 +43,25 @@ useKeepInView(queue, '[data-part="queue-item"][aria-current="true"]', () => [
     props.currentIndex,
     props.items[props.currentIndex]?.key,
 ])
+
+const contextMenu = useContextMenuStore()
+
+function openMenu(entry: { item: QueueItem; index: number }, x: number, y: number): void {
+    contextMenu.open(
+        {
+            type: 'queue-entry',
+            key: entry.item.key,
+            track: entry.item.track,
+            index: entry.index,
+            count: props.items.length,
+            currentIndex: props.currentIndex,
+        },
+        x,
+        y,
+    )
+}
+
+const trigger = useContextMenuTrigger(openMenu)
 
 function artistName(track: Track): string {
     const key = artistLabelKey(track.artist)
@@ -68,6 +91,14 @@ function duration(track: Track): string {
                 data-part="queue-item"
                 :data-state="state"
                 :aria-current="state === 'current' ? 'true' : undefined"
+                @contextmenu="trigger.onContextmenu($event, { item, index })"
+                @keydown="trigger.onKeydown($event, { item, index })"
+                @pointerdown="trigger.onPointerdown($event, { item, index })"
+                @pointermove="trigger.onPointermove"
+                @pointerup="trigger.cancel"
+                @pointercancel="trigger.cancel"
+                @pointerleave="trigger.cancel"
+                @click.capture="trigger.onClickCapture"
             >
                 <button
                     type="button"
@@ -108,6 +139,9 @@ function duration(track: Track): string {
                         :label="t('nowPlaying.remove')"
                         :disabled="index === currentIndex"
                         @click="emit('remove', item.key)"
+                    />
+                    <ItemMenuButton
+                        @open="(x: number, y: number) => openMenu({ item, index }, x, y)"
                     />
                 </div>
             </li>

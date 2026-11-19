@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { createPinia } from 'pinia'
+import { useContextMenuStore } from '@/stores/contextMenu'
 import type { Track } from '@/api/generated/models'
 import { createWaveMpI18n } from '@/i18n'
 import type { QueueItem } from '@/player/queue'
@@ -78,6 +79,36 @@ describe('PlayQueue', () => {
         await entries[1]!.get('[data-part="queue-item-info"]').trigger('click')
         expect(wrapper.emitted('move')).toEqual([['k-d', -1]])
         expect(wrapper.emitted('play')).toEqual([['k-e']])
+        wrapper.unmount()
+    })
+
+    it('opens the context menu of an entry by right click, keyboard and its button', async () => {
+        const wrapper = mountQueue(4)
+        const menu = useContextMenuStore()
+        const entries = wrapper.findAll('[data-part="queue-item"]')
+
+        await entries[2]!.trigger('contextmenu', { clientX: 7, clientY: 8 })
+        expect(menu.request).toMatchObject({
+            target: {
+                type: 'queue-entry',
+                key: 'k-d',
+                index: 3,
+                count: 7,
+                currentIndex: 4,
+            },
+            x: 7,
+            y: 8,
+        })
+
+        await entries[3]!.get('[data-part="queue-item-info"]').trigger('keydown', {
+            key: 'F10',
+            shiftKey: true,
+        })
+        expect(menu.request?.target).toMatchObject({ key: 'k-e', index: 4 })
+
+        await entries[0]!.get('[data-part="btn-item-menu"]').trigger('click')
+        expect(menu.request?.target).toMatchObject({ key: 'k-b', index: 1 })
+        expect(wrapper.emitted('play')).toBeUndefined()
         wrapper.unmount()
     })
 

@@ -1,11 +1,14 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import BaseCover from '@/components/base/BaseCover.vue'
 import BaseSegmentedControl, {
     type SegmentOption,
 } from '@/components/base/BaseSegmentedControl.vue'
 import LibraryCover from '@/components/library/LibraryCover.vue'
+import ItemMenuButton from '@/components/menus/ItemMenuButton.vue'
+import { useContextMenuTrigger } from '@/composables/useContextMenuTrigger'
+import { useContextMenuStore } from '@/stores/contextMenu'
 import LyricsStage from './LyricsStage.vue'
 import StageVisualization from './StageVisualization.vue'
 import VideoStage from './VideoStage.vue'
@@ -25,7 +28,9 @@ import {
  * other and fade into each other; the buttons choose the view, the music goes on. The video view
  * stays in the page as long as the track has a video, the lyrics view as long as it has lyrics, so
  * switching back to them is quick. While a casting device plays, the stage names it, shows the cover
- * instead of the video (the device shows it) and offers no visualization.
+ * instead of the video (the device shows it) and offers no visualization. The context menu of the
+ * stage (right click, long press, the button "More options" or the keyboard) chooses the view and
+ * shows the video or the visualization in full screen.
  */
 const props = withDefaults(
     defineProps<{
@@ -170,6 +175,43 @@ function selectMode(value: string): void {
     }
 }
 
+const contextMenu = useContextMenuStore()
+const videoStage = ref<InstanceType<typeof VideoStage> | null>(null)
+const stageVisualization = ref<InstanceType<typeof StageVisualization> | null>(null)
+
+function openMenu(_: unknown, x: number, y: number): void {
+    if (!props.track) {
+        return
+    }
+
+    const shown =
+        props.view === 'video'
+            ? videoStage.value
+            : props.view === 'visualization'
+              ? stageVisualization.value
+              : null
+    contextMenu.open(
+        {
+            type: 'now-playing',
+            views: viewOptions.value.map((option) => ({
+                mode: option.value as PlayerViewMode,
+                available: !option.disabled,
+            })),
+            selected: selected.value,
+            selectView: (mode) => emit('selectMode', mode),
+            fullscreen: {
+                available: !!shown?.fullscreenAvailable,
+                active: !!shown?.fullscreen,
+                toggle: () => void shown?.toggleFullscreen(),
+            },
+        },
+        x,
+        y,
+    )
+}
+
+const trigger = useContextMenuTrigger(openMenu)
+
 const subtitle = computed(() => {
     const key = artistLabelKey(props.track?.artist)
     const artist = key ? t(key) : (props.track?.artist?.name ?? '')
@@ -178,8 +220,17 @@ const subtitle = computed(() => {
 </script>
 
 <template>
-    <div data-part="stage" :data-state="view">
-        <div data-part="stage-views">
+    <div data-part="stage" :data-state="view" @keydown="trigger.onKeydown($event, null)">
+        <div
+            data-part="stage-views"
+            @contextmenu="trigger.onContextmenu($event, null)"
+            @pointerdown="trigger.onPointerdown($event, null)"
+            @pointermove="trigger.onPointermove"
+            @pointerup="trigger.cancel"
+            @pointercancel="trigger.cancel"
+            @pointerleave="trigger.cancel"
+            @click.capture="trigger.onClickCapture"
+        >
             <div
                 data-part="stage-view"
                 data-kind="cover"
@@ -202,6 +253,7 @@ const subtitle = computed(() => {
                 :aria-hidden="view === 'video' ? undefined : 'true'"
             >
                 <VideoStage
+                    ref="videoStage"
                     :active="view === 'video'"
                     @attach="emit('attachVideo', $event)"
                     @detach="emit('detachVideo', $event)"
@@ -214,6 +266,7 @@ const subtitle = computed(() => {
                 :aria-hidden="view === 'visualization' ? undefined : 'true'"
             >
                 <StageVisualization
+                    ref="stageVisualization"
                     :active="view === 'visualization'"
                     :audio="audio"
                     :settings="visualization"
@@ -260,6 +313,7 @@ const subtitle = computed(() => {
                 :model-value="selected"
                 @update:model-value="selectMode"
             />
+            <ItemMenuButton @open="(x: number, y: number) => openMenu(null, x, y)" />
         </div>
     </div>
 </template>

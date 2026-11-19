@@ -1218,6 +1218,12 @@ a[data-part='breadcrumb-link']:hover {
     color: var(--cg-ink);
 }
 
+[data-part='menu-item']:disabled,
+[data-part='menu-item']:disabled [data-part='icon'] {
+    --wmp-icon-fill: var(--wmp-color-text-disabled);
+    color: var(--wmp-color-text-disabled);
+}
+
 [data-part='menu-item']:is(:hover, :focus-visible):not(:disabled) {
     background: var(--cg-lens);
     box-shadow: var(--cg-lens-shadow);

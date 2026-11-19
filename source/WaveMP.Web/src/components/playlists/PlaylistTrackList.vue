@@ -13,22 +13,23 @@ export interface PlaylistTrackRow {
 <script setup lang="ts">
 import { computed, ref, type ComponentPublicInstance } from 'vue'
 import { useI18n } from 'vue-i18n'
-import type { MenuItem } from '@/components/base/BaseContextMenu.vue'
 import BaseIcon from '@/components/base/BaseIcon.vue'
 import BaseList, { type ListGroup, type ListRowBase } from '@/components/base/BaseList.vue'
 import FavoriteButton from '@/components/collection/FavoriteButton.vue'
 import RatingStars from '@/components/collection/RatingStars.vue'
-import TrackMenu from '@/components/library/TrackMenu.vue'
+import ItemMenuButton from '@/components/menus/ItemMenuButton.vue'
 import { useFormat } from '@/composables/useFormat'
 import { useSortableList } from '@/composables/useSortableList'
 import { artistLabelKey, durationSeconds, trackRowState } from '@/library/presentation'
+import { useContextMenuStore } from '@/stores/contextMenu'
 import { usePlayerStore } from '@/stores/player'
 
 /**
  * The tracks of a playlist (or of the list "Recently played") in their order, without grouping.
- * A double click, Enter or a tap plays the list from the row on. With sortable, each row has a
- * handle to drag it to another place (event move); the context menu adds the entries of the page
- * (extraItems, event extra), e.g. to move a row with the keyboard or to remove it. The columns
+ * A double click, Enter or a tap plays the list from the row on. The context menu applies to all
+ * selected rows (Ctrl and Shift with a click choose several). With sortable, the rows are entries
+ * of a playlist: each row has a handle to drag it to another place (event move), and the context
+ * menu also moves a row with the keyboard and removes the chosen rows (event remove). The columns
  * rating and favorite show the stars and the heart of the profile; a click changes them.
  */
 interface Row extends ListRowBase {
@@ -44,16 +45,16 @@ const props = withDefaults(
         sortable?: boolean
         /** Heading of the detail column; without it, the column is left out. */
         detailLabel?: string
-        extraItems?: (row: PlaylistTrackRow, index: number) => readonly MenuItem[]
-        /** data-state tokens of the list, e.g. "busy". */
+        /** data-state tokens of the list, e.g. "busy" while a change of the playlist runs. */
         state?: string
     }>(),
-    { sortable: false, detailLabel: undefined, extraItems: undefined, state: undefined },
+    { sortable: false, detailLabel: undefined, state: undefined },
 )
 
 const emit = defineEmits<{
     move: [from: number, to: number]
-    extra: [id: string, row: PlaylistTrackRow, index: number]
+    /** Indexes of the rows to remove, in the order of the list. */
+    remove: [indexes: number[]]
 }>()
 
 /** Id of the selected row. */
@@ -63,8 +64,10 @@ const { t } = useI18n()
 const format = useFormat()
 const player = usePlayerStore()
 const list = ref<ComponentPublicInstance | null>(null)
-const menu = ref<InstanceType<typeof TrackMenu> | null>(null)
-const menuRow = ref<Row | null>(null)
+const contextMenu = useContextMenuStore()
+/** Ids of the selected rows. */
+const selection = ref<readonly string[]>([])
+const busy = computed(() => props.state?.split(' ').includes('busy') ?? false)
 
 const columns = computed(() => [
     ...(props.sortable ? [{ id: 'handle', label: t('list.columns.handle') }] : []),
@@ -113,12 +116,6 @@ useSortableList(rowsElement, {
     onMove: (from, to) => emit('move', from, to),
 })
 
-const menuItems = computed(() =>
-    menuRow.value && props.extraItems
-        ? props.extraItems(menuRow.value.entry, menuRow.value.index)
-        : [],
-)
-
 function artistOf(track: Track): string {
     const key = artistLabelKey(track.artist)
     return key ? t(key) : (track.artist?.name ?? '')
@@ -140,23 +137,44 @@ function activate(rowId: string): void {
 }
 
 function openMenu(rowId: string, x: number, y: number): void {
-    const row = rowsById.value.get(rowId)
-    if (row) {
-        menuRow.value = row
-        void menu.value?.open(row.entry.track, x, y)
+    const chosen = new Set(selection.value.includes(rowId) ? selection.value : [rowId])
+    const rows = groups.value[0]!.rows.filter((row) => chosen.has(row.id))
+    const first = rows[0]
+    if (!first) {
+        return
     }
+
+    const single = rows.length === 1 ? first : undefined
+    contextMenu.open(
+        {
+            type: 'song',
+            tracks: rows.map((row) => row.entry.track),
+            playFrom: single ? () => playFrom(single.index) : undefined,
+            playlistEntry: props.sortable
+                ? {
+                      canMoveUp: first.index > 0,
+                      canMoveDown: first.index < props.rows.length - 1,
+                      busy: busy.value,
+                      moveUp: () => emit('move', first.index, first.index - 1),
+                      moveDown: () => emit('move', first.index, first.index + 1),
+                      remove: () =>
+                          emit(
+                              'remove',
+                              rows.map((row) => row.index),
+                          ),
+                  }
+                : undefined,
+        },
+        x,
+        y,
+    )
 }
 
-function onPlay(): void {
-    if (menuRow.value) {
-        playFrom(menuRow.value.index)
-    }
-}
-
-function onExtra(id: string): void {
-    if (menuRow.value) {
-        emit('extra', id, menuRow.value.entry, menuRow.value.index)
-    }
+/** The button "More options" of a row: its menu, for the row alone. */
+function openRowMenu(rowId: string, x: number, y: number): void {
+    selected.value = rowId
+    selection.value = [rowId]
+    openMenu(rowId, x, y)
 }
 </script>
 
@@ -164,12 +182,14 @@ function onExtra(id: string): void {
     <BaseList
         ref="list"
         v-model:selected="selected"
+        v-model:selection="selection"
         :columns="columns"
         :groups="groups"
         :label="label"
         :state="state"
         row-menu
         activate-on-tap
+        multi-select
         @row-menu="openMenu"
         @row-activate="activate"
     >
@@ -220,14 +240,18 @@ function onExtra(id: string): void {
                 :rating="row.entry.track.rating"
                 :focusable="false"
             />
-            <FavoriteButton
-                v-else-if="column.id === 'favorite'"
-                type="Track"
-                :id="row.entry.track.id ?? ''"
-                :favorite="row.entry.track.isFavorite"
-                :focusable="false"
-            />
+            <template v-else-if="column.id === 'favorite'">
+                <FavoriteButton
+                    type="Track"
+                    :id="row.entry.track.id ?? ''"
+                    :favorite="row.entry.track.isFavorite"
+                    :focusable="false"
+                />
+                <ItemMenuButton
+                    :focusable="false"
+                    @open="(x: number, y: number) => openRowMenu(row.id, x, y)"
+                />
+            </template>
         </template>
     </BaseList>
-    <TrackMenu ref="menu" :extra-items="menuItems" @play="onPlay" @extra="onExtra" />
 </template>
