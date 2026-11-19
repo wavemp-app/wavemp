@@ -24,6 +24,8 @@ import { ScrobblingRequestBuilderNavigationMetadata, ScrobblingRequestBuilderReq
 // @ts-ignore
 import { SettingsRequestBuilderRequestsMetadata, type SettingsRequestBuilder } from './settings/index.js';
 // @ts-ignore
+import { SmartPlaylistsRequestBuilderNavigationMetadata, SmartPlaylistsRequestBuilderRequestsMetadata, type SmartPlaylistsRequestBuilder } from './smartPlaylists/index.js';
+// @ts-ignore
 import { SubsonicRequestBuilderNavigationMetadata, SubsonicRequestBuilderRequestsMetadata, type SubsonicRequestBuilder } from './subsonic/index.js';
 // @ts-ignore
 import { type BaseRequestBuilder, type KeysToExcludeForNavigationMetadata, type NavigationMetadata } from '@microsoft/kiota-abstractions';
@@ -77,6 +79,10 @@ export interface MeRequestBuilder extends BaseRequestBuilder<MeRequestBuilder> {
      */
     get settings(): SettingsRequestBuilder;
     /**
+     * The smartPlaylists property
+     */
+    get smartPlaylists(): SmartPlaylistsRequestBuilder;
+    /**
      * The subsonic property
      */
     get subsonic(): SubsonicRequestBuilder;
@@ -125,6 +131,10 @@ export const MeRequestBuilderNavigationMetadata: Record<Exclude<keyof MeRequestB
     },
     settings: {
         requestsMetadata: SettingsRequestBuilderRequestsMetadata,
+    },
+    smartPlaylists: {
+        requestsMetadata: SmartPlaylistsRequestBuilderRequestsMetadata,
+        navigationMetadata: SmartPlaylistsRequestBuilderNavigationMetadata,
     },
     subsonic: {
         requestsMetadata: SubsonicRequestBuilderRequestsMetadata,

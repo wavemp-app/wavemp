@@ -34,6 +34,8 @@ import { SessionsRequestBuilderNavigationMetadata, SessionsRequestBuilderRequest
 // @ts-ignore
 import { SettingsRequestBuilderNavigationMetadata, type SettingsRequestBuilder } from './settings/index.js';
 // @ts-ignore
+import { SmartPlaylistTemplatesRequestBuilderRequestsMetadata, type SmartPlaylistTemplatesRequestBuilder } from './smartPlaylistTemplates/index.js';
+// @ts-ignore
 import { SourcesRequestBuilderNavigationMetadata, SourcesRequestBuilderRequestsMetadata, type SourcesRequestBuilder } from './sources/index.js';
 // @ts-ignore
 import { ThemesRequestBuilderNavigationMetadata, ThemesRequestBuilderRequestsMetadata, type ThemesRequestBuilder } from './themes/index.js';
@@ -120,6 +122,10 @@ export interface V1RequestBuilder extends BaseRequestBuilder<V1RequestBuilder> {
      * The settings property
      */
     get settings(): SettingsRequestBuilder;
+    /**
+     * The smartPlaylistTemplates property
+     */
+    get smartPlaylistTemplates(): SmartPlaylistTemplatesRequestBuilder;
     /**
      * The sources property
      */
@@ -215,6 +221,9 @@ export const V1RequestBuilderNavigationMetadata: Record<Exclude<keyof V1RequestB
     },
     settings: {
         navigationMetadata: SettingsRequestBuilderNavigationMetadata,
+    },
+    smartPlaylistTemplates: {
+        requestsMetadata: SmartPlaylistTemplatesRequestBuilderRequestsMetadata,
     },
     sources: {
         requestsMetadata: SourcesRequestBuilderRequestsMetadata,

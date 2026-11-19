@@ -1106,6 +1106,24 @@ export function createReplayGainFromDiscriminatorValue(parseNode: ParseNode | un
 /**
  * Creates a new instance of the appropriate class based on discriminator value
  * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {SaveSmartPlaylist}
+ */
+// @ts-ignore
+export function createSaveSmartPlaylistFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoSaveSmartPlaylist;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {SaveSmartPlaylistRule}
+ */
+// @ts-ignore
+export function createSaveSmartPlaylistRuleFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoSaveSmartPlaylistRule;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
  * @returns {Scan}
  */
 // @ts-ignore
@@ -1214,6 +1232,51 @@ export function createSetPinFromDiscriminatorValue(parseNode: ParseNode | undefi
 // @ts-ignore
 export function createSleepTimerSettingsFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
     return deserializeIntoSleepTimerSettings;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {SmartPlaylist}
+ */
+// @ts-ignore
+export function createSmartPlaylistFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoSmartPlaylist;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {SmartPlaylistPage}
+ */
+// @ts-ignore
+export function createSmartPlaylistPageFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoSmartPlaylistPage;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {SmartPlaylistRule}
+ */
+// @ts-ignore
+export function createSmartPlaylistRuleFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoSmartPlaylistRule;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {SmartPlaylistTemplate}
+ */
+// @ts-ignore
+export function createSmartPlaylistTemplateFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoSmartPlaylistTemplate;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {SmartPlaylistTemplatePage}
+ */
+// @ts-ignore
+export function createSmartPlaylistTemplatePageFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoSmartPlaylistTemplatePage;
 }
 /**
  * Creates a new instance of the appropriate class based on discriminator value
@@ -2757,6 +2820,37 @@ export function deserializeIntoReplayGain(replayGain: Partial<ReplayGain> | unde
 }
 /**
  * The deserialization information for the current model
+ * @param SaveSmartPlaylist The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoSaveSmartPlaylist(saveSmartPlaylist: Partial<SaveSmartPlaylist> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "direction": n => { saveSmartPlaylist.direction = n.getEnumValue<SortDirection>(SortDirectionObject); },
+        "limit": n => { saveSmartPlaylist.limit = n.getNumberValue(); },
+        "match": n => { saveSmartPlaylist.match = n.getEnumValue<SmartPlaylistMatch>(SmartPlaylistMatchObject); },
+        "name": n => { saveSmartPlaylist.name = n.getStringValue(); },
+        "rules": n => { saveSmartPlaylist.rules = n.getCollectionOfObjectValues<SaveSmartPlaylistRule>(createSaveSmartPlaylistRuleFromDiscriminatorValue); },
+        "sort": n => { saveSmartPlaylist.sort = n.getEnumValue<SmartPlaylistTrackSort>(SmartPlaylistTrackSortObject); },
+    }
+}
+/**
+ * The deserialization information for the current model
+ * @param SaveSmartPlaylistRule The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoSaveSmartPlaylistRule(saveSmartPlaylistRule: Partial<SaveSmartPlaylistRule> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "field": n => { saveSmartPlaylistRule.field = n.getEnumValue<SmartPlaylistField>(SmartPlaylistFieldObject); },
+        "number": n => { saveSmartPlaylistRule.number = n.getNumberValue(); },
+        "numberTo": n => { saveSmartPlaylistRule.numberTo = n.getNumberValue(); },
+        "operator": n => { saveSmartPlaylistRule.operator = n.getEnumValue<SmartPlaylistOperator>(SmartPlaylistOperatorObject); },
+        "text": n => { saveSmartPlaylistRule.text = n.getStringValue(); },
+    }
+}
+/**
+ * The deserialization information for the current model
  * @param Scan The instance to deserialize into.
  * @returns {Record<string, (node: ParseNode) => void>}
  */
@@ -2922,6 +3016,87 @@ export function deserializeIntoSetPin(setPin: Partial<SetPin> | undefined = {}) 
 export function deserializeIntoSleepTimerSettings(sleepTimerSettings: Partial<SleepTimerSettings> | undefined = {}) : Record<string, (node: ParseNode) => void> {
     return {
         "fadeSeconds": n => { sleepTimerSettings.fadeSeconds = n.getNumberValue(); },
+    }
+}
+/**
+ * The deserialization information for the current model
+ * @param SmartPlaylist The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoSmartPlaylist(smartPlaylist: Partial<SmartPlaylist> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "cover": n => { smartPlaylist.cover = n.getObjectValue<PlaylistCover>(createPlaylistCoverFromDiscriminatorValue); },
+        "createdAt": n => { smartPlaylist.createdAt = n.getDateValue(); },
+        "direction": n => { smartPlaylist.direction = n.getEnumValue<SortDirection>(SortDirectionObject); },
+        "durationMilliseconds": n => { smartPlaylist.durationMilliseconds = n.getNumberValue(); },
+        "id": n => { smartPlaylist.id = n.getGuidValue(); },
+        "limit": n => { smartPlaylist.limit = n.getNumberValue(); },
+        "match": n => { smartPlaylist.match = n.getEnumValue<SmartPlaylistMatch>(SmartPlaylistMatchObject); },
+        "name": n => { smartPlaylist.name = n.getStringValue(); },
+        "rules": n => { smartPlaylist.rules = n.getCollectionOfObjectValues<SmartPlaylistRule>(createSmartPlaylistRuleFromDiscriminatorValue); },
+        "sort": n => { smartPlaylist.sort = n.getEnumValue<SmartPlaylistTrackSort>(SmartPlaylistTrackSortObject); },
+        "trackCount": n => { smartPlaylist.trackCount = n.getNumberValue(); },
+        "updatedAt": n => { smartPlaylist.updatedAt = n.getDateValue(); },
+    }
+}
+/**
+ * The deserialization information for the current model
+ * @param SmartPlaylistPage The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoSmartPlaylistPage(smartPlaylistPage: Partial<SmartPlaylistPage> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "items": n => { smartPlaylistPage.items = n.getCollectionOfObjectValues<SmartPlaylist>(createSmartPlaylistFromDiscriminatorValue); },
+        "limit": n => { smartPlaylistPage.limit = n.getNumberValue(); },
+        "offset": n => { smartPlaylistPage.offset = n.getNumberValue(); },
+        "total": n => { smartPlaylistPage.total = n.getNumberValue(); },
+    }
+}
+/**
+ * The deserialization information for the current model
+ * @param SmartPlaylistRule The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoSmartPlaylistRule(smartPlaylistRule: Partial<SmartPlaylistRule> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "field": n => { smartPlaylistRule.field = n.getEnumValue<SmartPlaylistField>(SmartPlaylistFieldObject); },
+        "number": n => { smartPlaylistRule.number = n.getNumberValue(); },
+        "numberTo": n => { smartPlaylistRule.numberTo = n.getNumberValue(); },
+        "operator": n => { smartPlaylistRule.operator = n.getEnumValue<SmartPlaylistOperator>(SmartPlaylistOperatorObject); },
+        "text": n => { smartPlaylistRule.text = n.getStringValue(); },
+    }
+}
+/**
+ * The deserialization information for the current model
+ * @param SmartPlaylistTemplate The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoSmartPlaylistTemplate(smartPlaylistTemplate: Partial<SmartPlaylistTemplate> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "direction": n => { smartPlaylistTemplate.direction = n.getEnumValue<SortDirection>(SortDirectionObject); },
+        "id": n => { smartPlaylistTemplate.id = n.getEnumValue<SmartPlaylistTemplateId>(SmartPlaylistTemplateIdObject); },
+        "limit": n => { smartPlaylistTemplate.limit = n.getNumberValue(); },
+        "match": n => { smartPlaylistTemplate.match = n.getEnumValue<SmartPlaylistMatch>(SmartPlaylistMatchObject); },
+        "rules": n => { smartPlaylistTemplate.rules = n.getCollectionOfObjectValues<SmartPlaylistRule>(createSmartPlaylistRuleFromDiscriminatorValue); },
+        "sort": n => { smartPlaylistTemplate.sort = n.getEnumValue<SmartPlaylistTrackSort>(SmartPlaylistTrackSortObject); },
+    }
+}
+/**
+ * The deserialization information for the current model
+ * @param SmartPlaylistTemplatePage The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoSmartPlaylistTemplatePage(smartPlaylistTemplatePage: Partial<SmartPlaylistTemplatePage> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "items": n => { smartPlaylistTemplatePage.items = n.getCollectionOfObjectValues<SmartPlaylistTemplate>(createSmartPlaylistTemplateFromDiscriminatorValue); },
+        "limit": n => { smartPlaylistTemplatePage.limit = n.getNumberValue(); },
+        "offset": n => { smartPlaylistTemplatePage.offset = n.getNumberValue(); },
+        "total": n => { smartPlaylistTemplatePage.total = n.getNumberValue(); },
     }
 }
 /**
@@ -4801,6 +4976,60 @@ export interface ReplayGain extends AdditionalDataHolder, Parsable {
 export type ReplayGainMode = (typeof ReplayGainModeObject)[keyof typeof ReplayGainModeObject];
 export type Role = (typeof RoleObject)[keyof typeof RoleObject];
 /**
+ * A smart playlist to create or to replace: its name, rules, sort order and limit.
+ */
+export interface SaveSmartPlaylist extends AdditionalDataHolder, Parsable {
+    /**
+     * The direction property
+     */
+    direction?: SortDirection | null;
+    /**
+     * Largest number of songs, 1 to 10000, the first ones in the sort order; all matching songs if missing.
+     */
+    limit?: number | null;
+    /**
+     * The match property
+     */
+    match?: SmartPlaylistMatch | null;
+    /**
+     * Name, 1 to 100 characters; spaces at the ends are removed. Names do not need to be unique.
+     */
+    name?: string | null;
+    /**
+     * The rules, at most 20; without rules every song of the library belongs to the smart playlist.
+     */
+    rules?: SaveSmartPlaylistRule[] | null;
+    /**
+     * The sort property
+     */
+    sort?: SmartPlaylistTrackSort | null;
+}
+/**
+ * A rule of a smart playlist to save. Values the operator does not need are ignored.
+ */
+export interface SaveSmartPlaylistRule extends AdditionalDataHolder, Parsable {
+    /**
+     * The field property
+     */
+    field?: SmartPlaylistField | null;
+    /**
+     * Number of a number field (duration in seconds), the lower bound of Between or the number of days of a day field; the range depends on the field (see SmartPlaylistField).
+     */
+    number?: number | null;
+    /**
+     * Upper bound of Between, from `number` to the largest value of the field.
+     */
+    numberTo?: number | null;
+    /**
+     * The operator property
+     */
+    operator?: SmartPlaylistOperator | null;
+    /**
+     * Text of a text field, 1 to 200 characters; spaces at the ends are removed.
+     */
+    text?: string | null;
+}
+/**
  * A scan of the media folder: its run, its progress while running and its result once finished.
  */
 export interface Scan extends AdditionalDataHolder, Parsable {
@@ -6109,6 +6338,39 @@ export function serializeReplayGain(writer: SerializationWriter, replayGain: Par
 /**
  * Serializes information the current object
  * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param SaveSmartPlaylist The instance to serialize from.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeSaveSmartPlaylist(writer: SerializationWriter, saveSmartPlaylist: Partial<SaveSmartPlaylist> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!saveSmartPlaylist || isSerializingDerivedType) { return; }
+    writer.writeEnumValue<SortDirection>("direction", saveSmartPlaylist.direction);
+    writer.writeNumberValue("limit", saveSmartPlaylist.limit);
+    writer.writeEnumValue<SmartPlaylistMatch>("match", saveSmartPlaylist.match);
+    writer.writeStringValue("name", saveSmartPlaylist.name);
+    writer.writeCollectionOfObjectValues<SaveSmartPlaylistRule>("rules", saveSmartPlaylist.rules, serializeSaveSmartPlaylistRule);
+    writer.writeEnumValue<SmartPlaylistTrackSort>("sort", saveSmartPlaylist.sort);
+    writer.writeAdditionalData(saveSmartPlaylist.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param SaveSmartPlaylistRule The instance to serialize from.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeSaveSmartPlaylistRule(writer: SerializationWriter, saveSmartPlaylistRule: Partial<SaveSmartPlaylistRule> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!saveSmartPlaylistRule || isSerializingDerivedType) { return; }
+    writer.writeEnumValue<SmartPlaylistField>("field", saveSmartPlaylistRule.field);
+    writer.writeNumberValue("number", saveSmartPlaylistRule.number);
+    writer.writeNumberValue("numberTo", saveSmartPlaylistRule.numberTo);
+    writer.writeEnumValue<SmartPlaylistOperator>("operator", saveSmartPlaylistRule.operator);
+    writer.writeStringValue("text", saveSmartPlaylistRule.text);
+    writer.writeAdditionalData(saveSmartPlaylistRule.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
  * @param Scan The instance to serialize from.
  * @param writer Serialization writer to use to serialize this model
  */
@@ -6285,6 +6547,92 @@ export function serializeSleepTimerSettings(writer: SerializationWriter, sleepTi
     if (!sleepTimerSettings || isSerializingDerivedType) { return; }
     writer.writeNumberValue("fadeSeconds", sleepTimerSettings.fadeSeconds);
     writer.writeAdditionalData(sleepTimerSettings.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param SmartPlaylist The instance to serialize from.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeSmartPlaylist(writer: SerializationWriter, smartPlaylist: Partial<SmartPlaylist> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!smartPlaylist || isSerializingDerivedType) { return; }
+    writer.writeObjectValue<PlaylistCover>("cover", smartPlaylist.cover, serializePlaylistCover);
+    writer.writeDateValue("createdAt", smartPlaylist.createdAt);
+    writer.writeEnumValue<SortDirection>("direction", smartPlaylist.direction);
+    writer.writeNumberValue("durationMilliseconds", smartPlaylist.durationMilliseconds);
+    writer.writeGuidValue("id", smartPlaylist.id);
+    writer.writeNumberValue("limit", smartPlaylist.limit);
+    writer.writeEnumValue<SmartPlaylistMatch>("match", smartPlaylist.match);
+    writer.writeStringValue("name", smartPlaylist.name);
+    writer.writeCollectionOfObjectValues<SmartPlaylistRule>("rules", smartPlaylist.rules, serializeSmartPlaylistRule);
+    writer.writeEnumValue<SmartPlaylistTrackSort>("sort", smartPlaylist.sort);
+    writer.writeNumberValue("trackCount", smartPlaylist.trackCount);
+    writer.writeDateValue("updatedAt", smartPlaylist.updatedAt);
+    writer.writeAdditionalData(smartPlaylist.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param SmartPlaylistPage The instance to serialize from.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeSmartPlaylistPage(writer: SerializationWriter, smartPlaylistPage: Partial<SmartPlaylistPage> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!smartPlaylistPage || isSerializingDerivedType) { return; }
+    writer.writeCollectionOfObjectValues<SmartPlaylist>("items", smartPlaylistPage.items, serializeSmartPlaylist);
+    writer.writeNumberValue("limit", smartPlaylistPage.limit);
+    writer.writeNumberValue("offset", smartPlaylistPage.offset);
+    writer.writeNumberValue("total", smartPlaylistPage.total);
+    writer.writeAdditionalData(smartPlaylistPage.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param SmartPlaylistRule The instance to serialize from.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeSmartPlaylistRule(writer: SerializationWriter, smartPlaylistRule: Partial<SmartPlaylistRule> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!smartPlaylistRule || isSerializingDerivedType) { return; }
+    writer.writeEnumValue<SmartPlaylistField>("field", smartPlaylistRule.field);
+    writer.writeNumberValue("number", smartPlaylistRule.number);
+    writer.writeNumberValue("numberTo", smartPlaylistRule.numberTo);
+    writer.writeEnumValue<SmartPlaylistOperator>("operator", smartPlaylistRule.operator);
+    writer.writeStringValue("text", smartPlaylistRule.text);
+    writer.writeAdditionalData(smartPlaylistRule.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param SmartPlaylistTemplate The instance to serialize from.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeSmartPlaylistTemplate(writer: SerializationWriter, smartPlaylistTemplate: Partial<SmartPlaylistTemplate> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!smartPlaylistTemplate || isSerializingDerivedType) { return; }
+    writer.writeEnumValue<SortDirection>("direction", smartPlaylistTemplate.direction);
+    writer.writeEnumValue<SmartPlaylistTemplateId>("id", smartPlaylistTemplate.id);
+    writer.writeNumberValue("limit", smartPlaylistTemplate.limit);
+    writer.writeEnumValue<SmartPlaylistMatch>("match", smartPlaylistTemplate.match);
+    writer.writeCollectionOfObjectValues<SmartPlaylistRule>("rules", smartPlaylistTemplate.rules, serializeSmartPlaylistRule);
+    writer.writeEnumValue<SmartPlaylistTrackSort>("sort", smartPlaylistTemplate.sort);
+    writer.writeAdditionalData(smartPlaylistTemplate.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param SmartPlaylistTemplatePage The instance to serialize from.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeSmartPlaylistTemplatePage(writer: SerializationWriter, smartPlaylistTemplatePage: Partial<SmartPlaylistTemplatePage> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!smartPlaylistTemplatePage || isSerializingDerivedType) { return; }
+    writer.writeCollectionOfObjectValues<SmartPlaylistTemplate>("items", smartPlaylistTemplatePage.items, serializeSmartPlaylistTemplate);
+    writer.writeNumberValue("limit", smartPlaylistTemplatePage.limit);
+    writer.writeNumberValue("offset", smartPlaylistTemplatePage.offset);
+    writer.writeNumberValue("total", smartPlaylistTemplatePage.total);
+    writer.writeAdditionalData(smartPlaylistTemplatePage.additionalData);
 }
 /**
  * Serializes information the current object
@@ -7250,6 +7598,160 @@ export interface SleepTimerSettings extends AdditionalDataHolder, Parsable {
      */
     fadeSeconds?: number | null;
 }
+/**
+ * A smart playlist of the current profile: rules that pick songs from the library. Its songs are computed on every request, so it always reflects the current library.
+ */
+export interface SmartPlaylist extends AdditionalDataHolder, Parsable {
+    /**
+     * The covers of up to four of its first songs (Tracks), else none; never Custom.
+     */
+    cover?: PlaylistCover | null;
+    /**
+     * The createdAt property
+     */
+    createdAt?: Date | null;
+    /**
+     * The direction property
+     */
+    direction?: SortDirection | null;
+    /**
+     * Total duration of the songs right now in milliseconds.
+     */
+    durationMilliseconds?: number | null;
+    /**
+     * The id property
+     */
+    id?: Guid | null;
+    /**
+     * Largest number of songs; null for all matching songs.
+     */
+    limit?: number | null;
+    /**
+     * How the rules of a smart playlist are combined.
+     */
+    match?: SmartPlaylistMatch | null;
+    /**
+     * The name property
+     */
+    name?: string | null;
+    /**
+     * The rules in their order.
+     */
+    rules?: SmartPlaylistRule[] | null;
+    /**
+     * Sort key of the songs of a smart playlist. Songs without a value (e.g. without year or never played) come last in both directions; ties are sorted by album, disc and track number. Rating, PlayCount and LastPlayed are those of the current profile.
+     */
+    sort?: SmartPlaylistTrackSort | null;
+    /**
+     * Number of songs right now.
+     */
+    trackCount?: number | null;
+    /**
+     * When the name or the rules changed last.
+     */
+    updatedAt?: Date | null;
+}
+export type SmartPlaylistField = (typeof SmartPlaylistFieldObject)[keyof typeof SmartPlaylistFieldObject];
+export type SmartPlaylistMatch = (typeof SmartPlaylistMatchObject)[keyof typeof SmartPlaylistMatchObject];
+export type SmartPlaylistOperator = (typeof SmartPlaylistOperatorObject)[keyof typeof SmartPlaylistOperatorObject];
+/**
+ * One page of a collection.
+ */
+export interface SmartPlaylistPage extends AdditionalDataHolder, Parsable {
+    /**
+     * Items of the page, at most limit.
+     */
+    items?: SmartPlaylist[] | null;
+    /**
+     * Maximum number of items of the page, as requested.
+     */
+    limit?: number | null;
+    /**
+     * Number of items skipped before this page.
+     */
+    offset?: number | null;
+    /**
+     * Number of items of the whole collection.
+     */
+    total?: number | null;
+}
+/**
+ * A rule of a smart playlist. Only the values the operator needs are set.
+ */
+export interface SmartPlaylistRule extends AdditionalDataHolder, Parsable {
+    /**
+     * The field of a song a rule of a smart playlist looks at, with the kind of its value: text (Artist, Album, Genre), number (Year, Rating, PlayCount, Duration), days (LastPlayed, DateAdded) or yes/no (Favorite, HasAudio, HasVideo). Rating, Favorite, PlayCount and LastPlayed are those of the current profile.
+     */
+    field?: SmartPlaylistField | null;
+    /**
+     * Number of a number field (duration in seconds), the lower bound of Between or the number of days of a day field.
+     */
+    number?: number | null;
+    /**
+     * Upper bound of Between, included.
+     */
+    numberTo?: number | null;
+    /**
+     * How a rule of a smart playlist compares its field. Text fields take Is, IsNot, Contains and DoesNotContain with `text`; number fields Is, IsNot, AtLeast, AtMost with `number` and Between with `number` and `numberTo`; day fields InLast and NotInLast with the number of days in `number`; yes/no fields IsTrue and IsFalse without a value. Negations match every song the positive operator does not match, also songs without a value.
+     */
+    operator?: SmartPlaylistOperator | null;
+    /**
+     * Text of a text field.
+     */
+    text?: string | null;
+}
+/**
+ * A built-in template of smart playlists: the rules, sort order and limit a new smart playlist can start with. The client names it in the language of the user and sends it with a name to CreateMySmartPlaylist.
+ */
+export interface SmartPlaylistTemplate extends AdditionalDataHolder, Parsable {
+    /**
+     * The direction property
+     */
+    direction?: SortDirection | null;
+    /**
+     * A built-in template of smart playlists; clients name it in the language of the user.
+     */
+    id?: SmartPlaylistTemplateId | null;
+    /**
+     * Largest number of songs; null for all matching songs.
+     */
+    limit?: number | null;
+    /**
+     * How the rules of a smart playlist are combined.
+     */
+    match?: SmartPlaylistMatch | null;
+    /**
+     * The rules property
+     */
+    rules?: SmartPlaylistRule[] | null;
+    /**
+     * Sort key of the songs of a smart playlist. Songs without a value (e.g. without year or never played) come last in both directions; ties are sorted by album, disc and track number. Rating, PlayCount and LastPlayed are those of the current profile.
+     */
+    sort?: SmartPlaylistTrackSort | null;
+}
+export type SmartPlaylistTemplateId = (typeof SmartPlaylistTemplateIdObject)[keyof typeof SmartPlaylistTemplateIdObject];
+/**
+ * One page of a collection.
+ */
+export interface SmartPlaylistTemplatePage extends AdditionalDataHolder, Parsable {
+    /**
+     * Items of the page, at most limit.
+     */
+    items?: SmartPlaylistTemplate[] | null;
+    /**
+     * Maximum number of items of the page, as requested.
+     */
+    limit?: number | null;
+    /**
+     * Number of items skipped before this page.
+     */
+    offset?: number | null;
+    /**
+     * Number of items of the whole collection.
+     */
+    total?: number | null;
+}
+export type SmartPlaylistTrackSort = (typeof SmartPlaylistTrackSortObject)[keyof typeof SmartPlaylistTrackSortObject];
 export type SortDirection = (typeof SortDirectionObject)[keyof typeof SortDirectionObject];
 export type StreamProtocol = (typeof StreamProtocolObject)[keyof typeof StreamProtocolObject];
 /**
@@ -9049,6 +9551,7 @@ export const ProblemCodeObject = {
     PlaylistNot_found: "playlist.not_found",
     PlaylistEntry_not_found: "playlist.entry_not_found",
     PlaylistFull: "playlist.full",
+    PlaylistSmart_not_found: "playlist.smart_not_found",
     CoverUnsupported_format: "cover.unsupported_format",
     CoverToo_large: "cover.too_large",
     CoverUnreadable: "cover.unreadable",
@@ -9127,6 +9630,71 @@ export const ScrobbleConnectionStatusObject = {
 export const ScrobbleServiceObject = {
     LastFm: "LastFm",
     ListenBrainz: "ListenBrainz",
+} as const;
+/**
+ * The field of a song a rule of a smart playlist looks at, with the kind of its value: text (Artist, Album, Genre), number (Year, Rating, PlayCount, Duration), days (LastPlayed, DateAdded) or yes/no (Favorite, HasAudio, HasVideo). Rating, Favorite, PlayCount and LastPlayed are those of the current profile.
+ */
+export const SmartPlaylistFieldObject = {
+    Artist: "Artist",
+    Album: "Album",
+    Genre: "Genre",
+    Year: "Year",
+    Rating: "Rating",
+    Favorite: "Favorite",
+    PlayCount: "PlayCount",
+    LastPlayed: "LastPlayed",
+    DateAdded: "DateAdded",
+    Duration: "Duration",
+    HasAudio: "HasAudio",
+    HasVideo: "HasVideo",
+} as const;
+/**
+ * How the rules of a smart playlist are combined.
+ */
+export const SmartPlaylistMatchObject = {
+    All: "All",
+    Any: "Any",
+} as const;
+/**
+ * How a rule of a smart playlist compares its field. Text fields take Is, IsNot, Contains and DoesNotContain with `text`; number fields Is, IsNot, AtLeast, AtMost with `number` and Between with `number` and `numberTo`; day fields InLast and NotInLast with the number of days in `number`; yes/no fields IsTrue and IsFalse without a value. Negations match every song the positive operator does not match, also songs without a value.
+ */
+export const SmartPlaylistOperatorObject = {
+    Is: "Is",
+    IsNot: "IsNot",
+    Contains: "Contains",
+    DoesNotContain: "DoesNotContain",
+    AtLeast: "AtLeast",
+    AtMost: "AtMost",
+    Between: "Between",
+    InLast: "InLast",
+    NotInLast: "NotInLast",
+    IsTrue: "IsTrue",
+    IsFalse: "IsFalse",
+} as const;
+/**
+ * A built-in template of smart playlists; clients name it in the language of the user.
+ */
+export const SmartPlaylistTemplateIdObject = {
+    FourStarsAndMore: "FourStarsAndMore",
+    NeverPlayed: "NeverPlayed",
+    RecentlyAdded: "RecentlyAdded",
+    MostPlayed: "MostPlayed",
+    Favorites: "Favorites",
+} as const;
+/**
+ * Sort key of the songs of a smart playlist. Songs without a value (e.g. without year or never played) come last in both directions; ties are sorted by album, disc and track number. Rating, PlayCount and LastPlayed are those of the current profile.
+ */
+export const SmartPlaylistTrackSortObject = {
+    Title: "Title",
+    Artist: "Artist",
+    Album: "Album",
+    Year: "Year",
+    Genre: "Genre",
+    Rating: "Rating",
+    PlayCount: "PlayCount",
+    LastPlayed: "LastPlayed",
+    DateAdded: "DateAdded",
+    Duration: "Duration",
 } as const;
 export const SortDirectionObject = {
     Asc: "Asc",
