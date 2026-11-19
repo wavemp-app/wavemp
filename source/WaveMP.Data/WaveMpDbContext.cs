@@ -41,6 +41,8 @@ public class WaveMpDbContext(DbContextOptions<WaveMpDbContext> options) : DbCont
 
     public DbSet<PlayHistoryEntry> PlayHistory => Set<PlayHistoryEntry>();
 
+    public DbSet<PlaybackState> PlaybackStates => Set<PlaybackState>();
+
     public DbSet<Playlist> Playlists => Set<Playlist>();
 
     public DbSet<PlaylistEntry> PlaylistEntries => Set<PlaylistEntry>();
@@ -88,6 +90,7 @@ public class WaveMpDbContext(DbContextOptions<WaveMpDbContext> options) : DbCont
         modelBuilder.ApplyConfiguration(new TrackFileSelectionConfiguration());
         modelBuilder.ApplyConfiguration(new TagBackupConfiguration());
         modelBuilder.ApplyConfiguration(new PlayHistoryEntryConfiguration());
+        modelBuilder.ApplyConfiguration(new PlaybackStateConfiguration());
         modelBuilder.ApplyConfiguration(new PlaylistConfiguration());
         modelBuilder.ApplyConfiguration(new PlaylistEntryConfiguration());
         modelBuilder.ApplyConfiguration(new SmartPlaylistConfiguration());

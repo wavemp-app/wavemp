@@ -757,6 +757,76 @@ namespace WaveMP.Data.Migrations
                     b.ToTable("play_history", (string)null);
                 });
 
+            modelBuilder.Entity("WaveMP.Data.Entities.PlaybackState", b =>
+                {
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.PrimitiveCollection<List<int>>("AutoplayPositions")
+                        .IsRequired()
+                        .HasColumnType("integer[]")
+                        .HasColumnName("autoplay_positions");
+
+                    b.Property<DateTimeOffset>("ChangedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("changed_at");
+
+                    b.Property<int>("CurrentIndex")
+                        .HasColumnType("integer")
+                        .HasColumnName("current_index");
+
+                    b.Property<string>("DeviceId")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("device_id");
+
+                    b.Property<string>("DeviceName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("device_name");
+
+                    b.PrimitiveCollection<List<int>>("OriginalOrder")
+                        .IsRequired()
+                        .HasColumnType("integer[]")
+                        .HasColumnName("original_order");
+
+                    b.Property<int>("PositionMilliseconds")
+                        .HasColumnType("integer")
+                        .HasColumnName("position_milliseconds");
+
+                    b.Property<string>("Repeat")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("repeat");
+
+                    b.Property<bool>("Shuffle")
+                        .HasColumnType("boolean")
+                        .HasColumnName("shuffle");
+
+                    b.Property<Guid?>("SourceId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("source_id");
+
+                    b.Property<string>("SourceKind")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("source_kind");
+
+                    b.PrimitiveCollection<List<Guid>>("TrackIds")
+                        .IsRequired()
+                        .HasColumnType("uuid[]")
+                        .HasColumnName("track_ids");
+
+                    b.HasKey("UserId")
+                        .HasName("pk_playback_states");
+
+                    b.ToTable("playback_states", (string)null);
+                });
+
             modelBuilder.Entity("WaveMP.Data.Entities.Playlist", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1750,6 +1820,18 @@ namespace WaveMP.Data.Migrations
                         .HasConstraintName("fk_play_history_users_user_id");
 
                     b.Navigation("Track");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("WaveMP.Data.Entities.PlaybackState", b =>
+                {
+                    b.HasOne("WaveMP.Data.Entities.User", "User")
+                        .WithOne()
+                        .HasForeignKey("WaveMP.Data.Entities.PlaybackState", "UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_playback_states_users_user_id");
 
                     b.Navigation("User");
                 });

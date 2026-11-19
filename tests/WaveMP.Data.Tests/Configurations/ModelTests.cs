@@ -41,6 +41,7 @@ public class ModelTests
     [TestCase(typeof(PlayHistoryEntry), "play_history")]
     [TestCase(typeof(Favorite), "favorites")]
     [TestCase(typeof(TrackRating), "track_ratings")]
+    [TestCase(typeof(PlaybackState), "playback_states")]
     public void Entity_Always_HasSnakeCaseTable(Type entityType, string expectedTable)
     {
         IEntityType entity = GetEntity(entityType);
@@ -88,6 +89,7 @@ public class ModelTests
     [TestCase(typeof(Session))]
     [TestCase(typeof(UserSettings))]
     [TestCase(typeof(PlayHistoryEntry))]
+    [TestCase(typeof(PlaybackState))]
     public void DependentsOfUser_Always_AreDeletedWithTheUser(Type dependentType)
     {
         IForeignKey foreignKey = GetEntity(dependentType).GetForeignKeys()
@@ -323,6 +325,35 @@ public class ModelTests
         tags.ComplexType.FindProperty(nameof(MediaFileTags.Title))!.GetColumnName().Should().Be("tags_title");
         tags.ComplexType.FindProperty(nameof(MediaFileTags.ReplayGainTrackGain))!.GetColumnName()
             .Should().Be("tags_replay_gain_track_gain");
+    }
+
+    [TestCase(nameof(PlaybackState.Repeat))]
+    [TestCase(nameof(PlaybackState.SourceKind))]
+    public void PlaybackState_Enums_AreStoredAsNames(string property)
+    {
+        IProperty column = GetEntity(typeof(PlaybackState)).FindProperty(property)!;
+
+        column.GetProviderClrType().Should().Be<string>();
+    }
+
+    [TestCase(nameof(PlaybackState.TrackIds), "uuid[]")]
+    [TestCase(nameof(PlaybackState.AutoplayPositions), "integer[]")]
+    [TestCase(nameof(PlaybackState.OriginalOrder), "integer[]")]
+    public void PlaybackState_Lists_AreArrays(string property, string expectedType)
+    {
+        IProperty column = GetEntity(typeof(PlaybackState)).FindProperty(property)!;
+
+        column.GetColumnType().Should().Be(expectedType);
+        column.IsNullable.Should().BeFalse();
+    }
+
+    [Test]
+    public void PlaybackState_Always_BelongsToOneUser()
+    {
+        IEntityType entity = GetEntity(typeof(PlaybackState));
+
+        entity.FindPrimaryKey()!.Properties.Select(property => property.Name)
+            .Should().Equal(nameof(PlaybackState.UserId));
     }
 
     [TestCase(nameof(TagBackup.Performers))]
