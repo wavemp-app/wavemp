@@ -39,6 +39,7 @@ public sealed class AlbumsController(IAlbumService albums, ICoverCacheService co
     /// <param name="year">Only albums of this year.</param>
     /// <param name="myMusic">Only albums with tracks of the "my music" of the current profile. Combines with all other
     /// filters.</param>
+    /// <param name="sourceId">Only albums with tracks of this media source.</param>
     /// <param name="cancellationToken">Aborts the request.</param>
     /// <response code="200">One page of albums.</response>
     /// <response code="400">Invalid query parameters (code <c>request.invalid</c>).</response>
@@ -55,6 +56,7 @@ public sealed class AlbumsController(IAlbumService albums, ICoverCacheService co
         [FromQuery, StringLength(LibraryLimits.GenreMaxLength)] string? genre = null,
         [FromQuery, Range(LibraryLimits.MinYear, LibraryLimits.MaxYear)] int? year = null,
         [FromQuery] bool myMusic = false,
+        [FromQuery] Guid? sourceId = null,
         CancellationToken cancellationToken = default)
     {
         this.ValidateEnum(sort, nameof(sort));
@@ -75,7 +77,8 @@ public sealed class AlbumsController(IAlbumService albums, ICoverCacheService co
                 genre,
                 year,
                 User.GetUserId(),
-                myMusic),
+                myMusic,
+                sourceId),
             cancellationToken);
         return Ok(page.ToDto(album => album.ToDto()));
     }

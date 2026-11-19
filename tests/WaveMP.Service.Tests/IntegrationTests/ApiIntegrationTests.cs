@@ -149,9 +149,9 @@ public class ApiIntegrationTests
             .Where(response => response.Key is "201" or "202")
             .Select(response => response.Value!)];
 
-        // Users, sessions, playlists, playlist entries, history entries, Subsonic app passwords and themes; scans, job
-        // runs and backups.
-        responses.Should().HaveCount(10);
+        // Users, sessions, playlists, playlist entries, history entries, Subsonic app passwords, themes and media
+        // sources; scans, job runs and backups.
+        responses.Should().HaveCount(11);
         responses.Should().AllSatisfy(response =>
         {
             JsonNode location = response["headers"]!["Location"]!;

@@ -51,6 +51,7 @@ public sealed class TracksController(
     /// <param name="hasVideo">Only tracks with (true) or without (false) a video file.</param>
     /// <param name="myMusic">Only tracks of the "my music" of the current profile: rated, marked as favorite (also
     /// through their album or artist) or in one of its playlists. Combines with all other filters.</param>
+    /// <param name="sourceId">Only tracks of this media source.</param>
     /// <param name="cancellationToken">Aborts the request.</param>
     /// <response code="200">One page of tracks.</response>
     /// <response code="400">Invalid query parameters (code <c>request.invalid</c>).</response>
@@ -70,6 +71,7 @@ public sealed class TracksController(
         [FromQuery] bool? hasAudio = null,
         [FromQuery] bool? hasVideo = null,
         [FromQuery] bool myMusic = false,
+        [FromQuery] Guid? sourceId = null,
         CancellationToken cancellationToken = default)
     {
         this.ValidateEnum(sort, nameof(sort));
@@ -92,7 +94,8 @@ public sealed class TracksController(
             hasAudio,
             hasVideo,
             User.GetUserId(),
-            myMusic);
+            myMusic,
+            sourceId);
         Page<TrackRow> page = await tracks.ListAsync(request, cancellationToken);
         return Ok(page.ToDto(track => track.ToDto()));
     }

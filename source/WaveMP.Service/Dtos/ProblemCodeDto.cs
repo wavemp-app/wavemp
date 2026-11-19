@@ -417,4 +417,28 @@ public enum ProblemCodeDto
     /// </summary>
     [JsonStringEnumMemberName("theme.already_installed")]
     ThemeAlreadyInstalled,
+
+    /// <summary>
+    /// The media source does not exist (404).
+    /// </summary>
+    [JsonStringEnumMemberName("source.not_found")]
+    SourceNotFound,
+
+    /// <summary>
+    /// Another media source already has this name; names are compared without regard to case (409).
+    /// </summary>
+    [JsonStringEnumMemberName("source.name_taken")]
+    SourceNameTaken,
+
+    /// <summary>
+    /// The folder does not exist in the container (422).
+    /// </summary>
+    [JsonStringEnumMemberName("source.path_not_found")]
+    SourcePathNotFound,
+
+    /// <summary>
+    /// The folder is the folder of another media source, lies in it or contains it (409).
+    /// </summary>
+    [JsonStringEnumMemberName("source.path_overlaps")]
+    SourcePathOverlaps,
 }

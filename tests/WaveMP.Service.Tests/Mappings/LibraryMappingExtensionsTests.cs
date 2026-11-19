@@ -165,6 +165,7 @@ public class LibraryMappingExtensionsTests
         MediaFile file = new()
         {
             Id = Guid.NewGuid(),
+            SourceId = MediaSource.DefaultId,
             RelativePath = "Band/Album/Song.flac",
             DirectoryPath = "Band/Album",
             FileName = "Song.flac",
@@ -209,6 +210,7 @@ public class LibraryMappingExtensionsTests
         MediaFile file = new()
         {
             Id = Guid.NewGuid(),
+            SourceId = MediaSource.DefaultId,
             RelativePath = "Band/Clip.mp4",
             DirectoryPath = "Band",
             FileName = "Clip.mp4",

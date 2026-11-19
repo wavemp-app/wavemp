@@ -62,7 +62,13 @@ public static class ScanMappingExtensions
 
     public static ScanIssueDto ToDto(this ScanIssue issue)
     {
-        return new ScanIssueDto { Path = issue.Path, Code = issue.Code.ToDto() };
+        return new ScanIssueDto
+        {
+            Path = issue.Path,
+            Code = issue.Code.ToDto(),
+            SourceId = issue.SourceId,
+            SourceName = issue.SourceName,
+        };
     }
 
     public static ScanPhaseDto ToDto(this ScanPhase phase)
@@ -84,6 +90,9 @@ public static class ScanMappingExtensions
             ScanIssueCode.TagsUnreadable => ScanIssueCodeDto.FileTagsUnreadable,
             ScanIssueCode.ProbeFailed => ScanIssueCodeDto.FileProbeFailed,
             ScanIssueCode.PathTooLong => ScanIssueCodeDto.FilePathTooLong,
+            ScanIssueCode.SourceNotFound => ScanIssueCodeDto.SourceNotFound,
+            ScanIssueCode.SourceUnreadable => ScanIssueCodeDto.SourceUnreadable,
+            ScanIssueCode.SourceEmpty => ScanIssueCodeDto.SourceEmpty,
             _ => throw new ArgumentOutOfRangeException(nameof(code), code, "Unknown issue code."),
         };
     }

@@ -32,6 +32,7 @@ public sealed class ArtistsController(IArtistService artists) : ControllerBase
     /// ascending.</param>
     /// <param name="q">Search text: only artists whose name contains it or is similar to it (small typos).</param>
     /// <param name="myMusic">Only artists of the "my music" of the current profile, as track or album artist.</param>
+    /// <param name="sourceId">Only artists with tracks of this media source, as track or album artist.</param>
     /// <param name="cancellationToken">Aborts the request.</param>
     /// <response code="200">One page of artists.</response>
     /// <response code="400">Invalid query parameters (code <c>request.invalid</c>).</response>
@@ -45,6 +46,7 @@ public sealed class ArtistsController(IArtistService artists) : ControllerBase
         [FromQuery] SortDirectionDto? direction = null,
         [FromQuery, StringLength(LibraryLimits.TextMaxLength)] string? q = null,
         [FromQuery] bool myMusic = false,
+        [FromQuery] Guid? sourceId = null,
         CancellationToken cancellationToken = default)
     {
         this.ValidateEnum(sort, nameof(sort));
@@ -62,7 +64,8 @@ public sealed class ArtistsController(IArtistService artists) : ControllerBase
                 direction?.ToEntity(),
                 q,
                 User.GetUserId(),
-                myMusic),
+                myMusic,
+                sourceId),
             cancellationToken);
         return Ok(page.ToDto(artist => artist.ToDto()));
     }

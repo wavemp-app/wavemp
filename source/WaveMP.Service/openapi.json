@@ -102,6 +102,15 @@
               "type": "boolean",
               "default": false
             }
+          },
+          {
+            "name": "sourceId",
+            "in": "query",
+            "description": "Only albums with tracks of this media source.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ],
         "responses": {
@@ -504,6 +513,15 @@
             "schema": {
               "type": "boolean",
               "default": false
+            }
+          },
+          {
+            "name": "sourceId",
+            "in": "query",
+            "description": "Only artists with tracks of this media source, as track or album artist.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
             }
           }
         ],
@@ -3515,6 +3533,417 @@
           },
           "409": {
             "description": "The PIN is set by ADMIN_PIN (code `pin.managed_by_environment`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/api/v1/sources": {
+      "get": {
+        "tags": [
+          "MediaSources"
+        ],
+        "summary": "Lists the media sources, sorted by name.",
+        "operationId": "ListMediaSources",
+        "parameters": [
+          {
+            "name": "offset",
+            "in": "query",
+            "description": "Number of sources to skip.",
+            "schema": {
+              "maximum": 2147483647,
+              "minimum": 0,
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Maximum number of sources of the page.",
+            "schema": {
+              "maximum": 100,
+              "minimum": 1,
+              "type": "integer",
+              "format": "int32",
+              "default": 50
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "One page of media sources.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MediaSourcePage"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid query parameters (code `request.invalid`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblem"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "MediaSources"
+        ],
+        "summary": "Adds a media source. An active source is scanned at once, or after a running scan.",
+        "operationId": "CreateMediaSource",
+        "requestBody": {
+          "description": "The new source.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateMediaSource"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateMediaSource"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "The added source; Location points to it.",
+            "headers": {
+              "Location": {
+                "description": "Address of the created resource.",
+                "required": true,
+                "schema": {
+                  "type": "string",
+                  "format": "uri-reference"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MediaSource"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is invalid, e.g. a relative path (code `request.invalid`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The profile is not an admin (code `auth.forbidden`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The name is taken (code `source.name_taken`) or the folder overlaps the folder of another source (code `source.path_overlaps`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "The folder does not exist (code `source.path_not_found`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/api/v1/sources/{id}": {
+      "get": {
+        "tags": [
+          "MediaSources"
+        ],
+        "summary": "Returns a media source.",
+        "operationId": "GetMediaSource",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Id of the source.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "The source.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MediaSource"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The source does not exist (code `source.not_found`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      },
+      "patch": {
+        "tags": [
+          "MediaSources"
+        ],
+        "summary": "Changes a media source. Missing or null values stay unchanged. A new folder or a reactivated source is scanned at once, or after a running scan; a deactivated source is no longer scanned or watched, its tracks stay.",
+        "operationId": "UpdateMediaSource",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Id of the source.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "The changes.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateMediaSource"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateMediaSource"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "The changed source.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MediaSource"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is invalid (code `request.invalid`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The profile is not an admin (code `auth.forbidden`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The source does not exist (code `source.not_found`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The name is taken (code `source.name_taken`), the folder overlaps the folder of another source (code `source.path_overlaps`) or a scan runs while the folder changes (code `scan.already_running`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "The folder does not exist (code `source.path_not_found`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "MediaSources"
+        ],
+        "summary": "Removes a media source with its tracks and files from the library; the files on disk stay untouched.",
+        "operationId": "DeleteMediaSource",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Id of the source.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "The source is removed."
+          },
+          "403": {
+            "description": "The profile is not an admin (code `auth.forbidden`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The source does not exist (code `source.not_found`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "A scan is queued or running (code `scan.already_running`).",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -8001,6 +8430,15 @@
               "type": "boolean",
               "default": false
             }
+          },
+          {
+            "name": "sourceId",
+            "in": "query",
+            "description": "Only tracks of this media source.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ],
         "responses": {
@@ -11091,6 +11529,35 @@
         },
         "description": "A new session with its token."
       },
+      "CreateMediaSource": {
+        "required": [
+          "name",
+          "path"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "maxLength": 100,
+            "minLength": 0,
+            "type": "string",
+            "description": "Name of the source, unique without regard to case."
+          },
+          "path": {
+            "maxLength": 1000,
+            "minLength": 0,
+            "type": "string",
+            "description": "Absolute path of an existing folder in the container, apart from the folders of the other sources (neither the same, nor inside one, nor containing one)."
+          },
+          "isActive": {
+            "type": [
+              "null",
+              "boolean"
+            ],
+            "description": "Whether the source is scanned and watched; true if missing."
+          }
+        },
+        "description": "Adds a media source."
+      },
       "CreatePlayHistoryEntry": {
         "required": [
           "trackId"
@@ -11839,6 +12306,7 @@
           "scan.media_folder_unreadable",
           "scan.media_folder_empty",
           "scan.probe_unavailable",
+          "scan.no_media_sources",
           "cache.ffmpeg_unavailable",
           "cache.folder_unwritable",
           "backup.folder_unwritable",
@@ -12417,6 +12885,105 @@
         ],
         "type": "string"
       },
+      "MediaSource": {
+        "required": [
+          "id",
+          "name",
+          "path",
+          "followsMediaPath",
+          "isActive",
+          "isAvailable",
+          "isWatched",
+          "trackCount",
+          "fileCount",
+          "createdAt",
+          "updatedAt"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string",
+            "description": "Name of the source, unique without regard to case."
+          },
+          "path": {
+            "type": "string",
+            "description": "Absolute path of the folder in the container."
+          },
+          "followsMediaPath": {
+            "type": "boolean",
+            "description": "Whether the folder comes from the environment variable MEDIA_PATH (the first source as long as no path of its own was set)."
+          },
+          "isActive": {
+            "type": "boolean",
+            "description": "Whether the source is scanned and watched. The tracks of a deactivated source stay in the library."
+          },
+          "isAvailable": {
+            "type": "boolean",
+            "description": "Whether the folder exists in the container."
+          },
+          "isWatched": {
+            "type": "boolean",
+            "description": "Whether the file watcher watches the folder right now."
+          },
+          "trackCount": {
+            "type": "integer",
+            "description": "Number of tracks of the source in the library.",
+            "format": "int32"
+          },
+          "fileCount": {
+            "type": "integer",
+            "description": "Number of media files of the source in the library.",
+            "format": "int32"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "description": "A media source: a folder of the container whose media files the library contains."
+      },
+      "MediaSourcePage": {
+        "required": [
+          "items",
+          "offset",
+          "limit",
+          "total"
+        ],
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MediaSource"
+            },
+            "description": "Items of the page, at most limit."
+          },
+          "offset": {
+            "type": "integer",
+            "description": "Number of items skipped before this page.",
+            "format": "int32"
+          },
+          "limit": {
+            "type": "integer",
+            "description": "Maximum number of items of the page, as requested.",
+            "format": "int32"
+          },
+          "total": {
+            "type": "integer",
+            "description": "Number of items of the whole collection.",
+            "format": "int32"
+          }
+        },
+        "description": "One page of a collection."
+      },
       "MetadataTag": {
         "enum": [
           "Title",
@@ -12788,7 +13355,11 @@
           "theme.invalid",
           "theme.too_large",
           "theme.unsupported_format",
-          "theme.already_installed"
+          "theme.already_installed",
+          "source.not_found",
+          "source.name_taken",
+          "source.path_not_found",
+          "source.path_overlaps"
         ],
         "type": "string",
         "description": "Machine-readable code of a problem, part of every Problem Details response. Clients translate it."
@@ -13150,23 +13721,41 @@
         "properties": {
           "path": {
             "type": "string",
-            "description": "Path of the file relative to the media folder."
+            "description": "Path of the file relative to the folder of its media source; empty for a problem of the source itself."
           },
           "code": {
             "$ref": "#/components/schemas/ScanIssueCode"
+          },
+          "sourceId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Id of the media source; null in results of scans from before there were several sources.",
+            "format": "uuid"
+          },
+          "sourceName": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Name of the media source at the time of the scan."
           }
         },
-        "description": "A file with a problem found by a scan."
+        "description": "A file with a problem found by a scan, or a media source the scan skipped (with an empty path)."
       },
       "ScanIssueCode": {
         "enum": [
           "file.unreadable",
           "file.tags_unreadable",
           "file.probe_failed",
-          "file.path_too_long"
+          "file.path_too_long",
+          "source.not_found",
+          "source.unreadable",
+          "source.empty"
         ],
         "type": "string",
-        "description": "Problem with a file found by a scan. Clients translate it."
+        "description": "Problem with a file or a media source found by a scan. Clients translate it."
       },
       "ScanPage": {
         "required": [
@@ -15145,6 +15734,37 @@
         },
         "description": "Changes the settings of the media library. Missing or null values stay unchanged."
       },
+      "UpdateMediaSource": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "maxLength": 100,
+            "minLength": 1,
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "New name, unique without regard to case."
+          },
+          "path": {
+            "maxLength": 1000,
+            "minLength": 1,
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "New absolute path of an existing folder in the container, apart from the folders of the other sources. The source is scanned again; files with the same relative path keep their tracks."
+          },
+          "isActive": {
+            "type": [
+              "null",
+              "boolean"
+            ],
+            "description": "Whether the source is scanned and watched. A reactivated source is scanned at once."
+          }
+        },
+        "description": "Changes a media source. Missing or null values stay unchanged."
+      },
       "UpdateNowPlaying": {
         "required": [
           "trackId"
@@ -16139,6 +16759,9 @@
     },
     {
       "name": "Me"
+    },
+    {
+      "name": "MediaSources"
     },
     {
       "name": "MyAvatar"

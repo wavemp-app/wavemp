@@ -527,6 +527,7 @@ public class PlaylistsApiTests
         Track track = new()
         {
             Id = Guid.CreateVersion7(),
+            SourceId = MediaSource.DefaultId,
             DirectoryPath = "Gone",
             BaseName = name,
             NormalizedBaseName = name.ToUpperInvariant(),

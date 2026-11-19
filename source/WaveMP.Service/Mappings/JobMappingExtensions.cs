@@ -139,6 +139,7 @@ public static class JobMappingExtensions
             JobErrorCode.MediaFolderUnreadable => JobErrorCodeDto.ScanMediaFolderUnreadable,
             JobErrorCode.MediaFolderEmpty => JobErrorCodeDto.ScanMediaFolderEmpty,
             JobErrorCode.ProbeUnavailable => JobErrorCodeDto.ScanProbeUnavailable,
+            JobErrorCode.NoMediaSources => JobErrorCodeDto.ScanNoMediaSources,
             JobErrorCode.FfmpegUnavailable => JobErrorCodeDto.CacheFfmpegUnavailable,
             JobErrorCode.CacheFolderUnwritable => JobErrorCodeDto.CacheFolderUnwritable,
             JobErrorCode.BackupFolderUnwritable => JobErrorCodeDto.BackupFolderUnwritable,

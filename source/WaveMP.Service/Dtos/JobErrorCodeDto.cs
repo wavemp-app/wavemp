@@ -22,7 +22,7 @@ public enum JobErrorCodeDto
     JobInterrupted,
 
     /// <summary>
-    /// The media folder does not exist.
+    /// The media folder does not exist (the folder of the only media source that was scanned, or of all of them).
     /// </summary>
     [JsonStringEnumMemberName("scan.media_folder_not_found")]
     ScanMediaFolderNotFound,
@@ -44,6 +44,12 @@ public enum JobErrorCodeDto
     /// </summary>
     [JsonStringEnumMemberName("scan.probe_unavailable")]
     ScanProbeUnavailable,
+
+    /// <summary>
+    /// There is no active media source to scan.
+    /// </summary>
+    [JsonStringEnumMemberName("scan.no_media_sources")]
+    ScanNoMediaSources,
 
     /// <summary>
     /// ffmpeg cannot be started, so covers cannot be scaled.
