@@ -77,7 +77,7 @@ The first milestone of WaveMP: a self-hosted media player for your music and mus
 - **Collapsible sidebar** on the desktop, down to its icons. The choice is kept with your profile.
 - **Installable as an app (PWA)** on desktop and mobile devices. Browsers require HTTPS for that, except on `localhost`.
 - **Keyboard and screen readers.** Options that exclude each other, such as the views of Now Playing or **All music** and **My music**, are grouped switches you can operate with the arrow keys.
-- **Themes.** The look of WaveMP is a theme: one CSS file plus graphics. Theme authors find everything they need in [THEMING.md](../../THEMING.md).
+- **Themes.** The look of WaveMP is a theme: one CSS file plus graphics. Theme authors find everything they need in [THEMING.md](https://github.com/wavemp-app/wavemp/blob/v1.0.24/THEMING.md).
 
 ## For developers
 

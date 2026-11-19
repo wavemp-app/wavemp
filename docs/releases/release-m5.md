@@ -10,13 +10,13 @@ WaveMP now ships with six themes: Midnight and five new ones. Each one changes m
 
 A cheerful light theme for a sunny day: a strong blue window frame with a glossy title and transport bar, a periwinkle side pane with white group boxes and slightly raised buttons. Blue carries the structure and green means go, from the glossy green play button to the line of grass below the active tab. Rolling hills under a cloudy sky fill the profile selection and grow at the foot of the sidebar and the stage, which glows in the color of the cover.
 
-![Home in the theme Meadow](https://raw.githubusercontent.com/wavemp-app/wavemp/main/assets/screenshots/themes/meadow-light-home.png)
+![Home in the theme Meadow](https://raw.githubusercontent.com/wavemp-app/wavemp/v1.0.72/assets/screenshots/themes/meadow-light-home.png)
 
 ### Daylight
 
 The light sister of Midnight: the same full-width bands for header, toolbar and transport, each with a bright sky gloss, a pale sidebar next to the white content, azure keys for the chosen options and an azure glass play button. A soft halo in the color of the cover sits behind the stage, and the full-screen player and the profile selection are open sky with clouds.
 
-![Home in the theme Daylight](https://raw.githubusercontent.com/wavemp-app/wavemp/main/assets/screenshots/themes/daylight-light-home.png)
+![Home in the theme Daylight](https://raw.githubusercontent.com/wavemp-app/wavemp/v1.0.72/assets/screenshots/themes/daylight-light-home.png)
 
 ### Accent
 
@@ -24,7 +24,7 @@ A calm, flat theme in light and dark: frosted panes over a soft field of mist an
 
 | Light | Dark |
 |---|---|
-| ![Home in the theme Accent, light](https://raw.githubusercontent.com/wavemp-app/wavemp/main/assets/screenshots/themes/accent-light-home.png) | ![Home in the theme Accent, dark](https://raw.githubusercontent.com/wavemp-app/wavemp/main/assets/screenshots/themes/accent-dark-home.png) |
+| ![Home in the theme Accent, light](https://raw.githubusercontent.com/wavemp-app/wavemp/v1.0.72/assets/screenshots/themes/accent-light-home.png) | ![Home in the theme Accent, dark](https://raw.githubusercontent.com/wavemp-app/wavemp/v1.0.72/assets/screenshots/themes/accent-dark-home.png) |
 
 ### Pinstripe
 
@@ -32,7 +32,7 @@ A light hi-fi theme on fine horizontal pinstripes. On the desktop the transport 
 
 | Home | Now Playing |
 |---|---|
-| ![Home in the theme Pinstripe](https://raw.githubusercontent.com/wavemp-app/wavemp/main/assets/screenshots/themes/pinstripe-light-home.png) | ![Now Playing in the theme Pinstripe, with the song in the display at the top](https://raw.githubusercontent.com/wavemp-app/wavemp/main/assets/screenshots/themes/pinstripe-light-now-playing.png) |
+| ![Home in the theme Pinstripe](https://raw.githubusercontent.com/wavemp-app/wavemp/v1.0.72/assets/screenshots/themes/pinstripe-light-home.png) | ![Now Playing in the theme Pinstripe, with the song in the display at the top](https://raw.githubusercontent.com/wavemp-app/wavemp/v1.0.72/assets/screenshots/themes/pinstripe-light-now-playing.png) |
 
 ### Clear Glass
 
@@ -40,25 +40,25 @@ Clear, refracting glass in light and dark: header, sidebar, toolbar, content and
 
 | Light | Dark |
 |---|---|
-| ![Home in the theme Clear Glass, light](https://raw.githubusercontent.com/wavemp-app/wavemp/main/assets/screenshots/themes/clear-glass-light-home.png) | ![Home in the theme Clear Glass, dark](https://raw.githubusercontent.com/wavemp-app/wavemp/main/assets/screenshots/themes/clear-glass-dark-home.png) |
+| ![Home in the theme Clear Glass, light](https://raw.githubusercontent.com/wavemp-app/wavemp/v1.0.72/assets/screenshots/themes/clear-glass-light-home.png) | ![Home in the theme Clear Glass, dark](https://raw.githubusercontent.com/wavemp-app/wavemp/v1.0.72/assets/screenshots/themes/clear-glass-dark-home.png) |
 
-![Now Playing in the theme Clear Glass, dark, with the play button in the color of the cover](https://raw.githubusercontent.com/wavemp-app/wavemp/main/assets/screenshots/themes/clear-glass-dark-now-playing.png)
+![Now Playing in the theme Clear Glass, dark, with the play button in the color of the cover](https://raw.githubusercontent.com/wavemp-app/wavemp/v1.0.72/assets/screenshots/themes/clear-glass-dark-now-playing.png)
 
 ### Midnight
 
 The default theme stays as it was, with clearer text: the glossy buttons and the review badge start darker, the icons in the content are darker gray, and the built-in admin profile in the profile selection is easier to read.
 
-![Home in the theme Midnight](https://raw.githubusercontent.com/wavemp-app/wavemp/main/assets/screenshots/themes/midnight-dark-home.png)
+![Home in the theme Midnight](https://raw.githubusercontent.com/wavemp-app/wavemp/v1.0.72/assets/screenshots/themes/midnight-dark-home.png)
 
 ### On your phone
 
 Every theme has its own look on smartphones as well, with its colors in the header, the player and the bottom navigation.
 
 <p>
-  <img src="https://raw.githubusercontent.com/wavemp-app/wavemp/main/assets/screenshots/themes/meadow-light-phone-now-playing.png" alt="Now Playing in the theme Meadow on a smartphone" width="200">
-  <img src="https://raw.githubusercontent.com/wavemp-app/wavemp/main/assets/screenshots/themes/pinstripe-light-phone-now-playing.png" alt="Now Playing in the theme Pinstripe on a smartphone" width="200">
-  <img src="https://raw.githubusercontent.com/wavemp-app/wavemp/main/assets/screenshots/themes/clear-glass-dark-phone-now-playing.png" alt="Now Playing in the theme Clear Glass, dark, on a smartphone" width="200">
-  <img src="https://raw.githubusercontent.com/wavemp-app/wavemp/main/assets/screenshots/themes/accent-dark-phone-library.png" alt="The albums in the theme Accent, dark, on a smartphone" width="200">
+  <img src="https://raw.githubusercontent.com/wavemp-app/wavemp/v1.0.72/assets/screenshots/themes/meadow-light-phone-now-playing.png" alt="Now Playing in the theme Meadow on a smartphone" width="200">
+  <img src="https://raw.githubusercontent.com/wavemp-app/wavemp/v1.0.72/assets/screenshots/themes/pinstripe-light-phone-now-playing.png" alt="Now Playing in the theme Pinstripe on a smartphone" width="200">
+  <img src="https://raw.githubusercontent.com/wavemp-app/wavemp/v1.0.72/assets/screenshots/themes/clear-glass-dark-phone-now-playing.png" alt="Now Playing in the theme Clear Glass, dark, on a smartphone" width="200">
+  <img src="https://raw.githubusercontent.com/wavemp-app/wavemp/v1.0.72/assets/screenshots/themes/accent-dark-phone-library.png" alt="The albums in the theme Accent, dark, on a smartphone" width="200">
 </p>
 
 All six themes keep text and icons readable: every theme and variant meets the contrast of WCAG 2.2 AA.
@@ -70,16 +70,16 @@ All six themes keep text and icons readable: every theme and variant meets the c
 - **The right look from the start.** WaveMP opens in the theme of the profile right away, without flashing the default theme first.
 - **The color of the music.** Several themes pick up the main color of the cover that is playing, such as the glow behind the stage, and let it fade from song to song. The colors are chosen so that text stays readable on them.
 
-![The theme picker in the settings, in the theme Accent](https://raw.githubusercontent.com/wavemp-app/wavemp/main/assets/screenshots/themes/accent-light-settings.png)
+![The theme picker in the settings, in the theme Accent](https://raw.githubusercontent.com/wavemp-app/wavemp/v1.0.72/assets/screenshots/themes/accent-light-settings.png)
 
 ## Your own themes
 
 - **Install themes as ZIP packages.** Admins upload own themes under **Administration > Themes**. A theme package holds a `manifest.json` with the name, author, version and variants of the theme, exactly one CSS file and SVG, PNG or WebP pictures, including a preview picture per variant.
-- **Start from the template.** **Download the template** gives you a complete example theme with a commented CSS file, a manifest and pictures, ready to change, zip and upload. [THEMING.md](https://github.com/wavemp-app/wavemp/blob/main/THEMING.md) is the guide for theme authors, with all parts, states, variables and the rules for packages.
+- **Start from the template.** **Download the template** gives you a complete example theme with a commented CSS file, a manifest and pictures, ready to change, zip and upload. [THEMING.md](https://github.com/wavemp-app/wavemp/blob/v1.0.72/THEMING.md) is the guide for theme authors, with all parts, states, variables and the rules for packages.
 - **For every profile.** Once installed, the theme appears in the theme picker of every profile, after the shipped themes.
 - **New versions and deleting.** The theme page lists the installed themes with their previews, author and version. **Upload a new version** replaces a theme, and profiles that use it see the new version at once. A deleted theme is replaced by the default theme for the profiles that used it.
 - **Clear feedback.** A package that breaks the rules is not installed; WaveMP lists every problem with the file and line where it is, in your language.
-- **Safe by design.** A theme can only change the look: WaveMP checks every package completely before it installs it. Themes cannot run scripts or load anything from other servers, SVG pictures are cleaned, and sizes are limited. The largest package is 10 MB by default and can be changed with `Themes__MaxUploadBytes`; [THEMING.md](https://github.com/wavemp-app/wavemp/blob/main/THEMING.md#uploaded-themes) lists the other limits.
+- **Safe by design.** A theme can only change the look: WaveMP checks every package completely before it installs it. Themes cannot run scripts or load anything from other servers, SVG pictures are cleaned, and sizes are limited. The largest package is 10 MB by default and can be changed with `Themes__MaxUploadBytes`; [THEMING.md](https://github.com/wavemp-app/wavemp/blob/v1.0.72/THEMING.md#uploaded-themes) lists the other limits.
 - Uploaded themes are stored in the new folder `themes` in `/data`.
 
 ## Improvements

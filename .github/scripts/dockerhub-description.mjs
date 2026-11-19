@@ -217,7 +217,15 @@ function convertText(text, convert) {
  * location), except in fenced code blocks and inline code.
  */
 export function convertLinks(markdown, onFile = () => {}, location = {}) {
-    const convert = (target) => absoluteUrl(target, onFile, location)
+    return convertTargets(markdown, (target) => absoluteUrl(target, onFile, location))
+}
+
+/**
+ * Replaces the targets of the links and images of Markdown (inline, reference definitions and the
+ * src and href of HTML) with convert(target), or keeps a target for which convert returns null.
+ * Fenced code blocks and inline code stay as they are.
+ */
+export function convertTargets(markdown, convert) {
     const result = []
     forEachLine(markdown.split('\n'), (line, inFence) => {
         if (inFence) {

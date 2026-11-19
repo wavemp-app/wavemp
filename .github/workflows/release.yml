@@ -15,9 +15,10 @@
 #   (check-deploy.mjs --release --digest).
 # If one check fails, nothing is created: fix the templates, push, wait for green CI and start the
 # workflow again. The release is created on the commit the workflow runs on (the commit that raised
-# the templates), with the release notes as its text; their relative links and images point to the
-# files at the tag (release-notes.mjs). Releases created with the GITHUB_TOKEN trigger no other
-# workflow.
+# the templates), with the release notes as its text; their relative links and images, and
+# addresses of this repository at a branch, point to the files at the tag (release-notes.mjs), so
+# they keep working when files are renamed on main later. Releases created with the GITHUB_TOKEN
+# trigger no other workflow.
 name: Release
 
 on:

@@ -83,9 +83,13 @@ are raised in a commit of their own after the release notes, and the GitHub rele
 that commit. Every milestone release follows these steps, in this order:
 
 1. **Release notes.** After the last issue of the milestone (with green CI), write
-   `docs/releases/release-m<M>.md`, commit and push it, and wait for its CI run
-   (`gh run watch`). This run publishes the image of the release, `1.0.R`, where R is its run
-   number: `gh run list --workflow main.yml --commit <sha> --json number --jq '.[0].number'`.
+   `docs/releases/release-m<M>.md`. Link pictures and files of the repository with relative paths
+   (`../../assets/screenshots/...`), not with addresses at `main`. Then pin the release notes of
+   the earlier milestones to the tags of their releases with
+   `node .github/scripts/release-notes.mjs --pin` (needs the tags: `git fetch --tags`), so their
+   pictures keep working when files are renamed on `main` later. Commit both and push, and wait for
+   the CI run (`gh run watch`). This run publishes the image of the release, `1.0.R`, where R is
+   its run number: `gh run list --workflow main.yml --commit <sha> --json number --jq '.[0].number'`.
 2. **Templates.** Raise all templates to `1.0.R` (see [Raising the templates](#raising-the-templates)),
    check them with `node .github/scripts/check-deploy.mjs --release 1.0.R --digest <digest>`, commit
    and push them, and wait for the CI run. This commit changes nothing outside `deploy/`. Its CI run
@@ -103,7 +107,7 @@ that commit. Every milestone release follows these steps, in this order:
    template names `1.0.R` and pins its digest, that the release notes exist and link to existing
    files only, and that the tag does not exist yet. Only then does it create the release `v1.0.R`
    (title `WaveMP 1.0.R`) on the commit of step 2, with the release notes as its text (relative links
-   and images point to the files at the tag). If a check fails, nothing is created: fix the
+   and images, and addresses of the repository at a branch, point to the files at the tag). If a check fails, nothing is created: fix the
    templates, push, wait for green CI and start the workflow again. If something outside `deploy/`
    has to change, its commit publishes a new image; continue with step 2 for that image.
 4. **Milestone.** Close the milestone on GitHub.
