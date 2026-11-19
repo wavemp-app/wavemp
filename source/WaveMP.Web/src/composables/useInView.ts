@@ -17,8 +17,8 @@ function elementOf(target: Target): Element | null {
 
 /**
  * Whether the element (or the root element of a component) is in or near the viewport, e.g. to
- * load covers and further pages only when they are needed. Without IntersectionObserver the
- * element counts as visible.
+ * load covers and further pages only when they are needed; in the viewport of the window the
+ * element is in. Without IntersectionObserver the element counts as visible.
  */
 export function useInView(target: Ref<Target>, rootMargin = '200px'): Ref<boolean> {
     const supported = typeof IntersectionObserver !== 'undefined'
@@ -38,7 +38,10 @@ export function useInView(target: Ref<Target>, rootMargin = '200px'): Ref<boolea
                 return
             }
 
-            observer = new IntersectionObserver(
+            // The observer of the window the element is in: an element in another window (the
+            // floating mini player) never intersects the viewport of the app.
+            const Observer = element.ownerDocument.defaultView?.IntersectionObserver
+            observer = new (Observer ?? IntersectionObserver)(
                 (entries) => {
                     visible.value = entries.some((entry) => entry.isIntersecting)
                 },
