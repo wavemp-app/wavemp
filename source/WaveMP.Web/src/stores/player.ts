@@ -266,13 +266,21 @@ export const usePlayerStore = defineStore('player', () => {
         const view = stageViewOf(viewMode.value, hasVideo.value, videoState.value, hasLyrics.value)
         return casting.value && (view === 'visualization' || view === 'video') ? 'cover' : view
     })
+    /**
+     * Whether the video element lies in another window than the app, the floating mini player:
+     * that window stays above the others, so its video keeps playing while the app is hidden.
+     */
+    const videoInOtherWindow = computed(() => {
+        const owner = videoElement.value?.ownerDocument
+        return !!owner && typeof document !== 'undefined' && owner !== document
+    })
     /** Whether the video of the current track is to be shown. */
     const videoWanted = computed(
         () =>
             videoElement.value !== null &&
             hasVideo.value &&
             viewMode.value === PlayerViewModeObject.Video &&
-            pageVisible.value &&
+            (pageVisible.value || videoInOtherWindow.value) &&
             !casting.value,
     )
     /** What a casting device plays of the current track: its video or its sound. */
@@ -290,6 +298,11 @@ export const usePlayerStore = defineStore('player', () => {
     /** Where the music plays; events of the other engine are ignored. */
     let output: Output = 'local'
     let follower: PlayerVideoFollower | null = null
+    /**
+     * The video elements that want to show the video, the newest last: the stage of Now Playing
+     * and the mini player. Only the newest one shows it; when it goes, the one before takes over.
+     */
+    const videoElements: HTMLVideoElement[] = []
     /** The queue entry whose video is loaded or requested. */
     let videoKey: string | null = null
     /** Increases with every request of a video, so late answers are ignored. */
@@ -1165,13 +1178,47 @@ export const usePlayerStore = defineStore('player', () => {
         void session.updatePlayerViewMode(mode)
     }
 
-    /** The stage shows its video element; it shows the video of tracks with one from now on. */
+    /**
+     * A view shows its video element (the stage of Now Playing or the mini player); it shows the
+     * video of tracks with one from now on. The newest element shows the video, the ones before
+     * rest until it goes.
+     */
     function attachVideo(element: HTMLVideoElement): void {
-        if (videoElement.value === element) {
+        if (videoElements.includes(element)) {
             return
         }
 
-        detachVideo()
+        videoElements.push(element)
+        showVideoIn(element)
+    }
+
+    /**
+     * A view closes its video element (without one: the element that shows the video); the audio
+     * simply goes on, and the element before takes over the video.
+     */
+    function detachVideo(element?: HTMLVideoElement): void {
+        const target = element ?? videoElement.value
+        if (!target) {
+            return
+        }
+
+        const index = videoElements.indexOf(target)
+        if (index >= 0) {
+            videoElements.splice(index, 1)
+        }
+
+        if (target === videoElement.value) {
+            releaseVideo()
+            const previous = videoElements.at(-1)
+            if (previous) {
+                showVideoIn(previous)
+            }
+        }
+    }
+
+    /** Lets the video follow the audio in the element; the element before stops showing it. */
+    function showVideoIn(element: HTMLVideoElement): void {
+        releaseVideo()
         follower = playerDependencies.createVideoFollower(element, clock, {
             stateChange: onVideoState,
             // The own controls of the video (e.g. full screen on the iPhone) control the audio.
@@ -1179,11 +1226,14 @@ export const usePlayerStore = defineStore('player', () => {
             userPause: pause,
         })
         videoElement.value = element
+        // Not left to the watcher: when another element showed the video before, whether it is
+        // wanted does not change, but the new element has to load it.
+        updateVideo(false)
     }
 
-    /** The stage closes; the audio simply goes on. */
-    function detachVideo(element?: HTMLVideoElement): void {
-        if (!videoElement.value || (element && element !== videoElement.value)) {
+    /** The element that showed the video stops showing it. */
+    function releaseVideo(): void {
+        if (!videoElement.value) {
             return
         }
 

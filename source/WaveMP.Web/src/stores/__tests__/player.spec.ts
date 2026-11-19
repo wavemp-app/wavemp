@@ -694,6 +694,89 @@ describe('player store', () => {
             expect(follower.setActive).toHaveBeenLastCalledWith(true)
             expect(follower.load).toHaveBeenCalledOnce()
         })
+
+        it('moves the video to the mini player and back to the stage when it closes', async () => {
+            const stage = { ownerDocument: document } as HTMLVideoElement
+            const mini = { ownerDocument: document } as HTMLVideoElement
+            const elements: HTMLVideoElement[] = []
+            const followers: FakeFollower[] = []
+            playerDependencies.createVideoFollower = (shown, clock, events) => {
+                elements.push(shown)
+                follower = new FakeFollower(clock, events)
+                followers.push(follower)
+                return follower
+            }
+            const player = usePlayerStore()
+            player.attachVideo(stage)
+            player.playTracks(withVideo, 0)
+            await flushPromises()
+            follower.events.stateChange?.('ready')
+
+            player.attachVideo(mini)
+            await flushPromises()
+
+            expect(elements).toEqual([stage, mini])
+            expect(followers[0]!.dispose).toHaveBeenCalledOnce()
+            expect(followers[1]!.load).toHaveBeenCalledWith({ url: '/video/a' }, 0)
+            expect(player.videoState).toBe('loading')
+
+            // The stage closing meanwhile changes nothing for the mini player.
+            player.detachVideo(stage)
+            player.attachVideo(stage)
+            await flushPromises()
+            expect(elements).toEqual([stage, mini, stage])
+
+            player.detachVideo(mini)
+            player.detachVideo(stage)
+            player.attachVideo(stage)
+            await flushPromises()
+            expect(followers.at(-1)!.load).toHaveBeenCalledWith({ url: '/video/a' }, 0)
+            expect(engine.load).toHaveBeenCalledOnce()
+            expect(player.state.playback).toBe('playing')
+        })
+
+        it('returns the video to the stage when the mini player closes', async () => {
+            const stage = { ownerDocument: document } as HTMLVideoElement
+            const mini = { ownerDocument: document } as HTMLVideoElement
+            const elements: HTMLVideoElement[] = []
+            playerDependencies.createVideoFollower = (shown, clock, events) => {
+                elements.push(shown)
+                return (follower = new FakeFollower(clock, events))
+            }
+            const player = usePlayerStore()
+            player.attachVideo(stage)
+            player.attachVideo(mini)
+            player.playTracks(withVideo, 0)
+            await flushPromises()
+
+            player.detachVideo(mini)
+            await flushPromises()
+
+            expect(elements).toEqual([stage, mini, stage])
+            expect(follower.load).toHaveBeenCalledWith({ url: '/video/a' }, 0)
+            expect(follower.setActive).toHaveBeenLastCalledWith(true)
+        })
+
+        it('keeps the video of the floating mini player while the app is hidden', async () => {
+            const floating = {
+                ownerDocument: document.implementation.createHTMLDocument(''),
+            } as unknown as HTMLVideoElement
+            const player = usePlayerStore()
+            player.attachVideo(floating)
+            player.playTracks(withVideo, 0)
+            await flushPromises()
+            expect(follower.setActive).toHaveBeenLastCalledWith(true)
+            follower.setActive.mockClear()
+
+            Object.defineProperty(document, 'visibilityState', {
+                value: 'hidden',
+                configurable: true,
+            })
+            document.dispatchEvent(new Event('visibilitychange'))
+            await flushPromises()
+
+            expect(follower.setActive).not.toHaveBeenCalledWith(false)
+        })
     })
 
     it('stops when no track of the queue can be played', async () => {
