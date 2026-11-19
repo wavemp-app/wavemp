@@ -168,6 +168,49 @@ describe('playlist pages', () => {
             { id: 'playlist', labelKey: 'nav.playlists', label: 'Road Trip' },
         ])
     })
+
+    it('show a smart playlist, its editor and a new one below the overview', () => {
+        const music = { id: 'music', labelKey: 'breadcrumb.music', to: { name: 'library' } }
+
+        expect(
+            buildBreadcrumb({ name: 'smart-playlist', params: { id: 's1' } }, 'Top Rated'),
+        ).toEqual([
+            music,
+            playlists,
+            { id: 'playlist', labelKey: 'nav.playlists', label: 'Top Rated' },
+        ])
+        expect(buildBreadcrumb({ name: 'smart-playlists-new', params: {} })).toEqual([
+            music,
+            playlists,
+            { id: 'smart-playlist-new', labelKey: 'smartPlaylists.newTitle' },
+        ])
+        expect(
+            buildBreadcrumb({ name: 'smart-playlist-edit', params: { id: 's1' } }, 'Top Rated'),
+        ).toEqual([
+            music,
+            playlists,
+            {
+                id: 'playlist',
+                labelKey: 'nav.playlists',
+                label: 'Top Rated',
+                to: { name: 'smart-playlist', params: { id: 's1' } },
+            },
+            { id: 'smart-playlist-edit', labelKey: 'smartPlaylists.editTitle' },
+        ])
+        expect(
+            buildBreadcrumb({ name: 'smart-playlist-edit', params: { id: 's1' } }).map((c) => c.id),
+        ).toEqual(['music', 'playlists', 'smart-playlist-edit'])
+    })
+
+    it('select the node of a smart playlist, also while its rules are edited', () => {
+        expect(activeTreeId({ name: 'smart-playlist', params: { id: 's1' } })).toBe(
+            'smart-playlist:s1',
+        )
+        expect(activeTreeId({ name: 'smart-playlist-edit', params: { id: 's1' } })).toBe(
+            'smart-playlist:s1',
+        )
+        expect(activeTreeId({ name: 'smart-playlists-new', params: {} })).toBe('playlists')
+    })
 })
 
 describe('detail pages', () => {

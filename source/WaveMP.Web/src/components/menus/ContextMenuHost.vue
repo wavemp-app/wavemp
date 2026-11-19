@@ -2,13 +2,19 @@
 import { computed, nextTick, ref, shallowRef, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
-import { PlayerViewModeObject, type Playlist, type Track } from '@/api/generated/models'
+import {
+    PlayerViewModeObject,
+    type Playlist,
+    type SmartPlaylist,
+    type Track,
+} from '@/api/generated/models'
 import { fetchAllPages } from '@/api/paging'
 import { problemCodeOf, statusOf } from '@/api/problems'
 import BaseContextMenu, { type MenuItem } from '@/components/base/BaseContextMenu.vue'
 import AddToPlaylistDialog from '@/components/playlists/AddToPlaylistDialog.vue'
 import PlaylistDeleteDialog from '@/components/playlists/PlaylistDeleteDialog.vue'
 import PlaylistEditDialog from '@/components/playlists/PlaylistEditDialog.vue'
+import SmartPlaylistConvertDialog from '@/components/playlists/SmartPlaylistConvertDialog.vue'
 import { listAlbumTracks, listTracks } from '@/library/api'
 import { groupTracksByAlbum, groupTracksByDisc } from '@/library/grouping'
 import { registerDefaultMenuActions } from '@/menus/actions'
@@ -16,21 +22,25 @@ import { resolveMenu, runMenuAction, type ResolvedMenuEntry } from '@/menus/regi
 import type { MenuServices, MenuTarget, TrackSource } from '@/menus/targets'
 import { listPlaylistEntries, uploadPlaylistCover } from '@/playlists/api'
 import {
+    convertFailureKey,
     coverFailureKey,
     coverProblemKey,
     coverUploadProblem,
     coverUploadTypes,
 } from '@/playlists/presentation'
+import { listSmartPlaylistTracks } from '@/playlists/smartApi'
 import { useCollectionStore } from '@/stores/collection'
 import { useContextMenuStore } from '@/stores/contextMenu'
 import { usePlayerStore } from '@/stores/player'
 import { usePlaylistsStore } from '@/stores/playlists'
+import { useSmartPlaylistsStore } from '@/stores/smartPlaylists'
 import { useSessionStore } from '@/stores/session'
 
 /**
  * The one context menu of the app (see src/menus): it opens for the target an element hands to
  * the store and shows the entries registered for its type, and it holds the dialogs its entries
- * open (add to a playlist, rename or delete a playlist) and the file choice of a playlist cover.
+ * open (add to a playlist, rename or delete a playlist, convert or delete a smart playlist) and
+ * the file choice of a playlist cover.
  */
 registerDefaultMenuActions()
 
@@ -42,6 +52,7 @@ const player = usePlayerStore()
 const collection = useCollectionStore()
 const session = useSessionStore()
 const playlists = usePlaylistsStore()
+const smartPlaylists = useSmartPlaylistsStore()
 
 const menu = ref<InstanceType<typeof BaseContextMenu> | null>(null)
 const target = shallowRef<MenuTarget | null>(null)
@@ -53,7 +64,29 @@ const deleting = ref(false)
 const deleteBusy = ref(false)
 const deleteError = ref<string | null>(null)
 const coverInput = ref<HTMLInputElement | null>(null)
+const smartPlaylist = ref<SmartPlaylist | null>(null)
+const smartAction = ref<'convert' | 'delete' | null>(null)
+const smartBusy = ref(false)
+const smartError = ref<string | null>(null)
+const converting = computed({
+    get: () => smartAction.value === 'convert',
+    set: (value) => {
+        smartAction.value = value ? 'convert' : null
+    },
+})
+const deletingSmart = computed({
+    get: () => smartAction.value === 'delete',
+    set: (value) => {
+        smartAction.value = value ? 'delete' : null
+    },
+})
 const acceptedTypes = coverUploadTypes.join(',')
+
+function openSmartAction(value: SmartPlaylist, action: 'convert' | 'delete'): void {
+    smartPlaylist.value = value
+    smartError.value = null
+    smartAction.value = action
+}
 
 async function tracksOf(source: TrackSource): Promise<Track[]> {
     if (source.kind === 'album') {
@@ -68,6 +101,10 @@ async function tracksOf(source: TrackSource): Promise<Track[]> {
             listTracks({ offset, limit, artistId: source.id }),
         )
         return groupTracksByAlbum(tracks).flatMap((group) => group.tracks)
+    }
+
+    if (source.kind === 'smart-playlist') {
+        return fetchAllPages((offset, limit) => listSmartPlaylistTracks(source.id, offset, limit))
     }
 
     const entries = await fetchAllPages((offset, limit) =>
@@ -111,6 +148,12 @@ const services: MenuServices = {
         deleteError.value = null
         deleting.value = true
     },
+    convertSmartPlaylist(value) {
+        openSmartAction(value, 'convert')
+    },
+    deleteSmartPlaylist(value) {
+        openSmartAction(value, 'delete')
+    },
     queue: {
         playNext: (key) => player.moveItemNext(key),
         move: (key, offset) => player.moveItem(key, offset),
@@ -150,6 +193,8 @@ const label = computed(() => {
             return t('contextMenu.labels.artist')
         case 'playlist':
             return t('contextMenu.labels.playlist')
+        case 'smart-playlist':
+            return t('contextMenu.labels.smartPlaylist')
         case 'queue-entry':
             return t('contextMenu.labels.queueEntry')
         case 'now-playing':
@@ -239,6 +284,49 @@ async function confirmDelete(): Promise<void> {
         deleteBusy.value = false
     }
 }
+/** The page of the smart playlist (if shown) is gone after a conversion or deletion. */
+function leaveSmartPlaylist(id: string, playlist?: Playlist): void {
+    smartAction.value = null
+    if (route.params.id !== id || !String(route.name ?? '').startsWith('smart-playlist')) {
+        return
+    }
+
+    void router.push(
+        playlist?.id ? { name: 'playlist', params: { id: playlist.id } } : { name: 'playlists' },
+    )
+}
+
+async function confirmSmartAction(): Promise<void> {
+    const id = smartPlaylist.value?.id
+    const action = smartAction.value
+    if (!id || !action) {
+        return
+    }
+
+    smartBusy.value = true
+    smartError.value = null
+    try {
+        if (action === 'convert') {
+            leaveSmartPlaylist(id, await smartPlaylists.convert(id))
+        } else {
+            await smartPlaylists.remove(id)
+            leaveSmartPlaylist(id)
+        }
+    } catch (failure) {
+        if (statusOf(failure) === 404) {
+            smartPlaylists.forget(id)
+            leaveSmartPlaylist(id)
+        } else {
+            smartError.value = t(
+                action === 'convert'
+                    ? convertFailureKey(problemCodeOf(failure))
+                    : 'smartPlaylists.errors.deleteFailed',
+            )
+        }
+    } finally {
+        smartBusy.value = false
+    }
+}
 </script>
 
 <template>
@@ -253,6 +341,23 @@ async function confirmDelete(): Promise<void> {
         :busy="deleteBusy"
         :error="deleteError"
         @confirm="confirmDelete"
+    />
+    <SmartPlaylistConvertDialog
+        v-if="converting"
+        v-model:open="converting"
+        :smart-playlist="smartPlaylist"
+        :busy="smartBusy"
+        :error="smartError"
+        @confirm="confirmSmartAction"
+    />
+    <PlaylistDeleteDialog
+        v-if="deletingSmart"
+        v-model:open="deletingSmart"
+        kind="smart-playlist"
+        :playlist="smartPlaylist"
+        :busy="smartBusy"
+        :error="smartError"
+        @confirm="confirmSmartAction"
     />
     <input ref="coverInput" type="file" :accept="acceptedTypes" hidden @change="uploadCover" />
 </template>

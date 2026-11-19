@@ -12,6 +12,7 @@ import {
     type NavigationTreeNode,
 } from '@/navigation/libraryTree'
 import { usePlaylistsStore } from '@/stores/playlists'
+import { useSmartPlaylistsStore } from '@/stores/smartPlaylists'
 import { useSessionStore } from '@/stores/session'
 
 const props = withDefaults(
@@ -35,6 +36,7 @@ const emit = defineEmits<{
 const { t } = useI18n()
 const route = useRoute()
 const playlists = usePlaylistsStore()
+const smartPlaylists = useSmartPlaylistsStore()
 const session = useSessionStore()
 
 const expanded = ref<string[]>([...initiallyExpanded])
@@ -50,18 +52,22 @@ function toTreeNode(node: NavigationTreeNode): TreeNode {
     }
 }
 
-const nodes = computed(() => buildLibraryTree(playlists.playlists).map(toTreeNode))
+const nodes = computed(() =>
+    buildLibraryTree(playlists.playlists, smartPlaylists.smartPlaylists).map(toTreeNode),
+)
 const active = computed(() => activeTreeId(props.location ?? route))
 const state = computed(() =>
     [props.open ? 'open' : 'closed', props.collapsed ? 'collapsed' : 'expanded'].join(' '),
 )
 
-// The playlists of the profile below "Playlists", loaded again for every session.
+// The playlists and smart playlists of the profile below "Playlists", loaded again for every
+// session.
 watch(
     () => session.token,
     (token) => {
         if (token) {
             void playlists.ensureLoaded()
+            void smartPlaylists.ensureLoaded()
         }
     },
     // After the store forgot the playlists of the previous session.

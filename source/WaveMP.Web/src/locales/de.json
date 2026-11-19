@@ -31,6 +31,7 @@
     "createPlaylist": "Playlist erstellen",
     "library": "Bibliothek",
     "playlist": "Playlist",
+    "smartPlaylist": "Intelligente Playlist",
     "collapse": "Seitenleiste einklappen",
     "expand": "Seitenleiste ausklappen"
   },
@@ -309,6 +310,162 @@
       "coverSize": "Das Bild ist zu groß (höchstens 10 MB).",
       "coverUnreadable": "Das Bild ist beschädigt und kann nicht gelesen werden.",
       "coverFailed": "Das Cover konnte nicht geändert werden."
+    }
+  },
+  "smartPlaylists": {
+    "new": "Neue intelligente Playlist",
+    "newTitle": "Neue intelligente Playlist",
+    "editTitle": "Regeln bearbeiten",
+    "loading": "Intelligente Playlist wird geladen...",
+    "kindLabel": "Art",
+    "kind": "Intelligente Playlist",
+    "name": "Name",
+    "templatesTitle": "Mit einer Vorlage beginnen",
+    "templates": {
+      "fourStarsAndMore": "4 Sterne und mehr",
+      "neverPlayed": "Nie gespielt",
+      "recentlyAdded": "Kürzlich hinzugefügt",
+      "mostPlayed": "Meistgespielt",
+      "favorites": "Favoriten"
+    },
+    "rulesTitle": "Regeln",
+    "matchLabel": "Songs müssen erfüllen",
+    "match": {
+      "all": "Alle Regeln",
+      "any": "Eine der Regeln"
+    },
+    "ruleLabel": "Regel {number}",
+    "field": "Feld",
+    "condition": "Bedingung",
+    "value": "Wert",
+    "from": "Von",
+    "to": "Bis",
+    "days": "Tage",
+    "duration": "Dauer",
+    "durationHint": "Minuten und Sekunden, z. B. 3:30",
+    "ratingHint": "0 (unbewertet) bis 5 Sterne",
+    "addRule": "Regel hinzufügen",
+    "removeRule": "Regel {number} entfernen",
+    "noRules": "Ohne Regeln gehört jeder Song der Bibliothek zu dieser intelligenten Playlist.",
+    "orderTitle": "Reihenfolge und Begrenzung",
+    "sortLabel": "Sortieren nach",
+    "directionLabel": "Reihenfolge",
+    "direction": {
+      "asc": "Aufsteigend",
+      "desc": "Absteigend"
+    },
+    "limited": "Anzahl der Songs begrenzen",
+    "limit": "Anzahl der Songs",
+    "limitHint": "1 bis 10.000; die ersten Songs der Reihenfolge bleiben.",
+    "create": "Erstellen",
+    "save": "Speichern",
+    "editRules": "Regeln bearbeiten",
+    "convert": "In Playlist umwandeln",
+    "delete": "Löschen",
+    "emptyTitle": "Gerade passt kein Song",
+    "emptyText": "Songs, die die Regeln erfüllen, erscheinen hier von selbst.",
+    "fields": {
+      "artist": "Interpret",
+      "album": "Album",
+      "genre": "Genre",
+      "year": "Jahr",
+      "rating": "Bewertung",
+      "favorite": "Favorit",
+      "playCount": "Wiedergaben",
+      "lastPlayed": "Zuletzt gespielt",
+      "dateAdded": "Hinzugefügt",
+      "duration": "Dauer",
+      "hasAudio": "Audiodatei",
+      "hasVideo": "Musikvideo"
+    },
+    "operators": {
+      "is": "ist",
+      "isNot": "ist nicht",
+      "contains": "enthält",
+      "doesNotContain": "enthält nicht",
+      "atLeast": "ist mindestens",
+      "atMost": "ist höchstens",
+      "between": "liegt zwischen",
+      "inLast": "in den letzten Tagen",
+      "notInLast": "nicht in den letzten Tagen"
+    },
+    "flags": {
+      "favorite": {
+        "isTrue": "ist ein Favorit",
+        "isFalse": "ist kein Favorit"
+      },
+      "hasAudio": {
+        "isTrue": "vorhanden",
+        "isFalse": "fehlt"
+      },
+      "hasVideo": {
+        "isTrue": "vorhanden",
+        "isFalse": "fehlt"
+      }
+    },
+    "sorts": {
+      "title": "Titel",
+      "artist": "Interpret",
+      "album": "Album",
+      "year": "Jahr",
+      "genre": "Genre",
+      "rating": "Bewertung",
+      "playCount": "Wiedergaben",
+      "lastPlayed": "Zuletzt gespielt",
+      "dateAdded": "Hinzugefügt",
+      "duration": "Dauer"
+    },
+    "summary": {
+      "everything": "Alle Songs der Bibliothek.",
+      "match": {
+        "all": "Songs, die alle diese Regeln erfüllen:",
+        "any": "Songs, die mindestens eine dieser Regeln erfüllen:"
+      },
+      "is": "{field} ist „{value}“",
+      "isNot": "{field} ist nicht „{value}“",
+      "contains": "{field} enthält „{value}“",
+      "doesNotContain": "{field} enthält nicht „{value}“",
+      "atLeast": "{field} ist mindestens {value}",
+      "atMost": "{field} ist höchstens {value}",
+      "between": "{field} liegt zwischen {value} und {to}",
+      "inLast": "{field} innerhalb der letzten {value} Tage",
+      "notInLast": "{field} nicht innerhalb der letzten {value} Tage",
+      "favorite": {
+        "isTrue": "Ist ein Favorit",
+        "isFalse": "Ist kein Favorit"
+      },
+      "hasAudio": {
+        "isTrue": "Hat eine Audiodatei",
+        "isFalse": "Hat keine Audiodatei"
+      },
+      "hasVideo": {
+        "isTrue": "Hat ein Musikvideo",
+        "isFalse": "Hat kein Musikvideo"
+      },
+      "sorted": "Sortiert nach {sort}, {direction}.",
+      "limit": "Höchstens {count} Songs."
+    },
+    "convertDialog": {
+      "title": "In Playlist umwandeln",
+      "text": "„{name}“ in eine normale Playlist mit den Songs umwandeln, die sie gerade enthält? Die Playlist folgt danach nicht mehr den Regeln, und die intelligente Playlist wird entfernt.",
+      "confirm": "Umwandeln"
+    },
+    "deleteDialog": {
+      "title": "Intelligente Playlist löschen",
+      "text": "Die intelligente Playlist „{name}“ löschen? Die Songs bleiben in der Bibliothek.",
+      "confirm": "Löschen"
+    },
+    "errors": {
+      "notFound": "Diese intelligente Playlist gibt es nicht (mehr).",
+      "loadFailed": "Die intelligente Playlist konnte nicht geladen werden.",
+      "saveFailed": "Die intelligente Playlist konnte nicht gespeichert werden.",
+      "checkInput": "Bitte prüfe die markierten Felder.",
+      "deleteFailed": "Die intelligente Playlist konnte nicht gelöscht werden.",
+      "convertFailed": "Die intelligente Playlist konnte nicht umgewandelt werden.",
+      "full": "Die intelligente Playlist enthält mehr Songs, als eine Playlist aufnehmen kann. Lege zuerst eine Begrenzung fest.",
+      "libraryChanged": "Die Bibliothek ändert sich gerade, zum Beispiel während eines Scans. Bitte versuche es gleich noch einmal.",
+      "invalidNumber": "Bitte gib eine ganze Zahl ein.",
+      "invalidDuration": "Bitte gib eine Dauer wie 3:30 ein."
     }
   },
   "server": {
@@ -1466,6 +1623,7 @@
       "album": "Aktionen für das Album",
       "artist": "Aktionen für den Interpreten",
       "playlist": "Aktionen für die Playlist",
+      "smartPlaylist": "Aktionen für die intelligente Playlist",
       "queueEntry": "Aktionen für den Eintrag der Warteschlange",
       "nowPlaying": "Aktionen für die Wiedergabe"
     },
@@ -1498,6 +1656,9 @@
     "rename": "Umbenennen",
     "changeCover": "Cover ändern",
     "deletePlaylist": "Playlist löschen",
+    "editRules": "Regeln bearbeiten",
+    "convertToPlaylist": "In Playlist umwandeln",
+    "deleteSmartPlaylist": "Intelligente Playlist löschen",
     "viewCover": "Cover",
     "viewVideo": "Video",
     "viewVisualization": "Visualisierung",

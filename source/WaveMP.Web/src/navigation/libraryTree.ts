@@ -100,19 +100,68 @@ export function playlistNodeId(id: string): string {
     return `playlist:${id}`
 }
 
-/** The tree of the sidebar with the playlists of the profile below "Playlists", in their order. */
-export function buildLibraryTree(
-    playlists: readonly { readonly id?: string | null; readonly name?: string | null }[],
+/** Id of the tree node of a smart playlist. */
+export function smartPlaylistNodeId(id: string): string {
+    return `smart-playlist:${id}`
+}
+
+interface NamedItem {
+    readonly id?: string | null
+    readonly name?: string | null
+}
+
+/** Merges two lists sorted by label into one, keeping the order of each list. */
+function mergeByLabel(
+    first: readonly NavigationTreeNode[],
+    second: readonly NavigationTreeNode[],
 ): NavigationTreeNode[] {
-    const playlistNodes: NavigationTreeNode[] = playlists
-        .filter((playlist): playlist is { id: string; name?: string | null } => !!playlist.id)
-        .map((playlist) => ({
+    const merged: NavigationTreeNode[] = []
+    let i = 0
+    let j = 0
+    while (i < first.length || j < second.length) {
+        const a = first[i]
+        const b = second[j]
+        if (
+            a &&
+            (!b ||
+                (a.label ?? '').localeCompare(b.label ?? '', undefined, { sensitivity: 'base' }) <=
+                    0)
+        ) {
+            merged.push(a)
+            i++
+        } else if (b) {
+            merged.push(b)
+            j++
+        }
+    }
+    return merged
+}
+
+/**
+ * The tree of the sidebar with the playlists and smart playlists of the profile below
+ * "Playlists". Both come sorted by name; they are merged, so each keeps its own order.
+ */
+export function buildLibraryTree(
+    playlists: readonly NamedItem[],
+    smartPlaylists: readonly NamedItem[] = [],
+): NavigationTreeNode[] {
+    const named = (item: NamedItem): item is { id: string; name?: string | null } => !!item.id
+    const playlistNodes = mergeByLabel(
+        playlists.filter(named).map((playlist) => ({
             id: playlistNodeId(playlist.id),
             labelKey: 'sidebar.playlist',
             label: playlist.name ?? '',
-            icon: 'tree-playlist',
+            icon: 'tree-playlist' as const,
             to: { name: 'playlist', params: { id: playlist.id } },
-        }))
+        })),
+        smartPlaylists.filter(named).map((playlist) => ({
+            id: smartPlaylistNodeId(playlist.id),
+            labelKey: 'sidebar.smartPlaylist',
+            label: playlist.name ?? '',
+            icon: 'tree-smart-playlist' as const,
+            to: { name: 'smart-playlist', params: { id: playlist.id } },
+        })),
+    )
 
     return libraryTree.map((node) =>
         node.id === 'playlists'

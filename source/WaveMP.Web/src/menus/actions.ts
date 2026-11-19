@@ -1,6 +1,6 @@
-// The entries of the context menus of songs, albums, artists, playlists, queue entries and Now
-// Playing. registerDefaultMenuActions adds them to the registry once; further entries can be
-// registered after them (registerMenuActions).
+// The entries of the context menus of songs, albums, artists, playlists, smart playlists, queue
+// entries and Now Playing. registerDefaultMenuActions adds them to the registry once; further
+// entries can be registered after them (registerMenuActions).
 
 import {
     FavoriteTypeObject,
@@ -17,6 +17,7 @@ import type {
     MenuServices,
     NowPlayingTarget,
     PlaylistTarget,
+    SmartPlaylistTarget,
     QueueEntryTarget,
     SongTarget,
     TrackSource,
@@ -259,7 +260,9 @@ async function playSource(source: TrackSource, services: MenuServices, shuffle: 
     }
 }
 
-function playActions<Target extends AlbumTarget | ArtistTarget | PlaylistTarget>(
+function playActions<
+    Target extends AlbumTarget | ArtistTarget | PlaylistTarget | SmartPlaylistTarget,
+>(
     sourceOf: (target: Target) => TrackSource | undefined,
     hasTracks: (target: Target) => boolean,
 ): MenuAction<Target>[] {
@@ -351,6 +354,44 @@ export const playlistActions: readonly MenuAction<PlaylistTarget>[] = [
         icon: 'delete',
         enabled: (target) => !!target.playlist.id,
         run: (target, services) => services.deletePlaylist(target.playlist),
+    },
+]
+
+export const smartPlaylistActions: readonly MenuAction<SmartPlaylistTarget>[] = [
+    ...playActions<SmartPlaylistTarget>(
+        (target) =>
+            target.smartPlaylist.id
+                ? { kind: 'smart-playlist', id: target.smartPlaylist.id }
+                : undefined,
+        (target) => (target.smartPlaylist.trackCount ?? 0) > 0,
+    ),
+    {
+        id: 'edit-rules',
+        group: 'edit',
+        label: 'contextMenu.editRules',
+        icon: 'edit',
+        enabled: (target) => !!target.smartPlaylist.id,
+        run: (target, services) =>
+            services.navigate({
+                name: 'smart-playlist-edit',
+                params: { id: target.smartPlaylist.id! },
+            }),
+    },
+    {
+        id: 'convert',
+        group: 'edit',
+        label: 'contextMenu.convertToPlaylist',
+        icon: 'convert-playlist',
+        enabled: (target) => !!target.smartPlaylist.id,
+        run: (target, services) => services.convertSmartPlaylist(target.smartPlaylist),
+    },
+    {
+        id: 'delete',
+        group: 'delete',
+        label: 'contextMenu.deleteSmartPlaylist',
+        icon: 'delete',
+        enabled: (target) => !!target.smartPlaylist.id,
+        run: (target, services) => services.deleteSmartPlaylist(target.smartPlaylist),
     },
 ]
 
@@ -458,6 +499,7 @@ export function registerDefaultMenuActions(): void {
     registerMenuActions('album', albumActions)
     registerMenuActions('artist', artistActions)
     registerMenuActions('playlist', playlistActions)
+    registerMenuActions('smart-playlist', smartPlaylistActions)
     registerMenuActions('queue-entry', queueEntryActions)
     registerMenuActions('now-playing', nowPlayingActions)
 }

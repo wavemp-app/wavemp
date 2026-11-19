@@ -32,7 +32,8 @@
     "playlists": "Playlists",
     "createPlaylist": "Create Playlist",
     "library": "Library",
-    "playlist": "Playlist"
+    "playlist": "Playlist",
+    "smartPlaylist": "Smart playlist"
   },
   "library": {
     "back": "Back",
@@ -309,6 +310,162 @@
       "coverSize": "The picture is too large (at most 10 MB).",
       "coverUnreadable": "The picture is damaged and cannot be read.",
       "coverFailed": "The cover could not be changed."
+    }
+  },
+  "smartPlaylists": {
+    "new": "New smart playlist",
+    "newTitle": "New smart playlist",
+    "editTitle": "Edit rules",
+    "loading": "Loading smart playlist...",
+    "kindLabel": "Kind",
+    "kind": "Smart playlist",
+    "name": "Name",
+    "templatesTitle": "Start from a template",
+    "templates": {
+      "fourStarsAndMore": "4 stars and more",
+      "neverPlayed": "Never played",
+      "recentlyAdded": "Recently added",
+      "mostPlayed": "Most played",
+      "favorites": "Favorites"
+    },
+    "rulesTitle": "Rules",
+    "matchLabel": "Songs must match",
+    "match": {
+      "all": "All rules",
+      "any": "Any rule"
+    },
+    "ruleLabel": "Rule {number}",
+    "field": "Field",
+    "condition": "Condition",
+    "value": "Value",
+    "from": "From",
+    "to": "To",
+    "days": "Days",
+    "duration": "Duration",
+    "durationHint": "Minutes and seconds, e.g. 3:30",
+    "ratingHint": "0 (unrated) to 5 stars",
+    "addRule": "Add rule",
+    "removeRule": "Remove rule {number}",
+    "noRules": "Without rules, every song of the library belongs to this smart playlist.",
+    "orderTitle": "Order and limit",
+    "sortLabel": "Sort by",
+    "directionLabel": "Order",
+    "direction": {
+      "asc": "Ascending",
+      "desc": "Descending"
+    },
+    "limited": "Limit the number of songs",
+    "limit": "Number of songs",
+    "limitHint": "1 to 10,000; the first songs in the order are kept.",
+    "create": "Create",
+    "save": "Save",
+    "editRules": "Edit rules",
+    "convert": "Convert to playlist",
+    "delete": "Delete",
+    "emptyTitle": "No songs match right now",
+    "emptyText": "Songs that meet the rules appear here by themselves.",
+    "fields": {
+      "artist": "Artist",
+      "album": "Album",
+      "genre": "Genre",
+      "year": "Year",
+      "rating": "Rating",
+      "favorite": "Favorite",
+      "playCount": "Play count",
+      "lastPlayed": "Last played",
+      "dateAdded": "Date added",
+      "duration": "Duration",
+      "hasAudio": "Audio file",
+      "hasVideo": "Music video"
+    },
+    "operators": {
+      "is": "is",
+      "isNot": "is not",
+      "contains": "contains",
+      "doesNotContain": "does not contain",
+      "atLeast": "is at least",
+      "atMost": "is at most",
+      "between": "is between",
+      "inLast": "in the last days",
+      "notInLast": "not in the last days"
+    },
+    "flags": {
+      "favorite": {
+        "isTrue": "is a favorite",
+        "isFalse": "is not a favorite"
+      },
+      "hasAudio": {
+        "isTrue": "exists",
+        "isFalse": "is missing"
+      },
+      "hasVideo": {
+        "isTrue": "exists",
+        "isFalse": "is missing"
+      }
+    },
+    "sorts": {
+      "title": "Title",
+      "artist": "Artist",
+      "album": "Album",
+      "year": "Year",
+      "genre": "Genre",
+      "rating": "Rating",
+      "playCount": "Play count",
+      "lastPlayed": "Last played",
+      "dateAdded": "Date added",
+      "duration": "Duration"
+    },
+    "summary": {
+      "everything": "All songs of the library.",
+      "match": {
+        "all": "Songs that match all of these rules:",
+        "any": "Songs that match at least one of these rules:"
+      },
+      "is": "{field} is \"{value}\"",
+      "isNot": "{field} is not \"{value}\"",
+      "contains": "{field} contains \"{value}\"",
+      "doesNotContain": "{field} does not contain \"{value}\"",
+      "atLeast": "{field} is at least {value}",
+      "atMost": "{field} is at most {value}",
+      "between": "{field} is between {value} and {to}",
+      "inLast": "{field} within the last {value} days",
+      "notInLast": "{field} not within the last {value} days",
+      "favorite": {
+        "isTrue": "Is a favorite",
+        "isFalse": "Is not a favorite"
+      },
+      "hasAudio": {
+        "isTrue": "Has an audio file",
+        "isFalse": "Has no audio file"
+      },
+      "hasVideo": {
+        "isTrue": "Has a music video",
+        "isFalse": "Has no music video"
+      },
+      "sorted": "Sorted by {sort}, {direction}.",
+      "limit": "At most {count} songs."
+    },
+    "convertDialog": {
+      "title": "Convert to playlist",
+      "text": "Turn \"{name}\" into a normal playlist with the songs it holds right now? The playlist no longer follows the rules, and the smart playlist is removed.",
+      "confirm": "Convert"
+    },
+    "deleteDialog": {
+      "title": "Delete smart playlist",
+      "text": "Delete the smart playlist \"{name}\"? The songs stay in the library.",
+      "confirm": "Delete"
+    },
+    "errors": {
+      "notFound": "This smart playlist does not exist (any more).",
+      "loadFailed": "The smart playlist could not be loaded.",
+      "saveFailed": "The smart playlist could not be saved.",
+      "checkInput": "Please check the marked fields.",
+      "deleteFailed": "The smart playlist could not be deleted.",
+      "convertFailed": "The smart playlist could not be converted.",
+      "full": "The smart playlist holds more songs than a playlist can. Add a limit first.",
+      "libraryChanged": "The library is changing right now, for example during a scan. Please try again in a moment.",
+      "invalidNumber": "Please enter a whole number.",
+      "invalidDuration": "Please enter a duration like 3:30."
     }
   },
   "server": {
@@ -1466,6 +1623,7 @@
       "album": "Album actions",
       "artist": "Artist actions",
       "playlist": "Playlist actions",
+      "smartPlaylist": "Smart playlist actions",
       "queueEntry": "Queue entry actions",
       "nowPlaying": "Now Playing actions"
     },
@@ -1498,6 +1656,9 @@
     "rename": "Rename",
     "changeCover": "Change cover",
     "deletePlaylist": "Delete playlist",
+    "editRules": "Edit rules",
+    "convertToPlaylist": "Convert to playlist",
+    "deleteSmartPlaylist": "Delete smart playlist",
     "viewCover": "Cover",
     "viewVideo": "Video",
     "viewVisualization": "Visualization",

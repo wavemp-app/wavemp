@@ -1,7 +1,12 @@
 // Location of the current page: breadcrumb, page title and the active entry of the sidebar tree.
 
 import type { RouteLocationRaw } from 'vue-router'
-import { findLibrarySection, playlistNodeId, type LibrarySection } from './libraryTree'
+import {
+    findLibrarySection,
+    playlistNodeId,
+    smartPlaylistNodeId,
+    type LibrarySection,
+} from './libraryTree'
 
 export interface Crumb {
     readonly id: string
@@ -76,10 +81,27 @@ export function buildBreadcrumb(route: RouteInfo, detailTitle?: string | null): 
             crumbs.push({ id: 'recently-played', labelKey: 'playlists.recentlyPlayed' })
             break
         case 'playlist':
+        case 'smart-playlist':
             crumbs.push(playlistsCrumb)
             if (detailTitle) {
                 crumbs.push({ id: 'playlist', labelKey: 'nav.playlists', label: detailTitle })
             }
+            break
+        case 'smart-playlists-new':
+            crumbs.push(playlistsCrumb)
+            crumbs.push({ id: 'smart-playlist-new', labelKey: 'smartPlaylists.newTitle' })
+            break
+        case 'smart-playlist-edit':
+            crumbs.push(playlistsCrumb)
+            if (detailTitle) {
+                crumbs.push({
+                    id: 'playlist',
+                    labelKey: 'nav.playlists',
+                    label: detailTitle,
+                    to: { name: 'smart-playlist', params: { id: String(route.params.id ?? '') } },
+                })
+            }
+            crumbs.push({ id: 'smart-playlist-edit', labelKey: 'smartPlaylists.editTitle' })
             break
         case 'library-section': {
             crumbs.push(library)
@@ -206,6 +228,13 @@ export function activeTreeId(route: RouteInfo): string | undefined {
             return 'recently-played'
         case 'playlist':
             return typeof route.params.id === 'string' ? playlistNodeId(route.params.id) : undefined
+        case 'smart-playlists-new':
+            return 'playlists'
+        case 'smart-playlist':
+        case 'smart-playlist-edit':
+            return typeof route.params.id === 'string'
+                ? smartPlaylistNodeId(route.params.id)
+                : undefined
         default:
             return undefined
     }

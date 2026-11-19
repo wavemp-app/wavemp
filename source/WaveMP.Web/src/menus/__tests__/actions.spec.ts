@@ -49,6 +49,8 @@ function fakeServices(overrides: Partial<MenuServices> = {}): MenuServices {
         renamePlaylist: vi.fn(),
         changePlaylistCover: vi.fn(),
         deletePlaylist: vi.fn(),
+        convertSmartPlaylist: vi.fn(),
+        deleteSmartPlaylist: vi.fn(),
         queue: { playNext: vi.fn(), move: vi.fn(), remove: vi.fn() },
         ...overrides,
     }
@@ -279,7 +281,7 @@ describe('menu of songs', () => {
     })
 })
 
-describe('menus of albums, artists and playlists', () => {
+describe('menus of albums, artists, playlists and smart playlists', () => {
     it('plays, shuffles and queues the songs with audio of an album', async () => {
         const services = fakeServices()
         const target: MenuTarget = {
@@ -378,6 +380,45 @@ describe('menus of albums, artists and playlists', () => {
     it('greys out playing an empty playlist', () => {
         const entries = resolveMenu(
             { type: 'playlist', playlist: { id: 'list', trackCount: 0 } },
+            fakeServices(),
+        )
+
+        expect(summary(entries).slice(0, 2)).toEqual(['-play', '-shuffle'])
+    })
+
+    it('plays, edits, converts and deletes a smart playlist', async () => {
+        const services = fakeServices()
+        const smartPlaylist = { id: 'smart', name: 'Good', trackCount: 3 }
+        const target: MenuTarget = { type: 'smart-playlist', smartPlaylist }
+
+        expect(summary(resolveMenu(target, services))).toEqual([
+            'play',
+            'shuffle',
+            '|',
+            'edit-rules',
+            'convert',
+            '|',
+            'delete',
+        ])
+
+        await runMenuAction(target, 'shuffle', services)
+        await runMenuAction(target, 'edit-rules', services)
+        await runMenuAction(target, 'convert', services)
+        await runMenuAction(target, 'delete', services)
+
+        expect(services.tracksOf).toHaveBeenCalledWith({ kind: 'smart-playlist', id: 'smart' })
+        expect(services.playTracks).toHaveBeenCalledWith([plain, song], -1, { shuffle: true })
+        expect(services.navigate).toHaveBeenCalledWith({
+            name: 'smart-playlist-edit',
+            params: { id: 'smart' },
+        })
+        expect(services.convertSmartPlaylist).toHaveBeenCalledWith(smartPlaylist)
+        expect(services.deleteSmartPlaylist).toHaveBeenCalledWith(smartPlaylist)
+    })
+
+    it('greys out playing a smart playlist without songs', () => {
+        const entries = resolveMenu(
+            { type: 'smart-playlist', smartPlaylist: { id: 'smart', trackCount: 0 } },
             fakeServices(),
         )
 

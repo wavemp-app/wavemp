@@ -1,5 +1,5 @@
 // Pure helpers of the playlists: the order of entries, the slides of a cover made of track covers
-// and the checks of a picture before it is uploaded as cover.
+// and the checks of a picture before it is uploaded as cover; the messages of failed changes.
 
 import {
     PlaylistCoverKindObject,
@@ -86,4 +86,18 @@ export function coverViewOf(cover: PlaylistCover | null | undefined): PlaylistCo
 /** The slide after the current one, starting over after the last. */
 export function nextSlide(current: number, count: number): number {
     return count <= 0 ? 0 : (current + 1) % count
+}
+
+/** Message key of a failed conversion of a smart playlist into a normal playlist. */
+export function convertFailureKey(code: string | null | undefined): string {
+    switch (code) {
+        case ProblemCodeObject.PlaylistFull:
+            return 'smartPlaylists.errors.full'
+        case ProblemCodeObject.ServiceUnavailable:
+            return 'smartPlaylists.errors.libraryChanged'
+        case ProblemCodeObject.PlaylistSmart_not_found:
+            return 'smartPlaylists.errors.notFound'
+        default:
+            return 'smartPlaylists.errors.convertFailed'
+    }
 }

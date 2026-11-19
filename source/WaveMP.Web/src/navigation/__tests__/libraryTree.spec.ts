@@ -5,6 +5,7 @@ import {
     libraryTree,
     mainNavigation,
     playlistNodeId,
+    smartPlaylistNodeId,
 } from '../libraryTree'
 
 describe('buildLibraryTree', () => {
@@ -44,6 +45,35 @@ describe('buildLibraryTree', () => {
         expect(tree.find((node) => node.id === 'library')).toBe(
             libraryTree.find((node) => node.id === 'library'),
         )
+    })
+
+    it('merges the smart playlists into the playlists by name, with their own icon', () => {
+        const tree = buildLibraryTree(
+            [
+                { id: 'a', name: 'Alpha' },
+                { id: 'c', name: 'charlie' },
+            ],
+            [
+                { id: 's1', name: 'Bravo' },
+                { id: null, name: 'Without id' },
+                { id: 's2', name: 'Delta' },
+            ],
+        )
+
+        const children = tree.find((node) => node.id === 'playlists')!.children!.slice(2)
+        expect(children.map((node) => node.id)).toEqual([
+            'playlist:a',
+            'smart-playlist:s1',
+            'playlist:c',
+            'smart-playlist:s2',
+        ])
+        expect(children[1]).toEqual({
+            id: smartPlaylistNodeId('s1'),
+            labelKey: 'sidebar.smartPlaylist',
+            label: 'Bravo',
+            icon: 'tree-smart-playlist',
+            to: { name: 'smart-playlist', params: { id: 's1' } },
+        })
     })
 
     it('keeps the fixed tree without playlists', () => {

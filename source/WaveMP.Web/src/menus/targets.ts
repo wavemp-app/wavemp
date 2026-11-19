@@ -10,6 +10,7 @@ import type {
     FavoriteType,
     PlayerViewMode,
     Playlist,
+    SmartPlaylist,
     Track,
 } from '@/api/generated/models'
 import type { RouteLocationRaw } from 'vue-router'
@@ -51,6 +52,11 @@ export interface PlaylistTarget {
     readonly playlist: Playlist
 }
 
+export interface SmartPlaylistTarget {
+    readonly type: 'smart-playlist'
+    readonly smartPlaylist: SmartPlaylist
+}
+
 /** An entry of the play queue. */
 export interface QueueEntryTarget {
     readonly type: 'queue-entry'
@@ -82,15 +88,21 @@ export interface NowPlayingTarget {
 }
 
 export type MenuTarget =
-    SongTarget | AlbumTarget | ArtistTarget | PlaylistTarget | QueueEntryTarget | NowPlayingTarget
+    | SongTarget
+    | AlbumTarget
+    | ArtistTarget
+    | PlaylistTarget
+    | SmartPlaylistTarget
+    | QueueEntryTarget
+    | NowPlayingTarget
 
 export type MenuTargetType = MenuTarget['type']
 
 export type TargetOf<Type extends MenuTargetType> = Extract<MenuTarget, { type: Type }>
 
-/** Where the songs of an album, an artist or a playlist come from. */
+/** Where the songs of an album, an artist, a playlist or a smart playlist come from. */
 export interface TrackSource {
-    readonly kind: 'album' | 'artist' | 'playlist'
+    readonly kind: 'album' | 'artist' | 'playlist' | 'smart-playlist'
     readonly id: string
 }
 
@@ -109,12 +121,16 @@ export interface MenuServices {
     addToPlaylist(trackIds: readonly string[]): void
     /** Plays the song and shows its video on Now Playing. */
     watchVideo(track: Track): void
-    /** All songs of an album, an artist or a playlist, in the order they play. */
+    /** All songs of an album, an artist, a playlist or a smart playlist, in the order they play. */
     tracksOf(source: TrackSource): Promise<Track[]>
     renamePlaylist(playlist: Playlist): void
     changePlaylistCover(playlist: Playlist): void
     /** Asks before the playlist is deleted. */
     deletePlaylist(playlist: Playlist): void
+    /** Asks before the smart playlist becomes a normal playlist. */
+    convertSmartPlaylist(smartPlaylist: SmartPlaylist): void
+    /** Asks before the smart playlist is deleted. */
+    deleteSmartPlaylist(smartPlaylist: SmartPlaylist): void
     readonly queue: {
         playNext(key: string): void
         move(key: string, offset: -1 | 1): void
