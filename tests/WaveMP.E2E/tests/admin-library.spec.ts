@@ -49,7 +49,9 @@ test.describe('settings', () => {
         await expect(interval).toHaveValue('360')
 
         await interval.selectOption('720')
-        await page.getByRole('button', { name: 'Save' }).click()
+        // The library page has further forms (the online search) with their own Save button.
+        const form = page.locator("form[data-part='form']").filter({ has: interval })
+        await form.getByRole('button', { name: 'Save' }).click()
 
         await expect(page.locator("[data-part='alert'][data-state='success']")).toHaveText(
             'The settings are saved.',

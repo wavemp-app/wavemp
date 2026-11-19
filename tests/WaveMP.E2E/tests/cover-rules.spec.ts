@@ -177,7 +177,12 @@ test.describe("cover rules", () => {
         await expect(albumFirst).toHaveAttribute("aria-checked", "true");
 
         await trackFirst.click();
-        await page.getByRole("button", { name: "Save", exact: true }).click();
+        // The library page has further forms (the online search) with their own Save button.
+        await page
+            .locator("form[data-part='form']")
+            .filter({ has: field })
+            .getByRole("button", { name: "Save", exact: true })
+            .click();
 
         await expect(
             page.locator("[data-part='alert'][data-state='success']"),
