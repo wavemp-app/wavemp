@@ -25,4 +25,10 @@ public static class JobIds
     /// download is switched on.
     /// </summary>
     public const string LyricsDownload = "lyrics-download";
+
+    /// <summary>
+    /// Checks the library for problems (missing covers and tags, duplicates, unreadable files, ...) after every scan
+    /// and when an admin starts it.
+    /// </summary>
+    public const string LibraryCheck = "library-check";
 }

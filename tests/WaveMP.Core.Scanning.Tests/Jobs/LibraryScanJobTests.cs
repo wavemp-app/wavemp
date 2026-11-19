@@ -104,6 +104,24 @@ public class LibraryScanJobTests
             Arg.Any<CancellationToken>());
     }
 
+    [TestCase(true, 0)]
+    [TestCase(false, 1)]
+    [TestCase(false, 0)]
+    public async Task Execute_AfterEveryScan_StartsTheLibraryCheck(bool full, int filesAdded)
+    {
+        ILibraryScanner scanner = Substitute.For<ILibraryScanner>();
+        scanner.ScanAsync(Arg.Any<ScanScope>(), Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+            .Returns(new ScanResult(new ScanStatistics { FilesAdded = filesAdded, IsPartial = !full }, []));
+        IJobService jobs = Substitute.For<IJobService>();
+        IJobExecutionContext context = ContextFor(full ? null : ScanScope.Of(_source, ["Artist/Album"]));
+
+        await CreateJob(scanner, jobs).Execute(context, CancellationToken.None);
+
+        await jobs.Received(1).StartRunAsync(
+            new JobRunRequest(JobIds.LibraryCheck, JobRunTrigger.LibraryScan),
+            Arg.Any<CancellationToken>());
+    }
+
     [Test]
     public async Task Execute_PreparationCannotBeStarted_KeepsTheScanSuccessful()
     {
