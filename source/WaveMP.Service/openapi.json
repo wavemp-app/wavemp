@@ -4721,6 +4721,125 @@
         ]
       }
     },
+    "/api/v1/me/playback-state": {
+      "get": {
+        "tags": [
+          "PlaybackState"
+        ],
+        "summary": "Returns the saved playback state of the current profile with the songs of its queue. Songs that left the library are left out; if the current song is gone, the next entry is current at its beginning. Clients load the state on start and show it without starting playback; the device tells whether another device saved it.",
+        "operationId": "GetMyPlaybackState",
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "The saved state.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlaybackState"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The profile has no saved state yet (code `playback.state_not_found`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "PlaybackState"
+        ],
+        "summary": "Saves the playback state of a device for the current profile and replaces the saved one, unless that changed later (`changedAt`): the most recently changed state wins. Clients save on a change of song, on pause and every few seconds while playing, not on every progress update. Unknown songs are saved as well and left out when the state is read.",
+        "operationId": "SaveMyPlaybackState",
+        "requestBody": {
+          "description": "The state of the device.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePlaybackState"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePlaybackState"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "The state is saved."
+          },
+          "400": {
+            "description": "The request is invalid (code `request.invalid`), e.g. more than 2000 `items` (`max_items`), a `currentIndex` outside the queue or a negative `positionMilliseconds` (`out_of_range`), an `originalOrder` of a shuffled queue that does not name every position once (`invalid_value`) or a missing `device` (`required`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The profile was deleted in the meantime (code `user.not_found`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Another device saved a state that changed later; it stays (code `playback.state_outdated`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
     "/api/v1/me/playlists/{id}/cover": {
       "get": {
         "tags": [
@@ -14850,6 +14969,28 @@
         },
         "description": "Whether a profile is protected by a PIN. The PIN itself is never returned."
       },
+      "PlaybackDevice": {
+        "required": [
+          "id",
+          "name"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "maxLength": 64,
+            "minLength": 1,
+            "type": "string",
+            "description": "Id the device chose for itself and keeps, 1 to 64 characters, so it recognizes its own state."
+          },
+          "name": {
+            "maxLength": 100,
+            "minLength": 1,
+            "type": "string",
+            "description": "Name of the device that other devices show (\"continue listening from\"), 1 to 100 characters, for example \"Firefox · Windows\"."
+          }
+        },
+        "description": "The device that changed a playback state."
+      },
       "PlaybackMethod": {
         "enum": [
           "DirectPlay",
@@ -14857,6 +14998,125 @@
         ],
         "type": "string",
         "description": "How a client plays a track."
+      },
+      "PlaybackSource": {
+        "required": [
+          "kind",
+          "id"
+        ],
+        "type": "object",
+        "properties": {
+          "kind": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/PlaybackSourceKind"
+              }
+            ]
+          },
+          "id": {
+            "type": "string",
+            "description": "Id of the album, artist, playlist or smart playlist.",
+            "format": "uuid"
+          }
+        },
+        "description": "What a list in a player was started from: an album, an artist, a playlist or a smart playlist."
+      },
+      "PlaybackSourceKind": {
+        "enum": [
+          "Album",
+          "Artist",
+          "Playlist",
+          "SmartPlaylist"
+        ],
+        "type": "string"
+      },
+      "PlaybackState": {
+        "required": [
+          "items",
+          "currentIndex",
+          "positionMilliseconds",
+          "shuffle",
+          "originalOrder",
+          "repeat",
+          "device",
+          "changedAt"
+        ],
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PlaybackStateItem"
+            },
+            "description": "The queue in the order it plays, at most 2000 entries; the same song may appear more than once."
+          },
+          "currentIndex": {
+            "type": "integer",
+            "description": "Position of the current entry in `items`; -1 without one.",
+            "format": "int32"
+          },
+          "positionMilliseconds": {
+            "type": "integer",
+            "description": "Position within the current song in milliseconds; 0 if the saved current song left the library and the next entry took its place.",
+            "format": "int32"
+          },
+          "shuffle": {
+            "type": "boolean",
+            "description": "Whether the queue is shuffled."
+          },
+          "originalOrder": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "description": "While shuffled: the positions in `items` in the order before shuffling, so turning shuffle off restores it; empty otherwise."
+          },
+          "repeat": {
+            "$ref": "#/components/schemas/RepeatMode"
+          },
+          "source": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "What the list was started from; null for a list of single songs.",
+                "$ref": "#/components/schemas/PlaybackSource"
+              }
+            ]
+          },
+          "device": {
+            "description": "The device that changed the state last.",
+            "$ref": "#/components/schemas/PlaybackDevice"
+          },
+          "changedAt": {
+            "type": "string",
+            "description": "When the state changed on that device.",
+            "format": "date-time"
+          }
+        },
+        "description": "Where the current profile stopped listening: the queue, its current entry and position, shuffle and repeat, where the list came from and the device that changed it last. Entries of songs that left the library are left out."
+      },
+      "PlaybackStateItem": {
+        "required": [
+          "track",
+          "autoplay"
+        ],
+        "type": "object",
+        "properties": {
+          "track": {
+            "$ref": "#/components/schemas/Track"
+          },
+          "autoplay": {
+            "type": "boolean",
+            "description": "Whether autoplay added the entry after the list had ended."
+          }
+        },
+        "description": "An entry of a saved queue."
       },
       "PlaybackTarget": {
         "enum": [
@@ -15165,6 +15425,8 @@
           "transcode.segment_not_found",
           "transcode.job_not_found",
           "history.not_found",
+          "playback.state_not_found",
+          "playback.state_outdated",
           "playlist.not_found",
           "playlist.entry_not_found",
           "playlist.full",
@@ -15401,6 +15663,15 @@
           }
         },
         "description": "One page of a collection."
+      },
+      "RepeatMode": {
+        "enum": [
+          "Off",
+          "All",
+          "One"
+        ],
+        "type": "string",
+        "description": "Repeat mode of a player."
       },
       "ReplayGain": {
         "type": "object",
@@ -18136,6 +18407,120 @@
         },
         "description": "Changes the settings of the online search for album info. Missing or null values stay unchanged."
       },
+      "UpdatePlaybackState": {
+        "required": [
+          "items",
+          "currentIndex",
+          "positionMilliseconds",
+          "device"
+        ],
+        "type": "object",
+        "properties": {
+          "items": {
+            "maxItems": 2000,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UpdatePlaybackStateItem"
+            },
+            "description": "The queue in the order it plays, at most 2000 entries; of a longer queue the entries around the current one."
+          },
+          "currentIndex": {
+            "maximum": 1999,
+            "minimum": -1,
+            "type": [
+              "null",
+              "integer"
+            ],
+            "description": "Position of the current entry in `items`; -1 without one.",
+            "format": "int32"
+          },
+          "positionMilliseconds": {
+            "maximum": 2147483647,
+            "minimum": 0,
+            "type": [
+              "null",
+              "integer"
+            ],
+            "description": "Position within the current song in milliseconds.",
+            "format": "int32"
+          },
+          "shuffle": {
+            "type": [
+              "null",
+              "boolean"
+            ],
+            "description": "Whether the queue is shuffled; false if missing."
+          },
+          "originalOrder": {
+            "maxItems": 2000,
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            },
+            "description": "While shuffled: the positions in `items` in the order before shuffling, each position exactly once, so turning shuffle off restores it. Ignored while not shuffled."
+          },
+          "repeat": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "Repeat mode; Off if missing.",
+                "$ref": "#/components/schemas/RepeatMode"
+              }
+            ]
+          },
+          "source": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "What the list was started from; missing for a list of single songs.",
+                "$ref": "#/components/schemas/PlaybackSource"
+              }
+            ]
+          },
+          "device": {
+            "description": "The device that saves the state.",
+            "$ref": "#/components/schemas/PlaybackDevice"
+          },
+          "changedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "When the state changed on the device; now if missing. A time in the future counts as now. A state that changed before the saved one is rejected.",
+            "format": "date-time"
+          }
+        },
+        "description": "The playback state of a device to save for the current profile; it replaces the saved one."
+      },
+      "UpdatePlaybackStateItem": {
+        "required": [
+          "trackId"
+        ],
+        "type": "object",
+        "properties": {
+          "trackId": {
+            "type": "string",
+            "description": "Id of the song. Unknown songs are saved as well and left out when the state is read.",
+            "format": "uuid"
+          },
+          "autoplay": {
+            "type": [
+              "null",
+              "boolean"
+            ],
+            "description": "Whether autoplay added the entry after the list had ended; false if missing."
+          }
+        },
+        "description": "An entry of the queue to save."
+      },
       "UpdatePlaylist": {
         "type": "object",
         "properties": {
@@ -19144,6 +19529,9 @@
     },
     {
       "name": "OnlineMetadata"
+    },
+    {
+      "name": "PlaybackState"
     },
     {
       "name": "PlaylistCovers"

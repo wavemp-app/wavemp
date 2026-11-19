@@ -255,6 +255,19 @@ public enum ProblemCodeDto
     HistoryNotFound,
 
     /// <summary>
+    /// The profile has no saved playback state yet (404).
+    /// </summary>
+    [JsonStringEnumMemberName("playback.state_not_found")]
+    PlaybackStateNotFound,
+
+    /// <summary>
+    /// Another device saved a playback state that changed later than the one sent; the saved state stays (409).
+    /// Clients load it (GetMyPlaybackState) to continue from there.
+    /// </summary>
+    [JsonStringEnumMemberName("playback.state_outdated")]
+    PlaybackStateOutdated,
+
+    /// <summary>
     /// The playlist does not exist or belongs to another profile (404).
     /// </summary>
     [JsonStringEnumMemberName("playlist.not_found")]

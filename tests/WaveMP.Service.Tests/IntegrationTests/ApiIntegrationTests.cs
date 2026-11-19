@@ -273,6 +273,8 @@ public class ApiIntegrationTests
     [TestCase("GetTrackPlayback", true)]
     [TestCase("CreateMyHistoryEntry", true)]
     [TestCase("ListMyHistory", true)]
+    [TestCase("GetMyPlaybackState", true)]
+    [TestCase("SaveMyPlaybackState", true)]
     [TestCase("SetMyPlaylistCover", true)]
     [TestCase("ListMyFavorites", true)]
     [TestCase("AddMyFavoriteTrack", true)]
