@@ -49,6 +49,11 @@ public sealed class UserSettingsDto
     public required SleepTimerSettingsDto SleepTimer { get; init; }
 
     /// <summary>
+    /// Autoplay at the end of a list.
+    /// </summary>
+    public required AutoplaySettingsDto Autoplay { get; init; }
+
+    /// <summary>
     /// Visualization of the Now Playing view.
     /// </summary>
     public required VisualizationSettingsDto Visualization { get; init; }

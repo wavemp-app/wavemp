@@ -177,6 +177,38 @@ public class UserSettingsServiceTests
         result.CrossfadeSeconds.Should().Be(5);
         result.CrossfadeAlbumsGapless.Should().BeTrue();
         result.SleepTimerFadeSeconds.Should().Be(10);
+        result.AutoplayEnabled.Should().BeTrue();
+        result.AutoplayIncludeVideoOnly.Should().BeTrue();
+    }
+
+    [Test]
+    public async Task UpdateAsync_WithAutoplay_SavesItAndKeepsTheOtherSettings()
+    {
+        User user = Given("en");
+        user.Settings!.CrossfadeEnabled = true;
+
+        UserSettings? result = await _service.UpdateAsync(
+            user.Id,
+            new UpdateUserSettingsCommand(AutoplayEnabled: false, AutoplayIncludeVideoOnly: false));
+
+        result!.AutoplayEnabled.Should().BeFalse();
+        result.AutoplayIncludeVideoOnly.Should().BeFalse();
+        result.CrossfadeEnabled.Should().BeTrue();
+        await _users.Received(1).UpdateAsync(user, Arg.Any<CancellationToken>());
+    }
+
+    [Test]
+    public async Task UpdateAsync_WithoutAutoplay_KeepsIt()
+    {
+        User user = Given("en");
+        user.Settings!.AutoplayEnabled = false;
+
+        UserSettings? result = await _service.UpdateAsync(
+            user.Id,
+            new UpdateUserSettingsCommand(AutoplayIncludeVideoOnly: false));
+
+        result!.AutoplayEnabled.Should().BeFalse();
+        result.AutoplayIncludeVideoOnly.Should().BeFalse();
     }
 
     [Test]

@@ -290,6 +290,28 @@ public class MeSettingsApiTests
             settings.Crossfade.Seconds.Should().Be(5);
             settings.Crossfade.AlbumsGapless.Should().BeTrue();
             settings.SleepTimer.FadeSeconds.Should().Be(10);
+            settings.Autoplay.Should().BeEquivalentTo(new { Enabled = true, IncludeVideoOnly = true });
+        }
+    }
+
+    [Test]
+    public async Task UpdateMySettings_WithAutoplay_KeepsItForTheProfileAndTheOtherSettings()
+    {
+        (Guid _, HttpClient client) = await CreateProfileAsync();
+        using (client)
+        {
+            await PatchAsync(client, new { crossfade = new { enabled = true }, autoplay = new { enabled = false } });
+
+            HttpResponseMessage response = await PatchAsync(
+                client,
+                new { autoplay = new { includeVideoOnly = false } });
+            UserSettingsDto read = await client.GetJsonAsync<UserSettingsDto>("/api/v1/me/settings");
+
+            response.StatusCode.Should().Be(HttpStatusCode.OK);
+            (await response.Content.ReadAsStringAsync()).Should().Contain(
+                "\"autoplay\":{\"enabled\":false,\"includeVideoOnly\":false}");
+            read.Autoplay.Should().BeEquivalentTo(new { Enabled = false, IncludeVideoOnly = false });
+            read.Crossfade.Enabled.Should().BeTrue();
         }
     }
 

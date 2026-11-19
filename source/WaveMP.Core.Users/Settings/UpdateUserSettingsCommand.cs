@@ -30,6 +30,8 @@ namespace WaveMP.Core.Users.Settings;
 /// <param name="VisualizationQuality">How much detail the visualization draws.</param>
 /// <param name="ThemeId">Id of the theme of the web app, see <see cref="ThemeIds"/>.</param>
 /// <param name="ThemeAppearance">Which variant of a theme with a light and a dark variant the user sees.</param>
+/// <param name="AutoplayEnabled">Whether the players go on with matching songs when a list ends.</param>
+/// <param name="AutoplayIncludeVideoOnly">Whether autoplay also chooses songs that only have a music video.</param>
 public sealed record UpdateUserSettingsCommand(
     string? Language = null,
     ReplayGainMode? ReplayGain = null,
@@ -49,4 +51,6 @@ public sealed record UpdateUserSettingsCommand(
     int? VisualizationAutoChangeSeconds = null,
     VisualizationQuality? VisualizationQuality = null,
     string? ThemeId = null,
-    ThemeAppearance? ThemeAppearance = null);
+    ThemeAppearance? ThemeAppearance = null,
+    bool? AutoplayEnabled = null,
+    bool? AutoplayIncludeVideoOnly = null);

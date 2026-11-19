@@ -1359,6 +1359,16 @@ namespace WaveMP.Data.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("user_id");
 
+                    b.Property<bool>("AutoplayEnabled")
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true)
+                        .HasColumnName("autoplay_enabled");
+
+                    b.Property<bool>("AutoplayIncludeVideoOnly")
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true)
+                        .HasColumnName("autoplay_include_video_only");
+
                     b.Property<bool>("CrossfadeAlbumsGapless")
                         .HasColumnType("boolean")
                         .HasDefaultValue(true)

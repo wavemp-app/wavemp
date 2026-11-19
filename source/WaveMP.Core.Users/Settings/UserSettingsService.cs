@@ -136,6 +136,16 @@ internal sealed class UserSettingsService(IUserRepository users) : IUserSettings
         {
             settings.SleepTimerFadeSeconds = fade;
         }
+
+        if (command.AutoplayEnabled is { } autoplay)
+        {
+            settings.AutoplayEnabled = autoplay;
+        }
+
+        if (command.AutoplayIncludeVideoOnly is { } videoOnly)
+        {
+            settings.AutoplayIncludeVideoOnly = videoOnly;
+        }
     }
 
     private static void Validate(UpdateUserSettingsCommand command)

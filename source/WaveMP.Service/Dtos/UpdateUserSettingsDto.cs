@@ -54,6 +54,11 @@ public sealed class UpdateUserSettingsDto
     public UpdateSleepTimerSettingsDto? SleepTimer { get; init; }
 
     /// <summary>
+    /// Changes of the autoplay.
+    /// </summary>
+    public UpdateAutoplaySettingsDto? Autoplay { get; init; }
+
+    /// <summary>
     /// Changes of the visualization.
     /// </summary>
     public UpdateVisualizationSettingsDto? Visualization { get; init; }

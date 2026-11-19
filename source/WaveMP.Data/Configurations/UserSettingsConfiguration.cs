@@ -95,6 +95,16 @@ internal sealed class UserSettingsConfiguration : IEntityTypeConfiguration<UserS
             .HasDefaultValue(10)
             .ValueGeneratedNever();
 
+        // Autoplay is on for existing profiles as for new ones; the defaults (true) differ from the default of the CLR
+        // type, so the entity always writes its values.
+        builder.Property(settings => settings.AutoplayEnabled)
+            .HasDefaultValue(true)
+            .ValueGeneratedNever();
+
+        builder.Property(settings => settings.AutoplayIncludeVideoOnly)
+            .HasDefaultValue(true)
+            .ValueGeneratedNever();
+
         // Like the playback settings above: existing rows get the defaults of a new profile, and the entity always
         // writes its values (VisualizationAutoChange and VisualizationAutoChangeSeconds differ from the defaults of
         // their CLR types).

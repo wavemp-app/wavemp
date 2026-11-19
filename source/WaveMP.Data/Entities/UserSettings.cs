@@ -115,6 +115,16 @@ public class UserSettings
     public int SleepTimerFadeSeconds { get; set; } = 10;
 
     /// <summary>
+    /// Whether the players go on with matching songs when a list ends and repeat is off; on by default.
+    /// </summary>
+    public bool AutoplayEnabled { get; set; } = true;
+
+    /// <summary>
+    /// Whether autoplay also chooses songs that only have a music video; on by default.
+    /// </summary>
+    public bool AutoplayIncludeVideoOnly { get; set; } = true;
+
+    /// <summary>
     /// The visualization the Now Playing stage shows; <see cref="VisualizationModule.Milkdrop"/> by default.
     /// </summary>
     public VisualizationModule VisualizationModule { get; set; } = VisualizationModule.Milkdrop;

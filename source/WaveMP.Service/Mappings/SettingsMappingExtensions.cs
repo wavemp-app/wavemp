@@ -31,6 +31,11 @@ public static class SettingsMappingExtensions
                 AlbumsGapless = settings.CrossfadeAlbumsGapless,
             },
             SleepTimer = new SleepTimerSettingsDto { FadeSeconds = settings.SleepTimerFadeSeconds },
+            Autoplay = new AutoplaySettingsDto
+            {
+                Enabled = settings.AutoplayEnabled,
+                IncludeVideoOnly = settings.AutoplayIncludeVideoOnly,
+            },
             Visualization = new VisualizationSettingsDto
             {
                 Module = settings.VisualizationModule.ToDto(),
@@ -66,7 +71,9 @@ public static class SettingsMappingExtensions
             request.Visualization?.AutoChangeSeconds,
             request.Visualization?.Quality?.ToEntity(),
             request.Theme?.Id,
-            request.Theme?.Appearance?.ToEntity());
+            request.Theme?.Appearance?.ToEntity(),
+            request.Autoplay?.Enabled,
+            request.Autoplay?.IncludeVideoOnly);
     }
 
     public static ThemeAppearanceDto ToDto(this ThemeAppearance appearance)
