@@ -4,8 +4,8 @@ using WaveMP.Service.Converters;
 namespace WaveMP.Service.Dtos;
 
 /// <summary>
-/// Why a theme package is rejected. Clients translate it; the members of <see cref="ThemeErrorDto"/> named in
-/// brackets carry the details.
+/// Why a theme package is rejected or an installed theme is outdated. Clients translate it; the members of
+/// <see cref="ThemeErrorDto"/> named in brackets carry the details.
 /// </summary>
 [JsonConverter(typeof(StrictStringEnumConverter<ThemeErrorCodeDto>))]
 public enum ThemeErrorCodeDto
@@ -219,4 +219,12 @@ public enum ThemeErrorCodeDto
     /// </summary>
     [JsonStringEnumMemberName("font.invalid")]
     FontInvalid,
+
+    /// <summary>
+    /// An SVG file of an installed theme still has content that this version of WaveMP removes from SVG files, e.g. an
+    /// element it no longer allows. Only reported for installed themes (see <see cref="ThemeDto.Problems"/>);
+    /// uploading the theme again cleans the file (path).
+    /// </summary>
+    [JsonStringEnumMemberName("svg.not_cleaned")]
+    SvgNotCleaned,
 }

@@ -27,6 +27,8 @@ public static class ThemeMappingExtensions
                 })],
             SizeBytes = theme.SizeBytes,
             InstalledAt = theme.InstalledAt,
+            Status = theme.IsOutdated ? ThemeStatusDto.Outdated : ThemeStatusDto.Current,
+            Problems = [.. theme.Problems.Select(problem => problem.ToDto())],
         };
     }
 
@@ -92,6 +94,7 @@ public static class ThemeMappingExtensions
             ThemeErrorCode.SvgExternalReference => ThemeErrorCodeDto.SvgExternalReference,
             ThemeErrorCode.ImageInvalid => ThemeErrorCodeDto.ImageInvalid,
             ThemeErrorCode.FontInvalid => ThemeErrorCodeDto.FontInvalid,
+            ThemeErrorCode.SvgNotCleaned => ThemeErrorCodeDto.SvgNotCleaned,
             _ => throw new ArgumentOutOfRangeException(nameof(code), code, "Unknown theme error code."),
         };
     }

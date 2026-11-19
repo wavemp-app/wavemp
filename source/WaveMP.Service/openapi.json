@@ -6387,7 +6387,7 @@
         "tags": [
           "Themes"
         ],
-        "summary": "Lists the uploaded themes by name.",
+        "summary": "Lists the uploaded themes by name. Each one names whether it passes the checks of this version of the server (`status`); an outdated theme lists its `problems` and is still offered until an admin uploads a new version.",
         "operationId": "ListThemes",
         "parameters": [
           {
@@ -13573,7 +13573,9 @@
           "stylesheetUrl",
           "previews",
           "sizeBytes",
-          "installedAt"
+          "installedAt",
+          "status",
+          "problems"
         ],
         "type": "object",
         "properties": {
@@ -13623,6 +13625,17 @@
             "type": "string",
             "description": "When this version of the theme was installed.",
             "format": "date-time"
+          },
+          "status": {
+            "description": "Whether the theme passes the checks of this version of the server; installed themes are checked again on every start.",
+            "$ref": "#/components/schemas/ThemeStatus"
+          },
+          "problems": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ThemeError"
+            },
+            "description": "Why the theme is outdated (`status` `Outdated`), with the codes of a rejected package (e.g. `manifest.unsupported_api_version` or `svg.not_cleaned`) and the files they concern; empty for a current theme."
           }
         },
         "description": "A theme an admin uploaded. The themes shipped with WaveMP are part of the clients and not listed here."
@@ -13691,7 +13704,7 @@
             "format": "int64"
           }
         },
-        "description": "One reason why a theme package is rejected."
+        "description": "One reason why a theme package is rejected or why an installed theme is outdated."
       },
       "ThemeErrorCode": {
         "enum": [
@@ -13728,10 +13741,11 @@
           "svg.foreign_object",
           "svg.external_reference",
           "image.invalid",
-          "font.invalid"
+          "font.invalid",
+          "svg.not_cleaned"
         ],
         "type": "string",
-        "description": "Why a theme package is rejected. Clients translate it; the members of ThemeErrorDto named in brackets carry the details."
+        "description": "Why a theme package is rejected or an installed theme is outdated. Clients translate it; the members of ThemeErrorDto named in brackets carry the details."
       },
       "ThemePage": {
         "required": [
@@ -13852,6 +13866,14 @@
           }
         },
         "description": "Theme of the web app of the current profile."
+      },
+      "ThemeStatus": {
+        "enum": [
+          "Current",
+          "Outdated"
+        ],
+        "type": "string",
+        "description": "Whether an uploaded theme passes the checks of this version of the server. Installed themes are checked again on every start, because a newer version may reject more in theme packages or no longer support an old theme API version."
       },
       "ThemeVariant": {
         "enum": [

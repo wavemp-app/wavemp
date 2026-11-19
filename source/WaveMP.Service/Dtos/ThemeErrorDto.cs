@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 namespace WaveMP.Service.Dtos;
 
 /// <summary>
-/// One reason why a theme package is rejected.
+/// One reason why a theme package is rejected or why an installed theme is outdated.
 /// </summary>
 public sealed class ThemeErrorDto
 {

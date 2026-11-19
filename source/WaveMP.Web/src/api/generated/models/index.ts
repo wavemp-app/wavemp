@@ -2709,7 +2709,9 @@ export function deserializeIntoTheme(theme: Partial<Theme> | undefined = {}) : R
         "installedAt": n => { theme.installedAt = n.getDateValue(); },
         "name": n => { theme.name = n.getStringValue(); },
         "previews": n => { theme.previews = n.getCollectionOfObjectValues<ThemePreview>(createThemePreviewFromDiscriminatorValue); },
+        "problems": n => { theme.problems = n.getCollectionOfObjectValues<ThemeError>(createThemeErrorFromDiscriminatorValue); },
         "sizeBytes": n => { theme.sizeBytes = n.getNumberValue(); },
+        "status": n => { theme.status = n.getEnumValue<ThemeStatus>(ThemeStatusObject); },
         "stylesheetUrl": n => { theme.stylesheetUrl = n.getStringValue(); },
         "themeApi": n => { theme.themeApi = n.getNumberValue(); },
         "variants": n => { theme.variants = n.getCollectionOfEnumValues<ThemeVariant>(ThemeVariantObject); },
@@ -5860,7 +5862,9 @@ export function serializeTheme(writer: SerializationWriter, theme: Partial<Theme
     writer.writeDateValue("installedAt", theme.installedAt);
     writer.writeStringValue("name", theme.name);
     writer.writeCollectionOfObjectValues<ThemePreview>("previews", theme.previews, serializeThemePreview);
+    writer.writeCollectionOfObjectValues<ThemeError>("problems", theme.problems, serializeThemeError);
     writer.writeNumberValue("sizeBytes", theme.sizeBytes);
+    writer.writeEnumValue<ThemeStatus>("status", theme.status);
     writer.writeStringValue("stylesheetUrl", theme.stylesheetUrl);
     writer.writeNumberValue("themeApi", theme.themeApi);
     if(theme.variants)
@@ -6809,9 +6813,17 @@ export interface Theme extends AdditionalDataHolder, Parsable {
      */
     previews?: ThemePreview[] | null;
     /**
+     * Why the theme is outdated (`status` `Outdated`), with the codes of a rejected package (e.g. `manifest.unsupported_api_version` or `svg.not_cleaned`) and the files they concern; empty for a current theme.
+     */
+    problems?: ThemeError[] | null;
+    /**
      * Size of all files of the theme in bytes.
      */
     sizeBytes?: number | null;
+    /**
+     * Whether the theme passes the checks of this version of the server; installed themes are checked again on every start.
+     */
+    status?: ThemeStatus | null;
     /**
      * Address of the CSS file of the theme, relative to the root of the server. It needs no session; its content never changes, a new version of the theme has a new address.
      */
@@ -6831,11 +6843,11 @@ export interface Theme extends AdditionalDataHolder, Parsable {
 }
 export type ThemeAppearance = (typeof ThemeAppearanceObject)[keyof typeof ThemeAppearanceObject];
 /**
- * One reason why a theme package is rejected.
+ * One reason why a theme package is rejected or why an installed theme is outdated.
  */
 export interface ThemeError extends AdditionalDataHolder, Parsable {
     /**
-     * Why a theme package is rejected. Clients translate it; the members of ThemeErrorDto named in brackets carry the details.
+     * Why a theme package is rejected or an installed theme is outdated. Clients translate it; the members of ThemeErrorDto named in brackets carry the details.
      */
     code?: ThemeErrorCode | null;
     /**
@@ -6944,6 +6956,7 @@ export interface ThemeSettings extends AdditionalDataHolder, Parsable {
      */
     id?: string | null;
 }
+export type ThemeStatus = (typeof ThemeStatusObject)[keyof typeof ThemeStatusObject];
 export type ThemeVariant = (typeof ThemeVariantObject)[keyof typeof ThemeVariantObject];
 /**
  * A track of the library: all media files with the same base name in one folder.
@@ -8592,7 +8605,7 @@ export const ThemeAppearanceObject = {
     Dark: "Dark",
 } as const;
 /**
- * Why a theme package is rejected. Clients translate it; the members of ThemeErrorDto named in brackets carry the details.
+ * Why a theme package is rejected or an installed theme is outdated. Clients translate it; the members of ThemeErrorDto named in brackets carry the details.
  */
 export const ThemeErrorCodeObject = {
     PackageCorrupt: "package.corrupt",
@@ -8629,6 +8642,14 @@ export const ThemeErrorCodeObject = {
     SvgExternal_reference: "svg.external_reference",
     ImageInvalid: "image.invalid",
     FontInvalid: "font.invalid",
+    SvgNot_cleaned: "svg.not_cleaned",
+} as const;
+/**
+ * Whether the theme passes the checks of this version of the server; installed themes are checked again on every start.
+ */
+export const ThemeStatusObject = {
+    Current: "Current",
+    Outdated: "Outdated",
 } as const;
 /**
  * A variant of a theme.

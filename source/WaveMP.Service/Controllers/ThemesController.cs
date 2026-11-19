@@ -39,7 +39,9 @@ public sealed class ThemesController(IThemeService themes, IOptions<ThemeOptions
     private const int BufferSize = 81_920;
 
     /// <summary>
-    /// Lists the uploaded themes by name.
+    /// Lists the uploaded themes by name. Each one names whether it passes the checks of this version of the server
+    /// (<c>status</c>); an outdated theme lists its <c>problems</c> and is still offered until an admin uploads a new
+    /// version.
     /// </summary>
     /// <param name="offset">Number of themes to skip.</param>
     /// <param name="limit">Maximum number of themes of the page.</param>

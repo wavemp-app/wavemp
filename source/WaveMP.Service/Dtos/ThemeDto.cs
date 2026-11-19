@@ -50,4 +50,17 @@ public sealed class ThemeDto
     /// When this version of the theme was installed.
     /// </summary>
     public required DateTimeOffset InstalledAt { get; init; }
+
+    /// <summary>
+    /// Whether the theme passes the checks of this version of the server; installed themes are checked again on every
+    /// start.
+    /// </summary>
+    public required ThemeStatusDto Status { get; init; }
+
+    /// <summary>
+    /// Why the theme is outdated (<c>status</c> <c>Outdated</c>), with the codes of a rejected package (e.g.
+    /// <c>manifest.unsupported_api_version</c> or <c>svg.not_cleaned</c>) and the files they concern; empty for a
+    /// current theme.
+    /// </summary>
+    public required IReadOnlyList<ThemeErrorDto> Problems { get; init; }
 }

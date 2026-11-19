@@ -9,6 +9,7 @@ using AwesomeAssertions;
 using WaveMP.Service.Dtos;
 using WaveMP.Service.Policies;
 using WaveMP.Service.Tests.IntegrationTests.Extensions;
+using WaveMP.Testing.Files;
 using WaveMP.Testing.Themes;
 
 namespace WaveMP.Service.Tests.IntegrationTests;
@@ -143,6 +144,8 @@ public class ThemesApiTests
             });
         theme.StylesheetUrl.Should().MatchRegex("^/api/v1/themes/aurora/files/[0-9a-f]{32}\\.css$");
         theme.Previews.Select(preview => preview.Variant).Should().Equal(ThemeVariantDto.Light, ThemeVariantDto.Dark);
+        theme.Status.Should().Be(ThemeStatusDto.Current);
+        theme.Problems.Should().BeEmpty();
 
         PageDto<ThemeDto> list = await _user.GetJsonAsync<PageDto<ThemeDto>>("/api/v1/themes");
         list.Items.Should().ContainSingle().Which.Should().BeEquivalentTo(theme);
@@ -310,6 +313,41 @@ public class ThemesApiTests
         (await response.Content.ReadFromJsonAsync<ThemeDto>(HttpClientExtensions.JsonOptions))!.Name
             .Should().Be("Aurora 2");
         (await _user.GetJsonAsync<UserSettingsDto>("/api/v1/me/settings")).Theme.Id.Should().Be("aurora");
+    }
+
+    [Test]
+    public async Task ListThemes_ThemeThatTheRulesOfANewerVersionReject_IsOutdatedUntilItIsReplaced()
+    {
+        using TemporaryDirectory data = new();
+        Dictionary<string, string?> settings = new() { ["DATA_PATH"] = data.Path };
+        await using (WaveMpWebApplicationFactory first = new(settings: settings))
+        {
+            using HttpClient admin = await first.CreateAdminClientAsync();
+            HttpResponseMessage installed = await admin.PostAsync("/api/v1/themes", Zip(new ThemePackageBuilder().Build()));
+            installed.StatusCode.Should().Be(HttpStatusCode.Created, await installed.Content.ReadAsStringAsync());
+        }
+
+        // As if the version that installed the theme had let the script through.
+        string svg = Directory.GetFiles(Path.Combine(data.Path, "themes", "aurora", "files"), "*.svg").Single();
+        await File.WriteAllTextAsync(svg, """<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>""");
+
+        await using WaveMpWebApplicationFactory second = new(settings: settings);
+        using HttpClient restarted = await second.CreateAdminClientAsync();
+        PageDto<ThemeDto> list = await restarted.GetJsonAsync<PageDto<ThemeDto>>("/api/v1/themes");
+
+        ThemeDto theme = list.Items.Should().ContainSingle().Subject;
+        theme.Status.Should().Be(ThemeStatusDto.Outdated);
+        theme.Problems.Should().BeEquivalentTo([new { Code = ThemeErrorCodeDto.SvgScript, Path = "images/glass.svg" }]);
+        (await restarted.GetAsync(theme.StylesheetUrl)).StatusCode.Should().Be(HttpStatusCode.OK);
+
+        HttpResponseMessage replaced = await restarted.PutAsync(
+            "/api/v1/themes/aurora",
+            Zip(new ThemePackageBuilder().Build()));
+
+        replaced.StatusCode.Should().Be(HttpStatusCode.OK, await replaced.Content.ReadAsStringAsync());
+        ThemeDto current = (await restarted.GetJsonAsync<PageDto<ThemeDto>>("/api/v1/themes")).Items.Single();
+        current.Status.Should().Be(ThemeStatusDto.Current);
+        current.Problems.Should().BeEmpty();
     }
 
     [Test]

@@ -59,7 +59,40 @@ public partial class ThemeMappingExtensionsTests
             ],
             SizeBytes = 2048,
             InstalledAt = installedAt,
+            Status = ThemeStatusDto.Current,
+            Problems = [],
         }, options => options.WithStrictOrdering());
+    }
+
+    [Test]
+    public void ToDto_ThemeWithProblems_IsOutdatedAndNamesThem()
+    {
+        InstalledTheme theme = new()
+        {
+            Id = "aurora",
+            Name = "Aurora",
+            Author = "Author",
+            Version = "1.0.0",
+            ThemeApi = 4,
+            Variants = [ThemeVariant.Light],
+            Stylesheet = "0123456789abcdef0123456789abcdef.css",
+            Previews = new Dictionary<ThemeVariant, string>(),
+            Files = [],
+            SizeBytes = 2048,
+            InstalledAt = DateTimeOffset.UnixEpoch,
+            Problems =
+            [
+                new ThemeError(ThemeErrorCode.UnsupportedApiVersion, "manifest.json", Field: "themeApi", Min: 5, Max: 5),
+                new ThemeError(ThemeErrorCode.SvgNotCleaned, "images/glass.svg"),
+            ],
+        };
+
+        ThemeDto dto = theme.ToDto();
+
+        dto.Status.Should().Be(ThemeStatusDto.Outdated);
+        dto.Problems.Select(problem => (problem.Code, problem.Path)).Should().Equal(
+            (ThemeErrorCodeDto.UnsupportedApiVersion, "manifest.json"),
+            (ThemeErrorCodeDto.SvgNotCleaned, "images/glass.svg"));
     }
 
     [Test]
