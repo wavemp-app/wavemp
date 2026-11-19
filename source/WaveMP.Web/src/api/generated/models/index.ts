@@ -1077,6 +1077,42 @@ export function createPinStatusFromDiscriminatorValue(parseNode: ParseNode | und
     return deserializeIntoPinStatus;
 }
 /**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {PlaybackDevice}
+ */
+// @ts-ignore
+export function createPlaybackDeviceFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoPlaybackDevice;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {PlaybackSource}
+ */
+// @ts-ignore
+export function createPlaybackSourceFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoPlaybackSource;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {PlaybackState}
+ */
+// @ts-ignore
+export function createPlaybackStateFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoPlaybackState;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {PlaybackStateItem}
+ */
+// @ts-ignore
+export function createPlaybackStateItemFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoPlaybackStateItem;
+}
+/**
  * Records a play of a track in the play history of the current profile.
  */
 export interface CreatePlayHistoryEntry extends AdditionalDataHolder, Parsable {
@@ -1735,6 +1771,24 @@ export function createUpdateNowPlayingFromDiscriminatorValue(parseNode: ParseNod
 // @ts-ignore
 export function createUpdateOnlineMetadataSettingsFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
     return deserializeIntoUpdateOnlineMetadataSettings;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {UpdatePlaybackState}
+ */
+// @ts-ignore
+export function createUpdatePlaybackStateFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoUpdatePlaybackState;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {UpdatePlaybackStateItem}
+ */
+// @ts-ignore
+export function createUpdatePlaybackStateItemFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoUpdatePlaybackStateItem;
 }
 /**
  * Creates a new instance of the appropriate class based on discriminator value
@@ -2918,6 +2972,61 @@ export function deserializeIntoPinStatus(pinStatus: Partial<PinStatus> | undefin
 }
 /**
  * The deserialization information for the current model
+ * @param PlaybackDevice The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoPlaybackDevice(playbackDevice: Partial<PlaybackDevice> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "id": n => { playbackDevice.id = n.getStringValue(); },
+        "name": n => { playbackDevice.name = n.getStringValue(); },
+    }
+}
+/**
+ * The deserialization information for the current model
+ * @param PlaybackSource The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoPlaybackSource(playbackSource: Partial<PlaybackSource> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "id": n => { playbackSource.id = n.getGuidValue(); },
+        "kind": n => { playbackSource.kind = n.getEnumValue<PlaybackSourceKind>(PlaybackSourceKindObject); },
+    }
+}
+/**
+ * The deserialization information for the current model
+ * @param PlaybackState The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoPlaybackState(playbackState: Partial<PlaybackState> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "changedAt": n => { playbackState.changedAt = n.getDateValue(); },
+        "currentIndex": n => { playbackState.currentIndex = n.getNumberValue(); },
+        "device": n => { playbackState.device = n.getObjectValue<PlaybackDevice>(createPlaybackDeviceFromDiscriminatorValue); },
+        "items": n => { playbackState.items = n.getCollectionOfObjectValues<PlaybackStateItem>(createPlaybackStateItemFromDiscriminatorValue); },
+        "originalOrder": n => { playbackState.originalOrder = n.getCollectionOfPrimitiveValues<number>("number"); },
+        "positionMilliseconds": n => { playbackState.positionMilliseconds = n.getNumberValue(); },
+        "repeat": n => { playbackState.repeat = n.getEnumValue<RepeatMode>(RepeatModeObject); },
+        "shuffle": n => { playbackState.shuffle = n.getBooleanValue(); },
+        "source": n => { playbackState.source = n.getObjectValue<PlaybackSource>(createPlaybackSourceFromDiscriminatorValue); },
+    }
+}
+/**
+ * The deserialization information for the current model
+ * @param PlaybackStateItem The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoPlaybackStateItem(playbackStateItem: Partial<PlaybackStateItem> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "autoplay": n => { playbackStateItem.autoplay = n.getBooleanValue(); },
+        "track": n => { playbackStateItem.track = n.getObjectValue<Track>(createTrackFromDiscriminatorValue); },
+    }
+}
+/**
+ * The deserialization information for the current model
  * @param PlayHistoryEntry The instance to deserialize into.
  * @returns {Record<string, (node: ParseNode) => void>}
  */
@@ -3966,6 +4075,37 @@ export function deserializeIntoUpdateOnlineMetadataSettings(updateOnlineMetadata
         "enabled": n => { updateOnlineMetadataSettings.enabled = n.getBooleanValue(); },
         "musicBrainzRequestIntervalMilliseconds": n => { updateOnlineMetadataSettings.musicBrainzRequestIntervalMilliseconds = n.getNumberValue(); },
         "musicBrainzUrl": n => { updateOnlineMetadataSettings.musicBrainzUrl = n.getStringValue(); },
+    }
+}
+/**
+ * The deserialization information for the current model
+ * @param UpdatePlaybackState The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoUpdatePlaybackState(updatePlaybackState: Partial<UpdatePlaybackState> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "changedAt": n => { updatePlaybackState.changedAt = n.getDateValue(); },
+        "currentIndex": n => { updatePlaybackState.currentIndex = n.getNumberValue(); },
+        "device": n => { updatePlaybackState.device = n.getObjectValue<PlaybackDevice>(createPlaybackDeviceFromDiscriminatorValue); },
+        "items": n => { updatePlaybackState.items = n.getCollectionOfObjectValues<UpdatePlaybackStateItem>(createUpdatePlaybackStateItemFromDiscriminatorValue); },
+        "originalOrder": n => { updatePlaybackState.originalOrder = n.getCollectionOfPrimitiveValues<number>("number"); },
+        "positionMilliseconds": n => { updatePlaybackState.positionMilliseconds = n.getNumberValue(); },
+        "repeat": n => { updatePlaybackState.repeat = n.getEnumValue<RepeatMode>(RepeatModeObject); },
+        "shuffle": n => { updatePlaybackState.shuffle = n.getBooleanValue(); },
+        "source": n => { updatePlaybackState.source = n.getObjectValue<PlaybackSource>(createPlaybackSourceFromDiscriminatorValue); },
+    }
+}
+/**
+ * The deserialization information for the current model
+ * @param UpdatePlaybackStateItem The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoUpdatePlaybackStateItem(updatePlaybackStateItem: Partial<UpdatePlaybackStateItem> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "autoplay": n => { updatePlaybackStateItem.autoplay = n.getBooleanValue(); },
+        "trackId": n => { updatePlaybackStateItem.trackId = n.getGuidValue(); },
     }
 }
 /**
@@ -5196,7 +5336,88 @@ export interface PinStatus extends AdditionalDataHolder, Parsable {
      */
     isSet?: boolean | null;
 }
+/**
+ * The device that changed a playback state.
+ */
+export interface PlaybackDevice extends AdditionalDataHolder, Parsable {
+    /**
+     * Id the device chose for itself and keeps, 1 to 64 characters, so it recognizes its own state.
+     */
+    id?: string | null;
+    /**
+     * Name of the device that other devices show ("continue listening from"), 1 to 100 characters, for example "Firefox · Windows".
+     */
+    name?: string | null;
+}
 export type PlaybackMethod = (typeof PlaybackMethodObject)[keyof typeof PlaybackMethodObject];
+/**
+ * What a list in a player was started from: an album, an artist, a playlist or a smart playlist.
+ */
+export interface PlaybackSource extends AdditionalDataHolder, Parsable {
+    /**
+     * Id of the album, artist, playlist or smart playlist.
+     */
+    id?: Guid | null;
+    /**
+     * The kind property
+     */
+    kind?: PlaybackSourceKind | null;
+}
+export type PlaybackSourceKind = (typeof PlaybackSourceKindObject)[keyof typeof PlaybackSourceKindObject];
+/**
+ * Where the current profile stopped listening: the queue, its current entry and position, shuffle and repeat, where the list came from and the device that changed it last. Entries of songs that left the library are left out.
+ */
+export interface PlaybackState extends AdditionalDataHolder, Parsable {
+    /**
+     * When the state changed on that device.
+     */
+    changedAt?: Date | null;
+    /**
+     * Position of the current entry in `items`; -1 without one.
+     */
+    currentIndex?: number | null;
+    /**
+     * The device that changed the state last.
+     */
+    device?: PlaybackDevice | null;
+    /**
+     * The queue in the order it plays, at most 2000 entries; the same song may appear more than once.
+     */
+    items?: PlaybackStateItem[] | null;
+    /**
+     * While shuffled: the positions in `items` in the order before shuffling, so turning shuffle off restores it; empty otherwise.
+     */
+    originalOrder?: number[] | null;
+    /**
+     * Position within the current song in milliseconds; 0 if the saved current song left the library and the next entry took its place.
+     */
+    positionMilliseconds?: number | null;
+    /**
+     * Repeat mode of a player.
+     */
+    repeat?: RepeatMode | null;
+    /**
+     * Whether the queue is shuffled.
+     */
+    shuffle?: boolean | null;
+    /**
+     * The source property
+     */
+    source?: PlaybackSource | null;
+}
+/**
+ * An entry of a saved queue.
+ */
+export interface PlaybackStateItem extends AdditionalDataHolder, Parsable {
+    /**
+     * Whether autoplay added the entry after the list had ended.
+     */
+    autoplay?: boolean | null;
+    /**
+     * A track of the library: all media files with the same base name in one folder.
+     */
+    track?: Track | null;
+}
 export type PlaybackTarget = (typeof PlaybackTargetObject)[keyof typeof PlaybackTargetObject];
 export type PlayerViewMode = (typeof PlayerViewModeObject)[keyof typeof PlayerViewModeObject];
 /**
@@ -5484,6 +5705,7 @@ export interface RecentlyPlayedTrackPage extends AdditionalDataHolder, Parsable 
      */
     total?: number | null;
 }
+export type RepeatMode = (typeof RepeatModeObject)[keyof typeof RepeatModeObject];
 /**
  * The ReplayGain tags of the audio file of a track. Missing tags are null; clients then leave the volume as it is.
  */
@@ -6822,6 +7044,65 @@ export function serializePinStatus(writer: SerializationWriter, pinStatus: Parti
 /**
  * Serializes information the current object
  * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param PlaybackDevice The instance to serialize from.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializePlaybackDevice(writer: SerializationWriter, playbackDevice: Partial<PlaybackDevice> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!playbackDevice || isSerializingDerivedType) { return; }
+    writer.writeStringValue("id", playbackDevice.id);
+    writer.writeStringValue("name", playbackDevice.name);
+    writer.writeAdditionalData(playbackDevice.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param PlaybackSource The instance to serialize from.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializePlaybackSource(writer: SerializationWriter, playbackSource: Partial<PlaybackSource> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!playbackSource || isSerializingDerivedType) { return; }
+    writer.writeGuidValue("id", playbackSource.id);
+    writer.writeEnumValue<PlaybackSourceKind>("kind", playbackSource.kind);
+    writer.writeAdditionalData(playbackSource.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param PlaybackState The instance to serialize from.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializePlaybackState(writer: SerializationWriter, playbackState: Partial<PlaybackState> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!playbackState || isSerializingDerivedType) { return; }
+    writer.writeDateValue("changedAt", playbackState.changedAt);
+    writer.writeNumberValue("currentIndex", playbackState.currentIndex);
+    writer.writeObjectValue<PlaybackDevice>("device", playbackState.device, serializePlaybackDevice);
+    writer.writeCollectionOfObjectValues<PlaybackStateItem>("items", playbackState.items, serializePlaybackStateItem);
+    writer.writeCollectionOfPrimitiveValues<number>("originalOrder", playbackState.originalOrder);
+    writer.writeNumberValue("positionMilliseconds", playbackState.positionMilliseconds);
+    writer.writeEnumValue<RepeatMode>("repeat", playbackState.repeat);
+    writer.writeBooleanValue("shuffle", playbackState.shuffle);
+    writer.writeObjectValue<PlaybackSource>("source", playbackState.source, serializePlaybackSource);
+    writer.writeAdditionalData(playbackState.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param PlaybackStateItem The instance to serialize from.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializePlaybackStateItem(writer: SerializationWriter, playbackStateItem: Partial<PlaybackStateItem> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!playbackStateItem || isSerializingDerivedType) { return; }
+    writer.writeBooleanValue("autoplay", playbackStateItem.autoplay);
+    writer.writeObjectValue<Track>("track", playbackStateItem.track, serializeTrack);
+    writer.writeAdditionalData(playbackStateItem.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
  * @param PlayHistoryEntry The instance to serialize from.
  * @param writer Serialization writer to use to serialize this model
  */
@@ -7941,6 +8222,39 @@ export function serializeUpdateOnlineMetadataSettings(writer: SerializationWrite
     writer.writeNumberValue("musicBrainzRequestIntervalMilliseconds", updateOnlineMetadataSettings.musicBrainzRequestIntervalMilliseconds);
     writer.writeStringValue("musicBrainzUrl", updateOnlineMetadataSettings.musicBrainzUrl);
     writer.writeAdditionalData(updateOnlineMetadataSettings.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param UpdatePlaybackState The instance to serialize from.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeUpdatePlaybackState(writer: SerializationWriter, updatePlaybackState: Partial<UpdatePlaybackState> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!updatePlaybackState || isSerializingDerivedType) { return; }
+    writer.writeDateValue("changedAt", updatePlaybackState.changedAt);
+    writer.writeNumberValue("currentIndex", updatePlaybackState.currentIndex);
+    writer.writeObjectValue<PlaybackDevice>("device", updatePlaybackState.device, serializePlaybackDevice);
+    writer.writeCollectionOfObjectValues<UpdatePlaybackStateItem>("items", updatePlaybackState.items, serializeUpdatePlaybackStateItem);
+    writer.writeCollectionOfPrimitiveValues<number>("originalOrder", updatePlaybackState.originalOrder);
+    writer.writeNumberValue("positionMilliseconds", updatePlaybackState.positionMilliseconds);
+    writer.writeEnumValue<RepeatMode>("repeat", updatePlaybackState.repeat);
+    writer.writeBooleanValue("shuffle", updatePlaybackState.shuffle);
+    writer.writeObjectValue<PlaybackSource>("source", updatePlaybackState.source, serializePlaybackSource);
+    writer.writeAdditionalData(updatePlaybackState.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param UpdatePlaybackStateItem The instance to serialize from.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeUpdatePlaybackStateItem(writer: SerializationWriter, updatePlaybackStateItem: Partial<UpdatePlaybackStateItem> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!updatePlaybackStateItem || isSerializingDerivedType) { return; }
+    writer.writeBooleanValue("autoplay", updatePlaybackStateItem.autoplay);
+    writer.writeGuidValue("trackId", updatePlaybackStateItem.trackId);
+    writer.writeAdditionalData(updatePlaybackStateItem.additionalData);
 }
 /**
  * Serializes information the current object
@@ -9484,6 +9798,60 @@ export interface UpdateOnlineMetadataSettings extends AdditionalDataHolder, Pars
     musicBrainzUrl?: string | null;
 }
 /**
+ * The playback state of a device to save for the current profile; it replaces the saved one.
+ */
+export interface UpdatePlaybackState extends AdditionalDataHolder, Parsable {
+    /**
+     * When the state changed on the device; now if missing. A time in the future counts as now. A state that changed before the saved one is rejected.
+     */
+    changedAt?: Date | null;
+    /**
+     * Position of the current entry in `items`; -1 without one.
+     */
+    currentIndex?: number | null;
+    /**
+     * The device that saves the state.
+     */
+    device?: PlaybackDevice | null;
+    /**
+     * The queue in the order it plays, at most 2000 entries; of a longer queue the entries around the current one.
+     */
+    items?: UpdatePlaybackStateItem[] | null;
+    /**
+     * While shuffled: the positions in `items` in the order before shuffling, each position exactly once, so turning shuffle off restores it. Ignored while not shuffled.
+     */
+    originalOrder?: number[] | null;
+    /**
+     * Position within the current song in milliseconds.
+     */
+    positionMilliseconds?: number | null;
+    /**
+     * The repeat property
+     */
+    repeat?: RepeatMode | null;
+    /**
+     * Whether the queue is shuffled; false if missing.
+     */
+    shuffle?: boolean | null;
+    /**
+     * The source property
+     */
+    source?: PlaybackSource | null;
+}
+/**
+ * An entry of the queue to save.
+ */
+export interface UpdatePlaybackStateItem extends AdditionalDataHolder, Parsable {
+    /**
+     * Whether autoplay added the entry after the list had ended; false if missing.
+     */
+    autoplay?: boolean | null;
+    /**
+     * Id of the song. Unknown songs are saved as well and left out when the state is read.
+     */
+    trackId?: Guid | null;
+}
+/**
  * Changes a playlist. Missing or null values stay unchanged.
  */
 export interface UpdatePlaylist extends AdditionalDataHolder, Parsable {
@@ -10257,6 +10625,12 @@ export const PlaybackMethodObject = {
     DirectPlay: "DirectPlay",
     Transcode: "Transcode",
 } as const;
+export const PlaybackSourceKindObject = {
+    Album: "Album",
+    Artist: "Artist",
+    Playlist: "Playlist",
+    SmartPlaylist: "SmartPlaylist",
+} as const;
 /**
  * Who plays the stream of a playback: the client itself or a casting device the client hands the URLs to.
  */
@@ -10333,6 +10707,8 @@ export const ProblemCodeObject = {
     TranscodeSegment_not_found: "transcode.segment_not_found",
     TranscodeJob_not_found: "transcode.job_not_found",
     HistoryNot_found: "history.not_found",
+    PlaybackState_not_found: "playback.state_not_found",
+    PlaybackState_outdated: "playback.state_outdated",
     PlaylistNot_found: "playlist.not_found",
     PlaylistEntry_not_found: "playlist.entry_not_found",
     PlaylistFull: "playlist.full",
@@ -10368,6 +10744,14 @@ export const ProblemCodeObject = {
     LookupDisabled: "lookup.disabled",
     LookupUnavailable: "lookup.unavailable",
     LookupCover_not_found: "lookup.cover_not_found",
+} as const;
+/**
+ * Repeat mode of a player.
+ */
+export const RepeatModeObject = {
+    Off: "Off",
+    All: "All",
+    One: "One",
 } as const;
 /**
  * Whether the players even out the volume with the ReplayGain tags; Off by default.
