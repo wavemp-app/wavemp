@@ -1,8 +1,9 @@
 import { expect, test, type Locator, type Page } from '@playwright/test'
+import { withoutSavedPlayback } from './helpers/player'
 
 // The context menus with the synthetic test media of scripts/generate-media.sh: right click and
 // keyboard on the desktop, the multi-selection of songs, and the button "More options" on a phone.
-// Nothing is changed in the library; the queue lives in the page only.
+// Nothing is changed in the library.
 
 function part(page: Page, name: string): Locator {
     return page.locator(`[data-part='app'] [data-part='${name}']`)
@@ -20,6 +21,12 @@ function menuEntry(page: Page, item: string): Locator {
 function playableRows(page: Page): Locator {
     return page.locator("[data-part='app'] [data-part='list-row']:not([data-state~='video-only'])")
 }
+
+// The queue, shuffle and repeat start empty and off: the tests of the built-in admin share one
+// profile, so the saved playback state of another test must not be taken over.
+test.beforeEach(async ({ page }) => {
+    await withoutSavedPlayback(page)
+})
 
 test.describe('on the desktop', () => {
     test.beforeEach(({}, testInfo) => {

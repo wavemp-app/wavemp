@@ -1,4 +1,5 @@
 import { expect, test, type Locator, type Page } from '@playwright/test'
+import { withoutSavedPlayback } from './helpers/player'
 
 // The mini player (compact mode) with the synthetic test media of scripts/generate-media.sh:
 // E2E Album holds First Song and Second Song, two seconds each. The compact mode button exists on
@@ -32,6 +33,12 @@ async function playAlbumPaused(page: Page): Promise<void> {
     await appPart(page, 'btn-repeat').click()
     await expect(appPart(page, 'btn-repeat')).toHaveAttribute('data-state', 'all')
 }
+
+// The queue, shuffle and repeat start empty and off: the tests of the built-in admin share one
+// profile, so the saved playback state of another test must not be taken over.
+test.beforeEach(async ({ page }) => {
+    await withoutSavedPlayback(page)
+})
 
 test.describe('mini player', () => {
     test.beforeEach(({ isMobile }) => {

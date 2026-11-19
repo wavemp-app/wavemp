@@ -1,4 +1,5 @@
 import { expect, test, type Locator, type Page } from '@playwright/test'
+import { withoutSavedPlayback } from './helpers/player'
 import { chooseFromProfileMenu } from './helpers/navigation'
 
 // The keyboard shortcuts with the synthetic test media of scripts/generate-media.sh: E2E Album
@@ -38,6 +39,12 @@ async function volume(page: Page): Promise<number> {
         .getAttribute('aria-valuenow')
     return Number(value)
 }
+
+// The queue, shuffle and repeat start empty and off: the tests of the built-in admin share one
+// profile, so the saved playback state of another test must not be taken over.
+test.beforeEach(async ({ page }) => {
+    await withoutSavedPlayback(page)
+})
 
 test.describe('keyboard shortcuts', () => {
     test('control the player', async ({ page }) => {

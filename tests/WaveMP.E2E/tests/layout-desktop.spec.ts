@@ -1,4 +1,5 @@
 import { expect, test, type Locator, type Page } from '@playwright/test'
+import { withoutSavedPlayback } from './helpers/player'
 
 // Desktop layout of the theme Midnight (from 64rem on). The tests address the DOM only through
 // the data-part attributes of the theme API.
@@ -244,6 +245,7 @@ test('shows the songs of the library grouped by album', async ({ page }) => {
 })
 
 test('operates volume and mute while nothing plays', async ({ page }) => {
+    await withoutSavedPlayback(page)
     await page.goto('/library/songs')
     const volume = part(page, 'volume').getByRole('slider')
     const mute = part(page, 'btn-mute')

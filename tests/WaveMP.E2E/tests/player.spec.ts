@@ -1,4 +1,5 @@
 import { expect, test, type Locator, type Page } from '@playwright/test'
+import { withoutSavedPlayback } from './helpers/player'
 import { adminHeaders } from './helpers/api'
 
 // Plays the synthetic test media of scripts/generate-media.sh (scanned by library.setup.ts) in the
@@ -28,6 +29,12 @@ interface HistoryEntry {
     playedAt: string
     track: { title: string }
 }
+
+// The queue, shuffle and repeat start empty and off: the tests of the built-in admin share one
+// profile, so the saved playback state of another test must not be taken over.
+test.beforeEach(async ({ page }) => {
+    await withoutSavedPlayback(page)
+})
 
 test('plays an album, skips to the next song and records the play', async ({
     page,

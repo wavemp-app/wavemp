@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
+import { withoutSavedPlayback } from './helpers/player'
 
 // Error, loading and empty states of the pages. Failing requests are simulated in the browser
 // (page.route), so the server and its data stay untouched.
@@ -54,6 +55,7 @@ test('tells when nothing matches the search text', async ({ page }) => {
 })
 
 test('shows a hint on Now Playing while nothing plays', async ({ page }) => {
+    await withoutSavedPlayback(page)
     await page.goto('/now-playing')
 
     await expect(page.locator("[data-part='stage'] [data-part='empty-state']")).toContainText(

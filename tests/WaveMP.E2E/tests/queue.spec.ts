@@ -1,11 +1,15 @@
 import { expect, test, type Locator, type Page } from '@playwright/test'
+import { withoutSavedPlayback } from './helpers/player'
 
 // The queue on Now Playing with the synthetic test media of scripts/generate-media.sh: all songs
 // of the library with audio, plus the first three added once more from their context menu, give
 // a queue long enough to hide older played entries. The queue is built with the context menu of
 // the desktop, so the tests run in the project "chromium" only and change the viewport later.
-test.beforeEach(({}, testInfo) => {
+test.beforeEach(async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== 'chromium', 'Builds the queue with the desktop menu')
+    // The tests of the built-in admin share one profile: the queue starts empty instead of with
+    // the saved playback state of another test.
+    await withoutSavedPlayback(page)
 })
 
 const iPadLandscape = { width: 1180, height: 820 }
