@@ -761,6 +761,78 @@
         ]
       }
     },
+    "/api/v1/me/autoplay/next": {
+      "post": {
+        "tags": [
+          "Autoplay"
+        ],
+        "summary": "Chooses the songs that play after a list (album, playlist or queue), in random order: songs of the artists of the list, an artist that appears more often in the list more often; if they are not enough, songs of the same genres and similar decades. Songs of the list and excluded songs never come; songs the profile played within the last 24 hours only when no other song matches. Favorites and songs with 4 or 5 stars come a bit more often, songs with 1 star never; songs that only have a music video only while the profile includes them (setting autoplay.includeVideoOnly). Every song comes with its playback for the formats of the client, as GetTrackPlayback answers, including the signed stream URL. Clients call this when a list ends while repeat is off and the autoplay of the profile (setting autoplay.enabled) is on, and again for more songs; the endpoint itself does not check the setting.",
+        "operationId": "SelectMyAutoplayTracks",
+        "requestBody": {
+          "description": "The list and the formats of the client.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AutoplayRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/AutoplayRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "The next songs; empty if no matching song is left.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AutoplayResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is invalid (code `request.invalid`), e.g. no or more than 500 `trackIds` (`min_items`, `max_items`), more than 500 `excludedTrackIds`, a `count` out of range (`out_of_range`) or missing, too many or unknown `audioFormats`.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The profile was deleted in the meantime (code `user.not_found`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
     "/api/v1/avatar-presets": {
       "get": {
         "tags": [
@@ -11220,6 +11292,109 @@
         ],
         "type": "string"
       },
+      "AutoplayRequest": {
+        "required": [
+          "trackIds",
+          "audioFormats"
+        ],
+        "type": "object",
+        "properties": {
+          "trackIds": {
+            "maxItems": 500,
+            "minItems": 1,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "The tracks of the list that ended or is about to end (album, playlist or queue), in their order, 1 to 500; for a longer list its last tracks. The choice follows their artists, genres and years; they are never chosen themselves. Unknown ids are skipped."
+          },
+          "excludedTrackIds": {
+            "maxItems": 500,
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Further tracks that must not be chosen, at most 500, e.g. the songs that already wait in the autoplay list of the client."
+          },
+          "count": {
+            "maximum": 50,
+            "minimum": 1,
+            "type": [
+              "null",
+              "integer"
+            ],
+            "description": "Number of songs wanted, from 1 to 50; 10 if missing.",
+            "format": "int32"
+          },
+          "audioFormats": {
+            "maxItems": 20,
+            "minItems": 1,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AudioFormat"
+            },
+            "description": "The audio formats the client plays, 1 to 20, as for GetTrackPlayback: they decide the playback of each song."
+          }
+        },
+        "description": "Asks for the songs autoplay plays after a list."
+      },
+      "AutoplayResult": {
+        "required": [
+          "items"
+        ],
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AutoplayTrack"
+            },
+            "description": "The songs in the order they play, at most as many as requested; empty if no matching song is left. Songs the client cannot play (e.g. a file that is gone since the last scan) are left out."
+          }
+        },
+        "description": "The songs autoplay plays next."
+      },
+      "AutoplaySettings": {
+        "required": [
+          "enabled",
+          "includeVideoOnly"
+        ],
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "description": "Whether the players go on with matching songs when a list ends and repeat is off; true by default."
+          },
+          "includeVideoOnly": {
+            "type": "boolean",
+            "description": "Whether autoplay also chooses songs that only have a music video; true by default."
+          }
+        },
+        "description": "Autoplay of the current profile: when a list ends and repeat is off, the players go on with matching songs (see SelectMyAutoplayTracks)."
+      },
+      "AutoplayTrack": {
+        "required": [
+          "track",
+          "playback"
+        ],
+        "type": "object",
+        "properties": {
+          "track": {
+            "description": "The song.",
+            "$ref": "#/components/schemas/Track"
+          },
+          "playback": {
+            "description": "How the client plays the song, as GetTrackPlayback answers for the formats of the request, with the signed stream URL. The URL expires (expiresAt); clients ask GetTrackPlayback again for a song whose URL has expired when it is due.",
+            "$ref": "#/components/schemas/TrackPlayback"
+          }
+        },
+        "description": "A song autoplay chose, with how the client plays it."
+      },
       "Avatar": {
         "required": [
           "version"
@@ -15491,6 +15666,26 @@
         },
         "description": "State of the transcoding."
       },
+      "UpdateAutoplaySettings": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": [
+              "null",
+              "boolean"
+            ],
+            "description": "Whether the players go on with matching songs when a list ends and repeat is off."
+          },
+          "includeVideoOnly": {
+            "type": [
+              "null",
+              "boolean"
+            ],
+            "description": "Whether autoplay also chooses songs that only have a music video."
+          }
+        },
+        "description": "Changes the autoplay of the current profile. Missing or null values stay unchanged."
+      },
       "UpdateBackupSettings": {
         "type": "object",
         "properties": {
@@ -16241,6 +16436,17 @@
               }
             ]
           },
+          "autoplay": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "Changes of the autoplay.",
+                "$ref": "#/components/schemas/UpdateAutoplaySettings"
+              }
+            ]
+          },
           "visualization": {
             "oneOf": [
               {
@@ -16412,6 +16618,7 @@
           "equalizer",
           "crossfade",
           "sleepTimer",
+          "autoplay",
           "visualization"
         ],
         "type": "object",
@@ -16447,6 +16654,10 @@
           "sleepTimer": {
             "description": "Sleep timer of the players.",
             "$ref": "#/components/schemas/SleepTimerSettings"
+          },
+          "autoplay": {
+            "description": "Autoplay at the end of a list.",
+            "$ref": "#/components/schemas/AutoplaySettings"
           },
           "visualization": {
             "description": "Visualization of the Now Playing view.",
@@ -16717,6 +16928,9 @@
     },
     {
       "name": "Artists"
+    },
+    {
+      "name": "Autoplay"
     },
     {
       "name": "AvatarPresets"

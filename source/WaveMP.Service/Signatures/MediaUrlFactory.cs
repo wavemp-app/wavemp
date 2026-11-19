@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Security.Claims;
 using Microsoft.Extensions.Primitives;
+using WaveMP.Core.Streaming.Decisions;
 using WaveMP.Core.Streaming.Signatures;
 using WaveMP.Service.Dtos;
 using WaveMP.Service.Extensions;
@@ -92,6 +93,29 @@ public sealed class MediaUrlFactory(IMediaUrlIssuer issuer, LinkGenerator links)
             duration,
             QueryString.Create(HlsMediaParameter, media.ToString()),
             target);
+    }
+
+    /// <summary>
+    /// The signed URL of the sound of a track as decided: the file for direct play, the HLS master playlist of the
+    /// sound for transcoding; <c>null</c> if the track has to be transcoded and transcoding is unavailable or the
+    /// duration of the track is unknown.
+    /// </summary>
+    public MediaUrl? CreatePlaybackUrl(
+        HttpContext context,
+        Guid trackId,
+        PlaybackMethod method,
+        TimeSpan? duration,
+        bool transcodingAvailable,
+        MediaUrlTarget target = MediaUrlTarget.Local)
+    {
+        if (method == PlaybackMethod.DirectPlay)
+        {
+            return CreateAudioStreamUrl(context, trackId, duration, target);
+        }
+
+        return transcodingAvailable && duration > TimeSpan.Zero
+            ? CreateHlsMasterUrl(context, trackId, HlsMediaDto.Audio, duration, target)
+            : null;
     }
 
     /// <summary>

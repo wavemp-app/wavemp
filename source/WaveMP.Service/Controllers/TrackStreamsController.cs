@@ -81,11 +81,13 @@ public sealed class TrackStreamsController(
 
         TimeSpan? duration = result.Source.Duration;
         MediaUrlTarget urlTarget = target.ToEntity();
-        MediaUrl? stream = result.Decision.Method == PlaybackMethod.DirectPlay
-            ? urls.CreateAudioStreamUrl(HttpContext, id, duration, urlTarget)
-            : transcoding.IsAvailable && duration > TimeSpan.Zero
-                ? urls.CreateHlsMasterUrl(HttpContext, id, HlsMediaDto.Audio, duration, urlTarget)
-                : null;
+        MediaUrl? stream = urls.CreatePlaybackUrl(
+            HttpContext,
+            id,
+            result.Decision.Method,
+            duration,
+            transcoding.IsAvailable,
+            urlTarget);
         MediaUrl? cover = urlTarget == MediaUrlTarget.Cast ? urls.CreateCoverUrl(HttpContext, id, duration) : null;
         Response.Headers.CacheControl = "no-store";
         return Ok(result.Source.ToDto(result.Decision, stream, cover));

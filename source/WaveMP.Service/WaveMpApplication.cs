@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Options;
+using WaveMP.Core.Autoplay.Extensions;
 using WaveMP.Core.Backups.Extensions;
 using WaveMP.Core.Caching.Extensions;
 using WaveMP.Core.Collection.Extensions;
@@ -60,6 +61,7 @@ public static class WaveMpApplication
         builder.Services.AddWaveMpCaching();
         builder.Services.AddWaveMpPlaylists();
         builder.Services.AddWaveMpCollection();
+        builder.Services.AddWaveMpAutoplay();
         builder.Services.AddWaveMpStreaming();
         builder.Services.AddWaveMpScrobbling();
         builder.Services.AddWaveMpTranscoding();
