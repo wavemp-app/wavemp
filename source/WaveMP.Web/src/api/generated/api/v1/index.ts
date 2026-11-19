@@ -34,6 +34,8 @@ import { SessionsRequestBuilderNavigationMetadata, SessionsRequestBuilderRequest
 // @ts-ignore
 import { SettingsRequestBuilderNavigationMetadata, type SettingsRequestBuilder } from './settings/index.js';
 // @ts-ignore
+import { SourcesRequestBuilderNavigationMetadata, SourcesRequestBuilderRequestsMetadata, type SourcesRequestBuilder } from './sources/index.js';
+// @ts-ignore
 import { ThemesRequestBuilderNavigationMetadata, ThemesRequestBuilderRequestsMetadata, type ThemesRequestBuilder } from './themes/index.js';
 // @ts-ignore
 import { ThemeTemplateRequestBuilderRequestsMetadata, type ThemeTemplateRequestBuilder } from './themeTemplate/index.js';
@@ -118,6 +120,10 @@ export interface V1RequestBuilder extends BaseRequestBuilder<V1RequestBuilder> {
      * The settings property
      */
     get settings(): SettingsRequestBuilder;
+    /**
+     * The sources property
+     */
+    get sources(): SourcesRequestBuilder;
     /**
      * The themes property
      */
@@ -209,6 +215,10 @@ export const V1RequestBuilderNavigationMetadata: Record<Exclude<keyof V1RequestB
     },
     settings: {
         navigationMetadata: SettingsRequestBuilderNavigationMetadata,
+    },
+    sources: {
+        requestsMetadata: SourcesRequestBuilderRequestsMetadata,
+        navigationMetadata: SourcesRequestBuilderNavigationMetadata,
     },
     themes: {
         requestsMetadata: ThemesRequestBuilderRequestsMetadata,

@@ -82,6 +82,10 @@ export interface TracksRequestBuilderGetQueryParameters {
      */
     sort?: TrackSort;
     /**
+     * Only tracks of this media source.
+     */
+    sourceId?: Guid;
+    /**
      * Only tracks of this year.
      */
     year?: number;
@@ -89,7 +93,7 @@ export interface TracksRequestBuilderGetQueryParameters {
 /**
  * Uri template for the request builder.
  */
-export const TracksRequestBuilderUriTemplate = "{+baseurl}/api/v1/tracks{?albumId*,artistId*,direction*,genre*,hasAudio*,hasVideo*,limit*,myMusic*,offset*,q*,sort*,year*}";
+export const TracksRequestBuilderUriTemplate = "{+baseurl}/api/v1/tracks{?albumId*,artistId*,direction*,genre*,hasAudio*,hasVideo*,limit*,myMusic*,offset*,q*,sort*,sourceId*,year*}";
 /**
  * Metadata for all the navigation properties in the request builder.
  */

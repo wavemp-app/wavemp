@@ -553,6 +553,15 @@ export function createCreatedSessionFromDiscriminatorValue(parseNode: ParseNode 
 /**
  * Creates a new instance of the appropriate class based on discriminator value
  * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {CreateMediaSource}
+ */
+// @ts-ignore
+export function createCreateMediaSourceFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoCreateMediaSource;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
  * @returns {CreatePlayHistoryEntry}
  */
 // @ts-ignore
@@ -805,6 +814,41 @@ export function createMediaFileFromDiscriminatorValue(parseNode: ParseNode | und
 // @ts-ignore
 export function createMediaFilePageFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
     return deserializeIntoMediaFilePage;
+}
+/**
+ * Adds a media source.
+ */
+export interface CreateMediaSource extends AdditionalDataHolder, Parsable {
+    /**
+     * Whether the source is scanned and watched; true if missing.
+     */
+    isActive?: boolean | null;
+    /**
+     * Name of the source, unique without regard to case.
+     */
+    name?: string | null;
+    /**
+     * Absolute path of an existing folder in the container, apart from the folders of the other sources (neither the same, nor inside one, nor containing one).
+     */
+    path?: string | null;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {MediaSource}
+ */
+// @ts-ignore
+export function createMediaSourceFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoMediaSource;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {MediaSourcePage}
+ */
+// @ts-ignore
+export function createMediaSourcePageFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoMediaSourcePage;
 }
 /**
  * Creates a new instance of the appropriate class based on discriminator value
@@ -1370,6 +1414,15 @@ export function createUpdateLibrarySettingsFromDiscriminatorValue(parseNode: Par
 /**
  * Creates a new instance of the appropriate class based on discriminator value
  * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {UpdateMediaSource}
+ */
+// @ts-ignore
+export function createUpdateMediaSourceFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoUpdateMediaSource;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
  * @returns {UpdateNowPlaying}
  */
 // @ts-ignore
@@ -1891,6 +1944,19 @@ export function deserializeIntoCreatedSession(createdSession: Partial<CreatedSes
 }
 /**
  * The deserialization information for the current model
+ * @param CreateMediaSource The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoCreateMediaSource(createMediaSource: Partial<CreateMediaSource> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "isActive": n => { createMediaSource.isActive = n.getBooleanValue(); },
+        "name": n => { createMediaSource.name = n.getStringValue(); },
+        "path": n => { createMediaSource.path = n.getStringValue(); },
+    }
+}
+/**
+ * The deserialization information for the current model
  * @param CreatePlayHistoryEntry The instance to deserialize into.
  * @returns {Record<string, (node: ParseNode) => void>}
  */
@@ -2295,6 +2361,41 @@ export function deserializeIntoMediaFilePage(mediaFilePage: Partial<MediaFilePag
 }
 /**
  * The deserialization information for the current model
+ * @param MediaSource The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoMediaSource(mediaSource: Partial<MediaSource> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "createdAt": n => { mediaSource.createdAt = n.getDateValue(); },
+        "fileCount": n => { mediaSource.fileCount = n.getNumberValue(); },
+        "followsMediaPath": n => { mediaSource.followsMediaPath = n.getBooleanValue(); },
+        "id": n => { mediaSource.id = n.getGuidValue(); },
+        "isActive": n => { mediaSource.isActive = n.getBooleanValue(); },
+        "isAvailable": n => { mediaSource.isAvailable = n.getBooleanValue(); },
+        "isWatched": n => { mediaSource.isWatched = n.getBooleanValue(); },
+        "name": n => { mediaSource.name = n.getStringValue(); },
+        "path": n => { mediaSource.path = n.getStringValue(); },
+        "trackCount": n => { mediaSource.trackCount = n.getNumberValue(); },
+        "updatedAt": n => { mediaSource.updatedAt = n.getDateValue(); },
+    }
+}
+/**
+ * The deserialization information for the current model
+ * @param MediaSourcePage The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoMediaSourcePage(mediaSourcePage: Partial<MediaSourcePage> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "items": n => { mediaSourcePage.items = n.getCollectionOfObjectValues<MediaSource>(createMediaSourceFromDiscriminatorValue); },
+        "limit": n => { mediaSourcePage.limit = n.getNumberValue(); },
+        "offset": n => { mediaSourcePage.offset = n.getNumberValue(); },
+        "total": n => { mediaSourcePage.total = n.getNumberValue(); },
+    }
+}
+/**
+ * The deserialization information for the current model
  * @param PinStatus The instance to deserialize into.
  * @returns {Record<string, (node: ParseNode) => void>}
  */
@@ -2536,6 +2637,8 @@ export function deserializeIntoScanIssue(scanIssue: Partial<ScanIssue> | undefin
     return {
         "code": n => { scanIssue.code = n.getEnumValue<ScanIssueCode>(ScanIssueCodeObject); },
         "path": n => { scanIssue.path = n.getStringValue(); },
+        "sourceId": n => { scanIssue.sourceId = n.getGuidValue(); },
+        "sourceName": n => { scanIssue.sourceName = n.getStringValue(); },
     }
 }
 /**
@@ -3177,6 +3280,19 @@ export function deserializeIntoUpdateLibrarySettings(updateLibrarySettings: Part
         "scanIntervalMinutes": n => { updateLibrarySettings.scanIntervalMinutes = n.getNumberValue(); },
         "subsonicDownloads": n => { updateLibrarySettings.subsonicDownloads = n.getBooleanValue(); },
         "videoExtensions": n => { updateLibrarySettings.videoExtensions = n.getCollectionOfPrimitiveValues<string>("string"); },
+    }
+}
+/**
+ * The deserialization information for the current model
+ * @param UpdateMediaSource The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoUpdateMediaSource(updateMediaSource: Partial<UpdateMediaSource> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "isActive": n => { updateMediaSource.isActive = n.getBooleanValue(); },
+        "name": n => { updateMediaSource.name = n.getStringValue(); },
+        "path": n => { updateMediaSource.path = n.getStringValue(); },
     }
 }
 /**
@@ -4125,6 +4241,76 @@ export interface MediaFilePage extends AdditionalDataHolder, Parsable {
     total?: number | null;
 }
 export type MediaFileSort = (typeof MediaFileSortObject)[keyof typeof MediaFileSortObject];
+/**
+ * A media source: a folder of the container whose media files the library contains.
+ */
+export interface MediaSource extends AdditionalDataHolder, Parsable {
+    /**
+     * The createdAt property
+     */
+    createdAt?: Date | null;
+    /**
+     * Number of media files of the source in the library.
+     */
+    fileCount?: number | null;
+    /**
+     * Whether the folder comes from the environment variable MEDIA_PATH (the first source as long as no path of its own was set).
+     */
+    followsMediaPath?: boolean | null;
+    /**
+     * The id property
+     */
+    id?: Guid | null;
+    /**
+     * Whether the source is scanned and watched. The tracks of a deactivated source stay in the library.
+     */
+    isActive?: boolean | null;
+    /**
+     * Whether the folder exists in the container.
+     */
+    isAvailable?: boolean | null;
+    /**
+     * Whether the file watcher watches the folder right now.
+     */
+    isWatched?: boolean | null;
+    /**
+     * Name of the source, unique without regard to case.
+     */
+    name?: string | null;
+    /**
+     * Absolute path of the folder in the container.
+     */
+    path?: string | null;
+    /**
+     * Number of tracks of the source in the library.
+     */
+    trackCount?: number | null;
+    /**
+     * The updatedAt property
+     */
+    updatedAt?: Date | null;
+}
+/**
+ * One page of a collection.
+ */
+export interface MediaSourcePage extends AdditionalDataHolder, Parsable {
+    /**
+     * Items of the page, at most limit.
+     */
+    items?: MediaSource[] | null;
+    /**
+     * Maximum number of items of the page, as requested.
+     */
+    limit?: number | null;
+    /**
+     * Number of items skipped before this page.
+     */
+    offset?: number | null;
+    /**
+     * Number of items of the whole collection.
+     */
+    total?: number | null;
+}
 export type MetadataTag = (typeof MetadataTagObject)[keyof typeof MetadataTagObject];
 /**
  * Whether a profile is protected by a PIN. The PIN itself is never returned.
@@ -4504,17 +4690,25 @@ export interface Scan extends AdditionalDataHolder, Parsable {
     trigger?: JobTrigger | null;
 }
 /**
- * A file with a problem found by a scan.
+ * A file with a problem found by a scan, or a media source the scan skipped (with an empty path).
  */
 export interface ScanIssue extends AdditionalDataHolder, Parsable {
     /**
-     * Problem with a file found by a scan. Clients translate it.
+     * Problem with a file or a media source found by a scan. Clients translate it.
      */
     code?: ScanIssueCode | null;
     /**
-     * Path of the file relative to the media folder.
+     * Path of the file relative to the folder of its media source; empty for a problem of the source itself.
      */
     path?: string | null;
+    /**
+     * Id of the media source; null in results of scans from before there were several sources.
+     */
+    sourceId?: Guid | null;
+    /**
+     * Name of the media source at the time of the scan.
+     */
+    sourceName?: string | null;
 }
 export type ScanIssueCode = (typeof ScanIssueCodeObject)[keyof typeof ScanIssueCodeObject];
 /**
@@ -4988,6 +5182,20 @@ export function serializeCreatedSession(writer: SerializationWriter, createdSess
 }
 /**
  * Serializes information the current object
+ * @param CreateMediaSource The instance to serialize from.
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeCreateMediaSource(writer: SerializationWriter, createMediaSource: Partial<CreateMediaSource> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!createMediaSource || isSerializingDerivedType) { return; }
+    writer.writeBooleanValue("isActive", createMediaSource.isActive);
+    writer.writeStringValue("name", createMediaSource.name);
+    writer.writeStringValue("path", createMediaSource.path);
+    writer.writeAdditionalData(createMediaSource.additionalData);
+}
+/**
+ * Serializes information the current object
  * @param CreatePlayHistoryEntry The instance to serialize from.
  * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
  * @param writer Serialization writer to use to serialize this model
@@ -5420,6 +5628,43 @@ export function serializeMediaFilePage(writer: SerializationWriter, mediaFilePag
 /**
  * Serializes information the current object
  * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param MediaSource The instance to serialize from.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeMediaSource(writer: SerializationWriter, mediaSource: Partial<MediaSource> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!mediaSource || isSerializingDerivedType) { return; }
+    writer.writeDateValue("createdAt", mediaSource.createdAt);
+    writer.writeNumberValue("fileCount", mediaSource.fileCount);
+    writer.writeBooleanValue("followsMediaPath", mediaSource.followsMediaPath);
+    writer.writeGuidValue("id", mediaSource.id);
+    writer.writeBooleanValue("isActive", mediaSource.isActive);
+    writer.writeBooleanValue("isAvailable", mediaSource.isAvailable);
+    writer.writeBooleanValue("isWatched", mediaSource.isWatched);
+    writer.writeStringValue("name", mediaSource.name);
+    writer.writeStringValue("path", mediaSource.path);
+    writer.writeNumberValue("trackCount", mediaSource.trackCount);
+    writer.writeDateValue("updatedAt", mediaSource.updatedAt);
+    writer.writeAdditionalData(mediaSource.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param MediaSourcePage The instance to serialize from.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeMediaSourcePage(writer: SerializationWriter, mediaSourcePage: Partial<MediaSourcePage> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!mediaSourcePage || isSerializingDerivedType) { return; }
+    writer.writeCollectionOfObjectValues<MediaSource>("items", mediaSourcePage.items, serializeMediaSource);
+    writer.writeNumberValue("limit", mediaSourcePage.limit);
+    writer.writeNumberValue("offset", mediaSourcePage.offset);
+    writer.writeNumberValue("total", mediaSourcePage.total);
+    writer.writeAdditionalData(mediaSourcePage.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
  * @param PinStatus The instance to serialize from.
  * @param writer Serialization writer to use to serialize this model
  */
@@ -5677,6 +5922,8 @@ export function serializeScanIssue(writer: SerializationWriter, scanIssue: Parti
     if (!scanIssue || isSerializingDerivedType) { return; }
     writer.writeEnumValue<ScanIssueCode>("code", scanIssue.code);
     writer.writeStringValue("path", scanIssue.path);
+    writer.writeGuidValue("sourceId", scanIssue.sourceId);
+    writer.writeStringValue("sourceName", scanIssue.sourceName);
     writer.writeAdditionalData(scanIssue.additionalData);
 }
 /**
@@ -6362,6 +6609,20 @@ export function serializeUpdateLibrarySettings(writer: SerializationWriter, upda
     writer.writeBooleanValue("subsonicDownloads", updateLibrarySettings.subsonicDownloads);
     writer.writeCollectionOfPrimitiveValues<string>("videoExtensions", updateLibrarySettings.videoExtensions);
     writer.writeAdditionalData(updateLibrarySettings.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param UpdateMediaSource The instance to serialize from.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeUpdateMediaSource(writer: SerializationWriter, updateMediaSource: Partial<UpdateMediaSource> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!updateMediaSource || isSerializingDerivedType) { return; }
+    writer.writeBooleanValue("isActive", updateMediaSource.isActive);
+    writer.writeStringValue("name", updateMediaSource.name);
+    writer.writeStringValue("path", updateMediaSource.path);
+    writer.writeAdditionalData(updateMediaSource.additionalData);
 }
 /**
  * Serializes information the current object
@@ -7680,6 +7941,23 @@ export interface UpdateLibrarySettings extends AdditionalDataHolder, Parsable {
     videoExtensions?: string[] | null;
 }
 /**
+ * Changes a media source. Missing or null values stay unchanged.
+ */
+export interface UpdateMediaSource extends AdditionalDataHolder, Parsable {
+    /**
+     * Whether the source is scanned and watched. A reactivated source is scanned at once.
+     */
+    isActive?: boolean | null;
+    /**
+     * New name, unique without regard to case.
+     */
+    name?: string | null;
+    /**
+     * New absolute path of an existing folder in the container, apart from the folders of the other sources. The source is scanned again; files with the same relative path keep their tracks.
+     */
+    path?: string | null;
+}
+/**
  * The track the current profile starts to listen to.
  */
 export interface UpdateNowPlaying extends AdditionalDataHolder, Parsable {
@@ -8339,6 +8617,7 @@ export const JobErrorCodeObject = {
     ScanMedia_folder_unreadable: "scan.media_folder_unreadable",
     ScanMedia_folder_empty: "scan.media_folder_empty",
     ScanProbe_unavailable: "scan.probe_unavailable",
+    ScanNo_media_sources: "scan.no_media_sources",
     CacheFfmpeg_unavailable: "cache.ffmpeg_unavailable",
     CacheFolder_unwritable: "cache.folder_unwritable",
     BackupFolder_unwritable: "backup.folder_unwritable",
@@ -8537,6 +8816,10 @@ export const ProblemCodeObject = {
     ThemeToo_large: "theme.too_large",
     ThemeUnsupported_format: "theme.unsupported_format",
     ThemeAlready_installed: "theme.already_installed",
+    SourceNot_found: "source.not_found",
+    SourceName_taken: "source.name_taken",
+    SourcePath_not_found: "source.path_not_found",
+    SourcePath_overlaps: "source.path_overlaps",
 } as const;
 /**
  * Whether the players even out the volume with the ReplayGain tags; Off by default.
@@ -8554,13 +8837,16 @@ export const RoleObject = {
     User: "User",
 } as const;
 /**
- * Problem with a file found by a scan. Clients translate it.
+ * Problem with a file or a media source found by a scan. Clients translate it.
  */
 export const ScanIssueCodeObject = {
     FileUnreadable: "file.unreadable",
     FileTags_unreadable: "file.tags_unreadable",
     FileProbe_failed: "file.probe_failed",
     FilePath_too_long: "file.path_too_long",
+    SourceNot_found: "source.not_found",
+    SourceUnreadable: "source.unreadable",
+    SourceEmpty: "source.empty",
 } as const;
 /**
  * What a running scan is doing.

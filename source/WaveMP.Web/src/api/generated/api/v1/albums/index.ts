@@ -70,6 +70,10 @@ export interface AlbumsRequestBuilderGetQueryParameters {
      */
     sort?: AlbumSort;
     /**
+     * Only albums with tracks of this media source.
+     */
+    sourceId?: Guid;
+    /**
      * Only albums of this year.
      */
     year?: number;
@@ -77,7 +81,7 @@ export interface AlbumsRequestBuilderGetQueryParameters {
 /**
  * Uri template for the request builder.
  */
-export const AlbumsRequestBuilderUriTemplate = "{+baseurl}/api/v1/albums{?artistId*,direction*,genre*,limit*,myMusic*,offset*,q*,sort*,year*}";
+export const AlbumsRequestBuilderUriTemplate = "{+baseurl}/api/v1/albums{?artistId*,direction*,genre*,limit*,myMusic*,offset*,q*,sort*,sourceId*,year*}";
 /**
  * Metadata for all the navigation properties in the request builder.
  */

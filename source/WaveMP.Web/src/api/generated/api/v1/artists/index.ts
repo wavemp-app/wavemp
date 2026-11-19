@@ -61,11 +61,15 @@ export interface ArtistsRequestBuilderGetQueryParameters {
      * Sort key; Name by default, Relevance with q. Relevance without q falls back to the default.
      */
     sort?: ArtistSort;
+    /**
+     * Only artists with tracks of this media source, as track or album artist.
+     */
+    sourceId?: Guid;
 }
 /**
  * Uri template for the request builder.
  */
-export const ArtistsRequestBuilderUriTemplate = "{+baseurl}/api/v1/artists{?direction*,limit*,myMusic*,offset*,q*,sort*}";
+export const ArtistsRequestBuilderUriTemplate = "{+baseurl}/api/v1/artists{?direction*,limit*,myMusic*,offset*,q*,sort*,sourceId*}";
 /**
  * Metadata for all the navigation properties in the request builder.
  */
