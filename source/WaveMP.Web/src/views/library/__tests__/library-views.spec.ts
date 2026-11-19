@@ -34,6 +34,13 @@ const api = vi.hoisted(() => ({
 
 vi.mock('@/library/api', () => api)
 
+const online = vi.hoisted(() => ({ searchTrackOnline: vi.fn() }))
+
+vi.mock('@/library/onlineMetadata', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@/library/onlineMetadata')>()),
+    ...online,
+}))
+
 const LibraryView = (await import('../LibraryView.vue')).default
 const AlbumView = (await import('../AlbumView.vue')).default
 const SearchView = (await import('../SearchView.vue')).default
@@ -664,6 +671,30 @@ describe('TrackView', () => {
                 expect(router.currentRoute.value.fullPath).toBe('/library/songs'),
             )
             window.history.replaceState(null, '')
+            wrapper.unmount()
+        })
+
+        it('opens the online search from the address and removes the request when it closes', async () => {
+            signIn('Admin')
+            online.searchTrackOnline.mockResolvedValue({ current: {}, matches: [] })
+            const { wrapper, router } = await mountView(
+                TrackView,
+                '/library/tracks/Closing?edit=online',
+                { id: 'Closing' },
+            )
+
+            expect(online.searchTrackOnline).toHaveBeenCalledWith('Closing')
+            expect(api.getTrackMetadata).not.toHaveBeenCalled()
+            const dialog = wrapper
+                .findAllComponents(BaseDialog)
+                .find((each) => each.props('open') === true)
+            expect(dialog?.attributes('data-item')).toBe('online-search')
+
+            dialog?.vm.$emit('update:open', false)
+            await flushPromises()
+
+            expect(router.currentRoute.value.query.edit).toBeUndefined()
+            expect(online.searchTrackOnline).toHaveBeenCalledTimes(1)
             wrapper.unmount()
         })
 

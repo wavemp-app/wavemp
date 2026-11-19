@@ -29,7 +29,8 @@ import { useSessionStore } from '@/stores/session'
  * The details of a track: its cover, artist, album, numbers, year, genre, length and media, its
  * rating and the heart that marks it as favorite. Admins also see all its files, edit its
  * metadata, choose its cover rule, download its lyrics and set the offset of its video; the query
- * edit=metadata opens the editor at once (context menu of a track).
+ * edit=metadata opens the editor at once (context menu of a track, library check), edit=online the
+ * online search (library check).
  */
 const props = defineProps<{
     id: string
@@ -56,7 +57,11 @@ let generation = 0
 let editRequestHandled = false
 
 const duration = computed(() => durationSeconds(track.value?.durationMilliseconds))
-const editRequested = computed(() => route.query.edit === 'metadata')
+/** What the address asks to open at once: the metadata editor or the online search. */
+const editRequest = computed(() =>
+    route.query.edit === 'metadata' || route.query.edit === 'online' ? route.query.edit : null,
+)
+const editRequested = computed(() => editRequest.value === 'metadata')
 
 async function load(): Promise<void> {
     const current = ++generation
@@ -119,27 +124,33 @@ watch(
     { immediate: true },
 )
 
-// Opens the editor once per request, as soon as the track is loaded; it closes again when the
-// address no longer asks for it (back in the history).
+// Opens the editor or the online search once per request, as soon as the track is loaded; it
+// closes again when the address no longer asks for it (back in the history).
 watch(
-    [editRequested, status],
+    [editRequest, status],
     ([requested, current]) => {
         if (!requested) {
             if (editRequestHandled) {
                 editing.value = false
+                searchingOnline.value = false
             }
             editRequestHandled = false
         } else if (!editRequestHandled && current === 'ready' && session.isAdmin) {
             editRequestHandled = true
-            editing.value = true
+            if (requested === 'metadata') {
+                editing.value = true
+            } else {
+                searchingOnline.value = true
+            }
         }
     },
     { immediate: true },
 )
 
-// Closing the editor removes the request from the address, so reloading the page does not open it.
-watch(editing, (value) => {
-    if (!value && editRequested.value) {
+// Closing the editor or the online search removes the request from the address, so reloading the
+// page does not open it again.
+watch([editing, searchingOnline], ([isEditing, isSearching]) => {
+    if (!isEditing && !isSearching && editRequest.value) {
         void router.replace({ query: { ...route.query, edit: undefined } })
     }
 })
