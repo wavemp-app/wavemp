@@ -53,6 +53,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IAutoplayRepository, AutoplayRepository>();
         services.AddScoped<ILyricsRepository, LyricsRepository>();
         services.AddScoped<ITrackReviewRepository, TrackReviewRepository>();
+        services.AddScoped<ILibraryIssueRepository, LibraryIssueRepository>();
         services.AddScoped<IScrobbleRepository, ScrobbleRepository>();
         services.AddScoped<ISubsonicRepository, SubsonicRepository>();
 

@@ -61,6 +61,10 @@ public class WaveMpDbContext(DbContextOptions<WaveMpDbContext> options) : DbCont
 
     public DbSet<SubsonicAccount> SubsonicAccounts => Set<SubsonicAccount>();
 
+    public DbSet<LibraryIssue> LibraryIssues => Set<LibraryIssue>();
+
+    public DbSet<LibraryCheck> LibraryChecks => Set<LibraryCheck>();
+
     /// <summary>
     /// PostgreSQL extension of the fault-tolerant library search (trigrams). It is part of the official image and
     /// trusted since PostgreSQL 13, so the owner of the database can create it.
@@ -100,5 +104,7 @@ public class WaveMpDbContext(DbContextOptions<WaveMpDbContext> options) : DbCont
         modelBuilder.ApplyConfiguration(new ScrobbleConnectionConfiguration());
         modelBuilder.ApplyConfiguration(new ScrobbleQueueEntryConfiguration());
         modelBuilder.ApplyConfiguration(new SubsonicAccountConfiguration());
+        modelBuilder.ApplyConfiguration(new LibraryIssueConfiguration());
+        modelBuilder.ApplyConfiguration(new LibraryCheckConfiguration());
     }
 }

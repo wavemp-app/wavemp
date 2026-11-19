@@ -320,6 +320,82 @@ namespace WaveMP.Data.Migrations
                     b.ToTable("job_runs", (string)null);
                 });
 
+            modelBuilder.Entity("WaveMP.Data.Entities.LibraryCheck", b =>
+                {
+                    b.Property<int>("Id")
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("CheckedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("checked_at");
+
+                    b.Property<int>("TrackCount")
+                        .HasColumnType("integer")
+                        .HasColumnName("track_count");
+
+                    b.HasKey("Id")
+                        .HasName("pk_library_checks");
+
+                    b.ToTable("library_checks", (string)null);
+                });
+
+            modelBuilder.Entity("WaveMP.Data.Entities.LibraryIssue", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("DetectedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("detected_at");
+
+                    b.Property<string>("FileIssue")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("file_issue");
+
+                    b.Property<Guid?>("MediaFileId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("media_file_id");
+
+                    b.Property<string>("MissingTags")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("missing_tags");
+
+                    b.Property<Guid?>("RelatedTrackId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("related_track_id");
+
+                    b.Property<Guid?>("TrackId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("track_id");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("type");
+
+                    b.HasKey("Id")
+                        .HasName("pk_library_issues");
+
+                    b.HasIndex("MediaFileId")
+                        .HasDatabaseName("ix_library_issues_media_file_id");
+
+                    b.HasIndex("RelatedTrackId")
+                        .HasDatabaseName("ix_library_issues_related_track_id");
+
+                    b.HasIndex("TrackId")
+                        .HasDatabaseName("ix_library_issues_track_id");
+
+                    b.HasIndex("Type")
+                        .HasDatabaseName("ix_library_issues_type");
+
+                    b.ToTable("library_issues", (string)null);
+                });
+
             modelBuilder.Entity("WaveMP.Data.Entities.LyricsDownload", b =>
                 {
                     b.Property<Guid>("TrackId")
@@ -1750,6 +1826,33 @@ namespace WaveMP.Data.Migrations
                     b.Navigation("Track");
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("WaveMP.Data.Entities.LibraryIssue", b =>
+                {
+                    b.HasOne("WaveMP.Data.Entities.MediaFile", "MediaFile")
+                        .WithMany()
+                        .HasForeignKey("MediaFileId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .HasConstraintName("fk_library_issues_media_files_media_file_id");
+
+                    b.HasOne("WaveMP.Data.Entities.Track", "RelatedTrack")
+                        .WithMany()
+                        .HasForeignKey("RelatedTrackId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_library_issues_tracks_related_track_id");
+
+                    b.HasOne("WaveMP.Data.Entities.Track", "Track")
+                        .WithMany()
+                        .HasForeignKey("TrackId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .HasConstraintName("fk_library_issues_tracks_track_id");
+
+                    b.Navigation("MediaFile");
+
+                    b.Navigation("RelatedTrack");
+
+                    b.Navigation("Track");
                 });
 
             modelBuilder.Entity("WaveMP.Data.Entities.LyricsDownload", b =>
