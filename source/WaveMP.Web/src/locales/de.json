@@ -68,7 +68,11 @@
     "trackNotFound": "Diesen Titel gibt es nicht mehr.",
     "toLibrary": "Zur Bibliothek",
     "play": "Abspielen",
-    "shufflePlay": "Zufällig abspielen"
+    "shufflePlay": "Zufällig abspielen",
+    "sourceFilter": {
+      "label": "Medienordner",
+      "all": "Alle Medienordner"
+    }
   },
   "list": {
     "columns": {
@@ -731,7 +735,7 @@
     "title": "Bibliothek",
     "scanTitle": "Scan",
     "scanNow": "Jetzt scannen",
-    "scanHint": "Findet neue, geänderte und gelöschte Dateien im Medienordner.",
+    "scanHint": "Findet neue, geänderte und gelöschte Dateien in den Medienordnern.",
     "states": {
       "idle": "Bereit",
       "queued": "Wartet auf den Start",
@@ -762,13 +766,16 @@
       "artistsTotal": "Interpreten",
       "duration": "Dauer"
     },
-    "issuesSummary": "{count} Dateien mit Problemen",
+    "issuesSummary": "{count} Probleme mit Dateien oder Ordnern",
     "issuesListed": "Die ersten {count} sind aufgeführt.",
     "issues": {
       "fileUnreadable": "Nicht lesbar",
       "tagsUnreadable": "Tags nicht lesbar",
       "probeFailed": "Keine Medieninformationen",
-      "pathTooLong": "Pfad zu lang, übersprungen"
+      "pathTooLong": "Pfad zu lang, übersprungen",
+      "sourceNotFound": "Ordner fehlt, übersprungen",
+      "sourceUnreadable": "Ordner nicht lesbar, übersprungen",
+      "sourceEmpty": "Ordner ist leer, übersprungen und nichts entfernt"
     },
     "historyTitle": "Verlauf",
     "history": "Scans",
@@ -817,6 +824,63 @@
     "downloadLyricsHint": "Sucht nach jedem Scan die Songtexte neuer Titel ohne Songtext auf lrclib.net und speichert sie neben dem Titel als .lrc-Datei (oder in der Datenbank, wenn der Ordner nicht beschreibbar ist). Titel, für die LRCLIB noch keinen Songtext hat, werden später erneut gesucht. Dabei werden Titel, Interpreten und Alben deiner Bibliothek an den Dienst gesendet.",
     "subsonicDownloads": "Subsonic-Apps dürfen Titel herunterladen",
     "subsonicDownloadsHint": "Erlaubt Subsonic-Apps, die Originaldateien der Titel herunterzuladen, z. B. um sie auf dem Telefon zu behalten. Ohne diese Einstellung können die Apps nur streamen."
+  },
+  "adminSources": {
+    "title": "Medienordner",
+    "list": "Medienordner",
+    "add": "Medienordner hinzufügen",
+    "edit": "{name} bearbeiten",
+    "delete": "{name} entfernen",
+    "activate": "Einschalten",
+    "deactivate": "Ausschalten",
+    "activateNamed": "{name} einschalten",
+    "deactivateNamed": "{name} ausschalten",
+    "counts": "Titel: {tracks}, Dateien: {files}",
+    "empty": "Es gibt keinen Medienordner. Füge einen hinzu, damit die Bibliothek gescannt werden kann.",
+    "loadError": "Die Medienordner konnten nicht geladen werden.",
+    "saved": "{name} ist gespeichert. Neue und verschobene Ordner werden sofort gescannt.",
+    "activated": "{name} ist eingeschaltet und wird gescannt.",
+    "deactivated": "{name} ist ausgeschaltet. Seine Titel bleiben in der Bibliothek.",
+    "removed": "{name} ist aus der Bibliothek entfernt.",
+    "states": {
+      "active": "Ein",
+      "inactive": "Aus",
+      "unavailable": "Ordner fehlt",
+      "watched": "Überwacht",
+      "mediaPath": "Aus MEDIA_PATH"
+    },
+    "dialog": {
+      "createTitle": "Medienordner hinzufügen",
+      "editTitle": "Medienordner bearbeiten",
+      "name": "Name",
+      "nameHint": "Wird im Filter der Bibliothek angezeigt, z. B. Musikvideos.",
+      "path": "Ordner im Container",
+      "pathHint": "Der vollständige Pfad eines eingebundenen Volumes, z. B. /media/videos. Er darf nicht in einem anderen Medienordner liegen.",
+      "pathMediaPathHint": "Kommt aus MEDIA_PATH. Gib einen anderen Pfad ein, um stattdessen diesen Ordner zu nutzen.",
+      "active": "Diesen Ordner scannen und überwachen",
+      "activeHint": "Ausgeschaltet bleiben seine Titel in der Bibliothek, werden aber nicht aktualisiert.",
+      "add": "Hinzufügen",
+      "save": "Speichern"
+    },
+    "errors": {
+      "nameRequired": "Bitte gib einen Namen ein.",
+      "nameTaken": "Ein Medienordner mit diesem Namen existiert bereits.",
+      "pathRequired": "Bitte gib den Ordner ein.",
+      "pathInvalid": "Gib den vollständigen Pfad ein, beginnend mit /.",
+      "pathNotFound": "Diesen Ordner gibt es im Container nicht. Prüfe die Volumes in der docker-compose.yml.",
+      "pathOverlaps": "Dieser Ordner ist ein anderer Medienordner, liegt in einem oder enthält einen.",
+      "scanRunning": "Ein Scan läuft. Warte, bis er fertig ist, und ändere oder entferne den Ordner dann.",
+      "invalid": "Bitte prüfe deine Eingaben.",
+      "saveFailed": "Der Medienordner konnte nicht gespeichert werden.",
+      "deleteFailed": "Der Medienordner konnte nicht entfernt werden.",
+      "notFound": "Dieser Medienordner existiert nicht mehr."
+    },
+    "deleteDialog": {
+      "title": "Medienordner entfernen",
+      "text": "{name} aus der Bibliothek entfernen? Titel in diesem Ordner: {count}. Ihre Bewertungen, Favoriten und Playlist-Einträge gehen verloren.",
+      "filesStay": "Die Dateien im Ordner bleiben unverändert.",
+      "confirm": "Entfernen"
+    }
   },
   "adminFiles": {
     "title": "Dateiauswahl",
@@ -1242,6 +1306,7 @@
       "mediaFolderUnreadable": "Der Medienordner kann nicht gelesen werden. Prüfe seine Berechtigungen.",
       "mediaFolderEmpty": "Der Medienordner ist leer, deshalb wurde nichts entfernt. Prüfe, ob er eingebunden ist.",
       "probeUnavailable": "ffprobe ist auf dem Server nicht verfügbar.",
+      "noMediaSources": "Kein Medienordner ist eingeschaltet. Schalte einen ein oder füge einen hinzu.",
       "ffmpegUnavailable": "ffmpeg ist auf dem Server nicht verfügbar.",
       "cacheFolderUnwritable": "In den Cache-Ordner kann nicht geschrieben werden. Prüfe das Volume /data.",
       "backupFolderUnwritable": "In den Sicherungsordner kann nicht geschrieben werden. Prüfe das Volume /data.",

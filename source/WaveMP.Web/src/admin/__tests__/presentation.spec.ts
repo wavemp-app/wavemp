@@ -14,6 +14,7 @@ import {
     issueLabelKey,
     jobNameKey,
     jobScheduleKey,
+    mediaSourceStates,
     parseList,
     phaseLabelKey,
     progressRatio,
@@ -78,6 +79,28 @@ describe('presentation of the administration', () => {
         expect(phaseLabelKey('CleaningUp')).toBe('adminLibrary.phases.cleaningUp')
         expect(jobNameKey('library-scan')).toBe('adminJobs.names.libraryScan')
         expect(jobNameKey('unknown')).toBeNull()
+    })
+
+    it('translates the codes of the media folders', () => {
+        expect(errorLabelKey('scan.no_media_sources')).toBe('jobRuns.errors.noMediaSources')
+        expect(issueLabelKey('source.not_found')).toBe('adminLibrary.issues.sourceNotFound')
+        expect(issueLabelKey('source.unreadable')).toBe('adminLibrary.issues.sourceUnreadable')
+        expect(issueLabelKey('source.empty')).toBe('adminLibrary.issues.sourceEmpty')
+    })
+
+    it('describes the state of a media folder with tokens', () => {
+        expect(
+            mediaSourceStates({
+                isActive: true,
+                isAvailable: true,
+                isWatched: true,
+                followsMediaPath: true,
+            }),
+        ).toEqual(['active', 'watched', 'media-path'])
+        expect(mediaSourceStates({ isActive: false, isAvailable: false })).toEqual([
+            'inactive',
+            'unavailable',
+        ])
     })
 
     it('translates the codes of the cache', () => {

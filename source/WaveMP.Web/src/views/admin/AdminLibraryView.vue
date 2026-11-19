@@ -3,6 +3,7 @@ import { onMounted, ref, useId } from 'vue'
 import { useI18n } from 'vue-i18n'
 import AdminNav from '@/components/admin/AdminNav.vue'
 import LibrarySettingsForm from '@/components/admin/LibrarySettingsForm.vue'
+import MediaSourcesPanel from '@/components/admin/MediaSourcesPanel.vue'
 import ScanHistory from '@/components/admin/ScanHistory.vue'
 import ScanPanel from '@/components/admin/ScanPanel.vue'
 import ScanSummary from '@/components/admin/ScanSummary.vue'
@@ -11,12 +12,16 @@ import BaseButton from '@/components/base/BaseButton.vue'
 import { usePolling } from '@/composables/usePolling'
 import { useScansStore } from '@/stores/scans'
 
-/** Admin page of the library: start a scan, follow it, see its result, the history and settings. */
+/**
+ * Admin page of the library: the media folders, start a scan, follow it, see its result, the
+ * history and settings.
+ */
 const { t } = useI18n()
 const scans = useScansStore()
 
 const starting = ref(false)
 const message = ref<string | null>(null)
+const sourcesTitleId = useId()
 const scanTitleId = useId()
 const historyTitleId = useId()
 const settingsTitleId = useId()
@@ -50,6 +55,14 @@ async function start(): Promise<void> {
     await scans.loadHistory()
 }
 
+/** A media folder was added, switched on or moved, so the server may have started a scan. */
+async function onSourcesChanged(): Promise<void> {
+    const current = await scans.loadCurrent().catch(() => null)
+    if (current) {
+        polling.start()
+    }
+}
+
 onMounted(async () => {
     await Promise.all([scans.loadCurrent().catch(() => null), scans.loadHistory()])
     if (scans.current) {
@@ -65,6 +78,12 @@ onMounted(async () => {
         :aria-busy="scans.status === 'loading' && scans.history.length === 0 ? 'true' : undefined"
     >
         <AdminNav />
+        <section data-part="section" :aria-labelledby="sourcesTitleId">
+            <h2 :id="sourcesTitleId" data-part="section-title">
+                {{ t('adminSources.title') }}
+            </h2>
+            <MediaSourcesPanel @changed="onSourcesChanged" />
+        </section>
         <section data-part="section" :aria-labelledby="scanTitleId">
             <h2 :id="scanTitleId" data-part="section-title">{{ t('adminLibrary.scanTitle') }}</h2>
             <ScanPanel

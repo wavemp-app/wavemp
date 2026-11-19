@@ -1046,6 +1046,7 @@ a[data-part='breadcrumb-link']:hover {
 
 [data-part='file-meta'] > [data-part='badge'],
 [data-part='user-meta'] > [data-part='badge'],
+[data-part='source-meta'] > [data-part='badge'],
 [data-part='scan-status'] > [data-part='badge'],
 [data-part='run-item'] > [data-part='badge'],
 [data-part='run-meta'] > [data-part='badge'],
@@ -1070,6 +1071,7 @@ a[data-part='breadcrumb-link']:hover {
     :is(
         [data-part='file-meta'],
         [data-part='user-meta'],
+        [data-part='source-meta'],
         [data-part='scan-status'],
         [data-part='run-item'],
         [data-part='run-meta'],
@@ -2049,6 +2051,7 @@ a[data-part='breadcrumb-link']:hover {
 [data-part='transcode-item'],
 [data-part='backup-item'],
 [data-part='user-item'],
+[data-part='source-item'],
 [data-part='scrobble-item'],
 [data-part='file-item'],
 [data-part='file-selection-item'],
@@ -2077,6 +2080,7 @@ a[data-part='breadcrumb-link']:hover {
         [data-part='transcode-item'],
         [data-part='backup-item'],
         [data-part='user-item'],
+        [data-part='source-item'],
         [data-part='scrobble-item'],
         [data-part='file-item'],
         [data-part='file-selection-item'],
@@ -2109,6 +2113,7 @@ a[data-part='breadcrumb-link']:hover {
 }
 
 [data-part='user-item']:hover,
+[data-part='source-item']:hover,
 [data-part='job-item']:hover,
 [data-part='run-item']:hover,
 [data-part='transcode-item']:hover,
@@ -2117,6 +2122,7 @@ a[data-part='breadcrumb-link']:hover {
 }
 
 [data-part='user-name'],
+[data-part='source-name'],
 [data-part='job-name'],
 [data-part='transcode-title'],
 [data-part='backup-name'],
@@ -2127,15 +2133,18 @@ a[data-part='breadcrumb-link']:hover {
 }
 
 [data-part='file-path'],
-[data-part='issue-path'] {
+[data-part='issue-path'],
+[data-part='issue-source'] {
     color: var(--cg-ink);
 }
 
-[data-part='user-actions'] [data-variant='icon'] {
+[data-part='user-actions'] [data-variant='icon'],
+[data-part='source-actions'] [data-variant='icon'] {
     --wmp-icon-fill: var(--cg-muted);
 }
 
-[data-part='user-actions'] [data-variant='icon']:hover:not(:disabled) {
+[data-part='user-actions'] [data-variant='icon']:hover:not(:disabled),
+[data-part='source-actions'] [data-variant='icon']:hover:not(:disabled) {
     --wmp-icon-fill: var(--cg-edge);
 }
 

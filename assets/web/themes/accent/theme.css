@@ -1585,6 +1585,7 @@ a[data-part='breadcrumb-link']:hover {
     [data-part='backup-item'],
     [data-part='scrobble-item'],
     [data-part='user-item'],
+    [data-part='source-item'],
     [data-part='file-item'],
     [data-part='file-selection-item'],
     [data-part='review-item'],
@@ -1609,7 +1610,7 @@ a[data-part='breadcrumb-link']:hover {
     font-weight: 600;
 }
 
-:is([data-part='run-item'], [data-part='job-item'], [data-part='transcode-item'], [data-part='user-item'], [data-part='review-item'], [data-part='file-selection-item']):hover {
+:is([data-part='run-item'], [data-part='job-item'], [data-part='transcode-item'], [data-part='user-item'], [data-part='source-item'], [data-part='review-item'], [data-part='file-selection-item']):hover {
     background: var(--wmp-image-default-button-hover);
 }
 
@@ -1666,6 +1667,7 @@ a[data-part='breadcrumb-link']:hover {
 
 [data-part='file-path'],
 [data-part='issue-path'],
+[data-part='issue-source'],
 [data-part='backup-name'] {
     overflow-wrap: anywhere;
 }

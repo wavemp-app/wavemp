@@ -1457,6 +1457,7 @@ a[data-part='breadcrumb-link']:hover {
 
 [data-part='scrobble-item'],
 [data-part='user-item'],
+[data-part='source-item'],
 [data-part='file-item'],
 [data-part='file-selection-item'],
 [data-part='review-item'],
@@ -1468,6 +1469,7 @@ a[data-part='breadcrumb-link']:hover {
 }
 
 [data-part='user-item']:hover,
+[data-part='source-item']:hover,
 [data-part='file-selection-item']:hover,
 [data-part='review-item']:hover {
     border-color: #7d9fdf;
@@ -1475,6 +1477,7 @@ a[data-part='breadcrumb-link']:hover {
 
 [data-part='scrobble-name'],
 [data-part='user-name'],
+[data-part='source-name'],
 [data-part='backup-name'],
 [data-part='job-name'],
 [data-part='transcode-title'] {
@@ -1486,6 +1489,7 @@ a[data-part='breadcrumb-link']:hover {
 
 :is(
         [data-part='user-meta'],
+        [data-part='source-meta'],
         [data-part='scan-status'],
         [data-part='run-item'],
         [data-part='run-meta'],
@@ -1629,6 +1633,7 @@ a[data-part='breadcrumb-link']:hover {
 }
 
 [data-part='issue-path'],
+[data-part='issue-source'],
 [data-part='file-path'] {
     color: #10204a;
 }

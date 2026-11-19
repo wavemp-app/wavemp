@@ -9,6 +9,7 @@ import { createWaveMpI18n } from '@/i18n'
 import { createRoutes } from '@/router/routes'
 import { useJobsStore } from '@/stores/jobs'
 import { useLibrarySettingsStore } from '@/stores/librarySettings'
+import { useMediaSourcesStore } from '@/stores/mediaSources'
 import { useScansStore } from '@/stores/scans'
 
 const finished: Scan = {
@@ -28,6 +29,23 @@ async function mountView(component: unknown, path: string) {
     vi.spyOn(settings, 'load').mockImplementation(async () => {
         settings.settings = { scanIntervalMinutes: 360, fileWatcherEnabled: true }
         settings.status = 'ready'
+    })
+    const sources = useMediaSourcesStore()
+    vi.spyOn(sources, 'load').mockImplementation(async () => {
+        sources.sources = [
+            {
+                id: 'media',
+                name: 'Media',
+                path: '/media',
+                followsMediaPath: true,
+                isActive: true,
+                isAvailable: true,
+                isWatched: true,
+                trackCount: 4,
+                fileCount: 12,
+            },
+        ]
+        sources.status = 'ready'
     })
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const wrapper = mount(component as any, {
@@ -63,11 +81,14 @@ describe('AdminLibraryView', () => {
             wrapper.get('[data-view="admin-library"]').find('[data-part="admin-nav"]').exists(),
         ).toBe(true)
         expect(wrapper.findAll('[data-part="section-title"]').map((title) => title.text())).toEqual(
-            ['Scan', 'History', 'Settings'],
+            ['Media folders', 'Scan', 'History', 'Settings'],
         )
         expect(wrapper.get('[data-part="scan-status"]').attributes('data-state')).toBe('idle')
         expect(wrapper.find('[data-part="stat-list"]').exists()).toBe(true)
         expect(wrapper.findAll('[data-part="run-item"]')).toHaveLength(1)
+        expect(wrapper.get('[data-part="source-item"]').attributes('data-state')).toBe(
+            'active watched media-path',
+        )
         expect(wrapper.find('form[data-part="form"]').exists()).toBe(true)
         wrapper.unmount()
     })
@@ -100,6 +121,27 @@ describe('AdminLibraryView', () => {
 
         expect(wrapper.get('[data-part="scan-status"]').attributes('data-state')).toBe('idle')
         expect(scans.loadHistory).toHaveBeenCalledTimes(3)
+        wrapper.unmount()
+    })
+
+    it('follows the scan the server starts after a media folder was switched on', async () => {
+        const scans = useScansStore()
+        const loadCurrent = vi.spyOn(scans, 'loadCurrent').mockResolvedValue(null)
+        vi.spyOn(scans, 'loadHistory').mockResolvedValue()
+        const sources = useMediaSourcesStore()
+        const update = vi.spyOn(sources, 'update').mockResolvedValue({
+            id: 'media',
+            name: 'Media',
+            isActive: false,
+        })
+        const wrapper = await mountView(AdminLibraryView, '/admin/library')
+
+        await wrapper.get('[data-part="source-actions"] [data-item="toggle"]').trigger('click')
+        await flushPromises()
+
+        expect(update).toHaveBeenCalledWith('media', { isActive: false })
+        expect(wrapper.text()).toContain('Media is switched off. Its songs stay in the library.')
+        expect(loadCurrent).toHaveBeenCalledTimes(2)
         wrapper.unmount()
     })
 

@@ -688,6 +688,7 @@ a[data-part='breadcrumb-link']:hover {
 :is(
     [data-part='file-item'],
     [data-part='user-item'],
+    [data-part='source-item'],
     [data-part='cache-usage'],
     [data-part='transcoding-status'],
     [data-part='backup-status'],
@@ -712,6 +713,7 @@ a[data-part='breadcrumb-link']:hover {
 
 :is(
     [data-part='user-item'],
+    [data-part='source-item'],
     [data-part='run-item'],
     [data-part='job-item'],
     [data-part='transcode-item'],
@@ -730,9 +732,11 @@ a[data-part='breadcrumb-link']:hover {
 
 [data-part='file-path'],
 [data-part='issue-path'],
+[data-part='issue-source'],
 [data-part='backup-name'],
 [data-part='job-name'],
 [data-part='user-name'],
+[data-part='source-name'],
 [data-part='transcode-title'],
 [data-part='scrobble-name'] {
     color: #0d2944;
@@ -746,6 +750,7 @@ a[data-part='breadcrumb-link']:hover {
 :is(
         [data-part='file-meta'],
         [data-part='user-meta'],
+        [data-part='source-meta'],
         [data-part='scan-status'],
         [data-part='run-item'],
         [data-part='run-meta'],
@@ -1651,15 +1656,18 @@ a[data-part='breadcrumb-link']:hover {
 }
 
 [data-part='job-actions'] [data-part='icon'],
-[data-part='user-actions'] [data-variant='icon'] {
+[data-part='user-actions'] [data-variant='icon'],
+[data-part='source-actions'] [data-variant='icon'] {
     --wmp-icon-fill: #24476b;
 }
 
-[data-part='user-actions'] [data-variant='icon']:hover:not(:disabled) [data-part='icon'] {
+[data-part='user-actions'] [data-variant='icon']:hover:not(:disabled) [data-part='icon'],
+[data-part='source-actions'] [data-variant='icon']:hover:not(:disabled) [data-part='icon'] {
     --wmp-icon-fill: #0f6cc7;
 }
 
-[data-part='user-actions'] [data-variant='icon']:disabled [data-part='icon'] {
+[data-part='user-actions'] [data-variant='icon']:disabled [data-part='icon'],
+[data-part='source-actions'] [data-variant='icon']:disabled [data-part='icon'] {
     opacity: 0.4;
 }
 

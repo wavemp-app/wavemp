@@ -129,6 +129,7 @@ export const parts = [
     'rating',
     'rating-star',
     'scope-switch',
+    'source-filter',
     'segmented-control',
     'segment',
 
@@ -242,6 +243,13 @@ export const parts = [
     'user-name',
     'user-meta',
     'user-actions',
+    'source-list',
+    'source-item',
+    'source-info',
+    'source-name',
+    'source-path',
+    'source-meta',
+    'source-actions',
 
     // Administration
     'admin-nav',
@@ -261,6 +269,7 @@ export const parts = [
     'issue-list',
     'issue-item',
     'issue-path',
+    'issue-source',
     'disclosure',
     'disclosure-summary',
     'job-list',

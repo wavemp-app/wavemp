@@ -145,7 +145,7 @@ describe('ScanSummary', () => {
         expect(values.duration).toBe('1:05')
         const disclosure = wrapper.get('details[data-part="disclosure"]')
         expect(disclosure.get('[data-part="disclosure-summary"]').text()).toContain(
-            '60 files with problems',
+            '60 problems with files or folders',
         )
         expect(disclosure.get('[data-part="issue-path"]').text()).toBe('a/broken.mp3')
         expect(disclosure.get('[data-part="issue-item"]').text()).toContain('No media information')

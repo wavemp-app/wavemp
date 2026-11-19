@@ -62,3 +62,40 @@ test.describe('settings', () => {
         ).toContainText('Every 720 minutes')
     })
 })
+
+test.describe('media folders', () => {
+    test('lists the media folder from MEDIA_PATH and hides the filter of the library', async ({
+        page,
+    }) => {
+        await page.goto('/admin/library')
+
+        const media = page.locator("[data-part='source-item']").first()
+        await expect(media).toHaveAttribute('data-state', /\bactive\b/)
+        await expect(media).toHaveAttribute('data-state', /\bmedia-path\b/)
+        await expect(media.locator("[data-part='source-path']")).toHaveText('/media')
+        await expect(media.locator("[data-part='source-meta']")).toContainText('From MEDIA_PATH')
+
+        // One media folder: the library has nothing to filter by.
+        await page.goto('/library/songs')
+        await expect(page.locator("[data-part='list-row']").first()).toBeVisible()
+        await expect(page.locator("[data-part='source-filter']")).toHaveCount(0)
+    })
+
+    test('rejects a folder that does not exist in the container', async ({ page }) => {
+        await page.goto('/admin/library')
+        await expect(page.locator("[data-part='source-item']").first()).toBeVisible()
+        const before = await page.locator("[data-part='source-item']").count()
+
+        await page.locator("[data-item='add-source']").click()
+        const dialog = page.locator("dialog[data-part='dialog'][open]")
+        await dialog.getByLabel('Name').fill('Missing folder')
+        await dialog.getByLabel('Folder in the container').fill('/does-not-exist')
+        await dialog.getByRole('button', { name: 'Add' }).click()
+
+        await expect(dialog.locator("[data-part='field-error']")).toHaveText(
+            'This folder does not exist in the container. Check the volumes in docker-compose.yml.',
+        )
+        await dialog.getByRole('button', { name: 'Cancel' }).click()
+        await expect(page.locator("[data-part='source-item']")).toHaveCount(before)
+    })
+})

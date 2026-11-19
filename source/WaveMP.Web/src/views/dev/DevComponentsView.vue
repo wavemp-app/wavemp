@@ -11,6 +11,7 @@ import type {
     FileSelectionFilter,
     FileSelectionSort,
     Job,
+    MediaSource,
     PlayerViewMode,
     Scan,
     ScanIssue,
@@ -32,6 +33,7 @@ import FileChoiceGroup from '@/components/admin/FileChoiceGroup.vue'
 import FileSelectionFilters from '@/components/admin/FileSelectionFilters.vue'
 import FileSelectionList from '@/components/admin/FileSelectionList.vue'
 import JobList from '@/components/admin/JobList.vue'
+import MediaSourceList from '@/components/admin/MediaSourceList.vue'
 import ScanHistory from '@/components/admin/ScanHistory.vue'
 import ScanIssues from '@/components/admin/ScanIssues.vue'
 import ScanPanel from '@/components/admin/ScanPanel.vue'
@@ -488,6 +490,45 @@ const sampleIssues: ScanIssue[] = [
     { path: 'Artist/Album/03 Broken.mp3', code: 'file.probe_failed' },
     { path: 'Artist/Album/04 Locked.flac', code: 'file.tags_unreadable' },
 ]
+// Problems in several media folders name the folder of every entry.
+const sampleSourceIssues: ScanIssue[] = [
+    { path: '', code: 'source.not_found', sourceId: 'videos', sourceName: 'Music videos' },
+    {
+        path: 'Artist/Album/03 Broken.mp3',
+        code: 'file.probe_failed',
+        sourceId: 'media',
+        sourceName: 'Media',
+    },
+]
+const sampleSources: MediaSource[] = [
+    {
+        id: 'media',
+        name: 'Media',
+        path: '/media',
+        followsMediaPath: true,
+        isActive: true,
+        isAvailable: true,
+        isWatched: true,
+        trackCount: 1240,
+        fileCount: 2610,
+    },
+    {
+        id: 'videos',
+        name: 'Music videos',
+        path: '/media-videos',
+        followsMediaPath: false,
+        isActive: false,
+        isAvailable: false,
+        isWatched: false,
+        trackCount: 86,
+        fileCount: 172,
+    },
+]
+const sampleSourceFilter = ref('')
+const sampleSourceOptions = computed(() => [
+    { value: '', label: t('library.sourceFilter.all') },
+    ...sampleSources.map((source) => ({ value: source.id ?? '', label: source.name ?? '' })),
+])
 const sampleProcessing: Scan = {
     id: 'processing',
     status: 'Running',
@@ -1006,6 +1047,14 @@ const sampleTranscodeJobs = computed<TranscodeJob[]>(() => {
             <h2 data-part="dev-section-title">{{ t('dev.sections.home') }}</h2>
             <div data-part="view" data-view="library" data-section="songs">
                 <LibraryScopeSwitch />
+                <!-- The filter by media folder shows only with several folders in the store; its markup. -->
+                <div data-part="source-filter">
+                    <BaseSelect
+                        v-model="sampleSourceFilter"
+                        :label="t('library.sourceFilter.label')"
+                        :options="sampleSourceOptions"
+                    />
+                </div>
             </div>
             <div data-part="view" data-view="home">
                 <HomeShelf
@@ -1201,12 +1250,25 @@ const sampleTranscodeJobs = computed<TranscodeJob[]>(() => {
             <div data-part="view" data-view="admin-library">
                 <AdminNav />
                 <section data-part="section">
+                    <h2 data-part="section-title">{{ t('adminSources.title') }}</h2>
+                    <div data-part="view-actions">
+                        <BaseButton
+                            variant="primary"
+                            icon="add"
+                            data-item="add-source"
+                            :label="t('adminSources.add')"
+                        />
+                    </div>
+                    <MediaSourceList :sources="sampleSources" />
+                </section>
+                <section data-part="section">
                     <h2 data-part="section-title">{{ t('adminLibrary.scanTitle') }}</h2>
                     <ScanPanel :scan="null" activity="idle" />
                     <ScanPanel :scan="sampleDiscovering" activity="running" />
                     <ScanPanel :scan="sampleProcessing" activity="running" />
                     <ScanSummary :scan="sampleFinished" />
                     <ScanIssues :issues="sampleIssues" :failed="3" open />
+                    <ScanIssues :issues="sampleSourceIssues" :failed="2" open />
                 </section>
                 <section data-part="section">
                     <h2 data-part="section-title">{{ t('adminLibrary.historyTitle') }}</h2>

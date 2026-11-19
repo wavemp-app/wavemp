@@ -320,6 +320,14 @@ The color changes with the song; a theme can let it fade with `transition` on th
 | `user-name` | `span` | `user-info` | Name of the profile |
 | `user-meta` | `span` | `user-info` | Role and built-in state as `badge` with a visible `label`, and the creation date as `label` |
 | `user-actions` | `div` | `user-item` | Buttons to edit and delete the profile (`data-item` `edit`, `avatar`, `reset-pin` and `delete`) |
+| `source-list` | `ul` | `section` | Media folders of the library on the library page of the administration |
+| `source-item` | `li` | `source-list` | One media folder with `source-info` and `source-actions` |
+| `source-info` | `div` | `source-item` | Name, path and details of the media folder |
+| `source-name` | `span` | `source-info` | Name of the media folder |
+| `source-path` | `span` | `source-info` | Path of the folder in the container |
+| `source-meta` | `span` | `source-info` | State badges with a visible `label` (`active` or `inactive`, `unavailable`, `watched`, `media-path`) and the number of songs and files as `label` |
+| `source-actions` | `div` | `source-item` | Buttons to switch the media folder on or off (`data-item="toggle"`, a `button` with a visible `label`), to edit it (`edit`) and to remove it (`delete`) |
+| `source-filter` | `div` | `view` (library) | Filter of the songs, recently added songs, albums and artists by media folder, after `scope-switch`; a `field` with a `select` of all media folders. Only shown while the library has more than one media folder |
 | `admin-nav` | `nav` | `view` | Navigation between the pages of the administration (library, files, review, jobs, cache, transcoding, backups, themes, profiles; the page of the files of a song belongs to files): an `indicator` and one `admin-nav-item` per page; tells the current page with the runtime variables of an active element, see [Active element of a group](#active-element-of-a-group) |
 | `admin-nav-item` | `a` (`aria-current`) | `admin-nav` | Page of the administration with `icon` and `label` |
 | `section` | `section` (`aria-labelledby`) | `view` | Part of a page with a `section-title` |
@@ -335,8 +343,9 @@ The color changes with the song; a theme can let it fade with `transition` on th
 | `run-item` | `li` | `run-list` | One run with a status `badge` with a visible `label`, its time as `label` and `run-meta` |
 | `run-meta` | `span`, or `div` above the statistics | `run-item`, `section` | Details of a run as `label`s: trigger, duration, changes, error; above the statistics also the status `badge` |
 | `issue-list` | `ul` | `disclosure` | Files with problems |
-| `issue-item` | `li` | `issue-list` | One file with `issue-path` and the problem as `label` |
-| `issue-path` | `span` | `issue-item` | Path of the file relative to the media folder |
+| `issue-item` | `li` | `issue-list` | One file with `issue-path` and the problem as `label`; for a media folder the scan skipped `issue-source` without `issue-path` |
+| `issue-path` | `span` | `issue-item` | Path of the file relative to its media folder |
+| `issue-source` | `span` | `issue-item` | Name of the media folder, before `issue-path`: for a skipped media folder, and for every entry while the problems lie in several media folders |
 | `disclosure` | `details` | `section`, any | Content that opens on demand |
 | `disclosure-summary` | `summary` | `disclosure` | Always visible line of a `disclosure` with `label` and optionally `field-hint` |
 | `job-list` | `ul` | `view` | Background jobs |
@@ -494,6 +503,7 @@ The internal component overview (`/dev/components`) uses its own parts starting 
 | `alert` | `error`, `success` or `info` |
 | `field` | `invalid` while the field has an error |
 | `user-item` | `built-in` for the built-in admin profile |
+| `source-item` | `active` or `inactive` (scanned and watched or not), plus `unavailable` while the folder is missing, `watched` while the file watcher follows it and `media-path` while it comes from `MEDIA_PATH`; the same tokens mark the `badge`s in `source-meta` |
 | `admin-nav-item` | `active` for the current page |
 | `scan-status`, `job-item`, `backup-status` | `idle`, `queued` or `running` |
 | `backup-item` | `busy` while the export is deleted |
@@ -1233,6 +1243,7 @@ The themes shipped with WaveMP name the version they are written for in the comm
 ### Changelog
 
 - **Version 5:** visualizations. Changed: the `visualization` is no longer a placeholder: the state `placeholder` is gone, its `icon` and `label` moved into the new `visualization-message`, and the base lays out the `visualization` as a positioned box (no longer a grid) with the background `--wmp-stage-view-background`; themes that styled `visualization > icon` or `visualization > label` have to style `visualization-message > icon` and `visualization-message > label`; `btn-fullscreen` also lies in `visualization-controls`, so theme rules for `btn-fullscreen` that should only apply to the video need `video-stage > btn-fullscreen`. Added: the states `idle`, `loading`, `waiting`, `running`, `paused`, `unsupported`, `failed` and `fullscreen` of `visualization` and its attribute `data-module`; the parts `visualization-canvas`, `visualization-message`, `visualization-controls`, `btn-preset-previous`, `btn-preset-next` and `btn-auto-change` (states `on` and `off`, `aria-pressed`); the values `visualization-preset` and `visualization-auto-change` of `data-field`; the icon slots `preset-previous`, `preset-next` and `auto-change`.
+    - Additions without a version change: several media folders. On the library page of the administration the `section` of the media folders with the `button` `add-source` in `view-actions`, `source-list`, `source-item` and its states, `source-info`, `source-name`, `source-path`, `source-meta` with the `badge` tokens `active`, `inactive`, `unavailable`, `watched` and `media-path`, and `source-actions` with the `button`s `toggle`, `edit` and `delete`; `issue-source` in `issue-item`; in the library `source-filter` after `scope-switch`.
     - Additions without a version change: outdated uploaded themes. The part `theme-problems` in `theme-item`, the state `outdated` of `theme-item`, the `badge` token `outdated` in `theme-meta` and the code `svg.not_cleaned`, see [Checks after an update](#checks-after-an-update).
     - Additions without a version change: fonts in uploaded themes. A theme package can contain WOFF2 fonts for `@font-face` (see [Fonts of an uploaded theme](#fonts-of-an-uploaded-theme)), with the limit `Themes__MaxFontBytes` and the code `font.invalid`.
     - Additions without a version change: more themes and their variants. The themes Meadow (`meadow`), Daylight (`daylight`), Accent (`accent`, light and dark), Pinstripe (`pinstripe`) and Clear Glass (`clear-glass`, light and dark); the attribute `data-theme-variant` on the root element (see [Variants](#variants)); the runtime variables `--wmp-cover-color` and `--wmp-cover-color-contrast` on the root element; the theme picker of the settings (`section` `appearance` with the `field`s `theme` and `theme-appearance`, the parts `theme-picker` with an `indicator` and the runtime variables of an active element, `theme-option` with `data-item` and `data-variants`, `theme-preview` with `data-kind` and the state `missing`, `theme-preview-image` and `theme-variants`); the time display `transport-time` (state `empty`) with `time-elapsed` and `time-duration` in `transport`, hidden by the base. The default of `--wmp-profile-secondary-opacity` is `0.7` instead of `0.55`, so the label of the built-in admin keeps 4.5:1. Fixes of the base: the knob of a vertical `slider` (the bands of the `equalizer`) sits at the level of its fill, measured against `--wmp-equalizer-slider-height` (before, it stayed near the bottom); `now-playing-artist`, `queue-item-artist`, `queue-item-duration` and `equalizer-scale` are no longer dimmed with `opacity`, the last three take `--wmp-color-text-muted` instead; an `equalizer` in the state `off` fades only the `slider-fill`s and `slider-thumb`s of its bands, no longer the whole `equalizer-bands`, so scale, values and band names keep their contrast.

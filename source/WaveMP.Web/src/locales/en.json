@@ -68,7 +68,11 @@
     "trackNotFound": "This song no longer exists.",
     "toLibrary": "Go to the library",
     "play": "Play",
-    "shufflePlay": "Shuffle"
+    "shufflePlay": "Shuffle",
+    "sourceFilter": {
+      "label": "Media folder",
+      "all": "All media folders"
+    }
   },
   "list": {
     "columns": {
@@ -731,7 +735,7 @@
     "title": "Library",
     "scanTitle": "Scan",
     "scanNow": "Scan now",
-    "scanHint": "Finds new, changed and deleted files in the media folder.",
+    "scanHint": "Finds new, changed and deleted files in the media folders.",
     "states": {
       "idle": "Idle",
       "queued": "Waiting to start",
@@ -762,13 +766,16 @@
       "artistsTotal": "Artists",
       "duration": "Duration"
     },
-    "issuesSummary": "{count} files with problems",
+    "issuesSummary": "{count} problems with files or folders",
     "issuesListed": "The first {count} are listed.",
     "issues": {
       "fileUnreadable": "Cannot be read",
       "tagsUnreadable": "Tags cannot be read",
       "probeFailed": "No media information",
-      "pathTooLong": "Path too long, skipped"
+      "pathTooLong": "Path too long, skipped",
+      "sourceNotFound": "Folder missing, skipped",
+      "sourceUnreadable": "Folder cannot be read, skipped",
+      "sourceEmpty": "Folder is empty, skipped and nothing removed"
     },
     "historyTitle": "History",
     "history": "Scans",
@@ -792,7 +799,7 @@
       "custom": "Every {minutes} minutes"
     },
     "intervalHint": "The periodic scan always runs, also with the file watcher.",
-    "fileWatcher": "Watch the media folder for changes",
+    "fileWatcher": "Watch the media folders for changes",
     "fileWatcherHint": "Finds changes within seconds. Not reliable on network shares, so the periodic scan stays active.",
     "audioExtensions": "Audio file extensions",
     "videoExtensions": "Video file extensions",
@@ -817,6 +824,63 @@
     "downloadLyricsHint": "Looks up the lyrics of new songs without lyrics on lrclib.net after each scan and saves them next to the song as .lrc file (or in the database if the folder is not writable). Songs that LRCLIB has no lyrics for yet are looked up again later. Titles, artists and albums of your library are sent to the service.",
     "subsonicDownloads": "Subsonic apps may download songs",
     "subsonicDownloadsHint": "Allows Subsonic apps to download the original files of the songs, e.g. to keep them on the phone. Without it, the apps can only stream."
+  },
+  "adminSources": {
+    "title": "Media folders",
+    "list": "Media folders",
+    "add": "Add media folder",
+    "edit": "Edit {name}",
+    "delete": "Remove {name}",
+    "activate": "Switch on",
+    "deactivate": "Switch off",
+    "activateNamed": "Switch on {name}",
+    "deactivateNamed": "Switch off {name}",
+    "counts": "Songs: {tracks}, files: {files}",
+    "empty": "There is no media folder. Add one so the library can be scanned.",
+    "loadError": "The media folders could not be loaded.",
+    "saved": "{name} is saved. New and moved folders are scanned at once.",
+    "activated": "{name} is switched on and is being scanned.",
+    "deactivated": "{name} is switched off. Its songs stay in the library.",
+    "removed": "{name} is removed from the library.",
+    "states": {
+      "active": "On",
+      "inactive": "Off",
+      "unavailable": "Folder missing",
+      "watched": "Watched",
+      "mediaPath": "From MEDIA_PATH"
+    },
+    "dialog": {
+      "createTitle": "Add media folder",
+      "editTitle": "Edit media folder",
+      "name": "Name",
+      "nameHint": "Shown in the filter of the library, e.g. Music videos.",
+      "path": "Folder in the container",
+      "pathHint": "The full path of a mounted volume, e.g. /media/videos. It must not lie inside another media folder.",
+      "pathMediaPathHint": "Comes from MEDIA_PATH. Enter another path to use that folder instead.",
+      "active": "Scan and watch this folder",
+      "activeHint": "When switched off, its songs stay in the library but are not updated.",
+      "add": "Add",
+      "save": "Save"
+    },
+    "errors": {
+      "nameRequired": "Please enter a name.",
+      "nameTaken": "A media folder with this name already exists.",
+      "pathRequired": "Please enter the folder.",
+      "pathInvalid": "Enter the full path, starting with /.",
+      "pathNotFound": "This folder does not exist in the container. Check the volumes in docker-compose.yml.",
+      "pathOverlaps": "This folder is another media folder, lies inside one or contains one.",
+      "scanRunning": "A scan is running. Wait until it has finished, then change the folder or remove it.",
+      "invalid": "Please check your input.",
+      "saveFailed": "The media folder could not be saved.",
+      "deleteFailed": "The media folder could not be removed.",
+      "notFound": "This media folder no longer exists."
+    },
+    "deleteDialog": {
+      "title": "Remove media folder",
+      "text": "Remove {name} from the library? Songs in this folder: {count}. Their ratings, favorites and playlist entries are lost.",
+      "filesStay": "The files in the folder stay untouched.",
+      "confirm": "Remove"
+    }
   },
   "adminFiles": {
     "title": "File selection",
@@ -1242,6 +1306,7 @@
       "mediaFolderUnreadable": "The media folder cannot be read. Check its permissions.",
       "mediaFolderEmpty": "The media folder is empty, so nothing was removed. Check that it is mounted.",
       "probeUnavailable": "ffprobe is not available on the server.",
+      "noMediaSources": "No media folder is switched on. Switch one on or add one.",
       "ffmpegUnavailable": "ffmpeg is not available on the server.",
       "cacheFolderUnwritable": "The cache folder cannot be written. Check the volume /data.",
       "backupFolderUnwritable": "The backup folder cannot be written. Check the volume /data.",

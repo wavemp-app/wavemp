@@ -151,6 +151,7 @@ const errors: Record<string, Labeled> = {
     'scan.media_folder_unreadable': { labelKey: 'jobRuns.errors.mediaFolderUnreadable' },
     'scan.media_folder_empty': { labelKey: 'jobRuns.errors.mediaFolderEmpty' },
     'scan.probe_unavailable': { labelKey: 'jobRuns.errors.probeUnavailable' },
+    'scan.no_media_sources': { labelKey: 'jobRuns.errors.noMediaSources' },
     'cache.ffmpeg_unavailable': { labelKey: 'jobRuns.errors.ffmpegUnavailable' },
     'cache.folder_unwritable': { labelKey: 'jobRuns.errors.cacheFolderUnwritable' },
     'backup.folder_unwritable': { labelKey: 'jobRuns.errors.backupFolderUnwritable' },
@@ -174,9 +175,12 @@ const issues: Record<string, Labeled> = {
     'file.tags_unreadable': { labelKey: 'adminLibrary.issues.tagsUnreadable' },
     'file.probe_failed': { labelKey: 'adminLibrary.issues.probeFailed' },
     'file.path_too_long': { labelKey: 'adminLibrary.issues.pathTooLong' },
+    'source.not_found': { labelKey: 'adminLibrary.issues.sourceNotFound' },
+    'source.unreadable': { labelKey: 'adminLibrary.issues.sourceUnreadable' },
+    'source.empty': { labelKey: 'adminLibrary.issues.sourceEmpty' },
 }
 
-/** Message key of the problem of a file. */
+/** Message key of the problem of a file or of a media folder the scan skipped. */
 export function issueLabelKey(code: string | null | undefined): string {
     return (issues[code ?? ''] ?? { labelKey: 'adminLibrary.issues.fileUnreadable' }).labelKey
 }
@@ -296,4 +300,30 @@ export function backupTriggerPresentation(
 /** Whether a text is a time of day as the server expects it (HH:mm, 24 hours). */
 export function isTimeOfDay(text: string): boolean {
     return /^([01][0-9]|2[0-3]):[0-5][0-9]$/.test(text)
+}
+
+/** The parts of a media folder that mark its state, as tokens of data-state. */
+interface MediaSourceStateInput {
+    readonly isActive?: boolean | null
+    readonly isAvailable?: boolean | null
+    readonly isWatched?: boolean | null
+    readonly followsMediaPath?: boolean | null
+}
+
+/**
+ * data-state tokens of a media folder: active or inactive, plus unavailable (the folder is
+ * missing), watched (the file watcher follows it) and media-path (it comes from MEDIA_PATH).
+ */
+export function mediaSourceStates(source: MediaSourceStateInput): string[] {
+    const states = [source.isActive ? 'active' : 'inactive']
+    if (source.isAvailable === false) {
+        states.push('unavailable')
+    }
+    if (source.isWatched) {
+        states.push('watched')
+    }
+    if (source.followsMediaPath) {
+        states.push('media-path')
+    }
+    return states
 }

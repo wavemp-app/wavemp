@@ -1313,6 +1313,7 @@ a[data-part='breadcrumb-link']:hover {
 /* --- Panels: administration, settings, files ------------------------------------------------------ */
 
 [data-part='user-item'],
+[data-part='source-item'],
 [data-part='file-item'],
 [data-part='cache-usage'],
 [data-part='transcoding-status'],
@@ -1358,7 +1359,9 @@ a[data-part='breadcrumb-link']:hover {
 
 [data-part='file-path'],
 [data-part='issue-path'],
+[data-part='issue-source'],
 [data-part='user-name'],
+[data-part='source-name'],
 [data-part='job-name'],
 [data-part='backup-name'],
 [data-part='scrobble-name'],
@@ -1370,6 +1373,7 @@ a[data-part='breadcrumb-link']:hover {
 [data-part='badge']:is(
     [data-part='file-meta'] > *,
     [data-part='user-meta'] > *,
+    [data-part='source-meta'] > *,
     [data-part='scan-status'] > *,
     [data-part='run-item'] > *,
     [data-part='run-meta'] > *,
@@ -1428,18 +1432,20 @@ a[data-part='breadcrumb-link']:hover {
     color: #5f1a15;
 }
 
-[data-part='badge']:is([data-state~='canceled'], [data-state~='outdated']) {
+[data-part='badge']:is([data-state~='canceled'], [data-state~='outdated'], [data-state~='unavailable']) {
     border-color: #d4b77a;
     background: linear-gradient(#fffaf0, #f4e6c6);
     color: #4f3500;
 }
 
 [data-part='user-actions'] [data-variant='icon'],
+[data-part='source-actions'] [data-variant='icon'],
 [data-part='queue-item-actions'] [data-variant='icon'] {
     --wmp-icon-fill: #4d535b;
 }
 
 [data-part='user-actions'] [data-variant='icon']:hover:not(:disabled) [data-part='icon'],
+[data-part='source-actions'] [data-variant='icon']:hover:not(:disabled) [data-part='icon'],
 [data-part='queue-item-actions'] [data-variant='icon']:hover:not(:disabled) [data-part='icon'] {
     --wmp-icon-fill: #0b6b75;
 }
