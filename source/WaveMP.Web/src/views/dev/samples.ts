@@ -125,6 +125,14 @@ export function sampleTiles(t: Translate): Tile[] {
             to: { name: 'playlist', params: { id: 'sample-playlist-1' } },
         },
         {
+            id: 'smart-playlist',
+            kind: 'smart-playlist',
+            title: t('placeholders.playlist', { number: 2 }),
+            subtitle: t('library.songCount', { count: 12 }),
+            to: { name: 'smart-playlist', params: { id: 'sample-smart-playlist-1' } },
+            badge: 'smart-playlist',
+        },
+        {
             id: 'recently-played',
             kind: 'recently-played',
             title: t('playlists.recentlyPlayed'),

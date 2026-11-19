@@ -1712,6 +1712,8 @@ a[data-part='breadcrumb-link']:hover {
             minmax(0, 1.4fr) 5.75rem minmax(1.75rem, auto);
         --wmp-list-columns-recently-played: 2.25rem minmax(0, 2fr) 4rem minmax(0, 1.4fr)
             minmax(0, 1.4fr) 8.5rem 5.75rem minmax(1.75rem, auto);
+        --wmp-list-columns-smart-playlist: 2.25rem minmax(0, 2fr) 4rem minmax(0, 1.4fr)
+            minmax(0, 1.4fr) 5.75rem minmax(1.75rem, auto);
         --wmp-list-group-info-width: 11rem;
         --wmp-cover-size: 9rem;
         --wmp-cover-size-mini: 2.125rem;

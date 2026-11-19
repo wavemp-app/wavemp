@@ -127,6 +127,7 @@
         --wmp-icon-tree-years: url('/icons/phosphor/duotone/calendar-blank-duotone.svg');
         --wmp-icon-tree-recently-played: url('/icons/phosphor/duotone/headphones-duotone.svg');
         --wmp-icon-tree-playlist: url('/icons/phosphor/duotone/music-notes-simple-duotone.svg');
+        --wmp-icon-tree-smart-playlist: url('/icons/phosphor/duotone/magic-wand-duotone.svg');
         --wmp-icon-tree-favorites: url('/icons/phosphor/duotone/heart-duotone.svg');
         --wmp-icon-tree-expand: url('/icons/phosphor/regular/plus-square.svg');
         --wmp-icon-tree-collapse: url('/icons/phosphor/regular/minus-square.svg');
@@ -149,6 +150,7 @@
         --wmp-icon-genre: url('/icons/phosphor/fill/guitar-fill.svg');
         --wmp-icon-year: url('/icons/phosphor/fill/calendar-blank-fill.svg');
         --wmp-icon-playlist: url('/icons/phosphor/fill/playlist-fill.svg');
+        --wmp-icon-smart-playlist: url('/icons/phosphor/fill/magic-wand-fill.svg');
         --wmp-icon-recently-played: url('/icons/phosphor/fill/headphones-fill.svg');
         --wmp-icon-drag-handle: url('/icons/phosphor/regular/dots-six-vertical.svg');
         --wmp-icon-track: url('/icons/phosphor/fill/music-note-fill.svg');
@@ -213,6 +215,9 @@
         --wmp-icon-add-to-queue: url('/icons/phosphor/regular/list-plus.svg');
         --wmp-icon-add-to-playlist: url('/icons/phosphor/regular/playlist.svg');
         --wmp-icon-remove-from-playlist: url('/icons/phosphor/regular/minus-circle.svg');
+        --wmp-icon-create-smart-playlist: url('/icons/phosphor/regular/magic-wand.svg');
+        --wmp-icon-convert-playlist: url('/icons/phosphor/regular/swap.svg');
+        --wmp-icon-remove-rule: url('/icons/phosphor/regular/minus-circle.svg');
         --wmp-icon-change-cover: url('/icons/phosphor/regular/image-square.svg');
         --wmp-icon-add-favorite: url('/icons/phosphor/regular/heart.svg');
         --wmp-icon-remove-favorite: url('/icons/phosphor/regular/heart-break.svg');
@@ -286,6 +291,8 @@
             minmax(0, 1.5fr) 6.5rem minmax(2rem, auto);
         --wmp-list-columns-recently-played: 3rem minmax(0, 2fr) 4.5rem minmax(0, 1.5fr)
             minmax(0, 1.5fr) 10rem 6.5rem minmax(2rem, auto);
+        --wmp-list-columns-smart-playlist: 3rem minmax(0, 2fr) 4.5rem minmax(0, 1.5fr)
+            minmax(0, 1.5fr) 6.5rem minmax(2rem, auto);
         --wmp-shelf-tile-width: var(--wmp-tile-width);
         --wmp-list-group-info-width: 11rem;
         --wmp-avatar-size: 2rem;

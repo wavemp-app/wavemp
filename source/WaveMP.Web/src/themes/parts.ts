@@ -105,6 +105,7 @@ export const parts = [
     'tile',
     'tile-title',
     'tile-subtitle',
+    'tile-badge',
     'detail-header',
     'detail-info',
     'detail-title',
@@ -123,6 +124,15 @@ export const parts = [
     'playlist-choice',
     'playlist-choice-count',
     'drag-handle',
+    'smart-templates',
+    'smart-rules',
+    'smart-rule',
+    'smart-rule-values',
+    'smart-summary',
+    'smart-summary-intro',
+    'smart-summary-rules',
+    'smart-summary-rule',
+    'smart-summary-order',
 
     // Collection
     'btn-favorite',

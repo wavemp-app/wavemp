@@ -21,6 +21,7 @@ import type {
     TranscodingStatus,
     TrackReviewSort,
 } from '@/api/generated/models'
+import { SmartPlaylistFieldObject, SmartPlaylistOperatorObject } from '@/api/generated/models'
 import { fileCategories, fileChoices } from '@/admin/fileSelections'
 import AdminNav from '@/components/admin/AdminNav.vue'
 import BackupList from '@/components/admin/BackupList.vue'
@@ -79,6 +80,8 @@ import PlayQueue from '@/components/player/PlayQueue.vue'
 import PlaylistTrackList, {
     type PlaylistTrackRow,
 } from '@/components/playlists/PlaylistTrackList.vue'
+import SmartPlaylistRuleRow from '@/components/playlists/SmartPlaylistRuleRow.vue'
+import { newRule } from '@/playlists/smartRules'
 import PinPad from '@/components/profiles/PinPad.vue'
 import AvatarCropper from '@/components/profiles/AvatarCropper.vue'
 import AvatarPresetPicker from '@/components/profiles/AvatarPresetPicker.vue'
@@ -221,6 +224,16 @@ const tiles = computed(() => sampleTiles(t))
 const playlistRows = computed<PlaylistTrackRow[]>(() =>
     sampleTracks(t).map((track, index) => ({ id: `sample-entry-${index}`, track })),
 )
+const smartRules = [
+    { ...newRule(SmartPlaylistFieldObject.Genre), text: 'Rock' },
+    {
+        ...newRule(SmartPlaylistFieldObject.Year),
+        operator: SmartPlaylistOperatorObject.Between,
+        number: '1990',
+        numberTo: '1999',
+    },
+    newRule(SmartPlaylistFieldObject.Favorite),
+]
 const files = sampleFiles()
 const fileSummaries = computed(() => sampleFileSummaries(t))
 const fileSelection = sampleFileSelection()
@@ -1022,6 +1035,63 @@ const sampleTranscodeJobs = computed<TranscodeJob[]>(() => {
                     :label="t('placeholders.playlist', { number: 1 })"
                     sortable
                 />
+            </div>
+            <div data-part="view" data-view="smart-playlist-edit" data-state="create">
+                <form data-part="form" data-kind="smart-playlist" @submit.prevent>
+                    <section data-part="section" data-item="templates">
+                        <h3 data-part="section-title">{{ t('smartPlaylists.templatesTitle') }}</h3>
+                        <div data-part="smart-templates">
+                            <BaseButton
+                                data-item="four-stars-and-more"
+                                data-state="applied"
+                                icon="create-smart-playlist"
+                                :label="t('smartPlaylists.templates.fourStarsAndMore')"
+                            />
+                            <BaseButton
+                                data-item="never-played"
+                                icon="create-smart-playlist"
+                                :label="t('smartPlaylists.templates.neverPlayed')"
+                            />
+                        </div>
+                    </section>
+                    <section data-part="section" data-item="rules">
+                        <h3 data-part="section-title">{{ t('smartPlaylists.rulesTitle') }}</h3>
+                        <ol data-part="smart-rules">
+                            <SmartPlaylistRuleRow
+                                v-for="(rule, index) in smartRules"
+                                :key="rule.key"
+                                :rule="rule"
+                                :index="index"
+                                :errors="index === 1 ? { numberTo: t('validation.required') } : {}"
+                            />
+                        </ol>
+                    </section>
+                </form>
+            </div>
+            <div data-part="view" data-view="smart-playlist">
+                <section data-part="smart-summary" :aria-label="t('smartPlaylists.rulesTitle')">
+                    <p data-part="smart-summary-intro">
+                        {{ t('smartPlaylists.summary.match.all') }}
+                    </p>
+                    <ul data-part="smart-summary-rules">
+                        <li data-part="smart-summary-rule">
+                            {{
+                                t('smartPlaylists.summary.is', {
+                                    field: t('smartPlaylists.fields.genre'),
+                                    value: 'Rock',
+                                })
+                            }}
+                        </li>
+                    </ul>
+                    <p data-part="smart-summary-order">
+                        {{
+                            t('smartPlaylists.summary.sorted', {
+                                sort: t('smartPlaylists.sorts.artist'),
+                                direction: t('smartPlaylists.direction.asc'),
+                            })
+                        }}
+                    </p>
+                </section>
             </div>
             <div data-part="dev-samples">
                 <ul data-part="playlist-choices" :aria-label="t('playlists.addDialog.listLabel')">

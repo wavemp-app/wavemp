@@ -1,12 +1,20 @@
 import { useI18n } from 'vue-i18n'
-import type { Album, Artist, Genre, Playlist, Track, Year } from '@/api/generated/models'
+import type {
+    Album,
+    Artist,
+    Genre,
+    Playlist,
+    SmartPlaylist,
+    Track,
+    Year,
+} from '@/api/generated/models'
 import type { Tile } from '@/components/library/TileList.vue'
 import { useFormat } from '@/composables/useFormat'
 import { artistLabelKey } from '@/library/presentation'
 
 /**
  * Tiles of the library lists: albums with cover and album artist, artists, songs with cover and
- * artist, genres, years and playlists. Albums, artists, songs and playlists bring their context
+ * artist, genres, years, playlists and smart playlists. Albums, artists, songs and playlists bring their context
  * menu.
  */
 export function useLibraryTiles() {
@@ -66,6 +74,20 @@ export function useLibraryTiles() {
         }
     }
 
+    /** A smart playlist, with a badge that tells it apart from the normal playlists. */
+    function smartPlaylist(item: SmartPlaylist): Tile {
+        return {
+            id: `smart:${item.id ?? ''}`,
+            kind: 'smart-playlist',
+            title: item.name ?? '',
+            subtitle: songs(item.trackCount),
+            to: { name: 'smart-playlist', params: { id: item.id ?? '' } },
+            playlistCover: { id: item.id ?? '', cover: item.cover },
+            menu: item.id ? { type: 'smart-playlist', smartPlaylist: item } : undefined,
+            badge: 'smart-playlist',
+        }
+    }
+
     function genre(item: Genre): Tile {
         return {
             id: item.name ?? '',
@@ -87,5 +109,5 @@ export function useLibraryTiles() {
         }
     }
 
-    return { album, artist, track, genre, year, playlist }
+    return { album, artist, track, genre, year, playlist, smartPlaylist }
 }

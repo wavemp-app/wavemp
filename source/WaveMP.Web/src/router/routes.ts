@@ -28,6 +28,8 @@ import TrackView from '@/views/library/TrackView.vue'
 import YearView from '@/views/library/YearView.vue'
 import PlaylistView from '@/views/playlists/PlaylistView.vue'
 import RecentlyPlayedView from '@/views/playlists/RecentlyPlayedView.vue'
+import SmartPlaylistEditView from '@/views/playlists/SmartPlaylistEditView.vue'
+import SmartPlaylistView from '@/views/playlists/SmartPlaylistView.vue'
 import {
     defaultLibrarySection,
     librarySectionPattern,
@@ -161,6 +163,26 @@ export function createRoutes(extra: readonly RouteRecordRaw[] = []): RouteRecord
             name: 'playlists-recently-played',
             component: RecentlyPlayedView,
             meta: { tab: 'playlists', keepAlive: true },
+        },
+        {
+            path: '/playlists/smart/new',
+            name: 'smart-playlists-new',
+            component: SmartPlaylistEditView,
+            meta: { tab: 'playlists' },
+        },
+        {
+            path: '/playlists/smart/:id',
+            name: 'smart-playlist',
+            component: SmartPlaylistView,
+            props: true,
+            meta: { tab: 'playlists', keepAlive: true },
+        },
+        {
+            path: '/playlists/smart/:id/edit',
+            name: 'smart-playlist-edit',
+            component: SmartPlaylistEditView,
+            props: true,
+            meta: { tab: 'playlists' },
         },
         {
             path: '/playlists/:id',

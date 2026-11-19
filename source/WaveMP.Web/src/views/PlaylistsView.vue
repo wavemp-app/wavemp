@@ -8,10 +8,12 @@ import TileList, { type Tile } from '@/components/library/TileList.vue'
 import PlaylistEditDialog from '@/components/playlists/PlaylistEditDialog.vue'
 import { useLibraryTiles } from '@/composables/useLibraryTiles'
 import { usePlaylistsStore } from '@/stores/playlists'
+import { useSmartPlaylistsStore } from '@/stores/smartPlaylists'
 
 /**
- * The playlists of the current profile as tiles, led by the automatic list "Recently played".
- * Creates new playlists; the route /playlists/new opens the dialog at once (sidebar).
+ * The playlists and smart playlists of the current profile as tiles, together sorted by name and
+ * led by the automatic list "Recently played". Creates new playlists (the route /playlists/new
+ * opens the dialog at once, sidebar) and leads to the editor of a new smart playlist.
  */
 const props = withDefaults(
     defineProps<{
@@ -24,6 +26,7 @@ const { t } = useI18n()
 const libraryTiles = useLibraryTiles()
 const router = useRouter()
 const playlists = usePlaylistsStore()
+const smartPlaylists = useSmartPlaylistsStore()
 
 const creating = ref(false)
 /** Set once a new playlist opens, so closing the dialog does not lead back to the overview. */
@@ -37,10 +40,24 @@ const tiles = computed<Tile[]>(() => [
         subtitle: t('playlists.automatic'),
         to: { name: 'playlists-recently-played' },
     },
-    ...playlists.playlists.map((playlist) => libraryTiles.playlist(playlist)),
+    ...[
+        ...playlists.playlists.map((playlist) => libraryTiles.playlist(playlist)),
+        ...smartPlaylists.smartPlaylists.map((item) => libraryTiles.smartPlaylist(item)),
+    ].sort((a, b) => a.title.localeCompare(b.title, undefined, { sensitivity: 'base' })),
 ])
 
-const empty = computed(() => playlists.status === 'ready' && playlists.playlists.length === 0)
+const empty = computed(
+    () =>
+        playlists.status === 'ready' &&
+        playlists.playlists.length === 0 &&
+        smartPlaylists.smartPlaylists.length === 0,
+)
+const failed = computed(() => playlists.status === 'error' || smartPlaylists.status === 'error')
+
+function load(): void {
+    void playlists.load()
+    void smartPlaylists.load()
+}
 
 function created(playlist: Playlist): void {
     if (playlist.id) {
@@ -67,14 +84,18 @@ watch(creating, (value) => {
     }
 })
 
-onMounted(() => void playlists.load())
+onMounted(load)
 </script>
 
 <template>
     <div
         data-part="view"
         data-view="playlists"
-        :aria-busy="playlists.status === 'loading' ? 'true' : undefined"
+        :aria-busy="
+            playlists.status === 'loading' || smartPlaylists.status === 'loading'
+                ? 'true'
+                : undefined
+        "
     >
         <div data-part="view-actions">
             <BaseButton
@@ -84,10 +105,16 @@ onMounted(() => void playlists.load())
                 :label="t('playlists.create')"
                 @click="creating = true"
             />
+            <BaseButton
+                data-item="create-smart-playlist"
+                icon="create-smart-playlist"
+                :label="t('smartPlaylists.new')"
+                @click="router.push({ name: 'smart-playlists-new' })"
+            />
         </div>
-        <div v-if="playlists.status === 'error'" data-part="empty-state">
+        <div v-if="failed" data-part="empty-state">
             <p data-part="empty-state-title">{{ t('playlists.errors.loadFailed') }}</p>
-            <BaseButton :label="t('library.retry')" @click="playlists.load()" />
+            <BaseButton :label="t('library.retry')" @click="load" />
         </div>
         <TileList :tiles="tiles" :label="t('nav.playlists')" />
         <div v-if="empty" data-part="empty-state">

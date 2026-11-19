@@ -7,18 +7,24 @@ import LibraryCover from '@/components/library/LibraryCover.vue'
 import { useInView } from '@/composables/useInView'
 import { useMediaQuery } from '@/composables/useMediaQuery'
 import { coverSlideMilliseconds, coverViewOf, nextSlide } from '@/playlists/presentation'
+import type { IconSlotName } from '@/themes/iconSlots'
 
 /**
  * Cover of a playlist: its own picture, otherwise the covers of up to four of its tracks, one after
  * the other (the active slide has data-state="active"; the theme fades them), otherwise the
- * placeholder. The slides only change while the cover is in view and nobody asked for reduced
+ * placeholder with the icon. The slides only change while the cover is in view and nobody asked for reduced
  * motion. The cover tells themes the number of slides and the index of the active one
  * (--wmp-item-count, --wmp-active-index), e.g. to slide them sideways with CSS only.
  */
-const props = defineProps<{
-    id: string | null | undefined
-    cover: PlaylistCover | null | undefined
-}>()
+const props = withDefaults(
+    defineProps<{
+        id: string | null | undefined
+        cover: PlaylistCover | null | undefined
+        /** Icon of the placeholder, e.g. the symbol of smart playlists. */
+        icon?: IconSlotName
+    }>(),
+    { icon: 'playlist' },
+)
 
 const view = computed(() => coverViewOf(props.cover))
 const trackIds = computed(() => (view.value.kind === 'tracks' ? view.value.trackIds : []))
@@ -81,6 +87,6 @@ onBeforeUnmount(stop)
         </span>
     </span>
     <BaseCover v-else :placeholder="false">
-        <BaseIcon name="playlist" />
+        <BaseIcon :name="icon" />
     </BaseCover>
 </template>

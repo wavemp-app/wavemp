@@ -1612,12 +1612,147 @@
         inline-size: min(var(--wmp-cover-size-l), 100%);
     }
 
+    /* --- Smart playlists ---------------------------------------------------------------- */
+
+    /*
+     * The symbol of a smart playlist lies on the top start corner of its cover (the end corner
+     * holds btn-item-menu on touch screens); cover and badge share the first cell of the tile.
+     */
+    [data-part='tile']:has(> [data-part='tile-badge']) > :first-child,
+    [data-part='tile-badge'] {
+        grid-area: 1 / 1;
+    }
+
+    [data-part='tile-badge'] {
+        position: relative;
+        z-index: 1;
+        display: inline-grid;
+        place-items: center;
+        align-self: start;
+        justify-self: start;
+        margin: var(--wmp-space-s);
+        padding: var(--wmp-space-xs);
+        border: 1px solid var(--wmp-color-border);
+        border-radius: var(--wmp-radius-round);
+        background: var(--wmp-color-surface);
+        color: var(--wmp-color-accent);
+        pointer-events: none;
+    }
+
+    [data-part='tile-badge'] > [data-part='icon'] {
+        --wmp-icon-size: var(--wmp-icon-size-s);
+    }
+
+    /* The editor needs more room than other forms for the rules side by side. */
+    [data-part='form'][data-kind='smart-playlist'] {
+        max-inline-size: 56rem;
+    }
+
+    /* Sort and order side by side only where the segmented control of the order fits. */
+    [data-part='form'][data-kind='smart-playlist'] [data-part='field-row'] {
+        grid-template-columns: repeat(auto-fit, minmax(min(14rem, 100%), 1fr));
+    }
+
+    [data-part='smart-templates'] {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--wmp-space-s);
+    }
+
+    [data-part='smart-rules'] {
+        container: wavemp-smart-rules / inline-size;
+        display: grid;
+        gap: var(--wmp-space-s);
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
+    /* Field, condition, values and the remove button in one row; narrow forms wrap them. */
+    [data-part='smart-rule'] {
+        display: grid;
+        grid-template-columns:
+            minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.5fr)
+            auto;
+        align-items: start;
+        gap: var(--wmp-space-s) var(--wmp-space-m);
+        padding: var(--wmp-space-s) var(--wmp-space-m);
+        border: 1px solid var(--wmp-color-border);
+        border-radius: var(--wmp-radius-m);
+        background: var(--wmp-color-surface);
+    }
+
+    [data-part='smart-rule'][data-state~='invalid'] {
+        border-color: var(--wmp-color-danger);
+    }
+
+    [data-part='smart-rule'] > [data-item='remove-rule'] {
+        align-self: center;
+    }
+
+    [data-part='smart-rule-values'] {
+        display: grid;
+        grid-auto-flow: column;
+        grid-auto-columns: minmax(0, 1fr);
+        gap: var(--wmp-space-s);
+        min-inline-size: 0;
+    }
+
+    @container wavemp-smart-rules (width < 36rem) {
+        [data-part='smart-rule'] {
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+        }
+
+        [data-part='smart-rule'] > [data-part='smart-rule-values'] {
+            grid-column: 1 / 3;
+            grid-row: 2;
+        }
+
+        [data-part='smart-rule'] > [data-item='remove-rule'] {
+            grid-column: 3;
+            grid-row: 1;
+        }
+    }
+
+    [data-part='smart-summary'] {
+        display: grid;
+        gap: var(--wmp-space-xs);
+        min-inline-size: 0;
+    }
+
+    [data-part='smart-summary-intro'],
+    [data-part='smart-summary-order'] {
+        margin: 0;
+        color: var(--wmp-color-text-muted);
+    }
+
+    [data-part='smart-summary-rules'] {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--wmp-space-xs) var(--wmp-space-s);
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
+    [data-part='smart-summary-rule'] {
+        padding: var(--wmp-space-xs) var(--wmp-space-s);
+        border: 1px solid var(--wmp-color-border);
+        border-radius: var(--wmp-radius-s);
+        background: var(--wmp-color-surface);
+        overflow-wrap: anywhere;
+    }
+
     [data-view='playlist'] [data-part='list'] {
         --wmp-list-columns: var(--wmp-list-columns-playlist);
     }
 
     [data-view='recently-played'] [data-part='list'] {
         --wmp-list-columns: var(--wmp-list-columns-recently-played);
+    }
+
+    [data-view='smart-playlist'] [data-part='list'] {
+        --wmp-list-columns: var(--wmp-list-columns-smart-playlist);
     }
 
     [data-part='list'][data-state~='busy'],

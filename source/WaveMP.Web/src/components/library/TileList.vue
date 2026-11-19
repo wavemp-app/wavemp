@@ -2,9 +2,17 @@
 import type { RouteLocationRaw } from 'vue-router'
 import type { PlaylistCover as PlaylistCoverModel } from '@/api/generated/models'
 import type { MenuTarget } from '@/menus/targets'
+import type { IconSlotName } from '@/themes/iconSlots'
 
 export type TileKind =
-    'album' | 'artist' | 'track' | 'genre' | 'year' | 'playlist' | 'recently-played'
+    | 'album'
+    | 'artist'
+    | 'track'
+    | 'genre'
+    | 'year'
+    | 'playlist'
+    | 'smart-playlist'
+    | 'recently-played'
 
 export interface Tile {
     readonly id: string
@@ -25,6 +33,8 @@ export interface Tile {
     }
     /** The element of the context menu of the tile (song, album, artist or playlist). */
     readonly menu?: MenuTarget
+    /** Icon slot of a small badge on the cover, e.g. the symbol of smart playlists. */
+    readonly badge?: IconSlotName
 }
 </script>
 
@@ -101,10 +111,14 @@ function onPointerdown(event: PointerEvent, tile: Tile): void {
                     v-else-if="tile.playlistCover"
                     :id="tile.playlistCover.id"
                     :cover="tile.playlistCover.cover"
+                    :icon="tile.kind === 'smart-playlist' ? 'smart-playlist' : 'playlist'"
                 />
                 <BaseCover v-else :placeholder="false">
                     <BaseIcon :name="tile.kind" />
                 </BaseCover>
+                <span v-if="tile.badge" data-part="tile-badge">
+                    <BaseIcon :name="tile.badge" />
+                </span>
                 <span data-part="tile-title">{{ tile.title }}</span>
                 <span v-if="tile.subtitle" data-part="tile-subtitle">{{ tile.subtitle }}</span>
             </BaseLink>
