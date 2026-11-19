@@ -33,4 +33,11 @@ public enum JobIdDto
     /// </summary>
     [JsonStringEnumMemberName("lyrics-download")]
     LyricsDownload,
+
+    /// <summary>
+    /// Checks the library for problems (missing covers and tags, duplicates, unreadable files, ...) after every scan
+    /// and when an admin starts it; see ListLibraryIssues.
+    /// </summary>
+    [JsonStringEnumMemberName("library-check")]
+    LibraryCheck,
 }

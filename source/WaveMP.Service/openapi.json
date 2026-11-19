@@ -3186,6 +3186,179 @@
         ]
       }
     },
+    "/api/v1/library/issues": {
+      "get": {
+        "tags": [
+          "LibraryIssues"
+        ],
+        "summary": "Lists the problems the last run of the library check found, sorted, filtered and searched.",
+        "operationId": "ListLibraryIssues",
+        "parameters": [
+          {
+            "name": "offset",
+            "in": "query",
+            "description": "Number of problems to skip.",
+            "schema": {
+              "maximum": 2147483647,
+              "minimum": 0,
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Maximum number of problems of the page.",
+            "schema": {
+              "maximum": 100,
+              "minimum": 1,
+              "type": "integer",
+              "format": "int32",
+              "default": 50
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "description": "Sort key; Path by default.",
+            "schema": {
+              "$ref": "#/components/schemas/LibraryIssueSort"
+            }
+          },
+          {
+            "name": "direction",
+            "in": "query",
+            "description": "Sort direction; descending (the newest first) by default for DetectedAt, otherwise ascending.",
+            "schema": {
+              "$ref": "#/components/schemas/SortDirection"
+            }
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "description": "Only problems of these kinds (repeated query parameter, at most 20); all kinds without it.",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/LibraryIssueType"
+              }
+            }
+          },
+          {
+            "name": "severity",
+            "in": "query",
+            "description": "Only problems of this severity; together with type only the kinds of both.",
+            "schema": {
+              "$ref": "#/components/schemas/LibraryIssueSeverity"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "description": "Only problems whose track title, artist, album, folder or file name, or whose file path, contains the text, without regard to case.",
+            "schema": {
+              "maxLength": 200,
+              "minLength": 0,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "One page of problems.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LibraryIssuePage"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid query parameters (code `request.invalid`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblem"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/api/v1/library/issues/summary": {
+      "get": {
+        "tags": [
+          "LibraryIssues"
+        ],
+        "summary": "Returns the number of problems per kind (also kinds without problems) and when the library check ran last, for the overview of the administration.",
+        "operationId": "GetLibraryIssueSummary",
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "The overview of the library check.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LibraryIssueSummary"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
     "/api/v1/tracks/{id}/lyrics": {
       "get": {
         "tags": [
@@ -13939,7 +14112,8 @@
           "library-scan",
           "cover-cache",
           "database-backup",
-          "lyrics-download"
+          "lyrics-download",
+          "library-check"
         ],
         "type": "string",
         "description": "Id of a background job."
@@ -14108,6 +14282,322 @@
         ],
         "type": "string",
         "description": "What started a job run."
+      },
+      "LibraryIssue": {
+        "required": [
+          "id",
+          "type",
+          "severity",
+          "detectedAt",
+          "missingTags"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Id of the problem; stays the same as long as later runs of the check find it again.",
+            "format": "uuid"
+          },
+          "type": {
+            "$ref": "#/components/schemas/LibraryIssueType"
+          },
+          "severity": {
+            "$ref": "#/components/schemas/LibraryIssueSeverity"
+          },
+          "detectedAt": {
+            "type": "string",
+            "description": "When the check found the problem first.",
+            "format": "date-time"
+          },
+          "track": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "The track with the problem; null for an unreadable file that belongs to no track (e.g. a picture).",
+                "$ref": "#/components/schemas/LibraryIssueTrack"
+              }
+            ]
+          },
+          "file": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "The unreadable file, for UnreadableFile only.",
+                "$ref": "#/components/schemas/LibraryIssueFile"
+              }
+            ]
+          },
+          "fileIssue": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "What cannot be read of the file, for UnreadableFile only; the codes of the scan issues.",
+                "$ref": "#/components/schemas/ScanIssueCode"
+              }
+            ]
+          },
+          "missingTags": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MetadataTag"
+            },
+            "description": "The tags the file of the track lacks (Title, Artist, Album), for MissingTags only; empty otherwise."
+          },
+          "relatedTrack": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "Another track of the group of possible duplicates, for PossibleDuplicate only.",
+                "$ref": "#/components/schemas/LibraryIssueTrack"
+              }
+            ]
+          }
+        },
+        "description": "A problem of the library found by the library check, with its track, file and details. Clients show their own text for the type and the codes of the details."
+      },
+      "LibraryIssueCount": {
+        "required": [
+          "type",
+          "severity",
+          "count"
+        ],
+        "type": "object",
+        "properties": {
+          "type": {
+            "$ref": "#/components/schemas/LibraryIssueType"
+          },
+          "severity": {
+            "$ref": "#/components/schemas/LibraryIssueSeverity"
+          },
+          "count": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "description": "The number of problems of a kind."
+      },
+      "LibraryIssueFile": {
+        "required": [
+          "id",
+          "sourceId",
+          "sourceName",
+          "relativePath",
+          "kind"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "sourceId": {
+            "type": "string",
+            "description": "The media source the file lies in.",
+            "format": "uuid"
+          },
+          "sourceName": {
+            "type": "string"
+          },
+          "relativePath": {
+            "type": "string",
+            "description": "Path of the file relative to the folder of its media source with / as separator."
+          },
+          "kind": {
+            "$ref": "#/components/schemas/MediaFileKind"
+          }
+        },
+        "description": "The file of a problem of the library."
+      },
+      "LibraryIssuePage": {
+        "required": [
+          "items",
+          "offset",
+          "limit",
+          "total"
+        ],
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LibraryIssue"
+            },
+            "description": "Items of the page, at most limit."
+          },
+          "offset": {
+            "type": "integer",
+            "description": "Number of items skipped before this page.",
+            "format": "int32"
+          },
+          "limit": {
+            "type": "integer",
+            "description": "Maximum number of items of the page, as requested.",
+            "format": "int32"
+          },
+          "total": {
+            "type": "integer",
+            "description": "Number of items of the whole collection.",
+            "format": "int32"
+          }
+        },
+        "description": "One page of a collection."
+      },
+      "LibraryIssueSeverity": {
+        "enum": [
+          "Problem",
+          "Hint"
+        ],
+        "type": "string",
+        "description": "How much a problem of the library matters: Problem should be fixed, Hint is only a hint (videos without audio, songs without video)."
+      },
+      "LibraryIssueSort": {
+        "enum": [
+          "Path",
+          "Artist",
+          "Title",
+          "DetectedAt"
+        ],
+        "type": "string"
+      },
+      "LibraryIssueSummary": {
+        "required": [
+          "counts",
+          "problemCount",
+          "hintCount"
+        ],
+        "type": "object",
+        "properties": {
+          "counts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LibraryIssueCount"
+            },
+            "description": "Every kind of problem with its number, also kinds without problems; the problems first, then the hints."
+          },
+          "problemCount": {
+            "type": "integer",
+            "description": "Number of problems of severity Problem.",
+            "format": "int32"
+          },
+          "hintCount": {
+            "type": "integer",
+            "description": "Number of problems of severity Hint.",
+            "format": "int32"
+          },
+          "checkedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "When the last run of the check stored its result; null if the check never ran.",
+            "format": "date-time"
+          },
+          "trackCount": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "description": "Number of tracks the last run checked; null if the check never ran.",
+            "format": "int32"
+          }
+        },
+        "description": "The overview of the library check: the number of problems per kind and when the check ran last."
+      },
+      "LibraryIssueTrack": {
+        "required": [
+          "id",
+          "title",
+          "sourceId",
+          "sourceName",
+          "directoryPath",
+          "baseName",
+          "hasAudio",
+          "hasVideo"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string"
+          },
+          "artist": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "Artist of the track; null if unknown.",
+                "$ref": "#/components/schemas/ArtistReference"
+              }
+            ]
+          },
+          "album": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "Album of the track; null for tracks without album.",
+                "$ref": "#/components/schemas/AlbumReference"
+              }
+            ]
+          },
+          "sourceId": {
+            "type": "string",
+            "description": "The media source the files of the track lie in.",
+            "format": "uuid"
+          },
+          "sourceName": {
+            "type": "string"
+          },
+          "directoryPath": {
+            "type": "string",
+            "description": "Folder of the track relative to the folder of its media source with / as separator; empty for that folder itself."
+          },
+          "baseName": {
+            "type": "string",
+            "description": "File name of the track without extension, shared by all its files."
+          },
+          "durationMilliseconds": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "description": "Duration in milliseconds; null if unknown.",
+            "format": "int64"
+          },
+          "hasAudio": {
+            "type": "boolean"
+          },
+          "hasVideo": {
+            "type": "boolean"
+          }
+        },
+        "description": "A track of a problem of the library: what identifies it and where its files lie."
+      },
+      "LibraryIssueType": {
+        "enum": [
+          "UnreadableFile",
+          "MissingTags",
+          "UnknownAlbum",
+          "MissingCover",
+          "PossibleDuplicate",
+          "VideoWithoutAudio",
+          "AudioWithoutVideo"
+        ],
+        "type": "string",
+        "description": "Kind of a problem of the library found by the library check. Clients translate it."
       },
       "LibrarySettings": {
         "required": [
@@ -15989,8 +16479,7 @@
           "source.unreadable",
           "source.empty"
         ],
-        "type": "string",
-        "description": "Problem with a file or a media source found by a scan. Clients translate it."
+        "type": "string"
       },
       "ScanPage": {
         "required": [
@@ -19514,6 +20003,9 @@
     },
     {
       "name": "Jobs"
+    },
+    {
+      "name": "LibraryIssues"
     },
     {
       "name": "Lyrics"

@@ -312,6 +312,7 @@ public class ApiIntegrationTests
     [TestCase("Transcoding", 3)]
     [TestCase("Backups", 3)]
     [TestCase("OnlineMetadata", 5)]
+    [TestCase("LibraryIssues", 2)]
     public async Task GetOpenApiDocument_Always_DescribesUnauthorizedAndForbiddenResponses(string tag, int operations)
     {
         JsonNode document = await GetOpenApiDocumentAsync();

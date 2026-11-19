@@ -230,7 +230,7 @@ public static class LibraryMappingExtensions
         return id is { } artistId && name is not null ? new ArtistReferenceDto { Id = artistId, Name = name } : null;
     }
 
-    private static long? ToMilliseconds(TimeSpan? duration)
+    internal static long? ToMilliseconds(TimeSpan? duration)
     {
         return duration is { } value ? (long)Math.Round(value.TotalMilliseconds) : null;
     }

@@ -58,6 +58,7 @@ public static class JobMappingExtensions
             JobIds.CoverCache => JobIdDto.CoverCache,
             JobIds.DatabaseBackup => JobIdDto.DatabaseBackup,
             JobIds.LyricsDownload => JobIdDto.LyricsDownload,
+            JobIds.LibraryCheck => JobIdDto.LibraryCheck,
             _ => throw new ArgumentOutOfRangeException(nameof(jobId), jobId, "Unknown job."),
         };
     }

@@ -72,7 +72,10 @@ public class JobsApiTests
         JobDto covers = jobs.Items.Should().ContainSingle(job => job.Id == JobIdDto.CoverCache).Subject;
         JobDto backup = jobs.Items.Should().ContainSingle(job => job.Id == JobIdDto.DatabaseBackup).Subject;
         JobDto lyrics = jobs.Items.Should().ContainSingle(job => job.Id == JobIdDto.LyricsDownload).Subject;
-        jobs.Total.Should().Be(4);
+        JobDto check = jobs.Items.Should().ContainSingle(job => job.Id == JobIdDto.LibraryCheck).Subject;
+        jobs.Total.Should().Be(5);
+        check.IntervalMinutes.Should().BeNull();
+        check.NextRunAt.Should().BeNull();
         lyrics.IntervalMinutes.Should().BeNull();
         lyrics.NextRunAt.Should().BeNull();
         scan.State.Should().Be(JobStateDto.Idle);
