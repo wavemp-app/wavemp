@@ -84,6 +84,30 @@ public class CoverResolverTests
         ordered.Should().Equal(_own, secondary, embedded);
     }
 
+    [Test]
+    public void OrderForTrack_OnlineCover_ComesFirstInItsGroup()
+    {
+        CoverCandidateRow online = _own with
+        {
+            CoverId = Guid.NewGuid(),
+            Source = CoverSource.Online,
+            SourceId = Guid.Empty,
+        };
+        CoverCandidateRow onlineAlbum = _album with
+        {
+            CoverId = Guid.NewGuid(),
+            Source = CoverSource.Online,
+            SourceId = Guid.Empty,
+        };
+
+        IReadOnlyList<CoverCandidateRow> ordered = CoverResolver.OrderForTrack(
+            _trackId,
+            CoverPriority.AlbumFirst,
+            [_own, _album, online, onlineAlbum]);
+
+        ordered.Should().Equal(onlineAlbum, _album, online, _own);
+    }
+
     [TestCase(CoverPriority.AlbumFirst)]
     [TestCase(CoverPriority.TrackFirst)]
     public void OrderForAlbum_Always_FollowsTheRule(CoverPriority priority)

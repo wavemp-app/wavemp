@@ -2,6 +2,7 @@ using AwesomeAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
 using WaveMP.Core.Library.Covers;
+using WaveMP.Core.Library.Options;
 using WaveMP.Core.Metadata.Files;
 using WaveMP.Core.Metadata.Tags;
 using WaveMP.Data.Entities;
@@ -19,6 +20,7 @@ public class CoverSourceReaderTests
 
     private TemporaryDirectory _media = null!;
     private IEmbeddedPictureReader _pictures = null!;
+    private OnlineCoverFiles _onlineCovers = null!;
     private CoverSourceReader _reader = null!;
 
     [SetUp]
@@ -33,7 +35,10 @@ public class CoverSourceReaderTests
             call[2] = _media.Combine(relative);
             return !relative.StartsWith("..", StringComparison.Ordinal);
         });
-        _reader = new CoverSourceReader(locator, _pictures, NullLogger<CoverSourceReader>.Instance);
+        _onlineCovers = new OnlineCoverFiles(
+            Microsoft.Extensions.Options.Options.Create(new OnlineCoverOptions { RootPath = _media.Combine("online") }),
+            NullLogger<OnlineCoverFiles>.Instance);
+        _reader = new CoverSourceReader(locator, _pictures, _onlineCovers, NullLogger<CoverSourceReader>.Instance);
     }
 
     [TearDown]
@@ -94,6 +99,33 @@ public class CoverSourceReaderTests
         CoverCandidateRow embedded = Cover("Album/Song.mp3") with { Source = CoverSource.Embedded };
 
         (await _reader.OpenAsync(embedded)).Should().BeNull();
+    }
+
+    [Test]
+    public async Task OpenAsync_OnlineCover_ReadsItFromTheDataFolder()
+    {
+        var id = Guid.NewGuid();
+        string fileName = _onlineCovers.FileNameOf(id, _png)!;
+        (await _onlineCovers.SaveAsync(fileName, _png)).Should().BeTrue();
+        CoverCandidateRow online = Cover(fileName) with
+        {
+            CoverId = id,
+            Source = CoverSource.Online,
+            SourceId = Guid.Empty,
+        };
+
+        CoverImage image = (await _reader.OpenAsync(online))!;
+
+        image.ContentType.Should().Be("image/png");
+        (await ReadAsync(image)).Should().Equal(_png);
+    }
+
+    [Test]
+    public async Task OpenAsync_OnlineCoverWithForeignName_ReturnsNull()
+    {
+        CoverCandidateRow online = Write(Cover("Album/cover.png"), _png) with { Source = CoverSource.Online };
+
+        (await _reader.OpenAsync(online)).Should().BeNull();
     }
 
     private static CoverCandidateRow Cover(string relativePath)

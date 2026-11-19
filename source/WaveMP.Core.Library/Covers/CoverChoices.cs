@@ -93,6 +93,6 @@ public static class CoverChoices
         return string.Join(
             ';',
             ordered.Select(candidate =>
-                candidate.MediaFileId.ToString("N") + (candidate.Source == CoverSource.File ? "f" : "e")));
+                candidate.MediaFileId.ToString("N") + CoverSourceCodes.Of(candidate.Source)));
     }
 }

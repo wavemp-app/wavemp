@@ -14,4 +14,10 @@ public enum CoverSource
     /// A picture embedded in an audio or video file.
     /// </summary>
     Embedded,
+
+    /// <summary>
+    /// A picture found online and kept in the data folder, because the media folder could not be written (see
+    /// <see cref="OnlineCover"/>). Only covers that are read from the database carry it; the scan never creates one.
+    /// </summary>
+    Online,
 }

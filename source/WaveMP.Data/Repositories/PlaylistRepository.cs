@@ -317,7 +317,12 @@ internal sealed class PlaylistRepository(WaveMpDbContext dbContext) : IPlaylistR
                     || (entry.Track.AlbumId != null
                         && dbContext.Covers.Any(cover =>
                             cover.AlbumId == entry.Track.AlbumId
-                            || (cover.Track != null && cover.Track.AlbumId == entry.Track.AlbumId)))))
+                            || (cover.Track != null && cover.Track.AlbumId == entry.Track.AlbumId)))
+                    || dbContext.OnlineCovers.Any(cover =>
+                        cover.TrackId == entry.TrackId
+                        || (entry.Track.AlbumId != null
+                            && (cover.AlbumId == entry.Track.AlbumId
+                                || (cover.Track != null && cover.Track.AlbumId == entry.Track.AlbumId))))))
             .ToListAsync(cancellationToken);
     }
 

@@ -39,6 +39,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ILibraryScanRepository, LibraryScanRepository>();
         services.AddScoped<IArtistRepository, ArtistRepository>();
         services.AddScoped<IAlbumRepository, AlbumRepository>();
+        services.AddScoped<IOnlineMetadataRepository, OnlineMetadataRepository>();
         services.AddScoped<ITrackRepository, TrackRepository>();
         services.AddScoped<ICoverRepository, CoverRepository>();
         services.AddScoped<IFileSelectionRepository, FileSelectionRepository>();

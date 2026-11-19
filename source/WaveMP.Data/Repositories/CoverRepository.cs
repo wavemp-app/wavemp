@@ -19,13 +19,24 @@ internal sealed class CoverRepository(WaveMpDbContext dbContext) : ICoverReposit
             return null;
         }
 
-        IQueryable<Cover> covers = track.AlbumId is { } albumId
-            ? dbContext.Covers.Where(cover =>
-                cover.TrackId == trackId
-                || cover.AlbumId == albumId
-                || (cover.Track != null && cover.Track.AlbumId == albumId))
-            : dbContext.Covers.Where(cover => cover.TrackId == trackId);
-        return await Project(covers).ToListAsync(cancellationToken);
+        if (track.AlbumId is { } albumId)
+        {
+            return await ListAsync(
+                dbContext.Covers.Where(cover =>
+                    cover.TrackId == trackId
+                    || cover.AlbumId == albumId
+                    || (cover.Track != null && cover.Track.AlbumId == albumId)),
+                dbContext.OnlineCovers.Where(cover =>
+                    cover.TrackId == trackId
+                    || cover.AlbumId == albumId
+                    || (cover.Track != null && cover.Track.AlbumId == albumId)),
+                cancellationToken);
+        }
+
+        return await ListAsync(
+            dbContext.Covers.Where(cover => cover.TrackId == trackId),
+            dbContext.OnlineCovers.Where(cover => cover.TrackId == trackId),
+            cancellationToken);
     }
 
     public async Task<IReadOnlyList<CoverCandidateRow>?> GetAlbumCandidatesAsync(
@@ -37,15 +48,21 @@ internal sealed class CoverRepository(WaveMpDbContext dbContext) : ICoverReposit
             return null;
         }
 
-        return await Project(dbContext.Covers.Where(cover =>
-                cover.AlbumId == albumId || (cover.Track != null && cover.Track.AlbumId == albumId)))
-            .ToListAsync(cancellationToken);
+        return await ListAsync(
+            dbContext.Covers.Where(cover =>
+                cover.AlbumId == albumId || (cover.Track != null && cover.Track.AlbumId == albumId)),
+            dbContext.OnlineCovers.Where(cover =>
+                cover.AlbumId == albumId || (cover.Track != null && cover.Track.AlbumId == albumId)),
+            cancellationToken);
     }
 
     public async Task<IReadOnlyList<Guid>> ListAlbumIdsWithCoversAsync(CancellationToken cancellationToken = default)
     {
         return await dbContext.Albums.AsNoTracking()
-            .Where(album => album.Covers.Any() || album.Tracks.Any(track => track.Covers.Any()))
+            .Where(album => album.Covers.Any()
+                || album.Tracks.Any(track => track.Covers.Any())
+                || dbContext.OnlineCovers.Any(cover =>
+                    cover.AlbumId == album.Id || (cover.Track != null && cover.Track.AlbumId == album.Id)))
             .OrderBy(album => album.Id)
             .Select(album => album.Id)
             .ToListAsync(cancellationToken);
@@ -55,7 +72,8 @@ internal sealed class CoverRepository(WaveMpDbContext dbContext) : ICoverReposit
         CancellationToken cancellationToken = default)
     {
         return await dbContext.Tracks.AsNoTracking()
-            .Where(track => track.AlbumId == null && track.Covers.Any())
+            .Where(track => track.AlbumId == null
+                && (track.Covers.Any() || dbContext.OnlineCovers.Any(cover => cover.TrackId == track.Id)))
             .OrderBy(track => track.Id)
             .Select(track => track.Id)
             .ToListAsync(cancellationToken);
@@ -66,10 +84,14 @@ internal sealed class CoverRepository(WaveMpDbContext dbContext) : ICoverReposit
         CancellationToken cancellationToken = default)
     {
         Guid[] ids = [.. albumIds];
-        return await Project(dbContext.Covers.Where(cover =>
+        return await ListAsync(
+            dbContext.Covers.Where(cover =>
                 (cover.AlbumId != null && ids.Contains(cover.AlbumId.Value))
-                || (cover.Track != null && cover.Track.AlbumId != null && ids.Contains(cover.Track.AlbumId.Value))))
-            .ToListAsync(cancellationToken);
+                || (cover.Track != null && cover.Track.AlbumId != null && ids.Contains(cover.Track.AlbumId.Value))),
+            dbContext.OnlineCovers.Where(cover =>
+                (cover.AlbumId != null && ids.Contains(cover.AlbumId.Value))
+                || (cover.Track != null && cover.Track.AlbumId != null && ids.Contains(cover.Track.AlbumId.Value))),
+            cancellationToken);
     }
 
     public async Task<IReadOnlyList<CoverCandidateRow>> GetTrackBatchCandidatesAsync(
@@ -77,9 +99,10 @@ internal sealed class CoverRepository(WaveMpDbContext dbContext) : ICoverReposit
         CancellationToken cancellationToken = default)
     {
         Guid[] ids = [.. trackIds];
-        return await Project(dbContext.Covers.Where(cover =>
-                cover.TrackId != null && ids.Contains(cover.TrackId.Value)))
-            .ToListAsync(cancellationToken);
+        return await ListAsync(
+            dbContext.Covers.Where(cover => cover.TrackId != null && ids.Contains(cover.TrackId.Value)),
+            dbContext.OnlineCovers.Where(cover => cover.TrackId != null && ids.Contains(cover.TrackId.Value)),
+            cancellationToken);
     }
 
     public async Task<CoverRuleRow?> GetAlbumRuleAsync(Guid albumId, CancellationToken cancellationToken = default)
@@ -136,8 +159,55 @@ internal sealed class CoverRepository(WaveMpDbContext dbContext) : ICoverReposit
             })
             .Distinct()
             .ToListAsync(cancellationToken);
+        List<CoverSourceRow> online = await dbContext.OnlineCovers.AsNoTracking()
+            .Select(cover => new CoverSourceRow(cover.Id, CoverSource.Online, cover.Size, cover.CreatedAt))
+            .ToListAsync(cancellationToken);
         return [.. sources.Select(source =>
-            new CoverSourceRow(source.MediaFileId, source.Source, source.Size, source.ModifiedAt))];
+            new CoverSourceRow(source.MediaFileId, source.Source, source.Size, source.ModifiedAt)), .. online];
+    }
+
+    /// <summary>
+    /// The covers of the media files and the online covers, as one list.
+    /// </summary>
+    private static async Task<IReadOnlyList<CoverCandidateRow>> ListAsync(
+        IQueryable<Cover> covers,
+        IQueryable<OnlineCover> online,
+        CancellationToken cancellationToken)
+    {
+        List<CoverCandidateRow> rows = await Project(covers).ToListAsync(cancellationToken);
+        rows.AddRange(await ProjectOnline(online).ToListAsync(cancellationToken));
+        return rows;
+    }
+
+    /// <summary>
+    /// An online cover as candidate: the cover and its "file" share the id, the path is the name of the picture in the
+    /// folder of the online covers, and it is the primary cover of its album or track.
+    /// </summary>
+    private static IQueryable<CoverCandidateRow> ProjectOnline(IQueryable<OnlineCover> covers)
+    {
+        return covers.AsNoTracking().Select(cover => new CoverCandidateRow(
+            cover.Id,
+            cover.Id,
+            cover.AlbumId,
+            cover.TrackId,
+            cover.Track != null ? cover.Track.AlbumId : null,
+            cover.Track != null ? cover.Track.DiscNumber : null,
+            cover.Track != null ? cover.Track.TrackNumber : null,
+            cover.Track != null ? cover.Track.Title : null,
+            true,
+            CoverSource.Online,
+            Guid.Empty,
+            cover.FileName,
+            cover.MimeType,
+            cover.Size,
+            cover.CreatedAt,
+            false,
+            cover.Album != null
+                ? cover.Album.CoverPriority
+                : cover.Track != null && cover.Track.Album != null
+                    ? cover.Track.Album.CoverPriority
+                    : null,
+            cover.Track != null ? cover.Track.CoverPriority : null));
     }
 
     private static IQueryable<CoverCandidateRow> Project(IQueryable<Cover> covers)

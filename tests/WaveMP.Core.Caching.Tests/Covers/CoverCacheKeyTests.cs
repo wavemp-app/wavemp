@@ -19,6 +19,7 @@ public class CoverCacheKeyTests
         prefix.Should().Be(CoverCacheKey.PrefixOf(_fileId, CoverSource.File, _modifiedAt, 1234));
         prefix.Should().MatchRegex("^019a6f2c11117abc8def0123456789ab-f-[0-9a-f]{16}$");
         CoverCacheKey.PrefixOf(_fileId, CoverSource.Embedded, _modifiedAt, 1234).Should().Contain("-e-");
+        CoverCacheKey.PrefixOf(_fileId, CoverSource.Online, _modifiedAt, 1234).Should().Contain("-o-");
     }
 
     [Test]
@@ -77,6 +78,17 @@ public class CoverCacheKeyTests
         string prefix = CoverCacheKey.PrefixOf(_fileId, CoverSource.File, _modifiedAt, 1234);
 
         bool read = CoverCacheKey.TryReadSourcePrefix(CoverCacheKey.FileNameOf(prefix, 1000), out string result);
+
+        read.Should().BeTrue();
+        result.Should().Be(prefix);
+    }
+
+    [Test]
+    public void TryReadSourcePrefix_OnlineCover_ReturnsItsPrefix()
+    {
+        string prefix = CoverCacheKey.PrefixOf(_fileId, CoverSource.Online, _modifiedAt, 1234);
+
+        bool read = CoverCacheKey.TryReadSourcePrefix(CoverCacheKey.FileNameOf(prefix, 300), out string result);
 
         read.Should().BeTrue();
         result.Should().Be(prefix);

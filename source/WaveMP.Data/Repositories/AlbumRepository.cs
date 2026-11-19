@@ -134,7 +134,9 @@ internal sealed class AlbumRepository(WaveMpDbContext dbContext) : IAlbumReposit
             album.Tracks.Count,
             album.Tracks.Sum(track => track.Duration.HasValue ? track.Duration.Value.TotalMilliseconds : 0),
             dbContext.Covers.Any(cover =>
-                cover.AlbumId == album.Id || (cover.Track != null && cover.Track.AlbumId == album.Id)),
+                cover.AlbumId == album.Id || (cover.Track != null && cover.Track.AlbumId == album.Id))
+                || dbContext.OnlineCovers.Any(cover =>
+                    cover.AlbumId == album.Id || (cover.Track != null && cover.Track.AlbumId == album.Id)),
             album.FirstSeenAt,
             dbContext.Favorites.Any(favorite => favorite.UserId == user && favorite.AlbumId == album.Id)));
     }

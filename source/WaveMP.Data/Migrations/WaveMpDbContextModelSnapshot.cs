@@ -671,6 +671,61 @@ namespace WaveMP.Data.Migrations
                     b.ToTable("media_sources", (string)null);
                 });
 
+            modelBuilder.Entity("WaveMP.Data.Entities.OnlineCover", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid?>("AlbumId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("album_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("file_name");
+
+                    b.Property<string>("MimeType")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("mime_type");
+
+                    b.Property<Guid>("ReleaseId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("release_id");
+
+                    b.Property<long>("Size")
+                        .HasColumnType("bigint")
+                        .HasColumnName("size");
+
+                    b.Property<Guid?>("TrackId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("track_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_online_covers");
+
+                    b.HasIndex("AlbumId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_online_covers_album_id");
+
+                    b.HasIndex("TrackId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_online_covers_track_id");
+
+                    b.ToTable("online_covers", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_online_covers_owner", "(album_id IS NULL) <> (track_id IS NULL)");
+                        });
+                });
+
             modelBuilder.Entity("WaveMP.Data.Entities.PlayHistoryEntry", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1655,6 +1710,25 @@ namespace WaveMP.Data.Migrations
                         .HasConstraintName("fk_media_files_tracks_track_id");
 
                     b.Navigation("Source");
+
+                    b.Navigation("Track");
+                });
+
+            modelBuilder.Entity("WaveMP.Data.Entities.OnlineCover", b =>
+                {
+                    b.HasOne("WaveMP.Data.Entities.Album", "Album")
+                        .WithMany()
+                        .HasForeignKey("AlbumId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .HasConstraintName("fk_online_covers_albums_album_id");
+
+                    b.HasOne("WaveMP.Data.Entities.Track", "Track")
+                        .WithMany()
+                        .HasForeignKey("TrackId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .HasConstraintName("fk_online_covers_tracks_track_id");
+
+                    b.Navigation("Album");
 
                     b.Navigation("Track");
                 });

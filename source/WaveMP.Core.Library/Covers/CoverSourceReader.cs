@@ -9,6 +9,7 @@ namespace WaveMP.Core.Library.Covers;
 internal sealed class CoverSourceReader(
     IMediaFileLocator locator,
     IEmbeddedPictureReader pictures,
+    IOnlineCoverFiles onlineCovers,
     ILogger<CoverSourceReader> logger) : ICoverSourceReader
 {
     private const int BufferSize = 64 * 1024;
@@ -17,7 +18,18 @@ internal sealed class CoverSourceReader(
         CoverCandidateRow candidate,
         CancellationToken cancellationToken = default)
     {
-        if (!locator.TryGetFullPath(candidate.SourceId, candidate.RelativePath, out string path))
+        string path;
+        if (candidate.Source == CoverSource.Online)
+        {
+            if (onlineCovers.GetFullPath(candidate.RelativePath) is not { } onlinePath)
+            {
+                logger.LogDebug("Skipping the cover {CoverId}: no name of an online cover", candidate.CoverId);
+                return null;
+            }
+
+            path = onlinePath;
+        }
+        else if (!locator.TryGetFullPath(candidate.SourceId, candidate.RelativePath, out path))
         {
             logger.LogDebug("Skipping the cover {CoverId}: its path leaves the media folder", candidate.CoverId);
             return null;

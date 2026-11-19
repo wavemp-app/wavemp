@@ -342,7 +342,12 @@ internal sealed class TrackRepository(WaveMpDbContext dbContext) : ITrackReposit
                 || (track.AlbumId != null
                     && dbContext.Covers.Any(cover =>
                         cover.AlbumId == track.AlbumId
-                        || (cover.Track != null && cover.Track.AlbumId == track.AlbumId))),
+                        || (cover.Track != null && cover.Track.AlbumId == track.AlbumId)))
+                || dbContext.OnlineCovers.Any(cover =>
+                    cover.TrackId == track.Id
+                    || (track.AlbumId != null
+                        && (cover.AlbumId == track.AlbumId
+                            || (cover.Track != null && cover.Track.AlbumId == track.AlbumId)))),
             track.FirstSeenAt,
             dbContext.Favorites.Any(favorite => favorite.UserId == user && favorite.TrackId == track.Id),
             dbContext.TrackRatings

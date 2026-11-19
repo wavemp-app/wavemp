@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
+using WaveMP.Core.Library.Covers;
 using WaveMP.Data.Entities;
 using WaveMP.Data.Projections;
 
@@ -9,8 +10,8 @@ namespace WaveMP.Core.Caching.Covers;
 
 /// <summary>
 /// Names and ETags of scaled covers. They belong to the version of the picture, not to an album or track: the prefix
-/// <c>{file id}-{f|e}-{stamp}</c> names the file the picture comes from, whether it is a picture file (<c>f</c>) or
-/// embedded (<c>e</c>), and a stamp of the size and the time of the last change of the file and of
+/// <c>{file id}-{f|e|o}-{stamp}</c> names the file the picture comes from, whether it is a picture file (<c>f</c>),
+/// embedded (<c>e</c>) or an online cover in the data folder (<c>o</c>, the id of the online cover), and a stamp of the size and the time of the last change of the file and of
 /// <see cref="FormatVersion"/>. A changed file therefore gets new names and ETags at once, and albums and tracks that
 /// show the same picture share its files.
 /// </summary>
@@ -43,7 +44,7 @@ public static partial class CoverCacheKey
             $"{FormatVersion}:{modifiedAt.UtcTicks}:{size}");
         byte[] hash = SHA256.HashData(Encoding.UTF8.GetBytes(version));
         string stamp = Convert.ToHexStringLower(hash, 0, StampBytes);
-        return $"{mediaFileId:N}-{(source == CoverSource.File ? 'f' : 'e')}-{stamp}";
+        return $"{mediaFileId:N}-{CoverSourceCodes.Of(source)}-{stamp}";
     }
 
     /// <summary>
@@ -91,7 +92,7 @@ public static partial class CoverCacheKey
     }
 
     [GeneratedRegex(
-        "^[0-9a-f]{2}/([0-9a-f]{32}-[ef]-[0-9a-f]{16})-[0-9]{1,4}\\.webp$",
+        "^[0-9a-f]{2}/([0-9a-f]{32}-[efo]-[0-9a-f]{16})-[0-9]{1,4}\\.webp$",
         RegexOptions.CultureInvariant)]
     private static partial Regex FileNamePattern();
 }

@@ -152,7 +152,12 @@ internal sealed class SmartPlaylistRepository(WaveMpDbContext dbContext) : ISmar
                     || (track.AlbumId != null
                         && dbContext.Covers.Any(cover =>
                             cover.AlbumId == track.AlbumId
-                            || (cover.Track != null && cover.Track.AlbumId == track.AlbumId))),
+                            || (cover.Track != null && cover.Track.AlbumId == track.AlbumId)))
+                    || dbContext.OnlineCovers.Any(cover =>
+                        cover.TrackId == track.Id
+                        || (track.AlbumId != null
+                            && (cover.AlbumId == track.AlbumId
+                                || (cover.Track != null && cover.Track.AlbumId == track.AlbumId)))),
             })
             .ToListAsync(cancellationToken);
         return [.. candidates.Select((candidate, index) =>
