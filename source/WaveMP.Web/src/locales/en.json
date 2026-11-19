@@ -620,7 +620,47 @@
     "open": "Profile: {name}",
     "settings": "Settings",
     "switchProfile": "Switch profile",
-    "administration": "Administration"
+    "administration": "Administration",
+    "shortcuts": "Keyboard shortcuts"
+  },
+  "shortcuts": {
+    "title": "Keyboard shortcuts",
+    "hint": "Shortcuts rest while you type in a field or a dialog or menu is open.",
+    "groups": {
+      "playback": "Playback",
+      "volume": "Volume",
+      "view": "View",
+      "general": "General"
+    },
+    "actions": {
+      "playPause": "Play or pause",
+      "seekBackward": "Back 5 seconds",
+      "seekForward": "Forward 5 seconds",
+      "previous": "Previous song",
+      "next": "Next song",
+      "shuffle": "Shuffle on or off",
+      "repeat": "Change repeat",
+      "volumeUp": "Louder",
+      "volumeDown": "Quieter",
+      "mute": "Mute or unmute",
+      "fullscreen": "Full screen on or off",
+      "search": "Search the library",
+      "overview": "Show the keyboard shortcuts"
+    },
+    "keys": {
+      "ctrl": "Ctrl",
+      "command": "⌘",
+      "alt": "Alt",
+      "shift": "Shift",
+      "space": "Space",
+      "left": "←",
+      "right": "→",
+      "up": "↑",
+      "down": "↓",
+      "escape": "Esc",
+      "enter": "Enter",
+      "separator": "+"
+    }
   },
   "settings": {
     "title": "Settings",

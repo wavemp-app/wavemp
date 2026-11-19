@@ -620,7 +620,47 @@
     "open": "Profil: {name}",
     "settings": "Einstellungen",
     "switchProfile": "Profil wechseln",
-    "administration": "Administration"
+    "administration": "Administration",
+    "shortcuts": "Tastenkürzel"
+  },
+  "shortcuts": {
+    "title": "Tastenkürzel",
+    "hint": "Die Tastenkürzel ruhen, solange du in ein Feld tippst oder ein Dialog oder Menü offen ist.",
+    "groups": {
+      "playback": "Wiedergabe",
+      "volume": "Lautstärke",
+      "view": "Ansicht",
+      "general": "Allgemein"
+    },
+    "actions": {
+      "playPause": "Abspielen oder anhalten",
+      "seekBackward": "5 Sekunden zurück",
+      "seekForward": "5 Sekunden vor",
+      "previous": "Vorheriger Titel",
+      "next": "Nächster Titel",
+      "shuffle": "Zufallswiedergabe an oder aus",
+      "repeat": "Wiederholung wechseln",
+      "volumeUp": "Lauter",
+      "volumeDown": "Leiser",
+      "mute": "Stumm schalten oder Ton an",
+      "fullscreen": "Vollbild an oder aus",
+      "search": "Bibliothek durchsuchen",
+      "overview": "Tastenkürzel anzeigen"
+    },
+    "keys": {
+      "ctrl": "Strg",
+      "command": "⌘",
+      "alt": "Alt",
+      "shift": "Umschalt",
+      "space": "Leertaste",
+      "left": "←",
+      "right": "→",
+      "up": "↑",
+      "down": "↓",
+      "escape": "Esc",
+      "enter": "Eingabe",
+      "separator": "+"
+    }
   },
   "settings": {
     "title": "Einstellungen",

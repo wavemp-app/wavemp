@@ -6,6 +6,7 @@ import App from './App.vue'
 import router, { historyEntries } from './router'
 import { historyEntriesKey } from './router/entries'
 import { createWaveMpI18n } from './i18n'
+import { registerDefaultShortcuts } from './shortcuts/defaults'
 import { appLocale } from './i18n/locales'
 import { useSessionStore } from './stores/session'
 import { shownTheme } from './composables/useThemeSync'
@@ -33,6 +34,9 @@ const firstTheme = shownTheme(
     systemDark,
 )
 applyTheme(firstTheme.id, firstTheme.variant)
+
+// The keyboard shortcuts are defined before the app starts: conflicting ones throw here.
+registerDefaultShortcuts()
 
 const app = createApp(App)
 
