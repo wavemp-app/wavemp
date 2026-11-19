@@ -117,6 +117,58 @@ public class ThemeStoreTests
     }
 
     [Test]
+    public async Task InitializeAsync_ThemeThatPassesTheRules_IsNotOutdated()
+    {
+        await _store.SaveAsync(Theme(), replace: false);
+
+        using ThemeStore restarted = CreateStore();
+        await restarted.InitializeAsync();
+
+        InstalledTheme theme = restarted.Find("aurora")!;
+        theme.IsOutdated.Should().BeFalse();
+        theme.Problems.Should().BeEmpty();
+        theme.Sources.Should().ContainValues("theme.css", "images/glass.svg", "preview-dark.png");
+    }
+
+    [Test]
+    public async Task InitializeAsync_ThemeThatTheseRulesReject_IsOfferedAsOutdated()
+    {
+        InstalledTheme installed = (await _store.SaveAsync(Theme(), replace: false)).Theme!;
+        string glass = installed.Sources.Single(pair => pair.Value == "images/glass.svg").Key;
+        // As if an older version had let the script through.
+        await File.WriteAllTextAsync(
+            _folder.Combine($"themes/aurora/files/{glass}"),
+            """<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>""");
+
+        using ThemeStore restarted = CreateStore();
+        await restarted.InitializeAsync();
+
+        InstalledTheme theme = restarted.List().Should().ContainSingle().Subject;
+        theme.IsOutdated.Should().BeTrue();
+        theme.Problems.Should().Equal(new ThemeError(ThemeErrorCode.SvgScript, "images/glass.svg"));
+        (await File.ReadAllTextAsync(_folder.Combine("themes/aurora/theme.json"))).Should().NotContain("problems");
+    }
+
+    [Test]
+    public async Task InitializeAsync_ThemeInstalledBeforeTheSourcesWereKept_IsReadAndChecked()
+    {
+        await _store.SaveAsync(Theme(), replace: false);
+        string description = _folder.Combine("themes/aurora/theme.json");
+        System.Text.Json.Nodes.JsonObject json =
+            System.Text.Json.Nodes.JsonNode.Parse(await File.ReadAllTextAsync(description))!.AsObject();
+        json.Remove("sources").Should().BeTrue();
+        json["themeApi"] = ThemeApiVersions.Oldest - 1;
+        await File.WriteAllTextAsync(description, json.ToJsonString());
+
+        using ThemeStore restarted = CreateStore();
+        await restarted.InitializeAsync();
+
+        InstalledTheme theme = restarted.Find("aurora")!;
+        theme.Sources.Should().BeEmpty();
+        theme.Problems.Should().ContainSingle().Which.Code.Should().Be(ThemeErrorCode.UnsupportedApiVersion);
+    }
+
+    [Test]
     public async Task InitializeAsync_RemovesUnfinishedInstallationsAndSkipsBrokenThemes()
     {
         await _store.SaveAsync(Theme(), replace: false);

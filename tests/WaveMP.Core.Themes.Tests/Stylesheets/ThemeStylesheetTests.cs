@@ -32,6 +32,42 @@ public class ThemeStylesheetTests
         return (result, errors);
     }
 
+    [Test]
+    public void Check_InstalledStylesheet_KeepsTheAddressesOfItsFilesAsTheyAre()
+    {
+        const string Css = """
+            a { background: url("/api/v1/themes/aurora/files/0123456789abcdef0123456789abcdef.svg#glow"); }
+            b { mask: image-set("/api/v1/themes/aurora/files/fedcba9876543210fedcba9876543210.png" 1x); }
+            """;
+        List<ThemeError> errors = [];
+
+        string? result = ThemeStylesheet.Check(
+            Path,
+            Encoding.UTF8.GetBytes(Css),
+            target => _pictures.GetValueOrDefault(target),
+            errors,
+            address => _pictures.FirstOrDefault(pair => pair.Value == address).Key);
+
+        errors.Should().BeEmpty();
+        result.Should().Be(Css);
+    }
+
+    [Test]
+    public void Check_InstalledStylesheet_StillRejectsOtherAbsoluteAddresses()
+    {
+        List<ThemeError> errors = [];
+
+        string? result = ThemeStylesheet.Check(
+            Path,
+            Encoding.UTF8.GetBytes("a { b: url(/api/v1/themes/borealis/files/x.svg); }"),
+            target => _pictures.GetValueOrDefault(target),
+            errors,
+            _ => null);
+
+        result.Should().BeNull();
+        errors.Should().ContainSingle().Which.Code.Should().Be(ThemeErrorCode.StylesheetAbsoluteUrl);
+    }
+
     private static ThemeErrorCode SingleCode(string css)
     {
         (string? result, List<ThemeError> errors) = Check(css);

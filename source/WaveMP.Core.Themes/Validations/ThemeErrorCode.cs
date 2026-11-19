@@ -182,4 +182,11 @@ public enum ThemeErrorCode
     /// A WOFF2 file is no WOFF2 font (path).
     /// </summary>
     FontInvalid,
+
+    /// <summary>
+    /// An SVG file of an installed theme still has content that this version of WaveMP removes from SVG files, e.g. an
+    /// element it no longer allows. Only reported when an installed theme is checked again; uploading the theme again
+    /// cleans the file (path).
+    /// </summary>
+    SvgNotCleaned,
 }

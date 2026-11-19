@@ -14,7 +14,8 @@ public interface IThemeStore
     bool IsAvailable { get; }
 
     /// <summary>
-    /// Prepares the folder, removes the remains of interrupted installations and reads the installed themes.
+    /// Prepares the folder, removes the remains of interrupted installations, reads the installed themes and checks them
+    /// again with the rules of this version (<see cref="InstalledTheme.Problems"/>).
     /// </summary>
     Task InitializeAsync(CancellationToken cancellationToken = default);
 

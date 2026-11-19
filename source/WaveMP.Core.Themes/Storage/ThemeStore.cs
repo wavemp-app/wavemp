@@ -13,7 +13,8 @@ namespace WaveMP.Core.Themes.Storage;
 /// Keeps the installed themes in <see cref="ThemeOptions.RootPath"/>: <c>{id}/theme.json</c> and the files in
 /// <c>{id}/files/</c>. A theme is first written completely into a staging folder and then moved into place, so a
 /// theme is never half installed; a replaced theme is moved aside and removed afterwards. Remains of an interrupted
-/// installation are removed on start. Installations run one after another.
+/// installation are removed on start, and the installed themes are checked again with the rules of this version
+/// (<see cref="InstalledThemeCheck"/>). Installations run one after another.
 /// </summary>
 internal sealed class ThemeStore(IOptions<ThemeOptions> options, TimeProvider time, ILogger<ThemeStore> logger)
     : IThemeStore, IDisposable
@@ -211,6 +212,7 @@ internal sealed class ThemeStore(IOptions<ThemeOptions> options, TimeProvider ti
             Files = [.. theme.Files.Select(file => file.Name)],
             SizeBytes = theme.Files.Sum(file => (long)file.Content.Length),
             InstalledAt = time.GetUtcNow(),
+            Sources = theme.Sources,
         };
     }
 
@@ -295,10 +297,47 @@ internal sealed class ThemeStore(IOptions<ThemeOptions> options, TimeProvider ti
                 continue;
             }
 
-            themes[id] = theme;
+            themes[id] = await CheckAsync(theme, cancellationToken);
         }
 
         return themes.ToImmutable();
+    }
+
+    /// <summary>
+    /// Checks an installed theme again with the rules of this version (see <see cref="InstalledThemeCheck"/>). An
+    /// outdated theme is still offered; the admins see its problems and can upload a new version.
+    /// </summary>
+    private async Task<InstalledTheme> CheckAsync(InstalledTheme theme, CancellationToken cancellationToken)
+    {
+        string folder = Path.Combine(FolderOf(theme.Id), FilesFolderName);
+        Dictionary<string, byte[]> files = new(StringComparer.Ordinal);
+        try
+        {
+            foreach (string name in theme.Files)
+            {
+                files[name] = await File.ReadAllBytesAsync(Path.Combine(folder, name), cancellationToken);
+            }
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+        {
+            // Served as it is; a file that cannot be read now is answered with 404 then.
+            logger.LogWarning(exception, "Cannot read the files of the theme {ThemeId} to check them", theme.Id);
+            return theme;
+        }
+
+        IReadOnlyList<ThemeError> problems = InstalledThemeCheck.Run(theme, files);
+        if (problems.Count == 0)
+        {
+            return theme;
+        }
+
+        logger.LogWarning(
+            "The theme {ThemeId} {Version} does not pass the checks of this version of WaveMP ({Problems}); it is " +
+            "offered as it is until an admin uploads a new version",
+            theme.Id,
+            theme.Version,
+            string.Join(", ", problems.Select(problem => problem.Code).Distinct()));
+        return theme with { Problems = problems };
     }
 
     private async Task<InstalledTheme?> ReadDescriptionAsync(string folder, CancellationToken cancellationToken)

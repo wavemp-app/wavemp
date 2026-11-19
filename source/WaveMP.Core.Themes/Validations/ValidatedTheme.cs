@@ -24,4 +24,10 @@ public sealed class ValidatedTheme
     /// The installed name of the preview picture of each variant.
     /// </summary>
     public required IReadOnlyDictionary<ThemeVariant, string> Previews { get; init; }
+
+    /// <summary>
+    /// The path in the package of each installed file by its installed name; for files with the same content, the first
+    /// path.
+    /// </summary>
+    public required IReadOnlyDictionary<string, string> Sources { get; init; }
 }

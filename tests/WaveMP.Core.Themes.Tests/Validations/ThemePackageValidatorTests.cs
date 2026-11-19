@@ -33,6 +33,17 @@ public class ThemePackageValidatorTests
     }
 
     [Test]
+    public void Validate_ValidPackage_KeepsTheFirstPathOfEachInstalledFile()
+    {
+        ValidatedTheme theme = Validate(new ThemePackageBuilder()).Theme!;
+
+        theme.Sources.Should().HaveCount(3);
+        theme.Sources[theme.Stylesheet.Name].Should().Be("theme.css");
+        theme.Sources[theme.Previews[ThemeVariant.Light]].Should().Be("preview-dark.png");
+        theme.Sources.Values.Should().Contain("images/glass.svg");
+    }
+
+    [Test]
     public void Validate_ValidPackage_PointsTheCssToTheInstalledPictures()
     {
         ValidatedTheme theme = Validate(new ThemePackageBuilder()).Theme!;

@@ -37,20 +37,22 @@ internal static partial class CssAddresses
                 : new CssAddress(CssAddressKind.Invalid);
         }
 
-        if (address.StartsWith('/'))
-        {
-            return new CssAddress(CssAddressKind.Absolute);
-        }
-
         int hash = address.IndexOf('#', StringComparison.Ordinal);
         string path = hash < 0 ? address : address[..hash];
         string fragment = hash < 0 ? string.Empty : address[hash..];
-        if (path.Contains('?', StringComparison.Ordinal) || (fragment.Length > 0 && !FragmentPattern().IsMatch(fragment)))
+        bool isValid = !path.Contains('?', StringComparison.Ordinal) &&
+            (fragment.Length == 0 || FragmentPattern().IsMatch(fragment));
+        if (address.StartsWith('/'))
         {
-            return new CssAddress(CssAddressKind.Invalid);
+            // The path only counts when it is a plain one, e.g. for the addresses of an installed theme.
+            return isValid
+                ? new CssAddress(CssAddressKind.Absolute, path, fragment)
+                : new CssAddress(CssAddressKind.Absolute);
         }
 
-        return new CssAddress(CssAddressKind.Relative, path, fragment);
+        return isValid
+            ? new CssAddress(CssAddressKind.Relative, path, fragment)
+            : new CssAddress(CssAddressKind.Invalid);
     }
 
     [GeneratedRegex(@"\A[A-Za-z][A-Za-z0-9+.\-]*:", RegexOptions.CultureInvariant)]

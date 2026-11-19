@@ -1,4 +1,6 @@
+using System.Text.Json.Serialization;
 using WaveMP.Core.Themes.Definitions;
+using WaveMP.Core.Themes.Validations;
 
 namespace WaveMP.Core.Themes.Storage;
 
@@ -50,4 +52,24 @@ public sealed record InstalledTheme
     /// When this version of the theme was installed.
     /// </summary>
     public required DateTimeOffset InstalledAt { get; init; }
+
+    /// <summary>
+    /// The path in the uploaded package of each file by its installed name, so problems found later name the file as
+    /// the author knows it. Empty for themes installed before WaveMP kept it.
+    /// </summary>
+    public IReadOnlyDictionary<string, string> Sources { get; init; } = new Dictionary<string, string>();
+
+    /// <summary>
+    /// What the rules of this version of WaveMP reject in the installed theme, found when the themes are read on
+    /// start (see <see cref="InstalledThemeCheck"/>). Empty for a theme that passes them; otherwise the theme is
+    /// outdated and still offered as it is until an admin uploads a new version. Not stored in <c>theme.json</c>.
+    /// </summary>
+    [JsonIgnore]
+    public IReadOnlyList<ThemeError> Problems { get; init; } = [];
+
+    /// <summary>
+    /// Whether the theme no longer passes the rules of this version (see <see cref="Problems"/>).
+    /// </summary>
+    [JsonIgnore]
+    public bool IsOutdated => Problems.Count > 0;
 }

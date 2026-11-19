@@ -43,7 +43,33 @@ public static class ThemePackageValidator
             return Rejected(package.Errors);
         }
 
+        return Validate(package, expectedId, installed: false);
+    }
+
+    /// <summary>
+    /// Checks the files of an installed theme again with the rules of this version, as if they were a package of their
+    /// own: <paramref name="package"/> holds them by their installed names plus a <c>manifest.json</c> built from the
+    /// description of the theme. The addresses of its CSS file are already rewritten to the installed files, so they
+    /// count as relative ones; an SVG file that would be cleaned differently today is reported as
+    /// <see cref="ThemeErrorCode.SvgNotCleaned"/>. The limits of a package are not checked again: they guard the
+    /// upload, and the rewritten CSS file is longer than the uploaded one.
+    /// </summary>
+    internal static ThemeValidationResult ValidateInstalled(ThemePackage package, string id)
+    {
+        return Validate(package, id, installed: true);
+    }
+
+    private static ThemeValidationResult Validate(ThemePackage package, string? expectedId, bool installed)
+    {
         List<ThemeError> errors = [];
+        foreach (string path in package.Files.Keys.Order(StringComparer.Ordinal))
+        {
+            if (PackagePaths.KindOf(path) == PackageFileKind.Unsupported)
+            {
+                errors.Add(new ThemeError(ThemeErrorCode.UnsupportedFile, path));
+            }
+        }
+
         ThemeManifest? manifest = null;
         if (package.Files.TryGetValue(PackagePaths.ManifestFileName, out byte[]? manifestContent))
         {
@@ -62,14 +88,22 @@ public static class ThemePackageValidator
                 Field: ThemeManifestReader.IdField));
         }
 
-        string themeId = manifest?.Id ?? PlaceholderId;
-        Dictionary<string, ValidatedThemeFile> files = CheckFiles(package, errors);
+        // An installed theme keeps its id, even when its manifest no longer passes.
+        string themeId = (installed ? expectedId : manifest?.Id) ?? PlaceholderId;
+        Dictionary<string, ValidatedThemeFile> files = CheckFiles(package, installed, errors);
         CheckPreviews(manifest, package, errors);
-        ValidatedThemeFile? stylesheet = CheckStylesheet(package, themeId, files, errors);
+        (string Path, ValidatedThemeFile File)? stylesheet = CheckStylesheet(package, themeId, installed, files, errors);
 
-        if (errors.Count > 0 || manifest is null || stylesheet is null)
+        if (errors.Count > 0 || manifest is null || stylesheet is not { } css)
         {
             return Rejected(errors);
+        }
+
+        // The first path of each installed file, so a problem found later can name the file as its author knows it.
+        Dictionary<string, string> sources = new(StringComparer.Ordinal) { [css.File.Name] = css.Path };
+        foreach ((string path, ValidatedThemeFile file) in files.OrderBy(pair => pair.Key, StringComparer.Ordinal))
+        {
+            sources.TryAdd(file.Name, path);
         }
 
         return new ThemeValidationResult
@@ -77,25 +111,30 @@ public static class ThemePackageValidator
             Theme = new ValidatedTheme
             {
                 Manifest = manifest,
-                Stylesheet = stylesheet,
-                Files = [stylesheet, .. files.Values.DistinctBy(file => file.Name)],
+                Stylesheet = css.File,
+                Files = [css.File, .. files.Values.DistinctBy(file => file.Name)],
                 Previews = manifest.Previews.ToDictionary(pair => pair.Key, pair => files[pair.Value].Name),
+                Sources = sources,
             },
             Errors = [],
         };
     }
 
     /// <summary>
-    /// The pictures and fonts of the package, checked, by their path in the package.
+    /// The pictures and fonts of the package, checked, by their path in the package. For an installed theme, an SVG
+    /// file must come out of the cleaning unchanged.
     /// </summary>
-    private static Dictionary<string, ValidatedThemeFile> CheckFiles(ThemePackage package, List<ThemeError> errors)
+    private static Dictionary<string, ValidatedThemeFile> CheckFiles(
+        ThemePackage package,
+        bool installed,
+        List<ThemeError> errors)
     {
         Dictionary<string, ValidatedThemeFile> files = new(StringComparer.Ordinal);
         foreach ((string path, byte[] content) in package.Files.OrderBy(pair => pair.Key, StringComparer.Ordinal))
         {
             byte[]? checkedContent = PackagePaths.KindOf(path) switch
             {
-                PackageFileKind.Svg => SvgSanitizer.Sanitize(path, content, errors),
+                PackageFileKind.Svg => CheckSvg(path, content, installed, errors),
                 PackageFileKind.Png => CheckSignature(path, content, RasterImages.IsPng(content), errors),
                 PackageFileKind.WebP => CheckSignature(path, content, RasterImages.IsWebP(content), errors),
                 PackageFileKind.Font =>
@@ -109,6 +148,18 @@ public static class ThemePackageValidator
         }
 
         return files;
+    }
+
+    private static byte[]? CheckSvg(string path, byte[] content, bool installed, List<ThemeError> errors)
+    {
+        byte[]? cleaned = SvgSanitizer.Sanitize(path, content, errors);
+        if (cleaned is null || !installed || cleaned.AsSpan().SequenceEqual(content))
+        {
+            return cleaned;
+        }
+
+        errors.Add(new ThemeError(ThemeErrorCode.SvgNotCleaned, path));
+        return null;
     }
 
     /// <summary>
@@ -156,9 +207,14 @@ public static class ThemePackageValidator
         }
     }
 
-    private static ValidatedThemeFile? CheckStylesheet(
+    /// <summary>
+    /// The checked CSS file with its path in the package. In an installed theme, the addresses of its own files (see
+    /// <see cref="ThemeFiles.AddressOf"/>) stand for the files they name.
+    /// </summary>
+    private static (string Path, ValidatedThemeFile File)? CheckStylesheet(
         ThemePackage package,
         string themeId,
+        bool installed,
         Dictionary<string, ValidatedThemeFile> files,
         List<ThemeError> errors)
     {
@@ -177,8 +233,21 @@ public static class ThemePackageValidator
         }
 
         string path = stylesheets[0];
-        string? css = ThemeStylesheet.Check(path, package.Files[path], AddressOf, errors);
-        return css is null ? null : ToFile(Encoding.UTF8.GetBytes(css), ".css");
+        string? css = ThemeStylesheet.Check(
+            path,
+            package.Files[path],
+            AddressOf,
+            errors,
+            installed ? InstalledFileOf : null);
+        return css is null ? null : (path, ToFile(Encoding.UTF8.GetBytes(css), ".css"));
+
+        string? InstalledFileOf(string address)
+        {
+            string prefix = ThemeFiles.AddressOf(themeId, string.Empty);
+            return address.StartsWith(prefix, StringComparison.Ordinal) && address.Length > prefix.Length
+                ? address[prefix.Length..]
+                : null;
+        }
 
         // A picture or font whose content was rejected is in the package: its own error says what is wrong with it, so
         // the CSS file is not reported as naming a missing file. The package is rejected anyway.

@@ -53,8 +53,16 @@ internal static class ThemeStylesheet
     /// Checks the CSS file at <paramref name="path"/> and returns it with rewritten addresses, or <c>null</c> with the
     /// reasons in <paramref name="errors"/>. <paramref name="addressOf"/> returns the public address of a picture or a
     /// font of the package by its path, or <c>null</c> if the package has no such file at that path.
+    /// <paramref name="installedFileOf"/> is only given when the CSS file of an installed theme is checked again: its
+    /// addresses are already rewritten, so it returns the file that a root-absolute address of the theme names, or
+    /// <c>null</c> for any other root-absolute address (which is rejected as usual).
     /// </summary>
-    public static string? Check(string path, byte[] content, Func<string, string?> addressOf, List<ThemeError> errors)
+    public static string? Check(
+        string path,
+        byte[] content,
+        Func<string, string?> addressOf,
+        List<ThemeError> errors,
+        Func<string, string?>? installedFileOf = null)
     {
         string? text = Decode(content);
         if (text is null)
@@ -90,7 +98,7 @@ internal static class ThemeStylesheet
         int copied = 0;
         foreach (CssReference reference in scan.References)
         {
-            string? replacement = Rewrite(path, reference, addressOf, found);
+            string? replacement = Rewrite(path, reference, addressOf, installedFileOf, found);
             if (replacement is null)
             {
                 continue;
@@ -113,6 +121,7 @@ internal static class ThemeStylesheet
         string path,
         CssReference reference,
         Func<string, string?> addressOf,
+        Func<string, string?>? installedFileOf,
         List<ThemeError> errors)
     {
         CssAddress address = CssAddresses.Classify(reference.Value);
@@ -122,6 +131,11 @@ internal static class ThemeStylesheet
                 errors.Add(new ThemeError(ThemeErrorCode.StylesheetExternalUrl, path, reference.Line));
                 return null;
             case CssAddressKind.Absolute:
+                if (address.Path.Length > 0 && installedFileOf?.Invoke(address.Path) is { } installed)
+                {
+                    return Published(installed);
+                }
+
                 errors.Add(new ThemeError(ThemeErrorCode.StylesheetAbsoluteUrl, path, reference.Line));
                 return null;
             case CssAddressKind.Fragment:
@@ -134,16 +148,21 @@ internal static class ThemeStylesheet
                     return null;
                 }
 
-                if (addressOf(target) is not { } published)
-                {
-                    errors.Add(new ThemeError(ThemeErrorCode.StylesheetMissingFile, path, reference.Line, File: target));
-                    return null;
-                }
-
-                return Format(published + address.Fragment, reference.IsString);
+                return Published(target);
             default:
                 errors.Add(new ThemeError(ThemeErrorCode.StylesheetInvalidUrl, path, reference.Line));
                 return null;
+        }
+
+        string? Published(string target)
+        {
+            if (addressOf(target) is not { } published)
+            {
+                errors.Add(new ThemeError(ThemeErrorCode.StylesheetMissingFile, path, reference.Line, File: target));
+                return null;
+            }
+
+            return Format(published + address.Fragment, reference.IsString);
         }
     }
 
