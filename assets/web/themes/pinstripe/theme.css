@@ -1340,6 +1340,7 @@ a[data-part='breadcrumb-link']:hover {
 [data-part='transcoding-status'],
 [data-part='scan-status'],
 [data-part='backup-status'],
+[data-part='library-check-status'],
 [data-part='stat-item'],
 [data-part='run-item'],
 [data-part='job-item'],
@@ -1347,6 +1348,7 @@ a[data-part='breadcrumb-link']:hover {
 [data-part='backup-item'],
 [data-part='scrobble-item'],
 [data-part='file-selection-item'],
+[data-part='library-issue-item'],
 [data-part='review-item'],
 [data-part='file-choice'],
 [data-part='disclosure'] {
@@ -1360,7 +1362,7 @@ a[data-part='breadcrumb-link']:hover {
     background: linear-gradient(#ffffff, #f2f4f6);
 }
 
-:is([data-part='cache-usage'], [data-part='transcoding-status'], [data-part='backup-status'])
+:is([data-part='cache-usage'], [data-part='transcoding-status'], [data-part='backup-status'], [data-part='library-check-status'])
     [data-part='stat-item'] {
     box-shadow: none;
 }

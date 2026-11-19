@@ -1057,7 +1057,8 @@ a[data-part='breadcrumb-link']:hover {
 [data-part='stat-value'] > [data-part='badge'],
 [data-part='review-meta'] > [data-part='badge'],
 [data-part='review-tags'] > [data-part='badge'],
-[data-part='file-selection-info'] [data-part='badge'] {
+[data-part='file-selection-info'] [data-part='badge'],
+[data-part='library-issue-meta'] > [data-part='badge'] {
     border: 0;
     border-radius: 999px;
     background: var(--wmp-color-surface);
@@ -2080,6 +2081,7 @@ a[data-part='breadcrumb-link']:hover {
 [data-part='transcoding-status'],
 [data-part='scan-status'],
 [data-part='backup-status'],
+[data-part='library-check-status'],
 [data-part='stat-item'],
 [data-part='run-item'],
 [data-part='job-item'],
@@ -2090,6 +2092,7 @@ a[data-part='breadcrumb-link']:hover {
 [data-part='scrobble-item'],
 [data-part='file-item'],
 [data-part='file-selection-item'],
+[data-part='library-issue-item'],
 [data-part='file-choice'],
 [data-part='review-item'],
 [data-part='disclosure'],
@@ -2109,6 +2112,7 @@ a[data-part='breadcrumb-link']:hover {
         [data-part='transcoding-status'],
         [data-part='scan-status'],
         [data-part='backup-status'],
+        [data-part='library-check-status'],
         [data-part='stat-item'],
         [data-part='run-item'],
         [data-part='job-item'],
@@ -2119,6 +2123,7 @@ a[data-part='breadcrumb-link']:hover {
         [data-part='scrobble-item'],
         [data-part='file-item'],
         [data-part='file-selection-item'],
+        [data-part='library-issue-item'],
         [data-part='file-choice'],
         [data-part='review-item'],
         [data-part='disclosure'],
@@ -2131,7 +2136,7 @@ a[data-part='breadcrumb-link']:hover {
 }
 
 /* Statistics inside a panel are clear cells without a frame of their own. */
-:is([data-part='transcoding-status'], [data-part='cache-usage'], [data-part='backup-status'])
+:is([data-part='transcoding-status'], [data-part='cache-usage'], [data-part='backup-status'], [data-part='library-check-status'])
     [data-part='stat-item'] {
     background: var(--cg-groove);
     box-shadow: none;
@@ -2152,7 +2157,8 @@ a[data-part='breadcrumb-link']:hover {
 [data-part='job-item']:hover,
 [data-part='run-item']:hover,
 [data-part='transcode-item']:hover,
-[data-part='file-selection-item']:hover {
+[data-part='file-selection-item']:hover,
+[data-part='library-issue-item']:hover {
     background: var(--wmp-color-hover);
 }
 
@@ -2163,6 +2169,7 @@ a[data-part='breadcrumb-link']:hover {
 [data-part='backup-name'],
 [data-part='scrobble-name'],
 [data-part='file-selection-title'],
+[data-part='library-issue-title'],
 [data-part='review-title'] {
     color: var(--cg-ink);
 }

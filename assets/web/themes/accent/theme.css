@@ -1057,7 +1057,7 @@ a[data-part='breadcrumb-link']:hover {
 }
 
 /* Titles that open a dialog underline in ink, like links. */
-:is([data-part='file-selection-title'], [data-part='review-title']):hover {
+:is([data-part='file-selection-title'], [data-part='library-issue-title'], [data-part='review-title']):hover {
     color: var(--wmp-color-text);
 }
 
@@ -1603,6 +1603,7 @@ a[data-part='breadcrumb-link']:hover {
     [data-part='transcoding-status'],
     [data-part='scan-status'],
     [data-part='backup-status'],
+    [data-part='library-check-status'],
     [data-part='stat-item'],
     [data-part='run-item'],
     [data-part='job-item'],
@@ -1613,6 +1614,7 @@ a[data-part='breadcrumb-link']:hover {
     [data-part='source-item'],
     [data-part='file-item'],
     [data-part='file-selection-item'],
+    [data-part='library-issue-item'],
     [data-part='review-item'],
     [data-part='disclosure'],
     [data-part='issue-item']
@@ -1622,7 +1624,7 @@ a[data-part='breadcrumb-link']:hover {
     background: var(--acc-card);
 }
 
-:is([data-part='cache-usage'], [data-part='transcoding-status'], [data-part='backup-status'])
+:is([data-part='cache-usage'], [data-part='transcoding-status'], [data-part='backup-status'], [data-part='library-check-status'])
     [data-part='stat-item'] {
     background: var(--wmp-color-surface);
 }
@@ -1635,7 +1637,7 @@ a[data-part='breadcrumb-link']:hover {
     font-weight: 600;
 }
 
-:is([data-part='run-item'], [data-part='job-item'], [data-part='transcode-item'], [data-part='user-item'], [data-part='source-item'], [data-part='review-item'], [data-part='file-selection-item']):hover {
+:is([data-part='run-item'], [data-part='job-item'], [data-part='transcode-item'], [data-part='user-item'], [data-part='source-item'], [data-part='review-item'], [data-part='file-selection-item'], [data-part='library-issue-item']):hover {
     background: var(--wmp-image-default-button-hover);
 }
 

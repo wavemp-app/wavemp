@@ -1488,6 +1488,7 @@ a[data-part='breadcrumb-link']:hover {
 [data-part='source-item'],
 [data-part='file-item'],
 [data-part='file-selection-item'],
+[data-part='library-issue-item'],
 [data-part='review-item'],
 [data-part='backup-item'] {
     border: 1px solid #c6d7f7;
@@ -1499,6 +1500,7 @@ a[data-part='breadcrumb-link']:hover {
 [data-part='user-item']:hover,
 [data-part='source-item']:hover,
 [data-part='file-selection-item']:hover,
+[data-part='library-issue-item']:hover,
 [data-part='review-item']:hover {
     border-color: #7d9fdf;
 }
@@ -1625,6 +1627,7 @@ a[data-part='breadcrumb-link']:hover {
 [data-part='cache-usage'],
 [data-part='transcoding-status'],
 [data-part='backup-status'],
+[data-part='library-check-status'],
 [data-part='scan-status'],
 [data-part='stat-item'],
 [data-part='run-item'],
@@ -1699,7 +1702,8 @@ a[data-part='breadcrumb-link']:hover {
 }
 
 [data-part='review-title'],
-[data-part='file-selection-title'] {
+[data-part='file-selection-title'],
+[data-part='library-issue-title'] {
     color: #0a48c2;
     font-weight: 700;
 }

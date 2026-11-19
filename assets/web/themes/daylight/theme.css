@@ -692,6 +692,7 @@ a[data-part='breadcrumb-link']:hover {
     [data-part='cache-usage'],
     [data-part='transcoding-status'],
     [data-part='backup-status'],
+    [data-part='library-check-status'],
     [data-part='scan-status'],
     [data-part='stat-item'],
     [data-part='run-item'],
@@ -700,6 +701,7 @@ a[data-part='breadcrumb-link']:hover {
     [data-part='backup-item'],
     [data-part='scrobble-item'],
     [data-part='file-selection-item'],
+    [data-part='library-issue-item'],
     [data-part='review-item'],
     [data-part='disclosure']
 ) {
@@ -719,6 +721,7 @@ a[data-part='breadcrumb-link']:hover {
     [data-part='transcode-item'],
     [data-part='backup-item'],
     [data-part='file-selection-item'],
+    [data-part='library-issue-item'],
     [data-part='review-item']
 ):hover {
     border-color: #a9d0ee;
@@ -761,7 +764,8 @@ a[data-part='breadcrumb-link']:hover {
         [data-part='scrobble-meta'],
         [data-part='review-meta'],
         [data-part='review-tags'],
-        [data-part='file-selection-info']
+        [data-part='file-selection-info'],
+        [data-part='library-issue-meta']
     )
     > [data-part='badge'] {
     border: 1px solid #c3dbef;
@@ -1724,7 +1728,8 @@ a[data-part='breadcrumb-link']:hover {
 }
 
 [data-part='review-title'],
-[data-part='file-selection-title'] {
+[data-part='file-selection-title'],
+[data-part='library-issue-title'] {
     color: #0f62b8;
 }
 
