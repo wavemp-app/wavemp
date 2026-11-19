@@ -360,8 +360,14 @@ describe('AlbumView', () => {
 
         const ids = (call: unknown[]) => (call[0] as Track[]).map((item) => item.id)
         expect(ids(playTracks.mock.calls[0]!)).toEqual(['One', 'Two'])
-        expect(playTracks.mock.calls[0]!.slice(1)).toEqual([0, { shuffle: false }])
-        expect(playTracks.mock.calls[1]!.slice(1)).toEqual([-1, { shuffle: true }])
+        expect(playTracks.mock.calls[0]!.slice(1)).toEqual([
+            0,
+            { shuffle: false, source: { kind: 'album', id: 'first' } },
+        ])
+        expect(playTracks.mock.calls[1]!.slice(1)).toEqual([
+            -1,
+            { shuffle: true, source: { kind: 'album', id: 'first' } },
+        ])
         wrapper.unmount()
     })
 

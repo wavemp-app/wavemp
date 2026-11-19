@@ -74,6 +74,7 @@ import {
     type QueueItem,
 } from '@/player/queue'
 import { replayGainFactor } from '@/player/replayGain'
+import type { PlayerSource, RestoredState } from '@/player/resume'
 import { shouldPreload, shouldRestart } from '@/player/scheduling'
 import {
     browserSleepTimerClock,
@@ -244,6 +245,8 @@ export const usePlayerStore = defineStore('player', () => {
     const autoplay = shallowRef<readonly AutoplayEntry[]>([])
     /** Whether songs of autoplay are being requested. */
     const autoplayLoading = ref(false)
+    /** Where the list in the queue came from; null for single songs. */
+    const listSource = shallowRef<PlayerSource | null>(null)
 
     const current = computed<QueueItem | undefined>(() => currentItem(queue.value))
     const shuffle = computed(() => queue.value.shuffle)
@@ -783,14 +786,18 @@ export const usePlayerStore = defineStore('player', () => {
         reset()
     }
 
-    /** Replaces the queue with the tracks and plays the one at start. */
+    /**
+     * Replaces the queue with the tracks and plays the one at start. The source names the album,
+     * artist or playlist the tracks come from.
+     */
     function playTrackList(
         tracks: readonly Track[],
         start = 0,
-        options: { shuffle?: boolean } = {},
+        options: { shuffle?: boolean; source?: PlayerSource } = {},
     ): void {
         const shuffled = options.shuffle ?? queue.value.shuffle
         queue.value = playTracks(tracks, start, shuffled, playerDependencies.random)
+        listSource.value = options.source ?? null
         message.value = null
         skipped = 0
         retried = null
@@ -1401,6 +1408,7 @@ export const usePlayerStore = defineStore('player', () => {
         sleep.cancel()
         stopPlayback()
         queue.value = emptyQueue
+        listSource.value = null
         autoplayPlaybacks.clear()
         message.value = null
         reset()
@@ -1408,6 +1416,25 @@ export const usePlayerStore = defineStore('player', () => {
 
     function dismissMessage(): void {
         message.value = null
+    }
+
+    /**
+     * Takes over a saved state (see src/player/resume.ts) in place of the queue: the current entry
+     * waits paused at the saved position, so play goes on there. Browsers do not start playback
+     * without an action of the user, so nothing plays by itself.
+     */
+    function restore(state: RestoredState): void {
+        stopPlayback()
+        queue.value = state.queue
+        repeat.value = state.repeat
+        listSource.value = state.source
+        message.value = null
+        skipped = 0
+        retried = null
+        autoplayPlaybacks.clear()
+        if (current.value) {
+            void startCurrent(false, state.position)
+        }
     }
 
     // A new ReplayGain mode applies to the current track at once and to the next when it loads.
@@ -1608,6 +1635,8 @@ export const usePlayerStore = defineStore('player', () => {
         autoplay,
         autoplayLoading,
         autoplayActive,
+        source: listSource,
+        restore,
         playTracks: playTrackList,
         playNext,
         addToQueue,

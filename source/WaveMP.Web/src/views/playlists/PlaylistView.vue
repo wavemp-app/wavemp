@@ -174,7 +174,10 @@ function remove(indexes: readonly number[]): void {
 }
 
 function play(shuffle: boolean): void {
-    player.playTracks(tracks.value, shuffle ? -1 : 0, { shuffle })
+    player.playTracks(tracks.value, shuffle ? -1 : 0, {
+        shuffle,
+        source: { kind: 'playlist', id: props.id },
+    })
 }
 
 function chooseCover(): void {
@@ -338,6 +341,7 @@ onActivated(() => {
                 :rows="rows"
                 :label="playlist.name ?? ''"
                 sortable
+                :source="{ kind: 'playlist', id: props.id }"
                 :state="busy ? 'busy' : undefined"
                 @move="move"
                 @remove="remove"

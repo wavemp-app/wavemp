@@ -309,8 +309,8 @@ describe('menus of albums, artists, playlists and smart playlists', () => {
 
         expect(services.tracksOf).toHaveBeenCalledWith({ kind: 'album', id: 'album-1' })
         expect(vi.mocked(services.playTracks).mock.calls).toEqual([
-            [[plain, song], 0, { shuffle: false }],
-            [[plain, song], -1, { shuffle: true }],
+            [[plain, song], 0, { shuffle: false, source: { kind: 'album', id: 'album-1' } }],
+            [[plain, song], -1, { shuffle: true, source: { kind: 'album', id: 'album-1' } }],
         ])
         expect(services.addToQueue).toHaveBeenCalledWith([plain, song])
         expect(services.addToPlaylist).toHaveBeenCalledWith(['plain', 'clip', 'song'])
@@ -347,7 +347,10 @@ describe('menus of albums, artists, playlists and smart playlists', () => {
         await runMenuAction(target, 'favorite', services)
 
         expect(services.tracksOf).toHaveBeenCalledWith({ kind: 'artist', id: 'artist-1' })
-        expect(services.playTracks).toHaveBeenCalledWith([plain, song], -1, { shuffle: true })
+        expect(services.playTracks).toHaveBeenCalledWith([plain, song], -1, {
+            shuffle: true,
+            source: { kind: 'artist', id: 'artist-1' },
+        })
         expect(services.setFavorite).toHaveBeenCalledWith('Artist', 'artist-1', true)
     })
 
@@ -407,7 +410,10 @@ describe('menus of albums, artists, playlists and smart playlists', () => {
         await runMenuAction(target, 'delete', services)
 
         expect(services.tracksOf).toHaveBeenCalledWith({ kind: 'smart-playlist', id: 'smart' })
-        expect(services.playTracks).toHaveBeenCalledWith([plain, song], -1, { shuffle: true })
+        expect(services.playTracks).toHaveBeenCalledWith([plain, song], -1, {
+            shuffle: true,
+            source: { kind: 'smart-playlist', id: 'smart' },
+        })
         expect(services.navigate).toHaveBeenCalledWith({
             name: 'smart-playlist-edit',
             params: { id: 'smart' },

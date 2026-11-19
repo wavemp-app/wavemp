@@ -21,6 +21,7 @@ import ItemMenuButton from '@/components/menus/ItemMenuButton.vue'
 import { useFormat } from '@/composables/useFormat'
 import { useSortableList } from '@/composables/useSortableList'
 import { artistLabelKey, durationSeconds, trackRowState } from '@/library/presentation'
+import type { PlayerSource } from '@/player/resume'
 import { useContextMenuStore } from '@/stores/contextMenu'
 import { usePlayerStore } from '@/stores/player'
 
@@ -47,8 +48,10 @@ const props = withDefaults(
         detailLabel?: string
         /** data-state tokens of the list, e.g. "busy" while a change of the playlist runs. */
         state?: string
+        /** Where the tracks come from (the playlist of the page), saved with the queue. */
+        source?: PlayerSource
     }>(),
-    { sortable: false, detailLabel: undefined, state: undefined },
+    { sortable: false, detailLabel: undefined, state: undefined, source: undefined },
 )
 
 const emit = defineEmits<{
@@ -125,7 +128,7 @@ function artistOf(track: Track): string {
 function playFrom(index: number): void {
     const track = tracks.value[index]
     if (track?.hasAudio) {
-        player.playTracks(tracks.value, index)
+        player.playTracks(tracks.value, index, { source: props.source })
     }
 }
 

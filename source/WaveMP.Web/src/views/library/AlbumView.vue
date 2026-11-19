@@ -57,7 +57,10 @@ const playable = computed(() =>
 const hasAudio = computed(() => playable.value.length > 0)
 
 function play(shuffle: boolean): void {
-    player.playTracks(playable.value, shuffle ? -1 : 0, { shuffle })
+    player.playTracks(playable.value, shuffle ? -1 : 0, {
+        shuffle,
+        source: { kind: 'album', id: props.id },
+    })
 }
 
 async function load(): Promise<void> {
@@ -183,7 +186,12 @@ useDetailTitle(() => (status.value === 'ready' ? album.value?.title : null))
                     />
                 </template>
             </DetailHeader>
-            <TrackGroupList :groups="groups" :label="album.title ?? ''" :show-group-info="false" />
+            <TrackGroupList
+                :groups="groups"
+                :label="album.title ?? ''"
+                :show-group-info="false"
+                :source="{ kind: 'album', id: props.id }"
+            />
             <section
                 v-if="session.isAdmin"
                 data-part="section"

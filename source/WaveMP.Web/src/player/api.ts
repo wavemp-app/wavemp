@@ -7,10 +7,12 @@ import type {
     AudioFormat,
     AutoplayResult,
     Equalizer,
+    PlaybackState,
     PlaybackTarget,
     PlayHistoryEntry,
     TrackPlayback,
     TrackVideoPlayback,
+    UpdatePlaybackState,
 } from '@/api/generated/models'
 import type { VideoFormats } from './videoFormats'
 
@@ -79,4 +81,17 @@ export function recordPlay(trackId: string, playedAt: Date): Promise<PlayHistory
 /** The equalizer of the server: bands, limits and the curves of the presets. */
 export function getEqualizer(): Promise<Equalizer | undefined> {
     return apiClient.api.v1.equalizer.get()
+}
+
+/** The saved playback state of the current profile; the request fails with 404 before the first save. */
+export function getPlaybackState(): Promise<PlaybackState | undefined> {
+    return apiClient.api.v1.me.playbackState.get()
+}
+
+/**
+ * Saves the playback state of this device for the current profile. A state of another device that
+ * changed later stays; the request then fails with 409 (playback.state_outdated).
+ */
+export function savePlaybackState(state: UpdatePlaybackState): Promise<void> {
+    return apiClient.api.v1.me.playbackState.put(state)
 }

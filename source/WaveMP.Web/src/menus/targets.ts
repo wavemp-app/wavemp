@@ -109,7 +109,11 @@ export interface TrackSource {
 /** What the actions of the menus can do; the menu host provides it with the stores and the router. */
 export interface MenuServices {
     readonly isAdmin: boolean
-    playTracks(tracks: readonly Track[], start: number, options?: { shuffle?: boolean }): void
+    playTracks(
+        tracks: readonly Track[],
+        start: number,
+        options?: { shuffle?: boolean; source?: TrackSource },
+    ): void
     playNext(tracks: readonly Track[]): void
     addToQueue(tracks: readonly Track[]): void
     isFavorite(type: FavoriteType, id: string, fallback?: boolean | null): boolean

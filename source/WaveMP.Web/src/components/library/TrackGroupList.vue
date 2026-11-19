@@ -14,6 +14,7 @@ import ItemMenuButton from '@/components/menus/ItemMenuButton.vue'
 import { useFormat } from '@/composables/useFormat'
 import type { TrackGroup } from '@/library/grouping'
 import { artistLabelKey, durationSeconds, trackRowState } from '@/library/presentation'
+import type { PlayerSource } from '@/player/resume'
 import { useContextMenuStore } from '@/stores/contextMenu'
 import { usePlayerStore } from '@/stores/player'
 
@@ -38,8 +39,10 @@ const props = withDefaults(
         showGroupInfo?: boolean
         /** data-state tokens of the list, e.g. "placeholder". */
         state?: string
+        /** Where the tracks come from (the album of the page), saved with the queue. */
+        source?: PlayerSource
     }>(),
-    { showGroupInfo: true, state: undefined },
+    { showGroupInfo: true, state: undefined, source: undefined },
 )
 
 /** Id of the selected track. */
@@ -129,7 +132,7 @@ function playFrom(track: Track): void {
         return
     }
 
-    player.playTracks(allTracks.value, allTracks.value.indexOf(track))
+    player.playTracks(allTracks.value, allTracks.value.indexOf(track), { source: props.source })
 }
 
 function activate(rowId: string): void {

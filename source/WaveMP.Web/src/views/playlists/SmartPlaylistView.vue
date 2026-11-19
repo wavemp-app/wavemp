@@ -135,7 +135,10 @@ async function load(): Promise<void> {
 }
 
 function play(shuffle: boolean): void {
-    player.playTracks(tracks.value, shuffle ? -1 : 0, { shuffle })
+    player.playTracks(tracks.value, shuffle ? -1 : 0, {
+        shuffle,
+        source: { kind: 'smart-playlist', id: props.id },
+    })
 }
 
 function edit(): void {
@@ -277,7 +280,12 @@ onActivated(() => {
                 <p data-part="empty-state-title">{{ t('smartPlaylists.emptyTitle') }}</p>
                 <p data-part="empty-state-text">{{ t('smartPlaylists.emptyText') }}</p>
             </div>
-            <PlaylistTrackList v-else :rows="rows" :label="smartPlaylist.name ?? ''" />
+            <PlaylistTrackList
+                v-else
+                :rows="rows"
+                :label="smartPlaylist.name ?? ''"
+                :source="{ kind: 'smart-playlist', id: props.id }"
+            />
             <SmartPlaylistConvertDialog
                 v-if="converting"
                 v-model:open="converting"

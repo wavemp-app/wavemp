@@ -256,7 +256,7 @@ export const songActions: readonly MenuAction<SongTarget>[] = [
 async function playSource(source: TrackSource, services: MenuServices, shuffle: boolean) {
     const tracks = withAudio(await services.tracksOf(source))
     if (tracks.length > 0) {
-        services.playTracks(tracks, shuffle ? -1 : 0, { shuffle })
+        services.playTracks(tracks, shuffle ? -1 : 0, { shuffle, source })
     }
 }
 
