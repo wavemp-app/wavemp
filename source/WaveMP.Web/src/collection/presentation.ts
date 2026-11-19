@@ -55,3 +55,20 @@ export function withMyMusic(query: LocationQuery, myMusic: boolean): LocationQue
     }
     return result
 }
+
+/** Id of the media folder the query of a route filters by (?source=<id>), or undefined. */
+export function sourceOf(query: LocationQuery): string | undefined {
+    const value = Array.isArray(query.source) ? query.source[0] : query.source
+    return typeof value === 'string' && value !== '' ? value : undefined
+}
+
+/** The query with or without the filter by media folder; the other parameters stay. */
+export function withSource(query: LocationQuery, sourceId: string | undefined): LocationQuery {
+    const result: LocationQuery = { ...query }
+    if (sourceId) {
+        result.source = sourceId
+    } else {
+        delete result.source
+    }
+    return result
+}

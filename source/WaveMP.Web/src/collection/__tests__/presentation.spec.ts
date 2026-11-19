@@ -7,7 +7,9 @@ import {
     nextRating,
     ratingStars,
     starState,
+    sourceOf,
     withMyMusic,
+    withSource,
 } from '../presentation'
 
 describe('ratings', () => {
@@ -70,5 +72,23 @@ describe('my music in the query', () => {
             myMusic: 'true',
         })
         expect(withMyMusic({ q: 'rock', myMusic: 'true' }, false)).toEqual({ q: 'rock' })
+    })
+})
+
+describe('filter by media folder', () => {
+    it('reads the media folder from the query', () => {
+        expect(sourceOf({ source: 'abc' })).toBe('abc')
+        expect(sourceOf({ source: ['abc', 'def'] })).toBe('abc')
+        expect(sourceOf({ source: '' })).toBeUndefined()
+        expect(sourceOf({})).toBeUndefined()
+    })
+
+    it('sets and removes the media folder and keeps the rest of the query', () => {
+        expect(withSource({ q: 'rock', myMusic: 'true' }, 'abc')).toEqual({
+            q: 'rock',
+            myMusic: 'true',
+            source: 'abc',
+        })
+        expect(withSource({ q: 'rock', source: 'abc' }, undefined)).toEqual({ q: 'rock' })
     })
 })

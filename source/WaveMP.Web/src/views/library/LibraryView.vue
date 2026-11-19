@@ -14,9 +14,10 @@ import BaseAlert from '@/components/base/BaseAlert.vue'
 import BaseLink from '@/components/base/BaseLink.vue'
 import FavoritesCollection from '@/components/collection/FavoritesCollection.vue'
 import LibraryScopeSwitch from '@/components/collection/LibraryScopeSwitch.vue'
+import LibrarySourceFilter from '@/components/library/LibrarySourceFilter.vue'
 import TileCollection from '@/components/library/TileCollection.vue'
 import TrackCollection, { type TrackFilter } from '@/components/library/TrackCollection.vue'
-import { isMyMusic } from '@/collection/presentation'
+import { isMyMusic, sourceOf } from '@/collection/presentation'
 import { useLibraryTiles } from '@/composables/useLibraryTiles'
 import type { PagedListStatus } from '@/composables/usePagedList'
 import { useViewRoute } from '@/composables/useViewRoute'
@@ -28,7 +29,8 @@ import { parseSort, sortContext } from '@/library/sorting'
  * A section of the library: the songs grouped by album, the recently added songs (newest first),
  * the favorites of the profile, or albums, artists, genres and years as tiles. Search text (?q=,
  * not for years and favorites), sort order (?sort=, ?direction=) and the "my music" filter
- * (?myMusic=true, not for favorites) come from the query of the route.
+ * (?myMusic=true, not for favorites) and the media folder (?source=<id>, only for songs, recently
+ * added songs, albums and artists) come from the query of the route.
  */
 const props = defineProps<{
     /** Section of the library (route parameter), e.g. "songs". */
@@ -45,14 +47,29 @@ const filterable = computed(() => props.section !== 'years' && props.section !==
 // The favorites belong to the "my music" anyway, so their section offers no switch.
 const scoped = computed(() => props.section !== 'favorites')
 const myMusic = computed(() => scoped.value && isMyMusic(route.value.query))
-const trackFilter = computed<TrackFilter>(() => (myMusic.value ? { myMusic: true } : {}))
+// The API filters songs, albums and artists by media folder, not genres and years.
+const bySource = computed(() =>
+    ['songs', 'recently-added', 'albums', 'artists'].includes(props.section),
+)
+const sourceId = computed(() => (bySource.value ? sourceOf(route.value.query) : undefined))
+const trackFilter = computed<TrackFilter>(() => ({
+    ...(myMusic.value ? { myMusic: true } : {}),
+    ...(sourceId.value ? { sourceId: sourceId.value } : {}),
+}))
+const tileFiltered = computed(() => myMusic.value || !!sourceId.value)
 const search = computed(() => (filterable.value ? queryText(route.value.query) : ''))
 const sortState = computed(() => {
     const list = sortContext({ name: 'library-section', params: { section: props.section } })
     return list ? parseSort(list, route.value.query, search.value !== '') : {}
 })
 const reloadKey = computed(() =>
-    JSON.stringify([search.value, sortState.value.sort, sortState.value.direction, myMusic.value]),
+    JSON.stringify([
+        search.value,
+        sortState.value.sort,
+        sortState.value.direction,
+        myMusic.value,
+        sourceId.value,
+    ]),
 )
 const showAll = computed(() => {
     const query = { ...route.value.query }
@@ -82,11 +99,19 @@ function query(offset: number, limit: number) {
 }
 
 function fetchAlbums(offset: number, limit: number) {
-    return listAlbums({ ...query(offset, limit), sort: sortState.value.sort as AlbumSort })
+    return listAlbums({
+        ...query(offset, limit),
+        sort: sortState.value.sort as AlbumSort,
+        sourceId: sourceId.value,
+    })
 }
 
 function fetchArtists(offset: number, limit: number) {
-    return listArtists({ ...query(offset, limit), sort: sortState.value.sort as ArtistSort })
+    return listArtists({
+        ...query(offset, limit),
+        sort: sortState.value.sort as ArtistSort,
+        sourceId: sourceId.value,
+    })
 }
 
 function fetchGenres(offset: number, limit: number) {
@@ -111,6 +136,7 @@ function fetchYears(offset: number, limit: number) {
         :aria-busy="status === 'loading' ? 'true' : undefined"
     >
         <LibraryScopeSwitch v-if="scoped" />
+        <LibrarySourceFilter v-if="bySource" />
         <template v-if="search">
             <BaseAlert tone="info" :message="t('library.filteredBy', { query: search })" />
             <BaseLink :to="showAll">{{ t('library.showAll') }}</BaseLink>
@@ -145,7 +171,7 @@ function fetchYears(offset: number, limit: number) {
             :to-tile="(item: Album) => tiles.album(item)"
             :reload-key="reloadKey"
             :search="search"
-            :filtered="myMusic"
+            :filtered="tileFiltered"
             @status="status = $event"
         />
         <TileCollection
@@ -155,7 +181,7 @@ function fetchYears(offset: number, limit: number) {
             :to-tile="(item: Artist) => tiles.artist(item)"
             :reload-key="reloadKey"
             :search="search"
-            :filtered="myMusic"
+            :filtered="tileFiltered"
             @status="status = $event"
         />
         <TileCollection

@@ -6,6 +6,7 @@ import type { Track } from '@/api/generated/models'
 import BaseDialog from '@/components/base/BaseDialog.vue'
 import { createWaveMpI18n } from '@/i18n'
 import { createRoutes } from '@/router/routes'
+import { useMediaSourcesStore } from '@/stores/mediaSources'
 import { usePageTitleStore } from '@/stores/pageTitle'
 import { usePlayerStore } from '@/stores/player'
 import { useSessionStore } from '@/stores/session'
@@ -161,6 +162,96 @@ describe('LibraryView', () => {
             'Nothing in this list matches “gust”.',
         )
         wrapper.unmount()
+    })
+
+    describe('filter by media folder', () => {
+        // A loaded store: the filter loads the folders only once.
+        function twoSources(): void {
+            useMediaSourcesStore().$patch({
+                sources: [
+                    { id: 'media', name: 'Media' },
+                    { id: 'videos', name: 'Videos' },
+                ],
+                status: 'ready',
+            })
+        }
+
+        it('is hidden while the library has one media folder', async () => {
+            useMediaSourcesStore().$patch({
+                sources: [{ id: 'media', name: 'Media' }],
+                status: 'ready',
+            })
+            api.listTracks.mockResolvedValue({ items: [], total: 0 })
+
+            const { wrapper } = await mountView(LibraryView, '/library/songs', { section: 'songs' })
+
+            expect(wrapper.find('[data-part="source-filter"]').exists()).toBe(false)
+            wrapper.unmount()
+        })
+
+        it('filters songs and albums by the media folder of the route', async () => {
+            twoSources()
+            api.listTracks.mockResolvedValue({ items: [track('Opening')], total: 1 })
+            api.listAlbums.mockResolvedValue({ items: [], total: 0 })
+
+            const songs = await mountView(LibraryView, '/library/songs?source=videos', {
+                section: 'songs',
+            })
+            const albums = await mountView(LibraryView, '/library/albums?source=videos', {
+                section: 'albums',
+            })
+
+            expect(api.listTracks).toHaveBeenCalledWith(
+                expect.objectContaining({ sourceId: 'videos' }),
+            )
+            expect(api.listAlbums).toHaveBeenCalledWith(
+                expect.objectContaining({ sourceId: 'videos' }),
+            )
+            const select = songs.wrapper.get('[data-part="source-filter"] select')
+            expect((select.element as HTMLSelectElement).value).toBe('videos')
+            expect(albums.wrapper.get('[data-part="empty-state-text"]').text()).toBe(
+                'There is nothing in the library for this filter.',
+            )
+            songs.wrapper.unmount()
+            albums.wrapper.unmount()
+        })
+
+        it('puts the chosen media folder into the query and removes it for all folders', async () => {
+            twoSources()
+            api.listArtists.mockResolvedValue({ items: [], total: 0 })
+
+            const { wrapper, router } = await mountView(LibraryView, '/library/artists?q=a', {
+                section: 'artists',
+            })
+            const select = wrapper.get('[data-part="source-filter"] select')
+
+            await select.setValue('media')
+            await flushPromises()
+            expect(router.currentRoute.value.query).toEqual({ q: 'a', source: 'media' })
+            expect(api.listArtists).toHaveBeenLastCalledWith(
+                expect.objectContaining({ sourceId: 'media' }),
+            )
+
+            await select.setValue('')
+            await flushPromises()
+            expect(router.currentRoute.value.query).toEqual({ q: 'a' })
+            wrapper.unmount()
+        })
+
+        it('is not offered for genres, which the API does not filter by folder', async () => {
+            twoSources()
+            api.listGenres.mockResolvedValue({ items: [], total: 0 })
+
+            const { wrapper } = await mountView(LibraryView, '/library/genres?source=videos', {
+                section: 'genres',
+            })
+
+            expect(wrapper.find('[data-part="source-filter"]').exists()).toBe(false)
+            expect(api.listGenres).toHaveBeenCalledWith(
+                expect.not.objectContaining({ sourceId: 'videos' }),
+            )
+            wrapper.unmount()
+        })
     })
 
     it('ignores a search text in the years, which cannot be filtered', async () => {
