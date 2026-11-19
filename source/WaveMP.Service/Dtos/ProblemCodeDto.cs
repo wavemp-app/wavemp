@@ -273,6 +273,12 @@ public enum ProblemCodeDto
     PlaylistFull,
 
     /// <summary>
+    /// The smart playlist does not exist or belongs to another profile (404).
+    /// </summary>
+    [JsonStringEnumMemberName("playlist.smart_not_found")]
+    SmartPlaylistNotFound,
+
+    /// <summary>
     /// The uploaded picture is not a JPEG, PNG or WebP (415).
     /// </summary>
     [JsonStringEnumMemberName("cover.unsupported_format")]

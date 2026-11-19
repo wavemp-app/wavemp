@@ -6618,6 +6618,627 @@
         ]
       }
     },
+    "/api/v1/me/smart-playlists": {
+      "get": {
+        "tags": [
+          "SmartPlaylists"
+        ],
+        "summary": "Lists the smart playlists of the current profile with their number of songs right now, sorted and optionally searched.",
+        "operationId": "ListMySmartPlaylists",
+        "parameters": [
+          {
+            "name": "offset",
+            "in": "query",
+            "description": "Number of smart playlists to skip.",
+            "schema": {
+              "maximum": 2147483647,
+              "minimum": 0,
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Maximum number of smart playlists of the page.",
+            "schema": {
+              "maximum": 100,
+              "minimum": 1,
+              "type": "integer",
+              "format": "int32",
+              "default": 50
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "description": "Sort key; Name by default.",
+            "schema": {
+              "default": "Name",
+              "$ref": "#/components/schemas/PlaylistSort"
+            }
+          },
+          {
+            "name": "direction",
+            "in": "query",
+            "description": "Sort direction; ascending by default.",
+            "schema": {
+              "default": "Asc",
+              "$ref": "#/components/schemas/SortDirection"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "description": "Search text: only smart playlists whose name contains it, without regard to case.",
+            "schema": {
+              "maxLength": 100,
+              "minLength": 0,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "One page of smart playlists.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SmartPlaylistPage"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid query parameters (code `request.invalid`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblem"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "SmartPlaylists"
+        ],
+        "summary": "Creates a smart playlist of the current profile, e.g. from a template of ListSmartPlaylistTemplates.",
+        "operationId": "CreateMySmartPlaylist",
+        "requestBody": {
+          "description": "Name, rules, sort order and limit.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveSmartPlaylist"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveSmartPlaylist"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "The new smart playlist; Location points to it.",
+            "headers": {
+              "Location": {
+                "description": "Address of the created resource.",
+                "required": true,
+                "schema": {
+                  "type": "string",
+                  "format": "uri-reference"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SmartPlaylist"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is invalid (code `request.invalid`), e.g. a name of spaces only (`name`, `required`), more than 20 rules (`rules`, `max_items`), an operator that does not fit its field (`rules[i].operator`, `invalid_value`), a missing value (`rules[i].text` or `rules[i].number`, `required`) or a number outside the range of its field (`out_of_range` with min and max).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The profile was deleted in the meantime (code `user.not_found`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/api/v1/me/smart-playlists/{id}": {
+      "get": {
+        "tags": [
+          "SmartPlaylists"
+        ],
+        "summary": "Returns a smart playlist of the current profile with its number of songs right now.",
+        "operationId": "GetMySmartPlaylist",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Id of the smart playlist.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "The smart playlist.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SmartPlaylist"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The smart playlist does not exist or belongs to another profile (code `playlist.smart_not_found`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "SmartPlaylists"
+        ],
+        "summary": "Replaces name, rules, sort order and limit of a smart playlist of the current profile.",
+        "operationId": "UpdateMySmartPlaylist",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Id of the smart playlist.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "Name, rules, sort order and limit.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveSmartPlaylist"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveSmartPlaylist"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "The changed smart playlist.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SmartPlaylist"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is invalid (code `request.invalid`), as for CreateMySmartPlaylist.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The smart playlist does not exist or belongs to another profile (code `playlist.smart_not_found`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "SmartPlaylists"
+        ],
+        "summary": "Deletes a smart playlist of the current profile. The songs stay in the library.",
+        "operationId": "DeleteMySmartPlaylist",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Id of the smart playlist.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "The smart playlist is deleted."
+          },
+          "404": {
+            "description": "The smart playlist does not exist or belongs to another profile (code `playlist.smart_not_found`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/api/v1/me/smart-playlists/{id}/tracks": {
+      "get": {
+        "tags": [
+          "SmartPlaylists"
+        ],
+        "summary": "Lists the songs of a smart playlist in its order, computed now from the current library.",
+        "operationId": "ListMySmartPlaylistTracks",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Id of the smart playlist.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "description": "Number of songs to skip.",
+            "schema": {
+              "maximum": 2147483647,
+              "minimum": 0,
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Maximum number of songs of the page.",
+            "schema": {
+              "maximum": 100,
+              "minimum": 1,
+              "type": "integer",
+              "format": "int32",
+              "default": 50
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "One page of songs.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrackPage"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid query parameters (code `request.invalid`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The smart playlist does not exist or belongs to another profile (code `playlist.smart_not_found`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/api/v1/me/smart-playlists/{id}/conversions": {
+      "post": {
+        "tags": [
+          "SmartPlaylists"
+        ],
+        "summary": "Converts a smart playlist into a normal playlist with the same name and its songs of right now, in their order. The smart playlist is deleted; the new playlist no longer follows the rules.",
+        "operationId": "ConvertMySmartPlaylist",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Id of the smart playlist.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "The new playlist; Location points to it.",
+            "headers": {
+              "Location": {
+                "description": "Address of the created resource.",
+                "required": true,
+                "schema": {
+                  "type": "string",
+                  "format": "uri-reference"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Playlist"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The smart playlist does not exist or belongs to another profile (code `playlist.smart_not_found`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The smart playlist holds more songs than a playlist may have (code `playlist.full`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The library kept changing during the conversion, e.g. during a scan (code `service.unavailable`); nothing was changed.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/api/v1/smart-playlist-templates": {
+      "get": {
+        "tags": [
+          "SmartPlaylistTemplates"
+        ],
+        "summary": "Lists the built-in templates in the order clients offer them: rules, sort order and limit a new smart playlist can start with (CreateMySmartPlaylist with a name of the client).",
+        "operationId": "ListSmartPlaylistTemplates",
+        "parameters": [
+          {
+            "name": "offset",
+            "in": "query",
+            "description": "Number of templates to skip.",
+            "schema": {
+              "maximum": 2147483647,
+              "minimum": 0,
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Maximum number of templates of the page.",
+            "schema": {
+              "maximum": 100,
+              "minimum": 1,
+              "type": "integer",
+              "format": "int32",
+              "default": 50
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "One page of templates.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SmartPlaylistTemplatePage"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid paging parameters (code `request.invalid`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblem"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
     "/api/v1/me/subsonic": {
       "get": {
         "tags": [
@@ -13507,6 +14128,7 @@
           "playlist.not_found",
           "playlist.entry_not_found",
           "playlist.full",
+          "playlist.smart_not_found",
           "cover.unsupported_format",
           "cover.too_large",
           "cover.unreadable",
@@ -13791,6 +14413,130 @@
         ],
         "type": "string",
         "description": "Role of a profile."
+      },
+      "SaveSmartPlaylist": {
+        "required": [
+          "name",
+          "rules"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "maxLength": 100,
+            "minLength": 0,
+            "type": "string",
+            "description": "Name, 1 to 100 characters; spaces at the ends are removed. Names do not need to be unique."
+          },
+          "match": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "How the rules are combined; All if missing.",
+                "$ref": "#/components/schemas/SmartPlaylistMatch"
+              }
+            ]
+          },
+          "rules": {
+            "maxItems": 20,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SaveSmartPlaylistRule"
+            },
+            "description": "The rules, at most 20; without rules every song of the library belongs to the smart playlist."
+          },
+          "sort": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "Sort key of the songs; Artist if missing.",
+                "$ref": "#/components/schemas/SmartPlaylistTrackSort"
+              }
+            ]
+          },
+          "direction": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "Sort direction; ascending if missing.",
+                "$ref": "#/components/schemas/SortDirection"
+              }
+            ]
+          },
+          "limit": {
+            "maximum": 10000,
+            "minimum": 1,
+            "type": [
+              "null",
+              "integer"
+            ],
+            "description": "Largest number of songs, 1 to 10000, the first ones in the sort order; all matching songs if missing.",
+            "format": "int32"
+          }
+        },
+        "description": "A smart playlist to create or to replace: its name, rules, sort order and limit."
+      },
+      "SaveSmartPlaylistRule": {
+        "required": [
+          "field",
+          "operator"
+        ],
+        "type": "object",
+        "properties": {
+          "field": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "The field of the song.",
+                "$ref": "#/components/schemas/SmartPlaylistField"
+              }
+            ]
+          },
+          "operator": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "The operator; it has to fit the kind of the field.",
+                "$ref": "#/components/schemas/SmartPlaylistOperator"
+              }
+            ]
+          },
+          "text": {
+            "maxLength": 200,
+            "minLength": 0,
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Text of a text field, 1 to 200 characters; spaces at the ends are removed."
+          },
+          "number": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "description": "Number of a number field (duration in seconds), the lower bound of Between or the number of days of a day field; the range depends on the field (see SmartPlaylistField).",
+            "format": "int32"
+          },
+          "numberTo": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "description": "Upper bound of Between, from `number` to the largest value of the field.",
+            "format": "int32"
+          }
+        },
+        "description": "A rule of a smart playlist to save. Values the operator does not need are ignored."
       },
       "Scan": {
         "required": [
@@ -14266,6 +15012,295 @@
           }
         },
         "description": "Sleep timer of the current profile. The running timer itself belongs to the player that plays and is not stored."
+      },
+      "SmartPlaylist": {
+        "required": [
+          "id",
+          "name",
+          "match",
+          "rules",
+          "sort",
+          "direction",
+          "trackCount",
+          "durationMilliseconds",
+          "cover",
+          "createdAt",
+          "updatedAt"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "match": {
+            "$ref": "#/components/schemas/SmartPlaylistMatch"
+          },
+          "rules": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SmartPlaylistRule"
+            },
+            "description": "The rules in their order."
+          },
+          "sort": {
+            "$ref": "#/components/schemas/SmartPlaylistTrackSort"
+          },
+          "direction": {
+            "$ref": "#/components/schemas/SortDirection"
+          },
+          "limit": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "description": "Largest number of songs; null for all matching songs.",
+            "format": "int32"
+          },
+          "trackCount": {
+            "type": "integer",
+            "description": "Number of songs right now.",
+            "format": "int32"
+          },
+          "durationMilliseconds": {
+            "type": "integer",
+            "description": "Total duration of the songs right now in milliseconds.",
+            "format": "int64"
+          },
+          "cover": {
+            "description": "The covers of up to four of its first songs (Tracks), else none; never Custom.",
+            "$ref": "#/components/schemas/PlaylistCover"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "description": "When the name or the rules changed last.",
+            "format": "date-time"
+          }
+        },
+        "description": "A smart playlist of the current profile: rules that pick songs from the library. Its songs are computed on every request, so it always reflects the current library."
+      },
+      "SmartPlaylistField": {
+        "enum": [
+          "Artist",
+          "Album",
+          "Genre",
+          "Year",
+          "Rating",
+          "Favorite",
+          "PlayCount",
+          "LastPlayed",
+          "DateAdded",
+          "Duration",
+          "HasAudio",
+          "HasVideo"
+        ],
+        "type": "string",
+        "description": "The field of a song a rule of a smart playlist looks at, with the kind of its value: text (Artist, Album, Genre), number (Year, Rating, PlayCount, Duration), days (LastPlayed, DateAdded) or yes/no (Favorite, HasAudio, HasVideo). Rating, Favorite, PlayCount and LastPlayed are those of the current profile."
+      },
+      "SmartPlaylistMatch": {
+        "enum": [
+          "All",
+          "Any"
+        ],
+        "type": "string",
+        "description": "How the rules of a smart playlist are combined."
+      },
+      "SmartPlaylistOperator": {
+        "enum": [
+          "Is",
+          "IsNot",
+          "Contains",
+          "DoesNotContain",
+          "AtLeast",
+          "AtMost",
+          "Between",
+          "InLast",
+          "NotInLast",
+          "IsTrue",
+          "IsFalse"
+        ],
+        "type": "string",
+        "description": "How a rule of a smart playlist compares its field. Text fields take Is, IsNot, Contains and DoesNotContain with `text`; number fields Is, IsNot, AtLeast, AtMost with `number` and Between with `number` and `numberTo`; day fields InLast and NotInLast with the number of days in `number`; yes/no fields IsTrue and IsFalse without a value. Negations match every song the positive operator does not match, also songs without a value."
+      },
+      "SmartPlaylistPage": {
+        "required": [
+          "items",
+          "offset",
+          "limit",
+          "total"
+        ],
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SmartPlaylist"
+            },
+            "description": "Items of the page, at most limit."
+          },
+          "offset": {
+            "type": "integer",
+            "description": "Number of items skipped before this page.",
+            "format": "int32"
+          },
+          "limit": {
+            "type": "integer",
+            "description": "Maximum number of items of the page, as requested.",
+            "format": "int32"
+          },
+          "total": {
+            "type": "integer",
+            "description": "Number of items of the whole collection.",
+            "format": "int32"
+          }
+        },
+        "description": "One page of a collection."
+      },
+      "SmartPlaylistRule": {
+        "required": [
+          "field",
+          "operator"
+        ],
+        "type": "object",
+        "properties": {
+          "field": {
+            "$ref": "#/components/schemas/SmartPlaylistField"
+          },
+          "operator": {
+            "$ref": "#/components/schemas/SmartPlaylistOperator"
+          },
+          "text": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Text of a text field."
+          },
+          "number": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "description": "Number of a number field (duration in seconds), the lower bound of Between or the number of days of a day field.",
+            "format": "int32"
+          },
+          "numberTo": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "description": "Upper bound of Between, included.",
+            "format": "int32"
+          }
+        },
+        "description": "A rule of a smart playlist. Only the values the operator needs are set."
+      },
+      "SmartPlaylistTemplate": {
+        "required": [
+          "id",
+          "match",
+          "rules",
+          "sort",
+          "direction"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/SmartPlaylistTemplateId"
+          },
+          "match": {
+            "$ref": "#/components/schemas/SmartPlaylistMatch"
+          },
+          "rules": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SmartPlaylistRule"
+            }
+          },
+          "sort": {
+            "$ref": "#/components/schemas/SmartPlaylistTrackSort"
+          },
+          "direction": {
+            "$ref": "#/components/schemas/SortDirection"
+          },
+          "limit": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "description": "Largest number of songs; null for all matching songs.",
+            "format": "int32"
+          }
+        },
+        "description": "A built-in template of smart playlists: the rules, sort order and limit a new smart playlist can start with. The client names it in the language of the user and sends it with a name to CreateMySmartPlaylist."
+      },
+      "SmartPlaylistTemplateId": {
+        "enum": [
+          "FourStarsAndMore",
+          "NeverPlayed",
+          "RecentlyAdded",
+          "MostPlayed",
+          "Favorites"
+        ],
+        "type": "string",
+        "description": "A built-in template of smart playlists; clients name it in the language of the user."
+      },
+      "SmartPlaylistTemplatePage": {
+        "required": [
+          "items",
+          "offset",
+          "limit",
+          "total"
+        ],
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SmartPlaylistTemplate"
+            },
+            "description": "Items of the page, at most limit."
+          },
+          "offset": {
+            "type": "integer",
+            "description": "Number of items skipped before this page.",
+            "format": "int32"
+          },
+          "limit": {
+            "type": "integer",
+            "description": "Maximum number of items of the page, as requested.",
+            "format": "int32"
+          },
+          "total": {
+            "type": "integer",
+            "description": "Number of items of the whole collection.",
+            "format": "int32"
+          }
+        },
+        "description": "One page of a collection."
+      },
+      "SmartPlaylistTrackSort": {
+        "enum": [
+          "Title",
+          "Artist",
+          "Album",
+          "Year",
+          "Genre",
+          "Rating",
+          "PlayCount",
+          "LastPlayed",
+          "DateAdded",
+          "Duration"
+        ],
+        "type": "string",
+        "description": "Sort key of the songs of a smart playlist. Songs without a value (e.g. without year or never played) come last in both directions; ties are sorted by album, disc and track number. Rating, PlayCount and LastPlayed are those of the current profile."
       },
       "SortDirection": {
         "enum": [
@@ -17009,6 +18044,12 @@
     },
     {
       "name": "Settings"
+    },
+    {
+      "name": "SmartPlaylists"
+    },
+    {
+      "name": "SmartPlaylistTemplates"
     },
     {
       "name": "SubsonicAccess"

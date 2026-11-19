@@ -27,6 +27,16 @@ public static class QueryMappingExtensions
         };
     }
 
+    public static SortDirectionDto ToDto(this SortDirection direction)
+    {
+        return direction switch
+        {
+            SortDirection.Asc => SortDirectionDto.Asc,
+            SortDirection.Desc => SortDirectionDto.Desc,
+            _ => throw new ArgumentOutOfRangeException(nameof(direction), direction, "Unknown sort direction."),
+        };
+    }
+
     public static SortDirection ToEntity(this SortDirectionDto direction)
     {
         return direction switch
