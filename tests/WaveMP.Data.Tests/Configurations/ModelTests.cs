@@ -238,8 +238,10 @@ public class ModelTests
         result.IsNullable.Should().BeTrue();
     }
 
-    [TestCase(typeof(MediaFile), new[] { nameof(MediaFile.RelativePath) })]
-    [TestCase(typeof(Track), new[] { nameof(Track.DirectoryPath), nameof(Track.NormalizedBaseName) })]
+    [TestCase(typeof(MediaFile), new[] { nameof(MediaFile.SourceId), nameof(MediaFile.RelativePath) })]
+    [TestCase(
+        typeof(Track),
+        new[] { nameof(Track.SourceId), nameof(Track.DirectoryPath), nameof(Track.NormalizedBaseName) })]
     [TestCase(typeof(Album), new[] { nameof(Album.AlbumKey) })]
     [TestCase(typeof(Artist), new[] { nameof(Artist.NormalizedName) })]
     public void Library_NaturalKeys_HaveUniqueIndexes(Type entityType, string[] properties)

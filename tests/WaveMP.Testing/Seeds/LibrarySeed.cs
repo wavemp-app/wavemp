@@ -64,12 +64,14 @@ public sealed class LibrarySeed
         TimeSpan? duration = null,
         bool hasAudio = true,
         bool hasVideo = false,
-        DateTimeOffset? firstSeenAt = null)
+        DateTimeOffset? firstSeenAt = null,
+        MediaSource? source = null)
     {
         string baseName = $"{++_counter:D4} {title}";
         Track track = new()
         {
             Id = Guid.CreateVersion7(),
+            SourceId = source?.Id ?? MediaSource.DefaultId,
             DirectoryPath = album?.Title ?? string.Empty,
             BaseName = baseName,
             NormalizedBaseName = baseName.ToUpperInvariant(),
@@ -92,8 +94,29 @@ public sealed class LibrarySeed
     }
 
     /// <summary>
-    /// A file of the media folder; <paramref name="track"/> is <c>null</c> for pictures without a track, such as the
-    /// cover of an album.
+    /// A media source besides the first one that the migrations create, with a unique name.
+    /// </summary>
+    public MediaSource Source(string? name = null, string? path = null, bool isActive = true)
+    {
+        string unique = name ?? "Source " + Guid.NewGuid().ToString("N")[..12];
+        MediaSource source = new()
+        {
+            Id = Guid.CreateVersion7(),
+            Name = unique,
+            NormalizedName = unique.ToUpperInvariant(),
+            Path = path ?? "/sources/" + Guid.NewGuid().ToString("N"),
+            IsActive = isActive,
+            CreatedAt = DefaultTime,
+            UpdatedAt = DefaultTime,
+        };
+        _entities.Add(source);
+        return source;
+    }
+
+    /// <summary>
+    /// A file of a media source (the first one if <paramref name="source"/> is <c>null</c>); <paramref name="track"/>
+    /// is <c>null</c> for pictures without a track, such as the cover of an album. The file lies in the source of its
+    /// track.
     /// </summary>
     public MediaFile File(
         string relativePath,
@@ -103,7 +126,8 @@ public sealed class LibrarySeed
         long size = 1000,
         bool isLossless = false,
         bool hasEmbeddedPicture = false,
-        MediaFileIssue? issue = null)
+        MediaFileIssue? issue = null,
+        MediaSource? source = null)
     {
         int slash = relativePath.LastIndexOf('/');
         string fileName = slash < 0 ? relativePath : relativePath[(slash + 1)..];
@@ -112,6 +136,7 @@ public sealed class LibrarySeed
         MediaFile file = new()
         {
             Id = Guid.CreateVersion7(),
+            SourceId = source?.Id ?? track?.SourceId ?? MediaSource.DefaultId,
             RelativePath = relativePath,
             DirectoryPath = slash < 0 ? string.Empty : relativePath[..slash],
             FileName = fileName,

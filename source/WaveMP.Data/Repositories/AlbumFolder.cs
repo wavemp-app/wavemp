@@ -1,6 +1,6 @@
 namespace WaveMP.Data.Repositories;
 
 /// <summary>
-/// A folder with tracks of an album.
+/// A folder of a source with tracks of an album.
 /// </summary>
-public sealed record AlbumFolder(Guid AlbumId, string DirectoryPath);
+public sealed record AlbumFolder(Guid AlbumId, Guid SourceId, string DirectoryPath);

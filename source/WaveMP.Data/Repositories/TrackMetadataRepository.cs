@@ -9,11 +9,11 @@ internal sealed class TrackMetadataRepository(WaveMpDbContext dbContext) : ITrac
         Guid trackId,
         CancellationToken cancellationToken = default)
     {
-        string? directoryPath = await dbContext.Tracks.AsNoTracking()
+        var folder = await dbContext.Tracks.AsNoTracking()
             .Where(track => track.Id == trackId)
-            .Select(track => track.DirectoryPath)
+            .Select(track => new { track.SourceId, track.DirectoryPath })
             .FirstOrDefaultAsync(cancellationToken);
-        if (directoryPath is null)
+        if (folder is null)
         {
             return null;
         }
@@ -22,7 +22,7 @@ internal sealed class TrackMetadataRepository(WaveMpDbContext dbContext) : ITrac
             .FirstOrDefaultAsync(
                 file => file.TrackId == trackId && file.Kind == MediaFileKind.Audio && file.IsPrimary,
                 cancellationToken);
-        return new TrackEditTarget(trackId, directoryPath, audioFile);
+        return new TrackEditTarget(trackId, folder.SourceId, folder.DirectoryPath, audioFile);
     }
 
     public async Task AddTagBackupAsync(TagBackup backup, CancellationToken cancellationToken = default)

@@ -217,6 +217,11 @@ internal sealed class TrackRepository(WaveMpDbContext dbContext) : ITrackReposit
             tracks = tracks.Where(track => track.HasVideo == hasVideo);
         }
 
+        if (query.SourceId is { } sourceId)
+        {
+            tracks = tracks.Where(track => track.SourceId == sourceId);
+        }
+
         tracks = MyMusicOf(tracks, query.UserId, query.MyMusic);
         if (query.MinRating is { } minRating)
         {

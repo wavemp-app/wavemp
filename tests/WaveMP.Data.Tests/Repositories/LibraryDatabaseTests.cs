@@ -37,6 +37,7 @@ public abstract class LibraryDatabaseTests
         await using WaveMpDbContext dbContext = _database.CreateDbContext();
         await dbContext.Database.ExecuteSqlRawAsync(
             "TRUNCATE covers, media_files, tracks, albums, artists RESTART IDENTITY CASCADE");
+        await dbContext.MediaSources.Where(source => source.Id != MediaSource.DefaultId).ExecuteDeleteAsync();
     }
 
     [TearDown]

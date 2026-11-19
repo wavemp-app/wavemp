@@ -19,6 +19,12 @@ internal sealed class ArtistRepository(WaveMpDbContext dbContext) : IArtistRepos
                 || EF.Functions.TrigramsAreWordSimilar(search, artist.Name));
         }
 
+        if (query.SourceId is { } sourceId)
+        {
+            artists = artists.Where(artist => dbContext.Tracks.Any(track => track.SourceId == sourceId
+                && (track.ArtistId == artist.Id || (track.Album != null && track.Album.AlbumArtistId == artist.Id))));
+        }
+
         if (query.MyMusic)
         {
             // Like the artist filter of the track list: as artist of the track or of its album.

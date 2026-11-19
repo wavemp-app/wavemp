@@ -5,7 +5,8 @@ namespace WaveMP.Data.Projections;
 /// lyrics and the result of the last online lookup.
 /// </summary>
 /// <param name="TrackId">Id of the track.</param>
-/// <param name="DirectoryPath">Folder of the track relative to the media folder.</param>
+/// <param name="SourceId">Id of the media source of the track; the paths are relative to its folder.</param>
+/// <param name="DirectoryPath">Folder of the track relative to the folder of its source.</param>
 /// <param name="BaseName">File name of the track without extension, as on disk.</param>
 /// <param name="Title">Title of the track.</param>
 /// <param name="ArtistName">Name of the artist, or <c>null</c> if unknown.</param>
@@ -19,6 +20,7 @@ namespace WaveMP.Data.Projections;
 /// up.</param>
 public sealed record LyricsTrackRow(
     Guid TrackId,
+    Guid SourceId,
     string DirectoryPath,
     string BaseName,
     string Title,

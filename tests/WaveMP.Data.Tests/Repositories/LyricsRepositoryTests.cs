@@ -30,6 +30,7 @@ public class LyricsRepositoryTests : LibraryDatabaseTests
 
         row.Should().BeEquivalentTo(new LyricsTrackRow(
             track.Id,
+            MediaSource.DefaultId,
             "Album",
             track.BaseName,
             "Song",

@@ -23,6 +23,7 @@ namespace WaveMP.Data.Repositories;
 /// or artist) or in one of the user's playlists. Needs <paramref name="UserId"/>.</param>
 /// <param name="MinRating">Only tracks the user rated with at least this many stars. Needs <paramref name="UserId"/>.
 /// </param>
+/// <param name="SourceId">Only tracks of this media source.</param>
 public sealed record TrackListQuery(
     int Offset,
     int Limit,
@@ -37,4 +38,5 @@ public sealed record TrackListQuery(
     bool? HasVideo = null,
     Guid? UserId = null,
     bool MyMusic = false,
-    int? MinRating = null);
+    int? MinRating = null,
+    Guid? SourceId = null);

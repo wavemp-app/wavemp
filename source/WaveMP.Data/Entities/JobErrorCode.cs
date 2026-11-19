@@ -16,7 +16,7 @@ public enum JobErrorCode
     Interrupted,
 
     /// <summary>
-    /// The media folder does not exist.
+    /// The media folder does not exist (the folder of the only media source that was scanned).
     /// </summary>
     MediaFolderNotFound,
 
@@ -34,6 +34,11 @@ public enum JobErrorCode
     /// ffprobe cannot be started.
     /// </summary>
     ProbeUnavailable,
+
+    /// <summary>
+    /// There is no active media source to scan.
+    /// </summary>
+    NoMediaSources,
 
     /// <summary>
     /// ffmpeg cannot be started, e.g. to scale covers.

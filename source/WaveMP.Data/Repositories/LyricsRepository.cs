@@ -93,6 +93,7 @@ internal sealed class LyricsRepository(WaveMpDbContext dbContext) : ILyricsRepos
     {
         return tracks.Select(track => new LyricsTrackRow(
             track.Id,
+            track.SourceId,
             track.DirectoryPath,
             track.BaseName,
             track.Title,

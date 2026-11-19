@@ -19,7 +19,8 @@ namespace WaveMP.Data.Projections;
 /// <param name="TrackTitle">Title of the track of the cover.</param>
 /// <param name="IsPrimary">The cover chosen automatically for its album or track.</param>
 /// <param name="Source">A picture file or a picture embedded in an audio or video file.</param>
-/// <param name="RelativePath">Path of the file relative to the media folder.</param>
+/// <param name="SourceId">Id of the media source of the file.</param>
+/// <param name="RelativePath">Path of the file relative to the folder of its source.</param>
 /// <param name="MimeType">Type of the picture, if known.</param>
 /// <param name="Size">Size of the file in bytes.</param>
 /// <param name="ModifiedAt">Time of the last change of the file.</param>
@@ -40,6 +41,7 @@ public sealed record CoverCandidateRow(
     string? TrackTitle,
     bool IsPrimary,
     CoverSource Source,
+    Guid SourceId,
     string RelativePath,
     string? MimeType,
     long Size,

@@ -1,7 +1,7 @@
 namespace WaveMP.Data.Entities;
 
 /// <summary>
-/// A file of the media folder that the library uses: audio, video or picture. Every file is kept, also duplicates of
+/// A file of a media source that the library uses: audio, video or picture. Every file is kept, also duplicates of
 /// lower quality and pictures without a track, so a rescan can compare the folders with the database.
 /// </summary>
 public class MediaFile
@@ -9,12 +9,19 @@ public class MediaFile
     public Guid Id { get; set; }
 
     /// <summary>
-    /// Path relative to the media folder with <c>/</c> as separator; unique.
+    /// The media source the file lies in.
+    /// </summary>
+    public required Guid SourceId { get; set; }
+
+    public MediaSource? Source { get; set; }
+
+    /// <summary>
+    /// Path relative to the folder of the source with <c>/</c> as separator; unique within the source.
     /// </summary>
     public required string RelativePath { get; set; }
 
     /// <summary>
-    /// Folder relative to the media folder; empty for the media folder itself.
+    /// Folder relative to the folder of the source; empty for the folder of the source itself.
     /// </summary>
     public required string DirectoryPath { get; set; }
 

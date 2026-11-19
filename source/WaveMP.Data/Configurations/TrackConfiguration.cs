@@ -26,8 +26,8 @@ internal sealed class TrackConfiguration : IEntityTypeConfiguration<Track>
             .HasConversion<string>()
             .HasMaxLength(LibraryColumns.EnumMaxLength);
 
-        // One track per base name and folder, without regard to the case of the base name.
-        builder.HasIndex(track => new { track.DirectoryPath, track.NormalizedBaseName }).IsUnique();
+        // One track per base name and folder of a source, without regard to the case of the base name.
+        builder.HasIndex(track => new { track.SourceId, track.DirectoryPath, track.NormalizedBaseName }).IsUnique();
         builder.HasIndex(track => track.FirstSeenAt);
 
         // The review inbox counts and lists the unreviewed tracks (reviewed_at IS NULL).
@@ -36,6 +36,12 @@ internal sealed class TrackConfiguration : IEntityTypeConfiguration<Track>
             .HasDatabaseName(TitleTrigramIndex)
             .HasMethod(LibraryColumns.TrigramIndexMethod)
             .HasOperators(LibraryColumns.TrigramOperators);
+
+        // A removed source takes its tracks with it.
+        builder.HasOne(track => track.Source)
+            .WithMany()
+            .HasForeignKey(track => track.SourceId)
+            .OnDelete(DeleteBehavior.Cascade);
 
         builder.HasOne(track => track.Artist)
             .WithMany()

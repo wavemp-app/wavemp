@@ -39,8 +39,14 @@ internal sealed class MediaFileConfiguration : IEntityTypeConfiguration<MediaFil
             tags.Property(tag => tag.MusicBrainzReleaseId).HasMaxLength(LibraryColumns.TechnicalMaxLength);
         });
 
-        builder.HasIndex(file => file.RelativePath).IsUnique();
-        builder.HasIndex(file => file.DirectoryPath);
+        builder.HasIndex(file => new { file.SourceId, file.RelativePath }).IsUnique();
+        builder.HasIndex(file => new { file.SourceId, file.DirectoryPath });
+
+        // A removed source takes its files with it.
+        builder.HasOne(file => file.Source)
+            .WithMany()
+            .HasForeignKey(file => file.SourceId)
+            .OnDelete(DeleteBehavior.Cascade);
 
         builder.HasOne(file => file.Track)
             .WithMany(track => track.Files)

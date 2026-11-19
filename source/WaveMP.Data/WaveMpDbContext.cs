@@ -21,6 +21,8 @@ public class WaveMpDbContext(DbContextOptions<WaveMpDbContext> options) : DbCont
 
     public DbSet<JobRun> JobRuns => Set<JobRun>();
 
+    public DbSet<MediaSource> MediaSources => Set<MediaSource>();
+
     public DbSet<Artist> Artists => Set<Artist>();
 
     public DbSet<Album> Albums => Set<Album>();
@@ -72,6 +74,7 @@ public class WaveMpDbContext(DbContextOptions<WaveMpDbContext> options) : DbCont
         modelBuilder.ApplyConfiguration(new ServerSecretConfiguration());
         modelBuilder.ApplyConfiguration(new ServerSettingConfiguration());
         modelBuilder.ApplyConfiguration(new JobRunConfiguration());
+        modelBuilder.ApplyConfiguration(new MediaSourceConfiguration());
         modelBuilder.ApplyConfiguration(new ArtistConfiguration());
         modelBuilder.ApplyConfiguration(new AlbumConfiguration());
         modelBuilder.ApplyConfiguration(new TrackConfiguration());

@@ -9,25 +9,34 @@ namespace WaveMP.Data.Repositories;
 public interface ILibraryScanRepository
 {
     /// <summary>
-    /// The stored files in the folders and all their subfolders; <c>null</c> for the whole library.
+    /// The stored files of a source in the folders and all their subfolders; <c>null</c> for the whole source.
     /// </summary>
     Task<IReadOnlyList<MediaFileSnapshot>> GetFileSnapshotsAsync(
+        Guid sourceId,
         IReadOnlyCollection<string>? directories,
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// The stored files of one folder, without its subfolders; an empty path for the media folder itself.
+    /// The stored files of one folder of a source, without its subfolders; an empty path for the folder of the
+    /// source itself.
     /// </summary>
     Task<IReadOnlyList<MediaFileSnapshot>> GetFolderSnapshotsAsync(
+        Guid sourceId,
         string directoryPath,
         CancellationToken cancellationToken = default);
 
-    Task<int> CountFilesAsync(CancellationToken cancellationToken = default);
+    /// <summary>
+    /// The number of stored files of a source.
+    /// </summary>
+    Task<int> CountFilesAsync(Guid sourceId, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// The files and tracks of one folder (not its subfolders), tracked.
+    /// The files and tracks of one folder of a source (not its subfolders), tracked.
     /// </summary>
-    Task<StoredFolder> LoadFolderAsync(string directoryPath, CancellationToken cancellationToken = default);
+    Task<StoredFolder> LoadFolderAsync(
+        Guid sourceId,
+        string directoryPath,
+        CancellationToken cancellationToken = default);
 
     /// <summary>
     /// An artist by its normalized name, tracked.
@@ -57,15 +66,16 @@ public interface ILibraryScanRepository
     Task SaveChangesAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Deletes the files and tracks of folders that no longer exist (not their subfolders). Returns the number of
-    /// deleted files and tracks.
+    /// Deletes the files and tracks of folders of a source that no longer exist (not their subfolders). Returns the
+    /// number of deleted files and tracks.
     /// </summary>
     Task<(int Files, int Tracks)> DeleteDirectoriesAsync(
+        Guid sourceId,
         IReadOnlyCollection<string> directories,
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// The folders that contain tracks of an album.
+    /// The folders of all sources that contain tracks of an album.
     /// </summary>
     Task<IReadOnlyList<AlbumFolder>> GetAlbumFoldersAsync(CancellationToken cancellationToken = default);
 

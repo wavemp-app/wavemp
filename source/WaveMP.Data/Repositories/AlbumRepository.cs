@@ -45,6 +45,11 @@ internal sealed class AlbumRepository(WaveMpDbContext dbContext) : IAlbumReposit
             albums = albums.Where(album => album.Year == year);
         }
 
+        if (query.SourceId is { } sourceId)
+        {
+            albums = albums.Where(album => album.Tracks.Any(track => track.SourceId == sourceId));
+        }
+
         if (query.MyMusic)
         {
             IQueryable<Track> myTracks = MyMusicQueries.Tracks(

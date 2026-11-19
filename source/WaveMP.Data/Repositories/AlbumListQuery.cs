@@ -17,6 +17,7 @@ namespace WaveMP.Data.Repositories;
 /// <param name="UserId">The user whose favorites the rows carry and to whom <paramref name="MyMusic"/> refers.</param>
 /// <param name="MyMusic">Only albums with at least one track of the "my music" of the user. Needs
 /// <paramref name="UserId"/>.</param>
+/// <param name="SourceId">Only albums with at least one track of this media source.</param>
 public sealed record AlbumListQuery(
     int Offset,
     int Limit,
@@ -27,4 +28,5 @@ public sealed record AlbumListQuery(
     string? Genre = null,
     int? Year = null,
     Guid? UserId = null,
-    bool MyMusic = false);
+    bool MyMusic = false,
+    Guid? SourceId = null);

@@ -487,6 +487,10 @@ namespace WaveMP.Data.Migrations
                         .HasColumnType("bigint")
                         .HasColumnName("size");
 
+                    b.Property<Guid>("SourceId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("source_id");
+
                     b.Property<Guid?>("TrackId")
                         .HasColumnType("uuid")
                         .HasColumnName("track_id");
@@ -609,17 +613,62 @@ namespace WaveMP.Data.Migrations
                     b.HasKey("Id")
                         .HasName("pk_media_files");
 
-                    b.HasIndex("DirectoryPath")
-                        .HasDatabaseName("ix_media_files_directory_path");
-
-                    b.HasIndex("RelativePath")
-                        .IsUnique()
-                        .HasDatabaseName("ix_media_files_relative_path");
-
                     b.HasIndex("TrackId")
                         .HasDatabaseName("ix_media_files_track_id");
 
+                    b.HasIndex("SourceId", "DirectoryPath")
+                        .HasDatabaseName("ix_media_files_source_id_directory_path");
+
+                    b.HasIndex("SourceId", "RelativePath")
+                        .IsUnique()
+                        .HasDatabaseName("ix_media_files_source_id_relative_path");
+
                     b.ToTable("media_files", (string)null);
+                });
+
+            modelBuilder.Entity("WaveMP.Data.Entities.MediaSource", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("name");
+
+                    b.Property<string>("NormalizedName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("normalized_name");
+
+                    b.Property<string>("Path")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("path");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("Id")
+                        .HasName("pk_media_sources");
+
+                    b.HasIndex("NormalizedName")
+                        .IsUnique()
+                        .HasDatabaseName("ix_media_sources_normalized_name");
+
+                    b.ToTable("media_sources", (string)null);
                 });
 
             modelBuilder.Entity("WaveMP.Data.Entities.PlayHistoryEntry", b =>
@@ -1097,6 +1146,10 @@ namespace WaveMP.Data.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("reviewed_by_user_id");
 
+                    b.Property<Guid>("SourceId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("source_id");
+
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasMaxLength(512)
@@ -1143,9 +1196,9 @@ namespace WaveMP.Data.Migrations
                     NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex("Title"), "gin");
                     NpgsqlIndexBuilderExtensions.HasOperators(b.HasIndex("Title"), new[] { "gin_trgm_ops" });
 
-                    b.HasIndex("DirectoryPath", "NormalizedBaseName")
+                    b.HasIndex("SourceId", "DirectoryPath", "NormalizedBaseName")
                         .IsUnique()
-                        .HasDatabaseName("ix_tracks_directory_path_normalized_base_name");
+                        .HasDatabaseName("ix_tracks_source_id_directory_path_normalized_base_name");
 
                     b.ToTable("tracks", (string)null);
                 });
@@ -1512,11 +1565,20 @@ namespace WaveMP.Data.Migrations
 
             modelBuilder.Entity("WaveMP.Data.Entities.MediaFile", b =>
                 {
+                    b.HasOne("WaveMP.Data.Entities.MediaSource", "Source")
+                        .WithMany()
+                        .HasForeignKey("SourceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_media_files_media_sources_source_id");
+
                     b.HasOne("WaveMP.Data.Entities.Track", "Track")
                         .WithMany("Files")
                         .HasForeignKey("TrackId")
                         .OnDelete(DeleteBehavior.SetNull)
                         .HasConstraintName("fk_media_files_tracks_track_id");
+
+                    b.Navigation("Source");
 
                     b.Navigation("Track");
                 });
@@ -1654,11 +1716,20 @@ namespace WaveMP.Data.Migrations
                         .OnDelete(DeleteBehavior.SetNull)
                         .HasConstraintName("fk_tracks_users_reviewed_by_user_id");
 
+                    b.HasOne("WaveMP.Data.Entities.MediaSource", "Source")
+                        .WithMany()
+                        .HasForeignKey("SourceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_tracks_media_sources_source_id");
+
                     b.Navigation("Album");
 
                     b.Navigation("Artist");
 
                     b.Navigation("ReviewedBy");
+
+                    b.Navigation("Source");
                 });
 
             modelBuilder.Entity("WaveMP.Data.Entities.TrackFileSelection", b =>

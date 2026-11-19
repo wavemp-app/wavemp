@@ -9,11 +9,11 @@ internal sealed class FileSelectionRepository(WaveMpDbContext dbContext) : IFile
 {
     public async Task<TrackFiles?> LoadTrackAsync(Guid trackId, CancellationToken cancellationToken = default)
     {
-        string? directoryPath = await dbContext.Tracks.AsNoTracking()
+        var folder = await dbContext.Tracks.AsNoTracking()
             .Where(track => track.Id == trackId)
-            .Select(track => track.DirectoryPath)
+            .Select(track => new { track.SourceId, track.DirectoryPath })
             .FirstOrDefaultAsync(cancellationToken);
-        if (directoryPath is null)
+        if (folder is null)
         {
             return null;
         }
@@ -29,7 +29,7 @@ internal sealed class FileSelectionRepository(WaveMpDbContext dbContext) : IFile
         List<TrackFileSelection> selections = await dbContext.TrackFileSelections.AsNoTracking()
             .Where(selection => selection.TrackId == trackId)
             .ToListAsync(cancellationToken);
-        return new TrackFiles(trackId, directoryPath, files, covers, selections);
+        return new TrackFiles(trackId, folder.SourceId, folder.DirectoryPath, files, covers, selections);
     }
 
     public async Task<bool> ReplaceAsync(

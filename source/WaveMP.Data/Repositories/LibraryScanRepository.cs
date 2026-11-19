@@ -6,10 +6,11 @@ namespace WaveMP.Data.Repositories;
 internal sealed class LibraryScanRepository(WaveMpDbContext dbContext) : ILibraryScanRepository
 {
     public async Task<IReadOnlyList<MediaFileSnapshot>> GetFileSnapshotsAsync(
+        Guid sourceId,
         IReadOnlyCollection<string>? directories,
         CancellationToken cancellationToken = default)
     {
-        IQueryable<MediaFile> files = dbContext.MediaFiles.AsNoTracking();
+        IQueryable<MediaFile> files = dbContext.MediaFiles.AsNoTracking().Where(file => file.SourceId == sourceId);
         if (directories is null || directories.Contains(string.Empty))
         {
             return await ToSnapshots(files).ToListAsync(cancellationToken);
@@ -32,30 +33,32 @@ internal sealed class LibraryScanRepository(WaveMpDbContext dbContext) : ILibrar
     }
 
     public async Task<IReadOnlyList<MediaFileSnapshot>> GetFolderSnapshotsAsync(
+        Guid sourceId,
         string directoryPath,
         CancellationToken cancellationToken = default)
     {
         return await ToSnapshots(dbContext.MediaFiles.AsNoTracking()
-                .Where(file => file.DirectoryPath == directoryPath))
+                .Where(file => file.SourceId == sourceId && file.DirectoryPath == directoryPath))
             .ToListAsync(cancellationToken);
     }
 
-    public Task<int> CountFilesAsync(CancellationToken cancellationToken = default)
+    public Task<int> CountFilesAsync(Guid sourceId, CancellationToken cancellationToken = default)
     {
-        return dbContext.MediaFiles.CountAsync(cancellationToken);
+        return dbContext.MediaFiles.CountAsync(file => file.SourceId == sourceId, cancellationToken);
     }
 
     public async Task<StoredFolder> LoadFolderAsync(
+        Guid sourceId,
         string directoryPath,
         CancellationToken cancellationToken = default)
     {
         List<MediaFile> files = await dbContext.MediaFiles
-            .Where(file => file.DirectoryPath == directoryPath)
+            .Where(file => file.SourceId == sourceId && file.DirectoryPath == directoryPath)
             .ToListAsync(cancellationToken);
         List<Track> tracks = await dbContext.Tracks
             .Include(track => track.Covers)
             .Include(track => track.FileSelections)
-            .Where(track => track.DirectoryPath == directoryPath)
+            .Where(track => track.SourceId == sourceId && track.DirectoryPath == directoryPath)
             .ToListAsync(cancellationToken);
         return new StoredFolder(files, tracks);
     }
@@ -97,6 +100,7 @@ internal sealed class LibraryScanRepository(WaveMpDbContext dbContext) : ILibrar
     }
 
     public async Task<(int Files, int Tracks)> DeleteDirectoriesAsync(
+        Guid sourceId,
         IReadOnlyCollection<string> directories,
         CancellationToken cancellationToken = default)
     {
@@ -107,10 +111,10 @@ internal sealed class LibraryScanRepository(WaveMpDbContext dbContext) : ILibrar
 
         string[] paths = [.. directories];
         int files = await dbContext.MediaFiles
-            .Where(file => paths.Contains(file.DirectoryPath))
+            .Where(file => file.SourceId == sourceId && paths.Contains(file.DirectoryPath))
             .ExecuteDeleteAsync(cancellationToken);
         int tracks = await dbContext.Tracks
-            .Where(track => paths.Contains(track.DirectoryPath))
+            .Where(track => track.SourceId == sourceId && paths.Contains(track.DirectoryPath))
             .ExecuteDeleteAsync(cancellationToken);
         return (files, tracks);
     }
@@ -119,7 +123,7 @@ internal sealed class LibraryScanRepository(WaveMpDbContext dbContext) : ILibrar
     {
         return await dbContext.Tracks.AsNoTracking()
             .Where(track => track.AlbumId != null)
-            .Select(track => new AlbumFolder(track.AlbumId!.Value, track.DirectoryPath))
+            .Select(track => new AlbumFolder(track.AlbumId!.Value, track.SourceId, track.DirectoryPath))
             .Distinct()
             .ToListAsync(cancellationToken);
     }
@@ -133,6 +137,7 @@ internal sealed class LibraryScanRepository(WaveMpDbContext dbContext) : ILibrar
             .Where(file => file.Kind == MediaFileKind.Image && names.Contains(file.NormalizedBaseName))
             .Select(file => new AlbumCoverImage(
                 file.Id,
+                file.SourceId,
                 file.RelativePath,
                 file.DirectoryPath,
                 file.NormalizedBaseName,

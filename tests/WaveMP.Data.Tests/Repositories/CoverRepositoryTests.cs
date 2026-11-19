@@ -51,6 +51,7 @@ public class CoverRepositoryTests : LibraryDatabaseTests
                 "First",
                 true,
                 CoverSource.Embedded,
+                MediaSource.DefaultId,
                 "Album/01 First.mp3",
                 "image/png",
                 4321,

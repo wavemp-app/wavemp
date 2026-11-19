@@ -9,7 +9,15 @@ public class Track
     public Guid Id { get; set; }
 
     /// <summary>
-    /// Folder relative to the media folder with <c>/</c> as separator; empty for the media folder itself.
+    /// The media source the files of the track lie in.
+    /// </summary>
+    public required Guid SourceId { get; set; }
+
+    public MediaSource? Source { get; set; }
+
+    /// <summary>
+    /// Folder relative to the folder of the source with <c>/</c> as separator; empty for the folder of the source
+    /// itself.
     /// </summary>
     public required string DirectoryPath { get; set; }
 
