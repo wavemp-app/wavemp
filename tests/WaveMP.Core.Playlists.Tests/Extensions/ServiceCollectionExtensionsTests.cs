@@ -9,6 +9,7 @@ using WaveMP.Core.Playlists.Extensions;
 using WaveMP.Core.Playlists.Histories;
 using WaveMP.Core.Playlists.Options;
 using WaveMP.Core.Playlists.Playlists;
+using WaveMP.Core.Playlists.SmartPlaylists;
 using WaveMP.Data.Repositories;
 using WaveMP.Testing.Files;
 
@@ -27,6 +28,7 @@ public class ServiceCollectionExtensionsTests
         using IServiceScope scope = provider.CreateScope();
 
         scope.ServiceProvider.GetRequiredService<IPlaylistService>().Should().NotBeNull();
+        scope.ServiceProvider.GetRequiredService<ISmartPlaylistService>().Should().NotBeNull();
         scope.ServiceProvider.GetRequiredService<IPlaylistCoverService>().Should().NotBeNull();
         scope.ServiceProvider.GetRequiredService<IRecentlyPlayedService>().Should().NotBeNull();
         scope.ServiceProvider.GetRequiredService<IPlaylistCoverStore>().Should().NotBeNull();
@@ -80,6 +82,7 @@ public class ServiceCollectionExtensionsTests
         services.AddLogging();
         services.AddSingleton<IConfiguration>(new ConfigurationBuilder().AddInMemoryCollection(settings).Build());
         services.AddScoped(_ => Substitute.For<IPlaylistRepository>());
+        services.AddScoped(_ => Substitute.For<ISmartPlaylistRepository>());
         services.AddScoped(_ => Substitute.For<IPlayHistoryRepository>());
         services.AddScoped(_ => Substitute.For<ITrackRepository>());
         services.AddWaveMpCaching();
