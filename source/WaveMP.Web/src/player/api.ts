@@ -5,6 +5,7 @@
 import { apiClient } from '@/api/client'
 import type {
     AudioFormat,
+    AutoplayResult,
     Equalizer,
     PlaybackTarget,
     PlayHistoryEntry,
@@ -41,6 +42,24 @@ export function getVideoPlayback(
             audioCodecs: [...formats.audioCodecs],
             ...(target ? { target } : {}),
         },
+    })
+}
+
+/**
+ * The songs autoplay plays after a list: chosen by the server from the songs of the list, without
+ * the excluded ones, each with its playback for the formats of the browser.
+ */
+export function getAutoplayTracks(
+    trackIds: readonly string[],
+    excludedTrackIds: readonly string[],
+    audioFormats: readonly AudioFormat[],
+    count: number,
+): Promise<AutoplayResult | undefined> {
+    return apiClient.api.v1.me.autoplay.next.post({
+        trackIds: [...trackIds],
+        excludedTrackIds: [...excludedTrackIds],
+        audioFormats: [...audioFormats],
+        count,
     })
 }
 

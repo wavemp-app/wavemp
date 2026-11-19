@@ -18,6 +18,13 @@ import {
 import { isUnauthorized } from '@/api/problems'
 import { canonicalLocale } from '@/i18n/locales'
 import {
+    applyAutoplayChange,
+    defaultAutoplaySettings,
+    toAutoplaySettings,
+    type AutoplaySettings,
+    type AutoplaySettingsChange,
+} from '@/player/autoplay'
+import {
     applyCrossfadeChange,
     defaultCrossfadeSettings,
     toCrossfadeSettings,
@@ -105,6 +112,8 @@ export const useSessionStore = defineStore('session', () => {
     const equalizer = ref<EqualizerSettings>(defaultEqualizerSettings)
     /** Crossfade of the profile; gapless until the settings are loaded. */
     const crossfade = ref<CrossfadeSettings>(defaultCrossfadeSettings)
+    /** Autoplay of the profile; on until the settings are loaded. */
+    const autoplay = ref<AutoplaySettings>(defaultAutoplaySettings)
     /** Sleep timer settings of the profile. */
     const sleepTimer = ref<SleepTimerSettings>(defaultSleepTimerSettings)
     /** Visualization of Now Playing of the profile. */
@@ -165,6 +174,16 @@ export const useSessionStore = defineStore('session', () => {
         merge: mergeChanges,
         request: (change: CrossfadeSettingsChange) => patchSettings({ crossfade: { ...change } }),
         read: (settings) => toCrossfadeSettings(settings?.crossfade),
+    })
+    const autoplaySaver = createSettingSaver({
+        get: () => autoplay.value,
+        set: (value: AutoplaySettings) => {
+            autoplay.value = value
+        },
+        apply: applyAutoplayChange,
+        merge: mergeChanges,
+        request: (change: AutoplaySettingsChange) => patchSettings({ autoplay: { ...change } }),
+        read: (settings) => toAutoplaySettings(settings?.autoplay),
     })
     const sleepTimerSaver = createSettingSaver({
         get: () => sleepTimer.value,
@@ -241,10 +260,12 @@ export const useSessionStore = defineStore('session', () => {
     function resetPlaybackSettings(): void {
         equalizer.value = defaultEqualizerSettings
         crossfade.value = defaultCrossfadeSettings
+        autoplay.value = defaultAutoplaySettings
         sleepTimer.value = defaultSleepTimerSettings
         visualization.value = defaultVisualizationSettings
         requests.equalizer++
         crossfadeSaver.reset()
+        autoplaySaver.reset()
         sleepTimerSaver.reset()
         visualizationSaver.reset()
     }
@@ -253,6 +274,7 @@ export const useSessionStore = defineStore('session', () => {
     function applyPlaybackSettings(settings: UserSettings | null | undefined): void {
         equalizer.value = toEqualizerSettings(settings?.equalizer) ?? equalizer.value
         crossfade.value = toCrossfadeSettings(settings?.crossfade) ?? crossfade.value
+        autoplay.value = toAutoplaySettings(settings?.autoplay) ?? autoplay.value
         sleepTimer.value = toSleepTimerSettings(settings?.sleepTimer) ?? sleepTimer.value
         visualization.value =
             toVisualizationSettings(settings?.visualization) ?? visualization.value
@@ -470,6 +492,19 @@ export const useSessionStore = defineStore('session', () => {
         return crossfadeSaver.save(change)
     }
 
+    /**
+     * Changes the autoplay settings of the profile at once and saves them like updateCrossfade.
+     * Errors are passed on.
+     */
+    function updateAutoplay(change: AutoplaySettingsChange): Promise<void> {
+        return autoplaySaver.save(change)
+    }
+
+    /** Turns autoplay of the profile on or off at once and saves it like updateAutoplay. */
+    function setAutoplayEnabled(enabled: boolean): Promise<void> {
+        return autoplaySaver.save({ enabled })
+    }
+
     /** Changes the sleep timer settings of the profile at once and saves them like updateCrossfade. */
     function updateSleepTimer(change: SleepTimerSettingsChange): Promise<void> {
         return sleepTimerSaver.save(change)
@@ -505,6 +540,7 @@ export const useSessionStore = defineStore('session', () => {
         sidebarCollapsed,
         equalizer,
         crossfade,
+        autoplay,
         sleepTimer,
         visualization,
         isAuthenticated,
@@ -521,6 +557,8 @@ export const useSessionStore = defineStore('session', () => {
         updateEqualizer,
         updateCrossfade,
         setCrossfadeEnabled,
+        updateAutoplay,
+        setAutoplayEnabled,
         updateSleepTimer,
         updateVisualization,
         signOut,

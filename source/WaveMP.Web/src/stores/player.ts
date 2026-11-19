@@ -24,7 +24,27 @@ import {
 } from '@/components/shell/transport'
 import { getLyrics } from '@/lyrics/api'
 import type { TrackLyrics } from '@/lyrics/timing'
-import { getPlayback, getVideoPlayback, recordPlay, reportNowPlaying } from '@/player/api'
+import {
+    getAutoplayTracks,
+    getPlayback,
+    getVideoPlayback,
+    recordPlay,
+    reportNowPlaying,
+} from '@/player/api'
+import {
+    autoplayBatchSize,
+    autoplayContext,
+    autoplayExcluded,
+    autoplayMaxSkips,
+    autoplayRefillBelow,
+    autoplaySignature,
+    insertAutoplay,
+    isEndOfList,
+    isPlaybackFresh,
+    toAutoplayEntries,
+    withoutUpcomingAutoplay,
+    type AutoplayEntry,
+} from '@/player/autoplay'
 import { crossfadeDuration } from '@/player/crossfade'
 import {
     AudioEngine,
@@ -119,6 +139,7 @@ export const playerDependencies = {
     audioFormats: (): readonly AudioFormat[] => browserAudioFormats(),
     videoFormats: (): VideoFormats => browserVideoFormats(),
     random: (): number => Math.random(),
+    now: (): number => Date.now(),
     mediaSession: true,
     /** Whether the browser has Web Audio, which the equalizer and the crossfade need. */
     webAudio: (): boolean => browserAudioEnvironment.webAudio !== false,
@@ -168,6 +189,12 @@ function artistOf(track: Track | undefined): string | undefined {
  * each other when one ends on its own. The sleep timer belongs to this device: it fades out and
  * pauses after a time, at the end of the track or at the end of the queue.
  *
+ * Autoplay (see src/player/autoplay.ts): while it is on for the profile and repeat is off, the
+ * server chooses songs that fit the list; they wait below the queue. When the list has ended, the
+ * first one moves into the queue (marked as autoplay) and plays, early enough to fade into it or
+ * play it without a gap, and more songs load before the waiting ones run out. Adding songs to the
+ * queue, repeat or turning autoplay off takes back the songs autoplay put after the current one.
+ *
  * While a casting device is connected (see src/casting), the device plays instead of the browser:
  * the queue and the controls stay here, the device gets one track after the other (its video while
  * the video view is chosen), and equalizer, crossfade, ReplayGain and the visualization rest.
@@ -213,6 +240,10 @@ export const usePlayerStore = defineStore('player', () => {
     const sleepRemaining = ref(0)
     /** The lyrics of the current track; null while they load and for tracks without lyrics. */
     const lyrics = shallowRef<TrackLyrics | null>(null)
+    /** The songs autoplay plays after the list, in their order. */
+    const autoplay = shallowRef<readonly AutoplayEntry[]>([])
+    /** Whether songs of autoplay are being requested. */
+    const autoplayLoading = ref(false)
 
     const current = computed<QueueItem | undefined>(() => currentItem(queue.value))
     const shuffle = computed(() => queue.value.shuffle)
@@ -246,6 +277,12 @@ export const usePlayerStore = defineStore('player', () => {
     )
     /** What a casting device plays of the current track: its video or its sound. */
     const castKind = computed(() => castMediaKind(viewMode.value, hasVideo.value))
+    /** The songs of the list autoplay goes on from. */
+    const autoplayList = computed(() => autoplayContext(queue.value))
+    /** Whether autoplay goes on after the list: on for the profile, repeat off and a list to follow. */
+    const autoplayActive = computed(
+        () => session.autoplay.enabled && repeat.value === 'off' && autoplayList.value.length > 0,
+    )
 
     let engine: PlayerEngine | null = null
     /** The engine of the casting device, created with the first connection. */
@@ -270,6 +307,16 @@ export const usePlayerStore = defineStore('player', () => {
     let skipped = 0
     let retried: string | null = null
     let artworkHeld: { id: string; version: string | undefined } | null = null
+    /** Increases with every new list of autoplay, so late answers for an older list are ignored. */
+    let autoplayGeneration = 0
+    /** The running request of autoplay songs. */
+    let autoplayRequest: Promise<void> | null = null
+    /** Whether the server had no more songs for the list; more are requested for the next list. */
+    let autoplayExhausted = false
+    /** Songs the user removed from autoplay or skipped there; they do not come back for this list. */
+    const autoplayDismissed = new Set<string>()
+    /** Playbacks autoplay already brought for its songs in the queue, by key; each is used once. */
+    const autoplayPlaybacks = new Map<string, TrackPlayback>()
 
     const history = new PlayHistoryTracker(
         (trackId, playedAt) => recordPlay(trackId, playedAt),
@@ -375,9 +422,12 @@ export const usePlayerStore = defineStore('player', () => {
         }
     }
 
-    /** Whether the current entry is the last one in the order of the queue, without repeat. */
+    /**
+     * Whether the current entry is the last one of the list in the order of the queue, without
+     * repeat; songs of autoplay do not count, so the sleep timer stops at the end of the list.
+     */
     function isLastEntry(): boolean {
-        return nextIndex(queue.value, 'off', false) === null
+        return isEndOfList(queue.value)
     }
 
     /** Counts down the seconds of a timer with a duration; also checks it while nothing plays. */
@@ -441,7 +491,11 @@ export const usePlayerStore = defineStore('player', () => {
     }
 
     async function fetchLocalPlayback(item: QueueItem): Promise<Loaded | PlayerMessage> {
-        const result = await getPlayback(item.track.id ?? '', playerDependencies.audioFormats())
+        const known = autoplayPlaybacks.get(item.key)
+        autoplayPlaybacks.delete(item.key)
+        const result = isPlaybackFresh(known, playerDependencies.now())
+            ? known
+            : await getPlayback(item.track.id ?? '', playerDependencies.audioFormats())
         const source = result ? sourceOf(result) : null
         return result && source ? { key: item.key, playback: result, source } : 'unsupported'
     }
@@ -520,7 +574,11 @@ export const usePlayerStore = defineStore('player', () => {
         message.value = notice
         loading.value = false
         skipped++
-        const next = nextIndex(queue.value, repeat.value, false)
+        let next = nextIndex(queue.value, repeat.value, false)
+        if (next === null && skipped <= autoplayMaxSkips) {
+            next = promoteAutoplay()
+        }
+
         if (next === null || skipped >= queue.value.items.length) {
             skipped = 0
             stopPlayback()
@@ -556,19 +614,21 @@ export const usePlayerStore = defineStore('player', () => {
 
     /**
      * Loads the next entry on the other deck, so it starts without a gap or fades in. Nothing is
-     * prepared when the sleep timer stops after the current track.
+     * prepared when the sleep timer stops after the current track. At the end of the list, the next
+     * song of autoplay moves into the queue now, so it can follow the same way.
      */
     async function prepareNext(): Promise<void> {
-        const index = nextIndex(queue.value, repeat.value, true)
+        if (output === 'cast' || !loaded || sleep.stopsAfterCurrent(isLastEntry())) {
+            return
+        }
+
+        let index = nextIndex(queue.value, repeat.value, true)
+        if (index === null && playback.value === 'playing') {
+            index = promoteAutoplay()
+        }
+
         const item = index === null ? undefined : queue.value.items[index]
-        if (
-            output === 'cast' ||
-            !item ||
-            !loaded ||
-            prepared?.key === item.key ||
-            preparing === item.key ||
-            sleep.stopsAfterCurrent(isLastEntry())
-        ) {
+        if (!item || prepared?.key === item.key || preparing === item.key) {
             return
         }
 
@@ -633,10 +693,37 @@ export const usePlayerStore = defineStore('player', () => {
             return
         }
 
-        const index = nextIndex(queue.value, repeat.value, true)
+        const index = nextIndex(queue.value, repeat.value, true) ?? promoteAutoplay()
+        if (index !== null) {
+            queue.value = withIndex(queue.value, index)
+            void startCurrent(true)
+            return
+        }
+
+        history.stop()
+        const request = autoplayActive.value ? autoplayRequest : null
+        if (request) {
+            // Autoplay is still choosing its songs: the first one plays once it has them.
+            const token = generation
+            playback.value = 'playing'
+            loading.value = true
+            void request.then(() => {
+                if (token === generation && playback.value === 'playing') {
+                    continueWithAutoplay()
+                }
+            })
+            return
+        }
+
+        // The end of the queue: the last track stays, play starts it again.
+        playback.value = 'paused'
+        loading.value = false
+    }
+
+    /** Plays the next song of autoplay after the list has ended, or stops at the end. */
+    function continueWithAutoplay(): void {
+        const index = promoteAutoplay()
         if (index === null) {
-            // The end of the queue: the last track stays, play starts it again.
-            history.stop()
             playback.value = 'paused'
             loading.value = false
             return
@@ -707,12 +794,15 @@ export const usePlayerStore = defineStore('player', () => {
         }
     }
 
+    /** Songs of the user come before those of autoplay, which follow the new list. */
     function playNext(tracks: readonly Track[]): void {
+        retractAutoplay()
         queue.value = insertNext(queue.value, tracks)
         afterAdding()
     }
 
     function addToQueue(tracks: readonly Track[]): void {
+        retractAutoplay()
         queue.value = append(queue.value, tracks)
         afterAdding()
     }
@@ -797,10 +887,18 @@ export const usePlayerStore = defineStore('player', () => {
         void startCurrent(autoplay)
     }
 
+    /** Skips to the next entry; at the end of a playing list to the next song of autoplay. */
     function next(): void {
-        if (current.value) {
-            goTo(nextIndex(queue.value, repeat.value, false))
+        if (!current.value) {
+            return
         }
+
+        let index = nextIndex(queue.value, repeat.value, false)
+        if (index === null && playback.value === 'playing') {
+            index = promoteAutoplay()
+        }
+
+        goTo(index)
     }
 
     function previous(): void {
@@ -843,6 +941,165 @@ export const usePlayerStore = defineStore('player', () => {
      */
     function toggleCrossfade(): void {
         session.setCrossfadeEnabled(!session.crossfade.enabled).catch(() => undefined)
+    }
+
+    /**
+     * Turns autoplay of the profile on or off. Off takes back the songs it put after the current
+     * one; the current song plays on. If saving fails, the switch goes back.
+     */
+    function toggleAutoplay(): void {
+        session.setAutoplayEnabled(!session.autoplay.enabled).catch(() => undefined)
+    }
+
+    /**
+     * Moves the first waiting song of autoplay into the queue, at its end (or right after the
+     * current entry), and loads more songs when few are left. Returns its index, or null if autoplay
+     * is off or no song waits.
+     */
+    function promoteAutoplay(afterCurrent = false): number | null {
+        const entry = autoplay.value[0]
+        if (!autoplayActive.value || !entry) {
+            return null
+        }
+
+        autoplay.value = autoplay.value.slice(1)
+        if (entry.playback) {
+            autoplayPlaybacks.set(entry.key, entry.playback)
+        }
+
+        queue.value = insertAutoplay(queue.value, entry, afterCurrent)
+        refillAutoplay()
+        return queue.value.items.findIndex((item) => item.key === entry.key)
+    }
+
+    /**
+     * Requests songs of autoplay for the current list: a new list replaces the waiting songs, a
+     * refill adds to them. Answers for an older list are ignored; a failed request leaves the songs
+     * as they are.
+     */
+    async function fetchAutoplay(replace: boolean): Promise<void> {
+        if (!autoplayActive.value) {
+            return
+        }
+
+        const token = replace ? ++autoplayGeneration : autoplayGeneration
+        const waiting = replace ? [] : autoplay.value
+        const list = autoplayList.value
+        const excluded = autoplayExcluded(queue.value, waiting, autoplayDismissed)
+        autoplayLoading.value = true
+        const request = (async () => {
+            let items
+            try {
+                items = (
+                    await getAutoplayTracks(
+                        list,
+                        excluded,
+                        playerDependencies.audioFormats(),
+                        autoplayBatchSize,
+                    )
+                )?.items
+            } catch {
+                items = null
+            }
+
+            if (token !== autoplayGeneration) {
+                return
+            }
+
+            autoplayLoading.value = false
+            if (!items) {
+                return
+            }
+
+            const base = replace ? [] : autoplay.value
+            const added = toAutoplayEntries(items, [
+                ...autoplayDismissed,
+                ...base.map((entry) => entry.track.id),
+                ...queue.value.items.filter((item) => item.autoplay).map((item) => item.track.id),
+            ])
+            autoplayExhausted = added.length === 0
+            autoplay.value = [...base, ...added]
+        })()
+        autoplayRequest = request
+        await request
+        if (autoplayRequest === request) {
+            autoplayRequest = null
+        }
+    }
+
+    /** Loads more songs of autoplay when few are left, unless the list has no more. */
+    function refillAutoplay(): void {
+        if (
+            autoplayActive.value &&
+            !autoplayRequest &&
+            !autoplayExhausted &&
+            autoplay.value.length < autoplayRefillBelow
+        ) {
+            void fetchAutoplay(false)
+        }
+    }
+
+    /** Forgets the waiting songs and ignores answers still on their way. */
+    function resetAutoplay(): void {
+        autoplayGeneration++
+        autoplayRequest = null
+        autoplayExhausted = false
+        autoplayDismissed.clear()
+        autoplay.value = []
+        autoplayLoading.value = false
+    }
+
+    /** Takes back the songs autoplay put after the current entry. */
+    function retractAutoplay(): void {
+        const retracted = withoutUpcomingAutoplay(queue.value)
+        if (retracted !== queue.value) {
+            const kept = new Set(retracted.items.map((item) => item.key))
+            for (const item of queue.value.items) {
+                if (!kept.has(item.key)) {
+                    autoplayPlaybacks.delete(item.key)
+                }
+            }
+
+            queue.value = retracted
+            forgetPrepared()
+        }
+    }
+
+    function dismissAutoplay(entries: readonly AutoplayEntry[]): void {
+        for (const entry of entries) {
+            if (entry.track.id) {
+                autoplayDismissed.add(entry.track.id)
+            }
+        }
+    }
+
+    /** Removes a waiting song of autoplay; more load when few are left. */
+    function removeAutoplayEntry(key: string): void {
+        dismissAutoplay(autoplay.value.filter((entry) => entry.key === key))
+        autoplay.value = autoplay.value.filter((entry) => entry.key !== key)
+        refillAutoplay()
+    }
+
+    /**
+     * Plays a waiting song of autoplay now: the songs before it are skipped, the song follows the
+     * current entry in the queue and plays.
+     */
+    function playAutoplayEntry(key: string): void {
+        const at = autoplay.value.findIndex((entry) => entry.key === key)
+        if (at < 0) {
+            return
+        }
+
+        retractAutoplay()
+        dismissAutoplay(autoplay.value.slice(0, at))
+        autoplay.value = autoplay.value.slice(at)
+        const index = promoteAutoplay(true)
+        if (index !== null) {
+            queue.value = withIndex(queue.value, index)
+            retried = null
+            message.value = null
+            void startCurrent(true)
+        }
     }
 
     function applyVolume(): void {
@@ -1094,6 +1351,7 @@ export const usePlayerStore = defineStore('player', () => {
         sleep.cancel()
         stopPlayback()
         queue.value = emptyQueue
+        autoplayPlaybacks.clear()
         message.value = null
         reset()
     }
@@ -1111,6 +1369,24 @@ export const usePlayerStore = defineStore('player', () => {
             }
 
             forgetPrepared()
+        },
+    )
+
+    // A new list, autoplay turned on or off, repeat or the choice of songs with a video only: the
+    // waiting songs of autoplay follow. Off (or repeat) also takes back those it put into the queue.
+    watch(
+        [
+            autoplayActive,
+            () => autoplaySignature(autoplayList.value),
+            () => session.autoplay.includeVideoOnly,
+        ],
+        ([active]) => {
+            resetAutoplay()
+            if (active) {
+                void fetchAutoplay(true)
+            } else {
+                retractAutoplay()
+            }
         },
     )
 
@@ -1208,6 +1484,7 @@ export const usePlayerStore = defineStore('player', () => {
             message: message.value,
             equalizer: equalizer.settings.enabled,
             crossfade: session.crossfade.enabled,
+            autoplay: session.autoplay.enabled,
             sleepTimer: {
                 mode: sleepTimer.value.mode,
                 remaining: sleepRemaining.value,
@@ -1278,6 +1555,9 @@ export const usePlayerStore = defineStore('player', () => {
         analyser,
         sleepTimer,
         sleepRemaining,
+        autoplay,
+        autoplayLoading,
+        autoplayActive,
         playTracks: playTrackList,
         playNext,
         addToQueue,
@@ -1296,6 +1576,9 @@ export const usePlayerStore = defineStore('player', () => {
         toggleShuffle,
         cycleRepeat,
         toggleCrossfade,
+        toggleAutoplay,
+        removeAutoplayEntry,
+        playAutoplayEntry,
         toggleMute,
         setVolume,
         clear,

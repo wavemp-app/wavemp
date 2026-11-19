@@ -189,6 +189,62 @@ export type ArtistSort = (typeof ArtistSortObject)[keyof typeof ArtistSortObject
 export type AudioCodec = (typeof AudioCodecObject)[keyof typeof AudioCodecObject];
 export type AudioFormat = (typeof AudioFormatObject)[keyof typeof AudioFormatObject];
 /**
+ * Asks for the songs autoplay plays after a list.
+ */
+export interface AutoplayRequest extends AdditionalDataHolder, Parsable {
+    /**
+     * The audio formats the client plays, 1 to 20, as for GetTrackPlayback: they decide the playback of each song.
+     */
+    audioFormats?: AudioFormat[] | null;
+    /**
+     * Number of songs wanted, from 1 to 50; 10 if missing.
+     */
+    count?: number | null;
+    /**
+     * Further tracks that must not be chosen, at most 500, e.g. the songs that already wait in the autoplay list of the client.
+     */
+    excludedTrackIds?: Guid[] | null;
+    /**
+     * The tracks of the list that ended or is about to end (album, playlist or queue), in their order, 1 to 500; for a longer list its last tracks. The choice follows their artists, genres and years; they are never chosen themselves. Unknown ids are skipped.
+     */
+    trackIds?: Guid[] | null;
+}
+/**
+ * The songs autoplay plays next.
+ */
+export interface AutoplayResult extends AdditionalDataHolder, Parsable {
+    /**
+     * The songs in the order they play, at most as many as requested; empty if no matching song is left. Songs the client cannot play (e.g. a file that is gone since the last scan) are left out.
+     */
+    items?: AutoplayTrack[] | null;
+}
+/**
+ * Autoplay of the current profile: when a list ends and repeat is off, the players go on with matching songs (see SelectMyAutoplayTracks).
+ */
+export interface AutoplaySettings extends AdditionalDataHolder, Parsable {
+    /**
+     * Whether the players go on with matching songs when a list ends and repeat is off; true by default.
+     */
+    enabled?: boolean | null;
+    /**
+     * Whether autoplay also chooses songs that only have a music video; true by default.
+     */
+    includeVideoOnly?: boolean | null;
+}
+/**
+ * A song autoplay chose, with how the client plays it.
+ */
+export interface AutoplayTrack extends AdditionalDataHolder, Parsable {
+    /**
+     * How the client plays the song, as GetTrackPlayback answers for the formats of the request, with the signed stream URL. The URL expires (expiresAt); clients ask GetTrackPlayback again for a song whose URL has expired when it is due.
+     */
+    playback?: TrackPlayback | null;
+    /**
+     * The song.
+     */
+    track?: Track | null;
+}
+/**
  * The avatar of a profile: an uploaded picture or a built-in avatar. Its picture comes from GET /api/v1/users/{id}/avatar; profiles without an avatar have none, and clients show their initials.
  */
 export interface Avatar extends AdditionalDataHolder, Parsable {
@@ -441,6 +497,42 @@ export function createArtistPageFromDiscriminatorValue(parseNode: ParseNode | un
 // @ts-ignore
 export function createArtistReferenceFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
     return deserializeIntoArtistReference;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {AutoplayRequest}
+ */
+// @ts-ignore
+export function createAutoplayRequestFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoAutoplayRequest;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {AutoplayResult}
+ */
+// @ts-ignore
+export function createAutoplayResultFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoAutoplayResult;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {AutoplaySettings}
+ */
+// @ts-ignore
+export function createAutoplaySettingsFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoAutoplaySettings;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {AutoplayTrack}
+ */
+// @ts-ignore
+export function createAutoplayTrackFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoAutoplayTrack;
 }
 /**
  * Creates a new instance of the appropriate class based on discriminator value
@@ -1351,6 +1443,15 @@ export function createTranscodingStatusFromDiscriminatorValue(parseNode: ParseNo
 /**
  * Creates a new instance of the appropriate class based on discriminator value
  * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {UpdateAutoplaySettings}
+ */
+// @ts-ignore
+export function createUpdateAutoplaySettingsFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoUpdateAutoplaySettings;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
  * @returns {UpdateBackupSettings}
  */
 // @ts-ignore
@@ -1787,6 +1888,55 @@ export function deserializeIntoArtistReference(artistReference: Partial<ArtistRe
     return {
         "id": n => { artistReference.id = n.getGuidValue(); },
         "name": n => { artistReference.name = n.getStringValue(); },
+    }
+}
+/**
+ * The deserialization information for the current model
+ * @param AutoplayRequest The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoAutoplayRequest(autoplayRequest: Partial<AutoplayRequest> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "audioFormats": n => { autoplayRequest.audioFormats = n.getCollectionOfEnumValues<AudioFormat>(AudioFormatObject); },
+        "count": n => { autoplayRequest.count = n.getNumberValue(); },
+        "excludedTrackIds": n => { autoplayRequest.excludedTrackIds = n.getCollectionOfPrimitiveValues<Guid>("string"); },
+        "trackIds": n => { autoplayRequest.trackIds = n.getCollectionOfPrimitiveValues<Guid>("string"); },
+    }
+}
+/**
+ * The deserialization information for the current model
+ * @param AutoplayResult The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoAutoplayResult(autoplayResult: Partial<AutoplayResult> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "items": n => { autoplayResult.items = n.getCollectionOfObjectValues<AutoplayTrack>(createAutoplayTrackFromDiscriminatorValue); },
+    }
+}
+/**
+ * The deserialization information for the current model
+ * @param AutoplaySettings The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoAutoplaySettings(autoplaySettings: Partial<AutoplaySettings> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "enabled": n => { autoplaySettings.enabled = n.getBooleanValue(); },
+        "includeVideoOnly": n => { autoplaySettings.includeVideoOnly = n.getBooleanValue(); },
+    }
+}
+/**
+ * The deserialization information for the current model
+ * @param AutoplayTrack The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoAutoplayTrack(autoplayTrack: Partial<AutoplayTrack> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "playback": n => { autoplayTrack.playback = n.getObjectValue<TrackPlayback>(createTrackPlaybackFromDiscriminatorValue); },
+        "track": n => { autoplayTrack.track = n.getObjectValue<Track>(createTrackFromDiscriminatorValue); },
     }
 }
 /**
@@ -3193,6 +3343,18 @@ export function deserializeIntoTranscodingStatus(transcodingStatus: Partial<Tran
 }
 /**
  * The deserialization information for the current model
+ * @param UpdateAutoplaySettings The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoUpdateAutoplaySettings(updateAutoplaySettings: Partial<UpdateAutoplaySettings> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "enabled": n => { updateAutoplaySettings.enabled = n.getBooleanValue(); },
+        "includeVideoOnly": n => { updateAutoplaySettings.includeVideoOnly = n.getBooleanValue(); },
+    }
+}
+/**
+ * The deserialization information for the current model
  * @param UpdateBackupSettings The instance to deserialize into.
  * @returns {Record<string, (node: ParseNode) => void>}
  */
@@ -3474,6 +3636,7 @@ export function deserializeIntoUpdateUser(updateUser: Partial<UpdateUser> | unde
 // @ts-ignore
 export function deserializeIntoUpdateUserSettings(updateUserSettings: Partial<UpdateUserSettings> | undefined = {}) : Record<string, (node: ParseNode) => void> {
     return {
+        "autoplay": n => { updateUserSettings.autoplay = n.getObjectValue<UpdateAutoplaySettings>(createUpdateAutoplaySettingsFromDiscriminatorValue); },
         "crossfade": n => { updateUserSettings.crossfade = n.getObjectValue<UpdateCrossfadeSettings>(createUpdateCrossfadeSettingsFromDiscriminatorValue); },
         "equalizer": n => { updateUserSettings.equalizer = n.getObjectValue<UpdateEqualizerSettings>(createUpdateEqualizerSettingsFromDiscriminatorValue); },
         "language": n => { updateUserSettings.language = n.getStringValue(); },
@@ -3541,6 +3704,7 @@ export function deserializeIntoUserPage(userPage: Partial<UserPage> | undefined 
 // @ts-ignore
 export function deserializeIntoUserSettings(userSettings: Partial<UserSettings> | undefined = {}) : Record<string, (node: ParseNode) => void> {
     return {
+        "autoplay": n => { userSettings.autoplay = n.getObjectValue<AutoplaySettings>(createAutoplaySettingsFromDiscriminatorValue); },
         "crossfade": n => { userSettings.crossfade = n.getObjectValue<CrossfadeSettings>(createCrossfadeSettingsFromDiscriminatorValue); },
         "equalizer": n => { userSettings.equalizer = n.getObjectValue<EqualizerSettings>(createEqualizerSettingsFromDiscriminatorValue); },
         "language": n => { userSettings.language = n.getStringValue(); },
@@ -5014,6 +5178,60 @@ export function serializeArtistReference(writer: SerializationWriter, artistRefe
     writer.writeGuidValue("id", artistReference.id);
     writer.writeStringValue("name", artistReference.name);
     writer.writeAdditionalData(artistReference.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param AutoplayRequest The instance to serialize from.
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeAutoplayRequest(writer: SerializationWriter, autoplayRequest: Partial<AutoplayRequest> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!autoplayRequest || isSerializingDerivedType) { return; }
+    if(autoplayRequest.audioFormats)
+    writer.writeCollectionOfEnumValues<AudioFormat>("audioFormats", autoplayRequest.audioFormats);
+    writer.writeNumberValue("count", autoplayRequest.count);
+    writer.writeCollectionOfPrimitiveValues<Guid>("excludedTrackIds", autoplayRequest.excludedTrackIds);
+    writer.writeCollectionOfPrimitiveValues<Guid>("trackIds", autoplayRequest.trackIds);
+    writer.writeAdditionalData(autoplayRequest.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param AutoplayResult The instance to serialize from.
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeAutoplayResult(writer: SerializationWriter, autoplayResult: Partial<AutoplayResult> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!autoplayResult || isSerializingDerivedType) { return; }
+    writer.writeCollectionOfObjectValues<AutoplayTrack>("items", autoplayResult.items, serializeAutoplayTrack);
+    writer.writeAdditionalData(autoplayResult.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param AutoplaySettings The instance to serialize from.
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeAutoplaySettings(writer: SerializationWriter, autoplaySettings: Partial<AutoplaySettings> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!autoplaySettings || isSerializingDerivedType) { return; }
+    writer.writeBooleanValue("enabled", autoplaySettings.enabled);
+    writer.writeBooleanValue("includeVideoOnly", autoplaySettings.includeVideoOnly);
+    writer.writeAdditionalData(autoplaySettings.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param AutoplayTrack The instance to serialize from.
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeAutoplayTrack(writer: SerializationWriter, autoplayTrack: Partial<AutoplayTrack> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!autoplayTrack || isSerializingDerivedType) { return; }
+    writer.writeObjectValue<TrackPlayback>("playback", autoplayTrack.playback, serializeTrackPlayback);
+    writer.writeObjectValue<Track>("track", autoplayTrack.track, serializeTrack);
+    writer.writeAdditionalData(autoplayTrack.additionalData);
 }
 /**
  * Serializes information the current object
@@ -6515,6 +6733,19 @@ export function serializeTranscodingStatus(writer: SerializationWriter, transcod
 /**
  * Serializes information the current object
  * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param UpdateAutoplaySettings The instance to serialize from.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeUpdateAutoplaySettings(writer: SerializationWriter, updateAutoplaySettings: Partial<UpdateAutoplaySettings> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!updateAutoplaySettings || isSerializingDerivedType) { return; }
+    writer.writeBooleanValue("enabled", updateAutoplaySettings.enabled);
+    writer.writeBooleanValue("includeVideoOnly", updateAutoplaySettings.includeVideoOnly);
+    writer.writeAdditionalData(updateAutoplaySettings.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
  * @param UpdateBackupSettings The instance to serialize from.
  * @param writer Serialization writer to use to serialize this model
  */
@@ -6818,6 +7049,7 @@ export function serializeUpdateUser(writer: SerializationWriter, updateUser: Par
 // @ts-ignore
 export function serializeUpdateUserSettings(writer: SerializationWriter, updateUserSettings: Partial<UpdateUserSettings> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
     if (!updateUserSettings || isSerializingDerivedType) { return; }
+    writer.writeObjectValue<UpdateAutoplaySettings>("autoplay", updateUserSettings.autoplay, serializeUpdateAutoplaySettings);
     writer.writeObjectValue<UpdateCrossfadeSettings>("crossfade", updateUserSettings.crossfade, serializeUpdateCrossfadeSettings);
     writer.writeObjectValue<UpdateEqualizerSettings>("equalizer", updateUserSettings.equalizer, serializeUpdateEqualizerSettings);
     writer.writeStringValue("language", updateUserSettings.language);
@@ -6889,6 +7121,7 @@ export function serializeUserPage(writer: SerializationWriter, userPage: Partial
 // @ts-ignore
 export function serializeUserSettings(writer: SerializationWriter, userSettings: Partial<UserSettings> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
     if (!userSettings || isSerializingDerivedType) { return; }
+    writer.writeObjectValue<AutoplaySettings>("autoplay", userSettings.autoplay, serializeAutoplaySettings);
     writer.writeObjectValue<CrossfadeSettings>("crossfade", userSettings.crossfade, serializeCrossfadeSettings);
     writer.writeObjectValue<EqualizerSettings>("equalizer", userSettings.equalizer, serializeEqualizerSettings);
     writer.writeStringValue("language", userSettings.language);
@@ -7822,6 +8055,19 @@ export interface TranscodingStatus extends AdditionalDataHolder, Parsable {
     runningJobs?: number | null;
 }
 /**
+ * Changes the autoplay of the current profile. Missing or null values stay unchanged.
+ */
+export interface UpdateAutoplaySettings extends AdditionalDataHolder, Parsable {
+    /**
+     * Whether the players go on with matching songs when a list ends and repeat is off.
+     */
+    enabled?: boolean | null;
+    /**
+     * Whether autoplay also chooses songs that only have a music video.
+     */
+    includeVideoOnly?: boolean | null;
+}
+/**
  * Changes the settings of the database backups. Missing or null values stay unchanged.
  */
 export interface UpdateBackupSettings extends AdditionalDataHolder, Parsable {
@@ -8156,6 +8402,10 @@ export interface UpdateUser extends AdditionalDataHolder, Parsable {
  */
 export interface UpdateUserSettings extends AdditionalDataHolder, Parsable {
     /**
+     * The autoplay property
+     */
+    autoplay?: UpdateAutoplaySettings | null;
+    /**
      * The crossfade property
      */
     crossfade?: UpdateCrossfadeSettings | null;
@@ -8283,6 +8533,10 @@ export interface UserPage extends AdditionalDataHolder, Parsable {
  * Settings of the current profile.
  */
 export interface UserSettings extends AdditionalDataHolder, Parsable {
+    /**
+     * Autoplay at the end of a list.
+     */
+    autoplay?: AutoplaySettings | null;
     /**
      * Crossfade between tracks.
      */
@@ -8464,6 +8718,9 @@ export const AudioCodecObject = {
     Ac3: "Ac3",
     Eac3: "Eac3",
 } as const;
+/**
+ * Format of the audio file; null if it is none of the formats clients play directly.
+ */
 export const AudioFormatObject = {
     Mp3: "Mp3",
     Flac: "Flac",

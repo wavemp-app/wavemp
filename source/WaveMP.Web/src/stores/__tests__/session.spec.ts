@@ -595,6 +595,44 @@ describe('session store', () => {
             expect(session.crossfade).toEqual({ enabled: true, seconds: 8, albumsGapless: false })
         })
 
+        it('loads autoplay with the profile, on until loaded and for another profile', async () => {
+            api.createSession.mockResolvedValue(created('a'))
+            api.getSettings.mockResolvedValue({
+                language: 'en',
+                autoplay: { enabled: false, includeVideoOnly: false },
+            })
+            const session = useSessionStore()
+            expect(session.autoplay).toEqual({ enabled: true, includeVideoOnly: true })
+
+            await session.select('a')
+            expect(session.autoplay).toEqual({ enabled: false, includeVideoOnly: false })
+
+            session.clear()
+            expect(session.autoplay).toEqual({ enabled: true, includeVideoOnly: true })
+        })
+
+        it('turns autoplay off at once, saves it and turns it back when saving fails', async () => {
+            saveStoredSession(stored('a'))
+            api.updateSettings
+                .mockResolvedValueOnce({ autoplay: { enabled: false, includeVideoOnly: true } })
+                .mockRejectedValueOnce(new Error('offline'))
+            const session = useSessionStore()
+            session.restore()
+
+            const saving = session.setAutoplayEnabled(false)
+            expect(session.autoplay.enabled).toBe(false)
+            await saving
+            expect(api.updateSettings).toHaveBeenCalledWith({ autoplay: { enabled: false } })
+
+            await expect(session.updateAutoplay({ includeVideoOnly: false })).rejects.toThrow(
+                'offline',
+            )
+            expect(api.updateSettings).toHaveBeenLastCalledWith({
+                autoplay: { includeVideoOnly: false },
+            })
+            expect(session.autoplay).toEqual({ enabled: false, includeVideoOnly: true })
+        })
+
         it('saves the fade-out of the sleep timer and passes errors on', async () => {
             saveStoredSession(stored('a'))
             api.updateSettings.mockResolvedValueOnce({ sleepTimer: { fadeSeconds: 60 } })

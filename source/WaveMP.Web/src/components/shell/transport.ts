@@ -41,6 +41,8 @@ export interface TransportState {
     equalizer?: boolean
     /** Whether the crossfade of the profile is on. */
     crossfade?: boolean
+    /** Whether autoplay of the profile is on. */
+    autoplay?: boolean
     /** The sleep timer of this device. */
     sleepTimer?: TransportSleepTimer
     /**

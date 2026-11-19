@@ -9,6 +9,8 @@ export interface QueueItem {
     /** Unique within the queue; stays the same while the entry moves. */
     readonly key: string
     readonly track: Track
+    /** Added by autoplay after the list had ended; it does not count as a song of the list. */
+    readonly autoplay?: boolean
 }
 
 export interface Queue {
