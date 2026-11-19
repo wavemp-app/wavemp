@@ -900,6 +900,60 @@ export function createJobRunPageFromDiscriminatorValue(parseNode: ParseNode | un
 /**
  * Creates a new instance of the appropriate class based on discriminator value
  * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {LibraryIssueCount}
+ */
+// @ts-ignore
+export function createLibraryIssueCountFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoLibraryIssueCount;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {LibraryIssueFile}
+ */
+// @ts-ignore
+export function createLibraryIssueFileFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoLibraryIssueFile;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {LibraryIssue}
+ */
+// @ts-ignore
+export function createLibraryIssueFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoLibraryIssue;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {LibraryIssuePage}
+ */
+// @ts-ignore
+export function createLibraryIssuePageFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoLibraryIssuePage;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {LibraryIssueSummary}
+ */
+// @ts-ignore
+export function createLibraryIssueSummaryFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoLibraryIssueSummary;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {LibraryIssueTrack}
+ */
+// @ts-ignore
+export function createLibraryIssueTrackFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoLibraryIssueTrack;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
  * @returns {LibrarySettings}
  */
 // @ts-ignore
@@ -2683,6 +2737,103 @@ export function deserializeIntoJobRunPage(jobRunPage: Partial<JobRunPage> | unde
         "limit": n => { jobRunPage.limit = n.getNumberValue(); },
         "offset": n => { jobRunPage.offset = n.getNumberValue(); },
         "total": n => { jobRunPage.total = n.getNumberValue(); },
+    }
+}
+/**
+ * The deserialization information for the current model
+ * @param LibraryIssue The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoLibraryIssue(libraryIssue: Partial<LibraryIssue> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "detectedAt": n => { libraryIssue.detectedAt = n.getDateValue(); },
+        "file": n => { libraryIssue.file = n.getObjectValue<LibraryIssueFile>(createLibraryIssueFileFromDiscriminatorValue); },
+        "fileIssue": n => { libraryIssue.fileIssue = n.getEnumValue<ScanIssueCode>(ScanIssueCodeObject); },
+        "id": n => { libraryIssue.id = n.getGuidValue(); },
+        "missingTags": n => { libraryIssue.missingTags = n.getCollectionOfEnumValues<MetadataTag>(MetadataTagObject); },
+        "relatedTrack": n => { libraryIssue.relatedTrack = n.getObjectValue<LibraryIssueTrack>(createLibraryIssueTrackFromDiscriminatorValue); },
+        "severity": n => { libraryIssue.severity = n.getEnumValue<LibraryIssueSeverity>(LibraryIssueSeverityObject); },
+        "track": n => { libraryIssue.track = n.getObjectValue<LibraryIssueTrack>(createLibraryIssueTrackFromDiscriminatorValue); },
+        "type": n => { libraryIssue.type = n.getEnumValue<LibraryIssueType>(LibraryIssueTypeObject); },
+    }
+}
+/**
+ * The deserialization information for the current model
+ * @param LibraryIssueCount The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoLibraryIssueCount(libraryIssueCount: Partial<LibraryIssueCount> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "count": n => { libraryIssueCount.count = n.getNumberValue(); },
+        "severity": n => { libraryIssueCount.severity = n.getEnumValue<LibraryIssueSeverity>(LibraryIssueSeverityObject); },
+        "type": n => { libraryIssueCount.type = n.getEnumValue<LibraryIssueType>(LibraryIssueTypeObject); },
+    }
+}
+/**
+ * The deserialization information for the current model
+ * @param LibraryIssueFile The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoLibraryIssueFile(libraryIssueFile: Partial<LibraryIssueFile> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "id": n => { libraryIssueFile.id = n.getGuidValue(); },
+        "kind": n => { libraryIssueFile.kind = n.getEnumValue<MediaFileKind>(MediaFileKindObject); },
+        "relativePath": n => { libraryIssueFile.relativePath = n.getStringValue(); },
+        "sourceId": n => { libraryIssueFile.sourceId = n.getGuidValue(); },
+        "sourceName": n => { libraryIssueFile.sourceName = n.getStringValue(); },
+    }
+}
+/**
+ * The deserialization information for the current model
+ * @param LibraryIssuePage The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoLibraryIssuePage(libraryIssuePage: Partial<LibraryIssuePage> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "items": n => { libraryIssuePage.items = n.getCollectionOfObjectValues<LibraryIssue>(createLibraryIssueFromDiscriminatorValue); },
+        "limit": n => { libraryIssuePage.limit = n.getNumberValue(); },
+        "offset": n => { libraryIssuePage.offset = n.getNumberValue(); },
+        "total": n => { libraryIssuePage.total = n.getNumberValue(); },
+    }
+}
+/**
+ * The deserialization information for the current model
+ * @param LibraryIssueSummary The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoLibraryIssueSummary(libraryIssueSummary: Partial<LibraryIssueSummary> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "checkedAt": n => { libraryIssueSummary.checkedAt = n.getDateValue(); },
+        "counts": n => { libraryIssueSummary.counts = n.getCollectionOfObjectValues<LibraryIssueCount>(createLibraryIssueCountFromDiscriminatorValue); },
+        "hintCount": n => { libraryIssueSummary.hintCount = n.getNumberValue(); },
+        "problemCount": n => { libraryIssueSummary.problemCount = n.getNumberValue(); },
+        "trackCount": n => { libraryIssueSummary.trackCount = n.getNumberValue(); },
+    }
+}
+/**
+ * The deserialization information for the current model
+ * @param LibraryIssueTrack The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoLibraryIssueTrack(libraryIssueTrack: Partial<LibraryIssueTrack> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "album": n => { libraryIssueTrack.album = n.getObjectValue<AlbumReference>(createAlbumReferenceFromDiscriminatorValue); },
+        "artist": n => { libraryIssueTrack.artist = n.getObjectValue<ArtistReference>(createArtistReferenceFromDiscriminatorValue); },
+        "baseName": n => { libraryIssueTrack.baseName = n.getStringValue(); },
+        "directoryPath": n => { libraryIssueTrack.directoryPath = n.getStringValue(); },
+        "durationMilliseconds": n => { libraryIssueTrack.durationMilliseconds = n.getNumberValue(); },
+        "hasAudio": n => { libraryIssueTrack.hasAudio = n.getBooleanValue(); },
+        "hasVideo": n => { libraryIssueTrack.hasVideo = n.getBooleanValue(); },
+        "id": n => { libraryIssueTrack.id = n.getGuidValue(); },
+        "sourceId": n => { libraryIssueTrack.sourceId = n.getGuidValue(); },
+        "sourceName": n => { libraryIssueTrack.sourceName = n.getStringValue(); },
+        "title": n => { libraryIssueTrack.title = n.getStringValue(); },
     }
 }
 /**
@@ -4820,6 +4971,187 @@ export type JobRunStatus = (typeof JobRunStatusObject)[keyof typeof JobRunStatus
 export type JobState = (typeof JobStateObject)[keyof typeof JobStateObject];
 export type JobTrigger = (typeof JobTriggerObject)[keyof typeof JobTriggerObject];
 /**
+ * A problem of the library found by the library check, with its track, file and details. Clients show their own text for the type and the codes of the details.
+ */
+export interface LibraryIssue extends AdditionalDataHolder, Parsable {
+    /**
+     * When the check found the problem first.
+     */
+    detectedAt?: Date | null;
+    /**
+     * The file property
+     */
+    file?: LibraryIssueFile | null;
+    /**
+     * The fileIssue property
+     */
+    fileIssue?: ScanIssueCode | null;
+    /**
+     * Id of the problem; stays the same as long as later runs of the check find it again.
+     */
+    id?: Guid | null;
+    /**
+     * The tags the file of the track lacks (Title, Artist, Album), for MissingTags only; empty otherwise.
+     */
+    missingTags?: MetadataTag[] | null;
+    /**
+     * The relatedTrack property
+     */
+    relatedTrack?: LibraryIssueTrack | null;
+    /**
+     * How much a problem of the library matters: Problem should be fixed, Hint is only a hint (videos without audio, songs without video).
+     */
+    severity?: LibraryIssueSeverity | null;
+    /**
+     * The track property
+     */
+    track?: LibraryIssueTrack | null;
+    /**
+     * Kind of a problem of the library found by the library check. Clients translate it.
+     */
+    type?: LibraryIssueType | null;
+}
+/**
+ * The number of problems of a kind.
+ */
+export interface LibraryIssueCount extends AdditionalDataHolder, Parsable {
+    /**
+     * The count property
+     */
+    count?: number | null;
+    /**
+     * How much a problem of the library matters: Problem should be fixed, Hint is only a hint (videos without audio, songs without video).
+     */
+    severity?: LibraryIssueSeverity | null;
+    /**
+     * Kind of a problem of the library found by the library check. Clients translate it.
+     */
+    type?: LibraryIssueType | null;
+}
+/**
+ * The file of a problem of the library.
+ */
+export interface LibraryIssueFile extends AdditionalDataHolder, Parsable {
+    /**
+     * The id property
+     */
+    id?: Guid | null;
+    /**
+     * Kind of a media file; Lyrics is a lyrics file (.lrc) with the base name of the track.
+     */
+    kind?: MediaFileKind | null;
+    /**
+     * Path of the file relative to the folder of its media source with / as separator.
+     */
+    relativePath?: string | null;
+    /**
+     * The media source the file lies in.
+     */
+    sourceId?: Guid | null;
+    /**
+     * The sourceName property
+     */
+    sourceName?: string | null;
+}
+/**
+ * One page of a collection.
+ */
+export interface LibraryIssuePage extends AdditionalDataHolder, Parsable {
+    /**
+     * Items of the page, at most limit.
+     */
+    items?: LibraryIssue[] | null;
+    /**
+     * Maximum number of items of the page, as requested.
+     */
+    limit?: number | null;
+    /**
+     * Number of items skipped before this page.
+     */
+    offset?: number | null;
+    /**
+     * Number of items of the whole collection.
+     */
+    total?: number | null;
+}
+export type LibraryIssueSeverity = (typeof LibraryIssueSeverityObject)[keyof typeof LibraryIssueSeverityObject];
+export type LibraryIssueSort = (typeof LibraryIssueSortObject)[keyof typeof LibraryIssueSortObject];
+/**
+ * The overview of the library check: the number of problems per kind and when the check ran last.
+ */
+export interface LibraryIssueSummary extends AdditionalDataHolder, Parsable {
+    /**
+     * When the last run of the check stored its result; null if the check never ran.
+     */
+    checkedAt?: Date | null;
+    /**
+     * Every kind of problem with its number, also kinds without problems; the problems first, then the hints.
+     */
+    counts?: LibraryIssueCount[] | null;
+    /**
+     * Number of problems of severity Hint.
+     */
+    hintCount?: number | null;
+    /**
+     * Number of problems of severity Problem.
+     */
+    problemCount?: number | null;
+    /**
+     * Number of tracks the last run checked; null if the check never ran.
+     */
+    trackCount?: number | null;
+}
+/**
+ * A track of a problem of the library: what identifies it and where its files lie.
+ */
+export interface LibraryIssueTrack extends AdditionalDataHolder, Parsable {
+    /**
+     * The album property
+     */
+    album?: AlbumReference | null;
+    /**
+     * The artist property
+     */
+    artist?: ArtistReference | null;
+    /**
+     * File name of the track without extension, shared by all its files.
+     */
+    baseName?: string | null;
+    /**
+     * Folder of the track relative to the folder of its media source with / as separator; empty for that folder itself.
+     */
+    directoryPath?: string | null;
+    /**
+     * Duration in milliseconds; null if unknown.
+     */
+    durationMilliseconds?: number | null;
+    /**
+     * The hasAudio property
+     */
+    hasAudio?: boolean | null;
+    /**
+     * The hasVideo property
+     */
+    hasVideo?: boolean | null;
+    /**
+     * The id property
+     */
+    id?: Guid | null;
+    /**
+     * The media source the files of the track lie in.
+     */
+    sourceId?: Guid | null;
+    /**
+     * The sourceName property
+     */
+    sourceName?: string | null;
+    /**
+     * The title property
+     */
+    title?: string | null;
+}
+export type LibraryIssueType = (typeof LibraryIssueTypeObject)[keyof typeof LibraryIssueTypeObject];
+/**
  * Settings of the media library.
  */
 export interface LibrarySettings extends AdditionalDataHolder, Parsable {
@@ -5841,7 +6173,7 @@ export interface Scan extends AdditionalDataHolder, Parsable {
  */
 export interface ScanIssue extends AdditionalDataHolder, Parsable {
     /**
-     * Problem with a file or a media source found by a scan. Clients translate it.
+     * The code property
      */
     code?: ScanIssueCode | null;
     /**
@@ -6737,6 +7069,110 @@ export function serializeJobRunPage(writer: SerializationWriter, jobRunPage: Par
     writer.writeNumberValue("offset", jobRunPage.offset);
     writer.writeNumberValue("total", jobRunPage.total);
     writer.writeAdditionalData(jobRunPage.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param LibraryIssue The instance to serialize from.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeLibraryIssue(writer: SerializationWriter, libraryIssue: Partial<LibraryIssue> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!libraryIssue || isSerializingDerivedType) { return; }
+    writer.writeDateValue("detectedAt", libraryIssue.detectedAt);
+    writer.writeObjectValue<LibraryIssueFile>("file", libraryIssue.file, serializeLibraryIssueFile);
+    writer.writeEnumValue<ScanIssueCode>("fileIssue", libraryIssue.fileIssue);
+    writer.writeGuidValue("id", libraryIssue.id);
+    if(libraryIssue.missingTags)
+    writer.writeCollectionOfEnumValues<MetadataTag>("missingTags", libraryIssue.missingTags);
+    writer.writeObjectValue<LibraryIssueTrack>("relatedTrack", libraryIssue.relatedTrack, serializeLibraryIssueTrack);
+    writer.writeEnumValue<LibraryIssueSeverity>("severity", libraryIssue.severity);
+    writer.writeObjectValue<LibraryIssueTrack>("track", libraryIssue.track, serializeLibraryIssueTrack);
+    writer.writeEnumValue<LibraryIssueType>("type", libraryIssue.type);
+    writer.writeAdditionalData(libraryIssue.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param LibraryIssueCount The instance to serialize from.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeLibraryIssueCount(writer: SerializationWriter, libraryIssueCount: Partial<LibraryIssueCount> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!libraryIssueCount || isSerializingDerivedType) { return; }
+    writer.writeNumberValue("count", libraryIssueCount.count);
+    writer.writeEnumValue<LibraryIssueSeverity>("severity", libraryIssueCount.severity);
+    writer.writeEnumValue<LibraryIssueType>("type", libraryIssueCount.type);
+    writer.writeAdditionalData(libraryIssueCount.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param LibraryIssueFile The instance to serialize from.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeLibraryIssueFile(writer: SerializationWriter, libraryIssueFile: Partial<LibraryIssueFile> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!libraryIssueFile || isSerializingDerivedType) { return; }
+    writer.writeGuidValue("id", libraryIssueFile.id);
+    writer.writeEnumValue<MediaFileKind>("kind", libraryIssueFile.kind);
+    writer.writeStringValue("relativePath", libraryIssueFile.relativePath);
+    writer.writeGuidValue("sourceId", libraryIssueFile.sourceId);
+    writer.writeStringValue("sourceName", libraryIssueFile.sourceName);
+    writer.writeAdditionalData(libraryIssueFile.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param LibraryIssuePage The instance to serialize from.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeLibraryIssuePage(writer: SerializationWriter, libraryIssuePage: Partial<LibraryIssuePage> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!libraryIssuePage || isSerializingDerivedType) { return; }
+    writer.writeCollectionOfObjectValues<LibraryIssue>("items", libraryIssuePage.items, serializeLibraryIssue);
+    writer.writeNumberValue("limit", libraryIssuePage.limit);
+    writer.writeNumberValue("offset", libraryIssuePage.offset);
+    writer.writeNumberValue("total", libraryIssuePage.total);
+    writer.writeAdditionalData(libraryIssuePage.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param LibraryIssueSummary The instance to serialize from.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeLibraryIssueSummary(writer: SerializationWriter, libraryIssueSummary: Partial<LibraryIssueSummary> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!libraryIssueSummary || isSerializingDerivedType) { return; }
+    writer.writeDateValue("checkedAt", libraryIssueSummary.checkedAt);
+    writer.writeCollectionOfObjectValues<LibraryIssueCount>("counts", libraryIssueSummary.counts, serializeLibraryIssueCount);
+    writer.writeNumberValue("hintCount", libraryIssueSummary.hintCount);
+    writer.writeNumberValue("problemCount", libraryIssueSummary.problemCount);
+    writer.writeNumberValue("trackCount", libraryIssueSummary.trackCount);
+    writer.writeAdditionalData(libraryIssueSummary.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param LibraryIssueTrack The instance to serialize from.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeLibraryIssueTrack(writer: SerializationWriter, libraryIssueTrack: Partial<LibraryIssueTrack> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!libraryIssueTrack || isSerializingDerivedType) { return; }
+    writer.writeObjectValue<AlbumReference>("album", libraryIssueTrack.album, serializeAlbumReference);
+    writer.writeObjectValue<ArtistReference>("artist", libraryIssueTrack.artist, serializeArtistReference);
+    writer.writeStringValue("baseName", libraryIssueTrack.baseName);
+    writer.writeStringValue("directoryPath", libraryIssueTrack.directoryPath);
+    writer.writeNumberValue("durationMilliseconds", libraryIssueTrack.durationMilliseconds);
+    writer.writeBooleanValue("hasAudio", libraryIssueTrack.hasAudio);
+    writer.writeBooleanValue("hasVideo", libraryIssueTrack.hasVideo);
+    writer.writeGuidValue("id", libraryIssueTrack.id);
+    writer.writeGuidValue("sourceId", libraryIssueTrack.sourceId);
+    writer.writeStringValue("sourceName", libraryIssueTrack.sourceName);
+    writer.writeStringValue("title", libraryIssueTrack.title);
+    writer.writeAdditionalData(libraryIssueTrack.additionalData);
 }
 /**
  * Serializes information the current object
@@ -10530,6 +10966,7 @@ export const JobIdObject = {
     CoverCache: "cover-cache",
     DatabaseBackup: "database-backup",
     LyricsDownload: "lyrics-download",
+    LibraryCheck: "library-check",
 } as const;
 /**
  * State of a job run.
@@ -10560,6 +10997,31 @@ export const JobTriggerObject = {
     LibraryScan: "LibraryScan",
     CoverRule: "CoverRule",
     Settings: "Settings",
+} as const;
+/**
+ * How much a problem of the library matters: Problem should be fixed, Hint is only a hint (videos without audio, songs without video).
+ */
+export const LibraryIssueSeverityObject = {
+    Problem: "Problem",
+    Hint: "Hint",
+} as const;
+export const LibraryIssueSortObject = {
+    Path: "Path",
+    Artist: "Artist",
+    Title: "Title",
+    DetectedAt: "DetectedAt",
+} as const;
+/**
+ * Kind of a problem of the library found by the library check. Clients translate it.
+ */
+export const LibraryIssueTypeObject = {
+    UnreadableFile: "UnreadableFile",
+    MissingTags: "MissingTags",
+    UnknownAlbum: "UnknownAlbum",
+    MissingCover: "MissingCover",
+    PossibleDuplicate: "PossibleDuplicate",
+    VideoWithoutAudio: "VideoWithoutAudio",
+    AudioWithoutVideo: "AudioWithoutVideo",
 } as const;
 /**
  * Where the lyrics come from.
@@ -10769,7 +11231,7 @@ export const RoleObject = {
     User: "User",
 } as const;
 /**
- * Problem with a file or a media source found by a scan. Clients translate it.
+ * What cannot be read of the file, for UnreadableFile only; the codes of the scan issues.
  */
 export const ScanIssueCodeObject = {
     FileUnreadable: "file.unreadable",

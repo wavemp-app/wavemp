@@ -22,6 +22,8 @@ import { HealthRequestBuilderRequestsMetadata, type HealthRequestBuilder } from 
 // @ts-ignore
 import { JobsRequestBuilderNavigationMetadata, JobsRequestBuilderRequestsMetadata, type JobsRequestBuilder } from './jobs/index.js';
 // @ts-ignore
+import { LibraryRequestBuilderNavigationMetadata, type LibraryRequestBuilder } from './library/index.js';
+// @ts-ignore
 import { MeRequestBuilderNavigationMetadata, type MeRequestBuilder } from './me/index.js';
 // @ts-ignore
 import { OnlineReleasesRequestBuilderNavigationMetadata, type OnlineReleasesRequestBuilder } from './onlineReleases/index.js';
@@ -100,6 +102,10 @@ export interface V1RequestBuilder extends BaseRequestBuilder<V1RequestBuilder> {
      * The jobs property
      */
     get jobs(): JobsRequestBuilder;
+    /**
+     * The library property
+     */
+    get library(): LibraryRequestBuilder;
     /**
      * The me property
      */
@@ -207,6 +213,9 @@ export const V1RequestBuilderNavigationMetadata: Record<Exclude<keyof V1RequestB
     jobs: {
         requestsMetadata: JobsRequestBuilderRequestsMetadata,
         navigationMetadata: JobsRequestBuilderNavigationMetadata,
+    },
+    library: {
+        navigationMetadata: LibraryRequestBuilderNavigationMetadata,
     },
     me: {
         navigationMetadata: MeRequestBuilderNavigationMetadata,
