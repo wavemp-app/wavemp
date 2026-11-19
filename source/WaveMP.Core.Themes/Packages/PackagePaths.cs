@@ -106,6 +106,7 @@ internal static partial class PackagePaths
             ".svg" => PackageFileKind.Svg,
             ".png" => PackageFileKind.Png,
             ".webp" => PackageFileKind.WebP,
+            ".woff2" => PackageFileKind.Font,
             ".md" or ".txt" => PackageFileKind.Document,
             _ => PackageFileKind.Unsupported,
         };

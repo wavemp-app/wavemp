@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
 using WaveMP.Core.Themes.Definitions;
+using WaveMP.Core.Themes.Fonts;
 using WaveMP.Core.Themes.Graphics;
 using WaveMP.Core.Themes.Manifests;
 using WaveMP.Core.Themes.Options;
@@ -12,9 +13,9 @@ namespace WaveMP.Core.Themes.Validations;
 /// <summary>
 /// Checks an uploaded theme package completely and turns it into the files to install: the structure of the ZIP file
 /// (<see cref="ThemePackageReader"/>), the manifest (<see cref="ThemeManifestReader"/>), the SVG files (cleaned by
-/// <see cref="SvgSanitizer"/>), the PNG and WebP files (by their signature) and the CSS file
-/// (<see cref="ThemeStylesheet"/>, which rewrites its addresses to the installed files). All errors are collected, so
-/// a theme author sees every problem at once.
+/// <see cref="SvgSanitizer"/>), the PNG and WebP files (by their signature), the WOFF2 fonts (by their header, see
+/// <see cref="WebFonts"/>) and the CSS file (<see cref="ThemeStylesheet"/>, which rewrites its addresses to the
+/// installed files). All errors are collected, so a theme author sees every problem at once.
 /// </summary>
 public static class ThemePackageValidator
 {
@@ -27,6 +28,9 @@ public static class ThemePackageValidator
 
     // Used for the addresses while the manifest has no valid id; the package is rejected anyway.
     private const string PlaceholderId = "invalid";
+
+    // Used for the address of a picture or font whose content was rejected; the package is rejected anyway.
+    private const string RejectedFileName = "rejected";
 
     /// <summary>
     /// Checks a package. <paramref name="expectedId"/> is the id of the theme the package replaces, if any.
@@ -59,9 +63,9 @@ public static class ThemePackageValidator
         }
 
         string themeId = manifest?.Id ?? PlaceholderId;
-        Dictionary<string, ValidatedThemeFile> pictures = CheckPictures(package, errors);
+        Dictionary<string, ValidatedThemeFile> files = CheckFiles(package, errors);
         CheckPreviews(manifest, package, errors);
-        ValidatedThemeFile? stylesheet = CheckStylesheet(package, themeId, pictures, errors);
+        ValidatedThemeFile? stylesheet = CheckStylesheet(package, themeId, files, errors);
 
         if (errors.Count > 0 || manifest is null || stylesheet is null)
         {
@@ -74,48 +78,61 @@ public static class ThemePackageValidator
             {
                 Manifest = manifest,
                 Stylesheet = stylesheet,
-                Files = [stylesheet, .. pictures.Values.DistinctBy(file => file.Name)],
-                Previews = manifest.Previews.ToDictionary(pair => pair.Key, pair => pictures[pair.Value].Name),
+                Files = [stylesheet, .. files.Values.DistinctBy(file => file.Name)],
+                Previews = manifest.Previews.ToDictionary(pair => pair.Key, pair => files[pair.Value].Name),
             },
             Errors = [],
         };
     }
 
-    private static Dictionary<string, ValidatedThemeFile> CheckPictures(ThemePackage package, List<ThemeError> errors)
+    /// <summary>
+    /// The pictures and fonts of the package, checked, by their path in the package.
+    /// </summary>
+    private static Dictionary<string, ValidatedThemeFile> CheckFiles(ThemePackage package, List<ThemeError> errors)
     {
-        Dictionary<string, ValidatedThemeFile> pictures = new(StringComparer.Ordinal);
+        Dictionary<string, ValidatedThemeFile> files = new(StringComparer.Ordinal);
         foreach ((string path, byte[] content) in package.Files.OrderBy(pair => pair.Key, StringComparer.Ordinal))
         {
             byte[]? checkedContent = PackagePaths.KindOf(path) switch
             {
                 PackageFileKind.Svg => SvgSanitizer.Sanitize(path, content, errors),
-                PackageFileKind.Png => CheckRaster(path, content, RasterImages.IsPng(content), errors),
-                PackageFileKind.WebP => CheckRaster(path, content, RasterImages.IsWebP(content), errors),
+                PackageFileKind.Png => CheckSignature(path, content, RasterImages.IsPng(content), errors),
+                PackageFileKind.WebP => CheckSignature(path, content, RasterImages.IsWebP(content), errors),
+                PackageFileKind.Font =>
+                    CheckSignature(path, content, WebFonts.IsWoff2(content), errors, ThemeErrorCode.FontInvalid),
                 _ => null,
             };
             if (checkedContent is not null)
             {
-                pictures[path] = ToFile(checkedContent, Path.GetExtension(path).ToLowerInvariant());
+                files[path] = ToFile(checkedContent, Path.GetExtension(path).ToLowerInvariant());
             }
         }
 
-        return pictures;
+        return files;
     }
 
-    private static byte[]? CheckRaster(string path, byte[] content, bool matches, List<ThemeError> errors)
+    /// <summary>
+    /// A file that is installed as it is, if its content is of the format its extension names.
+    /// </summary>
+    private static byte[]? CheckSignature(
+        string path,
+        byte[] content,
+        bool matches,
+        List<ThemeError> errors,
+        ThemeErrorCode code = ThemeErrorCode.ImageInvalid)
     {
         if (matches)
         {
             return content;
         }
 
-        errors.Add(new ThemeError(ThemeErrorCode.ImageInvalid, path));
+        errors.Add(new ThemeError(code, path));
         return null;
     }
 
     /// <summary>
     /// Every preview is a picture of the package; a picture with a wrong content is reported by
-    /// <see cref="CheckPictures"/>.
+    /// <see cref="CheckFiles"/>.
     /// </summary>
     private static void CheckPreviews(ThemeManifest? manifest, ThemePackage package, List<ThemeError> errors)
     {
@@ -142,7 +159,7 @@ public static class ThemePackageValidator
     private static ValidatedThemeFile? CheckStylesheet(
         ThemePackage package,
         string themeId,
-        Dictionary<string, ValidatedThemeFile> pictures,
+        Dictionary<string, ValidatedThemeFile> files,
         List<ThemeError> errors)
     {
         List<string> stylesheets = [.. package.Files.Keys
@@ -160,14 +177,27 @@ public static class ThemePackageValidator
         }
 
         string path = stylesheets[0];
-        string? css = ThemeStylesheet.Check(
-            path,
-            package.Files[path],
-            target => pictures.TryGetValue(target, out ValidatedThemeFile? file)
-                ? ThemeFiles.AddressOf(themeId, file.Name)
-                : null,
-            errors);
+        string? css = ThemeStylesheet.Check(path, package.Files[path], AddressOf, errors);
         return css is null ? null : ToFile(Encoding.UTF8.GetBytes(css), ".css");
+
+        // A picture or font whose content was rejected is in the package: its own error says what is wrong with it, so
+        // the CSS file is not reported as naming a missing file. The package is rejected anyway.
+        string? AddressOf(string target)
+        {
+            if (files.TryGetValue(target, out ValidatedThemeFile? file))
+            {
+                return ThemeFiles.AddressOf(themeId, file.Name);
+            }
+
+            return package.Files.ContainsKey(target) && IsInstalledKind(PackagePaths.KindOf(target))
+                ? ThemeFiles.AddressOf(themeId, RejectedFileName)
+                : null;
+        }
+    }
+
+    private static bool IsInstalledKind(PackageFileKind kind)
+    {
+        return kind is PackageFileKind.Svg or PackageFileKind.Png or PackageFileKind.WebP or PackageFileKind.Font;
     }
 
     private static ValidatedThemeFile ToFile(byte[] content, string extension)

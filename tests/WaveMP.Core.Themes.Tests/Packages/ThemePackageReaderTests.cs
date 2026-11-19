@@ -40,6 +40,15 @@ public class ThemePackageReaderTests
     }
 
     [Test]
+    public void Read_PackageWithAFont_ReturnsTheFont()
+    {
+        ThemePackage package = Read(new ThemePackageBuilder().WithFont());
+
+        package.Errors.Should().BeEmpty();
+        package.Files.Should().ContainKey("fonts/aurora.woff2");
+    }
+
+    [Test]
     public void Read_FilesInOneFolder_ReadsTheFolderAsRoot()
     {
         ThemePackage package = Read(new ThemePackageBuilder().InFolder("aurora"));
@@ -107,7 +116,9 @@ public class ThemePackageReaderTests
     [TestCase("script.js")]
     [TestCase("images/page.html")]
     [TestCase("nested.zip")]
-    [TestCase("fonts/own.woff2")]
+    [TestCase("fonts/own.woff")]
+    [TestCase("fonts/own.ttf")]
+    [TestCase("fonts/own.otf")]
     [TestCase("images/photo.jpg")]
     [TestCase("data.json")]
     [TestCase("theme.css.exe")]
@@ -143,6 +154,27 @@ public class ThemePackageReaderTests
 
         package.Errors.Should().ContainSingle().Which.Should().Be(
             new ThemeError(ThemeErrorCode.FileTooLarge, "images/big.png", Max: 1024));
+    }
+
+    [Test]
+    public void Read_FontLargerThanItsLimit_IsRejected()
+    {
+        ThemePackage package = Read(
+            new ThemePackageBuilder().With("fonts/big.woff2", ThemePackageBuilder.Woff2(payload: 2048)),
+            new ThemeOptions { MaxFontBytes = 1024 });
+
+        package.Errors.Should().ContainSingle().Which.Should().Be(
+            new ThemeError(ThemeErrorCode.FileTooLarge, "fonts/big.woff2", Max: 1024));
+    }
+
+    [Test]
+    public void Read_FontWithinItsLimit_MayBeLargerThanOtherFiles()
+    {
+        ThemePackage package = Read(
+            new ThemePackageBuilder().With("fonts/big.woff2", ThemePackageBuilder.Woff2(payload: 2048)),
+            new ThemeOptions { MaxFileBytes = 1024, MaxFontBytes = 4096 });
+
+        package.Errors.Should().BeEmpty();
     }
 
     [Test]

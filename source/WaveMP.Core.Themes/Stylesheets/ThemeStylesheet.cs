@@ -5,8 +5,8 @@ namespace WaveMP.Core.Themes.Stylesheets;
 
 /// <summary>
 /// Checks the CSS file of an uploaded theme and rewrites its addresses. A theme only uses its own files: every
-/// address is a path relative to the CSS file that names a picture of the package (in any spelling a browser accepts:
-/// <c>url(a.svg)</c>, <c>url("a.svg")</c>, escapes, <c>src()</c>, <c>image-set()</c>). External addresses (any scheme,
+/// address is a path relative to the CSS file that names a picture or a font of the package (in any spelling a browser
+/// accepts: <c>url(a.svg)</c>, <c>url("a.svg")</c>, escapes, <c>src()</c>, <c>image-set()</c>). External addresses (any scheme,
 /// including <c>data:</c>, and <c>//</c>), root-absolute paths, <c>@import</c>, <c>@layer</c> and at-rules outside the
 /// list below are rejected. Each address is replaced by <c>url("...")</c> with the root-absolute address of the
 /// installed file, so it also works where the theme puts it into a CSS variable that the base styles use (a relative
@@ -51,8 +51,8 @@ internal static class ThemeStylesheet
 
     /// <summary>
     /// Checks the CSS file at <paramref name="path"/> and returns it with rewritten addresses, or <c>null</c> with the
-    /// reasons in <paramref name="errors"/>. <paramref name="addressOf"/> returns the public address of a picture of
-    /// the package by its path, or <c>null</c> if the package has no picture at that path.
+    /// reasons in <paramref name="errors"/>. <paramref name="addressOf"/> returns the public address of a picture or a
+    /// font of the package by its path, or <c>null</c> if the package has no such file at that path.
     /// </summary>
     public static string? Check(string path, byte[] content, Func<string, string?> addressOf, List<ThemeError> errors)
     {

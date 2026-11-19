@@ -57,6 +57,8 @@ public partial class ThemeDefinitionsTests
 
     [TestCase("0123456789abcdef0123456789abcdef.css", true)]
     [TestCase("0123456789abcdef0123456789abcdef.webp", true)]
+    [TestCase("0123456789abcdef0123456789abcdef.woff2", true)]
+    [TestCase("0123456789abcdef0123456789abcdef.woff", false)]
     [TestCase("0123456789ABCDEF0123456789abcdef.css", false)]
     [TestCase("0123456789abcdef0123456789abcdef.js", false)]
     [TestCase("../0123456789abcdef0123456789abcde.css", false)]
@@ -64,6 +66,16 @@ public partial class ThemeDefinitionsTests
     public void ThemeFiles_IsValidName_AcceptsContentNamesOnly(string name, bool expected)
     {
         ThemeFiles.IsValidName(name).Should().Be(expected);
+    }
+
+    [TestCase("0123456789abcdef0123456789abcdef.css", "text/css; charset=utf-8")]
+    [TestCase("0123456789abcdef0123456789abcdef.svg", "image/svg+xml")]
+    [TestCase("0123456789abcdef0123456789abcdef.png", "image/png")]
+    [TestCase("0123456789abcdef0123456789abcdef.webp", "image/webp")]
+    [TestCase("0123456789abcdef0123456789abcdef.woff2", "font/woff2")]
+    public void ThemeFiles_ContentTypeOf_NamesTheTypeOfTheExtension(string name, string expected)
+    {
+        ThemeFiles.ContentTypeOf(name).Should().Be(expected);
     }
 
     private static string FindRepositoryRoot()

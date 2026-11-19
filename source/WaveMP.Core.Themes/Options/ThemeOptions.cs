@@ -29,7 +29,7 @@ public sealed class ThemeOptions
     public long MaxUnpackedBytes { get; set; } = 32 * 1024 * 1024;
 
     /// <summary>
-    /// Largest unpacked file of a package in bytes (5 MiB); the CSS file has its own limit.
+    /// Largest unpacked file of a package in bytes (5 MiB); the CSS file and the fonts have their own limits.
     /// </summary>
     public long MaxFileBytes { get; set; } = 5 * 1024 * 1024;
 
@@ -37,6 +37,11 @@ public sealed class ThemeOptions
     /// Largest CSS file in bytes (1 MiB).
     /// </summary>
     public long MaxStylesheetBytes { get; set; } = 1024 * 1024;
+
+    /// <summary>
+    /// Largest font file (WOFF2) of a package in bytes (2 MiB).
+    /// </summary>
+    public long MaxFontBytes { get; set; } = 2 * 1024 * 1024;
 
     /// <summary>
     /// Largest number of entries (files and folders) of a package.

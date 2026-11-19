@@ -37,7 +37,8 @@ public enum ThemeErrorCode
     DuplicatePath,
 
     /// <summary>
-    /// A file of a type that a theme cannot contain, e.g. a script or a nested archive (path).
+    /// A file of a type that a theme cannot contain, e.g. a script, a font in another format than WOFF2 or a nested
+    /// archive (path).
     /// </summary>
     UnsupportedFile,
 
@@ -136,7 +137,8 @@ public enum ThemeErrorCode
     StylesheetInvalidUrl,
 
     /// <summary>
-    /// The CSS file names a file that is not in the package or is no picture (path, line; file: the missing file).
+    /// The CSS file names a file that is not in the package or is neither a picture nor a font (path, line; file: the
+    /// missing file).
     /// </summary>
     StylesheetMissingFile,
 
@@ -175,4 +177,9 @@ public enum ThemeErrorCode
     /// A PNG or WebP file is no picture of the format its extension names (path).
     /// </summary>
     ImageInvalid,
+
+    /// <summary>
+    /// A WOFF2 file is no WOFF2 font (path).
+    /// </summary>
+    FontInvalid,
 }

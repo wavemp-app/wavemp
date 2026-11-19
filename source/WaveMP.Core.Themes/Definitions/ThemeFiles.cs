@@ -18,12 +18,13 @@ public static partial class ThemeFiles
     /// <summary>
     /// Pattern of a file name: 32 hexadecimal digits and the extension.
     /// </summary>
-    public const string NamePattern = @"^[0-9a-f]{32}\.(css|svg|png|webp)$";
+    public const string NamePattern = @"^[0-9a-f]{32}\.(css|svg|png|webp|woff2)$";
 
     public const string CssContentType = "text/css; charset=utf-8";
     public const string SvgContentType = "image/svg+xml";
     public const string PngContentType = "image/png";
     public const string WebPContentType = "image/webp";
+    public const string Woff2ContentType = "font/woff2";
 
     /// <summary>
     /// The address of a file of a theme, relative to the root of the server.
@@ -48,10 +49,11 @@ public static partial class ThemeFiles
             ".css" => CssContentType,
             ".svg" => SvgContentType,
             ".png" => PngContentType,
+            ".woff2" => Woff2ContentType,
             _ => WebPContentType,
         };
     }
 
-    [GeneratedRegex(@"\A[0-9a-f]{32}\.(css|svg|png|webp)\z", RegexOptions.CultureInvariant)]
+    [GeneratedRegex(@"\A[0-9a-f]{32}\.(css|svg|png|webp|woff2)\z", RegexOptions.CultureInvariant)]
     private static partial Regex NameRegex();
 }

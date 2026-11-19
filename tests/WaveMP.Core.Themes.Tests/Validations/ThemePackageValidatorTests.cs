@@ -118,10 +118,83 @@ public class ThemePackageValidatorTests
     }
 
     [Test]
+    public void Validate_PictureOfTheCssWithTheWrongContent_IsReportedOnce()
+    {
+        Validate(new ThemePackageBuilder().With("images/glass.svg", "no svg"))
+            .Errors.Should().ContainSingle().Which.Should().Be(
+                new ThemeError(ThemeErrorCode.SvgInvalid, "images/glass.svg"));
+    }
+
+    [Test]
     public void Validate_WebPWithPngContent_IsRejected()
     {
         Validate(new ThemePackageBuilder().With("images/a.webp", ThemePackageBuilder.Png))
             .Errors.Should().ContainSingle().Which.Code.Should().Be(ThemeErrorCode.ImageInvalid);
+    }
+
+    [Test]
+    public void Validate_PackageWithAFont_InstallsItAndPointsTheCssToIt()
+    {
+        ThemeValidationResult result = Validate(new ThemePackageBuilder().WithFont());
+
+        result.Errors.Should().BeEmpty();
+        ValidatedTheme theme = result.Theme!;
+        ValidatedThemeFile font = theme.Files.Single(file => file.Name.EndsWith(".woff2", StringComparison.Ordinal));
+        font.Content.Should().Equal(ThemePackageBuilder.Woff2());
+        ThemeFiles.IsValidName(font.Name).Should().BeTrue();
+        Encoding.UTF8.GetString(theme.Stylesheet.Content).Should()
+            .Contain($"src: url(\"/api/v1/themes/aurora/files/{font.Name}\") format('woff2');")
+            .And.NotContain("fonts/aurora.woff2");
+    }
+
+    [Test]
+    public void Validate_FontWithTheWrongContent_IsRejected()
+    {
+        ThemeValidationResult result = Validate(new ThemePackageBuilder()
+            .WithFont()
+            .With("fonts/aurora.woff2", ThemePackageBuilder.Png));
+
+        // The font is in the package, so the CSS file that names it is not reported as well.
+        result.Theme.Should().BeNull();
+        result.Errors.Should().ContainSingle().Which.Should().Be(
+            new ThemeError(ThemeErrorCode.FontInvalid, "fonts/aurora.woff2"));
+    }
+
+    [Test]
+    public void Validate_CssNamingAFontThatIsNotInThePackage_IsRejected()
+    {
+        Validate(new ThemePackageBuilder().WithFont().Without("fonts/aurora.woff2"))
+            .Errors.Should().ContainSingle().Which.Should().Be(new ThemeError(
+                ThemeErrorCode.StylesheetMissingFile,
+                "theme.css",
+                3,
+                File: "fonts/aurora.woff2"));
+    }
+
+    [Test]
+    public void Validate_FontAsPreview_IsRejected()
+    {
+        ThemeValidationResult result = Validate(new ThemePackageBuilder()
+            .WithFont()
+            .WithManifest(ThemePackageBuilder.Manifest().Replace(
+                "\"preview-dark.png\"",
+                "\"fonts/aurora.woff2\"",
+                StringComparison.Ordinal)));
+
+        result.Errors.Should().ContainSingle().Which.Should().Be(new ThemeError(
+            ThemeErrorCode.PreviewMissing,
+            "manifest.json",
+            Field: "previews.dark",
+            File: "fonts/aurora.woff2"));
+    }
+
+    [Test]
+    public void Validate_FontFromAnotherServer_IsRejected()
+    {
+        Validate(new ThemePackageBuilder().With(
+                "theme.css",
+                "@font-face { font-family: X; src: url(https://fonts.example.com/x.woff2) format('woff2'); }"))
+            .Errors.Should().ContainSingle().Which.Code.Should().Be(ThemeErrorCode.StylesheetExternalUrl);
     }
 
     [Test]

@@ -72,7 +72,12 @@ internal static class ThemePackageReader
                     continue;
                 }
 
-                long limit = kind == PackageFileKind.Stylesheet ? options.MaxStylesheetBytes : options.MaxFileBytes;
+                long limit = kind switch
+                {
+                    PackageFileKind.Stylesheet => options.MaxStylesheetBytes,
+                    PackageFileKind.Font => options.MaxFontBytes,
+                    _ => options.MaxFileBytes,
+                };
                 byte[]? data = ReadEntry(entry, limit);
                 if (data is null)
                 {

@@ -22,6 +22,11 @@ internal enum PackageFileKind
     WebP,
 
     /// <summary>
+    /// A WOFF2 font that the CSS file names in <c>@font-face</c>.
+    /// </summary>
+    Font,
+
+    /// <summary>
     /// A text about the theme, e.g. its license or read-me; allowed, but not installed.
     /// </summary>
     Document,

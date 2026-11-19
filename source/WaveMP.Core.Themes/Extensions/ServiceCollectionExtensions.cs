@@ -29,7 +29,7 @@ public static class ServiceCollectionExtensions
                     ThemeOptions.FolderName))
             .Validate(
                 options => options.MaxUploadBytes >= 1 && options.MaxUnpackedBytes >= 1 && options.MaxFileBytes >= 1 &&
-                    options.MaxStylesheetBytes >= 1 && options.MaxEntries >= 1,
+                    options.MaxStylesheetBytes >= 1 && options.MaxFontBytes >= 1 && options.MaxEntries >= 1,
                 "The limits of the section Themes must be at least 1.");
 
         services.AddSingleton<IThemeStore, ThemeStore>();
