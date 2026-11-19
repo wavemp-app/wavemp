@@ -8628,6 +8628,7 @@ export const ThemeErrorCodeObject = {
     SvgForeign_object: "svg.foreign_object",
     SvgExternal_reference: "svg.external_reference",
     ImageInvalid: "image.invalid",
+    FontInvalid: "font.invalid",
 } as const;
 /**
  * A variant of a theme.

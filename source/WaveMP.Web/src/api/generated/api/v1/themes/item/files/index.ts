@@ -12,7 +12,7 @@ import { type BaseRequestBuilder, type KeysToExcludeForNavigationMetadata, type 
 export interface FilesRequestBuilder extends BaseRequestBuilder<FilesRequestBuilder> {
     /**
      * Gets an item from the ApiSdk.api.v1.themes.item.files.item collection
-     * @param name Name of the file: 32 hexadecimal digits and the extension css, svg, png or webp.
+     * @param name Name of the file: 32 hexadecimal digits and the extension css, svg, png, webp or woff2.
      * @returns {WithNameItemRequestBuilder}
      */
      byName(name: string) : WithNameItemRequestBuilder;

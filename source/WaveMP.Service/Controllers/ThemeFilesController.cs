@@ -10,8 +10,9 @@ using WaveMP.Service.Policies;
 namespace WaveMP.Service.Controllers;
 
 /// <summary>
-/// The files of the uploaded themes: the CSS file and the pictures. The browser loads them through a link element
-/// and through the CSS itself, which cannot send a session token, so they need no session; they hold nothing private.
+/// The files of the uploaded themes: the CSS file, the pictures and the fonts. The browser loads them through a link
+/// element and through the CSS itself, which cannot send a session token, so they need no session; they hold nothing
+/// private.
 /// </summary>
 [ApiController]
 [AllowAnonymous]
@@ -30,7 +31,8 @@ public sealed class ThemeFilesController(IThemeStore store) : ControllerBase
     /// request with a matching If-None-Match returns 304.
     /// </summary>
     /// <param name="id">Id of the theme.</param>
-    /// <param name="name">Name of the file: 32 hexadecimal digits and the extension css, svg, png or webp.</param>
+    /// <param name="name">Name of the file: 32 hexadecimal digits and the extension css, svg, png, webp or
+    /// woff2.</param>
     /// <response code="200">The file.</response>
     /// <response code="404">The theme does not exist or has no such file (code
     /// <c>theme.file_not_found</c>).</response>
@@ -40,7 +42,8 @@ public sealed class ThemeFilesController(IThemeStore store) : ControllerBase
         "text/css",
         ThemeFiles.SvgContentType,
         ThemeFiles.PngContentType,
-        ThemeFiles.WebPContentType)]
+        ThemeFiles.WebPContentType,
+        ThemeFiles.Woff2ContentType)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound, "application/problem+json")]
     public IActionResult GetThemeFile(string id, string name)
     {

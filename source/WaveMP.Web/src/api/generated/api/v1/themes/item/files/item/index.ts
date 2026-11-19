@@ -34,7 +34,7 @@ export const WithNameItemRequestBuilderUriTemplate = "{+baseurl}/api/v1/themes/{
 export const WithNameItemRequestBuilderRequestsMetadata: RequestsMetadata = {
     get: {
         uriTemplate: WithNameItemRequestBuilderUriTemplate,
-        responseBodyContentType: "text/css, image/svg+xml, image/png, image/webp, application/problem+json",
+        responseBodyContentType: "text/css, image/svg+xml, image/png, image/webp, font/woff2, application/problem+json",
         errorMappings: {
             404: createProblemDetailsFromDiscriminatorValue as ParsableFactory<Parsable>,
         },

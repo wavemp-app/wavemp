@@ -4,6 +4,7 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json.Nodes;
+using System.Text.RegularExpressions;
 using AwesomeAssertions;
 using WaveMP.Service.Dtos;
 using WaveMP.Service.Policies;
@@ -181,6 +182,37 @@ public class ThemesApiTests
 
         picture.Content.Headers.ContentType!.MediaType.Should().Be("image/svg+xml");
         preview.Content.Headers.ContentType!.MediaType.Should().Be("image/png");
+    }
+
+    [Test]
+    public async Task GetThemeFile_FontOfTheCss_IsServedAsWoff2()
+    {
+        HttpResponseMessage installed = await InstallAsync(new ThemePackageBuilder().WithFont());
+        installed.StatusCode.Should().Be(HttpStatusCode.Created, await installed.Content.ReadAsStringAsync());
+        ThemeDto theme = (await installed.Content.ReadFromJsonAsync<ThemeDto>(HttpClientExtensions.JsonOptions))!;
+        string css = await _anonymous.GetStringAsync(theme.StylesheetUrl);
+        string font = Regex.Match(css, "/api/v1/themes/aurora/files/[0-9a-f]{32}\\.woff2").Value;
+
+        HttpResponseMessage response = await _anonymous.GetAsync(font);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        response.Content.Headers.ContentType!.MediaType.Should().Be("font/woff2");
+        response.Headers.CacheControl!.ToString().Should().Be("public, max-age=31536000, immutable");
+        response.Headers.GetValues("X-Content-Type-Options").Should().Equal("nosniff");
+        (await response.Content.ReadAsByteArrayAsync()).Should().Equal(ThemePackageBuilder.Woff2());
+    }
+
+    [Test]
+    public async Task InstallTheme_FontWithTheWrongContent_ReturnsFontInvalid()
+    {
+        ThemePackageBuilder package = new ThemePackageBuilder()
+            .WithFont()
+            .With("fonts/aurora.woff2", "<script>alert(1)</script>");
+
+        JsonArray errors = await ShouldBeInvalidThemeAsync(await InstallAsync(package));
+
+        errors.Select(error => (error!["code"]!.GetValue<string>(), error["path"]?.GetValue<string>()))
+            .Should().Equal(("font.invalid", "fonts/aurora.woff2"));
     }
 
     [TestCase("/api/v1/themes/aurora/files/00000000000000000000000000000000.css")]

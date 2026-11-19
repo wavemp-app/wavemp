@@ -91,6 +91,7 @@ public static class ThemeMappingExtensions
             ThemeErrorCode.SvgForeignObject => ThemeErrorCodeDto.SvgForeignObject,
             ThemeErrorCode.SvgExternalReference => ThemeErrorCodeDto.SvgExternalReference,
             ThemeErrorCode.ImageInvalid => ThemeErrorCodeDto.ImageInvalid,
+            ThemeErrorCode.FontInvalid => ThemeErrorCodeDto.FontInvalid,
             _ => throw new ArgumentOutOfRangeException(nameof(code), code, "Unknown theme error code."),
         };
     }

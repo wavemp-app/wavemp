@@ -6326,7 +6326,7 @@
           {
             "name": "name",
             "in": "path",
-            "description": "Name of the file: 32 hexadecimal digits and the extension css, svg, png or webp.",
+            "description": "Name of the file: 32 hexadecimal digits and the extension css, svg, png, webp or woff2.",
             "required": true,
             "schema": {
               "type": "string"
@@ -6356,6 +6356,12 @@
                 }
               },
               "image/webp": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "font/woff2": {
                 "schema": {
                   "type": "string",
                   "format": "binary"
@@ -13721,7 +13727,8 @@
           "svg.event_handler",
           "svg.foreign_object",
           "svg.external_reference",
-          "image.invalid"
+          "image.invalid",
+          "font.invalid"
         ],
         "type": "string",
         "description": "Why a theme package is rejected. Clients translate it; the members of ThemeErrorDto named in brackets carry the details."

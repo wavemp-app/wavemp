@@ -48,7 +48,8 @@ public enum ThemeErrorCodeDto
     DuplicatePath,
 
     /// <summary>
-    /// A file of a type a theme cannot contain, e.g. a script, a font or a nested archive (path).
+    /// A file of a type a theme cannot contain, e.g. a script, a font in another format than WOFF2 or a nested
+    /// archive (path).
     /// </summary>
     [JsonStringEnumMemberName("file.unsupported_type")]
     UnsupportedFile,
@@ -165,7 +166,8 @@ public enum ThemeErrorCodeDto
     StylesheetInvalidUrl,
 
     /// <summary>
-    /// The CSS file names a file that is not in the package or is no picture (path, line; file: the missing file).
+    /// The CSS file names a file that is not in the package or is neither a picture nor a font (path, line; file: the
+    /// missing file).
     /// </summary>
     [JsonStringEnumMemberName("css.missing_file")]
     StylesheetMissingFile,
@@ -211,4 +213,10 @@ public enum ThemeErrorCodeDto
     /// </summary>
     [JsonStringEnumMemberName("image.invalid")]
     ImageInvalid,
+
+    /// <summary>
+    /// A WOFF2 file is no WOFF2 font (path).
+    /// </summary>
+    [JsonStringEnumMemberName("font.invalid")]
+    FontInvalid,
 }
