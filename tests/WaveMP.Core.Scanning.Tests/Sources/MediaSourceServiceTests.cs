@@ -136,6 +136,19 @@ public class MediaSourceServiceTests
     }
 
     [Test]
+    public async Task ListAsync_FolderMissingAfterTheWatcherStarted_IsNeitherAvailableNorWatched()
+    {
+        await _watcher.StartAsync(CancellationToken.None);
+        (await _service.ListAsync()).Single().IsWatched.Should().BeTrue();
+
+        Directory.Delete(_media, recursive: true);
+        MediaSourceOverview source = (await _service.ListAsync()).Single();
+
+        source.IsAvailable.Should().BeFalse();
+        source.IsWatched.Should().BeFalse();
+    }
+
+    [Test]
     public async Task CreateAsync_ValidSource_SavesItAndScansIt()
     {
         string videos = _root.Combine("videos");

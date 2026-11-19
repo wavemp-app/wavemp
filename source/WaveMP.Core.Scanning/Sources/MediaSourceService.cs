@@ -271,14 +271,16 @@ internal sealed class MediaSourceService(
     {
         string path = source.Path ?? mediaLibrary.Value.RootPath;
         MediaSourceCounts count = counts.GetValueOrDefault(source.Id) ?? new MediaSourceCounts(0, 0);
+        bool isAvailable = Directory.Exists(path);
         return new MediaSourceOverview(
             source.Id,
             source.Name,
             path,
             source.Path is null,
             source.IsActive,
-            Directory.Exists(path),
-            watcher.IsWatchingSource(source.Id),
+            isAvailable,
+            // A watcher can outlive its folder until the next scan; a missing folder is not watched.
+            isAvailable && watcher.IsWatchingSource(source.Id),
             count.Tracks,
             count.Files,
             source.CreatedAt,
