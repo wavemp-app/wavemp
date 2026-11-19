@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="WaveMP.Core.Autoplay.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\WaveMP.Core.Users\WaveMP.Core.Users.csproj" />
+    <ProjectReference Include="..\WaveMP.Data\WaveMP.Data.csproj" />
+  </ItemGroup>
+
+</Project>
