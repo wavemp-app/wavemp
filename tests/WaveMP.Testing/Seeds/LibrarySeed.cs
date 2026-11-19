@@ -241,6 +241,22 @@ public sealed class LibrarySeed
     }
 
     /// <summary>
+    /// A play of the track by the user in the play history.
+    /// </summary>
+    public PlayHistoryEntry Play(User user, Track track, DateTimeOffset playedAt)
+    {
+        PlayHistoryEntry entry = new()
+        {
+            Id = Guid.CreateVersion7(),
+            UserId = user.Id,
+            TrackId = track.Id,
+            PlayedAt = playedAt,
+        };
+        _entities.Add(entry);
+        return entry;
+    }
+
+    /// <summary>
     /// A playlist of the user with the tracks in the given order.
     /// </summary>
     public Playlist Playlist(User user, string name, params Track[] tracks)

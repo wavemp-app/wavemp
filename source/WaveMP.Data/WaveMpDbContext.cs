@@ -43,6 +43,8 @@ public class WaveMpDbContext(DbContextOptions<WaveMpDbContext> options) : DbCont
 
     public DbSet<PlaylistEntry> PlaylistEntries => Set<PlaylistEntry>();
 
+    public DbSet<SmartPlaylist> SmartPlaylists => Set<SmartPlaylist>();
+
     public DbSet<Favorite> Favorites => Set<Favorite>();
 
     public DbSet<TrackRating> TrackRatings => Set<TrackRating>();
@@ -85,6 +87,7 @@ public class WaveMpDbContext(DbContextOptions<WaveMpDbContext> options) : DbCont
         modelBuilder.ApplyConfiguration(new PlayHistoryEntryConfiguration());
         modelBuilder.ApplyConfiguration(new PlaylistConfiguration());
         modelBuilder.ApplyConfiguration(new PlaylistEntryConfiguration());
+        modelBuilder.ApplyConfiguration(new SmartPlaylistConfiguration());
         modelBuilder.ApplyConfiguration(new FavoriteConfiguration());
         modelBuilder.ApplyConfiguration(new TrackRatingConfiguration());
         modelBuilder.ApplyConfiguration(new LyricsDownloadConfiguration());

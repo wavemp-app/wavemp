@@ -968,6 +968,72 @@ namespace WaveMP.Data.Migrations
                     b.ToTable("sessions", (string)null);
                 });
 
+            modelBuilder.Entity("WaveMP.Data.Entities.SmartPlaylist", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("Direction")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("direction");
+
+                    b.Property<int?>("Limit")
+                        .HasColumnType("integer")
+                        .HasColumnName("limit");
+
+                    b.Property<string>("Match")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("match");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("name");
+
+                    b.Property<string>("NormalizedName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("normalized_name");
+
+                    b.Property<string>("Rules")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("rules");
+
+                    b.Property<string>("Sort")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("sort");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_smart_playlists");
+
+                    b.HasIndex("UserId", "NormalizedName", "Id")
+                        .HasDatabaseName("ix_smart_playlists_user_id_normalized_name_id");
+
+                    b.ToTable("smart_playlists", (string)null);
+                });
+
             modelBuilder.Entity("WaveMP.Data.Entities.SubsonicAccount", b =>
                 {
                     b.Property<Guid>("UserId")
@@ -1679,6 +1745,18 @@ namespace WaveMP.Data.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_sessions_users_user_id");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("WaveMP.Data.Entities.SmartPlaylist", b =>
+                {
+                    b.HasOne("WaveMP.Data.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_smart_playlists_users_user_id");
 
                     b.Navigation("User");
                 });
