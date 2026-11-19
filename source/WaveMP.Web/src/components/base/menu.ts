@@ -1,4 +1,4 @@
-// Keyboard and position logic of BaseContextMenu.
+// Keyboard and position logic of BaseContextMenu and of the elements that open a context menu.
 
 export interface MenuEntry {
     readonly disabled?: boolean
@@ -55,4 +55,32 @@ export function clampMenuPosition(point: Point, size: Size, viewport: Size, marg
         x: Math.min(Math.max(point.x, margin), maxX),
         y: Math.min(Math.max(point.y, margin), maxY),
     }
+}
+
+export interface Rect {
+    readonly left: number
+    readonly top: number
+    readonly right: number
+    readonly bottom: number
+}
+
+/**
+ * Position of a submenu: beside its menu at the height of its entry, on the right if it fits there,
+ * otherwise on the left; always kept within the viewport.
+ */
+export function submenuPosition(
+    entry: Rect,
+    menu: Rect,
+    size: Size,
+    viewport: Size,
+    margin = 4,
+): Point {
+    const fitsRight = menu.right + size.width + margin <= viewport.width
+    const x = fitsRight ? menu.right : menu.left - size.width
+    return clampMenuPosition({ x, y: entry.top }, size, viewport, margin)
+}
+
+/** The keys that open a context menu with the keyboard: the menu key and Shift+F10. */
+export function isMenuKey(event: Pick<KeyboardEvent, 'key' | 'shiftKey'>): boolean {
+    return event.key === 'ContextMenu' || (event.key === 'F10' && event.shiftKey)
 }

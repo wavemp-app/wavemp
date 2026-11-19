@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { clampMenuPosition, firstEnabledIndex, lastEnabledIndex, nextEnabledIndex } from '../menu'
+import {
+    clampMenuPosition,
+    firstEnabledIndex,
+    isMenuKey,
+    lastEnabledIndex,
+    nextEnabledIndex,
+    submenuPosition,
+} from '../menu'
 
 const entries = [{ disabled: true }, {}, { separator: true }, {}, { disabled: true }]
 
@@ -43,5 +50,36 @@ describe('clampMenuPosition', () => {
             x: 4,
             y: 4,
         })
+    })
+})
+
+describe('submenuPosition', () => {
+    const size = { width: 150, height: 120 }
+    const viewport = { width: 800, height: 600 }
+    const menu = { left: 100, top: 100, right: 300, bottom: 400 }
+
+    it('opens on the right of the menu at the height of the entry', () => {
+        const entry = { left: 104, top: 180, right: 296, bottom: 212 }
+        expect(submenuPosition(entry, menu, size, viewport)).toEqual({ x: 300, y: 180 })
+    })
+
+    it('opens on the left where the right side has no room', () => {
+        const wide = { left: 500, top: 100, right: 700, bottom: 400 }
+        const entry = { left: 504, top: 180, right: 696, bottom: 212 }
+        expect(submenuPosition(entry, wide, size, viewport)).toEqual({ x: 350, y: 180 })
+    })
+
+    it('stays within the viewport', () => {
+        const entry = { left: 104, top: 560, right: 296, bottom: 592 }
+        expect(submenuPosition(entry, menu, size, viewport)).toEqual({ x: 300, y: 476 })
+    })
+})
+
+describe('isMenuKey', () => {
+    it('knows the menu key and Shift+F10', () => {
+        expect(isMenuKey({ key: 'ContextMenu', shiftKey: false })).toBe(true)
+        expect(isMenuKey({ key: 'F10', shiftKey: true })).toBe(true)
+        expect(isMenuKey({ key: 'F10', shiftKey: false })).toBe(false)
+        expect(isMenuKey({ key: 'Enter', shiftKey: true })).toBe(false)
     })
 })

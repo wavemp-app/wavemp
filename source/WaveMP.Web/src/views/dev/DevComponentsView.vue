@@ -284,6 +284,16 @@ const menuItems = computed<MenuItem[]>(() => [
     { id: 'add', label: t('actions.add'), icon: 'add' },
     { id: 'settings', label: t('actions.settings'), icon: 'settings' },
     { id: 'profile', label: t('actions.profile'), icon: 'profile', disabled: true },
+    {
+        id: 'rate',
+        label: t('contextMenu.rate'),
+        icon: 'rate',
+        children: [
+            { id: 'rate-0', label: t('contextMenu.rating.none'), checked: false },
+            { id: 'rate-3', label: t('contextMenu.rating.three'), checked: true },
+            { id: 'rate-5', label: t('contextMenu.rating.five'), checked: false },
+        ],
+    },
     { id: 'separator-2', separator: true },
     { id: 'view-video', label: t('actions.showVideo'), icon: 'view-video' },
     { id: 'view-visualization', label: t('actions.showVisualization'), icon: 'view-visualization' },

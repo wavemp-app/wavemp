@@ -18,7 +18,17 @@ export interface ListGroup<Row extends ListRowBase> {
 </script>
 
 <script setup lang="ts" generic="Row extends ListRowBase">
-import { computed, nextTick, useId } from 'vue'
+import { computed, nextTick, useId, watch } from 'vue'
+import { isMenuKey } from './menu'
+import {
+    choose,
+    chooseAll,
+    chooseForMenu,
+    prune,
+    selectionMode,
+    type RowSelection,
+    type SelectionMode,
+} from './selection'
 import { useLongPress } from '@/composables/useLongPress'
 
 const props = withDefaults(
@@ -39,11 +49,17 @@ const props = withDefaults(
          * for lists whose rows start something, e.g. playback.
          */
         activateOnTap?: boolean
+        /**
+         * Several rows can be selected: Ctrl or Cmd with a click or Space adds or removes a row,
+         * Shift with a click or an arrow key selects a range, Ctrl+A selects all rows.
+         */
+        multiSelect?: boolean
     }>(),
-    { state: undefined, rowMenu: false, activateOnTap: false },
+    { state: undefined, rowMenu: false, activateOnTap: false, multiSelect: false },
 )
 
 const emit = defineEmits<{
+    /** The context menu of the row; it applies to the selection, which contains the row. */
     'row-menu': [rowId: string, x: number, y: number]
     /** Double click, Enter or (with activateOnTap) a tap on a touch screen. */
     'row-activate': [rowId: string]
@@ -54,12 +70,40 @@ defineSlots<{
     'group-info'?(props: { group: ListGroup<Row> }): unknown
 }>()
 
-/** Id of the selected row (single selection). */
+/** Id of the row with the focus: the selected row, or the one chosen last of several. */
 const selected = defineModel<string | undefined>('selected', { default: undefined })
+
+/** Ids of the selected rows in the order of the list (one row without multiSelect). */
+const selection = defineModel<readonly string[]>('selection', { default: () => [] })
 
 const listId = useId()
 const allRows = computed(() => props.groups.flatMap((group) => group.rows))
+const order = computed(() => allRows.value.map((row) => row.id))
 const tabStop = computed(() => selected.value ?? allRows.value[0]?.id)
+const selectedIds = computed(
+    () =>
+        new Set(
+            props.multiSelect
+                ? selection.value
+                : selected.value === undefined
+                  ? []
+                  : [selected.value],
+        ),
+)
+let anchor: string | undefined
+
+function current(): RowSelection {
+    return { ids: selection.value, anchor: anchor ?? selected.value }
+}
+
+// Rows that leave the list (e.g. removed from a playlist) leave the selection as well.
+watch(order, (value) => {
+    const pruned = prune(current(), value)
+    if (pruned.ids.length !== selection.value.length) {
+        selection.value = pruned.ids
+        anchor = pruned.anchor
+    }
+})
 
 function rowElementId(rowId: string): string {
     return `${listId}-row-${rowId}`
@@ -69,17 +113,38 @@ function titleId(groupId: string): string {
     return `${listId}-group-${groupId}`
 }
 
+function isSelected(row: Row): boolean {
+    return selectedIds.value.has(row.id)
+}
+
 function rowState(row: Row): string | undefined {
-    const tokens = [...(row.state ?? []), ...(row.id === selected.value ? ['selected'] : [])]
+    const tokens = [...(row.state ?? []), ...(isSelected(row) ? ['selected'] : [])]
     return tokens.length > 0 ? tokens.join(' ') : undefined
 }
 
-async function select(rowId: string, focus = false): Promise<void> {
+async function focusRow(rowId: string): Promise<void> {
+    await nextTick()
+    document.getElementById(rowElementId(rowId))?.focus()
+}
+
+function apply(next: RowSelection, rowId: string, focus: boolean): void {
+    anchor = next.anchor
+    selection.value = next.ids
     selected.value = rowId
     if (focus) {
-        await nextTick()
-        document.getElementById(rowElementId(rowId))?.focus()
+        void focusRow(rowId)
     }
+}
+
+function select(rowId: string, mode: SelectionMode = 'only', focus = false): void {
+    apply(choose(current(), order.value, rowId, props.multiSelect ? mode : 'only'), rowId, focus)
+}
+
+function selectForMenu(rowId: string): void {
+    const next = props.multiSelect
+        ? chooseForMenu(current(), order.value, rowId)
+        : choose(current(), order.value, rowId, 'only')
+    apply(next, rowId, false)
 }
 
 /** Kind of the pointer of the last press, to tell taps from clicks. */
@@ -88,12 +153,13 @@ let menuOpened = false
 
 const longPress = useLongPress<string>((rowId, x, y) => {
     menuOpened = true
-    void select(rowId)
+    selectForMenu(rowId)
     emit('row-menu', rowId, x, y)
 })
 
-function onClick(rowId: string): void {
-    void select(rowId)
+function onClick(event: MouseEvent, rowId: string): void {
+    const mode = selectionMode(event)
+    select(rowId, mode, props.multiSelect && mode !== 'only')
     if (props.activateOnTap && lastPointerType === 'touch' && !menuOpened) {
         emit('row-activate', rowId)
     }
@@ -101,8 +167,15 @@ function onClick(rowId: string): void {
     menuOpened = false
 }
 
+/** Shift and Ctrl with a click choose rows; they must not select the text of the list. */
+function onMousedown(event: MouseEvent): void {
+    if (props.multiSelect && selectionMode(event) !== 'only') {
+        event.preventDefault()
+    }
+}
+
 function activate(rowId: string): void {
-    void select(rowId)
+    select(rowId)
     emit('row-activate', rowId)
 }
 
@@ -113,7 +186,7 @@ function onContextMenu(event: MouseEvent, rowId: string): void {
 
     event.preventDefault()
     longPress.cancel()
-    void select(rowId)
+    selectForMenu(rowId)
     emit('row-menu', rowId, event.clientX, event.clientY)
 }
 
@@ -127,13 +200,13 @@ function onPointerdown(event: PointerEvent, rowId: string): void {
 
 function openMenuAtRow(event: KeyboardEvent, rowId: string): void {
     event.preventDefault()
-    void select(rowId)
+    selectForMenu(rowId)
     const rect = (event.currentTarget as HTMLElement).getBoundingClientRect()
     emit('row-menu', rowId, rect.left, rect.bottom)
 }
 
 function onKeydown(event: KeyboardEvent, rowId: string): void {
-    if (props.rowMenu && (event.key === 'ContextMenu' || (event.key === 'F10' && event.shiftKey))) {
+    if (props.rowMenu && isMenuKey(event)) {
         openMenuAtRow(event, rowId)
         return
     }
@@ -155,19 +228,43 @@ function onKeydown(event: KeyboardEvent, rowId: string): void {
 
     if (event.key === ' ') {
         event.preventDefault()
-        void select(rowId)
+        select(rowId, selectionMode(event))
+        return
+    }
+
+    if (
+        props.multiSelect &&
+        (event.ctrlKey || event.metaKey) &&
+        !event.shiftKey &&
+        event.key.toLowerCase() === 'a'
+    ) {
+        event.preventDefault()
+        apply(chooseAll(current(), order.value), rowId, false)
         return
     }
 
     if (target) {
         event.preventDefault()
-        void select(target.id, true)
+        if (props.multiSelect && (event.ctrlKey || event.metaKey) && !event.shiftKey) {
+            // Ctrl with an arrow key moves the focus only; Ctrl+Space then adds the row.
+            selected.value = target.id
+            void focusRow(target.id)
+        } else {
+            select(target.id, event.shiftKey ? 'range' : 'only', true)
+        }
     }
 }
 </script>
 
 <template>
-    <div data-part="list" role="grid" aria-readonly="true" :aria-label="label" :data-state="state">
+    <div
+        data-part="list"
+        role="grid"
+        aria-readonly="true"
+        :aria-label="label"
+        :aria-multiselectable="multiSelect ? 'true' : undefined"
+        :data-state="state"
+    >
         <div data-part="list-header" role="row">
             <span
                 v-for="column in columns"
@@ -206,10 +303,11 @@ function onKeydown(event: KeyboardEvent, rowId: string): void {
                     :key="row.id"
                     data-part="list-row"
                     role="row"
-                    :aria-selected="row.id === selected ? 'true' : 'false'"
+                    :aria-selected="isSelected(row) ? 'true' : 'false'"
                     :data-state="rowState(row)"
                     :tabindex="row.id === tabStop ? 0 : -1"
-                    @click="onClick(row.id)"
+                    @click="onClick($event, row.id)"
+                    @mousedown="onMousedown"
                     @dblclick="activate(row.id)"
                     @keydown="onKeydown($event, row.id)"
                     @contextmenu="onContextMenu($event, row.id)"
