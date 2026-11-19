@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <Container version="2">
   <Name>WaveMP</Name>
-  <Repository>wavemp/wavemp:1.0.72</Repository>
+  <Repository>wavemp/wavemp:1.0.88</Repository>
   <Registry>https://hub.docker.com/r/wavemp/wavemp</Registry>
   <Network>wavemp</Network>
   <MyIP/>
