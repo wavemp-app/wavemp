@@ -7,6 +7,7 @@ using WaveMP.Core.Jobs.Extensions;
 using WaveMP.Core.Library.Extensions;
 using WaveMP.Core.Lyrics.Extensions;
 using WaveMP.Core.Metadata.Extensions;
+using WaveMP.Core.OnlineMetadata.Extensions;
 using WaveMP.Core.Playlists.Extensions;
 using WaveMP.Core.Scanning.Extensions;
 using WaveMP.Core.Scrobbling.Extensions;
@@ -58,6 +59,7 @@ public static class WaveMpApplication
         builder.Services.AddWaveMpScanning();
         builder.Services.AddWaveMpLibrary();
         builder.Services.AddWaveMpLyrics();
+        builder.Services.AddWaveMpOnlineMetadata();
         builder.Services.AddWaveMpCaching();
         builder.Services.AddWaveMpPlaylists();
         builder.Services.AddWaveMpCollection();
@@ -144,6 +146,7 @@ public static class WaveMpApplication
         await app.Services.InitializeWaveMpSettingsAsync(cancellationToken);
         await app.Services.InitializeWaveMpCacheAsync(cancellationToken);
         await app.Services.InitializeWaveMpPlaylistsAsync(cancellationToken);
+        await app.Services.InitializeWaveMpOnlineMetadataAsync(cancellationToken);
         await app.Services.InitializeWaveMpAvatarsAsync(cancellationToken);
         await app.Services.InitializeWaveMpThemesAsync(cancellationToken);
         DataProtectionKeys.PrepareFolder(

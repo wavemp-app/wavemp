@@ -9,6 +9,7 @@ using Microsoft.Extensions.Logging;
 using NSubstitute;
 using WaveMP.Core.Backups.Exports;
 using WaveMP.Core.Lyrics.Downloads;
+using WaveMP.Core.OnlineMetadata.Clients;
 using WaveMP.Core.Scrobbling.Clients;
 using WaveMP.Data;
 using WaveMP.Service.Tests.IntegrationTests.Fakes;
@@ -55,6 +56,14 @@ namespace WaveMP.Service.Tests.IntegrationTests;
 /// Replaces the client of ListenBrainz, so no test sends requests to it; if <c>null</c>, a substitute that cannot be
 /// reached.
 /// </param>
+/// <param name="musicBrainz">
+/// Replaces the client of MusicBrainz, so no test sends requests to it; if <c>null</c>, a substitute that cannot be
+/// reached.
+/// </param>
+/// <param name="coverArtArchive">
+/// Replaces the client of the Cover Art Archive, so no test sends requests to it; if <c>null</c>, a substitute that
+/// cannot be reached.
+/// </param>
 public sealed class WaveMpWebApplicationFactory(
     string? databaseName = null,
     bool freshDatabase = false,
@@ -63,7 +72,9 @@ public sealed class WaveMpWebApplicationFactory(
     IReadOnlyDictionary<string, string?>? settings = null,
     ILrclibClient? lrclib = null,
     ILastFmClient? lastFm = null,
-    IListenBrainzClient? listenBrainz = null) : WebApplicationFactory<Program>
+    IListenBrainzClient? listenBrainz = null,
+    IMusicBrainzClient? musicBrainz = null,
+    ICoverArtArchiveClient? coverArtArchive = null) : WebApplicationFactory<Program>
 {
     public const string TestDatabaseName = "wavemp_tests";
 
@@ -97,6 +108,16 @@ public sealed class WaveMpWebApplicationFactory(
     /// The simulated ListenBrainz.
     /// </summary>
     public IListenBrainzClient ListenBrainz { get; } = listenBrainz ?? CreateListenBrainz();
+
+    /// <summary>
+    /// The simulated MusicBrainz.
+    /// </summary>
+    public IMusicBrainzClient MusicBrainz { get; } = musicBrainz ?? CreateMusicBrainz();
+
+    /// <summary>
+    /// The simulated Cover Art Archive.
+    /// </summary>
+    public ICoverArtArchiveClient CoverArtArchive { get; } = coverArtArchive ?? CreateCoverArtArchive();
 
     /// <summary>
     /// The errors the service logged.
@@ -157,6 +178,10 @@ public sealed class WaveMpWebApplicationFactory(
             services.AddSingleton(LastFm);
             services.RemoveAll<IListenBrainzClient>();
             services.AddSingleton(ListenBrainz);
+            services.RemoveAll<IMusicBrainzClient>();
+            services.AddSingleton(MusicBrainz);
+            services.RemoveAll<ICoverArtArchiveClient>();
+            services.AddSingleton(CoverArtArchive);
         });
     }
 
@@ -204,6 +229,30 @@ public sealed class WaveMpWebApplicationFactory(
         client.SubmitPlayingNowAsync(default!, default!, default)
             .ReturnsForAnyArgs(ScrobbleSendStatus.Unavailable);
         client.SubmitListensAsync(default!, default!, default).ReturnsForAnyArgs(ScrobbleSendStatus.Unavailable);
+        return client;
+    }
+
+    /// <summary>
+    /// A MusicBrainz that cannot be reached.
+    /// </summary>
+    public static IMusicBrainzClient CreateMusicBrainz()
+    {
+        IMusicBrainzClient client = Substitute.For<IMusicBrainzClient>();
+        client.SearchRecordingsAsync(default!, default)
+            .ReturnsForAnyArgs(OnlineResponse<IReadOnlyList<MusicBrainzRecording>>.Failed(OnlineStatus.Unavailable));
+        client.SearchReleasesAsync(default!, default)
+            .ReturnsForAnyArgs(OnlineResponse<IReadOnlyList<MusicBrainzRelease>>.Failed(OnlineStatus.Unavailable));
+        return client;
+    }
+
+    /// <summary>
+    /// A Cover Art Archive that cannot be reached.
+    /// </summary>
+    public static ICoverArtArchiveClient CreateCoverArtArchive()
+    {
+        ICoverArtArchiveClient client = Substitute.For<ICoverArtArchiveClient>();
+        client.GetFrontCoverAsync(default, default, default)
+            .ReturnsForAnyArgs(OnlineResponse<byte[]>.Failed(OnlineStatus.Unavailable));
         return client;
     }
 

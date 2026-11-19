@@ -22,7 +22,8 @@ public sealed class SettingsController(
     ILibrarySettingsService librarySettings,
     ICacheSettingsService cacheSettings,
     ITranscodingSettingsService transcodingSettings,
-    IBackupSettingsService backupSettings) : ControllerBase
+    IBackupSettingsService backupSettings,
+    IOnlineMetadataSettingsService onlineMetadataSettings) : ControllerBase
 {
     /// <summary>
     /// Returns the settings of the media library.
@@ -205,6 +206,56 @@ public sealed class SettingsController(
         }
 
         foreach (BackupSettingsValidationError error in result.Errors)
+        {
+            ModelState.AddValidationError(
+                error.Field.ToJsonName(),
+                error.Reason.ToCode(),
+                error.Minimum,
+                error.Maximum);
+        }
+
+        return ValidationProblem();
+    }
+
+    /// <summary>
+    /// Returns the settings of the online search for album info (MusicBrainz and the Cover Art Archive).
+    /// </summary>
+    /// <param name="cancellationToken">Aborts the request.</param>
+    /// <response code="200">The settings of the online search.</response>
+    [HttpGet("online-metadata", Name = "GetOnlineMetadataSettings")]
+    [ProducesResponseType<OnlineMetadataSettingsDto>(StatusCodes.Status200OK, "application/json")]
+    public async Task<ActionResult<OnlineMetadataSettingsDto>> GetOnlineMetadataSettingsAsync(
+        CancellationToken cancellationToken)
+    {
+        OnlineMetadataSettings settings = await onlineMetadataSettings.GetAsync(cancellationToken);
+        return Ok(settings.ToDto());
+    }
+
+    /// <summary>
+    /// Changes the settings of the online search for album info. Missing or null values stay unchanged; changes
+    /// apply to the next request. While the search is off, WaveMP sends no request to either service.
+    /// </summary>
+    /// <param name="request">The changes.</param>
+    /// <param name="cancellationToken">Aborts the request.</param>
+    /// <response code="200">The changed settings.</response>
+    /// <response code="400">The request is invalid (code <c>request.invalid</c>, errors by field: <c>invalid_format</c> for
+    /// an address that is not an absolute http or https address without query, <c>out_of_range</c>).</response>
+    [HttpPatch("online-metadata", Name = "UpdateOnlineMetadataSettings")]
+    [Consumes("application/json")]
+    [ProducesResponseType<OnlineMetadataSettingsDto>(StatusCodes.Status200OK, "application/json")]
+    [ProducesResponseType<ValidationProblemDto>(StatusCodes.Status400BadRequest, "application/problem+json")]
+    public async Task<ActionResult<OnlineMetadataSettingsDto>> UpdateOnlineMetadataSettingsAsync(
+        UpdateOnlineMetadataSettingsDto request,
+        CancellationToken cancellationToken)
+    {
+        OnlineMetadataSettingsResult result =
+            await onlineMetadataSettings.UpdateAsync(request.ToCommand(), cancellationToken);
+        if (result.IsSuccess)
+        {
+            return Ok(result.Settings.ToDto());
+        }
+
+        foreach (OnlineMetadataSettingsValidationError error in result.Errors)
         {
             ModelState.AddValidationError(
                 error.Field.ToJsonName(),

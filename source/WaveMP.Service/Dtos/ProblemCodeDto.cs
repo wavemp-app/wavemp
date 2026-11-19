@@ -447,4 +447,22 @@ public enum ProblemCodeDto
     /// </summary>
     [JsonStringEnumMemberName("source.path_overlaps")]
     SourcePathOverlaps,
+
+    /// <summary>
+    /// The online search for album info is switched off in its settings (409).
+    /// </summary>
+    [JsonStringEnumMemberName("lookup.disabled")]
+    LookupDisabled,
+
+    /// <summary>
+    /// MusicBrainz or the Cover Art Archive cannot be reached, e.g. without an internet connection, or failed (503).
+    /// </summary>
+    [JsonStringEnumMemberName("lookup.unavailable")]
+    LookupUnavailable,
+
+    /// <summary>
+    /// The release has no cover in the Cover Art Archive (404).
+    /// </summary>
+    [JsonStringEnumMemberName("lookup.cover_not_found")]
+    LookupCoverNotFound,
 }

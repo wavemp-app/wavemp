@@ -4185,6 +4185,542 @@
         ]
       }
     },
+    "/api/v1/tracks/{id}/online-matches": {
+      "get": {
+        "tags": [
+          "OnlineMetadata"
+        ],
+        "summary": "Searches a song in MusicBrainz by its title, artist, album and duration (from its tags, otherwise from the folder and file name) and returns the matches with their degree of agreement, the best first, next to its current tags. Requests to MusicBrainz wait in a queue that keeps the shortest time between two of them.",
+        "operationId": "SearchTrackOnlineMatches",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Id of the song.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "The matches; empty if MusicBrainz knows none.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OnlineTrackMatches"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The song does not exist (code `track.not_found`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The online search is switched off (code `lookup.disabled`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "MusicBrainz cannot be reached or failed (code `lookup.unavailable`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/api/v1/albums/{id}/online-matches": {
+      "get": {
+        "tags": [
+          "OnlineMetadata"
+        ],
+        "summary": "Searches an album in MusicBrainz by its title, album artist and number of songs and returns the releases that may be it with their degree of agreement, the best first, next to its current tags.",
+        "operationId": "SearchAlbumOnlineMatches",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Id of the album.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "The matches; empty if MusicBrainz knows none.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OnlineAlbumMatches"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The album does not exist (code `album.not_found`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The online search is switched off (code `lookup.disabled`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "MusicBrainz cannot be reached or failed (code `lookup.unavailable`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/api/v1/online-releases/{releaseId}/cover": {
+      "get": {
+        "tags": [
+          "OnlineMetadata"
+        ],
+        "summary": "Returns the front cover of a release from the Cover Art Archive as preview, before it is applied.",
+        "operationId": "GetOnlineReleaseCover",
+        "parameters": [
+          {
+            "name": "releaseId",
+            "in": "path",
+            "description": "The MusicBrainz id of the release.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "description": "Size of the preview; small by default.",
+            "schema": {
+              "default": "Small",
+              "$ref": "#/components/schemas/OnlineCoverSize"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "The picture.",
+            "content": {
+              "image/jpeg": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "image/png": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "image/webp": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "image/gif": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "image/bmp": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid size (code `request.invalid`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The release has no cover (code `lookup.cover_not_found`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The online search is switched off (code `lookup.disabled`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The Cover Art Archive cannot be reached or failed (code `lookup.unavailable`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/api/v1/tracks/{id}/online-metadata": {
+      "post": {
+        "tags": [
+          "OnlineMetadata"
+        ],
+        "summary": "Applies the fields of a match the admin confirmed to a song: the tags through the metadata editor (into the audio file only, its current tags saved as backup first) and the front cover of a release, stored following the cover rules: in the media folder if it can be written, otherwise in the data folder. The cover is downloaded first, so a failing Cover Art Archive changes nothing.",
+        "operationId": "ApplyTrackOnlineMetadata",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Id of the song.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "The tags and the release of the cover.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApplyTrackOnlineMetadata"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApplyTrackOnlineMetadata"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "The metadata of the song read again and where the cover went.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OnlineTrackApplyResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid values (code `request.invalid`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The song does not exist (code `track.not_found`) or the release has no cover (code `lookup.cover_not_found`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The online search is switched off (code `lookup.disabled`), the song has no audio file (code `track.no_audio`) or its audio file cannot be written (code `track.not_writable`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The Cover Art Archive cannot be reached or failed (code `lookup.unavailable`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/api/v1/albums/{id}/online-metadata": {
+      "post": {
+        "tags": [
+          "OnlineMetadata"
+        ],
+        "summary": "Applies the album fields of a match the admin confirmed (album, album artist, year, genre) to every song of an album whose audio file can be written, each through the metadata editor with a backup first, and the front cover of a release as cover of the album in the folder of the album, otherwise in the data folder.",
+        "operationId": "ApplyAlbumOnlineMetadata",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Id of the album.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "The tags and the release of the cover.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApplyAlbumOnlineMetadata"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApplyAlbumOnlineMetadata"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "How many songs were written and where the cover went.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OnlineAlbumApplyResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid values (code `request.invalid`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The album does not exist (code `album.not_found`) or the release has no cover (code `lookup.cover_not_found`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The online search is switched off (code `lookup.disabled`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The Cover Art Archive cannot be reached or failed (code `lookup.unavailable`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
     "/api/v1/me/playlists/{id}/cover": {
       "get": {
         "tags": [
@@ -6602,6 +7138,122 @@
           },
           "400": {
             "description": "The request is invalid (code `request.invalid`, errors by field).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblem"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/api/v1/settings/online-metadata": {
+      "get": {
+        "tags": [
+          "Settings"
+        ],
+        "summary": "Returns the settings of the online search for album info (MusicBrainz and the Cover Art Archive).",
+        "operationId": "GetOnlineMetadataSettings",
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "The settings of the online search.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OnlineMetadataSettings"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      },
+      "patch": {
+        "tags": [
+          "Settings"
+        ],
+        "summary": "Changes the settings of the online search for album info. Missing or null values stay unchanged; changes apply to the next request. While the search is off, WaveMP sends no request to either service.",
+        "operationId": "UpdateOnlineMetadataSettings",
+        "requestBody": {
+          "description": "The changes.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateOnlineMetadataSettings"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateOnlineMetadataSettings"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "The changed settings.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OnlineMetadataSettings"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is invalid (code `request.invalid`, errors by field: `invalid_format` for an address that is not an absolute http or https address without query, `out_of_range`).",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -11784,6 +12436,56 @@
         ],
         "type": "string"
       },
+      "ApplyAlbumOnlineMetadata": {
+        "type": "object",
+        "properties": {
+          "tags": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "The album tags to write into every song of the album that can be written: missing members stay unchanged.",
+                "$ref": "#/components/schemas/UpdateAlbumTags"
+              }
+            ]
+          },
+          "coverReleaseId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The release whose front cover becomes the cover of the album; null for none.",
+            "format": "uuid"
+          }
+        },
+        "description": "The fields of a match the admin applies to an album."
+      },
+      "ApplyTrackOnlineMetadata": {
+        "type": "object",
+        "properties": {
+          "tags": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "The tags to write, like `PATCH /api/v1/tracks/{id}/metadata`: missing members stay unchanged. Written into the audio file only, after its current tags are saved as backup.",
+                "$ref": "#/components/schemas/UpdateTrackMetadata"
+              }
+            ]
+          },
+          "coverReleaseId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The release whose front cover becomes the cover, following the cover rules; null for none.",
+            "format": "uuid"
+          }
+        },
+        "description": "The fields of a match the admin applies to a song."
+      },
       "Artist": {
         "required": [
           "id",
@@ -13792,6 +14494,344 @@
         "type": "string",
         "description": "A field of the tags that the review inbox checks; a track lists those its file lacks."
       },
+      "OnlineAlbumApplyResult": {
+        "required": [
+          "albumId",
+          "tracksWritten",
+          "tracksSkipped",
+          "cover"
+        ],
+        "type": "object",
+        "properties": {
+          "albumId": {
+            "type": "string",
+            "description": "Id of the album afterwards: a new title or album artist makes the songs another album.",
+            "format": "uuid"
+          },
+          "tracksWritten": {
+            "type": "integer",
+            "description": "Number of songs whose tags were written.",
+            "format": "int32"
+          },
+          "tracksSkipped": {
+            "type": "integer",
+            "description": "Number of songs that kept their tags: without audio file or not writable.",
+            "format": "int32"
+          },
+          "cover": {
+            "description": "Where the cover was stored.",
+            "$ref": "#/components/schemas/OnlineCoverOutcome"
+          }
+        },
+        "description": "The result of applying a match to an album."
+      },
+      "OnlineAlbumMatch": {
+        "required": [
+          "release",
+          "agreement",
+          "values"
+        ],
+        "type": "object",
+        "properties": {
+          "release": {
+            "description": "The release.",
+            "$ref": "#/components/schemas/OnlineRelease"
+          },
+          "agreement": {
+            "type": "integer",
+            "description": "How well the match agrees with the album, 0 to 100: title, album artist and number of songs compared.",
+            "format": "int32"
+          },
+          "values": {
+            "description": "The tags it suggests.",
+            "$ref": "#/components/schemas/OnlineAlbumValues"
+          }
+        },
+        "description": "A release of MusicBrainz that may be the album, with the tags it suggests."
+      },
+      "OnlineAlbumMatches": {
+        "required": [
+          "current",
+          "trackCount",
+          "editableTrackCount",
+          "matches"
+        ],
+        "type": "object",
+        "properties": {
+          "current": {
+            "description": "The current tags of the album in the library.",
+            "$ref": "#/components/schemas/OnlineAlbumValues"
+          },
+          "trackCount": {
+            "type": "integer",
+            "description": "Number of songs of the album.",
+            "format": "int32"
+          },
+          "editableTrackCount": {
+            "type": "integer",
+            "description": "Number of songs whose audio file can be written; the others keep their tags.",
+            "format": "int32"
+          },
+          "matches": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OnlineAlbumMatch"
+            },
+            "description": "The matches, the best first (at most 10 by default); empty if MusicBrainz knows none."
+          }
+        },
+        "description": "The matches of an album in MusicBrainz, the best first, next to its current tags."
+      },
+      "OnlineAlbumValues": {
+        "type": "object",
+        "properties": {
+          "album": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "albumArtist": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "year": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "genre": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        },
+        "description": "The tags of an album."
+      },
+      "OnlineCoverOutcome": {
+        "enum": [
+          "None",
+          "MediaFolder",
+          "DataFolder",
+          "NotSaved"
+        ],
+        "type": "string",
+        "description": "Where an applied cover was stored."
+      },
+      "OnlineCoverSize": {
+        "enum": [
+          "Small",
+          "Large"
+        ],
+        "type": "string",
+        "description": "Size of the preview of a cover from the Cover Art Archive."
+      },
+      "OnlineMetadataSettings": {
+        "required": [
+          "enabled",
+          "musicBrainzUrl",
+          "coverArtArchiveUrl",
+          "musicBrainzRequestIntervalMilliseconds"
+        ],
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "description": "Whether admins may search album info online. Off by default; while it is off, WaveMP sends no request to either service."
+          },
+          "musicBrainzUrl": {
+            "type": "string",
+            "description": "Address of MusicBrainz (default `https://musicbrainz.org`), e.g. an own mirror; no trailing slash."
+          },
+          "coverArtArchiveUrl": {
+            "type": "string",
+            "description": "Address of the Cover Art Archive (default `https://coverartarchive.org`); no trailing slash."
+          },
+          "musicBrainzRequestIntervalMilliseconds": {
+            "type": "integer",
+            "description": "Shortest time between two requests to MusicBrainz in milliseconds (0 to 60,000, default 1,000). Applies to an own mirror; musicbrainz.org always gets at least one second.",
+            "format": "int32"
+          }
+        },
+        "description": "Settings of the online search for album info: tags from MusicBrainz and covers from the Cover Art Archive."
+      },
+      "OnlineRelease": {
+        "required": [
+          "id"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The MusicBrainz id (MBID) of the release; its cover comes from `GET /api/v1/online-releases/{id}/cover`.",
+            "format": "uuid"
+          },
+          "date": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Date of the release: `YYYY`, `YYYY-MM` or `YYYY-MM-DD`."
+          },
+          "country": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Country of the release as ISO 3166-1 code, e.g. `GB`; `XW` stands for worldwide."
+          },
+          "format": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Format of its first medium as MusicBrainz names it, e.g. `CD` or `Digital Media`."
+          },
+          "trackCount": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "description": "Number of tracks on all media.",
+            "format": "int32"
+          }
+        },
+        "description": "A release of MusicBrainz with what tells it apart from other releases of the same album."
+      },
+      "OnlineTrackApplyResult": {
+        "required": [
+          "metadata",
+          "cover"
+        ],
+        "type": "object",
+        "properties": {
+          "metadata": {
+            "description": "The metadata of the song read again after writing.",
+            "$ref": "#/components/schemas/TrackMetadata"
+          },
+          "cover": {
+            "description": "Where the cover was stored.",
+            "$ref": "#/components/schemas/OnlineCoverOutcome"
+          }
+        },
+        "description": "The result of applying a match to a song."
+      },
+      "OnlineTrackMatch": {
+        "required": [
+          "recordingId",
+          "agreement"
+        ],
+        "type": "object",
+        "properties": {
+          "recordingId": {
+            "type": "string",
+            "description": "The MusicBrainz id (MBID) of the recording.",
+            "format": "uuid"
+          },
+          "release": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "The release; null for a recording without release (no album, no cover).",
+                "$ref": "#/components/schemas/OnlineRelease"
+              }
+            ]
+          },
+          "agreement": {
+            "type": "integer",
+            "description": "How well the match agrees with the song, 0 to 100: title, artist, album and duration compared with the song.",
+            "format": "int32"
+          },
+          "durationMilliseconds": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "description": "Length of the recording in milliseconds, if known.",
+            "format": "int64"
+          },
+          "title": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "artist": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "album": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "albumArtist": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "year": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "trackNumber": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "discNumber": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "genre": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        },
+        "description": "A recording of MusicBrainz on one of its releases that may be the song, with the tags it suggests."
+      },
+      "OnlineTrackMatches": {
+        "required": [
+          "current",
+          "matches"
+        ],
+        "type": "object",
+        "properties": {
+          "current": {
+            "description": "The current tags of the song and whether they can be written.",
+            "$ref": "#/components/schemas/TrackMetadata"
+          },
+          "matches": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OnlineTrackMatch"
+            },
+            "description": "The matches, the best first (at most 10 by default); empty if MusicBrainz knows none."
+          }
+        },
+        "description": "The matches of a song in MusicBrainz, the best first, next to its current tags."
+      },
       "PinStatus": {
         "required": [
           "isSet",
@@ -14156,7 +15196,10 @@
           "source.not_found",
           "source.name_taken",
           "source.path_not_found",
-          "source.path_overlaps"
+          "source.path_overlaps",
+          "lookup.disabled",
+          "lookup.unavailable",
+          "lookup.cover_not_found"
         ],
         "type": "string",
         "description": "Machine-readable code of a problem, part of every Problem Details response. Clients translate it."
@@ -16701,6 +17744,49 @@
         },
         "description": "State of the transcoding."
       },
+      "UpdateAlbumTags": {
+        "type": "object",
+        "properties": {
+          "album": {
+            "maxLength": 512,
+            "minLength": 0,
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "New album."
+          },
+          "albumArtist": {
+            "maxLength": 512,
+            "minLength": 0,
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "New album artist; replaces all album artists of the files."
+          },
+          "year": {
+            "maximum": 9999,
+            "minimum": 1,
+            "type": [
+              "null",
+              "integer"
+            ],
+            "description": "New year.",
+            "format": "int32"
+          },
+          "genre": {
+            "maxLength": 128,
+            "minLength": 0,
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "New genre; replaces all genres of the files."
+          }
+        },
+        "description": "Changes the album tags of the songs of an album. Missing members stay unchanged; null or an empty text removes the value from the tags."
+      },
       "UpdateAutoplaySettings": {
         "type": "object",
         "properties": {
@@ -17008,6 +18094,47 @@
           }
         },
         "description": "The track the current profile starts to listen to."
+      },
+      "UpdateOnlineMetadataSettings": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": [
+              "null",
+              "boolean"
+            ],
+            "description": "Switches the online search on or off."
+          },
+          "musicBrainzUrl": {
+            "maxLength": 2048,
+            "minLength": 0,
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Address of MusicBrainz: an absolute http or https address without query; a trailing slash is removed."
+          },
+          "coverArtArchiveUrl": {
+            "maxLength": 2048,
+            "minLength": 0,
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Address of the Cover Art Archive: an absolute http or https address without query; a trailing slash is removed."
+          },
+          "musicBrainzRequestIntervalMilliseconds": {
+            "maximum": 60000,
+            "minimum": 0,
+            "type": [
+              "null",
+              "integer"
+            ],
+            "description": "Shortest time between two requests to MusicBrainz in milliseconds; musicbrainz.org always gets at least one second.",
+            "format": "int32"
+          }
+        },
+        "description": "Changes the settings of the online search for album info. Missing or null values stay unchanged."
       },
       "UpdatePlaylist": {
         "type": "object",
@@ -18014,6 +19141,9 @@
     },
     {
       "name": "MyAvatar"
+    },
+    {
+      "name": "OnlineMetadata"
     },
     {
       "name": "PlaylistCovers"
