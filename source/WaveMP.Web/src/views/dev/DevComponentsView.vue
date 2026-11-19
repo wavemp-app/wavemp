@@ -47,6 +47,8 @@ import BaseCheckbox from '@/components/base/BaseCheckbox.vue'
 import BaseColorPicker from '@/components/base/BaseColorPicker.vue'
 import BaseContextMenu, { type MenuItem } from '@/components/base/BaseContextMenu.vue'
 import BaseDialog from '@/components/base/BaseDialog.vue'
+import ShortcutOverview from '@/components/shell/ShortcutOverview.vue'
+import { defaultShortcuts } from '@/shortcuts/defaults'
 import BaseIcon from '@/components/base/BaseIcon.vue'
 import BaseMeter from '@/components/base/BaseMeter.vue'
 import BaseProgress from '@/components/base/BaseProgress.vue'
@@ -319,6 +321,7 @@ searchFilled.value = t('dev.samples.searchValue')
 
 // Dialog and context menu
 const dialogOpen = ref(false)
+const shortcutsOpen = ref(false)
 const menu = ref<InstanceType<typeof BaseContextMenu> | null>(null)
 const menuItems = computed<MenuItem[]>(() => [
     { id: 'edit', label: t('actions.edit'), icon: 'edit' },
@@ -1550,7 +1553,9 @@ const sampleTranscodeJobs = computed<TranscodeJob[]>(() => {
             <h2 data-part="dev-section-title">{{ t('dev.sections.dialog') }}</h2>
             <div data-part="dev-samples">
                 <BaseButton :label="t('dev.samples.openDialog')" @click="dialogOpen = true" />
+                <BaseButton :label="t('shortcuts.title')" @click="shortcutsOpen = true" />
             </div>
+            <ShortcutOverview v-model:open="shortcutsOpen" :shortcuts="defaultShortcuts" />
             <BaseDialog v-model:open="dialogOpen" :title="t('dev.samples.dialogTitle')">
                 <p>{{ t('dev.samples.dialogText') }}</p>
                 <template #footer>

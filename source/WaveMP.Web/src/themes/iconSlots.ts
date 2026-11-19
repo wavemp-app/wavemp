@@ -112,6 +112,7 @@ export const iconSlots = {
 
     // General (menus and dialogs)
     settings: { file: regular('gear-six'), area: 'general' },
+    'keyboard-shortcuts': { file: regular('keyboard'), area: 'general' },
     profile: { file: regular('user-circle'), area: 'general' },
     'switch-profile': { file: regular('user-switch'), area: 'general' },
     'manage-profiles': { file: regular('users'), area: 'general' },

@@ -12,8 +12,10 @@ import { contentAreaId } from '@/router/scroll'
 import BaseAlert from '@/components/base/BaseAlert.vue'
 import CompactPlayer from '@/components/player/CompactPlayer.vue'
 import ContextMenuHost from '@/components/menus/ContextMenuHost.vue'
+import ShortcutOverview from './ShortcutOverview.vue'
 import { pageTitleKey } from '@/navigation/breadcrumb'
 import { useCoverColor } from '@/composables/useCoverColor'
+import { useKeyboardShortcuts } from '@/composables/useKeyboardShortcuts'
 import { useMediaQuery } from '@/composables/useMediaQuery'
 import { miniPlayerShowsVideo } from '@/player/miniPlayer'
 import { useCollectionStore } from '@/stores/collection'
@@ -23,6 +25,8 @@ import { useMiniPlayerStore } from '@/stores/miniPlayer'
 import { usePageTitleStore } from '@/stores/pageTitle'
 import { usePlayerStore } from '@/stores/player'
 import { useSessionStore } from '@/stores/session'
+import { useShortcutsStore } from '@/stores/shortcuts'
+import { shortcutRegistry } from '@/shortcuts/defaults'
 import { desktopMediaQuery } from '@/themes/breakpoints'
 
 /**
@@ -32,6 +36,9 @@ import { desktopMediaQuery } from '@/themes/breakpoints'
  * The mini player (compact mode) controls the same player: in the floating window of the browser,
  * rendered there through a teleport, or, where the browser has none, in place of the app, which
  * stays hidden but keeps its pages until the mini player closes.
+ *
+ * The keyboard shortcuts control the player in the app and in the mini player; their overview is a
+ * dialog of the shell.
  */
 const { t } = useI18n()
 const route = useRoute()
@@ -45,6 +52,7 @@ const player = usePlayerStore()
 const session = useSessionStore()
 const miniPlayer = useMiniPlayerStore()
 const isDesktop = useMediaQuery(desktopMediaQuery)
+const shortcuts = useShortcutsStore()
 
 useCoverColor()
 
@@ -63,6 +71,10 @@ const compactVideo = computed(() =>
     }),
 )
 const compactVideoReady = computed(() => player.videoState === 'ready')
+
+// Keyboard shortcuts like a desktop player (src/shortcuts); the overview opens with ?.
+useKeyboardShortcuts(compactInline)
+const shortcutList = shortcutRegistry.definitions()
 
 // Detail pages show their name (album, artist, ...), the other pages the name of the page.
 const title = computed(() => pageTitle.title ?? t(pageTitleKey(route)))
@@ -239,6 +251,11 @@ onUnmounted(() => {
         />
         <AppBottomNav />
         <ContextMenuHost />
+        <ShortcutOverview
+            v-if="shortcuts.overviewOpen"
+            v-model:open="shortcuts.overviewOpen"
+            :shortcuts="shortcutList"
+        />
     </div>
     <CompactPlayer
         v-if="compactInline"

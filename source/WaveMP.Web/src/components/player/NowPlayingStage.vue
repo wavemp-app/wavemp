@@ -8,6 +8,7 @@ import BaseSegmentedControl, {
 import LibraryCover from '@/components/library/LibraryCover.vue'
 import ItemMenuButton from '@/components/menus/ItemMenuButton.vue'
 import { useContextMenuTrigger } from '@/composables/useContextMenuTrigger'
+import { useShortcut } from '@/composables/useShortcut'
 import { useContextMenuStore } from '@/stores/contextMenu'
 import LyricsStage from './LyricsStage.vue'
 import StageVisualization from './StageVisualization.vue'
@@ -30,7 +31,7 @@ import {
  * switching back to them is quick. While a casting device plays, the stage names it, shows the cover
  * instead of the video (the device shows it) and offers no visualization. The context menu of the
  * stage (right click, long press, the button "More options" or the keyboard) chooses the view and
- * shows the video or the visualization in full screen.
+ * shows the video or the visualization in full screen, like the key F.
  */
 const props = withDefaults(
     defineProps<{
@@ -179,17 +180,21 @@ const contextMenu = useContextMenuStore()
 const videoStage = ref<InstanceType<typeof VideoStage> | null>(null)
 const stageVisualization = ref<InstanceType<typeof StageVisualization> | null>(null)
 
+/** The shown view that has a full screen: the video or the visualization. */
+function fullscreenView() {
+    return props.view === 'video'
+        ? videoStage.value
+        : props.view === 'visualization'
+          ? stageVisualization.value
+          : null
+}
+
 function openMenu(_: unknown, x: number, y: number): void {
     if (!props.track) {
         return
     }
 
-    const shown =
-        props.view === 'video'
-            ? videoStage.value
-            : props.view === 'visualization'
-              ? stageVisualization.value
-              : null
+    const shown = fullscreenView()
     contextMenu.open(
         {
             type: 'now-playing',
@@ -211,6 +216,17 @@ function openMenu(_: unknown, x: number, y: number): void {
 }
 
 const trigger = useContextMenuTrigger(openMenu)
+
+// The key F shows the video or the visualization in full screen and leaves it again; with the
+// cover or the lyrics the shell shows the whole app in full screen instead.
+useShortcut('fullscreen', () => {
+    const shown = fullscreenView()
+    if (!props.track || !shown?.fullscreenAvailable) {
+        return false
+    }
+
+    void shown.toggleFullscreen()
+})
 
 const subtitle = computed(() => {
     const key = artistLabelKey(props.track?.artist)

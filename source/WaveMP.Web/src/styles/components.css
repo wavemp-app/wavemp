@@ -3349,6 +3349,98 @@
         padding: var(--wmp-space-s) var(--wmp-space-l) var(--wmp-space-l);
     }
 
+    /* --- Overview of the keyboard shortcuts --------------------------------------------- */
+
+    [data-part='dialog'][data-item='shortcuts'] {
+        inline-size: min(46rem, calc(100vw - 2rem));
+    }
+
+    /* The groups stand side by side where two fit, like the columns of a printed key card. */
+    [data-part='shortcut-overview'] {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 19rem), 1fr));
+        gap: var(--wmp-space-l) var(--wmp-space-xl);
+        align-items: start;
+    }
+
+    [data-part='shortcut-group'] {
+        display: grid;
+        gap: var(--wmp-space-xs);
+        min-inline-size: 0;
+    }
+
+    [data-part='shortcut-group-title'] {
+        margin: 0;
+        padding-block-end: var(--wmp-space-xs);
+        border-block-end: 1px solid var(--wmp-color-border);
+        color: var(--wmp-color-text-muted);
+        font-size: var(--wmp-font-size-s);
+        font-weight: var(--wmp-font-weight-bold);
+    }
+
+    [data-part='shortcut-list'] {
+        display: grid;
+        margin: 0;
+    }
+
+    /* Description at the start, keys at the end, like the accelerators of a menu. */
+    [data-part='shortcut-item'] {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--wmp-space-m);
+        padding-block: var(--wmp-space-xs);
+    }
+
+    [data-part='shortcut-description'] {
+        min-inline-size: 0;
+    }
+
+    [data-part='shortcut-keys'] {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        gap: var(--wmp-space-xs);
+        margin: 0;
+    }
+
+    [data-part='shortcut-combo'] {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--wmp-space-xs);
+        font: inherit;
+        white-space: nowrap;
+    }
+
+    [data-part='shortcut-key'] {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-inline-size: var(--wmp-key-size);
+        block-size: var(--wmp-key-size);
+        padding-inline: var(--wmp-space-xs);
+        border: 1px solid var(--wmp-key-border-color);
+        border-block-end-width: 2px;
+        border-radius: var(--wmp-radius-s);
+        background: var(--wmp-key-background);
+        color: var(--wmp-key-color);
+        font: inherit;
+        font-size: var(--wmp-font-size-s);
+        font-weight: var(--wmp-font-weight-bold);
+        line-height: 1;
+    }
+
+    [data-part='shortcut-key-separator'] {
+        color: var(--wmp-color-text-muted);
+        font-size: var(--wmp-font-size-s);
+    }
+
+    [data-part='shortcut-hint'] {
+        margin: var(--wmp-space-l) 0 0;
+        color: var(--wmp-color-text-muted);
+        font-size: var(--wmp-font-size-s);
+    }
+
     /* --- Context menu (popover; never set display here, the closed popover must stay hidden) */
 
     [data-part='context-menu'] {

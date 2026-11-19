@@ -6,6 +6,7 @@ import { RoleObject, type Role } from '@/api/generated/models'
 import BaseContextMenu, { type MenuItem } from '@/components/base/BaseContextMenu.vue'
 import ProfileAvatar from '@/components/profiles/ProfileAvatar.vue'
 import { useSessionStore } from '@/stores/session'
+import { useShortcutsStore } from '@/stores/shortcuts'
 
 export interface ProfileMenuProfile {
     /** Id of the profile; with avatarVersion it shows the avatar picture. */
@@ -20,8 +21,8 @@ export interface ProfileMenuProfile {
 }
 
 /**
- * Button with the avatar of the current profile; opens the settings, the administration (admins
- * only) and the profile switch.
+ * Button with the avatar of the current profile; opens the settings, the overview of the keyboard
+ * shortcuts, the administration (admins only) and the profile switch.
  */
 const props = defineProps<{
     profile: ProfileMenuProfile
@@ -30,6 +31,7 @@ const props = defineProps<{
 const { t } = useI18n()
 const router = useRouter()
 const session = useSessionStore()
+const shortcuts = useShortcutsStore()
 
 const menu = ref<InstanceType<typeof BaseContextMenu> | null>(null)
 const button = ref<HTMLButtonElement | null>(null)
@@ -39,6 +41,7 @@ const isAdmin = computed(() => props.profile.role === RoleObject.Admin)
 
 const items = computed<MenuItem[]>(() => [
     { id: 'settings', label: t('profileMenu.settings'), icon: 'settings' },
+    { id: 'shortcuts', label: t('profileMenu.shortcuts'), icon: 'keyboard-shortcuts' },
     ...(isAdmin.value
         ? [
               {
@@ -66,6 +69,9 @@ async function choose(id: string): Promise<void> {
     switch (id) {
         case 'settings':
             await router.push({ name: 'settings' })
+            break
+        case 'shortcuts':
+            shortcuts.openOverview()
             break
         case 'administration':
             await router.push({ name: 'admin-library' })

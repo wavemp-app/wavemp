@@ -47,6 +47,10 @@
         --wmp-dialog-background: var(--wmp-color-surface);
         --wmp-menu-color: var(--wmp-color-text);
         --wmp-menu-background: var(--wmp-color-surface);
+        /* Keys in the overview of the keyboard shortcuts, tinted with the text of the dialog. */
+        --wmp-key-color: var(--wmp-dialog-color);
+        --wmp-key-background: color-mix(in srgb, var(--wmp-dialog-color) 7%, transparent);
+        --wmp-key-border-color: color-mix(in srgb, var(--wmp-dialog-color) 28%, transparent);
         --wmp-profile-select-color: var(--wmp-color-text);
         --wmp-profile-select-background: var(--wmp-color-surface-raised);
         /*
@@ -183,6 +187,7 @@
         --wmp-icon-item-menu: url('/icons/phosphor/fill/dots-three-outline-fill.svg');
         --wmp-icon-collapse-player: url('/icons/phosphor/fill/caret-down-fill.svg');
         --wmp-icon-settings: url('/icons/phosphor/regular/gear-six.svg');
+        --wmp-icon-keyboard-shortcuts: url('/icons/phosphor/regular/keyboard.svg');
         --wmp-icon-profile: url('/icons/phosphor/regular/user-circle.svg');
         --wmp-icon-switch-profile: url('/icons/phosphor/regular/user-switch.svg');
         --wmp-icon-manage-profiles: url('/icons/phosphor/regular/users.svg');
@@ -300,6 +305,7 @@
         --wmp-avatar-size-l: 6rem;
         --wmp-swatch-size: 2rem;
         --wmp-progress-height: 0.5rem;
+        --wmp-key-size: 1.625rem;
     }
 
     /* Document defaults; the root shows the theme color where a browser shows more than the page. */

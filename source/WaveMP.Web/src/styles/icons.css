@@ -363,6 +363,10 @@
         --_icon: var(--wmp-icon-settings);
     }
 
+    [data-icon='keyboard-shortcuts'] {
+        --_icon: var(--wmp-icon-keyboard-shortcuts);
+    }
+
     [data-icon='profile'] {
         --_icon: var(--wmp-icon-profile);
     }

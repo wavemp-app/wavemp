@@ -6,6 +6,7 @@ import ProfileMenu, { type ProfileMenuProfile } from '../ProfileMenu.vue'
 import { createWaveMpI18n } from '@/i18n'
 import { createRoutes } from '@/router/routes'
 import { useSessionStore } from '@/stores/session'
+import { useShortcutsStore } from '@/stores/shortcuts'
 
 const profile: ProfileMenuProfile = { name: 'Anna Bell', initials: 'AB', color: '#2e7d32' }
 
@@ -45,7 +46,7 @@ describe('ProfileMenu', () => {
 
         expect(wrapper.get('[data-part="btn-profile"]').attributes('aria-expanded')).toBe('true')
         const items = wrapper.findAll('[data-part="menu-item"]').map((item) => item.text())
-        expect(items).toEqual(['Settings', 'Switch profile'])
+        expect(items).toEqual(['Settings', 'Keyboard shortcuts', 'Switch profile'])
         wrapper.unmount()
     })
 
@@ -53,12 +54,28 @@ describe('ProfileMenu', () => {
         const { wrapper, router } = await mountMenu({ ...profile, role: 'Admin' })
 
         const items = wrapper.findAll('[data-part="menu-item"]').map((item) => item.text())
-        expect(items).toEqual(['Settings', 'Administration', 'Switch profile'])
+        expect(items).toEqual([
+            'Settings',
+            'Keyboard shortcuts',
+            'Administration',
+            'Switch profile',
+        ])
 
         await wrapper.get('[data-item="administration"]').trigger('click')
         await flushPromises()
 
         expect(router.currentRoute.value.name).toBe('admin-library')
+        wrapper.unmount()
+    })
+
+    it('opens the overview of the keyboard shortcuts', async () => {
+        const { wrapper } = await mountMenu()
+        const shortcuts = useShortcutsStore()
+
+        await wrapper.get('[data-item="shortcuts"]').trigger('click')
+        await flushPromises()
+
+        expect(shortcuts.overviewOpen).toBe(true)
         wrapper.unmount()
     })
 
