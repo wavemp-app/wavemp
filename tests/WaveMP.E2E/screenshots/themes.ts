@@ -191,6 +191,15 @@ async function openAlbum(page: Page, request: APIRequestContext): Promise<void> 
     await expect(part(page, 'detail-title')).toHaveText('E2E Album')
 }
 
+/** Opens the overview of the keyboard shortcuts with its key on the home page. */
+async function openShortcuts(page: Page): Promise<void> {
+    await page.goto('/')
+    await expect(page.locator("[data-part='shelf'][data-item='playlists']")).toBeVisible()
+    await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur())
+    await page.keyboard.press('?')
+    await expect(page.locator("[data-part='dialog'][data-item='shortcuts']")).toBeVisible()
+}
+
 /** Plays the album, pauses at once and opens Now Playing with the cover. */
 async function openNowPlaying(page: Page, request: APIRequestContext): Promise<void> {
     await openAlbum(page, request)
@@ -277,6 +286,12 @@ export const themeViews: readonly ThemeView[] = [
         },
     },
     {
+        name: 'shortcuts',
+        device: 'desktop',
+        stable: true,
+        open: openShortcuts,
+    },
+    {
         name: 'phone-library',
         device: 'phone',
         stable: true,
@@ -300,6 +315,12 @@ export const themeViews: readonly ThemeView[] = [
             await page.goto('/settings')
             await expect(page.locator("[data-part='theme-option']").first()).toBeVisible()
         },
+    },
+    {
+        name: 'phone-shortcuts',
+        device: 'phone',
+        stable: true,
+        open: openShortcuts,
     },
 ]
 

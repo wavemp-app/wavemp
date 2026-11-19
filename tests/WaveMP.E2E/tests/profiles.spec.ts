@@ -45,7 +45,7 @@ test('selects a profile and remembers it', async ({ page }) => {
     // Only the open menu: the menus of the songs and of the sort options are in the page as well.
     await expect(
         page.locator("[data-part='context-menu']:popover-open [data-part='menu-item']"),
-    ).toHaveText(['Settings', 'Switch profile'])
+    ).toHaveText(['Settings', 'Keyboard shortcuts', 'Switch profile'])
     await page.keyboard.press('Escape')
 
     // Profiles without the role admin never reach the profile administration.
