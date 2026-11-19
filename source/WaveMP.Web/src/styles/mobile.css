@@ -331,7 +331,8 @@
             display: grid !important;
             grid-template-areas:
                 'btn-shuffle btn-prev btn-play btn-next btn-repeat'
-                'btn-mute volume volume btn-crossfade btn-stop' !important;
+                'btn-mute volume volume volume btn-stop'
+                '. btn-crossfade . btn-autoplay .' !important;
             grid-template-columns: repeat(5, auto) !important;
             justify-content: center !important;
             justify-items: center;
@@ -369,6 +370,10 @@
 
         [data-part='transport'][data-state~='expanded'] [data-part='btn-crossfade'] {
             grid-area: btn-crossfade !important;
+        }
+
+        [data-part='transport'][data-state~='expanded'] [data-part='btn-autoplay'] {
+            grid-area: btn-autoplay !important;
         }
 
         [data-part='transport'][data-state~='expanded'] [data-part='btn-stop'] {

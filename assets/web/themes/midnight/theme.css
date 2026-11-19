@@ -724,12 +724,14 @@ a[data-part="breadcrumb-link"]:hover {
     color: #1f6fd6;
 }
 
-[data-part="queue-item"] {
+[data-part="queue-item"],
+[data-part="autoplay-item"] {
     border: 1px solid transparent;
     border-radius: 0.125rem;
 }
 
-[data-part="queue-item"]:hover {
+[data-part="queue-item"]:hover,
+[data-part="autoplay-item"]:hover {
     border-color: #d3e8fb;
     background: #eef7ff;
 }
@@ -745,7 +747,8 @@ a[data-part="breadcrumb-link"]:hover {
     color: #3a4553;
 }
 
-[data-part="queue-item-actions"] [data-part="icon"] {
+[data-part="queue-item-actions"] [data-part="icon"],
+[data-part="autoplay-item-actions"] [data-part="icon"] {
     --wmp-icon-fill: #6b737e;
 }
 

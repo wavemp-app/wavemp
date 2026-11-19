@@ -156,10 +156,11 @@ describe('AppTransport', () => {
         const buttons = off
             .findAll('[data-part="transport-controls"] > button')
             .map((button) => button.attributes('data-part'))
-        expect(buttons.slice(0, 4)).toEqual([
+        expect(buttons.slice(0, 5)).toEqual([
             'btn-shuffle',
             'btn-repeat',
             'btn-crossfade',
+            'btn-autoplay',
             'btn-stop',
         ])
         const crossfade = off.get('[data-part="btn-crossfade"]')
@@ -172,6 +173,22 @@ describe('AppTransport', () => {
         expect(off.emitted('toggleCrossfade')).toHaveLength(1)
 
         const on = mountTransport({ crossfade: true }).get('[data-part="btn-crossfade"]')
+        expect(on.attributes('aria-pressed')).toBe('true')
+        expect(on.attributes('data-state')).toBe('on')
+    })
+
+    it('shows the autoplay switch between crossfade and stop, pressed while it is on', async () => {
+        const off = mountTransport({ autoplay: false })
+        const autoplay = off.get('[data-part="btn-autoplay"]')
+        expect(autoplay.attributes('aria-pressed')).toBe('false')
+        expect(autoplay.attributes('data-state')).toBe('off')
+        expect(autoplay.get('[data-part="icon"]').attributes('data-icon')).toBe('autoplay')
+        expect(autoplay.get('[data-part="label"]').text()).toBe('Autoplay')
+
+        await autoplay.trigger('click')
+        expect(off.emitted('toggleAutoplay')).toHaveLength(1)
+
+        const on = mountTransport({ autoplay: true }).get('[data-part="btn-autoplay"]')
         expect(on.attributes('aria-pressed')).toBe('true')
         expect(on.attributes('data-state')).toBe('on')
     })

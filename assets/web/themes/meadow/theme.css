@@ -937,12 +937,14 @@ a[data-part='breadcrumb-link']:hover {
     background: linear-gradient(#f3f7ff, #ffffff);
 }
 
-[data-part='queue-item'] {
+[data-part='queue-item'],
+[data-part='autoplay-item'] {
     border: 1px solid transparent;
     border-radius: var(--wmp-radius-s);
 }
 
-[data-part='queue-item']:hover {
+[data-part='queue-item']:hover,
+[data-part='autoplay-item']:hover {
     border-color: #c6d7f7;
     background: #eef4ff;
 }
@@ -955,17 +957,21 @@ a[data-part='breadcrumb-link']:hover {
 }
 
 [data-part='queue-item-artist'],
-[data-part='queue-item-duration'] {
+[data-part='queue-item-duration'],
+[data-part='autoplay-item-artist'],
+[data-part='autoplay-item-duration'] {
     color: #3b4f78;
     opacity: 1;
 }
 
-[data-part='queue-item-info'] [data-part='cover'] {
+[data-part='queue-item-info'] [data-part='cover'],
+[data-part='autoplay-item-info'] [data-part='cover'] {
     border: 2px solid #ffffff;
     box-shadow: 0 0 0 1px #b9cbed;
 }
 
-[data-part='queue-item-actions'] [data-part='icon'] {
+[data-part='queue-item-actions'] [data-part='icon'],
+[data-part='autoplay-item-actions'] [data-part='icon'] {
     --wmp-icon-fill: #2f55a8;
 }
 
@@ -1023,7 +1029,7 @@ a[data-part='breadcrumb-link']:hover {
     opacity: 0.5;
 }
 
-/* Pressed toggles (shuffle, repeat, crossfade, mute) light up in green. */
+/* Pressed toggles (shuffle, repeat, crossfade, autoplay, mute) light up in green. */
 [data-part='transport'] [aria-pressed='true']:not([data-part='btn-favorite'], [data-part='rating-star']) {
     --wmp-icon-fill: #b8f5a0;
 }

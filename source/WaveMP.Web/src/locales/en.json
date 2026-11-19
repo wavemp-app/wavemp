@@ -121,6 +121,7 @@
     "repeatAll": "Repeat: all",
     "repeatOne": "Repeat: one",
     "crossfade": "Crossfade",
+    "autoplay": "Autoplay",
     "mute": "Mute",
     "volume": "Volume",
     "seek": "Position",
@@ -145,6 +146,15 @@
     "sleepTimerRemaining": "Stops in {time}",
     "sleepTimerEndOfTrackShort": "End of song",
     "sleepTimerEndOfQueueShort": "End of queue"
+  },
+  "autoplay": {
+    "title": "Autoplay",
+    "hint": "Plays similar songs when the queue ends.",
+    "turnOff": "Turn off autoplay",
+    "playItem": "Play {title} now",
+    "remove": "Remove from autoplay",
+    "loading": "Finding similar songs…",
+    "empty": "No similar songs left. Playback stops at the end of the queue."
   },
   "nowPlaying": {
     "emptyTitle": "Nothing is playing",
@@ -410,6 +420,7 @@
       "expanded": "Expanded (full-screen player on mobile)",
       "sleepTimer": "Sleep timer running",
       "crossfade": "Crossfade on",
+      "autoplay": "Autoplay on",
       "casting": "Casting to a device",
       "castInsecure": "Casting without HTTPS"
     },
@@ -481,6 +492,9 @@
     "crossfadeOff": "Off (without gaps)",
     "crossfadeSeconds": "{seconds} s",
     "crossfadeAlbums": "Do not crossfade songs of the same album",
+    "autoplay": "Autoplay: play similar songs when the queue ends",
+    "autoplayHint": "Chosen by the artists of the list, then by its genres and decades. Applies while repeat is off. The autoplay button of the player turns it on and off.",
+    "autoplayVideoOnly": "Include songs that only have a music video",
     "sleepTimerFade": "Sleep timer fade-out",
     "sleepTimerFadeHint": "How long the music fades out before the sleep timer stops it.",
     "sleepTimerFadeSeconds": "{seconds} seconds",

@@ -353,6 +353,32 @@ describe('SettingsView playback', () => {
         expect(session.crossfade).toEqual({ enabled: false, seconds: 6, albumsGapless: false })
     })
 
+    it('saves autoplay and its songs with a video only at once', async () => {
+        const { wrapper, session } = mountView()
+        const update = vi.spyOn(session, 'updateAutoplay').mockImplementation(async (change) => {
+            session.autoplay = {
+                enabled: change.enabled ?? session.autoplay.enabled,
+                includeVideoOnly: change.includeVideoOnly ?? session.autoplay.includeVideoOnly,
+            }
+        })
+        const enabled = field<HTMLInputElement>(wrapper, 'autoplay', 'input')
+        const videoOnly = field<HTMLInputElement>(wrapper, 'autoplay-video-only', 'input')
+        expect(enabled.element.checked).toBe(true)
+        expect(videoOnly.element.checked).toBe(true)
+        expect(videoOnly.element.disabled).toBe(false)
+
+        await videoOnly.setValue(false)
+        await flushPromises()
+        expect(update).toHaveBeenCalledWith({ includeVideoOnly: false })
+
+        await enabled.setValue(false)
+        await flushPromises()
+        expect(update).toHaveBeenLastCalledWith({ enabled: false })
+        expect(
+            field<HTMLInputElement>(wrapper, 'autoplay-video-only', 'input').element.disabled,
+        ).toBe(true)
+    })
+
     it('follows the switch of the transport bar', async () => {
         const { wrapper, session } = mountView()
         session.crossfade = { enabled: true, seconds: 8, albumsGapless: true }

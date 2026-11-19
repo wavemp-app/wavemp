@@ -158,6 +158,7 @@
         --wmp-icon-repeat: url('/icons/phosphor/fill/repeat-fill.svg');
         --wmp-icon-repeat-one: url('/icons/phosphor/fill/repeat-once-fill.svg');
         --wmp-icon-crossfade: url('/icons/phosphor/fill/intersect-fill.svg');
+        --wmp-icon-autoplay: url('/icons/phosphor/fill/infinity-fill.svg');
         --wmp-icon-stop: url('/icons/phosphor/fill/stop-fill.svg');
         --wmp-icon-previous: url('/icons/phosphor/fill/skip-back-fill.svg');
         --wmp-icon-play: url('/icons/phosphor/fill/play-fill.svg');

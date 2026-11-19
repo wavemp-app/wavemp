@@ -18,6 +18,8 @@ import { useContextMenuStore } from '@/stores/contextMenu'
  * current entry cannot be removed, and clearing keeps it. The context menu of an entry (right
  * click, long press, the button "More options" or the keyboard) also plays it next. Where the
  * queue scrolls itself (beside the stage on the desktop), it keeps the current entry in view.
+ * Entries autoplay added carry the state autoplay; the songs autoplay plays next follow in the slot
+ * below the list.
  */
 const props = defineProps<{
     items: readonly QueueItem[]
@@ -63,6 +65,11 @@ function openMenu(entry: { item: QueueItem; index: number }, x: number, y: numbe
 
 const trigger = useContextMenuTrigger(openMenu)
 
+/** The data-state tokens of an entry: current or played, and autoplay for songs autoplay added. */
+function stateOf(item: QueueItem, state: 'played' | 'current' | undefined): string | undefined {
+    return [state, item.autoplay ? 'autoplay' : undefined].filter(Boolean).join(' ') || undefined
+}
+
 function artistName(track: Track): string {
     const key = artistLabelKey(track.artist)
     return key ? t(key) : (track.artist?.name ?? '')
@@ -89,7 +96,7 @@ function duration(track: Track): string {
                 v-for="{ item, index, state } in entries"
                 :key="item.key"
                 data-part="queue-item"
-                :data-state="state"
+                :data-state="stateOf(item, state)"
                 :aria-current="state === 'current' ? 'true' : undefined"
                 @contextmenu="trigger.onContextmenu($event, { item, index })"
                 @keydown="trigger.onKeydown($event, { item, index })"
@@ -146,5 +153,6 @@ function duration(track: Track): string {
                 </div>
             </li>
         </ol>
+        <slot />
     </section>
 </template>

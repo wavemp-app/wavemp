@@ -73,6 +73,7 @@ import TrackFileList from '@/components/library/TrackFileList.vue'
 import TrackGroupList from '@/components/library/TrackGroupList.vue'
 import EqualizerPanel from '@/components/player/EqualizerPanel.vue'
 import NowPlayingStage from '@/components/player/NowPlayingStage.vue'
+import AutoplayList from '@/components/player/AutoplayList.vue'
 import PlayQueue from '@/components/player/PlayQueue.vue'
 import PlaylistTrackList, {
     type PlaylistTrackRow,
@@ -200,6 +201,14 @@ const sampleQueue = computed(() =>
         .map((track, index) => ({ key: `sample-${index}`, track })),
 )
 const sampleQueueIndex = ref(1)
+/** Songs autoplay plays after the sample queue, among them one with a music video only. */
+const sampleAutoplay = ref(
+    sampleTracks(t)
+        .slice()
+        .reverse()
+        .slice(0, 3)
+        .map((track, index) => ({ key: `sample-autoplay-${index}`, track })),
+)
 const sampleViewMode = ref<PlayerViewMode>('Video')
 const sampleVideoTrack = computed(() => sampleTracks(t).find((track) => track.hasVideo))
 const sampleLyricsTrack = computed(() => sampleTracks(t).find((track) => !track.hasVideo))
@@ -397,6 +406,12 @@ const transports = computed(() => [
         id: 'crossfade',
         label: t('dev.transportStates.crossfade'),
         state: { ...idle, ...track.value, playback: 'playing' as const, crossfade: true },
+        expanded: false,
+    },
+    {
+        id: 'autoplay',
+        label: t('dev.transportStates.autoplay'),
+        state: { ...idle, ...track.value, playback: 'playing' as const, autoplay: true },
         expanded: false,
     },
     {
@@ -1591,7 +1606,18 @@ const sampleTranscodeJobs = computed<TranscodeJob[]>(() => {
                                         (item) => item.key === key,
                                     ))
                             "
-                        />
+                        >
+                            <AutoplayList
+                                :entries="sampleAutoplay"
+                                :loading="false"
+                                @remove="
+                                    (key) =>
+                                        (sampleAutoplay = sampleAutoplay.filter(
+                                            (entry) => entry.key !== key,
+                                        ))
+                                "
+                            />
+                        </PlayQueue>
                     </div>
                 </div>
                 <div data-part="dev-sample">
@@ -1617,6 +1643,11 @@ const sampleTranscodeJobs = computed<TranscodeJob[]>(() => {
                             @select-mode="sampleLyricsMode = $event"
                         />
                     </div>
+                </div>
+                <div data-part="dev-sample">
+                    <PlayQueue :items="sampleQueue.slice(0, 2)" :current-index="1">
+                        <AutoplayList :entries="[]" :loading="true" />
+                    </PlayQueue>
                 </div>
                 <div data-part="dev-sample">
                     <PlaylistsView />

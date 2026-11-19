@@ -121,6 +121,7 @@
     "repeatAll": "Wiederholen: alle",
     "repeatOne": "Wiederholen: einen",
     "crossfade": "Überblenden",
+    "autoplay": "Autoplay",
     "mute": "Stummschalten",
     "volume": "Lautstärke",
     "seek": "Position",
@@ -145,6 +146,15 @@
     "sleepTimerRemaining": "Stoppt in {time}",
     "sleepTimerEndOfTrackShort": "Titelende",
     "sleepTimerEndOfQueueShort": "Warteschlangenende"
+  },
+  "autoplay": {
+    "title": "Autoplay",
+    "hint": "Spielt ähnliche Titel, wenn die Warteschlange endet.",
+    "turnOff": "Autoplay ausschalten",
+    "playItem": "{title} jetzt abspielen",
+    "remove": "Aus Autoplay entfernen",
+    "loading": "Ähnliche Titel werden gesucht…",
+    "empty": "Keine ähnlichen Titel mehr. Die Wiedergabe endet mit der Warteschlange."
   },
   "nowPlaying": {
     "emptyTitle": "Es wird nichts wiedergegeben",
@@ -410,6 +420,7 @@
       "expanded": "Erweitert (mobiler Vollbild-Player)",
       "sleepTimer": "Sleep-Timer läuft",
       "crossfade": "Überblenden an",
+      "autoplay": "Autoplay an",
       "casting": "Streamen auf ein Gerät",
       "castInsecure": "Streamen ohne HTTPS"
     },
@@ -481,6 +492,9 @@
     "crossfadeOff": "Aus (ohne Lücken)",
     "crossfadeSeconds": "{seconds} s",
     "crossfadeAlbums": "Titel desselben Albums nicht überblenden",
+    "autoplay": "Autoplay: ähnliche Titel spielen, wenn die Warteschlange endet",
+    "autoplayHint": "Ausgewählt nach den Interpreten der Liste, dann nach ihren Genres und Jahrzehnten. Gilt, solange Wiederholen aus ist. Der Autoplay-Button des Players schaltet es ein und aus.",
+    "autoplayVideoOnly": "Titel einbeziehen, die nur ein Musikvideo haben",
     "sleepTimerFade": "Ausblenden des Sleep-Timers",
     "sleepTimerFadeHint": "Wie lange die Musik ausgeblendet wird, bevor der Sleep-Timer sie stoppt.",
     "sleepTimerFadeSeconds": "{seconds} Sekunden",

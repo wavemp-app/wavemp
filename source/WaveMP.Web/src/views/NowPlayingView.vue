@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { castStatusText } from '@/casting/presentation'
 import NowPlayingStage from '@/components/player/NowPlayingStage.vue'
+import AutoplayList from '@/components/player/AutoplayList.vue'
 import PlayQueue from '@/components/player/PlayQueue.vue'
 import { usePlayerStore } from '@/stores/player'
 import { useSessionStore } from '@/stores/session'
@@ -10,7 +11,7 @@ import type { VisualizationSettingsChange } from '@/visualization/settings'
 
 /**
  * Now Playing: the stage with the current track (cover, video, visualization or lyrics) and the queue of
- * the player.
+ * the player, followed by the songs autoplay plays after it while autoplay goes on after the list.
  */
 const { t } = useI18n()
 const player = usePlayerStore()
@@ -61,6 +62,15 @@ function updateVisualization(change: VisualizationSettingsChange): void {
             @move="player.moveItem"
             @remove="player.removeItem"
             @clear="player.clearQueue"
-        />
+        >
+            <AutoplayList
+                v-if="player.autoplayActive"
+                :entries="player.autoplay"
+                :loading="player.autoplayLoading"
+                @play="player.playAutoplayEntry"
+                @remove="player.removeAutoplayEntry"
+                @turn-off="player.toggleAutoplay"
+            />
+        </PlayQueue>
     </div>
 </template>

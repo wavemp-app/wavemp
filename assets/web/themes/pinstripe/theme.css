@@ -807,15 +807,18 @@ a[data-part='breadcrumb-link']:hover {
     background: #ffffff;
 }
 
-[data-part='queue-item'] {
+[data-part='queue-item'],
+[data-part='autoplay-item'] {
     border-radius: 0;
 }
 
-[data-part='queue-item']:nth-child(even) {
+[data-part='queue-item']:nth-child(even),
+[data-part='autoplay-item']:nth-child(even) {
     background: #eef3f7;
 }
 
-[data-part='queue-item']:hover {
+[data-part='queue-item']:hover,
+[data-part='autoplay-item']:hover {
     background: #dfeff0;
 }
 
@@ -845,12 +848,15 @@ a[data-part='breadcrumb-link']:hover {
     --wmp-icon-fill: rgb(255 255 255 / 55%);
 }
 
-[data-part='queue-item-info'] [data-part='cover'] {
+[data-part='queue-item-info'] [data-part='cover'],
+[data-part='autoplay-item-info'] [data-part='cover'] {
     box-shadow: 0 0 0 1px rgb(0 0 0 / 18%);
 }
 
 [data-part='queue-item-artist'],
-[data-part='queue-item-duration'] {
+[data-part='queue-item-duration'],
+[data-part='autoplay-item-artist'],
+[data-part='autoplay-item-duration'] {
     color: #4d535b;
     opacity: 1;
 }
@@ -1440,13 +1446,15 @@ a[data-part='breadcrumb-link']:hover {
 
 [data-part='user-actions'] [data-variant='icon'],
 [data-part='source-actions'] [data-variant='icon'],
-[data-part='queue-item-actions'] [data-variant='icon'] {
+[data-part='queue-item-actions'] [data-variant='icon'],
+[data-part='autoplay-item-actions'] [data-variant='icon'] {
     --wmp-icon-fill: #4d535b;
 }
 
 [data-part='user-actions'] [data-variant='icon']:hover:not(:disabled) [data-part='icon'],
 [data-part='source-actions'] [data-variant='icon']:hover:not(:disabled) [data-part='icon'],
-[data-part='queue-item-actions'] [data-variant='icon']:hover:not(:disabled) [data-part='icon'] {
+[data-part='queue-item-actions'] [data-variant='icon']:hover:not(:disabled) [data-part='icon'],
+[data-part='autoplay-item-actions'] [data-variant='icon']:hover:not(:disabled) [data-part='icon'] {
     --wmp-icon-fill: #0b6b75;
 }
 

@@ -46,6 +46,7 @@ const emit = defineEmits<{
     toggleShuffle: []
     cycleRepeat: []
     toggleCrossfade: []
+    toggleAutoplay: []
     toggleMute: []
     changeVolume: [volume: number]
     compact: []
@@ -216,6 +217,15 @@ function onMiniPlayer(): void {
                 :state="state.crossfade ? 'on' : 'off'"
                 :disabled="!effects"
                 @click="emit('toggleCrossfade')"
+            />
+            <BaseButton
+                part="btn-autoplay"
+                variant="icon"
+                icon="autoplay"
+                :label="t('player.autoplay')"
+                :pressed="state.autoplay ?? false"
+                :state="state.autoplay ? 'on' : 'off'"
+                @click="emit('toggleAutoplay')"
             />
             <BaseButton
                 part="btn-stop"

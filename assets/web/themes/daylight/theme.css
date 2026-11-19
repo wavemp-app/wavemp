@@ -1104,12 +1104,14 @@ a[data-part='breadcrumb-link']:hover {
     border-color: #cfe3f4;
 }
 
-[data-part='queue-item'] {
+[data-part='queue-item'],
+[data-part='autoplay-item'] {
     border: 1px solid transparent;
     border-radius: var(--wmp-radius-s);
 }
 
-[data-part='queue-item']:hover {
+[data-part='queue-item']:hover,
+[data-part='autoplay-item']:hover {
     border-color: #d2e8f9;
     background: #f1f8fe;
 }
@@ -1129,16 +1131,20 @@ a[data-part='breadcrumb-link']:hover {
 
 /* The base dims artist and duration; their color is dark enough to keep 4.5:1 through it. */
 [data-part='queue-item-artist'],
-[data-part='queue-item-duration'] {
+[data-part='queue-item-duration'],
+[data-part='autoplay-item-artist'],
+[data-part='autoplay-item-duration'] {
     color: #1f4060;
 }
 
-[data-part='queue-item-info'] [data-part='cover'] {
+[data-part='queue-item-info'] [data-part='cover'],
+[data-part='autoplay-item-info'] [data-part='cover'] {
     border-radius: 0.25rem;
     box-shadow: 0 1px 3px rgb(20 70 120 / 25%);
 }
 
-[data-part='queue-item-actions'] [data-variant] {
+[data-part='queue-item-actions'] [data-variant],
+[data-part='autoplay-item-actions'] [data-variant] {
     --wmp-icon-fill: #24476b;
 }
 

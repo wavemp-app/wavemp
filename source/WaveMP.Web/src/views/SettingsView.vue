@@ -279,6 +279,18 @@ async function changeCrossfadeAlbums(value: boolean): Promise<void> {
     }
 }
 
+async function changeAutoplay(value: boolean): Promise<void> {
+    if (value !== session.autoplay.enabled) {
+        await save(() => session.updateAutoplay({ enabled: value }))
+    }
+}
+
+async function changeAutoplayVideoOnly(value: boolean): Promise<void> {
+    if (value !== session.autoplay.includeVideoOnly) {
+        await save(() => session.updateAutoplay({ includeVideoOnly: value }))
+    }
+}
+
 /**
  * "Off" turns the automatic change off and keeps its interval (the button of the visualization turns
  * it on again); an interval turns it on with that interval.
@@ -402,6 +414,20 @@ async function changeSleepTimerFade(value: string): Promise<void> {
                 :label="t('settings.crossfadeAlbums')"
                 :disabled="cast.connected || crossfade === crossfadeOff"
                 @update:model-value="changeCrossfadeAlbums"
+            />
+            <BaseCheckbox
+                :model-value="session.autoplay.enabled"
+                data-field="autoplay"
+                :label="t('settings.autoplay')"
+                :hint="t('settings.autoplayHint')"
+                @update:model-value="changeAutoplay"
+            />
+            <BaseCheckbox
+                :model-value="session.autoplay.includeVideoOnly"
+                data-field="autoplay-video-only"
+                :label="t('settings.autoplayVideoOnly')"
+                :disabled="!session.autoplay.enabled"
+                @update:model-value="changeAutoplayVideoOnly"
             />
             <BaseSelect
                 :model-value="sleepTimerFade"

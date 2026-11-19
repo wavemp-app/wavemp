@@ -275,6 +275,10 @@
         --_icon: var(--wmp-icon-crossfade);
     }
 
+    [data-icon='autoplay'] {
+        --_icon: var(--wmp-icon-autoplay);
+    }
+
     [data-icon='previous'] {
         --_icon: var(--wmp-icon-previous);
     }
