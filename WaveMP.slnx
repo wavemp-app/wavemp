@@ -8,6 +8,7 @@
     <Project Path="source/WaveMP.Core.Library/WaveMP.Core.Library.csproj" />
     <Project Path="source/WaveMP.Core.Lyrics/WaveMP.Core.Lyrics.csproj" />
     <Project Path="source/WaveMP.Core.Metadata/WaveMP.Core.Metadata.csproj" />
+    <Project Path="source/WaveMP.Core.OnlineMetadata/WaveMP.Core.OnlineMetadata.csproj" />
     <Project Path="source/WaveMP.Core.Playlists/WaveMP.Core.Playlists.csproj" />
     <Project Path="source/WaveMP.Core.Scanning/WaveMP.Core.Scanning.csproj" />
     <Project Path="source/WaveMP.Core.Scrobbling/WaveMP.Core.Scrobbling.csproj" />
@@ -29,6 +30,7 @@
     <Project Path="tests/WaveMP.Core.Library.Tests/WaveMP.Core.Library.Tests.csproj" />
     <Project Path="tests/WaveMP.Core.Lyrics.Tests/WaveMP.Core.Lyrics.Tests.csproj" />
     <Project Path="tests/WaveMP.Core.Metadata.Tests/WaveMP.Core.Metadata.Tests.csproj" />
+    <Project Path="tests/WaveMP.Core.OnlineMetadata.Tests/WaveMP.Core.OnlineMetadata.Tests.csproj" />
     <Project Path="tests/WaveMP.Core.Playlists.Tests/WaveMP.Core.Playlists.Tests.csproj" />
     <Project Path="tests/WaveMP.Core.Scanning.Tests/WaveMP.Core.Scanning.Tests.csproj" />
     <Project Path="tests/WaveMP.Core.Scrobbling.Tests/WaveMP.Core.Scrobbling.Tests.csproj" />
