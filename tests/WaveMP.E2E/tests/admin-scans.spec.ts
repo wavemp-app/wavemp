@@ -36,7 +36,9 @@ test('scans the media folder from the library page', async ({ page, request }) =
         .poll(async () => (await latestScan(request))?.id, { timeout: 30_000 })
         .not.toBe(before?.id)
     await expect(status).toHaveAttribute('data-state', 'idle', { timeout: 120_000 })
-    const scanSection = page.locator("[data-part='section']").first()
+    const scanSection = page
+        .locator("[data-part='section']")
+        .filter({ has: page.locator("[data-part='scan-status']") })
     await expect(scanSection.locator("[data-part='run-meta'] > [data-part='badge']")).toHaveText(
         'Succeeded',
     )

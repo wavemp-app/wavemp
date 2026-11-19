@@ -78,7 +78,7 @@ onMounted(async () => {
         :aria-busy="scans.status === 'loading' && scans.history.length === 0 ? 'true' : undefined"
     >
         <AdminNav />
-        <section data-part="section" :aria-labelledby="sourcesTitleId">
+        <section data-part="section" data-item="media-sources" :aria-labelledby="sourcesTitleId">
             <h2 :id="sourcesTitleId" data-part="section-title">
                 {{ t('adminSources.title') }}
             </h2>

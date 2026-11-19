@@ -13,7 +13,7 @@ test('shows the navigation, the scan and the settings without horizontal scrolli
     await expect(adminNavItem(page, 'admin-library')).toBeVisible()
     await expect(adminNavItem(page, 'admin-jobs')).toBeVisible()
     await expect(page.locator("[data-part='scan-status'] button")).toBeVisible()
-    await expect(page.locator("form[data-part='form']")).toBeVisible()
+    await expect(page.getByRole('region', { name: 'Settings' }).locator('form')).toBeVisible()
 
     const overflow = await page.evaluate(
         () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
