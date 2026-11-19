@@ -57,11 +57,15 @@ test('plays an album, skips to the next song and records the play', async ({
     await part(page, 'btn-play').click()
     await expect(transport(page)).toHaveAttribute('data-state', /\bplaying\b/)
 
-    // The last song plays to its end, then the player pauses on it.
-    await expect(part(page, 'btn-play')).toHaveAttribute('data-state', 'paused', {
-        timeout: 15_000,
+    // The last song plays to its end. Autoplay (on by default) goes on with the only other song of
+    // the artist, a music video without audio file; after it the player pauses (autoplay.spec.ts).
+    await expect(part(page, 'now-playing-title')).toHaveText('Video Only', {
+        timeout: 30_000,
     })
-    await expect(part(page, 'now-playing-title')).toHaveText('Second Song')
+    await expect(part(page, 'btn-play')).toHaveAttribute('data-state', 'paused', {
+        timeout: 30_000,
+    })
+    await expect(part(page, 'now-playing-title')).toHaveText('Video Only')
 
     // More than half of the song played, so it is in the history of the profile.
     const headers = await adminHeaders(request)
@@ -95,7 +99,10 @@ test('plays a song of the list by double click and shows the queue', async ({ pa
     await part(page, 'now-playing-mini').click()
     await expect(page).toHaveURL(/\/now-playing$/)
     await expect(part(page, 'stage-title')).toHaveText('Second Song')
-    const items = part(page, 'queue-item')
+    // Autoplay may already have put its next song after the list (marked autoplay).
+    const items = page.locator(
+        "[data-part='app'] [data-part='queue-item']:not([data-state~='autoplay'])",
+    )
     await expect(items.locator("[data-part='queue-item-title']")).toHaveText([
         'First Song',
         'Second Song',

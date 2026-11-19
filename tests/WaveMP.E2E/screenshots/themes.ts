@@ -201,6 +201,8 @@ async function openNowPlaying(page: Page, request: APIRequestContext): Promise<v
     await pause(page)
     await page.locator("[data-part='app'] a[href='/now-playing']").filter({ visible: true }).click()
     await expect(page).toHaveURL(/\/now-playing$/)
+    // Autoplay below the queue has chosen its songs (Video Only of the same artist).
+    await expect(part(page, 'autoplay-item').filter({ visible: true }).first()).toBeVisible()
 }
 
 export const themeViews: readonly ThemeView[] = [
