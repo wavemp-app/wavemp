@@ -26,14 +26,17 @@ import {
  * events only; on mobile, the same DOM becomes the mini player and the full-screen player. The heart
  * and the stars of the current track save the favorite and the rating of the profile themselves.
  * While a casting device plays, the bar names it and greys out the crossfade and the equalizer.
+ * The compact mode button opens and closes the mini player (desktop only).
  */
 const props = withDefaults(
     defineProps<{
         state: TransportState
         /** Full-screen player on mobile. */
         expanded?: boolean
+        /** Whether the mini player (compact mode) is open. */
+        compact?: boolean
     }>(),
-    { expanded: false },
+    { expanded: false, compact: false },
 )
 
 const emit = defineEmits<{
@@ -281,13 +284,13 @@ function onMiniPlayer(): void {
             </div>
         </div>
         <div data-part="mode-switch" role="group" :aria-label="t('player.modes')">
-            <!-- The compact mode follows in a later step. -->
             <BaseButton
                 part="btn-compact"
                 variant="icon"
                 icon="compact"
                 :label="t('player.compactMode')"
-                disabled
+                :pressed="compact"
+                :state="compact ? 'on' : 'off'"
                 @click="emit('compact')"
             />
             <BaseButton

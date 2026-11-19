@@ -202,6 +202,20 @@ export const parts = [
     'cast-status',
     'btn-collapse',
 
+    // Mini player (compact mode)
+    'compact-player',
+    'compact-player-panel',
+    'compact-player-media',
+    'compact-player-video',
+    'compact-player-info',
+    'compact-player-title',
+    'compact-player-artist',
+    'compact-player-seek',
+    'compact-player-time',
+    'compact-player-controls',
+    'compact-player-volume',
+    'btn-compact-close',
+
     // Mobile
     'bottom-nav',
     'bottom-nav-item',

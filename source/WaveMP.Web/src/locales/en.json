@@ -127,7 +127,7 @@
     "seek": "Position",
     "position": "{position} of {duration}",
     "modes": "Player modes",
-    "compactMode": "Switch to compact mode",
+    "compactMode": "Mini player",
     "open": "Open player",
     "showNowPlaying": "Show Now Playing",
     "close": "Close player",
@@ -146,6 +146,10 @@
     "sleepTimerRemaining": "Stops in {time}",
     "sleepTimerEndOfTrackShort": "End of song",
     "sleepTimerEndOfQueueShort": "End of queue"
+  },
+  "compactPlayer": {
+    "label": "Mini player",
+    "close": "Close mini player"
   },
   "autoplay": {
     "title": "Autoplay",
@@ -343,6 +347,11 @@
     "theme": "Theme",
     "themeVariant": "Variant",
     "sidebarCollapsed": "Collapsed (desktop)",
+    "compactPlayerSamples": {
+      "inline": "In the window of the app, nothing playing",
+      "window": "Floating window, playing",
+      "wide": "Wide floating window with the video"
+    },
     "sections": {
       "buttons": "Buttons",
       "tabs": "Tabs",
@@ -358,6 +367,7 @@
       "toolbar": "Toolbar",
       "sidebar": "Sidebar",
       "transport": "Transport",
+      "compactPlayer": "Mini player",
       "bottomNav": "Bottom navigation",
       "states": "Other states",
       "parts": "Parts",

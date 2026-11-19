@@ -127,7 +127,7 @@
     "seek": "Position",
     "position": "{position} von {duration}",
     "modes": "Player-Modi",
-    "compactMode": "Zum Kompaktmodus wechseln",
+    "compactMode": "Miniplayer",
     "open": "Player öffnen",
     "showNowPlaying": "Aktuelle Wiedergabe anzeigen",
     "close": "Player schließen",
@@ -146,6 +146,10 @@
     "sleepTimerRemaining": "Stoppt in {time}",
     "sleepTimerEndOfTrackShort": "Titelende",
     "sleepTimerEndOfQueueShort": "Warteschlangenende"
+  },
+  "compactPlayer": {
+    "label": "Miniplayer",
+    "close": "Miniplayer schließen"
   },
   "autoplay": {
     "title": "Autoplay",
@@ -343,6 +347,11 @@
     "theme": "Design",
     "themeVariant": "Variante",
     "sidebarCollapsed": "Eingeklappt (Desktop)",
+    "compactPlayerSamples": {
+      "inline": "Im Fenster der App, keine Wiedergabe",
+      "window": "Schwebendes Fenster, Wiedergabe",
+      "wide": "Breites schwebendes Fenster mit dem Video"
+    },
     "sections": {
       "buttons": "Buttons",
       "tabs": "Tabs",
@@ -358,6 +367,7 @@
       "toolbar": "Toolbar",
       "sidebar": "Sidebar",
       "transport": "Transport-Leiste",
+      "compactPlayer": "Miniplayer",
       "bottomNav": "Untere Navigation",
       "states": "Weitere Zustände",
       "parts": "Parts",

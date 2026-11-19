@@ -260,21 +260,21 @@ The color changes with the song; a theme can let it fade with `transition` on th
 | `now-playing-actions` | `div` (`role="group"`) | `transport` | `btn-favorite` and `rating` of the current song; empty (state `empty`) while nothing plays; on mobile only in the full-screen player |
 | `transport-message` | `p` (`role="status"`) | `transport` | Notice of the player, for example that a song was skipped; empty while there is none. The base shows it above the transport bar, outside the grid |
 | `transport-time` | `span` (`aria-hidden="true"`) | `transport` | Elapsed time and length of the current song as text, for a display in the transport bar (the `seek` slider tells them to assistive technology). Hidden by the base and on mobile; a theme shows it with `display` |
-| `time-elapsed` | `span` | `transport-time` | Elapsed time, for example `1:23` |
-| `time-duration` | `span` | `transport-time` | Length of the song, for example `3:45` |
+| `time-elapsed` | `span` | `transport-time`, `compact-player-time` | Elapsed time, for example `1:23` |
+| `time-duration` | `span` | `transport-time`, `compact-player-time` | Length of the song, for example `3:45` |
 | `transport-controls` | `div` (`role="group"`) | `transport` | Playback controls |
 | `btn-shuffle` | `button` (`aria-pressed`) | `transport-controls` | Shuffle |
 | `btn-repeat` | `button` (`aria-pressed`) | `transport-controls` | Repeat off, all or one |
 | `btn-crossfade` | `button` (`aria-pressed`) | `transport-controls` | Turns the crossfade of the profile on and off (the length stays as set on the settings page); pressed while it is on; disabled while casting. Between `btn-repeat` and `btn-stop`; on mobile in the full-screen player |
 | `btn-autoplay` | `button` (`aria-pressed`) | `transport-controls` | Turns autoplay of the profile on and off: similar songs play when the list has ended and repeat is off; pressed while it is on. Between `btn-crossfade` and `btn-stop`; on mobile in the full-screen player |
 | `btn-stop` | `button` | `transport-controls` | Stop |
-| `btn-prev` | `button` | `transport-controls` | Previous track |
-| `btn-play` | `button` | `transport-controls` | Play and pause |
-| `btn-next` | `button` | `transport-controls` | Next track |
-| `btn-mute` | `button` (`aria-pressed`) | `transport-controls` | Mute |
-| `volume` | `div` | `transport-controls` | Volume with a `slider` |
+| `btn-prev` | `button` | `transport-controls`, `compact-player-controls` | Previous track |
+| `btn-play` | `button` | `transport-controls`, `compact-player-controls` | Play and pause |
+| `btn-next` | `button` | `transport-controls`, `compact-player-controls` | Next track |
+| `btn-mute` | `button` (`aria-pressed`) | `transport-controls`, `compact-player-volume` | Mute |
+| `volume` | `div` | `transport-controls`, `compact-player-volume` | Volume with a `slider` |
 | `mode-switch` | `div` (`role="group"`) | `transport` | Buttons for player modes, the equalizer, the sleep timer and casting |
-| `btn-compact` | `button` | `mode-switch` | Compact mode (disabled in this version) |
+| `btn-compact` | `button` (`aria-pressed`) | `mode-switch` | Opens the mini player (`compact-player`) and closes it again; pressed while it is open. Hidden on mobile |
 | `btn-equalizer` | `button` | `mode-switch` | Opens the equalizer (`data-view="equalizer"`); disabled while casting |
 | `sleep-timer` | `div` | `mode-switch` | Sleep timer: `btn-sleep-timer`, `sleep-timer-remaining` and its menu (`context-menu`) |
 | `btn-sleep-timer` | `button` (`aria-pressed`, `aria-haspopup="menu"`, `aria-expanded`) | `sleep-timer` | Opens the menu of the sleep timer; pressed while a timer runs |
@@ -283,6 +283,18 @@ The color changes with the song; a theme can let it fade with `transition` on th
 | `btn-cast` | `button` | `cast` | Opens the device selection of the browser or the operating system, which also ends casting. Without HTTPS (Chromecast) it carries `aria-disabled="true"`, `aria-expanded` and `aria-describedby` and shows or hides `cast-hint` instead |
 | `cast-hint` | `p` (`role="note"`) | `cast` | Why Chromecast is unavailable (it needs HTTPS); only without HTTPS. The base shows it above the button while it is open |
 | `btn-collapse` | `button` | `transport` | Closes the full-screen player (mobile) |
+| `compact-player` | `section` (`aria-label`) | `body` of the floating window, or beside `app` | The mini player (compact mode), which controls the running playback; the music always plays in the window of the app. Where the browser has the Document Picture-in-Picture API (Chrome, Edge), it fills a floating window that stays above the other windows (`data-kind="window"`); this window gets the styles of the app and the attributes of the root element (theme, variant, language, cover color), so all rules of the theme apply there, and it is a viewport of its own. Other browsers show it in the window of the app (`data-kind="inline"`) while `app` is `hidden`; Escape and `btn-compact-close` return to the app. The base makes it a size container (`wavemp-compact-player`) with the colors `--wmp-compact-player-color` and `--wmp-compact-player-background`; it fills the floating window, and in the window of the app it is a card of `--wmp-compact-player-width` by `--wmp-compact-player-height` in the middle of the screen |
+| `compact-player-panel` | `div` | `compact-player` | Grid of the mini player with the areas `media`, `info`, `seek`, `time`, `controls`, `volume` and `close`; the base puts `media` above the other areas and, in a container wider than 1.25 times its height or lower than `16rem`, beside them (at most 40 % of the width). Below a height of `12rem` the base hides `compact-player-time` and the `volume` slider |
+| `compact-player-media` | `div` | `compact-player-panel` | The `cover` of the current song and, while the mini player shows its video, `compact-player-video` above it. The base makes it a size container; the `cover` takes its shorter side |
+| `compact-player-video` | `video` (muted) | `compact-player-media` | The music video of the current song, following the music, while the song has one, the profile chose the video view of Now Playing and no casting device plays; the video moves here from the stage of Now Playing while the mini player is open. The base keeps it invisible until it is ready (state `video` of `compact-player-media`), with the background `--wmp-stage-view-background` |
+| `compact-player-info` | `div` | `compact-player-panel` | `compact-player-title` and `compact-player-artist` |
+| `compact-player-title` | `span` | `compact-player-info` | Title of the current song, or that nothing plays |
+| `compact-player-artist` | `span` | `compact-player-info` | Artist of the current song; empty while nothing plays |
+| `compact-player-seek` | `div` | `compact-player-panel` | Progress bar with a `slider` |
+| `compact-player-time` | `span` (`aria-hidden="true"`) | `compact-player-panel` | `time-elapsed` and `time-duration` below the progress bar |
+| `compact-player-controls` | `div` (`role="group"`) | `compact-player-panel` | `btn-prev`, `btn-play` and `btn-next`, the same parts as in `transport-controls`: rules of the theme for these parts without `transport` in the selector apply here as well |
+| `compact-player-volume` | `div` (`role="group"`) | `compact-player-panel` | `btn-mute` and `volume` |
+| `btn-compact-close` | `button` | `compact-player-panel` | Closes the mini player and returns to the app (icon slot `expand-player`) |
 | `equalizer` | `section` | `view` | The equalizer of the profile: `equalizer-controls`, an `alert` if the browser cannot apply it, and `equalizer-bands` |
 | `equalizer-controls` | `div` (`role="group"`) | `equalizer` | `button` `power` (`aria-pressed`), the `field` `equalizer-preset` with a `select`, `button` `reset` |
 | `equalizer-bands` | `div` (`role="group"`) | `equalizer` | The preamp, `equalizer-scale` and one `equalizer-band` per frequency, side by side; the mobile base scrolls them horizontally |
@@ -462,6 +474,12 @@ The internal component overview (`/dev/components`) uses its own parts starting 
 | `transport` | `idle`, `playing` or `paused`; additionally `loading` while a song loads or waits for data, and `expanded` while the full-screen player is open (mobile) |
 | `transport-message` | `empty` without a notice, otherwise its kind: `unsupported` (the browser cannot play the song and the server cannot transcode it), `unavailable` (it could not be loaded) or `failed` (it failed to play) |
 | `transport-time` | `empty` without a current song |
+| `compact-player` | `idle`, `playing` or `paused`; additionally `loading` while a song loads or waits for data, and `video` while it shows the video of the song |
+| `compact-player-media` | `video` while the video of the song is shown, otherwise `cover` |
+| `compact-player-info` | `empty` while nothing plays |
+| `compact-player-seek` | `disabled` while nothing plays |
+| `compact-player-time` | `empty` without a current song |
+| `btn-compact` | `on` while the mini player is open, otherwise `off` |
 | `theme-preview` | `missing` while the preview picture of the theme cannot be loaded |
 | `btn-play` | `idle`, `playing` or `paused` |
 | `btn-shuffle` | `on` or `off` |
@@ -618,6 +636,7 @@ The base links states to graphics: buttons use the variables `--wmp-image-<varia
 | `data-view` | `view` | `library`, `library-search`, `library-album`, `library-artist`, `library-genre`, `library-year`, `library-track`, `home`, `now-playing`, `playlists`, `playlist`, `recently-played`, `settings`, `equalizer`, `settings-pin`, `settings-scrobbling-lastfm`, `admin-library`, `admin-jobs`, `admin-cache`, `admin-transcoding`, `admin-backups`, `admin-themes`, `admin-users`, `admin-files`, `admin-track-files`, `admin-review`, `admin-review-track`, `not-found` |
 | `data-kind` | `tile` | `album`, `artist`, `track`, `genre`, `year`, `playlist`, `recently-played` |
 | `data-kind` | `stage-view` | `cover`, `video`, `visualization`, `lyrics` |
+| `data-kind` | `compact-player` | `window` (the floating window) or `inline` (in the window of the app) |
 | `data-kind` | `context-menu` | `submenu` for the submenu of an entry |
 | `data-words` | `lyrics` | `true` for synchronized lyrics with word timestamps |
 | `data-index` | `lyrics-line` | Index of the line, starting at 0 |
@@ -706,6 +725,8 @@ Text color and background of each area.
 | `--wmp-content-background` | `var(--wmp-color-surface)` |
 | `--wmp-transport-color` | `var(--wmp-color-text)` |
 | `--wmp-transport-background` | `var(--wmp-color-surface-raised)` |
+| `--wmp-compact-player-color` | `var(--wmp-transport-color)` |
+| `--wmp-compact-player-background` | `var(--wmp-transport-background)` |
 | `--wmp-bottom-nav-color` | `var(--wmp-color-text)` |
 | `--wmp-bottom-nav-background` | `var(--wmp-color-surface-raised)` |
 | `--wmp-dialog-color` | `var(--wmp-color-text)` |
@@ -810,6 +831,8 @@ The graphic of each icon slot is a variable as well, see [Icons](#icons).
 | `--wmp-seek-height` | `0.25rem` | Height of the progress line (mini player) |
 | `--wmp-bottom-nav-height` | `3.5rem` | Height of `bottom-nav-item` |
 | `--wmp-mini-player-height` | `3.5rem` | Minimum height of the mini player (mobile) |
+| `--wmp-compact-player-width` | `20rem` | Width of `compact-player` in the window of the app (`data-kind="inline"`) |
+| `--wmp-compact-player-height` | `28rem` | Height of `compact-player` in the window of the app (`data-kind="inline"`) |
 | `--wmp-button-height` | `2rem` | Minimum height of buttons |
 | `--wmp-field-height` | `2rem` | Minimum height of inputs |
 | `--wmp-round-button-size` | `2rem` | Size of round buttons |
@@ -969,6 +992,7 @@ The defaults are icons of [Phosphor Icons](https://phosphoricons.com) (MIT) unde
 | `volume` | `--wmp-icon-volume` | `/icons/phosphor/fill/speaker-high-fill.svg` | Transport |
 | `muted` | `--wmp-icon-muted` | `/icons/phosphor/fill/speaker-x-fill.svg` | Transport |
 | `compact` | `--wmp-icon-compact` | `/icons/phosphor/fill/corners-in-fill.svg` | Transport |
+| `expand-player` | `--wmp-icon-expand-player` | `/icons/phosphor/fill/corners-out-fill.svg` | Transport |
 | `equalizer` | `--wmp-icon-equalizer` | `/icons/phosphor/fill/faders-fill.svg` | Transport |
 | `sleep-timer` | `--wmp-icon-sleep-timer` | `/icons/phosphor/fill/moon-fill.svg` | Transport |
 | `cast` | `--wmp-icon-cast` | `/icons/phosphor/fill/screencast-fill.svg` | Transport |
@@ -1266,6 +1290,7 @@ The themes shipped with WaveMP name the version they are written for in the comm
 ### Changelog
 
 - **Version 5:** visualizations. Changed: the `visualization` is no longer a placeholder: the state `placeholder` is gone, its `icon` and `label` moved into the new `visualization-message`, and the base lays out the `visualization` as a positioned box (no longer a grid) with the background `--wmp-stage-view-background`; themes that styled `visualization > icon` or `visualization > label` have to style `visualization-message > icon` and `visualization-message > label`; `btn-fullscreen` also lies in `visualization-controls`, so theme rules for `btn-fullscreen` that should only apply to the video need `video-stage > btn-fullscreen`. Added: the states `idle`, `loading`, `waiting`, `running`, `paused`, `unsupported`, `failed` and `fullscreen` of `visualization` and its attribute `data-module`; the parts `visualization-canvas`, `visualization-message`, `visualization-controls`, `btn-preset-previous`, `btn-preset-next` and `btn-auto-change` (states `on` and `off`, `aria-pressed`); the values `visualization-preset` and `visualization-auto-change` of `data-field`; the icon slots `preset-previous`, `preset-next` and `auto-change`.
+    - Additions without a version change: the mini player (compact mode). `btn-compact` is no longer disabled: it opens and closes the mini player (`aria-pressed`, states `on` and `off`). The parts `compact-player` (attribute `data-kind` with `window` or `inline`, states `idle`, `playing`, `paused`, `loading` and `video`), `compact-player-panel`, `compact-player-media` (states `cover` and `video`), `compact-player-video`, `compact-player-info` (state `empty`), `compact-player-title`, `compact-player-artist`, `compact-player-seek` (state `disabled`), `compact-player-time` (state `empty`, with `time-elapsed` and `time-duration`), `compact-player-controls` (with `btn-prev`, `btn-play` and `btn-next`), `compact-player-volume` (with `btn-mute` and `volume`) and `btn-compact-close`; the variables `--wmp-compact-player-color`, `--wmp-compact-player-background`, `--wmp-compact-player-width` and `--wmp-compact-player-height`; the icon slot `expand-player`.
     - Additions without a version change: autoplay. The toggle button `btn-autoplay` (states `on` and `off`, `aria-pressed`) between `btn-crossfade` and `btn-stop` with the icon slot `autoplay`; in the mobile full-screen player the second row holds `btn-mute`, the volume and `btn-stop`, and a third row `btn-crossfade` and `btn-autoplay`; the `section` `autoplay` after the `queue-list` in `queue` (states `loading`, `ready` and `empty`, `aria-busy`) with a `section-title` (`h3`), the `button` `turn-off-autoplay`, `autoplay-hint`, `autoplay-list`, `autoplay-item` (state `video-only`), `autoplay-item-info`, `autoplay-item-title`, `autoplay-item-artist`, `autoplay-item-duration`, `autoplay-item-actions` (`button` `remove` and `btn-item-menu`) and `autoplay-status`; the state `autoplay` of `queue-item`; the `data-field`s `autoplay` and `autoplay-video-only` on the settings page.
     - Additions without a version change: context menus. One context menu for songs (in lists, on tiles of the home page and in search), albums, artists, playlists, queue entries and Now Playing (right click, long press, the menu key and Shift+F10); entries that do not apply stay in the menu, disabled; submenus (a nested `context-menu` with `data-kind="submenu"`, `menu-item` with `aria-haspopup`, `aria-expanded` and `aria-controls`, the part `submenu-indicator`); the button `btn-item-menu` in `tile-item`, in the `list-cell` `favorite`, in `queue-item-actions` and in `stage-actions`, hidden by the base where a pointer can hover; `tile-item` is a containing block (`position: relative`) and the `list-cell` `favorite` a flex row; several selected `list-row`s in lists of songs (`aria-multiselectable` on `list`); new values of `data-item` in the menus; the icon slots `item-menu`, `watch-video`, `show-files`, `rate` and `submenu`. The defaults of `--wmp-list-columns`, `--wmp-list-columns-playlist` and `--wmp-list-columns-recently-played` end in `minmax(2rem, auto)`, so the favorite column makes room for `btn-item-menu` on touch screens; themes that set these variables should do the same.
     - Additions without a version change: several media folders. On the library page of the administration the `section` of the media folders (`data-item="media-sources"`) with the `button` `add-source` in `view-actions`, `source-list`, `source-item` and its states, `source-info`, `source-name`, `source-path`, `source-meta` with the `badge` tokens `active`, `inactive`, `unavailable`, `watched` and `media-path`, and `source-actions` with the `button`s `toggle`, `edit` and `delete`; `issue-source` in `issue-item`; in the library `source-filter` after `scope-switch`.

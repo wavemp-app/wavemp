@@ -102,6 +102,7 @@ export const iconSlots = {
     volume: { file: fill('speaker-high'), area: 'transport' },
     muted: { file: fill('speaker-x'), area: 'transport' },
     compact: { file: fill('corners-in'), area: 'transport' },
+    'expand-player': { file: fill('corners-out'), area: 'transport' },
     equalizer: { file: fill('faders'), area: 'transport' },
     'sleep-timer': { file: fill('moon'), area: 'transport' },
     cast: { file: fill('screencast'), area: 'transport' },

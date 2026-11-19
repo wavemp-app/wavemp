@@ -74,6 +74,7 @@ import TrackGroupList from '@/components/library/TrackGroupList.vue'
 import EqualizerPanel from '@/components/player/EqualizerPanel.vue'
 import NowPlayingStage from '@/components/player/NowPlayingStage.vue'
 import AutoplayList from '@/components/player/AutoplayList.vue'
+import CompactPlayer from '@/components/player/CompactPlayer.vue'
 import PlayQueue from '@/components/player/PlayQueue.vue'
 import PlaylistTrackList, {
     type PlaylistTrackRow,
@@ -1561,6 +1562,31 @@ const sampleTranscodeJobs = computed<TranscodeJob[]>(() => {
             <div v-for="transport in transports" :key="transport.id" data-part="dev-sample">
                 <p data-part="dev-sample-title">{{ transport.label }}</p>
                 <AppTransport :state="transport.state" :expanded="transport.expanded" />
+            </div>
+        </section>
+
+        <section data-part="dev-section">
+            <h2 data-part="dev-section-title">{{ t('dev.sections.compactPlayer') }}</h2>
+            <div data-part="dev-samples">
+                <div data-part="dev-sample">
+                    <p data-part="dev-sample-title">{{ t('dev.compactPlayerSamples.inline') }}</p>
+                    <CompactPlayer kind="inline" :state="idle" />
+                </div>
+                <div data-part="dev-sample">
+                    <p data-part="dev-sample-title">{{ t('dev.compactPlayerSamples.window') }}</p>
+                    <CompactPlayer
+                        kind="window"
+                        :state="{ ...idle, ...track, playback: 'playing' }"
+                    />
+                </div>
+                <div data-part="dev-sample" data-kind="wide">
+                    <p data-part="dev-sample-title">{{ t('dev.compactPlayerSamples.wide') }}</p>
+                    <CompactPlayer
+                        kind="window"
+                        :state="{ ...idle, ...track, playback: 'paused' }"
+                        video
+                    />
+                </div>
             </div>
         </section>
 

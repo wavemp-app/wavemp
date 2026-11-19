@@ -95,6 +95,19 @@
         max-inline-size: 18rem;
     }
 
+    /* The mini player fills a window or sits in the middle of the screen; here it is a sample. */
+    [data-part='dev-sample'] > [data-part='compact-player'] {
+        position: relative;
+        inline-size: 20rem;
+        block-size: 28rem;
+        margin: 0;
+    }
+
+    [data-part='dev-sample'][data-kind='wide'] > [data-part='compact-player'] {
+        inline-size: 30rem;
+        block-size: 12rem;
+    }
+
     [data-part='dev-sample'] > [data-part='sidebar'][data-state~='collapsed'] {
         max-inline-size: var(--wmp-sidebar-collapsed-width);
     }

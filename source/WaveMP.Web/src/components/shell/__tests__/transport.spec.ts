@@ -23,9 +23,9 @@ const idle: TransportState = {
     muted: false,
 }
 
-function mountTransport(state: Partial<TransportState> = {}, expanded = false) {
+function mountTransport(state: Partial<TransportState> = {}, expanded = false, compact = false) {
     return mount(AppTransport, {
-        props: { state: { ...idle, ...state }, expanded },
+        props: { state: { ...idle, ...state }, expanded, compact },
         global: { plugins: [createWaveMpI18n('en'), createPinia()] },
     })
 }
@@ -78,7 +78,7 @@ describe('AppTransport', () => {
         const wrapper = mountTransport()
 
         expect(wrapper.get('[data-part="transport"]').attributes('data-state')).toBe('idle')
-        for (const part of ['btn-play', 'btn-stop', 'btn-prev', 'btn-next', 'btn-compact']) {
+        for (const part of ['btn-play', 'btn-stop', 'btn-prev', 'btn-next']) {
             expect(wrapper.get(`[data-part="${part}"]`).attributes('disabled')).toBeDefined()
         }
         expect(wrapper.get('[data-part="seek"]').attributes('data-state')).toBe('disabled')
@@ -88,6 +88,22 @@ describe('AppTransport', () => {
         expect(wrapper.get('[data-part="transport-message"]').attributes('data-state')).toBe(
             'empty',
         )
+    })
+
+    it('opens the mini player with the compact mode button, also without a song', async () => {
+        const closed = mountTransport()
+        const button = closed.get('[data-part="btn-compact"]')
+
+        expect(button.attributes('disabled')).toBeUndefined()
+        expect(button.attributes('aria-pressed')).toBe('false')
+        expect(button.attributes('data-state')).toBe('off')
+        expect(button.get('[data-part="label"]').text()).toBe('Mini player')
+        await button.trigger('click')
+        expect(closed.emitted('compact')).toHaveLength(1)
+
+        const open = mountTransport({}, false, true).get('[data-part="btn-compact"]')
+        expect(open.attributes('aria-pressed')).toBe('true')
+        expect(open.attributes('data-state')).toBe('on')
     })
 
     it('enables play, previous and next for a stopped track', () => {

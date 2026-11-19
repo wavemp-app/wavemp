@@ -10,13 +10,16 @@ import AppTransport from './AppTransport.vue'
 import type { SleepTimerChoice } from './transport'
 import { contentAreaId } from '@/router/scroll'
 import BaseAlert from '@/components/base/BaseAlert.vue'
+import CompactPlayer from '@/components/player/CompactPlayer.vue'
 import ContextMenuHost from '@/components/menus/ContextMenuHost.vue'
 import { pageTitleKey } from '@/navigation/breadcrumb'
 import { useCoverColor } from '@/composables/useCoverColor'
 import { useMediaQuery } from '@/composables/useMediaQuery'
+import { miniPlayerShowsVideo } from '@/player/miniPlayer'
 import { useCollectionStore } from '@/stores/collection'
 import { useContextMenuStore } from '@/stores/contextMenu'
 import { useHealthStore } from '@/stores/health'
+import { useMiniPlayerStore } from '@/stores/miniPlayer'
 import { usePageTitleStore } from '@/stores/pageTitle'
 import { usePlayerStore } from '@/stores/player'
 import { useSessionStore } from '@/stores/session'
@@ -25,6 +28,10 @@ import { desktopMediaQuery } from '@/themes/breakpoints'
 /**
  * App shell: the fixed areas of the theme API around the content of the current page. The DOM is
  * the same on every device; the mobile base and the themes arrange it with CSS only.
+ *
+ * The mini player (compact mode) controls the same player: in the floating window of the browser,
+ * rendered there through a teleport, or, where the browser has none, in place of the app, which
+ * stays hidden but keeps its pages until the mini player closes.
  */
 const { t } = useI18n()
 const route = useRoute()
@@ -36,6 +43,7 @@ const contextMenu = useContextMenuStore()
 
 const player = usePlayerStore()
 const session = useSessionStore()
+const miniPlayer = useMiniPlayerStore()
 const isDesktop = useMediaQuery(desktopMediaQuery)
 
 useCoverColor()
@@ -44,6 +52,18 @@ const sidebarOpen = ref(false)
 /** The desktop sidebar shows only its icons; kept per profile. The mobile drawer is unchanged. */
 const sidebarCollapsed = computed(() => isDesktop.value && session.sidebarCollapsed)
 const playerExpanded = ref(false)
+/** The mini player shows in the window of the app; the app is hidden meanwhile. */
+const compactInline = computed(() => miniPlayer.mode === 'inline')
+/** The mini player shows the video of the song, like the stage would. */
+const compactVideo = computed(() =>
+    miniPlayerShowsVideo({
+        hasVideo: player.hasVideo,
+        videoChosen: player.viewMode === 'Video',
+        casting: player.casting,
+    }),
+)
+const compactVideoReady = computed(() => player.videoState === 'ready')
+
 // Detail pages show their name (album, artist, ...), the other pages the name of the page.
 const title = computed(() => pageTitle.title ?? t(pageTitleKey(route)))
 
@@ -98,8 +118,38 @@ function collapsePlayer(): void {
     }
 }
 
+/** Opens the mini player, or closes it while it is open (the compact mode button). */
+async function toggleCompact(): Promise<void> {
+    if (miniPlayer.isOpen) {
+        closeCompact()
+        return
+    }
+
+    await miniPlayer.open()
+    if (compactInline.value) {
+        await nextTick()
+        document
+            .querySelector<HTMLElement>('[data-part="compact-player"] [data-part="btn-play"]')
+            ?.focus()
+    }
+}
+
+/** Closes the mini player and returns to the app. */
+function closeCompact(): void {
+    const floating = miniPlayer.mode === 'window'
+    miniPlayer.close()
+    if (floating) {
+        window.focus()
+    }
+    void focus('[data-part="btn-compact"]')
+}
+
 function onKeydown(event: KeyboardEvent): void {
     if (event.key === 'Escape' && !event.defaultPrevented) {
+        if (compactInline.value) {
+            closeCompact()
+            return
+        }
         closeSidebar()
         collapsePlayer()
     }
@@ -129,6 +179,8 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
+    // Without the shell (e.g. on the profile selection) the mini player has nothing to show.
+    miniPlayer.close()
     document.removeEventListener('keydown', onKeydown)
     window.removeEventListener('online', checkHealth)
     window.removeEventListener('offline', checkHealth)
@@ -136,7 +188,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-    <div data-part="app">
+    <div data-part="app" :hidden="compactInline || undefined">
         <AppHeader :sidebar-open="sidebarOpen" @toggle-sidebar="toggleSidebar" />
         <AppToolbar />
         <AppSidebar
@@ -164,6 +216,7 @@ onUnmounted(() => {
         <AppTransport
             :state="player.state"
             :expanded="playerExpanded"
+            :compact="miniPlayer.isOpen"
             @play="player.play"
             @pause="player.pause"
             @stop="player.stop"
@@ -180,10 +233,46 @@ onUnmounted(() => {
             @open-equalizer="openEqualizer"
             @sleep-timer="chooseSleepTimer"
             @cast="player.requestCast"
+            @compact="toggleCompact"
             @expand="expandPlayer"
             @collapse="collapsePlayer"
         />
         <AppBottomNav />
         <ContextMenuHost />
     </div>
+    <CompactPlayer
+        v-if="compactInline"
+        kind="inline"
+        :state="player.state"
+        :video="compactVideo"
+        :video-ready="compactVideoReady"
+        @play="player.play"
+        @pause="player.pause"
+        @previous="player.previous"
+        @next="player.next"
+        @seek="player.seek"
+        @toggle-mute="player.toggleMute"
+        @change-volume="player.setVolume"
+        @close="closeCompact"
+        @attach-video="player.attachVideo"
+        @detach-video="player.detachVideo"
+    />
+    <Teleport v-if="miniPlayer.target" :to="miniPlayer.target">
+        <CompactPlayer
+            kind="window"
+            :state="player.state"
+            :video="compactVideo"
+            :video-ready="compactVideoReady"
+            @play="player.play"
+            @pause="player.pause"
+            @previous="player.previous"
+            @next="player.next"
+            @seek="player.seek"
+            @toggle-mute="player.toggleMute"
+            @change-volume="player.setVolume"
+            @close="closeCompact"
+            @attach-video="player.attachVideo"
+            @detach-video="player.detachVideo"
+        />
+    </Teleport>
 </template>

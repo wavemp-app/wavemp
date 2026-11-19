@@ -2143,6 +2143,193 @@
         white-space: nowrap;
     }
 
+    /* --- Mini player (compact mode) ------------------------------------------------------ */
+
+    /*
+     * The mini player fills the floating window (kind "window"); in the window of the app (kind
+     * "inline") it is a card in the middle of the screen while the app is hidden. It is a size
+     * container, so its panel can rearrange itself when the window is resized: the cover above
+     * the controls in a tall window, beside them in a wide one.
+     */
+    [data-part='compact-player'] {
+        container: wavemp-compact-player / size;
+        position: fixed;
+        inset: 0;
+        display: grid;
+        overflow: hidden;
+        color: var(--wmp-compact-player-color);
+        background: var(--wmp-compact-player-background);
+        accent-color: var(--wmp-color-accent);
+    }
+
+    [data-part='compact-player'][data-kind='inline'] {
+        inline-size: min(var(--wmp-compact-player-width), 100vw - 2 * var(--wmp-space-l));
+        block-size: min(var(--wmp-compact-player-height), 100dvh - 2 * var(--wmp-space-l));
+        margin: auto;
+        border: 1px solid var(--wmp-color-border);
+        border-radius: var(--wmp-radius-l);
+        box-shadow: 0 1rem 3rem var(--wmp-backdrop-color);
+    }
+
+    [data-part='compact-player-panel'] {
+        display: grid;
+        grid-template:
+            'media media media' minmax(0, 1fr)
+            'info info info' auto
+            'seek seek seek' auto
+            'time time time' auto
+            'controls controls controls' auto
+            'volume volume close' auto
+            / minmax(0, 1fr) auto auto;
+        align-items: center;
+        min-block-size: 0;
+        padding: var(--wmp-space-l);
+        row-gap: var(--wmp-space-xs);
+    }
+
+    /* A size container of its own, so the cover can measure the free space. */
+    [data-part='compact-player-media'] {
+        container-type: size;
+        grid-area: media;
+        position: relative;
+        display: grid;
+        place-items: center;
+        align-self: stretch;
+        min-block-size: 0;
+        margin-block-end: var(--wmp-space-s);
+    }
+
+    /* The cover is as large as the free space allows, always square. */
+    [data-part='compact-player-media'] > [data-part='cover'] {
+        inline-size: min(100cqi, 100cqb);
+        aspect-ratio: 1;
+        border-radius: var(--wmp-radius-m);
+    }
+
+    /* The video waits invisibly until it is ready at the position of the music, then covers it. */
+    [data-part='compact-player-video'] {
+        position: absolute;
+        inset: 0;
+        inline-size: 100%;
+        block-size: 100%;
+        object-fit: contain;
+        background: var(--wmp-stage-view-background);
+        border-radius: var(--wmp-radius-m);
+        opacity: 0;
+    }
+
+    [data-part='compact-player-media'][data-state~='video'] > [data-part='compact-player-video'] {
+        opacity: 1;
+    }
+
+    [data-part='compact-player-info'] {
+        grid-area: info;
+        display: grid;
+        min-inline-size: 0;
+        text-align: center;
+    }
+
+    [data-part='compact-player-title'],
+    [data-part='compact-player-artist'] {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    [data-part='compact-player-title'] {
+        font-weight: var(--wmp-font-weight-bold);
+    }
+
+    /* Keeps its line while nothing plays, so the controls do not jump. */
+    [data-part='compact-player-artist'] {
+        min-block-size: calc(var(--wmp-line-height) * 1em);
+        font-size: var(--wmp-font-size-s);
+    }
+
+    [data-part='compact-player-seek'] {
+        grid-area: seek;
+        min-inline-size: 0;
+    }
+
+    /* Artist and time keep the text color of the mini player, which its background is made for. */
+    [data-part='compact-player-time'] {
+        grid-area: time;
+        display: flex;
+        justify-content: space-between;
+        font-size: var(--wmp-font-size-xs);
+        font-variant-numeric: tabular-nums;
+    }
+
+    [data-part='compact-player-time'][data-state~='empty'] {
+        visibility: hidden;
+    }
+
+    [data-part='compact-player-controls'] {
+        grid-area: controls;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: var(--wmp-space-m);
+        background: var(--wmp-image-transport-controls);
+    }
+
+    [data-part='compact-player-volume'] {
+        grid-area: volume;
+        display: flex;
+        align-items: center;
+        gap: var(--wmp-space-xs);
+        min-inline-size: 0;
+    }
+
+    [data-part='compact-player-volume'] > [data-part='volume'] {
+        flex: 0 1 8rem;
+        inline-size: auto;
+        min-inline-size: 2rem;
+    }
+
+    [data-part='compact-player-panel'] > [data-part='btn-compact-close'] {
+        grid-area: close;
+        justify-self: end;
+    }
+
+    /*
+     * A wide or low window: the cover on the left, as high as the window (at most 40 % of its
+     * width), the controls beside it.
+     */
+    @container wavemp-compact-player (aspect-ratio > 1.25) or (height < 16rem) {
+        [data-part='compact-player-panel'] {
+            grid-template:
+                'media info info' minmax(0, 1fr)
+                'media seek seek' auto
+                'media time time' auto
+                'media controls controls' auto
+                'media volume close' auto
+                / min(100cqb - 2 * var(--wmp-space-l), 40cqi) minmax(0, 1fr) auto;
+            column-gap: var(--wmp-space-l);
+        }
+
+        [data-part='compact-player-media'] {
+            margin-block-end: 0;
+        }
+
+        [data-part='compact-player-info'] {
+            align-self: end;
+            text-align: start;
+        }
+
+        [data-part='compact-player-controls'] {
+            justify-content: start;
+        }
+    }
+
+    /* A low window: no time display and no volume slider, the cover stays. */
+    @container wavemp-compact-player (height < 12rem) {
+        [data-part='compact-player-time'],
+        [data-part='compact-player-volume'] > [data-part='volume'] {
+            display: none;
+        }
+    }
+
     /* --- Equalizer ----------------------------------------------------------------------- */
 
     [data-part='equalizer'] {

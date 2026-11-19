@@ -307,6 +307,10 @@
         --_icon: var(--wmp-icon-compact);
     }
 
+    [data-icon='expand-player'] {
+        --_icon: var(--wmp-icon-expand-player);
+    }
+
     [data-icon='equalizer'] {
         --_icon: var(--wmp-icon-equalizer);
     }

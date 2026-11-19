@@ -39,6 +39,8 @@
         --wmp-content-background: var(--wmp-color-surface);
         --wmp-transport-color: var(--wmp-color-text);
         --wmp-transport-background: var(--wmp-color-surface-raised);
+        --wmp-compact-player-color: var(--wmp-transport-color);
+        --wmp-compact-player-background: var(--wmp-transport-background);
         --wmp-bottom-nav-color: var(--wmp-color-text);
         --wmp-bottom-nav-background: var(--wmp-color-surface-raised);
         --wmp-dialog-color: var(--wmp-color-text);
@@ -167,6 +169,7 @@
         --wmp-icon-volume: url('/icons/phosphor/fill/speaker-high-fill.svg');
         --wmp-icon-muted: url('/icons/phosphor/fill/speaker-x-fill.svg');
         --wmp-icon-compact: url('/icons/phosphor/fill/corners-in-fill.svg');
+        --wmp-icon-expand-player: url('/icons/phosphor/fill/corners-out-fill.svg');
         --wmp-icon-equalizer: url('/icons/phosphor/fill/faders-fill.svg');
         --wmp-icon-sleep-timer: url('/icons/phosphor/fill/moon-fill.svg');
         --wmp-icon-cast: url('/icons/phosphor/fill/screencast-fill.svg');
@@ -258,6 +261,8 @@
         --wmp-seek-height: 0.25rem;
         --wmp-bottom-nav-height: 3.5rem;
         --wmp-mini-player-height: 3.5rem;
+        --wmp-compact-player-width: 20rem;
+        --wmp-compact-player-height: 28rem;
         --wmp-button-height: 2rem;
         --wmp-field-height: 2rem;
         --wmp-round-button-size: 2rem;
