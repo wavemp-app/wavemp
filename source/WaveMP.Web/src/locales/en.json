@@ -1566,6 +1566,78 @@
       "saveFailed": "The changes could not be saved."
     }
   },
+  "onlineMetadata": {
+    "search": "Search online",
+    "titleTrack": "Song info from MusicBrainz",
+    "titleAlbum": "Album info from MusicBrainz",
+    "searching": "Searching MusicBrainz",
+    "matches": "Matches",
+    "agreement": "Agreement",
+    "agreementValue": "{value} % agreement",
+    "withoutAlbum": "Without album",
+    "trackCount": "Songs: {count}",
+    "compare": "Changes",
+    "field": "Field",
+    "current": "Now",
+    "suggested": "Suggested",
+    "empty": "empty",
+    "same": "Same as now",
+    "unknown": "Not known",
+    "cover": "Cover",
+    "useCover": "Use this cover",
+    "coverLoading": "Loading the cover",
+    "coverMissing": "No cover in the Cover Art Archive",
+    "coverUnavailable": "The cover could not be loaded",
+    "noMatches": "MusicBrainz knows no match. Correct the title and artist with \"Edit metadata\" and search again.",
+    "disabled": "The online search is off. Switch it on in the library settings.",
+    "toSettings": "Open the library settings",
+    "unavailable": "MusicBrainz cannot be reached. Check the internet connection of the server and try again.",
+    "searchFailed": "The search failed.",
+    "notFoundTrack": "The song no longer exists.",
+    "notFoundAlbum": "The album no longer exists.",
+    "searchAgain": "Search again",
+    "apply": "Apply",
+    "applying": "Applying",
+    "nothingChosen": "Choose the fields or the cover you want to apply.",
+    "coverOnly": "The cover can still be applied.",
+    "albumPartial": "The tags are written into {editable} of {count} songs; the others cannot be written.",
+    "albumNone": "No song of this album can be written; only the cover can be applied.",
+    "albumNote": "The album fields are written into every song of the album.",
+    "source": "Tags come from MusicBrainz (CC0). Covers from the Cover Art Archive belong to their rights holders and are only for your own library.",
+    "results": {
+      "track": "The tags were written.",
+      "album": "Songs with the new tags: {count}",
+      "skipped": "Songs that could not be written: {count}",
+      "coverMediaFolder": "The cover was saved in the music folder.",
+      "coverDataFolder": "The music folder cannot be written, so WaveMP keeps the cover in its data folder.",
+      "coverNotSaved": "The cover could not be saved."
+    },
+    "errors": {
+      "coverUnavailable": "The Cover Art Archive cannot be reached. Nothing was changed; try again later.",
+      "coverNotFound": "This release has no cover in the Cover Art Archive. Nothing was changed.",
+      "notWritable": "The audio file cannot be written. Nothing was changed.",
+      "noAudio": "This song has no audio file. Nothing was changed.",
+      "applyFailed": "The changes could not be applied."
+    }
+  },
+  "onlineMetadataSettings": {
+    "title": "Online search for album info",
+    "enabled": "Search album info online",
+    "enabledHint": "Admins can fetch missing tags from MusicBrainz and covers from the Cover Art Archive for songs and albums. While this is off, WaveMP sends no requests to either service.",
+    "musicBrainzUrl": "MusicBrainz address",
+    "musicBrainzUrlHint": "An own mirror works as well.",
+    "coverArtArchiveUrl": "Cover Art Archive address",
+    "interval": "Pause between requests to MusicBrainz (ms)",
+    "intervalHint": "musicbrainz.org always gets at least one second; an own mirror can use less.",
+    "save": "Save",
+    "saved": "The settings of the online search were saved.",
+    "saveError": "The settings could not be saved.",
+    "loadError": "The settings of the online search could not be loaded.",
+    "errors": {
+      "url": "Enter an address that starts with http:// or https://.",
+      "interval": "Enter a whole number from {min} to {max}."
+    }
+  },
   "files": {
     "label": "Files of the song",
     "kinds": {

@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n'
 import AdminNav from '@/components/admin/AdminNav.vue'
 import LibrarySettingsForm from '@/components/admin/LibrarySettingsForm.vue'
 import MediaSourcesPanel from '@/components/admin/MediaSourcesPanel.vue'
+import OnlineMetadataSettingsForm from '@/components/admin/OnlineMetadataSettingsForm.vue'
 import ScanHistory from '@/components/admin/ScanHistory.vue'
 import ScanPanel from '@/components/admin/ScanPanel.vue'
 import ScanSummary from '@/components/admin/ScanSummary.vue'
@@ -25,6 +26,7 @@ const sourcesTitleId = useId()
 const scanTitleId = useId()
 const historyTitleId = useId()
 const settingsTitleId = useId()
+const onlineTitleId = useId()
 
 const polling = usePolling(refresh, 1000)
 
@@ -132,6 +134,12 @@ onMounted(async () => {
                 {{ t('adminLibrary.settingsTitle') }}
             </h2>
             <LibrarySettingsForm />
+        </section>
+        <section data-part="section" data-item="online-metadata" :aria-labelledby="onlineTitleId">
+            <h2 :id="onlineTitleId" data-part="section-title">
+                {{ t('onlineMetadataSettings.title') }}
+            </h2>
+            <OnlineMetadataSettingsForm />
         </section>
     </div>
 </template>

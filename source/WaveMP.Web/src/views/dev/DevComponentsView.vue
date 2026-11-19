@@ -69,6 +69,9 @@ import DetailHeader from '@/components/library/DetailHeader.vue'
 import LibraryEmpty from '@/components/library/LibraryEmpty.vue'
 import LoadMore from '@/components/library/LoadMore.vue'
 import MetaItem from '@/components/library/MetaItem.vue'
+import OnlineCompareTable from '@/components/library/OnlineCompareTable.vue'
+import OnlineMatchList from '@/components/library/OnlineMatchList.vue'
+import { compareRows, defaultSelection, onlineTrackFields } from '@/library/onlineMetadata'
 import TileList from '@/components/library/TileList.vue'
 import TrackFileList from '@/components/library/TrackFileList.vue'
 import TrackGroupList from '@/components/library/TrackGroupList.vue'
@@ -138,6 +141,8 @@ import {
     sampleFiles,
     sampleLyrics,
     sampleLyricsPosition,
+    sampleOnlineCurrent,
+    sampleOnlineMatches,
     sampleTiles,
     sampleTrackReviews,
     sampleTracks,
@@ -237,6 +242,21 @@ const smartRules = [
 const files = sampleFiles()
 const fileSummaries = computed(() => sampleFileSummaries(t))
 const fileSelection = sampleFileSelection()
+const onlineMatches = computed(() => sampleOnlineMatches(t))
+const onlineCurrent = computed(() => sampleOnlineCurrent(t))
+const onlineSelected = ref<string | null>('sample-match-1')
+const onlineValues = computed(
+    () =>
+        onlineMatches.value.find((match) => match.key === onlineSelected.value)?.values ??
+        onlineCurrent.value,
+)
+const onlineRows = computed(() =>
+    compareRows(onlineTrackFields, onlineCurrent.value, onlineValues.value),
+)
+const onlineChosen = computed(() =>
+    defaultSelection(onlineTrackFields, onlineCurrent.value, onlineValues.value),
+)
+const onlineUseCover = ref(true)
 const fileSearch = ref('')
 const sampleCoverRule = ref('Inherit')
 const sampleCoverRuleOptions = computed(() =>
@@ -1482,6 +1502,34 @@ const sampleTranscodeJobs = computed<TranscodeJob[]>(() => {
                         :category="category"
                         :choices="fileChoices(fileSelection[category], files)"
                         :labelledby="`dev-file-choices-${category}`"
+                    />
+                </section>
+            </div>
+            <div data-part="online-search" data-owner="track" data-state="ready">
+                <section data-part="online-section" data-item="matches">
+                    <h3 id="dev-online-matches" data-part="online-section-title">
+                        {{ t('onlineMetadata.matches') }}
+                    </h3>
+                    <OnlineMatchList
+                        v-model="onlineSelected"
+                        owner="track"
+                        :matches="onlineMatches"
+                        labelledby="dev-online-matches"
+                    />
+                </section>
+                <section data-part="online-section" data-item="compare">
+                    <h3 data-part="online-section-title">{{ t('onlineMetadata.compare') }}</h3>
+                    <OnlineCompareTable
+                        v-model:use-cover="onlineUseCover"
+                        owner="track"
+                        :id="null"
+                        :has-cover="false"
+                        :rows="onlineRows"
+                        :chosen="onlineChosen"
+                        :tags-writable="true"
+                        :show-cover="true"
+                        cover-state="missing"
+                        :cover-url="null"
                     />
                 </section>
             </div>

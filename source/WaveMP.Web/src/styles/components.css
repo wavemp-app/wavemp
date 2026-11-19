@@ -2093,6 +2093,214 @@
         cursor: default;
     }
 
+    /* --- Online search for album info ---------------------------------------------------- */
+
+    [data-part='dialog'][data-item='online-search'] {
+        inline-size: min(46rem, calc(100vw - 2rem));
+    }
+
+    [data-part='online-search'] {
+        container: wavemp-online-search / inline-size;
+        display: grid;
+        gap: var(--wmp-space-l);
+        min-inline-size: 0;
+    }
+
+    [data-part='online-section'] {
+        display: grid;
+        gap: var(--wmp-space-s);
+        min-inline-size: 0;
+    }
+
+    [data-part='online-section-title'] {
+        font-size: var(--wmp-font-size-m);
+        font-weight: var(--wmp-font-weight-bold);
+    }
+
+    [data-part='online-matches'] {
+        position: relative;
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
+        gap: var(--wmp-space-s);
+        min-inline-size: 0;
+    }
+
+    [data-part='online-matches'] > [data-part='indicator'] {
+        position: absolute;
+        inset-block-start: var(--wmp-indicator-y, 0);
+        left: var(--wmp-indicator-x, 0);
+        inline-size: var(--wmp-indicator-width, 0);
+        block-size: var(--wmp-indicator-height, 0);
+        pointer-events: none;
+    }
+
+    [data-part='online-match'] {
+        display: grid;
+        align-content: start;
+        gap: var(--wmp-space-xs);
+        min-inline-size: 0;
+        padding: var(--wmp-space-s) var(--wmp-space-m);
+        border: 1px solid var(--wmp-color-border);
+        border-radius: var(--wmp-radius-m);
+        background: var(--wmp-color-surface);
+        color: inherit;
+        text-align: start;
+        cursor: pointer;
+    }
+
+    [data-part='online-match']:hover {
+        border-color: var(--wmp-color-accent);
+    }
+
+    [data-part='online-match'][aria-checked='true'] {
+        border-color: var(--wmp-color-accent);
+        box-shadow: inset 0 0 0 1px var(--wmp-color-accent);
+    }
+
+    [data-part='online-match']:focus-visible {
+        outline: 2px solid var(--wmp-color-focus);
+        outline-offset: 2px;
+    }
+
+    [data-part='online-match'][aria-disabled='true'] {
+        cursor: default;
+    }
+
+    [data-part='online-match-title'] {
+        font-weight: var(--wmp-font-weight-bold);
+        overflow-wrap: anywhere;
+    }
+
+    :is([data-part='online-match-artist'], [data-part='online-match-album']) {
+        overflow-wrap: anywhere;
+    }
+
+    :is([data-part='online-match-album'], [data-part='online-match-release']) {
+        color: var(--wmp-color-text-muted);
+        font-size: var(--wmp-font-size-s);
+    }
+
+    [data-part='online-match-release'] {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--wmp-space-xs) var(--wmp-space-s);
+    }
+
+    [data-part='online-match-agreement'] {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: center;
+        gap: var(--wmp-space-s);
+        margin-block-start: var(--wmp-space-xs);
+        font-size: var(--wmp-font-size-s);
+    }
+
+    [data-part='online-match-agreement'] > [data-part='meter'] {
+        min-inline-size: 0;
+    }
+
+    [data-part='online-compare'] {
+        inline-size: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+    }
+
+    [data-part='online-compare'] :is(th, td) {
+        padding: var(--wmp-space-s);
+        border-block-end: 1px solid var(--wmp-color-border);
+        text-align: start;
+        vertical-align: top;
+        overflow-wrap: anywhere;
+    }
+
+    [data-part='online-compare-head'] > th {
+        color: var(--wmp-color-text-muted);
+        font-size: var(--wmp-font-size-s);
+        font-weight: var(--wmp-font-weight-normal);
+    }
+
+    [data-part='online-compare-field'] {
+        font-weight: var(--wmp-font-weight-normal);
+    }
+
+    [data-part='online-compare-field'] > [data-part='field'] {
+        margin: 0;
+    }
+
+    [data-part='online-compare-current'] {
+        color: var(--wmp-color-text-muted);
+    }
+
+    /* A value is as high as the checkbox of its field, so both share one line. */
+    :is([data-part='online-compare-current'], [data-part='online-compare-suggested'])
+        > [data-part='label'] {
+        display: flex;
+        align-items: center;
+        min-block-size: var(--wmp-field-height);
+    }
+
+    [data-part='online-compare-row'][data-state='missing']
+        > [data-part='online-compare-suggested'] {
+        color: var(--wmp-color-success);
+        font-weight: var(--wmp-font-weight-bold);
+    }
+
+    [data-part='online-compare-row'][data-state='different']
+        > [data-part='online-compare-suggested'] {
+        color: var(--wmp-color-accent);
+        font-weight: var(--wmp-font-weight-bold);
+    }
+
+    [data-part='online-compare-row']:is([data-state='same'], [data-state='unknown'])
+        > [data-part='online-compare-suggested'] {
+        color: var(--wmp-color-text-muted);
+    }
+
+    [data-part='online-compare-row'][data-field='cover'] [data-part='cover'] {
+        inline-size: min(var(--wmp-cover-size), 100%);
+    }
+
+    [data-part='online-compare-row'][data-field='cover'] [data-part='online-compare-suggested'] {
+        color: var(--wmp-color-text-muted);
+        font-weight: var(--wmp-font-weight-normal);
+    }
+
+    /* Narrow: the field with its checkbox spans the row, current and suggested values below. */
+    @container wavemp-online-search (width < 30rem) {
+        [data-part='online-compare'],
+        [data-part='online-compare'] :is(thead, tbody) {
+            display: grid;
+        }
+
+        [data-part='online-compare'] tr {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+            border-block-end: 1px solid var(--wmp-color-border);
+        }
+
+        [data-part='online-compare'] :is(th, td) {
+            border-block-end: 0;
+        }
+
+        [data-part='online-compare-head'] > th:first-child {
+            display: none;
+        }
+
+        [data-part='online-compare-field'] {
+            grid-column: 1 / -1;
+            padding-block-end: 0;
+        }
+
+        :is([data-part='online-compare-current'], [data-part='online-compare-suggested']) {
+            padding-block-start: 0;
+        }
+
+        :is([data-part='online-compare-current'], [data-part='online-compare-suggested'])
+            > [data-part='label'] {
+            min-block-size: 0;
+        }
+    }
+
     /* --- Slider -------------------------------------------------------------------------- */
 
     [data-part='slider'] {

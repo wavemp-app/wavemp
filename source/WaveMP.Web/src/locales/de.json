@@ -1566,6 +1566,78 @@
       "saveFailed": "Die Änderungen konnten nicht gespeichert werden."
     }
   },
+  "onlineMetadata": {
+    "search": "Online suchen",
+    "titleTrack": "Song-Infos von MusicBrainz",
+    "titleAlbum": "Album-Infos von MusicBrainz",
+    "searching": "MusicBrainz wird durchsucht",
+    "matches": "Treffer",
+    "agreement": "Übereinstimmung",
+    "agreementValue": "{value} % Übereinstimmung",
+    "withoutAlbum": "Ohne Album",
+    "trackCount": "Songs: {count}",
+    "compare": "Änderungen",
+    "field": "Feld",
+    "current": "Jetzt",
+    "suggested": "Vorschlag",
+    "empty": "leer",
+    "same": "Wie bisher",
+    "unknown": "Nicht bekannt",
+    "cover": "Cover",
+    "useCover": "Dieses Cover verwenden",
+    "coverLoading": "Cover wird geladen",
+    "coverMissing": "Kein Cover im Cover Art Archive",
+    "coverUnavailable": "Das Cover konnte nicht geladen werden",
+    "noMatches": "MusicBrainz kennt keinen Treffer. Korrigiere Titel und Interpret mit „Metadaten bearbeiten“ und suche erneut.",
+    "disabled": "Die Online-Suche ist aus. Schalte sie in den Bibliothekseinstellungen ein.",
+    "toSettings": "Bibliothekseinstellungen öffnen",
+    "unavailable": "MusicBrainz ist nicht erreichbar. Prüfe die Internetverbindung des Servers und versuche es erneut.",
+    "searchFailed": "Die Suche ist fehlgeschlagen.",
+    "notFoundTrack": "Den Song gibt es nicht mehr.",
+    "notFoundAlbum": "Das Album gibt es nicht mehr.",
+    "searchAgain": "Erneut suchen",
+    "apply": "Übernehmen",
+    "applying": "Wird übernommen",
+    "nothingChosen": "Wähle die Felder oder das Cover, die du übernehmen möchtest.",
+    "coverOnly": "Das Cover kann trotzdem übernommen werden.",
+    "albumPartial": "Die Tags werden in {editable} von {count} Songs geschrieben; die übrigen sind nicht beschreibbar.",
+    "albumNone": "Kein Song dieses Albums ist beschreibbar; nur das Cover kann übernommen werden.",
+    "albumNote": "Die Album-Felder werden in jeden Song des Albums geschrieben.",
+    "source": "Die Tags stammen von MusicBrainz (CC0). Cover aus dem Cover Art Archive gehören ihren Rechteinhabern und sind nur für die eigene Bibliothek gedacht.",
+    "results": {
+      "track": "Die Tags wurden geschrieben.",
+      "album": "Songs mit den neuen Tags: {count}",
+      "skipped": "Nicht beschreibbare Songs: {count}",
+      "coverMediaFolder": "Das Cover wurde im Musikordner gespeichert.",
+      "coverDataFolder": "Der Musikordner ist nicht beschreibbar, deshalb bewahrt WaveMP das Cover in seinem Datenordner auf.",
+      "coverNotSaved": "Das Cover konnte nicht gespeichert werden."
+    },
+    "errors": {
+      "coverUnavailable": "Das Cover Art Archive ist nicht erreichbar. Es wurde nichts geändert; versuche es später erneut.",
+      "coverNotFound": "Diese Veröffentlichung hat kein Cover im Cover Art Archive. Es wurde nichts geändert.",
+      "notWritable": "Die Audiodatei ist nicht beschreibbar. Es wurde nichts geändert.",
+      "noAudio": "Dieser Song hat keine Audiodatei. Es wurde nichts geändert.",
+      "applyFailed": "Die Änderungen konnten nicht übernommen werden."
+    }
+  },
+  "onlineMetadataSettings": {
+    "title": "Online-Suche nach Album-Infos",
+    "enabled": "Album-Infos online suchen",
+    "enabledHint": "Admins können fehlende Tags von MusicBrainz und Cover aus dem Cover Art Archive für Songs und Alben holen. Solange das aus ist, sendet WaveMP keine Anfragen an diese Dienste.",
+    "musicBrainzUrl": "Adresse von MusicBrainz",
+    "musicBrainzUrlHint": "Ein eigener Mirror funktioniert ebenfalls.",
+    "coverArtArchiveUrl": "Adresse des Cover Art Archive",
+    "interval": "Pause zwischen Anfragen an MusicBrainz (ms)",
+    "intervalHint": "musicbrainz.org bekommt immer mindestens eine Sekunde; ein eigener Mirror kann weniger nutzen.",
+    "save": "Speichern",
+    "saved": "Die Einstellungen der Online-Suche wurden gespeichert.",
+    "saveError": "Die Einstellungen konnten nicht gespeichert werden.",
+    "loadError": "Die Einstellungen der Online-Suche konnten nicht geladen werden.",
+    "errors": {
+      "url": "Gib eine Adresse ein, die mit http:// oder https:// beginnt.",
+      "interval": "Gib eine ganze Zahl von {min} bis {max} ein."
+    }
+  },
   "files": {
     "label": "Dateien des Titels",
     "kinds": {

@@ -99,6 +99,7 @@ const icons: Record<IconStyle, string[]> = {
         'floppy-disk',
         'folder-open',
         'gear-six',
+        'globe-simple',
         'hard-drives',
         'heart',
         'heart-break',

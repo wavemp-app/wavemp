@@ -13,6 +13,7 @@ import CoverRuleForm from '@/components/library/CoverRuleForm.vue'
 import DetailHeader from '@/components/library/DetailHeader.vue'
 import LibraryCover from '@/components/library/LibraryCover.vue'
 import MetaItem from '@/components/library/MetaItem.vue'
+import OnlineMetadataDialog from '@/components/library/OnlineMetadataDialog.vue'
 import TrackFileList from '@/components/library/TrackFileList.vue'
 import TrackLyricsPanel from '@/components/library/TrackLyricsPanel.vue'
 import TrackMetadataDialog from '@/components/library/TrackMetadataDialog.vue'
@@ -50,6 +51,7 @@ const status = ref<'loading' | 'ready' | 'notFound' | 'error'>('loading')
 const files = ref<MediaFile[]>([])
 const filesStatus = ref<'idle' | 'loading' | 'ready' | 'error'>('idle')
 const editing = ref(false)
+const searchingOnline = ref(false)
 let generation = 0
 let editRequestHandled = false
 
@@ -240,6 +242,13 @@ useDetailTitle(() => (status.value === 'ready' ? track.value?.title : null))
                         :label="t('trackMetadata.edit')"
                         @click="editing = true"
                     />
+                    <BaseButton
+                        v-if="session.isAdmin"
+                        data-item="search-online"
+                        icon="search-online"
+                        :label="t('onlineMetadata.search')"
+                        @click="searchingOnline = true"
+                    />
                 </template>
             </DetailHeader>
             <section
@@ -305,6 +314,14 @@ useDetailTitle(() => (status.value === 'ready' ? track.value?.title : null))
                 :track-id="id"
                 :return-to-previous="editRequested"
                 @saved="reload"
+            />
+            <OnlineMetadataDialog
+                v-if="session.isAdmin"
+                v-model:open="searchingOnline"
+                owner="track"
+                :id="track.id ?? id"
+                :has-cover="track.hasCover ?? false"
+                @applied="reload"
             />
         </template>
     </div>

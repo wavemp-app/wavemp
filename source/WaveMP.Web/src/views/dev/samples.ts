@@ -10,6 +10,7 @@ import type {
     TrackReview,
 } from '@/api/generated/models'
 import type { Tile } from '@/components/library/TileList.vue'
+import type { OnlineMatch, OnlineValues } from '@/library/onlineMetadata'
 import type { LyricsLineTiming, TrackLyrics } from '@/lyrics/timing'
 
 type Translate = (key: string, values?: Record<string, unknown>) => string
@@ -341,5 +342,45 @@ export function sampleFileSelection(): TrackFileSelection {
             automaticFileId: 'jpg',
             candidateFileIds: ['jpg'],
         },
+    }
+}
+
+/** Two matches of the online search for a song: one with a release, one without. */
+export function sampleOnlineMatches(t: Translate): OnlineMatch[] {
+    const values = {
+        title: t('placeholders.track', { number: 2 }),
+        artist: t('placeholders.artist', { number: 1 }),
+        albumArtist: t('placeholders.artist', { number: 1 }),
+        trackNumber: 2,
+        discNumber: 1,
+        genre: null,
+    }
+    return [
+        {
+            key: 'sample-match-1',
+            release: { id: 'sample-release-1', date: '2006-05-01', country: 'DE', trackCount: 4 },
+            agreement: 92,
+            values: { ...values, album: t('placeholders.album', { number: 1 }), year: 2006 },
+        },
+        {
+            key: 'sample-match-2',
+            release: null,
+            agreement: 47,
+            values: { ...values, album: null, year: null },
+        },
+    ]
+}
+
+/** The current values of the song the sample matches belong to. */
+export function sampleOnlineCurrent(t: Translate): OnlineValues {
+    return {
+        title: t('placeholders.track', { number: 2 }),
+        artist: t('placeholders.artist', { number: 1 }),
+        album: t('placeholders.album', { number: 1 }),
+        albumArtist: null,
+        year: 2007,
+        trackNumber: 2,
+        discNumber: null,
+        genre: t('placeholders.genre', { number: 1 }),
     }
 }

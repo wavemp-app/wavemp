@@ -127,6 +127,7 @@ export const iconSlots = {
     'view-cover': { file: regular('image'), area: 'general' },
     'view-lyrics': { file: regular('subtitles'), area: 'general' },
     'download-lyrics': { file: regular('cloud-arrow-down'), area: 'general' },
+    'search-online': { file: regular('globe-simple'), area: 'general' },
     upload: { file: regular('upload-simple'), area: 'general' },
     'detail-back': { file: regular('arrow-left'), area: 'general' },
     'review-done': { file: regular('check-circle'), area: 'general' },

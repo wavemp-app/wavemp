@@ -423,6 +423,10 @@
         --_icon: var(--wmp-icon-download-lyrics);
     }
 
+    [data-icon='search-online'] {
+        --_icon: var(--wmp-icon-search-online);
+    }
+
     [data-icon='upload'] {
         --_icon: var(--wmp-icon-upload);
     }

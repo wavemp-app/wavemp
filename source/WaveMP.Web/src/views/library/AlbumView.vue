@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, useId, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useRouter } from 'vue-router'
 import type { Album, Track } from '@/api/generated/models'
 import { fetchAllPages } from '@/api/paging'
 import { statusOf } from '@/api/problems'
@@ -11,6 +12,7 @@ import CoverRuleForm from '@/components/library/CoverRuleForm.vue'
 import DetailHeader from '@/components/library/DetailHeader.vue'
 import LibraryCover from '@/components/library/LibraryCover.vue'
 import MetaItem from '@/components/library/MetaItem.vue'
+import OnlineMetadataDialog from '@/components/library/OnlineMetadataDialog.vue'
 import TrackGroupList from '@/components/library/TrackGroupList.vue'
 import { useDetailTitle } from '@/composables/useDetailTitle'
 import { useFormat } from '@/composables/useFormat'
@@ -32,7 +34,9 @@ const { t } = useI18n()
 const format = useFormat()
 const player = usePlayerStore()
 const session = useSessionStore()
+const router = useRouter()
 const coverRuleTitleId = useId()
+const searchingOnline = ref(false)
 
 const album = ref<Album | null>(null)
 const tracks = ref<Track[]>([])
@@ -76,6 +80,18 @@ async function load(): Promise<void> {
             album.value = null
             status.value = statusOf(error) === 404 ? 'notFound' : 'error'
         }
+    }
+}
+
+/**
+ * After the online search the album may have another id (new album name or album artist): the
+ * page moves to it, otherwise it shows the new values.
+ */
+function onApplied(result: { albumId: string | null }): void {
+    if (result.albumId && result.albumId !== props.id) {
+        void router.replace({ name: 'library-album', params: { id: result.albumId } })
+    } else {
+        void load()
     }
 }
 
@@ -158,6 +174,13 @@ useDetailTitle(() => (status.value === 'ready' ? album.value?.title : null))
                         :id="album.id ?? id"
                         :favorite="album.isFavorite"
                     />
+                    <BaseButton
+                        v-if="session.isAdmin"
+                        data-item="search-online"
+                        icon="search-online"
+                        :label="t('onlineMetadata.search')"
+                        @click="searchingOnline = true"
+                    />
                 </template>
             </DetailHeader>
             <TrackGroupList :groups="groups" :label="album.title ?? ''" :show-group-info="false" />
@@ -174,6 +197,14 @@ useDetailTitle(() => (status.value === 'ready' ? album.value?.title : null))
                     :available="album.hasCover ?? false"
                 />
             </section>
+            <OnlineMetadataDialog
+                v-if="session.isAdmin"
+                v-model:open="searchingOnline"
+                owner="album"
+                :id="album.id ?? id"
+                :has-cover="album.hasCover ?? false"
+                @applied="onApplied"
+            />
         </template>
     </div>
 </template>

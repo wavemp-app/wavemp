@@ -198,6 +198,7 @@
         --wmp-icon-view-cover: url('/icons/phosphor/regular/image.svg');
         --wmp-icon-view-lyrics: url('/icons/phosphor/regular/subtitles.svg');
         --wmp-icon-download-lyrics: url('/icons/phosphor/regular/cloud-arrow-down.svg');
+        --wmp-icon-search-online: url('/icons/phosphor/regular/globe-simple.svg');
         --wmp-icon-upload: url('/icons/phosphor/regular/upload-simple.svg');
         --wmp-icon-detail-back: url('/icons/phosphor/regular/arrow-left.svg');
         --wmp-icon-review-done: url('/icons/phosphor/regular/check-circle.svg');
