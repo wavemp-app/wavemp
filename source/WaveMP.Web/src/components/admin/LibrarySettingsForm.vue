@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n'
 import type { CoverPriority, LibrarySettings } from '@/api/generated/models'
 import { problemCodeOf, validationErrorsOf } from '@/api/problems'
 import { customIntervalKey, formatList, intervalOptions, parseList } from '@/admin/presentation'
+import { changedSettings } from '@/admin/settingsChanges'
 import BaseAlert from '@/components/base/BaseAlert.vue'
 import BaseButton from '@/components/base/BaseButton.vue'
 import BaseCheckbox from '@/components/base/BaseCheckbox.vue'
@@ -27,7 +28,9 @@ type Field = 'interval' | 'audio' | 'video' | 'images' | 'coverNames' | 'coverPr
 /**
  * Settings of the library: scan interval, file watcher, extension lists, album cover names, the
  * global cover rule, the download of lyrics (off by default, because it sends the titles of the
- * library to an online service) and whether Subsonic apps may download the original files. A changed cover rule loads the covers of albums and songs again.
+ * library to an online service) and whether Subsonic apps may download the original files. A
+ * changed cover rule loads the covers of albums and songs again. Saving sends only the changed
+ * values, so settings changed elsewhere since the page was loaded stay as they are.
  */
 const { t } = useI18n()
 const format = useFormat()
@@ -123,17 +126,21 @@ async function save(): Promise<void> {
     errors.value = {}
     const previousPriority = store.settings?.coverPriority
     try {
-        const result = await store.update({
-            scanIntervalMinutes: Number(interval.value),
-            fileWatcherEnabled: fileWatcher.value,
-            audioExtensions: parseList(audio.value),
-            videoExtensions: parseList(video.value),
-            imageExtensions: parseList(images.value),
-            albumCoverNames: parseList(coverNames.value),
-            coverPriority: coverPriorityOf(coverPriority.value as CoverPriority),
-            downloadLyrics: downloadLyrics.value,
-            subsonicDownloads: subsonicDownloads.value,
-        })
+        // Only the changed values: an unchanged field must not put back a value that was changed
+        // elsewhere since the form was loaded. The answer shows all settings of the server again.
+        const result = await store.update(
+            changedSettings(store.settings, {
+                scanIntervalMinutes: Number(interval.value),
+                fileWatcherEnabled: fileWatcher.value,
+                audioExtensions: parseList(audio.value),
+                videoExtensions: parseList(video.value),
+                imageExtensions: parseList(images.value),
+                albumCoverNames: parseList(coverNames.value),
+                coverPriority: coverPriorityOf(coverPriority.value as CoverPriority),
+                downloadLyrics: downloadLyrics.value,
+                subsonicDownloads: subsonicDownloads.value,
+            }),
+        )
         if (result && result.coverPriority !== previousPriority) {
             // Albums and songs without a rule of their own may show another cover now.
             covers.invalidate()

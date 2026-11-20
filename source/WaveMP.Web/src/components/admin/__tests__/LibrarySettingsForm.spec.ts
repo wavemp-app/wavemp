@@ -77,16 +77,11 @@ describe('LibrarySettingsForm', () => {
         await wrapper.get('form').trigger('submit')
         await flushPromises()
 
+        // Only the changed values, so settings changed elsewhere in the meantime stay as they are.
         expect(update).toHaveBeenCalledWith({
             scanIntervalMinutes: 720,
             fileWatcherEnabled: false,
             audioExtensions: ['.MP3', 'ogg'],
-            videoExtensions: ['mkv'],
-            imageExtensions: ['jpg'],
-            albumCoverNames: ['cover', 'folder'],
-            coverPriority: 'AlbumFirst',
-            downloadLyrics: false,
-            subsonicDownloads: false,
         })
         expect(wrapper.get('[data-part="alert"][data-state="success"]').text()).toBe(
             'The settings are saved.',
@@ -113,9 +108,7 @@ describe('LibrarySettingsForm', () => {
         await wrapper.get('form').trigger('submit')
         await flushPromises()
 
-        expect(update).toHaveBeenCalledWith(
-            expect.objectContaining({ coverPriority: 'TrackFirst' }),
-        )
+        expect(update).toHaveBeenCalledWith({ coverPriority: 'TrackFirst' })
         expect(invalidate).toHaveBeenCalledTimes(1)
         wrapper.unmount()
     })
@@ -163,6 +156,23 @@ describe('LibrarySettingsForm', () => {
         await flushPromises()
 
         expect(invalidate).not.toHaveBeenCalled()
+        wrapper.unmount()
+    })
+
+    it('sends nothing unchanged and shows the settings the server answers with', async () => {
+        const { wrapper, update } = await mountForm()
+        // The server has a value another admin saved after the form was loaded.
+        update.mockResolvedValue({ ...settings, subsonicDownloads: true })
+
+        await wrapper.get('form').trigger('submit')
+        await flushPromises()
+
+        expect(update).toHaveBeenCalledWith({})
+        const downloads = wrapper.get('[data-field="subsonic-downloads"] input[type="checkbox"]')
+        expect((downloads.element as HTMLInputElement).checked).toBe(true)
+        expect(wrapper.get('[data-part="alert"][data-state="success"]').text()).toBe(
+            'The settings are saved.',
+        )
         wrapper.unmount()
     })
 
