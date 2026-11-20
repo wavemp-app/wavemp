@@ -77,4 +77,69 @@ internal sealed class PlayHistoryRepository(WaveMpDbContext dbContext) : IPlayHi
             .ToListAsync(cancellationToken);
         return new Page<RecentTrackRow>(items, query.Offset, query.Limit, total);
     }
+
+    public async Task<IReadOnlyList<PlayStatisticsRow>> ListPlaysAsync(
+        Guid userId,
+        DateTimeOffset? from,
+        DateTimeOffset? to,
+        CancellationToken cancellationToken = default)
+    {
+        IQueryable<PlayHistoryEntry> plays = dbContext.PlayHistory.AsNoTracking()
+            .Where(entry => entry.UserId == userId);
+        if (from?.ToUniversalTime() is { } start)
+        {
+            plays = plays.Where(entry => entry.PlayedAt >= start);
+        }
+
+        if (to?.ToUniversalTime() is { } end)
+        {
+            plays = plays.Where(entry => entry.PlayedAt < end);
+        }
+
+        return await plays
+            .OrderBy(entry => entry.PlayedAt)
+            .ThenBy(entry => entry.Id)
+            .Select(entry => new PlayStatisticsRow(
+                entry.PlayedAt,
+                entry.TrackId,
+                entry.Track!.Title,
+                entry.Track.ArtistId,
+                entry.Track.Artist != null ? entry.Track.Artist.Name : null,
+                entry.Track.AlbumId,
+                entry.Track.Album != null ? entry.Track.Album.Title : null,
+                entry.Track.Album != null ? entry.Track.Album.AlbumArtistId : null,
+                entry.Track.Album != null && entry.Track.Album.AlbumArtist != null
+                    ? entry.Track.Album.AlbumArtist.Name
+                    : null,
+                entry.Track.Genre,
+                entry.Track.Duration))
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<IReadOnlyDictionary<Guid, DateTimeOffset>> FindFirstPlaysOfArtistsAsync(
+        Guid userId,
+        IReadOnlyCollection<Guid> artistIds,
+        CancellationToken cancellationToken = default)
+    {
+        if (artistIds.Count == 0)
+        {
+            return new Dictionary<Guid, DateTimeOffset>();
+        }
+
+        Guid[] ids = [.. artistIds.Distinct()];
+        return await dbContext.PlayHistory.AsNoTracking()
+            .Where(entry => entry.UserId == userId
+                && entry.Track!.ArtistId != null
+                && ids.Contains(entry.Track.ArtistId.Value))
+            .GroupBy(entry => entry.Track!.ArtistId!.Value)
+            .Select(group => new { ArtistId = group.Key, FirstPlayedAt = group.Min(entry => entry.PlayedAt) })
+            .ToDictionaryAsync(row => row.ArtistId, row => row.FirstPlayedAt, cancellationToken);
+    }
+
+    public Task<DateTimeOffset?> FindFirstPlayAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        return dbContext.PlayHistory.AsNoTracking()
+            .Where(entry => entry.UserId == userId)
+            .MinAsync(entry => (DateTimeOffset?)entry.PlayedAt, cancellationToken);
+    }
 }

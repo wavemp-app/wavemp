@@ -20,6 +20,8 @@ import { PlaybackStateRequestBuilderRequestsMetadata, type PlaybackStateRequestB
 // @ts-ignore
 import { PlaylistsRequestBuilderNavigationMetadata, PlaylistsRequestBuilderRequestsMetadata, type PlaylistsRequestBuilder } from './playlists/index.js';
 // @ts-ignore
+import { RecapVideosRequestBuilderRequestsMetadata, type RecapVideosRequestBuilder } from './recapVideos/index.js';
+// @ts-ignore
 import { RecentlyPlayedRequestBuilderRequestsMetadata, type RecentlyPlayedRequestBuilder } from './recentlyPlayed/index.js';
 // @ts-ignore
 import { ScrobblingRequestBuilderNavigationMetadata, ScrobblingRequestBuilderRequestsMetadata, type ScrobblingRequestBuilder } from './scrobbling/index.js';
@@ -27,6 +29,8 @@ import { ScrobblingRequestBuilderNavigationMetadata, ScrobblingRequestBuilderReq
 import { SettingsRequestBuilderRequestsMetadata, type SettingsRequestBuilder } from './settings/index.js';
 // @ts-ignore
 import { SmartPlaylistsRequestBuilderNavigationMetadata, SmartPlaylistsRequestBuilderRequestsMetadata, type SmartPlaylistsRequestBuilder } from './smartPlaylists/index.js';
+// @ts-ignore
+import { StatsRequestBuilderRequestsMetadata, type StatsRequestBuilder } from './stats/index.js';
 // @ts-ignore
 import { SubsonicRequestBuilderNavigationMetadata, SubsonicRequestBuilderRequestsMetadata, type SubsonicRequestBuilder } from './subsonic/index.js';
 // @ts-ignore
@@ -73,6 +77,10 @@ export interface MeRequestBuilder extends BaseRequestBuilder<MeRequestBuilder> {
      */
     get playlists(): PlaylistsRequestBuilder;
     /**
+     * The recapVideos property
+     */
+    get recapVideos(): RecapVideosRequestBuilder;
+    /**
      * The recentlyPlayed property
      */
     get recentlyPlayed(): RecentlyPlayedRequestBuilder;
@@ -88,6 +96,10 @@ export interface MeRequestBuilder extends BaseRequestBuilder<MeRequestBuilder> {
      * The smartPlaylists property
      */
     get smartPlaylists(): SmartPlaylistsRequestBuilder;
+    /**
+     * The stats property
+     */
+    get stats(): StatsRequestBuilder;
     /**
      * The subsonic property
      */
@@ -131,6 +143,9 @@ export const MeRequestBuilderNavigationMetadata: Record<Exclude<keyof MeRequestB
         requestsMetadata: PlaylistsRequestBuilderRequestsMetadata,
         navigationMetadata: PlaylistsRequestBuilderNavigationMetadata,
     },
+    recapVideos: {
+        requestsMetadata: RecapVideosRequestBuilderRequestsMetadata,
+    },
     recentlyPlayed: {
         requestsMetadata: RecentlyPlayedRequestBuilderRequestsMetadata,
     },
@@ -144,6 +159,9 @@ export const MeRequestBuilderNavigationMetadata: Record<Exclude<keyof MeRequestB
     smartPlaylists: {
         requestsMetadata: SmartPlaylistsRequestBuilderRequestsMetadata,
         navigationMetadata: SmartPlaylistsRequestBuilderNavigationMetadata,
+    },
+    stats: {
+        requestsMetadata: StatsRequestBuilderRequestsMetadata,
     },
     subsonic: {
         requestsMetadata: SubsonicRequestBuilderRequestsMetadata,

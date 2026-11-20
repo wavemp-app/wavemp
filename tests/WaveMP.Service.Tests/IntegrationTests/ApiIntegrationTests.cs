@@ -150,8 +150,9 @@ public class ApiIntegrationTests
             .Select(response => response.Value!)];
 
         // Users, sessions, playlists, playlist entries, smart playlists, playlists converted from smart playlists,
-        // history entries, Subsonic app passwords, themes and media sources; scans, job runs and backups.
-        responses.Should().HaveCount(13);
+        // history entries, Subsonic app passwords, themes, media sources and recap shares; scans, job runs and
+        // backups.
+        responses.Should().HaveCount(14);
         responses.Should().AllSatisfy(response =>
         {
             JsonNode location = response["headers"]!["Location"]!;

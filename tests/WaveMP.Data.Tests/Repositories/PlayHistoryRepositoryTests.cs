@@ -198,6 +198,97 @@ public class PlayHistoryRepositoryTests : LibraryDatabaseTests
         beyond.Total.Should().Be(2);
     }
 
+    [Test]
+    public async Task ListPlaysAsync_WithBounds_ListsThePlaysOfTheUserInThePeriodWithTheirTracks()
+    {
+        StandardLibrary library = await SeedStandardLibraryAsync();
+        User user = await AddUserAsync();
+        User other = await AddUserAsync();
+        await AddEntryAsync(user, library.Opening, _start.AddMinutes(-1));
+        await AddEntryAsync(user, library.Ballad, _start);
+        await AddEntryAsync(user, library.Opening, _start.AddMinutes(30));
+        await AddEntryAsync(user, library.Closing, _start.AddHours(1));
+        await AddEntryAsync(other, library.Duet, _start.AddMinutes(10));
+
+        IReadOnlyList<PlayStatisticsRow> plays =
+            await CreateRepository().ListPlaysAsync(user.Id, _start, _start.AddHours(1));
+
+        plays.Should().Equal(
+            new PlayStatisticsRow(
+                _start,
+                library.Ballad.Id,
+                "Ballad",
+                library.Beta.Id,
+                "Beta Singer",
+                library.SecondAlbum.Id,
+                "Second Album",
+                library.Beta.Id,
+                "Beta Singer",
+                "Pop",
+                TimeSpan.FromMinutes(5)),
+            new PlayStatisticsRow(
+                _start.AddMinutes(30),
+                library.Opening.Id,
+                "Opening",
+                library.Alpha.Id,
+                "Alpha Band",
+                library.FirstAlbum.Id,
+                "First Album",
+                library.Alpha.Id,
+                "Alpha Band",
+                "Rock",
+                TimeSpan.FromMinutes(3)));
+    }
+
+    [Test]
+    public async Task ListPlaysAsync_WithoutBounds_ListsAllPlaysOfTheUserOldestFirst()
+    {
+        StandardLibrary library = await SeedStandardLibraryAsync();
+        User user = await AddUserAsync();
+        await AddEntryAsync(user, library.LooseSong, _start.AddDays(1));
+        await AddEntryAsync(user, library.Opening, _start);
+
+        IReadOnlyList<PlayStatisticsRow> plays = await CreateRepository().ListPlaysAsync(user.Id, null, null);
+
+        plays.Select(play => play.TrackId).Should().Equal(library.Opening.Id, library.LooseSong.Id);
+        plays[1].AlbumId.Should().BeNull();
+        plays[1].AlbumTitle.Should().BeNull();
+        plays[1].Genre.Should().BeNull();
+    }
+
+    [Test]
+    public async Task FindFirstPlaysOfArtistsAsync_Always_ReturnsTheFirstPlayOfEachArtistOfTheUser()
+    {
+        StandardLibrary library = await SeedStandardLibraryAsync();
+        User user = await AddUserAsync();
+        User other = await AddUserAsync();
+        await AddEntryAsync(other, library.Opening, _start.AddDays(-5));
+        await AddEntryAsync(user, library.Closing, _start.AddDays(2));
+        await AddEntryAsync(user, library.Opening, _start);
+        await AddEntryAsync(user, library.Ballad, _start.AddDays(1));
+
+        IReadOnlyDictionary<Guid, DateTimeOffset> first = await CreateRepository().FindFirstPlaysOfArtistsAsync(
+            user.Id,
+            [library.Alpha.Id, library.Guest.Id]);
+
+        first.Should().BeEquivalentTo(new Dictionary<Guid, DateTimeOffset> { [library.Alpha.Id] = _start });
+    }
+
+    [Test]
+    public async Task FindFirstPlayAsync_Always_ReturnsTheFirstPlayOfTheUserOrNull()
+    {
+        StandardLibrary library = await SeedStandardLibraryAsync();
+        User user = await AddUserAsync();
+        User silent = await AddUserAsync();
+        await AddEntryAsync(user, library.Closing, _start.AddDays(2));
+        await AddEntryAsync(user, library.Opening, _start);
+
+        IPlayHistoryRepository repository = CreateRepository();
+
+        (await repository.FindFirstPlayAsync(user.Id)).Should().Be(_start);
+        (await repository.FindFirstPlayAsync(silent.Id)).Should().BeNull();
+    }
+
     private IPlayHistoryRepository CreateRepository()
     {
         return new PlayHistoryRepository(CreateDbContext());

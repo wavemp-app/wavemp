@@ -65,6 +65,8 @@ public class WaveMpDbContext(DbContextOptions<WaveMpDbContext> options) : DbCont
 
     public DbSet<LibraryCheck> LibraryChecks => Set<LibraryCheck>();
 
+    public DbSet<RecapShare> RecapShares => Set<RecapShare>();
+
     /// <summary>
     /// PostgreSQL extension of the fault-tolerant library search (trigrams). It is part of the official image and
     /// trusted since PostgreSQL 13, so the owner of the database can create it.
@@ -106,5 +108,6 @@ public class WaveMpDbContext(DbContextOptions<WaveMpDbContext> options) : DbCont
         modelBuilder.ApplyConfiguration(new SubsonicAccountConfiguration());
         modelBuilder.ApplyConfiguration(new LibraryIssueConfiguration());
         modelBuilder.ApplyConfiguration(new LibraryCheckConfiguration());
+        modelBuilder.ApplyConfiguration(new RecapShareConfiguration());
     }
 }

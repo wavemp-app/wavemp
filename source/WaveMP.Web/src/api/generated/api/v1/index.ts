@@ -30,6 +30,8 @@ import { OnlineReleasesRequestBuilderNavigationMetadata, type OnlineReleasesRequ
 // @ts-ignore
 import { ProfilesRequestBuilderRequestsMetadata, type ProfilesRequestBuilder } from './profiles/index.js';
 // @ts-ignore
+import { RecapSharesRequestBuilderNavigationMetadata, RecapSharesRequestBuilderRequestsMetadata, type RecapSharesRequestBuilder } from './recapShares/index.js';
+// @ts-ignore
 import { ScansRequestBuilderNavigationMetadata, ScansRequestBuilderRequestsMetadata, type ScansRequestBuilder } from './scans/index.js';
 // @ts-ignore
 import { SearchRequestBuilderRequestsMetadata, type SearchRequestBuilder } from './search/index.js';
@@ -118,6 +120,10 @@ export interface V1RequestBuilder extends BaseRequestBuilder<V1RequestBuilder> {
      * The profiles property
      */
     get profiles(): ProfilesRequestBuilder;
+    /**
+     * The recapShares property
+     */
+    get recapShares(): RecapSharesRequestBuilder;
     /**
      * The scans property
      */
@@ -225,6 +231,10 @@ export const V1RequestBuilderNavigationMetadata: Record<Exclude<keyof V1RequestB
     },
     profiles: {
         requestsMetadata: ProfilesRequestBuilderRequestsMetadata,
+    },
+    recapShares: {
+        requestsMetadata: RecapSharesRequestBuilderRequestsMetadata,
+        navigationMetadata: RecapSharesRequestBuilderNavigationMetadata,
     },
     scans: {
         requestsMetadata: ScansRequestBuilderRequestsMetadata,

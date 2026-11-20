@@ -33,4 +33,28 @@ public interface IPlayHistoryRepository
     Task<Page<RecentTrackRow>> ListRecentTracksAsync(
         RecentTrackListQuery query,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Lists the plays of the user from <paramref name="from"/> (inclusive) to <paramref name="to"/> (exclusive) with
+    /// their tracks, the oldest first; without a bound, from the first or up to the last play.
+    /// </summary>
+    Task<IReadOnlyList<PlayStatisticsRow>> ListPlaysAsync(
+        Guid userId,
+        DateTimeOffset? from,
+        DateTimeOffset? to,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// The first play of the user of a track of each artist, over the whole history; artists the user never played are
+    /// missing.
+    /// </summary>
+    Task<IReadOnlyDictionary<Guid, DateTimeOffset>> FindFirstPlaysOfArtistsAsync(
+        Guid userId,
+        IReadOnlyCollection<Guid> artistIds,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// The first play of the user, or <c>null</c> without any.
+    /// </summary>
+    Task<DateTimeOffset?> FindFirstPlayAsync(Guid userId, CancellationToken cancellationToken = default);
 }

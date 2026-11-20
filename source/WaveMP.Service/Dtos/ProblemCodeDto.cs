@@ -478,4 +478,28 @@ public enum ProblemCodeDto
     /// </summary>
     [JsonStringEnumMemberName("lookup.cover_not_found")]
     LookupCoverNotFound,
+
+    /// <summary>
+    /// The shared recap does not exist (404).
+    /// </summary>
+    [JsonStringEnumMemberName("recap_share.not_found")]
+    RecapShareNotFound,
+
+    /// <summary>
+    /// The recorded video is larger than allowed (413).
+    /// </summary>
+    [JsonStringEnumMemberName("video.too_large")]
+    VideoTooLarge,
+
+    /// <summary>
+    /// The content is no WebM, Matroska or MP4 video (415).
+    /// </summary>
+    [JsonStringEnumMemberName("video.unsupported_format")]
+    VideoUnsupportedFormat,
+
+    /// <summary>
+    /// The video could not be converted, e.g. because it is damaged (422).
+    /// </summary>
+    [JsonStringEnumMemberName("video.unreadable")]
+    VideoUnreadable,
 }

@@ -45,6 +45,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IFileSelectionRepository, FileSelectionRepository>();
         services.AddScoped<ITrackMetadataRepository, TrackMetadataRepository>();
         services.AddScoped<IPlayHistoryRepository, PlayHistoryRepository>();
+        services.AddScoped<IRecapShareRepository, RecapShareRepository>();
         services.AddScoped<IPlaybackStateRepository, PlaybackStateRepository>();
         services.AddScoped<IPlaylistRepository, PlaylistRepository>();
         services.AddScoped<ISmartPlaylistRepository, SmartPlaylistRepository>();

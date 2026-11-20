@@ -6146,6 +6146,473 @@
         }
       }
     },
+    "/api/v1/recap-shares": {
+      "get": {
+        "tags": [
+          "RecapShares"
+        ],
+        "summary": "Lists the recaps the other profiles shared (scope received) or the current profile shared (scope own), the most recently shared first.",
+        "operationId": "ListRecapShares",
+        "parameters": [
+          {
+            "name": "scope",
+            "in": "query",
+            "description": "Which recaps to list; received without it.",
+            "schema": {
+              "$ref": "#/components/schemas/RecapShareScope"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "description": "Number of shares to skip.",
+            "schema": {
+              "maximum": 2147483647,
+              "minimum": 0,
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Maximum number of shares of the page.",
+            "schema": {
+              "maximum": 100,
+              "minimum": 1,
+              "type": "integer",
+              "format": "int32",
+              "default": 50
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "One page of shared recaps.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecapSharePage"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid query parameters (code `request.invalid`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblem"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "RecapShares"
+        ],
+        "summary": "Shares a recap of the current profile with the other profiles. The days of the period are fixed now; the statistics are counted from the play history whenever the recap is opened. Sharing the same period (kind, days and time zone) again keeps the share and changes its design.",
+        "operationId": "CreateRecapShare",
+        "requestBody": {
+          "description": "The period and design of the recap.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateRecapShare"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateRecapShare"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "The new share; Location points to it.",
+            "headers": {
+              "Location": {
+                "description": "Address of the created resource.",
+                "required": true,
+                "schema": {
+                  "type": "string",
+                  "format": "uri-reference"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecapShare"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "The period was shared before; the share with its new design.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecapShare"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is invalid, e.g. from after to or an unknown time zone (code `request.invalid`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The profile was deleted in the meantime (code `user.not_found`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/api/v1/recap-shares/{id}": {
+      "get": {
+        "tags": [
+          "RecapShares"
+        ],
+        "summary": "Returns a shared recap of any profile.",
+        "operationId": "GetRecapShare",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Id of the share.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "The share.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecapShare"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The share does not exist (code `recap_share.not_found`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "RecapShares"
+        ],
+        "summary": "Takes back a recap the current profile shared; the other profiles no longer see it.",
+        "operationId": "DeleteRecapShare",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Id of the share.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "The recap is no longer shared."
+          },
+          "403": {
+            "description": "Another profile shared the recap (code `auth.forbidden`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The share does not exist (code `recap_share.not_found`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/api/v1/recap-shares/{id}/statistics": {
+      "get": {
+        "tags": [
+          "RecapShares"
+        ],
+        "summary": "Returns a shared recap with the statistics of the profile that shared it, counted now for the days of the share. Favorites and ratings of the tracks are those of the current profile.",
+        "operationId": "GetRecapShareStatistics",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Id of the share.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "top",
+            "in": "query",
+            "description": "Length of each ranking.",
+            "schema": {
+              "maximum": 50,
+              "minimum": 1,
+              "type": "integer",
+              "format": "int32",
+              "default": 10
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "The share with its statistics.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SharedRecap"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid query parameters (code `request.invalid`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The share does not exist (code `recap_share.not_found`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/api/v1/me/recap-videos": {
+      "post": {
+        "tags": [
+          "RecapVideos"
+        ],
+        "summary": "Converts a recorded video (the raw bytes of a WebM, Matroska or MP4 file, 200 MiB at most by default) into MP4 with H.264 and, if the recording has sound, AAC, and returns it. The server keeps nothing: the uploaded and the converted file lie in a temporary folder of the data folder only while the request runs, and left-over files are deleted automatically.",
+        "operationId": "ConvertMyRecapVideo",
+        "requestBody": {
+          "content": {
+            "video/webm": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            },
+            "video/x-matroska": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            },
+            "video/mp4": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "The MP4 video.",
+            "content": {
+              "video/mp4": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "The video is too large (code `video.too_large`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "The content is no WebM, Matroska or MP4 video (code `video.unsupported_format`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "The video could not be converted, e.g. because it is damaged (code `video.unreadable`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Videos cannot be converted, ffmpeg is missing or the data folder cannot be written (code `service.unavailable`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
     "/api/v1/me/recently-played": {
       "get": {
         "tags": [
@@ -8203,6 +8670,94 @@
           },
           "400": {
             "description": "Invalid paging parameters (code `request.invalid`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblem"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/api/v1/me/stats": {
+      "get": {
+        "tags": [
+          "Statistics"
+        ],
+        "summary": "Counts the plays of the current profile in a period: the most played tracks, artists, albums and genres, the listening time, the number of songs, the plays over time and per hour and the artists played for the first time. Every play counts with the whole duration of its track; plays of tracks that left the library are gone.",
+        "operationId": "GetMyStatistics",
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "description": "First day of the period (YYYY-MM-DD, from 1900-01-01); without it, the period starts with the first play.",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "description": "Last day of the period (up to 2999-12-31); without it, today in the time zone.",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "timeZone",
+            "in": "query",
+            "description": "IANA time zone the days and hours are counted in, e.g. Europe/Berlin; UTC without it.",
+            "schema": {
+              "maxLength": 64,
+              "minLength": 0,
+              "type": "string"
+            }
+          },
+          {
+            "name": "top",
+            "in": "query",
+            "description": "Length of each ranking.",
+            "schema": {
+              "maximum": 50,
+              "minimum": 1,
+              "type": "integer",
+              "format": "int32",
+              "default": 10
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "The statistics.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListeningStatistics"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid query parameters, e.g. from after to or an unknown time zone (code `request.invalid`).",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -13442,6 +13997,63 @@
         },
         "description": "Creates a playlist of the current profile."
       },
+      "CreateRecapShare": {
+        "required": [
+          "period",
+          "to",
+          "timeZone",
+          "design"
+        ],
+        "type": "object",
+        "properties": {
+          "period": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/RecapPeriod"
+              }
+            ]
+          },
+          "from": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "First day of the period; null or missing from the first play on.",
+            "format": "date"
+          },
+          "to": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Last day of the period.",
+            "format": "date"
+          },
+          "timeZone": {
+            "maxLength": 64,
+            "minLength": 1,
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "IANA time zone the days are counted in, e.g. Europe/Berlin."
+          },
+          "design": {
+            "maxLength": 32,
+            "minLength": 1,
+            "pattern": "^[a-z0-9-]+$",
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Id of the design of the clients, e.g. aurora."
+          }
+        },
+        "description": "A recap to share with the other profiles. Sharing the same period (kind, days and time zone) again changes the design of the existing share."
+      },
       "CreateSession": {
         "required": [
           "profileId"
@@ -14075,6 +14687,32 @@
           }
         },
         "description": "The home page of the current profile: every row is the first page of its list, total tells how many items the whole list has."
+      },
+      "HourStatistics": {
+        "required": [
+          "hour",
+          "plays",
+          "listeningMilliseconds"
+        ],
+        "type": "object",
+        "properties": {
+          "hour": {
+            "type": "integer",
+            "description": "Hour of the day, 0 to 23.",
+            "format": "int32"
+          },
+          "plays": {
+            "type": "integer",
+            "description": "Number of plays.",
+            "format": "int32"
+          },
+          "listeningMilliseconds": {
+            "type": "integer",
+            "description": "Listening time in milliseconds.",
+            "format": "int64"
+          }
+        },
+        "description": "The plays that started in an hour of the day."
       },
       "Job": {
         "required": [
@@ -14710,6 +15348,87 @@
         },
         "description": "Settings of the media library."
       },
+      "ListeningStatistics": {
+        "required": [
+          "from",
+          "to",
+          "timeZone",
+          "totals",
+          "topTracks",
+          "topArtists",
+          "topAlbums",
+          "topGenres",
+          "newArtists",
+          "timeline",
+          "hours"
+        ],
+        "type": "object",
+        "properties": {
+          "from": {
+            "type": "string",
+            "description": "First day of the period; for all plays the day of the first play.",
+            "format": "date"
+          },
+          "to": {
+            "type": "string",
+            "description": "Last day of the period.",
+            "format": "date"
+          },
+          "timeZone": {
+            "type": "string",
+            "description": "IANA time zone the days and hours are counted in."
+          },
+          "totals": {
+            "$ref": "#/components/schemas/StatisticsTotals"
+          },
+          "topTracks": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TopTrack"
+            },
+            "description": "The most played tracks, at most as many as requested with top."
+          },
+          "topArtists": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TopArtist"
+            },
+            "description": "The most played artists (artists of the tracks); tracks without artist do not count."
+          },
+          "topAlbums": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TopAlbum"
+            },
+            "description": "The most played albums; tracks without album do not count."
+          },
+          "topGenres": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TopGenre"
+            },
+            "description": "The most played genres, compared without regard to case; tracks without genre do not count."
+          },
+          "newArtists": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NewArtist"
+            },
+            "description": "Artists the profile played for the first time in the period, the most played first."
+          },
+          "timeline": {
+            "$ref": "#/components/schemas/Timeline"
+          },
+          "hours": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/HourStatistics"
+            },
+            "description": "The plays per hour of the day in the time zone: 24 entries, from 0 to 23."
+          }
+        },
+        "description": "The statistics of the plays of a profile in a period: rankings, listening time and the plays over time. Every play counts with the whole duration of its track. Rankings put the most plays first, then the longest listening time."
+      },
       "Lyrics": {
         "required": [
           "type",
@@ -15147,6 +15866,44 @@
         ],
         "type": "string",
         "description": "A field of the tags that the review inbox checks; a track lists those its file lacks."
+      },
+      "NewArtist": {
+        "required": [
+          "artist",
+          "firstPlayedAt",
+          "plays",
+          "listeningMilliseconds"
+        ],
+        "type": "object",
+        "properties": {
+          "artist": {
+            "$ref": "#/components/schemas/ArtistReference"
+          },
+          "firstPlayedAt": {
+            "type": "string",
+            "description": "The first play of a track of the artist.",
+            "format": "date-time"
+          },
+          "plays": {
+            "type": "integer",
+            "description": "Number of plays in the period.",
+            "format": "int32"
+          },
+          "listeningMilliseconds": {
+            "type": "integer",
+            "description": "Listening time in the period in milliseconds.",
+            "format": "int64"
+          },
+          "coverTrackId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The most played track of the artist with a cover (GetTrackCover); null if none has one.",
+            "format": "uuid"
+          }
+        },
+        "description": "An artist the profile played for the first time in a period."
       },
       "OnlineAlbumApplyResult": {
         "required": [
@@ -15996,7 +16753,11 @@
           "source.path_overlaps",
           "lookup.disabled",
           "lookup.unavailable",
-          "lookup.cover_not_found"
+          "lookup.cover_not_found",
+          "recap_share.not_found",
+          "video.too_large",
+          "video.unsupported_format",
+          "video.unreadable"
         ],
         "type": "string",
         "description": "Machine-readable code of a problem, part of every Problem Details response. Clients translate it."
@@ -16146,6 +16907,122 @@
           }
         },
         "description": "A profile referred to by another resource, for example the profile that reviewed a track."
+      },
+      "RecapPeriod": {
+        "enum": [
+          "LastMonth",
+          "LastThreeMonths",
+          "LastYear",
+          "CurrentYear",
+          "AllTime",
+          "Custom"
+        ],
+        "type": "string",
+        "description": "How the period of a recap was chosen. The days of a shared recap are fixed when it is shared."
+      },
+      "RecapShare": {
+        "required": [
+          "id",
+          "owner",
+          "isOwn",
+          "period",
+          "to",
+          "timeZone",
+          "design",
+          "createdAt",
+          "updatedAt"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "owner": {
+            "description": "The profile that shared the recap; its plays are counted.",
+            "$ref": "#/components/schemas/ProfileReference"
+          },
+          "isOwn": {
+            "type": "boolean",
+            "description": "Whether the current profile shared the recap."
+          },
+          "period": {
+            "$ref": "#/components/schemas/RecapPeriod"
+          },
+          "from": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "First day of the period; null from the first play on.",
+            "format": "date"
+          },
+          "to": {
+            "type": "string",
+            "description": "Last day of the period.",
+            "format": "date"
+          },
+          "timeZone": {
+            "type": "string",
+            "description": "IANA time zone of the days."
+          },
+          "design": {
+            "type": "string",
+            "description": "Id of the design of the clients the recap is shown in, e.g. aurora."
+          },
+          "createdAt": {
+            "type": "string",
+            "description": "When the recap was shared first.",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "description": "When it was shared last (with its current design).",
+            "format": "date-time"
+          }
+        },
+        "description": "A recap a profile shared with the other profiles of the instance."
+      },
+      "RecapSharePage": {
+        "required": [
+          "items",
+          "offset",
+          "limit",
+          "total"
+        ],
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RecapShare"
+            },
+            "description": "Items of the page, at most limit."
+          },
+          "offset": {
+            "type": "integer",
+            "description": "Number of items skipped before this page.",
+            "format": "int32"
+          },
+          "limit": {
+            "type": "integer",
+            "description": "Maximum number of items of the page, as requested.",
+            "format": "int32"
+          },
+          "total": {
+            "type": "integer",
+            "description": "Number of items of the whole collection.",
+            "format": "int32"
+          }
+        },
+        "description": "One page of a collection."
+      },
+      "RecapShareScope": {
+        "enum": [
+          "Received",
+          "Own"
+        ],
+        "type": "string"
       },
       "RecentlyPlayedTrack": {
         "required": [
@@ -16847,6 +17724,22 @@
         },
         "description": "Sets or changes the PIN of a profile."
       },
+      "SharedRecap": {
+        "required": [
+          "share",
+          "statistics"
+        ],
+        "type": "object",
+        "properties": {
+          "share": {
+            "$ref": "#/components/schemas/RecapShare"
+          },
+          "statistics": {
+            "$ref": "#/components/schemas/ListeningStatistics"
+          }
+        },
+        "description": "A shared recap with the statistics of the profile that shared it."
+      },
       "SleepTimerSettings": {
         "required": [
           "fadeSeconds"
@@ -17156,6 +18049,62 @@
           "Desc"
         ],
         "type": "string"
+      },
+      "StatisticsTotals": {
+        "required": [
+          "plays",
+          "listeningMilliseconds",
+          "tracks",
+          "artists",
+          "albums",
+          "genres",
+          "newArtists",
+          "activeDays"
+        ],
+        "type": "object",
+        "properties": {
+          "plays": {
+            "type": "integer",
+            "description": "Number of plays.",
+            "format": "int32"
+          },
+          "listeningMilliseconds": {
+            "type": "integer",
+            "description": "Sum of the durations of the played tracks in milliseconds.",
+            "format": "int64"
+          },
+          "tracks": {
+            "type": "integer",
+            "description": "Number of different tracks.",
+            "format": "int32"
+          },
+          "artists": {
+            "type": "integer",
+            "description": "Number of different artists.",
+            "format": "int32"
+          },
+          "albums": {
+            "type": "integer",
+            "description": "Number of different albums.",
+            "format": "int32"
+          },
+          "genres": {
+            "type": "integer",
+            "description": "Number of different genres.",
+            "format": "int32"
+          },
+          "newArtists": {
+            "type": "integer",
+            "description": "Number of artists played for the first time in the period.",
+            "format": "int32"
+          },
+          "activeDays": {
+            "type": "integer",
+            "description": "Number of days with at least one play.",
+            "format": "int32"
+          }
+        },
+        "description": "Numbers of a whole period of the statistics."
       },
       "StreamProtocol": {
         "enum": [
@@ -17529,6 +18478,201 @@
         ],
         "type": "string",
         "description": "A variant of a theme."
+      },
+      "Timeline": {
+        "required": [
+          "granularity",
+          "buckets"
+        ],
+        "type": "object",
+        "properties": {
+          "granularity": {
+            "$ref": "#/components/schemas/TimelineGranularity"
+          },
+          "buckets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TimelineBucket"
+            },
+            "description": "The steps in their order."
+          }
+        },
+        "description": "The plays over a period, without gaps: per day for up to 45 days, per week for up to 190 days, per month for up to 2200 days, otherwise per year."
+      },
+      "TimelineBucket": {
+        "required": [
+          "start",
+          "plays",
+          "listeningMilliseconds"
+        ],
+        "type": "object",
+        "properties": {
+          "start": {
+            "type": "string",
+            "description": "First day of the step: the day, the Monday of the week, the first of the month or of the year; may lie before the period.",
+            "format": "date"
+          },
+          "plays": {
+            "type": "integer",
+            "description": "Number of plays of the period in the step.",
+            "format": "int32"
+          },
+          "listeningMilliseconds": {
+            "type": "integer",
+            "description": "Listening time of the period in the step in milliseconds.",
+            "format": "int64"
+          }
+        },
+        "description": "One step of the timeline of the statistics."
+      },
+      "TimelineGranularity": {
+        "enum": [
+          "Day",
+          "Week",
+          "Month",
+          "Year"
+        ],
+        "type": "string",
+        "description": "Length of the steps of the timeline of the statistics."
+      },
+      "TopAlbum": {
+        "required": [
+          "album",
+          "plays",
+          "listeningMilliseconds",
+          "tracks"
+        ],
+        "type": "object",
+        "properties": {
+          "album": {
+            "$ref": "#/components/schemas/AlbumReference"
+          },
+          "plays": {
+            "type": "integer",
+            "description": "Number of plays in the period.",
+            "format": "int32"
+          },
+          "listeningMilliseconds": {
+            "type": "integer",
+            "description": "Listening time in the period in milliseconds.",
+            "format": "int64"
+          },
+          "tracks": {
+            "type": "integer",
+            "description": "Number of different tracks played.",
+            "format": "int32"
+          },
+          "coverTrackId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The most played track of the album with a cover (GetTrackCover); null if none has one.",
+            "format": "uuid"
+          }
+        },
+        "description": "An album among the most played of a period."
+      },
+      "TopArtist": {
+        "required": [
+          "artist",
+          "plays",
+          "listeningMilliseconds",
+          "tracks"
+        ],
+        "type": "object",
+        "properties": {
+          "artist": {
+            "$ref": "#/components/schemas/ArtistReference"
+          },
+          "plays": {
+            "type": "integer",
+            "description": "Number of plays in the period.",
+            "format": "int32"
+          },
+          "listeningMilliseconds": {
+            "type": "integer",
+            "description": "Listening time in the period in milliseconds.",
+            "format": "int64"
+          },
+          "tracks": {
+            "type": "integer",
+            "description": "Number of different tracks played.",
+            "format": "int32"
+          },
+          "coverTrackId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The most played track of the artist with a cover (GetTrackCover); null if none has one.",
+            "format": "uuid"
+          }
+        },
+        "description": "An artist among the most played of a period."
+      },
+      "TopGenre": {
+        "required": [
+          "name",
+          "plays",
+          "listeningMilliseconds",
+          "tracks"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Name of the genre in its most played spelling."
+          },
+          "plays": {
+            "type": "integer",
+            "description": "Number of plays in the period.",
+            "format": "int32"
+          },
+          "listeningMilliseconds": {
+            "type": "integer",
+            "description": "Listening time in the period in milliseconds.",
+            "format": "int64"
+          },
+          "tracks": {
+            "type": "integer",
+            "description": "Number of different tracks played.",
+            "format": "int32"
+          },
+          "coverTrackId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The most played track of the genre with a cover (GetTrackCover); null if none has one.",
+            "format": "uuid"
+          }
+        },
+        "description": "A genre among the most played of a period."
+      },
+      "TopTrack": {
+        "required": [
+          "track",
+          "plays",
+          "listeningMilliseconds"
+        ],
+        "type": "object",
+        "properties": {
+          "track": {
+            "$ref": "#/components/schemas/Track"
+          },
+          "plays": {
+            "type": "integer",
+            "description": "Number of plays in the period.",
+            "format": "int32"
+          },
+          "listeningMilliseconds": {
+            "type": "integer",
+            "description": "Listening time in the period in milliseconds.",
+            "format": "int64"
+          }
+        },
+        "description": "A track among the most played of a period."
       },
       "Track": {
         "required": [
@@ -20083,6 +21227,12 @@
       "name": "Profiles"
     },
     {
+      "name": "RecapShares"
+    },
+    {
+      "name": "RecapVideos"
+    },
+    {
       "name": "RecentlyPlayed"
     },
     {
@@ -20105,6 +21255,9 @@
     },
     {
       "name": "SmartPlaylistTemplates"
+    },
+    {
+      "name": "Statistics"
     },
     {
       "name": "SubsonicAccess"
