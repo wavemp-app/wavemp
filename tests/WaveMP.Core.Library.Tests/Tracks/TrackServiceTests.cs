@@ -112,6 +112,22 @@ public class TrackServiceTests
     }
 
     [Test]
+    public async Task ListGenresAndYears_WithSource_PassTheSource()
+    {
+        var sourceId = Guid.NewGuid();
+
+        await _service.ListGenresAsync(new GenreListRequest(0, 10, SourceId: sourceId));
+        await _service.ListYearsAsync(new YearListRequest(0, 10, SourceId: sourceId));
+
+        await _tracks.Received(1).ListGenresAsync(
+            new GenreListQuery(0, 10, GenreSortField.Name, SortDirection.Asc, SourceId: sourceId),
+            Arg.Any<CancellationToken>());
+        await _tracks.Received(1).ListYearsAsync(
+            new YearListQuery(0, 10, SortDirection.Desc, SourceId: sourceId),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Test]
     public async Task ListGenresAndYears_WithMyMusic_PassUserAndFilter()
     {
         var userId = Guid.NewGuid();

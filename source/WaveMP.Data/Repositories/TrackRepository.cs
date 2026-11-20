@@ -114,7 +114,9 @@ internal sealed class TrackRepository(WaveMpDbContext dbContext) : ITrackReposit
 
     public Task<Page<GenreRow>> ListGenresAsync(GenreListQuery query, CancellationToken cancellationToken = default)
     {
-        IQueryable<Track> tracks = MyMusicOf(dbContext.Tracks.AsNoTracking(), query.UserId, query.MyMusic)
+        IQueryable<Track> tracks = OfSource(
+                MyMusicOf(dbContext.Tracks.AsNoTracking(), query.UserId, query.MyMusic),
+                query.SourceId)
             .Where(track => track.Genre != null);
         if (query.Search is { } search)
         {
@@ -150,7 +152,7 @@ internal sealed class TrackRepository(WaveMpDbContext dbContext) : ITrackReposit
 
     public Task<Page<YearRow>> ListYearsAsync(YearListQuery query, CancellationToken cancellationToken = default)
     {
-        return MyMusicOf(dbContext.Tracks.AsNoTracking(), query.UserId, query.MyMusic)
+        return OfSource(MyMusicOf(dbContext.Tracks.AsNoTracking(), query.UserId, query.MyMusic), query.SourceId)
             .Where(track => track.Year != null)
             .GroupBy(track => track.Year!.Value)
             .Select(group => new
@@ -217,11 +219,7 @@ internal sealed class TrackRepository(WaveMpDbContext dbContext) : ITrackReposit
             tracks = tracks.Where(track => track.HasVideo == hasVideo);
         }
 
-        if (query.SourceId is { } sourceId)
-        {
-            tracks = tracks.Where(track => track.SourceId == sourceId);
-        }
-
+        tracks = OfSource(tracks, query.SourceId);
         tracks = MyMusicOf(tracks, query.UserId, query.MyMusic);
         if (query.MinRating is { } minRating)
         {
@@ -231,6 +229,11 @@ internal sealed class TrackRepository(WaveMpDbContext dbContext) : ITrackReposit
         }
 
         return tracks;
+    }
+
+    private static IQueryable<Track> OfSource(IQueryable<Track> tracks, Guid? sourceId)
+    {
+        return sourceId is { } id ? tracks.Where(track => track.SourceId == id) : tracks;
     }
 
     private IQueryable<Track> MyMusicOf(IQueryable<Track> tracks, Guid? userId, bool myMusic)

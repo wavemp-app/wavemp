@@ -10,9 +10,11 @@ namespace WaveMP.Core.Library.Tracks;
 /// <param name="Direction">Sort direction; the newest year first by default.</param>
 /// <param name="UserId">The profile to whom <paramref name="MyMusic"/> refers.</param>
 /// <param name="MyMusic">Only the tracks of the "my music" of the profile count; ignored without a profile.</param>
+/// <param name="SourceId">Only the tracks of this media source count.</param>
 public sealed record YearListRequest(
     int Offset,
     int Limit,
     SortDirection? Direction = null,
     Guid? UserId = null,
-    bool MyMusic = false);
+    bool MyMusic = false,
+    Guid? SourceId = null);

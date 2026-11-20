@@ -30,6 +30,8 @@ public sealed class GenresController(ITrackService tracks) : ControllerBase
     /// <param name="direction">Sort direction; descending by default for TrackCount, otherwise ascending.</param>
     /// <param name="q">Search text: only genres that contain it or are similar to it.</param>
     /// <param name="myMusic">Only genres of the "my music" of the current profile, counted over these tracks.</param>
+    /// <param name="sourceId">Only genres of the tracks of this media source, counted over these tracks. Combines with
+    /// <c>myMusic</c>.</param>
     /// <param name="cancellationToken">Aborts the request.</param>
     /// <response code="200">One page of genres.</response>
     /// <response code="400">Invalid query parameters (code <c>request.invalid</c>).</response>
@@ -43,6 +45,7 @@ public sealed class GenresController(ITrackService tracks) : ControllerBase
         [FromQuery] SortDirectionDto? direction = null,
         [FromQuery, StringLength(LibraryLimits.TextMaxLength)] string? q = null,
         [FromQuery] bool myMusic = false,
+        [FromQuery] Guid? sourceId = null,
         CancellationToken cancellationToken = default)
     {
         this.ValidateEnum(sort, nameof(sort));
@@ -60,7 +63,8 @@ public sealed class GenresController(ITrackService tracks) : ControllerBase
                 direction?.ToEntity(),
                 q,
                 User.GetUserId(),
-                myMusic),
+                myMusic,
+                sourceId),
             cancellationToken);
         return Ok(page.ToDto(genre => genre.ToDto()));
     }

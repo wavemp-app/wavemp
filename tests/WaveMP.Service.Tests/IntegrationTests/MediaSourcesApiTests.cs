@@ -248,9 +248,32 @@ public class MediaSourcesApiTests
         none.Total.Should().Be(0);
     }
 
-    private async Task<MediaSourceDto> CreateSourceAsync(string fileName)
+    [Test]
+    public async Task ListGenresAndYears_SourceFilter_OnlyCountTheTracksOfTheSource()
     {
-        string folder = await CreateFolderWithAudioAsync(fileName);
+        MediaSourceDto source = await CreateSourceAsync(
+            "Tagged.mp3",
+            new TestTags { Title = "Tagged", Genre = "Source Genre", Date = "1987" });
+
+        PageDto<GenreDto> genres = await _user.GetJsonAsync<PageDto<GenreDto>>(
+            $"/api/v1/genres?sourceId={source.Id}");
+        PageDto<YearDto> years = await _user.GetJsonAsync<PageDto<YearDto>>(
+            $"/api/v1/years?sourceId={source.Id}");
+        PageDto<GenreDto> otherGenres = await _user.GetJsonAsync<PageDto<GenreDto>>(
+            $"/api/v1/genres?sourceId={MediaSource.DefaultId}");
+        PageDto<YearDto> noYears = await _user.GetJsonAsync<PageDto<YearDto>>(
+            $"/api/v1/years?sourceId={Guid.NewGuid()}");
+
+        genres.Items.Should().ContainSingle().Which.Should().BeEquivalentTo(
+            new { Name = "Source Genre", TrackCount = 1 });
+        years.Items.Should().ContainSingle().Which.Should().BeEquivalentTo(new { Year = 1987, TrackCount = 1 });
+        otherGenres.Items.Select(genre => genre.Name).Should().NotContain("Source Genre");
+        noYears.Total.Should().Be(0);
+    }
+
+    private async Task<MediaSourceDto> CreateSourceAsync(string fileName, TestTags? tags = null)
+    {
+        string folder = await CreateFolderWithAudioAsync(fileName, tags);
         HttpResponseMessage response = await _admin.PostAsJsonAsync(
             "/api/v1/sources",
             new { name = Name("Source"), path = folder });
@@ -259,10 +282,10 @@ public class MediaSourcesApiTests
         return (await response.Content.ReadFromJsonAsync<MediaSourceDto>(HttpClientExtensions.JsonOptions))!;
     }
 
-    private async Task<string> CreateFolderWithAudioAsync(string fileName = "Track.mp3")
+    private async Task<string> CreateFolderWithAudioAsync(string fileName = "Track.mp3", TestTags? tags = null)
     {
         string folder = _others.CreateDirectory(HttpClientExtensions.Unique());
-        await TestMediaGenerator.CreateAudioAsync(Path.Combine(folder, fileName), AudioFormat.Mp3);
+        await TestMediaGenerator.CreateAudioAsync(Path.Combine(folder, fileName), AudioFormat.Mp3, tags);
         return folder;
     }
 

@@ -83,7 +83,8 @@ internal static class LibraryQueries
             LibraryQueryDefaults.Direction(sort, request.Direction),
             SearchText.Normalize(request.Search),
             request.UserId,
-            IsMyMusic(request.UserId, request.MyMusic));
+            IsMyMusic(request.UserId, request.MyMusic),
+            request.SourceId);
     }
 
     public static YearListQuery ToQuery(YearListRequest request)
@@ -93,7 +94,8 @@ internal static class LibraryQueries
             request.Limit,
             LibraryQueryDefaults.YearDirection(request.Direction),
             request.UserId,
-            IsMyMusic(request.UserId, request.MyMusic));
+            IsMyMusic(request.UserId, request.MyMusic),
+            request.SourceId);
     }
 
     /// <summary>

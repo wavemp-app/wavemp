@@ -297,6 +297,40 @@ public class TrackRepositoryTests : LibraryDatabaseTests
     }
 
     [Test]
+    public async Task ListGenresAndYearsAsync_SourceFilter_CountOnlyTheTracksOfTheSource()
+    {
+        await SeedStandardLibraryAsync();
+        LibrarySeed seed = new();
+        MediaSource other = seed.Source();
+        Artist artist = seed.Artist("Gamma Group");
+        Album album = seed.Album("Other Album", artist);
+        seed.Track("Elsewhere", artist, album, 1, null, 2001, "rock", source: other);
+        seed.Track("Far Away", artist, album, 2, null, 1999, "Jazz", source: other);
+        await SaveAsync(seed);
+        TrackRepository repository = new(CreateDbContext());
+
+        Page<GenreRow> genres = await repository.ListGenresAsync(
+            new GenreListQuery(0, 100, GenreSortField.Name, SortDirection.Asc, SourceId: other.Id));
+        Page<GenreRow> allGenres = await repository.ListGenresAsync(
+            new GenreListQuery(0, 100, GenreSortField.Name, SortDirection.Asc));
+        Page<YearRow> years = await repository.ListYearsAsync(
+            new YearListQuery(0, 100, SortDirection.Desc, SourceId: other.Id));
+        Page<YearRow> none = await repository.ListYearsAsync(
+            new YearListQuery(0, 100, SortDirection.Desc, SourceId: Guid.NewGuid()));
+
+        genres.Items.Should().BeEquivalentTo(
+            [new GenreRow("Jazz", 1, 1), new GenreRow("rock", 1, 1)],
+            options => options.WithStrictOrdering());
+        allGenres.Items.Should().BeEquivalentTo(
+            [new GenreRow("Jazz", 1, 1), new GenreRow("Pop", 3, 2), new GenreRow("Rock", 4, 2)],
+            options => options.WithStrictOrdering());
+        years.Items.Should().BeEquivalentTo(
+            [new YearRow(2001, 1, 1), new YearRow(1999, 1, 1)],
+            options => options.WithStrictOrdering());
+        none.Total.Should().Be(0);
+    }
+
+    [Test]
     public async Task FindPrimaryFileAsync_WithDuplicates_ReturnsThePrimaryFileOfTheKind()
     {
         StandardLibrary library = await SeedStandardLibraryAsync();

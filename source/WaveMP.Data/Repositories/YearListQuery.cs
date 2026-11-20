@@ -10,9 +10,11 @@ namespace WaveMP.Data.Repositories;
 /// <param name="Direction">Sort direction of the years.</param>
 /// <param name="UserId">The user to whom <paramref name="MyMusic"/> refers.</param>
 /// <param name="MyMusic">Only the tracks of the "my music" of the user count. Needs <paramref name="UserId"/>.</param>
+/// <param name="SourceId">Only the tracks of this media source count.</param>
 public sealed record YearListQuery(
     int Offset,
     int Limit,
     SortDirection Direction,
     Guid? UserId = null,
-    bool MyMusic = false);
+    bool MyMusic = false,
+    Guid? SourceId = null);
