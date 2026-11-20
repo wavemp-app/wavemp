@@ -1,6 +1,7 @@
 import { expect, test, type APIRequestContext } from '@playwright/test'
 import { adminHeaders, createUser, deleteUser, uniqueSuffix } from './helpers/api'
 import { adminNavItem, homeUrl, profileTile } from './helpers/navigation'
+import { chooseTheme, openSettings } from './helpers/settings'
 import { emptyStorageState } from './helpers/storage'
 
 // The theme page of the administration: the template is downloaded, uploaded as a theme package
@@ -89,12 +90,9 @@ test.describe('changes', () => {
                 await userPage.goto('/')
                 await profileTile(userPage, user.name).click()
                 await expect(userPage).toHaveURL(homeUrl)
-                await userPage.goto('/settings')
-                const option = userPage.locator(
-                    `[data-part='theme-option'][data-item='${templateId}']`,
-                )
-                await option.click()
-                await expect(option).toHaveAttribute('aria-checked', 'true')
+                // The reload below finds the theme only once the server has stored the choice.
+                await openSettings(userPage)
+                await chooseTheme(userPage, templateId)
                 await expect(userPage.locator(':root')).toHaveAttribute('data-theme', templateId)
                 await expect
                     .poll(() =>

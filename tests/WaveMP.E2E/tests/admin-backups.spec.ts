@@ -4,6 +4,8 @@ import { adminNavItem } from './helpers/navigation'
 
 // The backup page of the administration on the desktop and on the smartphone. The exports are
 // created by the real pg_dump of the image against the PostgreSQL 18 database of the test setup.
+// The settings are shared by all tests and one test changes them while the others run, so only
+// that test expects the default values; the others accept any time and number.
 
 test('shows the state, the exports and the settings of the backups without horizontal scrolling', async ({
     page,
@@ -15,13 +17,13 @@ test('shows the state, the exports and the settings of the backups without horiz
     const status = page.locator("[data-part='backup-status']")
     await expect(status).toBeVisible()
     await expect(status.locator("[data-item='schedule'] [data-part='stat-value']")).toHaveText(
-        /^Daily at 03:00 \([^)]+\)$/,
+        /^Daily at \d{2}:\d{2} \([^)]+\)$/,
     )
     await expect(status.locator("[data-item='next-run'] [data-part='stat-value']")).not.toHaveText(
         'None',
     )
-    await expect(page.getByLabel('Time of the daily backup')).toHaveValue('03:00')
-    await expect(page.getByLabel('Exports to keep')).toHaveValue('7')
+    await expect(page.getByLabel('Time of the daily backup')).toHaveValue(/^\d{2}:\d{2}$/)
+    await expect(page.getByLabel('Exports to keep')).toHaveValue(/^\d+$/)
 
     const overflow = await page.evaluate(
         () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
@@ -112,10 +114,24 @@ test.describe('changes', () => {
         }
     })
 
-    test('saves the time and the number of kept exports', async ({ page, request }) => {
+    test('shows the defaults and saves the time and the number of kept exports', async ({
+        page,
+        request,
+    }) => {
         try {
             await page.goto('/admin/backups')
-            await page.getByLabel('Time of the daily backup').fill('22:15')
+            const time = page.getByLabel('Time of the daily backup')
+            // The fields are locked until the settings are loaded, so they keep what is typed.
+            await expect(time).toBeEnabled()
+            await expect(time).toHaveValue('03:00')
+            await expect(page.getByLabel('Exports to keep')).toHaveValue('7')
+            await expect(
+                page.locator(
+                    "[data-part='backup-status'] [data-item='schedule'] [data-part='stat-value']",
+                ),
+            ).toHaveText(/^Daily at 03:00 \([^)]+\)$/)
+
+            await time.fill('22:15')
             await page.getByLabel('Exports to keep').selectOption('14')
             await page.getByRole('button', { name: 'Save' }).click()
 
