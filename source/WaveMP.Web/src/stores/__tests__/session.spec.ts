@@ -633,6 +633,36 @@ describe('session store', () => {
             expect(session.autoplay).toEqual({ enabled: false, includeVideoOnly: true })
         })
 
+        it('loads the ambient light of videos with the profile, on until loaded', async () => {
+            api.createSession.mockResolvedValue(created('a'))
+            api.getSettings.mockResolvedValue({ language: 'en', video: { ambientMode: false } })
+            const session = useSessionStore()
+            expect(session.video).toEqual({ ambientMode: true })
+
+            await session.select('a')
+            expect(session.video).toEqual({ ambientMode: false })
+
+            session.clear()
+            expect(session.video).toEqual({ ambientMode: true })
+        })
+
+        it('switches the ambient light off at once and back when saving fails', async () => {
+            saveStoredSession(stored('a'))
+            api.updateSettings
+                .mockResolvedValueOnce({ video: { ambientMode: false } })
+                .mockRejectedValueOnce(new Error('offline'))
+            const session = useSessionStore()
+            session.restore()
+
+            const saving = session.updateVideo({ ambientMode: false })
+            expect(session.video.ambientMode).toBe(false)
+            await saving
+            expect(api.updateSettings).toHaveBeenCalledWith({ video: { ambientMode: false } })
+
+            await expect(session.updateVideo({ ambientMode: true })).rejects.toThrow('offline')
+            expect(session.video).toEqual({ ambientMode: false })
+        })
+
         it('saves the fade-out of the sleep timer and passes errors on', async () => {
             saveStoredSession(stored('a'))
             api.updateSettings.mockResolvedValueOnce({ sleepTimer: { fadeSeconds: 60 } })

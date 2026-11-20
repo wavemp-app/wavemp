@@ -77,6 +77,8 @@ export const parts = [
     'btn-auto-change',
     'video-stage',
     'video-backdrop',
+    'video-ambient',
+    'video-ambient-canvas',
     'video',
     'btn-fullscreen',
     'cover',

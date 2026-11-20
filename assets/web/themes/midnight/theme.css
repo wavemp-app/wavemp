@@ -192,6 +192,10 @@
     --wmp-round-button-size: 1.875rem;
     --wmp-slider-thumb-size: 0.875rem;
     --wmp-seek-height: 0.25rem;
+
+    /* The ambient light of videos glows like the blue play button: strong and saturated. */
+    --wmp-video-ambient-intensity: 0.85;
+    --wmp-video-ambient-saturation: 1.4;
 }
 
 /* --- Dark areas: header, transport bar, bottom navigation -------------------------------------- */

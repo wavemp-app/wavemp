@@ -3357,6 +3357,75 @@
         pointer-events: none;
     }
 
+    /*
+     * The ambient light: two canvases with tiny pictures of the video, stretched over the whole
+     * stage, enlarged and blurred, so only soft light in the colors of the picture shows around it.
+     * The current canvas fades in above the previous one with every new picture; with reduced
+     * motion one static color fills the area instead. The ambient light is a size container, so
+     * the blur can grow with the stage (cqmax), also in full screen.
+     */
+    [data-part='video-ambient'] {
+        position: absolute;
+        inset: 0;
+        container-type: size;
+        overflow: hidden;
+        isolation: isolate;
+        pointer-events: none;
+        opacity: var(--wmp-video-ambient-intensity);
+        transition: opacity var(--wmp-video-ambient-fade-duration) ease-in-out;
+    }
+
+    [data-part='video-ambient']:is([data-state~='off'], [data-state~='waiting']) {
+        opacity: 0;
+    }
+
+    [data-part='video-ambient'][data-state~='static'] {
+        background: var(--wmp-video-ambient-color, transparent);
+    }
+
+    [data-part='video-ambient-canvas'] {
+        position: absolute;
+        inset: 0;
+        display: block;
+        inline-size: 100%;
+        block-size: 100%;
+        object-fit: fill;
+        opacity: 0;
+        filter: blur(var(--wmp-video-ambient-blur)) saturate(var(--wmp-video-ambient-saturation));
+        transform: scale(var(--wmp-video-ambient-scale));
+    }
+
+    [data-part='video-ambient-canvas'][data-state~='previous'] {
+        z-index: 0;
+        opacity: 1;
+    }
+
+    [data-part='video-ambient-canvas'][data-state~='current'] {
+        z-index: 1;
+        opacity: 1;
+        animation: wmp-video-ambient-picture var(--wmp-video-ambient-transition-duration) linear;
+    }
+
+    [data-part='video-ambient'][data-state~='static'] > [data-part='video-ambient-canvas'] {
+        display: none;
+    }
+
+    @keyframes wmp-video-ambient-picture {
+        from {
+            opacity: 0;
+        }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        [data-part='video-ambient'] {
+            transition: none;
+        }
+
+        [data-part='video-ambient-canvas'][data-state~='current'] {
+            animation: none;
+        }
+    }
+
     [data-part='video'] {
         position: absolute;
         inset: 0;

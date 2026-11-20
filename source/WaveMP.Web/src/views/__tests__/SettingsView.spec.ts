@@ -386,6 +386,29 @@ describe('SettingsView playback', () => {
         ).toBe(true)
     })
 
+    it('switches the ambient light of videos off and on at once', async () => {
+        const { wrapper, session } = mountView()
+        const update = vi.spyOn(session, 'updateVideo').mockImplementation(async (change) => {
+            session.video = { ambientMode: change.ambientMode ?? session.video.ambientMode }
+        })
+        const ambient = field<HTMLInputElement>(wrapper, 'video-ambient', 'input')
+        expect(ambient.element.checked).toBe(true)
+        expect(wrapper.get('[data-field="video-ambient"]').text()).toContain(
+            'Ambient light around videos',
+        )
+
+        await ambient.setValue(false)
+        await flushPromises()
+        expect(update).toHaveBeenCalledWith({ ambientMode: false })
+        expect(field<HTMLInputElement>(wrapper, 'video-ambient', 'input').element.checked).toBe(
+            false,
+        )
+
+        await ambient.setValue(true)
+        await flushPromises()
+        expect(update).toHaveBeenLastCalledWith({ ambientMode: true })
+    })
+
     it('follows the switch of the transport bar', async () => {
         const { wrapper, session } = mountView()
         session.crossfade = { enabled: true, seconds: 8, albumsGapless: true }

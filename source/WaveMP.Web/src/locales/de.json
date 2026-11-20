@@ -713,6 +713,8 @@
     "autoplay": "Autoplay: ähnliche Titel spielen, wenn die Warteschlange endet",
     "autoplayHint": "Ausgewählt nach den Interpreten der Liste, dann nach ihren Genres und Jahrzehnten. Gilt, solange Wiederholen aus ist. Der Autoplay-Button des Players schaltet es ein und aus.",
     "autoplayVideoOnly": "Titel einbeziehen, die nur ein Musikvideo haben",
+    "videoAmbient": "Umgebungslicht um Videos",
+    "videoAmbientHint": "Füllt die dunkle Fläche um ein Video mit weichem Licht in den Farben des Bildes.",
     "sleepTimerFade": "Ausblenden des Sleep-Timers",
     "sleepTimerFadeHint": "Wie lange die Musik ausgeblendet wird, bevor der Sleep-Timer sie stoppt.",
     "sleepTimerFadeSeconds": "{seconds} Sekunden",

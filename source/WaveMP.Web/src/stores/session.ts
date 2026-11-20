@@ -61,6 +61,13 @@ import {
     type ThemeChoice,
 } from '@/themes/choice'
 import {
+    applyVideoSettingsChange,
+    defaultVideoSettings,
+    toVideoSettings,
+    type VideoSettings,
+    type VideoSettingsChange,
+} from '@/player/videoSettings'
+import {
     applyVisualizationChange,
     defaultVisualizationSettings,
     explicitVisualizationChange,
@@ -118,6 +125,8 @@ export const useSessionStore = defineStore('session', () => {
     const sleepTimer = ref<SleepTimerSettings>(defaultSleepTimerSettings)
     /** Visualization of Now Playing of the profile. */
     const visualization = ref<VisualizationSettings>(defaultVisualizationSettings)
+    /** Videos of Now Playing of the profile; the ambient light is on until the settings are loaded. */
+    const video = ref<VideoSettings>(defaultVideoSettings)
     /** Increases with every change of the equalizer, so older answers do not overwrite newer ones. */
     const requests = { equalizer: 0 }
     /**
@@ -206,6 +215,16 @@ export const useSessionStore = defineStore('session', () => {
             patchSettings({ visualization: { ...change } }),
         read: (settings) => toVisualizationSettings(settings?.visualization),
     })
+    const videoSaver = createSettingSaver({
+        get: () => video.value,
+        set: (value: VideoSettings) => {
+            video.value = value
+        },
+        apply: applyVideoSettingsChange,
+        merge: mergeChanges,
+        request: (change: VideoSettingsChange) => patchSettings({ video: { ...change } }),
+        read: (settings) => toVideoSettings(settings?.video),
+    })
     /**
      * Save view mode and sidebar one request after the other and only the latest choice, so quick
      * changes cannot reach the server out of order and leave an older value stored.
@@ -263,11 +282,13 @@ export const useSessionStore = defineStore('session', () => {
         autoplay.value = defaultAutoplaySettings
         sleepTimer.value = defaultSleepTimerSettings
         visualization.value = defaultVisualizationSettings
+        video.value = defaultVideoSettings
         requests.equalizer++
         crossfadeSaver.reset()
         autoplaySaver.reset()
         sleepTimerSaver.reset()
         visualizationSaver.reset()
+        videoSaver.reset()
     }
 
     /** Takes over the playback settings of an answer; incomplete groups keep their values. */
@@ -278,6 +299,7 @@ export const useSessionStore = defineStore('session', () => {
         sleepTimer.value = toSleepTimerSettings(settings?.sleepTimer) ?? sleepTimer.value
         visualization.value =
             toVisualizationSettings(settings?.visualization) ?? visualization.value
+        video.value = toVideoSettings(settings?.video) ?? video.value
     }
 
     function persist(): void {
@@ -515,6 +537,14 @@ export const useSessionStore = defineStore('session', () => {
         return visualizationSaver.save(explicitVisualizationChange(visualization.value, change))
     }
 
+    /**
+     * Changes the video settings of the profile (the ambient light) at once and saves them like
+     * updateCrossfade. Errors are passed on.
+     */
+    function updateVideo(change: VideoSettingsChange): Promise<void> {
+        return videoSaver.save(change)
+    }
+
     /** Ends the session on the server (if reachable) and forgets it. */
     async function signOut(): Promise<void> {
         if (token.value) {
@@ -543,6 +573,7 @@ export const useSessionStore = defineStore('session', () => {
         autoplay,
         sleepTimer,
         visualization,
+        video,
         isAuthenticated,
         isAdmin,
         isBuiltInAdmin,
@@ -561,6 +592,7 @@ export const useSessionStore = defineStore('session', () => {
         setAutoplayEnabled,
         updateSleepTimer,
         updateVisualization,
+        updateVideo,
         signOut,
         clear,
     }

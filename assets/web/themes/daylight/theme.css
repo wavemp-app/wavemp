@@ -172,6 +172,7 @@
     );
 
     --wmp-stage-view-background: linear-gradient(#0d2a4a, #061528);
+    --wmp-video-ambient-intensity: 0.7;
     --wmp-lyrics-color: #0b2c4f;
     --wmp-lyrics-muted-color: #4d6884;
 

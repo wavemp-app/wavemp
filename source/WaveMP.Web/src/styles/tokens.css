@@ -298,6 +298,12 @@
         --wmp-cover-size-l: 12rem;
         --wmp-stage-transition-duration: 0.6s;
         --wmp-stage-view-background: #000000;
+        --wmp-video-ambient-intensity: 0.75;
+        --wmp-video-ambient-blur: 6cqmax;
+        --wmp-video-ambient-saturation: 1.3;
+        --wmp-video-ambient-scale: 1.2;
+        --wmp-video-ambient-transition-duration: 0.25s;
+        --wmp-video-ambient-fade-duration: 0.6s;
         --wmp-lyrics-color: #ffffff;
         --wmp-lyrics-muted-color: rgb(255 255 255 / 0.45);
         --wmp-lyrics-active-scale: 1.12;

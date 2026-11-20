@@ -321,6 +321,12 @@ async function changeAutoplayVideoOnly(value: boolean): Promise<void> {
     }
 }
 
+async function changeVideoAmbient(value: boolean): Promise<void> {
+    if (value !== session.video.ambientMode) {
+        await save(() => session.updateVideo({ ambientMode: value }))
+    }
+}
+
 /**
  * "Off" turns the automatic change off and keeps its interval (the button of the visualization turns
  * it on again); an interval turns it on with that interval.
@@ -458,6 +464,13 @@ async function changeSleepTimerFade(value: string): Promise<void> {
                 :label="t('settings.autoplayVideoOnly')"
                 :disabled="!session.autoplay.enabled"
                 @update:model-value="changeAutoplayVideoOnly"
+            />
+            <BaseCheckbox
+                :model-value="session.video.ambientMode"
+                data-field="video-ambient"
+                :label="t('settings.videoAmbient')"
+                :hint="t('settings.videoAmbientHint')"
+                @update:model-value="changeVideoAmbient"
             />
             <BaseSelect
                 :model-value="sleepTimerFade"

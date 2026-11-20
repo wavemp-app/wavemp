@@ -190,6 +190,9 @@
     --wmp-slider-fill-background: linear-gradient(90deg, #00626a, color-mix(in oklab, #00626a 45%, var(--cg-tint)));
 
     --wmp-stage-view-background: color-mix(in oklab, var(--cg-tint) 22%, #0b121c);
+    /* The ambient light of videos is frosted like the glass panes: soft and wide. */
+    --wmp-video-ambient-intensity: 0.8;
+    --wmp-video-ambient-blur: 8cqmax;
     --wmp-lyrics-color: #ffffff;
     --wmp-lyrics-muted-color: rgb(255 255 255 / 62%);
 

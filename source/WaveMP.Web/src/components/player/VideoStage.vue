@@ -2,6 +2,7 @@
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import BaseButton from '@/components/base/BaseButton.vue'
+import VideoAmbient from './VideoAmbient.vue'
 import { canFullscreen, enterFullscreen, exitFullscreen, isFullscreen } from '@/player/fullscreen'
 import { videoAspectRatio, videoOrientation } from '@/player/videoOrientation'
 
@@ -12,14 +13,17 @@ import { videoAspectRatio, videoOrientation } from '@/player/videoOrientation'
  * click or the button shows the stage in full screen. The video is always shown whole and
  * undistorted in the middle of the stage; the orientation of its picture (data-orientation) and its
  * aspect ratio (--wmp-video-aspect-ratio) let the theme design the free areas around it, for
- * example with the video-backdrop behind it.
+ * example with the video-backdrop behind it. Above the backdrop, the video-ambient fills these areas
+ * with soft light in the colors of the picture, unless the profile switched it off.
  */
 const props = withDefaults(
     defineProps<{
         /** Whether the stage shows the video view. */
         active?: boolean
+        /** Whether the profile shows the ambient light around the picture. */
+        ambient?: boolean
     }>(),
-    { active: true },
+    { active: true, ambient: true },
 )
 
 const emit = defineEmits<{
@@ -116,6 +120,7 @@ defineExpose({ fullscreen, fullscreenAvailable, toggleFullscreen })
         @dblclick="toggleFullscreen"
     >
         <span data-part="video-backdrop" aria-hidden="true"></span>
+        <VideoAmbient :video="video" :enabled="ambient" :active="active" :fullscreen="fullscreen" />
         <video
             ref="video"
             data-part="video"

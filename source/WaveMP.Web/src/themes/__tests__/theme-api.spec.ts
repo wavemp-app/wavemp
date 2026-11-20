@@ -27,6 +27,7 @@ const runtimeVariables = [
     '--wmp-bar-value',
     '--wmp-agreement',
     '--wmp-video-aspect-ratio',
+    '--wmp-video-ambient-color',
     '--wmp-line-progress',
     '--wmp-word-progress',
     '--wmp-item-count',

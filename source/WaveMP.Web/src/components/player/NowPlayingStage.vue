@@ -46,6 +46,8 @@ const props = withDefaults(
         audio?: AnalyserNode | null
         /** The visualization settings of the profile. */
         visualization?: VisualizationSettings
+        /** Whether videos show the ambient light around their picture. */
+        ambient?: boolean
         /** The lyrics of the track; null for tracks without lyrics. */
         lyrics?: TrackLyrics | null
         /** Whether the music plays. */
@@ -68,6 +70,7 @@ const props = withDefaults(
         videoState: 'idle',
         audio: null,
         visualization: () => defaultVisualizationSettings,
+        ambient: true,
         lyrics: null,
         playing: false,
         position: 0,
@@ -271,6 +274,7 @@ const subtitle = computed(() => {
                 <VideoStage
                     ref="videoStage"
                     :active="view === 'video'"
+                    :ambient="ambient"
                     @attach="emit('attachVideo', $event)"
                     @detach="emit('detachVideo', $event)"
                 />
