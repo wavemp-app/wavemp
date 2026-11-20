@@ -32,6 +32,8 @@ const saving = ref(false)
 const saved = ref(false)
 const failed = ref(false)
 const invalid = ref<Partial<Record<'scheduleTime' | 'retention', string>>>({})
+/** Locked until the settings are loaded, so a loaded value never replaces what was typed. */
+const locked = computed(() => saving.value || !store.settings)
 
 function show(settings: BackupSettings | null): void {
     if (settings?.scheduleTime) {
@@ -137,7 +139,7 @@ onMounted(async () => {
                     : t('adminBackups.scheduleTimeHint')
             "
             :error="invalid.scheduleTime"
-            :disabled="saving"
+            :disabled="locked"
             required
         />
         <BaseSelect
@@ -147,7 +149,7 @@ onMounted(async () => {
             :options="options"
             :hint="t('adminBackups.retentionHint')"
             :error="invalid.retention"
-            :disabled="saving"
+            :disabled="locked"
         />
         <BaseAlert v-if="saved" tone="success" :message="t('adminBackups.saved')" />
         <BaseAlert v-if="failed" tone="error" :message="t('adminBackups.saveError')" />
@@ -156,7 +158,7 @@ onMounted(async () => {
                 type="submit"
                 variant="primary"
                 :label="t('adminBackups.save')"
-                :disabled="saving || !store.settings"
+                :disabled="locked"
             />
         </div>
     </form>
