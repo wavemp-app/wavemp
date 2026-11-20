@@ -245,18 +245,42 @@ describe('LibraryView', () => {
             wrapper.unmount()
         })
 
-        it('is not offered for genres, which the API does not filter by folder', async () => {
+        it('filters genres and years by the media folder of the route', async () => {
             twoSources()
             api.listGenres.mockResolvedValue({ items: [], total: 0 })
+            api.listYears.mockResolvedValue({ items: [], total: 0 })
 
-            const { wrapper } = await mountView(LibraryView, '/library/genres?source=videos', {
+            const genres = await mountView(LibraryView, '/library/genres?source=videos', {
                 section: 'genres',
+            })
+            const years = await mountView(LibraryView, '/library/years?source=videos', {
+                section: 'years',
+            })
+
+            expect(api.listGenres).toHaveBeenCalledWith(
+                expect.objectContaining({ sourceId: 'videos' }),
+            )
+            expect(api.listYears).toHaveBeenCalledWith(
+                expect.objectContaining({ sourceId: 'videos' }),
+            )
+            for (const { wrapper } of [genres, years]) {
+                const select = wrapper.get('[data-part="source-filter"] select')
+                expect((select.element as HTMLSelectElement).value).toBe('videos')
+                expect(wrapper.get('[data-part="empty-state-text"]').text()).toBe(
+                    'There is nothing in the library for this filter.',
+                )
+                wrapper.unmount()
+            }
+        })
+
+        it('is not offered for the favorites', async () => {
+            twoSources()
+
+            const { wrapper } = await mountView(LibraryView, '/library/favorites?source=videos', {
+                section: 'favorites',
             })
 
             expect(wrapper.find('[data-part="source-filter"]').exists()).toBe(false)
-            expect(api.listGenres).toHaveBeenCalledWith(
-                expect.not.objectContaining({ sourceId: 'videos' }),
-            )
             wrapper.unmount()
         })
     })

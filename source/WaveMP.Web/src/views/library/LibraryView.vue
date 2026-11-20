@@ -29,8 +29,8 @@ import { parseSort, sortContext } from '@/library/sorting'
  * A section of the library: the songs grouped by album, the recently added songs (newest first),
  * the favorites of the profile, or albums, artists, genres and years as tiles. Search text (?q=,
  * not for years and favorites), sort order (?sort=, ?direction=) and the "my music" filter
- * (?myMusic=true, not for favorites) and the media folder (?source=<id>, only for songs, recently
- * added songs, albums and artists) come from the query of the route.
+ * (?myMusic=true, not for favorites) and the media folder (?source=<id>, not for favorites) come
+ * from the query of the route.
  */
 const props = defineProps<{
     /** Section of the library (route parameter), e.g. "songs". */
@@ -47,9 +47,9 @@ const filterable = computed(() => props.section !== 'years' && props.section !==
 // The favorites belong to the "my music" anyway, so their section offers no switch.
 const scoped = computed(() => props.section !== 'favorites')
 const myMusic = computed(() => scoped.value && isMyMusic(route.value.query))
-// The API filters songs, albums and artists by media folder, not genres and years.
+// Every section but the favorites can be filtered by media folder.
 const bySource = computed(() =>
-    ['songs', 'recently-added', 'albums', 'artists'].includes(props.section),
+    ['songs', 'recently-added', 'albums', 'artists', 'genres', 'years'].includes(props.section),
 )
 const sourceId = computed(() => (bySource.value ? sourceOf(route.value.query) : undefined))
 const trackFilter = computed<TrackFilter>(() => ({
@@ -115,7 +115,11 @@ function fetchArtists(offset: number, limit: number) {
 }
 
 function fetchGenres(offset: number, limit: number) {
-    return listGenres({ ...query(offset, limit), sort: sortState.value.sort as GenreSort })
+    return listGenres({
+        ...query(offset, limit),
+        sort: sortState.value.sort as GenreSort,
+        sourceId: sourceId.value,
+    })
 }
 
 function fetchYears(offset: number, limit: number) {
@@ -124,6 +128,7 @@ function fetchYears(offset: number, limit: number) {
         limit,
         direction: sortState.value.direction,
         myMusic: myMusic.value || undefined,
+        sourceId: sourceId.value,
     })
 }
 </script>
@@ -191,7 +196,7 @@ function fetchYears(offset: number, limit: number) {
             :to-tile="(item: Genre) => tiles.genre(item)"
             :reload-key="reloadKey"
             :search="search"
-            :filtered="myMusic"
+            :filtered="tileFiltered"
             @status="status = $event"
         />
         <TileCollection
@@ -200,7 +205,7 @@ function fetchYears(offset: number, limit: number) {
             :fetch-page="fetchYears"
             :to-tile="(item: Year) => tiles.year(item)"
             :reload-key="reloadKey"
-            :filtered="myMusic"
+            :filtered="tileFiltered"
             @status="status = $event"
         />
     </div>
