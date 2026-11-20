@@ -1191,7 +1191,7 @@ The preview shows the variant of the color scheme of the browser (`prefers-color
 
 The screenshot and contrast check of tests/WaveMP.E2E opens fixed views of the app with a profile of its own per theme and variant (filled with playlists, favorites and plays of the synthetic test media), takes a screenshot of each and checks the contrast:
 
-- desktop (1280 by 800): `profiles`, `home`, `album`, `artists`, `songs-menu` (the songs with an open context menu), `now-playing` (with the cover), `settings` (with the theme picker), `admin` (the transcoding page), `shortcuts` (the overview of the keyboard shortcuts),
+- desktop (1280 by 800): `profiles`, `home`, `playlists` (the overview of the playlists, with the current entry on the first level of the sidebar), `album`, `artists`, `songs-menu` (the songs with an open context menu), `now-playing` (with the cover), `settings` (with the theme picker), `admin` (the transcoding page), `shortcuts` (the overview of the keyboard shortcuts),
 - phone (Pixel 7): `phone-library`, `phone-now-playing`, `phone-settings`, each with the bottom navigation, and `phone-shortcuts` (the overview of the keyboard shortcuts). The regression also compares the bottom navigation of `phone-now-playing` on its own (`phone-now-playing-bottom-nav`).
 
 ```bash

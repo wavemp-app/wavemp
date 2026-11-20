@@ -239,6 +239,24 @@ export const themeViews: readonly ThemeView[] = [
         },
     },
     {
+        // The overview of the playlists, whose entry "Playlists" is the current one on the first
+        // level of the sidebar tree.
+        name: 'playlists',
+        device: 'desktop',
+        stable: true,
+        async open(page) {
+            await page.goto('/playlists')
+            await expect(
+                page.locator("[data-part='tile'][data-kind='playlist']").first(),
+            ).toBeVisible()
+            await expect(
+                page.locator(
+                    "[data-part='sidebar'] [data-part='tree-item'][aria-level='1'][aria-current='page']",
+                ),
+            ).toBeVisible()
+        },
+    },
+    {
         name: 'album',
         device: 'desktop',
         stable: true,
