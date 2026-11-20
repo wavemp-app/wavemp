@@ -4,7 +4,7 @@
 // @ts-ignore
 import { createGenrePageFromDiscriminatorValue, createProblemDetailsFromDiscriminatorValue, createValidationProblemFromDiscriminatorValue, type GenrePage, type GenreSort, type ProblemDetails, type SortDirection, type ValidationProblem } from '../../../models/index.js';
 // @ts-ignore
-import { type BaseRequestBuilder, type Parsable, type ParsableFactory, type RequestConfiguration, type RequestInformation, type RequestsMetadata } from '@microsoft/kiota-abstractions';
+import { type BaseRequestBuilder, type Guid, type Parsable, type ParsableFactory, type RequestConfiguration, type RequestInformation, type RequestsMetadata } from '@microsoft/kiota-abstractions';
 
 /**
  * Builds and executes requests for operations under /api/v1/genres
@@ -53,11 +53,15 @@ export interface GenresRequestBuilderGetQueryParameters {
      * Sort key; Name by default.
      */
     sort?: GenreSort;
+    /**
+     * Only genres of the tracks of this media source, counted over these tracks. Combines with `myMusic`.
+     */
+    sourceId?: Guid;
 }
 /**
  * Uri template for the request builder.
  */
-export const GenresRequestBuilderUriTemplate = "{+baseurl}/api/v1/genres{?direction*,limit*,myMusic*,offset*,q*,sort*}";
+export const GenresRequestBuilderUriTemplate = "{+baseurl}/api/v1/genres{?direction*,limit*,myMusic*,offset*,q*,sort*,sourceId*}";
 /**
  * Metadata for all the requests in the request builder.
  */

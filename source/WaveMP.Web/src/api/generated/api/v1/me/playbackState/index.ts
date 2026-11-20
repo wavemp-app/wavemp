@@ -11,6 +11,12 @@ import { type BaseRequestBuilder, type Parsable, type ParsableFactory, type Requ
  */
 export interface PlaybackStateRequestBuilder extends BaseRequestBuilder<PlaybackStateRequestBuilder> {
     /**
+     * Clears the saved playback state of the current profile, so the next start of a client begins without a queue (`GET` then answers 404). Succeeds also without a saved state. A device that still plays saves its state again; clients stop their own player before they clear the state.
+     * @param requestConfiguration Configuration for the request such as headers, query parameters, and middleware options.
+     * @throws {ProblemDetails} error when the service returns a 401 status code
+     */
+     delete(requestConfiguration?: RequestConfiguration<object> | undefined) : Promise<void>;
+    /**
      * Returns the saved playback state of the current profile with the songs of its queue. Songs that left the library are left out; if the current song is gone, the next entry is current at its beginning. Clients load the state on start and show it without starting playback; the device tells whether another device saved it.
      * @param requestConfiguration Configuration for the request such as headers, query parameters, and middleware options.
      * @returns {Promise<PlaybackState>}
@@ -28,6 +34,12 @@ export interface PlaybackStateRequestBuilder extends BaseRequestBuilder<Playback
      * @throws {ProblemDetails} error when the service returns a 409 status code
      */
      put(body: UpdatePlaybackState, requestConfiguration?: RequestConfiguration<object> | undefined) : Promise<void>;
+    /**
+     * Clears the saved playback state of the current profile, so the next start of a client begins without a queue (`GET` then answers 404). Succeeds also without a saved state. A device that still plays saves its state again; clients stop their own player before they clear the state.
+     * @param requestConfiguration Configuration for the request such as headers, query parameters, and middleware options.
+     * @returns {RequestInformation}
+     */
+     toDeleteRequestInformation(requestConfiguration?: RequestConfiguration<object> | undefined) : RequestInformation;
     /**
      * Returns the saved playback state of the current profile with the songs of its queue. Songs that left the library are left out; if the current song is gone, the next entry is current at its beginning. Clients load the state on start and show it without starting playback; the device tells whether another device saved it.
      * @param requestConfiguration Configuration for the request such as headers, query parameters, and middleware options.
@@ -50,6 +62,14 @@ export const PlaybackStateRequestBuilderUriTemplate = "{+baseurl}/api/v1/me/play
  * Metadata for all the requests in the request builder.
  */
 export const PlaybackStateRequestBuilderRequestsMetadata: RequestsMetadata = {
+    delete: {
+        uriTemplate: PlaybackStateRequestBuilderUriTemplate,
+        responseBodyContentType: "application/problem+json",
+        errorMappings: {
+            401: createProblemDetailsFromDiscriminatorValue as ParsableFactory<Parsable>,
+        },
+        adapterMethodName: "sendNoResponseContent",
+    },
     get: {
         uriTemplate: PlaybackStateRequestBuilderUriTemplate,
         responseBodyContentType: "application/json",

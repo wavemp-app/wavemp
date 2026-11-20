@@ -4,7 +4,7 @@
 // @ts-ignore
 import { createProblemDetailsFromDiscriminatorValue, createValidationProblemFromDiscriminatorValue, createYearPageFromDiscriminatorValue, type ProblemDetails, type SortDirection, type ValidationProblem, type YearPage } from '../../../models/index.js';
 // @ts-ignore
-import { type BaseRequestBuilder, type Parsable, type ParsableFactory, type RequestConfiguration, type RequestInformation, type RequestsMetadata } from '@microsoft/kiota-abstractions';
+import { type BaseRequestBuilder, type Guid, type Parsable, type ParsableFactory, type RequestConfiguration, type RequestInformation, type RequestsMetadata } from '@microsoft/kiota-abstractions';
 
 /**
  * Builds and executes requests for operations under /api/v1/years
@@ -45,11 +45,15 @@ export interface YearsRequestBuilderGetQueryParameters {
      * Number of years to skip.
      */
     offset?: number;
+    /**
+     * Only years of the tracks of this media source, counted over these tracks. Combines with `myMusic`.
+     */
+    sourceId?: Guid;
 }
 /**
  * Uri template for the request builder.
  */
-export const YearsRequestBuilderUriTemplate = "{+baseurl}/api/v1/years{?direction*,limit*,myMusic*,offset*}";
+export const YearsRequestBuilderUriTemplate = "{+baseurl}/api/v1/years{?direction*,limit*,myMusic*,offset*,sourceId*}";
 /**
  * Metadata for all the requests in the request builder.
  */

@@ -2407,6 +2407,15 @@
               "type": "boolean",
               "default": false
             }
+          },
+          {
+            "name": "sourceId",
+            "in": "query",
+            "description": "Only genres of the tracks of this media source, counted over these tracks. Combines with `myMusic`.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ],
         "responses": {
@@ -5004,6 +5013,33 @@
                 }
               }
             }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "PlaybackState"
+        ],
+        "summary": "Clears the saved playback state of the current profile, so the next start of a client begins without a queue (`GET` then answers 404). Succeeds also without a saved state. A device that still plays saves its state again; clients stop their own player before they clear the state.",
+        "operationId": "ClearMyPlaybackState",
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "The profile has no saved state."
           }
         },
         "security": [
@@ -12483,6 +12519,15 @@
             "schema": {
               "type": "boolean",
               "default": false
+            }
+          },
+          {
+            "name": "sourceId",
+            "in": "query",
+            "description": "Only years of the tracks of this media source, counted over these tracks. Combines with `myMusic`.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
             }
           }
         ],
