@@ -270,6 +270,25 @@ async function openNowPlaying(page: Page, request: APIRequestContext): Promise<v
     await expect(part(page, 'autoplay-item').filter({ visible: true }).first()).toBeVisible()
 }
 
+/** Opens the recap of the last month, paused on its second section once it has entered. */
+async function openRecap(page: Page): Promise<void> {
+    await page.goto('/recap')
+    const story = page.locator("[data-part='recap-story']")
+    await expect(story).toHaveAttribute('data-state', /playing|paused/)
+    await story.locator("[data-part='btn-recap-pause']").click()
+    await story.locator("[data-part='btn-recap-next']").click()
+    await expect(story.locator("[data-part='recap-slide']")).toHaveAttribute(
+        'data-kind',
+        'listening-time',
+    )
+    // The clicks scrolled the story into view; the screenshot starts at the top of the page.
+    await page.evaluate(() => {
+        document.querySelector("[data-part='content']")?.scrollTo(0, 0)
+        window.scrollTo(0, 0)
+    })
+    await page.waitForTimeout(1500)
+}
+
 export const themeViews: readonly ThemeView[] = [
     {
         name: 'profiles',
@@ -400,6 +419,33 @@ export const themeViews: readonly ThemeView[] = [
         device: 'phone',
         stable: true,
         open: openShortcuts,
+    },
+    {
+        // The recap of the last month, paused on the minutes of music. The numbers and the days
+        // depend on when the run happens, so the regression leaves the recap pages out.
+        name: 'recap',
+        device: 'desktop',
+        stable: false,
+        open: openRecap,
+    },
+    {
+        name: 'statistics',
+        device: 'desktop',
+        stable: false,
+        async open(page) {
+            await page.goto('/recap/statistics')
+            await expect(page.locator("[data-view='statistics']")).toHaveAttribute(
+                'data-state',
+                'ready',
+            )
+            await expect(page.locator("[data-part='chart']").first()).toBeVisible()
+        },
+    },
+    {
+        name: 'phone-recap',
+        device: 'phone',
+        stable: false,
+        open: openRecap,
     },
 ]
 
