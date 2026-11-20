@@ -2124,6 +2124,15 @@ export function createUpdateUserSettingsFromDiscriminatorValue(parseNode: ParseN
 /**
  * Creates a new instance of the appropriate class based on discriminator value
  * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {UpdateVideoSettings}
+ */
+// @ts-ignore
+export function createUpdateVideoSettingsFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoUpdateVideoSettings;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
  * @returns {UpdateVisualizationSettings}
  */
 // @ts-ignore
@@ -2195,6 +2204,15 @@ export function createValidationErrorFromDiscriminatorValue(parseNode: ParseNode
 // @ts-ignore
 export function createValidationProblemFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
     return deserializeIntoValidationProblem;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {VideoSettings}
+ */
+// @ts-ignore
+export function createVideoSettingsFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoVideoSettings;
 }
 /**
  * Creates a new instance of the appropriate class based on discriminator value
@@ -4798,7 +4816,19 @@ export function deserializeIntoUpdateUserSettings(updateUserSettings: Partial<Up
         "sidebarCollapsed": n => { updateUserSettings.sidebarCollapsed = n.getBooleanValue(); },
         "sleepTimer": n => { updateUserSettings.sleepTimer = n.getObjectValue<UpdateSleepTimerSettings>(createUpdateSleepTimerSettingsFromDiscriminatorValue); },
         "theme": n => { updateUserSettings.theme = n.getObjectValue<UpdateThemeSettings>(createUpdateThemeSettingsFromDiscriminatorValue); },
+        "video": n => { updateUserSettings.video = n.getObjectValue<UpdateVideoSettings>(createUpdateVideoSettingsFromDiscriminatorValue); },
         "visualization": n => { updateUserSettings.visualization = n.getObjectValue<UpdateVisualizationSettings>(createUpdateVisualizationSettingsFromDiscriminatorValue); },
+    }
+}
+/**
+ * The deserialization information for the current model
+ * @param UpdateVideoSettings The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoUpdateVideoSettings(updateVideoSettings: Partial<UpdateVideoSettings> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "ambientMode": n => { updateVideoSettings.ambientMode = n.getBooleanValue(); },
     }
 }
 /**
@@ -4866,6 +4896,7 @@ export function deserializeIntoUserSettings(userSettings: Partial<UserSettings> 
         "sidebarCollapsed": n => { userSettings.sidebarCollapsed = n.getBooleanValue(); },
         "sleepTimer": n => { userSettings.sleepTimer = n.getObjectValue<SleepTimerSettings>(createSleepTimerSettingsFromDiscriminatorValue); },
         "theme": n => { userSettings.theme = n.getObjectValue<ThemeSettings>(createThemeSettingsFromDiscriminatorValue); },
+        "video": n => { userSettings.video = n.getObjectValue<VideoSettings>(createVideoSettingsFromDiscriminatorValue); },
         "visualization": n => { userSettings.visualization = n.getObjectValue<VisualizationSettings>(createVisualizationSettingsFromDiscriminatorValue); },
     }
 }
@@ -4898,6 +4929,17 @@ export function deserializeIntoValidationProblem(validationProblem: Partial<Vali
         "status": n => { validationProblem.status = n.getNumberValue(); },
         "title": n => { validationProblem.title = n.getStringValue(); },
         "type": n => { validationProblem.type = n.getStringValue(); },
+    }
+}
+/**
+ * The deserialization information for the current model
+ * @param VideoSettings The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoVideoSettings(videoSettings: Partial<VideoSettings> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "ambientMode": n => { videoSettings.ambientMode = n.getBooleanValue(); },
     }
 }
 /**
@@ -9629,8 +9671,21 @@ export function serializeUpdateUserSettings(writer: SerializationWriter, updateU
     writer.writeBooleanValue("sidebarCollapsed", updateUserSettings.sidebarCollapsed);
     writer.writeObjectValue<UpdateSleepTimerSettings>("sleepTimer", updateUserSettings.sleepTimer, serializeUpdateSleepTimerSettings);
     writer.writeObjectValue<UpdateThemeSettings>("theme", updateUserSettings.theme, serializeUpdateThemeSettings);
+    writer.writeObjectValue<UpdateVideoSettings>("video", updateUserSettings.video, serializeUpdateVideoSettings);
     writer.writeObjectValue<UpdateVisualizationSettings>("visualization", updateUserSettings.visualization, serializeUpdateVisualizationSettings);
     writer.writeAdditionalData(updateUserSettings.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param UpdateVideoSettings The instance to serialize from.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeUpdateVideoSettings(writer: SerializationWriter, updateVideoSettings: Partial<UpdateVideoSettings> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!updateVideoSettings || isSerializingDerivedType) { return; }
+    writer.writeBooleanValue("ambientMode", updateVideoSettings.ambientMode);
+    writer.writeAdditionalData(updateVideoSettings.additionalData);
 }
 /**
  * Serializes information the current object
@@ -9701,6 +9756,7 @@ export function serializeUserSettings(writer: SerializationWriter, userSettings:
     writer.writeBooleanValue("sidebarCollapsed", userSettings.sidebarCollapsed);
     writer.writeObjectValue<SleepTimerSettings>("sleepTimer", userSettings.sleepTimer, serializeSleepTimerSettings);
     writer.writeObjectValue<ThemeSettings>("theme", userSettings.theme, serializeThemeSettings);
+    writer.writeObjectValue<VideoSettings>("video", userSettings.video, serializeVideoSettings);
     writer.writeObjectValue<VisualizationSettings>("visualization", userSettings.visualization, serializeVisualizationSettings);
     writer.writeAdditionalData(userSettings.additionalData);
 }
@@ -9736,6 +9792,18 @@ export function serializeValidationProblem(writer: SerializationWriter, validati
     writer.writeStringValue("title", validationProblem.title);
     writer.writeStringValue("type", validationProblem.type);
     writer.writeAdditionalData(validationProblem.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param VideoSettings The instance to serialize from.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeVideoSettings(writer: SerializationWriter, videoSettings: Partial<VideoSettings> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!videoSettings || isSerializingDerivedType) { return; }
+    writer.writeBooleanValue("ambientMode", videoSettings.ambientMode);
+    writer.writeAdditionalData(videoSettings.additionalData);
 }
 /**
  * Serializes information the current object
@@ -11432,9 +11500,22 @@ export interface UpdateUserSettings extends AdditionalDataHolder, Parsable {
      */
     theme?: UpdateThemeSettings | null;
     /**
+     * The video property
+     */
+    video?: UpdateVideoSettings | null;
+    /**
      * The visualization property
      */
     visualization?: UpdateVisualizationSettings | null;
+}
+/**
+ * Changes the videos of the Now Playing view of the current profile. Missing or null values stay unchanged.
+ */
+export interface UpdateVideoSettings extends AdditionalDataHolder, Parsable {
+    /**
+     * Whether videos show the ambient light in the free area around their picture.
+     */
+    ambientMode?: boolean | null;
 }
 /**
  * Changes the visualization of the current profile. Missing or null values stay unchanged.
@@ -11564,6 +11645,10 @@ export interface UserSettings extends AdditionalDataHolder, Parsable {
      */
     theme?: ThemeSettings | null;
     /**
+     * Videos of the Now Playing view.
+     */
+    video?: VideoSettings | null;
+    /**
      * Visualization of the Now Playing view.
      */
     visualization?: VisualizationSettings | null;
@@ -11626,6 +11711,15 @@ export interface ValidationProblem extends AdditionalDataHolder, ApiError, Parsa
 }
 export type VideoCodec = (typeof VideoCodecObject)[keyof typeof VideoCodecObject];
 export type VideoContainer = (typeof VideoContainerObject)[keyof typeof VideoContainerObject];
+/**
+ * Videos of the Now Playing view of the current profile.
+ */
+export interface VideoSettings extends AdditionalDataHolder, Parsable {
+    /**
+     * Whether videos show the ambient light: soft light in the colors of the current picture in the free area around it; true by default. Clients that show videos without a free area around them ignore it.
+     */
+    ambientMode?: boolean | null;
+}
 export type VisualizationModule = (typeof VisualizationModuleObject)[keyof typeof VisualizationModuleObject];
 export type VisualizationQuality = (typeof VisualizationQualityObject)[keyof typeof VisualizationQualityObject];
 /**
