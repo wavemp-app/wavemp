@@ -94,7 +94,7 @@ public class CoverImageCacheTests
     {
         string prefix = CoverCacheKey.PrefixOf(_first);
 
-        CoverDelivery delivery = (await _cache.DeliverAsync([_first], 150))!;
+        CoverDelivery delivery = (await _cache.DeliverAsync([_first], 250))!;
 
         delivery.ETag.Should().Be($"{prefix}-300");
         (await ReadAsync(delivery)).Should().HaveCount(300);
@@ -105,6 +105,26 @@ public class CoverImageCacheTests
             Arg.Is<IReadOnlyList<CoverEncodeTarget>>(targets => targets.Single().MaxSize == 300),
             Arg.Any<CancellationToken>());
         Directory.EnumerateFiles(_data.Combine("cache/tmp")).Should().BeEmpty();
+    }
+
+    [TestCase(150, 192)]
+    [TestCase(450, 600)]
+    [TestCase(1500, 2000)]
+    [TestCase(4096, 2000)]
+    public async Task DeliverAsync_SizeForADenseScreen_ConvertsTheRoundedSizeOnDemand(int requested, int rounded)
+    {
+        string prefix = CoverCacheKey.PrefixOf(_first);
+
+        CoverDelivery delivery = (await _cache.DeliverAsync([_first], requested))!;
+
+        delivery.ETag.Should().Be($"{prefix}-{rounded}");
+        (await ReadAsync(delivery)).Should().HaveCount(rounded);
+        _store.Contains(CacheArea.Covers, CoverCacheKey.FileNameOf(prefix, rounded)).Should().BeTrue();
+        await _encoder.Received(1).EncodeAsync(
+            Arg.Any<Stream>(),
+            "image/png",
+            Arg.Is<IReadOnlyList<CoverEncodeTarget>>(targets => targets.Single().MaxSize == rounded),
+            Arg.Any<CancellationToken>());
     }
 
     [Test]

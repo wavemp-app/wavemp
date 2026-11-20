@@ -34,12 +34,12 @@ public static class AvatarPresets
     }
 
     /// <summary>
-    /// Opens the picture of a built-in avatar in the size (see <see cref="CoverSizes.Snap"/>), or returns <c>null</c>
-    /// for an unknown id. The caller disposes it.
+    /// Opens the picture of a built-in avatar in the size (see <see cref="CoverSizes.SnapStored"/>), or returns
+    /// <c>null</c> for an unknown id. The caller disposes it.
     /// </summary>
     public static Stream? Open(string id, int size)
     {
-        return Contains(id) ? _assembly.GetManifestResourceStream(ResourceName(id, CoverSizes.Snap(size))) : null;
+        return Contains(id) ? _assembly.GetManifestResourceStream(ResourceName(id, CoverSizes.SnapStored(size))) : null;
     }
 
     /// <summary>
@@ -53,7 +53,7 @@ public static class AvatarPresets
             return null;
         }
 
-        string name = ResourceName(id, CoverSizes.Snap(size));
+        string name = ResourceName(id, CoverSizes.SnapStored(size));
         return _hashes.GetOrAdd(name, static resource =>
         {
             using Stream? content = _assembly.GetManifestResourceStream(resource);

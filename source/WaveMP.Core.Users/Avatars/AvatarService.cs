@@ -114,7 +114,7 @@ internal sealed class AvatarService(
             return CoverDeliveryResult.NotFound;
         }
 
-        int snapped = CoverSizes.Snap(size ?? CoverSizes.Large);
+        int snapped = CoverSizes.SnapStored(size ?? CoverSizes.Large);
         string version = AvatarVersions.Of(updatedAt);
         if (user.AvatarPresetId is { } presetId)
         {
@@ -146,7 +146,7 @@ internal sealed class AvatarService(
 
     public CoverDeliveryResult GetPreset(string presetId, int? size)
     {
-        int snapped = CoverSizes.Snap(size ?? CoverSizes.Large);
+        int snapped = CoverSizes.SnapStored(size ?? CoverSizes.Large);
         Stream? content = AvatarPresets.Open(presetId, snapped);
         if (content is null)
         {

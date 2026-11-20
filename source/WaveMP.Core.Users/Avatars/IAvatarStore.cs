@@ -25,8 +25,8 @@ public interface IAvatarStore
     Task<AvatarSaveStatus> SaveAsync(Guid userId, Stream content, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Opens the stored picture of the size (see <see cref="Caching.Covers.CoverSizes.Snap"/>), or <c>null</c> if there
-    /// is none. The caller disposes it.
+    /// Opens the stored picture of the size (see <see cref="Caching.Covers.CoverSizes.SnapStored"/>), or <c>null</c>
+    /// if there is none. The caller disposes it.
     /// </summary>
     Stream? Open(Guid userId, int size);
 

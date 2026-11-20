@@ -25,8 +25,8 @@ public interface IPlaylistCoverStore
     Task<CoverSaveStatus> SaveAsync(Guid playlistId, Stream content, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Opens the stored picture of the size (see <see cref="Caching.Covers.CoverSizes.Snap"/>; the largest without a
-    /// size), or <c>null</c> if there is none. The caller disposes it.
+    /// Opens the stored picture of the size (see <see cref="Caching.Covers.CoverSizes.SnapStored"/>; the largest
+    /// without a size), or <c>null</c> if there is none. The caller disposes it.
     /// </summary>
     Stream? Open(Guid playlistId, int size);
 

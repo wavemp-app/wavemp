@@ -46,7 +46,7 @@ public sealed class MediaUrlFactory(IMediaUrlIssuer issuer, LinkGenerator links)
     public const string CoverSizeParameter = "size";
 
     /// <summary>
-    /// Size of the cover for casting devices: the largest one the server prepares, for TV screens.
+    /// Size of the cover for casting devices: a large one, for TV screens.
     /// </summary>
     public const int CastCoverSize = 1000;
 

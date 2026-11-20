@@ -157,14 +157,15 @@ public sealed class AlbumsController(IAlbumService albums, ICoverCacheService co
 
     /// <summary>
     /// Returns the cover of an album as picture: the picture in its folder, otherwise the cover of one of its tracks.
-    /// With size, the picture is scaled to fit into a square of 96, 300 or 1000 pixels (the requested size rounded up,
-    /// at most 1000; never enlarged) and delivered as WebP from the cache; without size, as stored (JPEG, PNG, WebP,
-    /// GIF or BMP). Every picture carries a strong ETag of its version and size, Last-Modified and
+    /// With size, the picture is scaled to fit into a square of 96, 192, 300, 600, 1000 or 2000 pixels (the requested
+    /// size rounded up, at most 2000; never enlarged) and delivered as WebP from the cache; without size, as stored
+    /// (JPEG, PNG, WebP, GIF or BMP). Every picture carries a strong ETag of its version and size, Last-Modified and
     /// Cache-Control: private, no-cache; a request with a matching If-None-Match returns 304.
     /// </summary>
     /// <param name="id">Id of the album.</param>
-    /// <param name="size">Largest width and height in pixels the client shows the picture with (1 to 4096); the
-    /// server rounds it up to 96, 300 or 1000.</param>
+    /// <param name="size">Largest width and height in pixels the client shows the picture with (1 to 4096), its width
+    /// in CSS pixels times the pixel density of the screen; the server rounds it up to 96, 192, 300, 600, 1000 or
+    /// 2000.</param>
     /// <param name="cancellationToken">Aborts the request.</param>
     /// <response code="200">The picture.</response>
     /// <response code="400">Invalid size (code <c>request.invalid</c>).</response>

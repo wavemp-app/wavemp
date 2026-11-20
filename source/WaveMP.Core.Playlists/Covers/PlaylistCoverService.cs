@@ -92,7 +92,7 @@ internal sealed class PlaylistCoverService(
             return CoverDeliveryResult.NotFound;
         }
 
-        int snapped = CoverSizes.Snap(size ?? CoverSizes.Large);
+        int snapped = CoverSizes.SnapStored(size ?? CoverSizes.Large);
         Stream? content = store.Open(playlistId, snapped);
         if (content is null)
         {

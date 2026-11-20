@@ -47,7 +47,7 @@ internal sealed class CoverImageCache(
             return null;
         }
 
-        int scaled = CoverSizes.Snap(requested);
+        int scaled = CoverSizes.SnapScaled(requested);
         foreach (CoverCandidateRow candidate in ordered)
         {
             string prefix = CoverCacheKey.PrefixOf(candidate);

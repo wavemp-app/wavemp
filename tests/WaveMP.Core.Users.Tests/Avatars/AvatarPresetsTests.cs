@@ -11,7 +11,7 @@ public class AvatarPresetsTests
     {
         foreach (string id in AvatarPresets.Ids)
         {
-            foreach (int size in CoverSizes.All)
+            foreach (int size in CoverSizes.Stored)
             {
                 yield return new TestCaseData(id, size);
             }

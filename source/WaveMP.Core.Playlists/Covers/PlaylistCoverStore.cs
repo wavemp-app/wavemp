@@ -92,7 +92,7 @@ internal sealed class PlaylistCoverStore(
 
         picture.Position = 0;
         string prefix = Guid.NewGuid().ToString("N");
-        CoverEncodeTarget[] targets = [.. CoverSizes.All.Select(size => new CoverEncodeTarget(
+        CoverEncodeTarget[] targets = [.. CoverSizes.Stored.Select(size => new CoverEncodeTarget(
             size,
             Path.Combine(TemporaryPath, $"{prefix}-{size.ToString(CultureInfo.InvariantCulture)}{FileExtension}"),
             Square: true))];
@@ -136,7 +136,7 @@ internal sealed class PlaylistCoverStore(
         {
             // Delete: a new upload may replace the file while it is delivered.
             return new FileStream(
-                FileOf(playlistId, CoverSizes.Snap(size)),
+                FileOf(playlistId, CoverSizes.SnapStored(size)),
                 FileMode.Open,
                 FileAccess.Read,
                 FileShare.Read | FileShare.Delete,

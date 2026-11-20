@@ -12,7 +12,7 @@ public interface ICoverImageCache
 {
     /// <summary>
     /// The first cover of the ordered list that can be delivered: without <paramref name="size"/> as stored, otherwise
-    /// scaled to <see cref="CoverSizes.Snap"/> of the size. <c>null</c> if none can be read.
+    /// scaled to <see cref="CoverSizes.SnapScaled"/> of the size. <c>null</c> if none can be read.
     /// </summary>
     Task<CoverDelivery?> DeliverAsync(
         IReadOnlyList<CoverCandidateRow> ordered,

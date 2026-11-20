@@ -65,18 +65,25 @@ public class CoverCacheApiTests
         _media.Dispose();
     }
 
-    [TestCase(96, 96, 64)]
-    [TestCase(300, 300, 200)]
-    [TestCase(1000, 1000, 667)]
-    [TestCase(150, 300, 200)]
-    [TestCase(2000, 1000, 667)]
-    public async Task GetAlbumCover_WithSize_DeliversTheRoundedSizeAsWebP(int size, int width, int height)
+    // Big Album has a cover of 1200 x 800 pixels, which is never enlarged.
+    [TestCase(96, 96, 96, 64)]
+    [TestCase(150, 192, 192, 128)]
+    [TestCase(300, 300, 300, 200)]
+    [TestCase(450, 600, 600, 400)]
+    [TestCase(1000, 1000, 1000, 667)]
+    [TestCase(1001, 2000, 1200, 800)]
+    [TestCase(4096, 2000, 1200, 800)]
+    public async Task GetAlbumCover_WithSize_DeliversTheRoundedSizeAsWebP(
+        int size,
+        int rounded,
+        int width,
+        int height)
     {
         HttpResponseMessage response = await _user.GetAsync($"/api/v1/albums/{_albums["Big Album"]}/cover?size={size}");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         response.Content.Headers.ContentType!.MediaType.Should().Be("image/webp");
-        response.Headers.ETag!.Tag.Should().EndWith($"-{CoverSizeOf(size)}\"");
+        response.Headers.ETag!.Tag.Should().EndWith($"-{rounded}\"");
         (await ImageProbe.GetSizeAsync(await response.Content.ReadAsByteArrayAsync())).Should().Be((width, height));
     }
 
@@ -214,10 +221,5 @@ public class CoverCacheApiTests
     {
         string name = etag.Tag.Trim('"');
         return Path.Combine(CoverFolder, name[30..32], name + ".webp");
-    }
-
-    private static int CoverSizeOf(int requested)
-    {
-        return requested <= 96 ? 96 : requested <= 300 ? 300 : 1000;
     }
 }
