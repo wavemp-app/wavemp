@@ -102,6 +102,45 @@ describe('themes store', () => {
         expect(api.list).toHaveBeenCalled()
     })
 
+    it('keeps the list of an upload when an older load answers last', async () => {
+        // The app and the admin page load the list on start; the upload loads it again.
+        let answerFirst: (list: unknown) => void = () => {}
+        api.list.mockReturnValueOnce(
+            new Promise((resolve) => {
+                answerFirst = resolve
+            }),
+        )
+        api.install.mockResolvedValue(theme)
+        const store = useThemesStore()
+
+        const first = store.load()
+        expect(await store.install(new ArrayBuffer(4))).toEqual({ status: 'installed', theme })
+        answerFirst({ items: [], total: 0 })
+        await first
+
+        expect(store.status).toBe('ready')
+        expect(store.items).toEqual([theme])
+        expect(themeById('aurora').stylesheet).toBe(stylesheet)
+    })
+
+    it('shows no error of an older load once a newer one succeeded', async () => {
+        let failFirst: (error: Error) => void = () => {}
+        api.list.mockReturnValueOnce(
+            new Promise((_, reject) => {
+                failFirst = reject
+            }),
+        )
+        const store = useThemesStore()
+
+        const first = store.load()
+        await store.load()
+        failFirst(new Error('offline'))
+        await first
+
+        expect(store.status).toBe('ready')
+        expect(store.items).toEqual([theme])
+    })
+
     it('replaces a theme with a new version', async () => {
         api.replace.mockResolvedValue(theme)
         const store = useThemesStore()

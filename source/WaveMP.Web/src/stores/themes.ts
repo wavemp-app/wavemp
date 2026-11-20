@@ -51,6 +51,12 @@ function uploadProblem(error: unknown): ThemeUploadResult {
 export const useThemesStore = defineStore('themes', () => {
     const items = ref<Theme[]>([])
     const status = ref<ThemesStatus>('idle')
+    /**
+     * Increases with every load, so only the latest one decides the list: the app and the admin
+     * page load it at the same time and an upload loads it again, and an older answer that
+     * arrives last would bring back a list without the new theme.
+     */
+    let generation = 0
 
     function publish(list: Theme[]): void {
         items.value = list
@@ -60,19 +66,23 @@ export const useThemesStore = defineStore('themes', () => {
     }
 
     async function load(): Promise<void> {
+        const current = ++generation
         if (status.value !== 'ready') {
             status.value = 'loading'
         }
 
         try {
-            publish(
-                await fetchAllPages((offset, limit) =>
-                    apiClient.api.v1.themes.get({ queryParameters: { offset, limit } }),
-                ),
+            const loaded = await fetchAllPages((offset, limit) =>
+                apiClient.api.v1.themes.get({ queryParameters: { offset, limit } }),
             )
-            status.value = 'ready'
+            if (current === generation) {
+                publish(loaded)
+                status.value = 'ready'
+            }
         } catch {
-            status.value = 'error'
+            if (current === generation) {
+                status.value = 'error'
+            }
         }
     }
 
