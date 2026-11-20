@@ -37,8 +37,8 @@ describe('absoluteUrl', () => {
             `${raw}/assets/screenshots/home.png`,
         )
         assert.equal(
-            absoluteUrl('./assets/logo/wavemp-logo.svg'),
-            `${raw}/assets/logo/wavemp-logo.svg`,
+            absoluteUrl('./assets/logo/wavemp-logo-default.svg'),
+            `${raw}/assets/logo/wavemp-logo-default.svg`,
         )
         assert.equal(absoluteUrl('assets/A.JPG'), `${raw}/assets/A.JPG`)
         assert.equal(absoluteUrl('LICENSE'), `${github}/blob/main/LICENSE`)

@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/logo/wavemp-logo.svg" alt="WaveMP logo" width="128" height="128">
+  <img src="assets/logo/wavemp-logo-default.svg" alt="WaveMP logo" width="128" height="128">
 </p>
 
 # WaveMP
@@ -699,7 +699,7 @@ For work on a theme, `npm run theme:preview -- <theme>` in `source/WaveMP.Web` s
 
 The Phosphor icons in `assets/web/icons` are copied from the npm package `@phosphor-icons/core`. To add an icon, add it to the list in `source/WaveMP.Web/scripts/sync-icons.ts` and run `npm run icons:sync` in `source/WaveMP.Web`.
 
-The logo is `assets/logo/wavemp-logo.svg`, an optimized copy of the source logo `assets/logo/wavemp-logo-teal-wave-round.svg`. The build of the web app generates the favicon, the PWA icons (including the maskable ones) and the Apple touch icon from it (`source/WaveMP.Web/scripts/vite-plugin-app-icons.ts`). `npm run logo:export` in `source/WaveMP.Web` creates `wavemp-logo.svg` and its PNG exports (`wavemp-logo-256.png`, `wavemp-logo-512.png`) again from the source logo; it skips files that already exist unless it is called with `-- --force`.
+The default logo is `assets/logo/wavemp-logo-default.svg`, an optimized copy of the Fluent logo `assets/logo/wavemp-logo-fluent.svg`, with its dark variant `wavemp-logo-default-dark.svg` (from `wavemp-logo-fluent-dark.svg`). The build of the web app generates the favicon, the PWA icons (including the maskable ones) and the Apple touch icon from them (`source/WaveMP.Web/scripts/vite-plugin-app-icons.ts`); the SVG favicon switches to the dark variant in the dark mode of the browser, and the dark variants of the themes show it in the app. `npm run logo:export` in `source/WaveMP.Web` creates both optimized copies and the PNG exports of the default logo (`wavemp-logo-default-256.png`, `wavemp-logo-default-512.png`, used by the app catalogs and the labels of the Docker image) again from the source logos; it skips files that already exist unless it is called with `-- --force`. The earlier logo (`wavemp-logo-teal-wave-round.svg` with its copies `wavemp-logo.svg`, `wavemp-logo-256.png` and `wavemp-logo-512.png`) stays in the folder as an alternative and is no longer used.
 
 If you set `DB_PORT` in `.env`, also set it for the service: `dotnet user-secrets set DB_PORT <port> --project source/WaveMP.Service`.
 
