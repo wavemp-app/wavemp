@@ -1585,8 +1585,9 @@ a[data-part='breadcrumb-link']:hover {
 
 /* --- Administration ------------------------------------------------------------------------ */
 
-/* Folder tabs on a blue rule; the line of grass slides below the current page. */
+/* Folder tabs on a blue rule, side by side; the line of grass slides below the current page. */
 [data-part='admin-nav'] {
+    column-gap: 1px;
     border-block-end: 2px solid #b4c7ea;
 }
 
