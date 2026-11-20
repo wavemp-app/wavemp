@@ -96,9 +96,29 @@ export const libraryTree: readonly NavigationTreeNode[] = [
             to: { name: 'library-section', params: { section: section.id } },
         })),
     },
+    {
+        id: 'recap',
+        labelKey: 'sidebar.recap',
+        icon: 'tree-recap',
+        to: { name: 'recap' },
+        children: [
+            {
+                id: 'statistics',
+                labelKey: 'recap.nav.statistics',
+                icon: 'tree-statistics',
+                to: { name: 'statistics' },
+            },
+            {
+                id: 'shared-recaps',
+                labelKey: 'recap.nav.shared',
+                icon: 'tree-shared-recaps',
+                to: { name: 'shared-recaps' },
+            },
+        ],
+    },
 ]
 
-/** Nodes that are expanded when the app starts. */
+/** Nodes that are expanded when the app starts; the recap starts collapsed. */
 export const initiallyExpanded: readonly string[] = ['playlists', 'library']
 
 /** Id of the tree node of a playlist. */

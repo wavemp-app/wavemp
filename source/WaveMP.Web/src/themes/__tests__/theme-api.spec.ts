@@ -24,6 +24,7 @@ const runtimeVariables = [
     '--wmp-swatch-color',
     '--wmp-progress-value',
     '--wmp-meter-value',
+    '--wmp-bar-value',
     '--wmp-agreement',
     '--wmp-video-aspect-ratio',
     '--wmp-line-progress',

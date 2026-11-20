@@ -272,3 +272,36 @@ describe('home page', () => {
         )
     })
 })
+
+describe('recap pages', () => {
+    const recap = { id: 'recap', labelKey: 'recap.title', to: { name: 'recap' } }
+
+    it('show the recap below music and its pages below the recap', () => {
+        expect(buildBreadcrumb({ name: 'recap', params: {} }).map((c) => c.id)).toEqual([
+            'music',
+            'recap',
+        ])
+        expect(buildBreadcrumb({ name: 'statistics', params: {} }).slice(1)).toEqual([
+            recap,
+            { id: 'statistics', labelKey: 'recap.nav.statistics' },
+        ])
+        expect(pageTitleKey({ name: 'shared-recaps', params: {} })).toBe('recap.nav.shared')
+    })
+
+    it('show a shared recap below the shared recaps, with its title once known', () => {
+        const route = { name: 'shared-recap', params: { id: 's1' } }
+
+        expect(buildBreadcrumb(route).map((c) => c.id)).toEqual(['music', 'recap', 'shared-recaps'])
+        expect(buildBreadcrumb(route, 'Ada').at(-1)).toEqual({
+            id: 'shared-recap',
+            labelKey: 'recap.nav.shared',
+            label: 'Ada',
+        })
+    })
+
+    it('select their node of the sidebar', () => {
+        expect(activeTreeId({ name: 'recap', params: {} })).toBe('recap')
+        expect(activeTreeId({ name: 'statistics', params: {} })).toBe('statistics')
+        expect(activeTreeId({ name: 'shared-recap', params: { id: 's1' } })).toBe('shared-recaps')
+    })
+})

@@ -52,6 +52,9 @@ export const iconSlots = {
     'tree-playlist': { file: duotone('music-notes-simple'), area: 'sidebar' },
     'tree-smart-playlist': { file: duotone('magic-wand'), area: 'sidebar' },
     'tree-favorites': { file: duotone('heart'), area: 'sidebar' },
+    'tree-recap': { file: duotone('sparkle'), area: 'sidebar' },
+    'tree-statistics': { file: duotone('chart-bar'), area: 'sidebar' },
+    'tree-shared-recaps': { file: duotone('users-three'), area: 'sidebar' },
     'tree-expand': { file: regular('plus-square'), area: 'sidebar' },
     'tree-collapse': { file: regular('minus-square'), area: 'sidebar' },
     'sidebar-collapse': { file: duotone('caret-double-left'), area: 'sidebar' },
@@ -90,6 +93,11 @@ export const iconSlots = {
     'preset-next': { file: fill('caret-right'), area: 'content' },
     'auto-change': { file: fill('timer'), area: 'content' },
     'item-menu': { file: fill('dots-three-outline'), area: 'content' },
+    recap: { file: regular('sparkle'), area: 'content' },
+    statistics: { file: regular('chart-bar'), area: 'content' },
+    'shared-recaps': { file: regular('users-three'), area: 'content' },
+    'recap-previous': { file: fill('caret-left'), area: 'content' },
+    'recap-next': { file: fill('caret-right'), area: 'content' },
 
     // Transport
     shuffle: { file: fill('shuffle'), area: 'transport' },
@@ -164,6 +172,8 @@ export const iconSlots = {
     'has-pin': { file: regular('lock'), area: 'general' },
     'reset-pin': { file: regular('lock-open'), area: 'general' },
     'change-avatar': { file: regular('user-circle'), area: 'general' },
+    'save-picture': { file: regular('export'), area: 'general' },
+    'save-video': { file: regular('video'), area: 'general' },
 
     // Profile selection and digit pad of the PIN
     'profile-lock': { file: fill('lock'), area: 'content' },

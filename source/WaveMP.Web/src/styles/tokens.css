@@ -133,6 +133,9 @@
         --wmp-icon-tree-playlist: url('/icons/phosphor/duotone/music-notes-simple-duotone.svg');
         --wmp-icon-tree-smart-playlist: url('/icons/phosphor/duotone/magic-wand-duotone.svg');
         --wmp-icon-tree-favorites: url('/icons/phosphor/duotone/heart-duotone.svg');
+        --wmp-icon-tree-recap: url('/icons/phosphor/duotone/sparkle-duotone.svg');
+        --wmp-icon-tree-statistics: url('/icons/phosphor/duotone/chart-bar-duotone.svg');
+        --wmp-icon-tree-shared-recaps: url('/icons/phosphor/duotone/users-three-duotone.svg');
         --wmp-icon-tree-expand: url('/icons/phosphor/regular/plus-square.svg');
         --wmp-icon-tree-collapse: url('/icons/phosphor/regular/minus-square.svg');
         --wmp-icon-sidebar-collapse: url('/icons/phosphor/duotone/caret-double-left-duotone.svg');
@@ -187,6 +190,11 @@
         --wmp-icon-preset-next: url('/icons/phosphor/fill/caret-right-fill.svg');
         --wmp-icon-auto-change: url('/icons/phosphor/fill/timer-fill.svg');
         --wmp-icon-item-menu: url('/icons/phosphor/fill/dots-three-outline-fill.svg');
+        --wmp-icon-recap: url('/icons/phosphor/regular/sparkle.svg');
+        --wmp-icon-statistics: url('/icons/phosphor/regular/chart-bar.svg');
+        --wmp-icon-shared-recaps: url('/icons/phosphor/regular/users-three.svg');
+        --wmp-icon-recap-previous: url('/icons/phosphor/fill/caret-left-fill.svg');
+        --wmp-icon-recap-next: url('/icons/phosphor/fill/caret-right-fill.svg');
         --wmp-icon-collapse-player: url('/icons/phosphor/fill/caret-down-fill.svg');
         --wmp-icon-settings: url('/icons/phosphor/regular/gear-six.svg');
         --wmp-icon-keyboard-shortcuts: url('/icons/phosphor/regular/keyboard.svg');
@@ -239,6 +247,8 @@
         --wmp-icon-has-pin: url('/icons/phosphor/regular/lock.svg');
         --wmp-icon-reset-pin: url('/icons/phosphor/regular/lock-open.svg');
         --wmp-icon-change-avatar: url('/icons/phosphor/regular/user-circle.svg');
+        --wmp-icon-save-picture: url('/icons/phosphor/regular/export.svg');
+        --wmp-icon-save-video: url('/icons/phosphor/regular/video.svg');
         --wmp-icon-profile-lock: url('/icons/phosphor/fill/lock-fill.svg');
         --wmp-icon-pin-delete: url('/icons/phosphor/fill/backspace-fill.svg');
         --wmp-icon-pin-submit: url('/icons/phosphor/fill/arrow-right-fill.svg');
@@ -308,6 +318,24 @@
         --wmp-swatch-size: 2rem;
         --wmp-progress-height: 0.5rem;
         --wmp-key-size: 1.625rem;
+
+        /* Recap: the colors of the design Aurora (see recaps.css for the others) and the story */
+        --wmp-recap-background-start: #0b1636;
+        --wmp-recap-background-end: #2a1660;
+        --wmp-recap-glow: #5b43d9;
+        --wmp-recap-accent: #5ee8d2;
+        --wmp-recap-text: #f4f7ff;
+        --wmp-recap-text-muted: #c1c9ea;
+        --wmp-recap-surface: rgb(255 255 255 / 0.12);
+        --wmp-recap-font-family: var(--wmp-font-family);
+        --wmp-recap-story-width: 26rem;
+        --wmp-recap-radius: 1.25rem;
+        --wmp-recap-shadow: 0 1rem 2.5rem rgb(0 0 0 / 0.28);
+        --wmp-recap-transition-duration: 0.6s;
+
+        /* Charts of the statistics */
+        --wmp-chart-height: 12rem;
+        --wmp-chart-bar-color: var(--wmp-color-accent);
     }
 
     /* The dark variant of a theme shows the dark variant of the logo. */

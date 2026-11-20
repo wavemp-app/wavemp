@@ -14,6 +14,8 @@ import type {
     Job,
     MediaSource,
     PlayerViewMode,
+    RecapPeriod,
+    RecapShare,
     Scan,
     ScanIssue,
     ScrobblingService,
@@ -22,7 +24,12 @@ import type {
     TranscodingStatus,
     TrackReviewSort,
 } from '@/api/generated/models'
-import { SmartPlaylistFieldObject, SmartPlaylistOperatorObject } from '@/api/generated/models'
+import {
+    RecapPeriodObject,
+    SmartPlaylistFieldObject,
+    SmartPlaylistOperatorObject,
+} from '@/api/generated/models'
+import { DateOnly } from '@microsoft/kiota-abstractions'
 import { fileCategories, fileChoices } from '@/admin/fileSelections'
 import AdminNav from '@/components/admin/AdminNav.vue'
 import BackupList from '@/components/admin/BackupList.vue'
@@ -98,6 +105,15 @@ import ProfileAvatar from '@/components/profiles/ProfileAvatar.vue'
 import ProfileSelect from '@/components/profiles/ProfileSelect.vue'
 import ProfileSummary from '@/components/profiles/ProfileSummary.vue'
 import ScrobbleList from '@/components/profiles/ScrobbleList.vue'
+import RecapExport from '@/components/recaps/RecapExport.vue'
+import RecapNav from '@/components/recaps/RecapNav.vue'
+import RecapPeriodPicker from '@/components/recaps/RecapPeriodPicker.vue'
+import RecapShareList from '@/components/recaps/RecapShareList.vue'
+import RecapStory from '@/components/recaps/RecapStory.vue'
+import RecapStorySlide from '@/components/recaps/RecapStorySlide.vue'
+import StatisticsChart from '@/components/recaps/StatisticsChart.vue'
+import StatisticsTable from '@/components/recaps/StatisticsTable.vue'
+import type { RecapSlide } from '@/recaps/slides'
 import ReviewActions from '@/components/review/ReviewActions.vue'
 import ReviewBulkBar from '@/components/review/ReviewBulkBar.vue'
 import ReviewFilters from '@/components/review/ReviewFilters.vue'
@@ -756,6 +772,64 @@ const sampleScrobbleServices: ScrobblingService[] = [
         queuedScrobbles: 5,
     },
 ]
+const sampleRecapPeriod = ref<RecapPeriod>(RecapPeriodObject.Custom)
+const sampleRecapRange = ref({ from: '2026-10-01', to: '2026-09-01' })
+const sampleRecapBars = Array.from({ length: 12 }, (_, index) => ({
+    key: String(index),
+    label: String(index + 1),
+    description: String(index + 1),
+    ratio: [0.2, 0.5, 0.35, 1, 0.6, 0.4, 0.1, 0, 0.3, 0.7, 0.45, 0.25][index] ?? 0,
+    peak: index === 3,
+    labelled: index % 3 === 0,
+}))
+const sampleRecapSlides: RecapSlide[] = [
+    { kind: 'intro', title: 'Lars', figure: 'Aurora', figureLabel: 'Aurora', caption: '2026' },
+    {
+        kind: 'top-artists',
+        title: 'Aurora',
+        items: [1, 2, 3].map((rank) => ({
+            key: String(rank),
+            rank,
+            title: `Artist ${rank}`,
+            subtitle: 'Pop',
+            value: String(10 - rank),
+            coverTrackId: null,
+        })),
+    },
+    { kind: 'timeline', title: 'Aurora', bars: sampleRecapBars, caption: 'Aurora' },
+    {
+        kind: 'summary',
+        title: 'Aurora',
+        coverTrackId: null,
+        facts: [
+            { key: 'minutes', label: 'Minutes', value: '1,234' },
+            { key: 'tracks', label: 'Songs', value: '56' },
+        ],
+    },
+]
+const sampleRecapShares: RecapShare[] = [
+    {
+        id: 'share-1',
+        owner: { id: 'user-1', name: 'Ada' },
+        isOwn: false,
+        period: RecapPeriodObject.LastMonth,
+        from: new DateOnly({ year: 2026, month: 10, day: 21 }),
+        to: new DateOnly({ year: 2026, month: 11, day: 20 }),
+        timeZone: 'Europe/Berlin',
+        design: 'aurora',
+        updatedAt: new Date(Date.UTC(2026, 10, 20, 18)),
+    },
+]
+const sampleStatisticsColumns = [
+    { key: 'rank', label: '#', numeric: true },
+    { key: 'title', label: 'Aurora' },
+    { key: 'plays', label: '12', numeric: true },
+]
+const sampleStatisticsRows = [
+    { key: 'a', cells: { rank: '1', title: 'First Song', plays: '12' } },
+    { key: 'b', cells: { rank: '2', title: 'Second Song', plays: '7' } },
+]
+
 const sampleBackups: Backup[] = [
     {
         id: 'wavemp-20261116T030000Z-schedule',
@@ -1756,6 +1830,68 @@ const sampleTranscodeJobs = computed<TranscodeJob[]>(() => {
             <h2 data-part="dev-section-title">{{ t('dev.sections.bottomNav') }}</h2>
             <div data-part="dev-sample">
                 <AppBottomNav active-tab="library" />
+            </div>
+        </section>
+
+        <section data-part="dev-section">
+            <h2 data-part="dev-section-title">{{ t('dev.sections.recaps') }}</h2>
+            <div data-part="view" data-view="recap">
+                <RecapNav />
+                <RecapPeriodPicker
+                    v-model="sampleRecapPeriod"
+                    v-model:custom="sampleRecapRange"
+                    invalid
+                />
+                <div data-part="recap-layout">
+                    <div data-part="recap-stage">
+                        <RecapStory
+                            :slides="sampleRecapSlides"
+                            design="aurora"
+                            :label="t('recap.title')"
+                        />
+                    </div>
+                    <div data-part="recap-panel">
+                        <RecapExport
+                            :slides="sampleRecapSlides"
+                            :index="0"
+                            design="aurora"
+                            :story="null"
+                            file-stem="dev"
+                        />
+                    </div>
+                </div>
+                <div data-part="dev-samples">
+                    <div
+                        v-for="design in ['aurora', 'frost', 'prism']"
+                        :key="design"
+                        data-part="recap-story"
+                        :data-recap-design="design"
+                        data-decoration="glow"
+                    >
+                        <span data-part="recap-backdrop"></span>
+                        <div data-part="recap-slides">
+                            <RecapStorySlide
+                                v-for="slide in sampleRecapSlides"
+                                :key="slide.kind"
+                                :slide="slide"
+                            />
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div data-part="view" data-view="statistics">
+                <StatisticsChart
+                    :bars="sampleRecapBars"
+                    :label="t('statistics.timeline')"
+                    interactive
+                />
+                <StatisticsTable
+                    labelledby="dev-statistics"
+                    :columns="sampleStatisticsColumns"
+                    :rows="sampleStatisticsRows"
+                />
+                <RecapShareList :shares="sampleRecapShares" />
+                <RecapShareList :shares="sampleRecapShares" own />
             </div>
         </section>
 

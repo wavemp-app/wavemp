@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
     buildLibraryTree,
+    initiallyExpanded,
     librarySections,
     libraryTree,
     mainNavigation,
@@ -100,5 +101,14 @@ describe('main navigation', () => {
             icon: 'tree-favorites',
             to: { name: 'library-section', params: { section: 'favorites' } },
         })
+    })
+    it('ends with the recap, its statistics and the shared recaps, collapsed', () => {
+        const recap = libraryTree.at(-1)!
+        expect(recap).toMatchObject({ id: 'recap', icon: 'tree-recap', to: { name: 'recap' } })
+        expect(recap.children?.map((node) => [node.id, node.icon])).toEqual([
+            ['statistics', 'tree-statistics'],
+            ['shared-recaps', 'tree-shared-recaps'],
+        ])
+        expect(initiallyExpanded).not.toContain('recap')
     })
 })

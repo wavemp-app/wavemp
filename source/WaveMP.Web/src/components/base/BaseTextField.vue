@@ -5,7 +5,7 @@ const props = withDefaults(
     defineProps<{
         label: string
         placeholder?: string
-        type?: 'text' | 'email' | 'url' | 'number' | 'password' | 'time'
+        type?: 'text' | 'email' | 'url' | 'number' | 'password' | 'time' | 'date'
         disabled?: boolean
         required?: boolean
         maxlength?: number

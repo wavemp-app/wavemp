@@ -1609,24 +1609,28 @@ a[data-part='breadcrumb-link']:hover {
 /* --- Administration ---------------------------------------------------------------------------- */
 
 /* The pages of the administration are glass tabs on a pale rail; the current one is lit. */
-[data-part='admin-nav'] {
+[data-part='admin-nav'],
+[data-part='recap-nav'] {
     border-block-end-color: #a9cdea;
 }
 
-[data-part='admin-nav-item'] {
+[data-part='admin-nav-item'],
+[data-part='recap-nav-item'] {
     border: 1px solid transparent;
     border-block-end: 0;
     border-radius: var(--wmp-radius-m) var(--wmp-radius-m) 0 0;
     color: #24476b;
 }
 
-[data-part='admin-nav-item']:hover {
+[data-part='admin-nav-item']:hover,
+[data-part='recap-nav-item']:hover {
     border-color: #cfe3f4;
     background: linear-gradient(#ffffff, #eef7fe);
     color: #0b3d72;
 }
 
-[data-part='admin-nav-item'][data-state~='active'] {
+[data-part='admin-nav-item'][data-state~='active'],
+[data-part='recap-nav-item'][data-state~='active'] {
     border-color: #a9cdea;
     background: linear-gradient(#ffffff 0%, #eef7fe 48%, #dbeefc 52%, #e8f4fe 100%);
     box-shadow: inset 0 1px #ffffff;
@@ -1634,12 +1638,14 @@ a[data-part='breadcrumb-link']:hover {
     font-weight: 600;
 }
 
-[data-part='admin-nav-item'] > [data-part='icon'] {
+[data-part='admin-nav-item'] > [data-part='icon'],
+[data-part='recap-nav-item'] > [data-part='icon'] {
     --wmp-icon-fill: linear-gradient(#2a86d6, #0b4f94);
 }
 
 /* An azure line under the current page; it slides only while the rail is in use. */
-[data-part='admin-nav'] > [data-part='indicator'] {
+[data-part='admin-nav'] > [data-part='indicator'],
+[data-part='recap-nav'] > [data-part='indicator'] {
     display: block;
     inset-block-start: auto;
     inset-block-end: 0;
@@ -1647,7 +1653,8 @@ a[data-part='breadcrumb-link']:hover {
     background: linear-gradient(90deg, #6fd3ff, #0f6cc7);
 }
 
-[data-part='admin-nav']:is(:hover, :focus-within, :active) > [data-part='indicator'] {
+[data-part='admin-nav']:is(:hover, :focus-within, :active) > [data-part='indicator'],
+[data-part='recap-nav']:is(:hover, :focus-within, :active) > [data-part='indicator'] {
     transition:
         left 0.25s ease,
         inline-size 0.25s ease;
@@ -1890,7 +1897,8 @@ a[data-part='breadcrumb-link']:hover {
     [data-part='tile'],
     [data-part='profile-tile'],
     [data-part='bottom-nav']:is(:hover, :focus-within, :active) > [data-part='indicator'],
-    [data-part='admin-nav']:is(:hover, :focus-within, :active) > [data-part='indicator'] {
+    [data-part='admin-nav']:is(:hover, :focus-within, :active) > [data-part='indicator'],
+    [data-part='recap-nav']:is(:hover, :focus-within, :active) > [data-part='indicator'] {
         transition: none;
     }
 }

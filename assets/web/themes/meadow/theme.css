@@ -1586,12 +1586,14 @@ a[data-part='breadcrumb-link']:hover {
 /* --- Administration ------------------------------------------------------------------------ */
 
 /* Folder tabs on a blue rule, side by side; the line of grass slides below the current page. */
-[data-part='admin-nav'] {
+[data-part='admin-nav'],
+[data-part='recap-nav'] {
     column-gap: 1px;
     border-block-end: 2px solid #b4c7ea;
 }
 
-[data-part='admin-nav-item'] {
+[data-part='admin-nav-item'],
+[data-part='recap-nav-item'] {
     border: 1px solid #c6d7f7;
     border-block-end: 0;
     border-radius: var(--wmp-radius-s) var(--wmp-radius-s) 0 0;
@@ -1600,23 +1602,27 @@ a[data-part='breadcrumb-link']:hover {
     font-weight: 700;
 }
 
-[data-part='admin-nav-item']:hover {
+[data-part='admin-nav-item']:hover,
+[data-part='recap-nav-item']:hover {
     background: linear-gradient(#ffffff, #dde8fc);
     color: #0a1a40;
 }
 
-[data-part='admin-nav-item'][data-state~='active'] {
+[data-part='admin-nav-item'][data-state~='active'],
+[data-part='recap-nav-item'][data-state~='active'] {
     border-color: #7d9fdf;
     border-block-end-color: transparent;
     background: #ffffff;
     color: #0a1a40;
 }
 
-[data-part='admin-nav-item'] > [data-part='icon'] {
+[data-part='admin-nav-item'] > [data-part='icon'],
+[data-part='recap-nav-item'] > [data-part='icon'] {
     --wmp-icon-fill: #0a48c2;
 }
 
-[data-part='admin-nav'] > [data-part='indicator'] {
+[data-part='admin-nav'] > [data-part='indicator'],
+[data-part='recap-nav'] > [data-part='indicator'] {
     display: block;
     inset-block-start: auto;
     inset-block-end: 0;
@@ -1881,6 +1887,7 @@ a[data-part='breadcrumb-link']:hover {
         [data-part='tabs'],
         [data-part='bottom-nav'],
         [data-part='admin-nav'],
+        [data-part='recap-nav'],
         [data-part='tree'],
         [data-part='segmented-control']
     ):is(:hover, :focus-within, :active)
@@ -1897,6 +1904,7 @@ a[data-part='breadcrumb-link']:hover {
             [data-part='tabs'],
             [data-part='bottom-nav'],
             [data-part='admin-nav'],
+            [data-part='recap-nav'],
             [data-part='tree'],
             [data-part='segmented-control']
         ):is(:hover, :focus-within, :active)

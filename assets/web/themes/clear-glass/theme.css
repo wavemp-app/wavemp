@@ -454,6 +454,7 @@
         [data-part='tabs'],
         [data-part='bottom-nav'],
         [data-part='admin-nav'],
+        [data-part='recap-nav'],
         [data-part='tree'],
         [data-part='segmented-control'],
         [data-part='theme-picker'],
@@ -480,6 +481,7 @@
         [data-part='tabs'],
         [data-part='bottom-nav'],
         [data-part='admin-nav'],
+        [data-part='recap-nav'],
         [data-part='tree'],
         [data-part='segmented-control'],
         [data-part='theme-picker'],
@@ -498,6 +500,7 @@
         [data-part='tab'],
         [data-part='bottom-nav-item'],
         [data-part='admin-nav-item'],
+        [data-part='recap-nav-item'],
         [data-part='tree-item'],
         [data-part='segment'],
         [data-part='theme-option']
@@ -510,6 +513,7 @@
         [data-part='tab'][aria-current='page'],
         [data-part='bottom-nav-item'][aria-current='page'],
         [data-part='admin-nav-item']:is([aria-current='page'], [data-state~='active']),
+        [data-part='recap-nav-item']:is([aria-current='page'], [data-state~='active']),
         [data-part='tree-item'][aria-current='page'],
         [data-part='segment'][aria-checked='true'],
         [data-part='theme-option'][aria-checked='true']
@@ -528,6 +532,7 @@
     [data-part='tab'],
     [data-part='bottom-nav-item'],
     [data-part='admin-nav-item'],
+    [data-part='recap-nav-item'],
     [data-part='tree-item'],
     [data-part='theme-option'],
     [data-part='file-choice']
@@ -540,6 +545,7 @@
         [data-part='tabs'],
         [data-part='bottom-nav'],
         [data-part='admin-nav'],
+        [data-part='recap-nav'],
         [data-part='segmented-control']
     )
     > [data-part='indicator']::after {
@@ -553,7 +559,7 @@
 }
 
 :root[data-theme-variant='dark']
-    :is([data-part='tabs'], [data-part='bottom-nav'], [data-part='admin-nav'], [data-part='segmented-control'])
+    :is([data-part='tabs'], [data-part='bottom-nav'], [data-part='admin-nav'], [data-part='recap-nav'], [data-part='segmented-control'])
     > [data-part='indicator']::after {
     opacity: 0.25;
 }
@@ -2047,7 +2053,8 @@ a[data-part='breadcrumb-link']:hover {
 /* --- Administration ---------------------------------------------------------------------------- */
 
 /* The pages of the administration: a groove with the sliding lens, like the segmented controls. */
-[data-part='admin-nav'] {
+[data-part='admin-nav'],
+[data-part='recap-nav'] {
     padding: 0.25rem;
     border: 0;
     border-radius: 999px;
@@ -2055,7 +2062,8 @@ a[data-part='breadcrumb-link']:hover {
     box-shadow: var(--cg-groove-shadow);
 }
 
-[data-part='admin-nav-item'] {
+[data-part='admin-nav-item'],
+[data-part='recap-nav-item'] {
     --wmp-icon-fill: currentColor;
 
     border: 0;
@@ -2064,12 +2072,14 @@ a[data-part='breadcrumb-link']:hover {
     color: var(--cg-muted);
 }
 
-[data-part='admin-nav-item']:hover {
+[data-part='admin-nav-item']:hover,
+[data-part='recap-nav-item']:hover {
     background: transparent;
     color: var(--cg-ink);
 }
 
-[data-part='admin-nav-item'][data-state~='active'] {
+[data-part='admin-nav-item'][data-state~='active'],
+[data-part='recap-nav-item'][data-state~='active'] {
     border: 0;
     background: transparent;
     color: var(--cg-ink);
@@ -2607,6 +2617,7 @@ a[data-part='breadcrumb-link']:hover {
             [data-part='tabs'],
             [data-part='bottom-nav'],
             [data-part='admin-nav'],
+            [data-part='recap-nav'],
             [data-part='tree'],
             [data-part='segmented-control'],
             [data-part='theme-picker'],
@@ -2617,6 +2628,7 @@ a[data-part='breadcrumb-link']:hover {
             [data-part='tab'],
             [data-part='bottom-nav-item'],
             [data-part='admin-nav-item'],
+            [data-part='recap-nav-item'],
             [data-part='tree-item'],
             [data-part='segment'],
             [data-part='theme-option']
@@ -2696,6 +2708,7 @@ a[data-part='breadcrumb-link']:hover {
             [data-part='tabs'],
             [data-part='bottom-nav'],
             [data-part='admin-nav'],
+            [data-part='recap-nav'],
             [data-part='tree'],
             [data-part='segmented-control'],
             [data-part='theme-picker'],
@@ -2710,6 +2723,7 @@ a[data-part='breadcrumb-link']:hover {
     [data-part='tree-item'][aria-current='page'],
     [data-part='bottom-nav-item'][aria-current='page'],
     [data-part='admin-nav-item'][data-state~='active'],
+    [data-part='recap-nav-item'][data-state~='active'],
     [data-part='theme-option'][aria-checked='true'],
     [data-part='file-choice'][aria-checked='true'],
     [data-part='queue-item'][data-state~='current'] {

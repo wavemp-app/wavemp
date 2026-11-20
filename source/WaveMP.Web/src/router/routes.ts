@@ -31,6 +31,10 @@ import PlaylistView from '@/views/playlists/PlaylistView.vue'
 import RecentlyPlayedView from '@/views/playlists/RecentlyPlayedView.vue'
 import SmartPlaylistEditView from '@/views/playlists/SmartPlaylistEditView.vue'
 import SmartPlaylistView from '@/views/playlists/SmartPlaylistView.vue'
+import RecapView from '@/views/recaps/RecapView.vue'
+import SharedRecapView from '@/views/recaps/SharedRecapView.vue'
+import SharedRecapsView from '@/views/recaps/SharedRecapsView.vue'
+import StatisticsView from '@/views/recaps/StatisticsView.vue'
 import {
     defaultLibrarySection,
     librarySectionPattern,
@@ -191,6 +195,26 @@ export function createRoutes(extra: readonly RouteRecordRaw[] = []): RouteRecord
             component: PlaylistView,
             props: true,
             meta: { tab: 'playlists', keepAlive: true },
+        },
+        { path: '/recap', name: 'recap', component: RecapView, meta: { tab: 'home' } },
+        {
+            path: '/recap/statistics',
+            name: 'statistics',
+            component: StatisticsView,
+            meta: { tab: 'home', keepAlive: true },
+        },
+        {
+            path: '/recap/shared',
+            name: 'shared-recaps',
+            component: SharedRecapsView,
+            meta: { tab: 'home', keepAlive: true },
+        },
+        {
+            path: '/recap/shared/:id',
+            name: 'shared-recap',
+            component: SharedRecapView,
+            props: true,
+            meta: { tab: 'home' },
         },
         { path: '/settings', name: 'settings', component: SettingsView },
         { path: '/settings/pin', name: 'settings-pin', component: PinSettingsView },

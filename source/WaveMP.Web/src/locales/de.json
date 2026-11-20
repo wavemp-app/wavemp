@@ -34,7 +34,8 @@
     "playlist": "Playlist",
     "smartPlaylist": "Intelligente Playlist",
     "collapse": "Seitenleiste einklappen",
-    "expand": "Seitenleiste ausklappen"
+    "expand": "Seitenleiste ausklappen",
+    "recap": "Rückblick"
   },
   "library": {
     "back": "Zurück",
@@ -517,6 +518,7 @@
       "wide": "Breites schwebendes Fenster mit dem Video"
     },
     "sections": {
+      "recaps": "Rückblick und Statistik",
       "buttons": "Buttons",
       "tabs": "Tabs",
       "tree": "Baum",
@@ -1944,6 +1946,180 @@
       "serviceUnavailable": "LRCLIB ist nicht erreichbar. Prüfe die Internetverbindung des Servers.",
       "rateLimited": "LRCLIB lehnt Anfragen gerade ab. Versuche es später noch einmal.",
       "failed": "Der Songtext konnte nicht heruntergeladen werden."
+    }
+  },
+  "recap": {
+    "title": "Rückblick",
+    "nav": {
+      "label": "Navigation des Rückblicks",
+      "recap": "Rückblick",
+      "statistics": "Statistik",
+      "shared": "Geteilte Rückblicke"
+    },
+    "period": "Zeitraum",
+    "periods": {
+      "lastMonth": "Letzter Monat",
+      "lastThreeMonths": "Letzte 3 Monate",
+      "lastYear": "Letztes Jahr",
+      "currentYear": "Dieses Jahr",
+      "allTime": "Gesamte Zeit",
+      "custom": "Eigener"
+    },
+    "from": "Von",
+    "to": "Bis",
+    "customInvalid": "Wähle einen ersten und einen letzten Tag; der erste Tag darf nicht nach dem letzten liegen.",
+    "storyLabel": "Dein Rückblick: {period}",
+    "loadError": "Der Rückblick konnte nicht geladen werden.",
+    "design": "Design",
+    "designLabel": "Aussehen der Story",
+    "designs": {
+      "aurora": "Aurora",
+      "frost": "Frost",
+      "prism": "Prisma"
+    },
+    "share": "Teilen",
+    "shareWithProfiles": "Mit den anderen Profilen teilen",
+    "shareWithProfilesHint": "Die anderen Profile dieses Servers finden diesen Rückblick unter Geteilte Rückblicke. Seine Zahlen folgen immer deinem Wiedergabeverlauf dieser Tage.",
+    "shareFailed": "Das Teilen konnte nicht geändert werden.",
+    "pictureFormat": "Bildformat",
+    "formats": {
+      "story": "Story",
+      "square": "Quadratisch"
+    },
+    "savePicture": "Bild speichern",
+    "sharePicture": "Bild teilen",
+    "saveVideo": "Video speichern",
+    "shareVideo": "Video teilen",
+    "cancelVideo": "Video abbrechen",
+    "recording": "Das Video wird aufgenommen",
+    "converting": "Das Video wird umgewandelt",
+    "videoUnsupported": "Dieser Browser kann keine Videos aufnehmen; Bilder funktionieren.",
+    "shareTitle": "Mein WaveMP-Rückblick",
+    "pictureSaved": "Das Bild wurde gespeichert.",
+    "pictureShared": "Das Bild wurde geteilt.",
+    "pictureFailed": "Das Bild konnte nicht erstellt werden.",
+    "videoSaved": "Das Video wurde gespeichert.",
+    "videoShared": "Das Video wurde geteilt.",
+    "videoFailed": "Das Video konnte nicht erstellt werden.",
+    "previous": "Vorheriger Abschnitt",
+    "next": "Nächster Abschnitt",
+    "pause": "Story anhalten",
+    "play": "Story abspielen",
+    "sectionOf": "Abschnitt {index} von {count}",
+    "chartLabel": "Diagramm: {title}",
+    "playsOne": "{count}-mal gehört",
+    "playsOther": "{count}-mal gehört",
+    "songsOne": "{count} Song",
+    "songsOther": "{count} Songs",
+    "compilation": "Kompilation",
+    "firstPlayed": "Zuerst gehört am {date}",
+    "barDescription": "{label}: {plays}",
+    "until": "Bis {date}",
+    "slides": {
+      "intro": {
+        "title": "{name}, das war deine Musik"
+      },
+      "empty": {
+        "title": "In diesen Tagen lief nichts",
+        "caption": "Hör ein paar Songs: Deine Lieblinge, deine Hörzeit und die Künstler, die du entdeckst, erscheinen dann hier."
+      },
+      "listeningTime": {
+        "title": "Zeit mit deiner Musik",
+        "unitOne": "Minute Musik",
+        "unitOther": "Minuten Musik"
+      },
+      "topTrack": {
+        "title": "Dein Song Nummer eins"
+      },
+      "topTracks": {
+        "title": "Deine Top-Songs"
+      },
+      "topArtists": {
+        "title": "Deine Top-Künstler"
+      },
+      "topAlbums": {
+        "title": "Deine Top-Alben"
+      },
+      "topGenres": {
+        "title": "Deine Top-Genres"
+      },
+      "timeline": {
+        "title": "Wann du gehört hast",
+        "peakDay": "Dein stärkster Tag: {label}",
+        "peakWeek": "Deine stärkste Woche begann am {label}",
+        "peakMonth": "Dein stärkster Monat: {label}",
+        "peakYear": "Dein stärkstes Jahr: {label}"
+      },
+      "hours": {
+        "title": "Deine Tageszeit",
+        "unit": "hörst du am meisten"
+      },
+      "newArtists": {
+        "title": "Neu entdeckt",
+        "unitOne": "Künstler zum ersten Mal gehört",
+        "unitOther": "Künstler zum ersten Mal gehört"
+      },
+      "summary": {
+        "title": "{name} in Zahlen",
+        "caption": "{period}: {range}"
+      }
+    },
+    "facts": {
+      "minutes": "Minuten",
+      "plays": "Wiedergaben",
+      "tracks": "Songs",
+      "artists": "Künstler",
+      "activeDays": "Tage mit Musik",
+      "topArtist": "Top-Künstler",
+      "topTrack": "Top-Song",
+      "topGenre": "Top-Genre"
+    },
+    "sharedTitle": "{name}: {period}",
+    "sharedAt": "Geteilt am {date}",
+    "sharedLoadError": "Die geteilten Rückblicke konnten nicht geladen werden.",
+    "receivedTitle": "Mit dir geteilt",
+    "receivedEmpty": "Noch kein Profil teilt einen Rückblick mit dir.",
+    "ownTitle": "Von dir geteilt",
+    "ownEmpty": "Du teilst keinen Rückblick. Schalte das Teilen auf der Seite deines Rückblicks ein.",
+    "stopSharing": "Nicht mehr teilen",
+    "stopSharingFailed": "Das Teilen konnte nicht beendet werden.",
+    "sharedMissingTitle": "Dieser Rückblick wird nicht mehr geteilt",
+    "sharedMissingText": "Sein Profil teilt ihn nicht mehr oder wurde entfernt."
+  },
+  "statistics": {
+    "loadError": "Die Statistik konnte nicht geladen werden.",
+    "emptyTitle": "In diesen Tagen lief nichts",
+    "emptyText": "Wähle einen anderen Zeitraum oder hör etwas Musik.",
+    "hoursMinutes": "{hours} Std. {minutes} Min.",
+    "minutes": "{minutes} Min.",
+    "totals": {
+      "title": "Überblick",
+      "listeningTime": "Hörzeit",
+      "plays": "Wiedergaben",
+      "tracks": "Songs",
+      "artists": "Künstler",
+      "albums": "Alben",
+      "genres": "Genres",
+      "newArtists": "Neue Künstler",
+      "activeDays": "Tage mit Musik"
+    },
+    "timeline": "Wiedergaben im Zeitverlauf",
+    "hours": "Wiedergaben nach Tageszeit",
+    "topTracks": "Top-Songs",
+    "topArtists": "Top-Künstler",
+    "topAlbums": "Top-Alben",
+    "topGenres": "Top-Genres",
+    "newArtists": "Neu entdeckte Künstler",
+    "columns": {
+      "rank": "Platz",
+      "song": "Song",
+      "artist": "Künstler",
+      "album": "Album",
+      "genre": "Genre",
+      "songs": "Songs",
+      "plays": "Wiedergaben",
+      "time": "Zeit",
+      "firstPlayed": "Zuerst gehört"
     }
   }
 }

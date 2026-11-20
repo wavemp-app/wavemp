@@ -35,6 +35,12 @@ const adminPageTitles = {
     'admin-users': 'adminUsers.title',
 } as const
 
+/** Message keys of the titles of the pages below the recap. */
+const recapPageTitles = {
+    statistics: 'recap.nav.statistics',
+    'shared-recaps': 'recap.nav.shared',
+} as const
+
 /** The section of the library each detail page belongs to. */
 const detailSections: Readonly<Record<string, LibrarySection>> = {
     'library-album': 'albums',
@@ -51,6 +57,7 @@ const detailSections: Readonly<Record<string, LibrarySection>> = {
 export function buildBreadcrumb(route: RouteInfo, detailTitle?: string | null): Crumb[] {
     const crumbs: Crumb[] = [{ id: 'music', labelKey: 'breadcrumb.music', to: { name: 'library' } }]
     const library: Crumb = { id: 'library', labelKey: 'nav.library', to: { name: 'library' } }
+    const recapCrumb: Crumb = { id: 'recap', labelKey: 'recap.title', to: { name: 'recap' } }
     const playlistsCrumb: Crumb = {
         id: 'playlists',
         labelKey: 'nav.playlists',
@@ -187,6 +194,29 @@ export function buildBreadcrumb(route: RouteInfo, detailTitle?: string | null): 
             crumbs.push({ id: 'admin', labelKey: 'admin.title', to: { name: 'admin' } })
             crumbs.push({ id: route.name, labelKey: adminPageTitles[route.name] })
             break
+        case 'recap':
+            crumbs.push({ id: 'recap', labelKey: 'recap.title' })
+            break
+        case 'statistics':
+        case 'shared-recaps':
+            crumbs.push(recapCrumb)
+            crumbs.push({ id: route.name, labelKey: recapPageTitles[route.name] })
+            break
+        case 'shared-recap':
+            crumbs.push(recapCrumb)
+            crumbs.push({
+                id: 'shared-recaps',
+                labelKey: recapPageTitles['shared-recaps'],
+                to: { name: 'shared-recaps' },
+            })
+            if (detailTitle) {
+                crumbs.push({
+                    id: route.name,
+                    labelKey: recapPageTitles['shared-recaps'],
+                    label: detailTitle,
+                })
+            }
+            break
         case 'not-found':
             crumbs.push({ id: 'not-found', labelKey: 'notFound.title' })
             break
@@ -230,6 +260,13 @@ export function activeTreeId(route: RouteInfo): string | undefined {
             return typeof route.params.id === 'string' ? playlistNodeId(route.params.id) : undefined
         case 'smart-playlists-new':
             return 'playlists'
+        case 'recap':
+            return 'recap'
+        case 'statistics':
+            return 'statistics'
+        case 'shared-recaps':
+        case 'shared-recap':
+            return 'shared-recaps'
         case 'smart-playlist':
         case 'smart-playlist-edit':
             return typeof route.params.id === 'string'

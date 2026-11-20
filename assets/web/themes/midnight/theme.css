@@ -1296,11 +1296,13 @@ a[data-part="breadcrumb-link"]:hover {
 /* --- Administration ----------------------------------------------------------------------------- */
 
 /* Glass tabs; the current page is light blue. */
-[data-part="admin-nav"] {
+[data-part="admin-nav"],
+[data-part="recap-nav"] {
     border-block-end-color: #b9c3ce;
 }
 
-[data-part="admin-nav-item"] {
+[data-part="admin-nav-item"],
+[data-part="recap-nav-item"] {
     border: 1px solid #c3cbd4;
     border-block-end: 0;
     border-radius: 0.25rem 0.25rem 0 0;
@@ -1309,12 +1311,14 @@ a[data-part="breadcrumb-link"]:hover {
     box-shadow: inset 0 1px rgb(255 255 255 / 80%);
 }
 
-[data-part="admin-nav-item"]:hover {
+[data-part="admin-nav-item"]:hover,
+[data-part="recap-nav-item"]:hover {
     background: linear-gradient(#f4faff, #e3f1fd 48%, #d2e8fc 52%, #e2f0fd);
     color: #10253f;
 }
 
-[data-part="admin-nav-item"][data-state~="active"] {
+[data-part="admin-nav-item"][data-state~="active"],
+[data-part="recap-nav-item"][data-state~="active"] {
     border-color: #84b9ea;
     background: linear-gradient(#e6f3fe, #c9e2fa 48%, #b4d6f8 52%, #cfe6fb);
     color: #10253f;
@@ -1323,7 +1327,8 @@ a[data-part="breadcrumb-link"]:hover {
         0 0 6px rgb(59 155 255 / 35%);
 }
 
-[data-part="admin-nav-item"] > [data-part="icon"] {
+[data-part="admin-nav-item"] > [data-part="icon"],
+[data-part="recap-nav-item"] > [data-part="icon"] {
     --wmp-icon-fill: linear-gradient(#4aa8ff, #1f6fd6);
 }
 

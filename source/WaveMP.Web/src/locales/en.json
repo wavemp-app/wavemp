@@ -34,7 +34,8 @@
     "createPlaylist": "Create Playlist",
     "library": "Library",
     "playlist": "Playlist",
-    "smartPlaylist": "Smart playlist"
+    "smartPlaylist": "Smart playlist",
+    "recap": "Recap"
   },
   "library": {
     "back": "Back",
@@ -517,6 +518,7 @@
       "wide": "Wide floating window with the video"
     },
     "sections": {
+      "recaps": "Recap and statistics",
       "buttons": "Buttons",
       "tabs": "Tabs",
       "tree": "Tree",
@@ -1944,6 +1946,180 @@
       "serviceUnavailable": "LRCLIB cannot be reached. Check the internet connection of the server.",
       "rateLimited": "LRCLIB refuses requests for a while. Try again later.",
       "failed": "The lyrics could not be downloaded."
+    }
+  },
+  "recap": {
+    "title": "Recap",
+    "nav": {
+      "label": "Recap navigation",
+      "recap": "Recap",
+      "statistics": "Statistics",
+      "shared": "Shared recaps"
+    },
+    "period": "Period",
+    "periods": {
+      "lastMonth": "Last month",
+      "lastThreeMonths": "Last 3 months",
+      "lastYear": "Last year",
+      "currentYear": "This year",
+      "allTime": "All time",
+      "custom": "Custom"
+    },
+    "from": "From",
+    "to": "To",
+    "customInvalid": "Choose a first and a last day; the first day must not come after the last.",
+    "storyLabel": "Your recap: {period}",
+    "loadError": "The recap could not be loaded.",
+    "design": "Design",
+    "designLabel": "Look of the story",
+    "designs": {
+      "aurora": "Aurora",
+      "frost": "Frost",
+      "prism": "Prism"
+    },
+    "share": "Share",
+    "shareWithProfiles": "Share with the other profiles",
+    "shareWithProfilesHint": "The other profiles of this server find this recap under Shared recaps. Its numbers always follow your play history of these days.",
+    "shareFailed": "Sharing could not be changed.",
+    "pictureFormat": "Picture format",
+    "formats": {
+      "story": "Story",
+      "square": "Square"
+    },
+    "savePicture": "Save picture",
+    "sharePicture": "Share picture",
+    "saveVideo": "Save video",
+    "shareVideo": "Share video",
+    "cancelVideo": "Cancel video",
+    "recording": "Recording the video",
+    "converting": "Converting the video",
+    "videoUnsupported": "This browser cannot record videos; pictures work.",
+    "shareTitle": "My WaveMP recap",
+    "pictureSaved": "The picture was saved.",
+    "pictureShared": "The picture was shared.",
+    "pictureFailed": "The picture could not be created.",
+    "videoSaved": "The video was saved.",
+    "videoShared": "The video was shared.",
+    "videoFailed": "The video could not be created.",
+    "previous": "Previous section",
+    "next": "Next section",
+    "pause": "Pause the story",
+    "play": "Play the story",
+    "sectionOf": "Section {index} of {count}",
+    "chartLabel": "Chart: {title}",
+    "playsOne": "{count} play",
+    "playsOther": "{count} plays",
+    "songsOne": "{count} song",
+    "songsOther": "{count} songs",
+    "compilation": "Compilation",
+    "firstPlayed": "First played on {date}",
+    "barDescription": "{label}: {plays}",
+    "until": "Until {date}",
+    "slides": {
+      "intro": {
+        "title": "{name}, this was your music"
+      },
+      "empty": {
+        "title": "Nothing played in these days",
+        "caption": "Play some songs: your favorites, your listening time and the artists you discover will show up here."
+      },
+      "listeningTime": {
+        "title": "Time with your music",
+        "unitOne": "minute of music",
+        "unitOther": "minutes of music"
+      },
+      "topTrack": {
+        "title": "Your song number one"
+      },
+      "topTracks": {
+        "title": "Your top songs"
+      },
+      "topArtists": {
+        "title": "Your top artists"
+      },
+      "topAlbums": {
+        "title": "Your top albums"
+      },
+      "topGenres": {
+        "title": "Your top genres"
+      },
+      "timeline": {
+        "title": "When you listened",
+        "peakDay": "Your busiest day: {label}",
+        "peakWeek": "Your busiest week began on {label}",
+        "peakMonth": "Your busiest month: {label}",
+        "peakYear": "Your busiest year: {label}"
+      },
+      "hours": {
+        "title": "Your time of day",
+        "unit": "is when you listen most"
+      },
+      "newArtists": {
+        "title": "New discoveries",
+        "unitOne": "artist played for the first time",
+        "unitOther": "artists played for the first time"
+      },
+      "summary": {
+        "title": "{name} in numbers",
+        "caption": "{period}: {range}"
+      }
+    },
+    "facts": {
+      "minutes": "Minutes",
+      "plays": "Plays",
+      "tracks": "Songs",
+      "artists": "Artists",
+      "activeDays": "Days with music",
+      "topArtist": "Top artist",
+      "topTrack": "Top song",
+      "topGenre": "Top genre"
+    },
+    "sharedTitle": "{name}: {period}",
+    "sharedAt": "Shared on {date}",
+    "sharedLoadError": "The shared recaps could not be loaded.",
+    "receivedTitle": "Shared with you",
+    "receivedEmpty": "No profile shares a recap with you yet.",
+    "ownTitle": "Shared by you",
+    "ownEmpty": "You share no recap. Switch on sharing on the page of your recap.",
+    "stopSharing": "Stop sharing",
+    "stopSharingFailed": "Sharing could not be stopped.",
+    "sharedMissingTitle": "This recap is not shared any more",
+    "sharedMissingText": "Its profile stopped sharing it or was removed."
+  },
+  "statistics": {
+    "loadError": "The statistics could not be loaded.",
+    "emptyTitle": "No plays in these days",
+    "emptyText": "Choose another period or play some music.",
+    "hoursMinutes": "{hours} h {minutes} min",
+    "minutes": "{minutes} min",
+    "totals": {
+      "title": "Overview",
+      "listeningTime": "Listening time",
+      "plays": "Plays",
+      "tracks": "Songs",
+      "artists": "Artists",
+      "albums": "Albums",
+      "genres": "Genres",
+      "newArtists": "New artists",
+      "activeDays": "Days with music"
+    },
+    "timeline": "Plays over time",
+    "hours": "Plays by hour of the day",
+    "topTracks": "Top songs",
+    "topArtists": "Top artists",
+    "topAlbums": "Top albums",
+    "topGenres": "Top genres",
+    "newArtists": "Artists you discovered",
+    "columns": {
+      "rank": "Rank",
+      "song": "Song",
+      "artist": "Artist",
+      "album": "Album",
+      "genre": "Genre",
+      "songs": "Songs",
+      "plays": "Plays",
+      "time": "Time",
+      "firstPlayed": "First played"
     }
   }
 }

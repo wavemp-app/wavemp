@@ -352,6 +352,7 @@
         [data-part='tabs'],
         [data-part='bottom-nav'],
         [data-part='admin-nav'],
+        [data-part='recap-nav'],
         [data-part='tree'],
         [data-part='color-picker'],
         [data-part='avatar-presets'],
@@ -367,6 +368,7 @@
         [data-part='tabs'],
         [data-part='bottom-nav'],
         [data-part='admin-nav'],
+        [data-part='recap-nav'],
         [data-part='tree'],
         [data-part='color-picker'],
         [data-part='avatar-presets'],
@@ -388,6 +390,7 @@
         [data-part='tabs'],
         [data-part='bottom-nav'],
         [data-part='admin-nav'],
+        [data-part='recap-nav'],
         [data-part='tree'],
         [data-part='color-picker'],
         [data-part='avatar-presets'],
@@ -403,7 +406,7 @@
 }
 
 /* Horizontal groups: a short line centered below the active entry. */
-:is([data-part='tabs'], [data-part='admin-nav'], [data-part='bottom-nav'], [data-part='segmented-control'])
+:is([data-part='tabs'], [data-part='admin-nav'], [data-part='recap-nav'], [data-part='bottom-nav'], [data-part='segmented-control'])
     > [data-part='indicator']::after {
     inset-block-end: 0.3125rem;
     inset-inline-start: 50%;
@@ -476,29 +479,36 @@
 }
 
 /* Administration: tabs on a hairline, the line under the current page. */
-[data-part='admin-nav'] {
+[data-part='admin-nav'],
+[data-part='recap-nav'] {
     border-block-end-color: var(--acc-hairline);
 }
 
 [data-part='admin-nav-item'],
-[data-part='admin-nav-item'][data-state~='active'] {
+[data-part='recap-nav-item'],
+[data-part='admin-nav-item'][data-state~='active'],
+[data-part='recap-nav-item'][data-state~='active'] {
     border-block-end-color: transparent;
     border-radius: var(--wmp-radius-m) var(--wmp-radius-m) 0 0;
 }
 
-[data-part='admin-nav-item']:hover {
+[data-part='admin-nav-item']:hover,
+[data-part='recap-nav-item']:hover {
     background: var(--wmp-color-hover);
 }
 
-[data-part='admin-nav-item'][data-state~='active'] {
+[data-part='admin-nav-item'][data-state~='active'],
+[data-part='recap-nav-item'][data-state~='active'] {
     font-weight: 600;
 }
 
-[data-part='admin-nav-item'][data-state~='active'] > [data-part='icon'] {
+[data-part='admin-nav-item'][data-state~='active'] > [data-part='icon'],
+[data-part='recap-nav-item'][data-state~='active'] > [data-part='icon'] {
     color: var(--wmp-color-text);
 }
 
-[data-part='admin-nav'] > [data-part='indicator']::after {
+[data-part='admin-nav'] > [data-part='indicator']::after,
+[data-part='recap-nav'] > [data-part='indicator']::after {
     inset-block-end: 0;
     inline-size: min(1.25rem, var(--wmp-indicator-width, 0px));
 }
@@ -1824,6 +1834,7 @@ a[data-part='breadcrumb-link']:hover {
             [data-part='tabs'],
             [data-part='bottom-nav'],
             [data-part='admin-nav'],
+            [data-part='recap-nav'],
             [data-part='tree'],
             [data-part='color-picker'],
             [data-part='avatar-presets'],
@@ -1880,6 +1891,7 @@ a[data-part='breadcrumb-link']:hover {
             [data-part='tabs'],
             [data-part='bottom-nav'],
             [data-part='admin-nav'],
+            [data-part='recap-nav'],
             [data-part='tree'],
             [data-part='color-picker'],
             [data-part='avatar-presets'],

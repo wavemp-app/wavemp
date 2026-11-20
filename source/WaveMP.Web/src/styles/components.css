@@ -329,6 +329,7 @@
         [data-part='tabs'],
         [data-part='bottom-nav'],
         [data-part='admin-nav'],
+        [data-part='recap-nav'],
         [data-part='tree'],
         [data-part='color-picker']
     ) {
@@ -339,6 +340,7 @@
             [data-part='tabs'],
             [data-part='bottom-nav'],
             [data-part='admin-nav'],
+            [data-part='recap-nav'],
             [data-part='tree'],
             [data-part='color-picker']
         )
