@@ -121,7 +121,7 @@ export type PlayerEngine = Pick<
 /** What the store needs from the video follower; tests replace it. */
 export type PlayerVideoFollower = Pick<
     VideoFollower,
-    'load' | 'unload' | 'setActive' | 'setOffset' | 'sync' | 'dispose'
+    'load' | 'unload' | 'setActive' | 'setOffset' | 'sync' | 'dispose' | 'allowPlayback'
 >
 
 /** Parts of the browser the player uses; tests replace them. */
@@ -1180,8 +1180,16 @@ export const usePlayerStore = defineStore('player', () => {
         }
     }
 
-    /** Chooses what the stage shows; the audio is never touched. */
+    /**
+     * Chooses what the stage shows; the audio is never touched. Called within the tap or click on
+     * the view, so a browser that lets a video play only after a gesture of the user (Safari on the
+     * iPhone and iPad) allows the video of the stage to play from now on.
+     */
     function selectViewMode(mode: PlayerViewMode): void {
+        if (mode === PlayerViewModeObject.Video) {
+            follower?.allowPlayback()
+        }
+
         void session.updatePlayerViewMode(mode)
     }
 

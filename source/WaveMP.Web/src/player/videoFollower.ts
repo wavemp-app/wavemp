@@ -180,9 +180,38 @@ export class VideoFollower {
         this.timer ??= this.environment.setInterval(() => this.sync(), syncInterval)
     }
 
+    /**
+     * Lets the video play from now on in browsers that allow it only after a gesture of the user
+     * (Safari on the iPhone and iPad, for example in Low Power Mode); called within a tap or click.
+     * The video starts and stops at once unless the follower wants it to play; the next check plays
+     * or pauses it like the audio.
+     */
+    allowPlayback(): void {
+        const element = this.element
+        if (!element.paused) {
+            return
+        }
+
+        element.play().catch(() => {
+            // Stopped at once or refused: the next check starts the video when it should play.
+        })
+        if (!this.wantsPlaying) {
+            element.pause()
+        }
+    }
+
     /** Brings the video to the position of the audio and plays or pauses it like the audio. */
     sync(): void {
-        if (!this.active || !this.loaded || !this.hasMetadata || this.state === 'failed') {
+        if (!this.active || !this.loaded || this.state === 'failed') {
+            return
+        }
+
+        if (!this.hasMetadata) {
+            // Safari on the iPhone and iPad loads the data of a media element only once it plays,
+            // so a video that waits for its metadata before it plays would never get it. The shown
+            // video starts at once (muted, and invisible until it is ready); as soon as its
+            // metadata is there, it moves to the position of the audio and plays or pauses like it.
+            this.play()
             return
         }
 

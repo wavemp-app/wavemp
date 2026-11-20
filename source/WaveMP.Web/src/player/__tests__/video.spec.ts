@@ -185,6 +185,65 @@ describe('VideoFollower', () => {
         expect(video.src).toBe('/video')
     })
 
+    it('starts a shown video before its metadata, since Safari on the iPhone loads it only then', () => {
+        clock.playing = false
+        follower.load({ url: '/video' }, 1500)
+        follower.setActive(true)
+
+        expect(video.play).toHaveBeenCalledOnce()
+        expect(video.paused).toBe(false)
+        expect(follower.videoState).toBe('loading')
+
+        // The paused audio: the video stops at the position of the audio and shows its picture.
+        video.loadMetadata()
+        expect(video.paused).toBe(true)
+        expect(video.currentTime).toBe(31.5)
+        video.seeked()
+        expect(follower.videoState).toBe('ready')
+    })
+
+    it('tries again to start a video without metadata with every check', () => {
+        video.play.mockImplementationOnce(() => Promise.reject(new Error('NotAllowedError')))
+        follower.load({ url: '/video' })
+        follower.setActive(true)
+        expect(video.paused).toBe(true)
+
+        tick()
+
+        expect(video.play).toHaveBeenCalledTimes(2)
+        expect(video.paused).toBe(false)
+    })
+
+    it('starts no hidden video and none that is not loaded', () => {
+        follower.setActive(true)
+        follower.load({ url: '/video' })
+        follower.setActive(false)
+        tick()
+
+        expect(video.play).not.toHaveBeenCalled()
+        expect(video.paused).toBe(true)
+    })
+
+    it('allows the video to play within a gesture and leaves it as the follower wants it', () => {
+        follower.load({ url: '/video' })
+        follower.allowPlayback()
+        expect(video.play).toHaveBeenCalledOnce()
+        expect(video.pause).toHaveBeenCalledOnce()
+        expect(video.paused).toBe(true)
+
+        // A shown video that should play but was refused plays now.
+        video.play.mockImplementationOnce(() => Promise.reject(new Error('NotAllowedError')))
+        follower.setActive(true)
+        expect(video.paused).toBe(true)
+        follower.allowPlayback()
+        expect(video.paused).toBe(false)
+
+        // A playing video goes on as it is.
+        follower.allowPlayback()
+        expect(video.play).toHaveBeenCalledTimes(3)
+        expect(video.paused).toBe(false)
+    })
+
     it('shows a video that needs no seek once its first picture arrived', () => {
         clock.position = 0
         follower.load({ url: '/video' })

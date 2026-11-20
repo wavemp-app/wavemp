@@ -67,6 +67,7 @@ class FakeFollower implements PlayerVideoFollower {
     readonly setOffset = vi.fn()
     readonly sync = vi.fn()
     readonly dispose = vi.fn()
+    readonly allowPlayback = vi.fn()
 
     constructor(
         readonly clock: () => FollowerClock,
@@ -642,6 +643,22 @@ describe('player store', () => {
             player.selectViewMode('Visualization')
 
             expect(update).toHaveBeenCalledWith('Visualization')
+        })
+
+        it('allows the video of the stage to play when the video is chosen', async () => {
+            const session = useSessionStore()
+            vi.spyOn(session, 'updatePlayerViewMode').mockResolvedValue()
+            const player = usePlayerStore()
+            player.attachVideo(element)
+            player.playTracks(withVideo, 0)
+            await flushPromises()
+
+            player.selectViewMode('Cover')
+            player.selectViewMode('Visualization')
+            expect(follower.allowPlayback).not.toHaveBeenCalled()
+
+            player.selectViewMode('Video')
+            expect(follower.allowPlayback).toHaveBeenCalledOnce()
         })
 
         it('applies a new offset only to the video of the current track', async () => {
