@@ -117,6 +117,11 @@ interface Deck {
     source: DeckSource | null
     /** The file or HLS stream of the element. */
     readonly slot: MediaSourceSlot
+    /**
+     * Where the deck was last sent (start position of the track or seek) until the element is
+     * there; null without one. Cleared by seeked and with every new source.
+     */
+    target: SeekTarget | null
 }
 
 interface Crossfade {
@@ -125,9 +130,47 @@ interface Crossfade {
     readonly timer: number
 }
 
+/** A position a deck was sent to. */
+export interface SeekTarget {
+    readonly position: number
+    /**
+     * Whether the element was sent there: false while it waits for its metadata, before which it
+     * cannot seek; the deck moves it there once the metadata is known.
+     */
+    readonly sent: boolean
+}
+
 /** A time of a media element in seconds, 0 while unknown. */
 export function finiteOrZero(value: number): number {
     return Number.isFinite(value) && value > 0 ? value : 0
+}
+
+/** The ready state from which a media element knows its duration and can seek (HAVE_METADATA). */
+const haveMetadata = 1
+
+/** What deckPosition needs of a media element. */
+export interface SeekableElement {
+    readonly currentTime: number
+    readonly readyState: number
+    readonly seeking: boolean
+}
+
+/**
+ * The position of a deck: the position it was sent to until the element is there (it waits for the
+ * metadata to go there, has no metadata or still seeks), otherwise the time of the element. So no
+ * event of the element from before the seek or the metadata moves the player back.
+ */
+export function deckPosition(target: SeekTarget | null, element: SeekableElement): number {
+    if (target !== null && (!target.sent || element.readyState < haveMetadata || element.seeking)) {
+        return target.position
+    }
+
+    return finiteOrZero(element.currentTime)
+}
+
+/** A position within the duration of a track; without a known duration only not below 0. */
+function clampPosition(position: number, duration: number): number {
+    return Math.max(0, duration > 0 ? Math.min(position, duration) : position)
 }
 
 export class AudioEngine {
@@ -177,7 +220,7 @@ export class AudioEngine {
     }
 
     get position(): number {
-        return finiteOrZero(this.deck.audio.currentTime)
+        return this.positionOf(this.deck)
     }
 
     get duration(): number {
@@ -198,7 +241,10 @@ export class AudioEngine {
         return this.crossfade !== null
     }
 
-    /** Loads a track on the current deck, optionally at a position, and starts it with play. */
+    /**
+     * Loads a track on the current deck, optionally at a position, and starts it with play. The
+     * element moves to the position once it knows the metadata; a seek before that replaces it.
+     */
     load(source: DeckSource, position = 0): void {
         this.cancelHandover()
         this.finishCrossfade()
@@ -207,13 +253,7 @@ export class AudioEngine {
         deck.source = source
         this.applyGain(deck)
         this.attach(deck, source)
-        if (position > 0) {
-            const audio = deck.audio
-            const seek = (): void => {
-                audio.currentTime = position
-            }
-            audio.addEventListener('loadedmetadata', seek, { once: true })
-        }
+        deck.target = position > 0 ? { position, sent: false } : null
     }
 
     /** Loads the next track on the other deck, or forgets it with null. */
@@ -276,12 +316,19 @@ export class AudioEngine {
         this.unload(this.deck)
     }
 
+    /**
+     * Moves the current track to the position. Without metadata the element cannot seek yet: it
+     * moves there once the metadata is known, and the deck reports the position until then.
+     */
     seek(position: number): void {
         this.cancelHandover()
         this.finishCrossfade()
-        const audio = this.deck.audio
-        const duration = finiteOrZero(audio.duration)
-        audio.currentTime = Math.max(0, duration > 0 ? Math.min(position, duration) : position)
+        const deck = this.deck
+        const audio = deck.audio
+        const target = clampPosition(position, finiteOrZero(audio.duration))
+        deck.target = { position: target, sent: audio.readyState >= haveMetadata }
+        // Without metadata the browser keeps it as its start position; the deck makes sure of it.
+        audio.currentTime = target
     }
 
     /** Output gain between 0 and 1 (already shaped by the volume curve). */
@@ -363,6 +410,11 @@ export class AudioEngine {
         return this.decks[this.current]!
     }
 
+    /** The position of a deck: its target while the element is not there yet (see deckPosition). */
+    private positionOf(deck: Deck): number {
+        return deckPosition(deck.target, deck.audio)
+    }
+
     private get other(): Deck {
         return this.decks[1 - this.current]!
     }
@@ -375,23 +427,42 @@ export class AudioEngine {
             fade: null,
             source: null,
             slot: new MediaSourceSlot(audio, this.environment.hls ?? browserHlsSupport),
+            target: null,
         }
         const active = (): boolean => this.decks[this.current] === deck
+        audio.addEventListener('loadedmetadata', () => {
+            // The start position of the track, or a seek from before the metadata.
+            const target = deck.target
+            if (target === null) {
+                return
+            }
+
+            const position = clampPosition(target.position, finiteOrZero(audio.duration))
+            deck.target = { position, sent: true }
+            if (finiteOrZero(audio.currentTime) !== position) {
+                audio.currentTime = position
+            }
+
+            // Already there: the browser applied it as its start position, and no seeked follows.
+            if (!audio.seeking && finiteOrZero(audio.currentTime) === position) {
+                deck.target = null
+            }
+        })
+        audio.addEventListener('seeked', () => {
+            // A newer seek may still run (its own seeked follows), or the metadata is still missing.
+            if (!audio.seeking && deck.target?.sent !== false) {
+                deck.target = null
+            }
+        })
         audio.addEventListener('timeupdate', () => {
             if (active()) {
-                this.events.timeupdate?.(
-                    finiteOrZero(audio.currentTime),
-                    finiteOrZero(audio.duration),
-                )
+                this.events.timeupdate?.(this.positionOf(deck), finiteOrZero(audio.duration))
                 this.scheduleHandover()
             }
         })
         audio.addEventListener('durationchange', () => {
             if (active()) {
-                this.events.timeupdate?.(
-                    finiteOrZero(audio.currentTime),
-                    finiteOrZero(audio.duration),
-                )
+                this.events.timeupdate?.(this.positionOf(deck), finiteOrZero(audio.duration))
             }
         })
         audio.addEventListener('playing', () => active() && this.events.playing?.())
@@ -633,6 +704,7 @@ export class AudioEngine {
 
     /** Sets the source of a deck: a file directly, an HLS stream through the HLS support. */
     private attach(deck: Deck, source: DeckSource): void {
+        deck.target = null
         deck.slot.set(source.url, source.hls === true, (error) => {
             if (this.decks[this.current] === deck) {
                 this.events.error?.(error)
@@ -642,6 +714,7 @@ export class AudioEngine {
 
     private unload(deck: Deck): void {
         deck.source = null
+        deck.target = null
         deck.slot.clear()
     }
 }

@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
     AudioEngine,
     crossfadeUnloadDelay,
+    deckPosition,
     handoverLead,
     type AudioEnvironment,
     type EngineEvents,
@@ -13,6 +14,9 @@ class FakeAudio extends EventTarget {
     src = ''
     currentTime = 0
     duration = Number.NaN
+    /** HAVE_ENOUGH_DATA unless a test lets the element wait for its metadata. */
+    readyState = 4
+    seeking = false
     paused = true
     ended = false
     volume = 1
@@ -236,6 +240,157 @@ describe('AudioEngine', () => {
         s.decks[0]!.dispatchEvent(new Event('loadedmetadata'))
 
         expect(s.decks[0]!.currentTime).toBe(42)
+    })
+
+    describe('seeking before the element is there', () => {
+        /** The element of the current deck right after a new source: no metadata yet. */
+        function waitingForMetadata(): FakeAudio {
+            const audio = s.decks[0]!
+            audio.readyState = 0
+            audio.currentTime = 0
+            return audio
+        }
+
+        /** The metadata arrives; a browser without a start position of its own is still at 0. */
+        function metadata(audio: FakeAudio, duration = 2): void {
+            audio.readyState = 1
+            audio.duration = duration
+            audio.dispatchEvent(new Event('durationchange'))
+            audio.dispatchEvent(new Event('loadedmetadata'))
+        }
+
+        /** The element finished seeking to where it was sent. */
+        function seeked(audio: FakeAudio): void {
+            audio.seeking = false
+            audio.readyState = 4
+            audio.dispatchEvent(new Event('timeupdate'))
+            audio.dispatchEvent(new Event('seeked'))
+        }
+
+        it('lets a seek replace the start position of the track', () => {
+            s.engine.load({ url: '/a', gain: 1 }, 42)
+            const audio = waitingForMetadata()
+
+            s.engine.seek(1)
+            audio.currentTime = 0
+            metadata(audio, 60)
+
+            expect(audio.currentTime).toBe(1)
+            expect(s.engine.position).toBe(1)
+        })
+
+        it('reports the sought position until the element is there', () => {
+            s.engine.load({ url: '/a', gain: 1 })
+            const audio = waitingForMetadata()
+
+            s.engine.seek(1)
+            // Events of the element from before the seek still tell its start.
+            audio.currentTime = 0
+            audio.dispatchEvent(new Event('timeupdate'))
+            expect(s.events.timeupdate).toHaveBeenLastCalledWith(1, 0)
+            expect(s.engine.position).toBe(1)
+
+            metadata(audio)
+            expect(s.events.timeupdate).toHaveBeenLastCalledWith(1, 2)
+            expect(audio.currentTime).toBe(1)
+
+            audio.seeking = true
+            audio.dispatchEvent(new Event('timeupdate'))
+            expect(s.events.timeupdate).toHaveBeenLastCalledWith(1, 2)
+
+            seeked(audio)
+            expect(s.events.timeupdate).toHaveBeenLastCalledWith(1, 2)
+            // From now on the element tells the position again.
+            audio.currentTime = 1.25
+            audio.dispatchEvent(new Event('timeupdate'))
+            expect(s.events.timeupdate).toHaveBeenLastCalledWith(1.25, 2)
+        })
+
+        it('keeps a seek the browser applied with the metadata by itself', () => {
+            s.engine.load({ url: '/a', gain: 1 })
+            const audio = waitingForMetadata()
+
+            s.engine.seek(1)
+            audio.seeking = true
+            metadata(audio)
+            expect(audio.currentTime).toBe(1)
+
+            seeked(audio)
+            audio.currentTime = 0
+            audio.dispatchEvent(new Event('timeupdate'))
+            expect(s.events.timeupdate).toHaveBeenLastCalledWith(0, 2)
+        })
+
+        it('clamps a seek before the metadata to the track', () => {
+            s.engine.load({ url: '/a', gain: 1 })
+            const audio = waitingForMetadata()
+
+            s.engine.seek(30)
+            metadata(audio, 2)
+
+            expect(audio.currentTime).toBe(2)
+        })
+
+        it('reports the newest seek while an older one still runs', () => {
+            s.engine.load({ url: '/a', gain: 1 })
+            const audio = s.decks[0]!
+            audio.duration = 10
+
+            s.engine.seek(0)
+            audio.seeking = true
+            s.engine.seek(4)
+            audio.currentTime = 0
+            audio.dispatchEvent(new Event('seeked'))
+
+            expect(s.engine.position).toBe(4)
+        })
+
+        it('does not take the start position of a track to the next one', () => {
+            s.engine.load({ url: '/a', gain: 1 }, 42)
+            s.engine.load({ url: '/b', gain: 1 })
+            const audio = waitingForMetadata()
+
+            metadata(audio, 60)
+
+            expect(audio.currentTime).toBe(0)
+            expect(s.engine.position).toBe(0)
+        })
+
+        it('starts the prepared track at its start', () => {
+            s.engine.load({ url: '/a', gain: 1 })
+            s.engine.seek(5)
+            s.engine.prepare({ url: '/b', gain: 1 })
+            const next = s.decks[1]!
+            next.readyState = 0
+
+            next.readyState = 1
+            next.duration = 10
+            next.dispatchEvent(new Event('loadedmetadata'))
+
+            expect(next.currentTime).toBe(0)
+        })
+    })
+
+    describe('deckPosition', () => {
+        const element = (currentTime: number, readyState: number, seeking = false) => ({
+            currentTime,
+            readyState,
+            seeking,
+        })
+
+        const sent = { position: 3, sent: true }
+
+        it('tells the target until the element is there', () => {
+            expect(deckPosition({ position: 3, sent: false }, element(0, 4))).toBe(3)
+            expect(deckPosition(sent, element(0, 0))).toBe(3)
+            expect(deckPosition(sent, element(0, 4, true))).toBe(3)
+        })
+
+        it('tells the time of the element once it is there or without a target', () => {
+            expect(deckPosition(sent, element(3.5, 4))).toBe(3.5)
+            expect(deckPosition(null, element(2, 0))).toBe(2)
+            expect(deckPosition(null, element(Number.NaN, 0))).toBe(0)
+        })
     })
 
     it('reports time, pause and the end', async () => {
