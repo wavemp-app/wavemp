@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { resetLibrarySettings } from './helpers/api'
+import { librarySettings, resetLibrarySettings, updateLibrarySettings } from './helpers/api'
 import { adminNavItem } from './helpers/navigation'
 
 // The library page of the administration on the desktop and on the smartphone.
@@ -35,6 +35,9 @@ test('shows the jobs page without horizontal scrolling', async ({ page }) => {
 })
 
 test.describe('settings', () => {
+    // The tests change the same settings and reset them afterwards, so they run one after the other.
+    test.describe.configure({ mode: 'serial' })
+
     test.beforeEach(({}, testInfo) => {
         test.skip(testInfo.project.name !== 'chromium', 'Settings are changed on one project only.')
     })
@@ -62,6 +65,33 @@ test.describe('settings', () => {
         await expect(
             page.locator("[data-part='job-item'][data-item='library-scan'] [data-part='job-meta']"),
         ).toContainText('Every 720 minutes')
+    })
+
+    test('keeps a setting changed elsewhere while the page was open', async ({
+        page,
+        request,
+    }) => {
+        await page.goto('/admin/library')
+        const interval = page.getByLabel('Scan the library')
+        await expect(interval).toHaveValue('360')
+        const downloads = page.locator("[data-field='subsonic-downloads'] input[type='checkbox']")
+        await expect(downloads).not.toBeChecked()
+
+        // Another admin (or another test) changes a setting the form still shows unchanged.
+        await updateLibrarySettings(request, { subsonicDownloads: true })
+
+        await interval.selectOption('720')
+        const form = page.locator("form[data-part='form']").filter({ has: interval })
+        await form.getByRole('button', { name: 'Save' }).click()
+        await expect(page.locator("[data-part='alert'][data-state='success']")).toHaveText(
+            'The settings are saved.',
+        )
+
+        // The form sends only what was changed in it and then shows the settings of the server.
+        const saved = await librarySettings(request)
+        expect(saved.scanIntervalMinutes).toBe(720)
+        expect(saved.subsonicDownloads).toBe(true)
+        await expect(downloads).toBeChecked()
     })
 })
 

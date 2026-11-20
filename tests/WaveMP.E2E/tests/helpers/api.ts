@@ -130,9 +130,20 @@ export async function updateLibrarySettings(
     expect(response.status()).toBe(200)
 }
 
-/** Restores the defaults of the settings the tests change. */
+/** The library settings as the server has them now. */
+export async function librarySettings(
+    request: APIRequestContext,
+): Promise<Record<string, unknown>> {
+    const response = await request.get('/api/v1/settings/library', {
+        headers: authorization(await adminToken(request)),
+    })
+    expect(response.status()).toBe(200)
+    return response.json()
+}
+
+/** Restores the defaults of the settings the tests of the library page change. */
 export async function resetLibrarySettings(request: APIRequestContext): Promise<void> {
-    await updateLibrarySettings(request, { scanIntervalMinutes: 360 })
+    await updateLibrarySettings(request, { scanIntervalMinutes: 360, subsonicDownloads: false })
 }
 
 // Library
