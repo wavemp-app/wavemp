@@ -2,7 +2,7 @@ name: wavemp
 services:
   wavemp:
     container_name: wavemp
-    image: wavemp/wavemp:1.0.88
+    image: wavemp/wavemp:1.0.106
     # CasaOS creates the folders of the bind mounts as root. WaveMP starts as root, hands its data
     # folder to the user PUID and the group PGID (set by CasaOS and ZimaOS) and runs as them.
     restart: unless-stopped
@@ -159,11 +159,11 @@ x-casaos:
   architectures:
     - amd64
     - arm64
-  version: "1.0.88"
-  update_at: "2026-11-19"
+  version: "1.0.106"
+  update_at: "2026-11-20"
   release_notes:
-    en_US: "Several media folders, an online search for album info and covers, smart playlists, a library check, autoplay and a mini player. All changes: https://github.com/wavemp-app/wavemp/releases/tag/v1.0.88"
-    de_DE: "Mehrere Medienordner, eine Online-Suche nach Albuminfos und Covern, intelligente Playlists, eine Bibliotheksprüfung, Autoplay und ein Miniplayer. Alle Änderungen: https://github.com/wavemp-app/wavemp/releases/tag/v1.0.88"
+    en_US: "Recaps of your listening as a story in three designs that you can save and share, statistics with charts and tables, and ambient light around music videos. All changes: https://github.com/wavemp-app/wavemp/releases/tag/v1.0.106"
+    de_DE: "Rückblicke auf dein Hören als Story in drei Designs zum Speichern und Teilen, Statistiken mit Diagrammen und Tabellen und Umgebungslicht um Musikvideos. Alle Änderungen: https://github.com/wavemp-app/wavemp/releases/tag/v1.0.106"
   website: https://wavemp-app.github.io
   repo: https://github.com/wavemp-app/wavemp
   support: https://github.com/wavemp-app/wavemp/issues
