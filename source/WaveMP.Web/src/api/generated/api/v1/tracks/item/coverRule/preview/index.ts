@@ -36,7 +36,7 @@ export interface PreviewRequestBuilderGetQueryParameters {
      */
     rule?: CoverRuleOption;
     /**
-     * Largest width and height in pixels the client shows the picture with (1 to 4096); the server rounds it up to 96, 300 or 1000.
+     * Largest width and height in pixels the client shows the picture with (1 to 4096), its width in CSS pixels times the pixel density of the screen; the server rounds it up to 96, 192, 300, 600, 1000 or 2000.
      */
     size?: number;
 }
