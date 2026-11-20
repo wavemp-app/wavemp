@@ -314,6 +314,8 @@ export const usePlayerStore = defineStore('player', () => {
     let videoRetried: string | null = null
     /** The loaded track and its playback; null while loading or idle. */
     let loaded: Loaded | null = null
+    /** Where the user moved the track while it was still loading; it starts there once loaded. */
+    let seekWhileLoading: number | null = null
     /** The track prepared on the other deck. */
     let prepared: Loaded | null = null
     let preparing: string | null = null
@@ -548,6 +550,7 @@ export const usePlayerStore = defineStore('player', () => {
         const token = ++generation
         forgetPrepared()
         loaded = null
+        seekWhileLoading = null
         history.stop()
         if (!item) {
             reset()
@@ -573,9 +576,13 @@ export const usePlayerStore = defineStore('player', () => {
 
         loaded = result
         duration.value = seconds(result.playback.durationMilliseconds) || duration.value
+        // A seek of the user while the track loaded wins over the position it was started at.
+        const at = seekWhileLoading ?? startPosition
+        seekWhileLoading = null
+        position.value = at
         const player = activeEngine()
-        player.load(result.source, startPosition)
-        history.start(item.track.id ?? '', startPosition)
+        player.load(result.source, at)
+        history.start(item.track.id ?? '', at)
         if (shouldPlay) {
             playback.value = 'playing'
             await startEngine(player)
@@ -606,6 +613,11 @@ export const usePlayerStore = defineStore('player', () => {
     }
 
     function onTimeUpdate(time: number, length: number): void {
+        // While the next track loads, the time of the previous one is not its position.
+        if (!loaded) {
+            return
+        }
+
         position.value = time
         if (length > 0) {
             duration.value = length
@@ -940,6 +952,9 @@ export const usePlayerStore = defineStore('player', () => {
         history.seek(target)
         if (loaded) {
             activeEngine().seek(target)
+        } else if (loading.value) {
+            // The track is still being requested: it starts at this position once it is loaded.
+            seekWhileLoading = target
         }
 
         follower?.sync()

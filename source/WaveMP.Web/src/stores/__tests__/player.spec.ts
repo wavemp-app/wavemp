@@ -7,6 +7,7 @@ import { getLyrics } from '@/lyrics/api'
 import type { TrackLyrics } from '@/lyrics/timing'
 import { getPlayback, getVideoPlayback, recordPlay, reportNowPlaying } from '@/player/api'
 import type { FollowerClock, VideoFollowerEvents } from '@/player/videoFollower'
+import { playTracks } from '@/player/queue'
 import {
     playerDependencies,
     usePlayerStore,
@@ -362,6 +363,68 @@ describe('player store', () => {
         await flushPromises()
         expect(engine.load).toHaveBeenCalledTimes(2)
         expect(player.state.playback).toBe('playing')
+    })
+
+    it('starts a track at the position the user sought while it loaded', async () => {
+        let answer: (playback: TrackPlayback) => void = () => undefined
+        vi.mocked(getPlayback).mockImplementationOnce(
+            () => new Promise<TrackPlayback>((resolve) => (answer = resolve)),
+        )
+        const player = usePlayerStore()
+        player.playTracks(abc, 0)
+        player.togglePlay()
+        expect(player.state).toMatchObject({ playback: 'paused', loading: true })
+
+        player.seek(30)
+        answer(direct('a'))
+        await flushPromises()
+
+        expect(engine.loaded).toEqual([{ url: '/stream/a', gain: 1, position: 30 }])
+        expect(engine.seek).not.toHaveBeenCalled()
+        expect(player.state).toMatchObject({ playback: 'paused', loading: false, position: 30 })
+    })
+
+    it('replaces the saved position with a seek while the restored track loads', async () => {
+        let answer: (playback: TrackPlayback) => void = () => undefined
+        vi.mocked(getPlayback).mockImplementationOnce(
+            () => new Promise<TrackPlayback>((resolve) => (answer = resolve)),
+        )
+        const player = usePlayerStore()
+        player.restore({
+            queue: playTracks(abc, 1, false),
+            repeat: 'off',
+            position: 40,
+            source: null,
+        })
+        expect(player.state).toMatchObject({ trackId: 'b', position: 40, loading: true })
+
+        player.seek(12)
+        answer(direct('b'))
+        await flushPromises()
+
+        expect(engine.loaded).toEqual([{ url: '/stream/b', gain: 1, position: 12 }])
+        expect(player.state).toMatchObject({ playback: 'paused', position: 12 })
+    })
+
+    it('ignores the time of the previous track while the next one loads', async () => {
+        const player = usePlayerStore()
+        player.playTracks(abc, 0)
+        await flushPromises()
+        engine.events.timeupdate?.(50, 200)
+        let answer: (playback: TrackPlayback) => void = () => undefined
+        vi.mocked(getPlayback).mockImplementationOnce(
+            () => new Promise<TrackPlayback>((resolve) => (answer = resolve)),
+        )
+
+        player.next()
+        // The previous track still plays a moment until the next one is loaded.
+        engine.events.timeupdate?.(51, 200)
+        expect(player.state.position).toBe(0)
+
+        answer(direct('b'))
+        await flushPromises()
+        engine.events.timeupdate?.(1, 200)
+        expect(player.state.position).toBe(1)
     })
 
     it('stops waiting for data when paused and ignores waiting while paused', async () => {
