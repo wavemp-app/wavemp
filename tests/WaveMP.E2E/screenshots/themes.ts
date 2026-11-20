@@ -9,9 +9,15 @@ import {
     type Locator,
     type Page,
 } from '@playwright/test'
-import { adminToken, deleteUser, findAlbumId, findUserByName } from '../tests/helpers/api'
+import {
+    adminToken,
+    deleteUser,
+    findAlbumId,
+    findTrackId,
+    findUserByName,
+} from '../tests/helpers/api'
 import { homeUrl, profileTile } from '../tests/helpers/navigation'
-import { part, pause, prepareProfile, send, sessionHeaders } from './helpers'
+import { part, prepareProfile, send, sessionHeaders } from './helpers'
 
 // The views every theme is checked and photographed with (THEMING.md, "Checking a theme"): the
 // screenshots for theme designers (theme.screenshots.ts), the preview pictures of the theme
@@ -19,6 +25,11 @@ import { part, pause, prepareProfile, send, sessionHeaders } from './helpers'
 // theme and variant gets a profile of its own (an admin, so it also sees the administration),
 // filled like the profile of the README screenshots, so several runs can share one WaveMP
 // instance at the same time.
+//
+// The player of every view starts from the same saved playback state: E2E Album paused at the
+// start of First Song, saved by the desktop device of the theme runs. The pages never save their
+// own state and nothing plays, so no view depends on how far an earlier view played or on when its
+// save reached the server.
 
 export type ThemeVariant = 'light' | 'dark'
 
@@ -83,6 +94,35 @@ export function themeProfileName(target: ThemeTarget): string {
 /** Color of the theme profiles, fixed so the screenshots stay the same. */
 const profileColor = '#2f6fd0'
 
+/** Key of the id of the device in the local storage of the web app (src/player/device.ts). */
+const deviceIdKey = 'wavemp.device-id'
+
+/** The device that saved the playback state of the theme profiles. */
+const savingDevice = { id: 'theme-regression-desktop', name: 'Chrome · Windows' }
+
+/** Another device of the profile, which shows the notice "Continue listening from". */
+const otherDeviceId = 'theme-regression-other'
+
+/** Saves the playback state every view starts from: E2E Album paused at the start of First Song. */
+async function savePlaybackState(
+    request: APIRequestContext,
+    headers: Record<string, string>,
+): Promise<void> {
+    const tracks = await Promise.all(
+        ['First Song', 'Second Song'].map((title) => findTrackId(request, title)),
+    )
+    await send(request, headers, 'put', '/api/v1/me/playback-state', {
+        items: tracks.map((trackId) => ({ trackId })),
+        currentIndex: 0,
+        positionMilliseconds: 0,
+        shuffle: false,
+        originalOrder: [],
+        repeat: 'Off',
+        source: { kind: 'Album', id: await findAlbumId(request, 'E2E Album') },
+        device: savingDevice,
+    })
+}
+
 export interface ThemeProfile {
     readonly id: string
     readonly name: string
@@ -118,6 +158,7 @@ export async function createThemeProfile(
             appearance: target.variant === 'dark' ? 'Dark' : 'Light',
         },
     })
+    await savePlaybackState(request, headers)
     return { id, name, headers }
 }
 
@@ -162,6 +203,9 @@ export function themeContextOptions(
     }
 }
 
+/** What the player of a view shows, see `ThemeView.player`. */
+export type ThemePlayer = 'saved' | 'other-device' | 'none'
+
 export interface ThemeView {
     /** File name of the screenshot, e.g. "album" or "phone-library". */
     readonly name: string
@@ -176,6 +220,12 @@ export interface ThemeView {
      * navigation, so a change of them shows clearly; the file name is "<view>-<part>".
      */
     readonly details?: readonly string[]
+    /**
+     * What the player shows: the saved playback state as the device that saved it ("saved", the
+     * default), as another device of the profile with the notice "Continue listening from"
+     * ("other-device"), or nothing, as if the profile had never played ("none").
+     */
+    readonly player?: ThemePlayer
     /** Opens the view; the page has the session of the theme profile. */
     open(page: Page, request: APIRequestContext): Promise<void>
 }
@@ -205,14 +255,15 @@ async function openShortcuts(page: Page): Promise<void> {
     await expect(page.locator("[data-part='dialog'][data-item='shortcuts']")).toBeVisible()
 }
 
-/** Plays the album, pauses at once and opens Now Playing with the cover. */
+/**
+ * Opens Now Playing with the cover from the album, with the saved playback state: First Song waits
+ * paused at its start. Nothing plays, as the songs last two seconds only.
+ */
 async function openNowPlaying(page: Page, request: APIRequestContext): Promise<void> {
     await openAlbum(page, request)
-    await part(page, 'detail-actions').locator("[data-item='play']").click()
     await expect(part(page, 'now-playing-title').filter({ visible: true }).first()).toHaveText(
         'First Song',
     )
-    await pause(page)
     await page.locator("[data-part='app'] a[href='/now-playing']").filter({ visible: true }).click()
     await expect(page).toHaveURL(/\/now-playing$/)
     // Autoplay below the queue has chosen its songs (Video Only of the same artist).
@@ -272,9 +323,12 @@ export const themeViews: readonly ThemeView[] = [
         },
     },
     {
+        // Without a song in the player: the open menu reaches over the transport, and its shadow
+        // would fall on the time of the song.
         name: 'songs-menu',
         device: 'desktop',
         stable: true,
+        player: 'none',
         async open(page) {
             await page.goto('/library/songs')
             const row = part(page, 'list-row').filter({ hasText: 'Second Song' }).first()
@@ -318,6 +372,7 @@ export const themeViews: readonly ThemeView[] = [
         name: 'phone-library',
         device: 'phone',
         stable: true,
+        player: 'other-device',
         async open(page) {
             await page.goto('/library/albums')
             await expect(page.locator("[data-part='tile']").first()).toBeVisible()
@@ -387,7 +442,8 @@ export async function settle(page: Page): Promise<void> {
 
 /**
  * Opens every view of a target in its own browser context per device, with the session of the
- * profile of the target, and calls back with the settled page.
+ * profile of the target, and calls back with the settled page. The pages keep the saved playback
+ * state as it is: their saves are answered without reaching the server.
  */
 export async function visitThemeViews(
     browser: Browser,
@@ -404,9 +460,29 @@ export async function visitThemeViews(
         }
         const context = await browser.newContext(themeContextOptions(device, target.variant))
         try {
+            let player: ThemePlayer = 'saved'
+            await context.route('**/api/v1/me/playback-state', (route) => {
+                if (route.request().method() === 'PUT') {
+                    return route.fulfill({ status: 204 })
+                }
+                return player === 'none'
+                    ? route.fulfill({
+                          status: 404,
+                          contentType: 'application/problem+json',
+                          body: JSON.stringify({ status: 404, code: 'playback.state_not_found' }),
+                      })
+                    : route.fallback()
+            })
             const page = await context.newPage()
             await enterAs(page, profile)
             for (const view of deviceViews) {
+                // The page reads the id of its device and the saved state when it loads, and every
+                // view loads the page.
+                player = view.player ?? 'saved'
+                await page.evaluate(([key, id]) => localStorage.setItem(key, id), [
+                    deviceIdKey,
+                    player === 'other-device' ? otherDeviceId : savingDevice.id,
+                ] as const)
                 await view.open(page, request)
                 await settle(page)
                 await visit(page, view)
