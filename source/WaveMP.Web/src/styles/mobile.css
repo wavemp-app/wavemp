@@ -410,8 +410,45 @@
             padding-block-end: env(safe-area-inset-bottom);
         }
 
+        /*
+         * Every entry: icon above its label, both centered, at the same height in all entries; the
+         * label takes at most two centered lines, and the entry (and with it the highlight of the
+         * theme) grows with them. Paddings and sizes stay with the theme.
+         */
         [data-part='bottom-nav'] > [data-part='bottom-nav-item'] {
             display: grid !important;
+            grid-template-columns: minmax(0, 1fr) !important;
+            grid-template-rows: auto auto !important;
+            justify-items: center !important;
+            align-content: start !important;
+            min-inline-size: 0 !important;
+            block-size: auto !important;
+            max-block-size: none !important;
+            overflow: visible !important;
+            text-align: center !important;
+        }
+
+        [data-part='bottom-nav-item'] > :is([data-part='icon'], [data-part='label']) {
+            position: static !important;
+            grid-column: 1 !important;
+            justify-self: center !important;
+            margin: 0 !important;
+        }
+
+        [data-part='bottom-nav-item'] > [data-part='icon'] {
+            grid-row: 1 !important;
+        }
+
+        [data-part='bottom-nav-item'] > [data-part='label'] {
+            grid-row: 2 !important;
+            display: -webkit-box !important;
+            max-inline-size: 100% !important;
+            overflow: hidden !important;
+            text-align: center !important;
+            white-space: normal !important;
+            -webkit-box-orient: vertical !important;
+            -webkit-line-clamp: 2 !important;
+            line-clamp: 2 !important;
         }
 
         /* --- Content details (not protected, themes may adjust them) ---------------------- */

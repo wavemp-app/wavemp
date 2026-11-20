@@ -359,16 +359,46 @@
         translate: -50% 0;
     }
 
+    /*
+     * Icon above the label, both centered, starting at the same height in every entry: an entry
+     * whose label takes two lines makes all entries taller instead of pushing its icon up. The top
+     * padding centers an entry with one line of label in --wmp-bottom-nav-height and leaves room
+     * for a highlight inside the entry (the indicator of the theme).
+     */
     [data-part='bottom-nav-item'] {
         display: grid;
+        grid-template-rows: auto auto;
         justify-items: center;
-        align-content: center;
+        align-content: start;
         gap: 0.125rem;
         min-block-size: var(--wmp-bottom-nav-height);
-        padding-inline: var(--wmp-space-xs);
+        min-inline-size: 0;
+        padding: var(--wmp-space-s);
+        padding-block-start: max(
+            var(--wmp-space-s),
+            (var(--wmp-bottom-nav-height) - var(--wmp-icon-size) - 0.125rem - 1lh) / 2
+        );
         color: inherit;
         font-size: var(--wmp-font-size-xs);
+        text-align: center;
         text-decoration: none;
+    }
+
+    /*
+     * At most two centered lines; longer words break instead of leaving the entry. The padding
+     * keeps the ellipsis of a cut label visible, which browsers draw slightly beyond the text.
+     */
+    [data-part='bottom-nav-item'] > [data-part='label'] {
+        display: -webkit-box;
+        max-inline-size: 100%;
+        padding-inline: var(--wmp-space-xs);
+        overflow: hidden;
+        overflow-wrap: anywhere;
+        hyphens: auto;
+        text-align: center;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+        line-clamp: 2;
     }
 
     [data-part='bottom-nav-item'][aria-current='page'] {
