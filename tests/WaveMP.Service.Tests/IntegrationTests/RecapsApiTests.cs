@@ -302,8 +302,8 @@ public class RecapsApiTests
 
         await forbidden.ShouldBeProblemAsync(HttpStatusCode.Forbidden, "auth.forbidden");
         deleted.StatusCode.Should().Be(HttpStatusCode.NoContent);
-        await gone.ShouldBeProblemAsync(HttpStatusCode.NotFound, "recap_share.not_found");
-        await goneStatistics.ShouldBeProblemAsync(HttpStatusCode.NotFound, "recap_share.not_found");
+        await gone.ShouldBeProblemAsync(HttpStatusCode.NotFound, "recap.share_not_found");
+        await goneStatistics.ShouldBeProblemAsync(HttpStatusCode.NotFound, "recap.share_not_found");
     }
 
     [Test]

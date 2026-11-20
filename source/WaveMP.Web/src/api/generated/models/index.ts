@@ -12125,7 +12125,7 @@ export const ProblemCodeObject = {
     LookupDisabled: "lookup.disabled",
     LookupUnavailable: "lookup.unavailable",
     LookupCover_not_found: "lookup.cover_not_found",
-    Recap_shareNot_found: "recap_share.not_found",
+    RecapShare_not_found: "recap.share_not_found",
     VideoToo_large: "video.too_large",
     VideoUnsupported_format: "video.unsupported_format",
     VideoUnreadable: "video.unreadable",

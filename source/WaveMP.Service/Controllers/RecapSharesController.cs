@@ -128,7 +128,7 @@ public sealed class RecapSharesController(IRecapShareService shares) : Controlle
     /// <param name="id">Id of the share.</param>
     /// <param name="cancellationToken">Aborts the request.</param>
     /// <response code="200">The share.</response>
-    /// <response code="404">The share does not exist (code <c>recap_share.not_found</c>).</response>
+    /// <response code="404">The share does not exist (code <c>recap.share_not_found</c>).</response>
     [HttpGet("{id:guid}", Name = GetShareRoute)]
     [ProducesResponseType<RecapShareDto>(StatusCodes.Status200OK, "application/json")]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound, "application/problem+json")]
@@ -149,7 +149,7 @@ public sealed class RecapSharesController(IRecapShareService shares) : Controlle
     /// <param name="cancellationToken">Aborts the request.</param>
     /// <response code="200">The share with its statistics.</response>
     /// <response code="400">Invalid query parameters (code <c>request.invalid</c>).</response>
-    /// <response code="404">The share does not exist (code <c>recap_share.not_found</c>).</response>
+    /// <response code="404">The share does not exist (code <c>recap.share_not_found</c>).</response>
     [HttpGet("{id:guid}/statistics", Name = "GetRecapShareStatistics")]
     [ProducesResponseType<SharedRecapDto>(StatusCodes.Status200OK, "application/json")]
     [ProducesResponseType<ValidationProblemDto>(StatusCodes.Status400BadRequest, "application/problem+json")]
@@ -173,7 +173,7 @@ public sealed class RecapSharesController(IRecapShareService shares) : Controlle
     /// <param name="cancellationToken">Aborts the request.</param>
     /// <response code="204">The recap is no longer shared.</response>
     /// <response code="403">Another profile shared the recap (code <c>auth.forbidden</c>).</response>
-    /// <response code="404">The share does not exist (code <c>recap_share.not_found</c>).</response>
+    /// <response code="404">The share does not exist (code <c>recap.share_not_found</c>).</response>
     [HttpDelete("{id:guid}", Name = "DeleteRecapShare")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status403Forbidden, "application/problem+json")]

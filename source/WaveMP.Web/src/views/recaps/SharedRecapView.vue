@@ -54,7 +54,7 @@ async function load(): Promise<void> {
         if (current === generation) {
             recap.value = null
             status.value =
-                statusOf(error) === 404 || problemCodeOf(error) === 'recap_share.not_found'
+                statusOf(error) === 404 || problemCodeOf(error) === 'recap.share_not_found'
                     ? 'not-found'
                     : 'error'
         }

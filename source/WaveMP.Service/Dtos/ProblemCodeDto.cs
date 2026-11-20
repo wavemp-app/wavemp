@@ -482,7 +482,7 @@ public enum ProblemCodeDto
     /// <summary>
     /// The shared recap does not exist (404).
     /// </summary>
-    [JsonStringEnumMemberName("recap_share.not_found")]
+    [JsonStringEnumMemberName("recap.share_not_found")]
     RecapShareNotFound,
 
     /// <summary>

@@ -6357,7 +6357,7 @@
             }
           },
           "404": {
-            "description": "The share does not exist (code `recap_share.not_found`).",
+            "description": "The share does not exist (code `recap.share_not_found`).",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -6416,7 +6416,7 @@
             }
           },
           "404": {
-            "description": "The share does not exist (code `recap_share.not_found`).",
+            "description": "The share does not exist (code `recap.share_not_found`).",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -6496,7 +6496,7 @@
             }
           },
           "404": {
-            "description": "The share does not exist (code `recap_share.not_found`).",
+            "description": "The share does not exist (code `recap.share_not_found`).",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -16754,7 +16754,7 @@
           "lookup.disabled",
           "lookup.unavailable",
           "lookup.cover_not_found",
-          "recap_share.not_found",
+          "recap.share_not_found",
           "video.too_large",
           "video.unsupported_format",
           "video.unreadable"
