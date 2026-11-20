@@ -14,7 +14,7 @@ WaveMP can now scan and watch more than one folder, for example your music on on
 - **Switch off or remove.** A switched-off folder keeps its songs in the library without updating them. Removing a folder removes its songs, with their ratings, favorites and playlist entries, from the library; the files themselves are never touched.
 - **Filter by folder.** As soon as there is more than one media folder, the songs, recently added songs, albums and artists of the library can be filtered by media folder.
 
-The [README](../../README.md#several-media-folders) shows how to mount further folders.
+The [README](https://github.com/wavemp-app/wavemp/blob/v1.0.88/README.md#several-media-folders) shows how to mount further folders.
 
 ### Album info from the internet
 
@@ -112,7 +112,7 @@ Songs, albums, artists, playlists, the entries of the queue and **Now Playing** 
 
 ## Themes
 
-- **Fonts in theme packages.** Uploaded themes can now bring their own fonts as WOFF2 files and use them with `@font-face`. WaveMP checks every font before it installs the theme, and fonts are served from your WaveMP server only. The author of a theme is responsible for the license of its fonts; [THEMING.md](../../THEMING.md#fonts-of-an-uploaded-theme) explains how to add fonts and which licenses allow it. The largest font is 2 MiB by default and can be changed with `Themes__MaxFontBytes`.
+- **Fonts in theme packages.** Uploaded themes can now bring their own fonts as WOFF2 files and use them with `@font-face`. WaveMP checks every font before it installs the theme, and fonts are served from your WaveMP server only. The author of a theme is responsible for the license of its fonts; [THEMING.md](https://github.com/wavemp-app/wavemp/blob/v1.0.88/THEMING.md#fonts-of-an-uploaded-theme) explains how to add fonts and which licenses allow it. The largest font is 2 MiB by default and can be changed with `Themes__MaxFontBytes`.
 - **Checked again after an update.** A newer version of WaveMP may check theme packages more strictly. On every start WaveMP now checks the installed themes again with its current rules. A theme that no longer passes stays available to the profiles, but **Administration > Themes** marks it as outdated and lists its problems, so you know what to fix in a new version of the theme.
 - **Midnight looks the same everywhere.** Midnight now brings its own font, Selawik (SIL Open Font License 1.1), so it looks the same on Windows, macOS, iOS and Android.
 
@@ -129,7 +129,7 @@ Songs, albums, artists, playlists, the entries of the queue and **Now Playing** 
 - **Online search.** `GET` and `PATCH /api/v1/settings/online-metadata` configure the search; `GET /api/v1/tracks/{id}/online-matches` and `GET /api/v1/albums/{id}/online-matches` search, `POST /api/v1/tracks/{id}/online-metadata` and `POST /api/v1/albums/{id}/online-metadata` apply a match, and `GET /api/v1/online-releases/{releaseId}/cover` delivers a cover preview.
 - **Library check.** `GET /api/v1/library/issues` lists the problems (paged, with filter, search and sort order) and `GET /api/v1/library/issues/summary` counts them by kind. The check runs as the job `library-check`.
 - **Themes.** `GET /api/v1/themes` and `GET /api/v1/themes/{id}` now name in `status` (`Current` or `Outdated`) and `problems` whether a theme passes the checks of this version. New error codes cover fonts in packages. The theme API gains parts for the new views and stays at version 5, since all changes are additions.
-- **New settings:** `Lyrics__LookUpAgainAfter`, `LibraryCheck__DuplicateDurationTolerance`, `OnlineMetadata__RequestTimeout`, `OnlineMetadata__MaxAttempts`, `OnlineMetadata__MaxCoverBytes` and `Themes__MaxFontBytes`; the [README](../../README.md#settings) describes them.
+- **New settings:** `Lyrics__LookUpAgainAfter`, `LibraryCheck__DuplicateDurationTolerance`, `OnlineMetadata__RequestTimeout`, `OnlineMetadata__MaxAttempts`, `OnlineMetadata__MaxCoverBytes` and `Themes__MaxFontBytes`; the [README](https://github.com/wavemp-app/wavemp/blob/v1.0.88/README.md#settings) describes them.
 
 All new endpoints and codes are described in the OpenAPI document.
 
