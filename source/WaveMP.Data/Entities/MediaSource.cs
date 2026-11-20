@@ -40,4 +40,11 @@ public class MediaSource
     public required DateTimeOffset CreatedAt { get; set; }
 
     public required DateTimeOffset UpdatedAt { get; set; }
+
+    /// <summary>
+    /// Version of the rules the albums of the tracks of this source were formed with. A scan forms them again from the
+    /// stored files of every folder of a source with an older version (without reading the files), so a change of the
+    /// rules also applies to folders that did not change.
+    /// </summary>
+    public int AlbumGroupingVersion { get; set; }
 }

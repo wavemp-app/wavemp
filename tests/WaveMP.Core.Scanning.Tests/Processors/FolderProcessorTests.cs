@@ -1,4 +1,5 @@
 using AwesomeAssertions;
+using WaveMP.Core.Metadata.Resolutions;
 using WaveMP.Core.Scanning.Groupings;
 using WaveMP.Core.Scanning.Processors;
 using WaveMP.Core.Scanning.Selections;
@@ -53,7 +54,7 @@ public class FolderProcessorTests
     }
 
     [Test]
-    public void Process_SeveralArtistsInOneFolder_MakesACompilation()
+    public void Process_SeveralArtistsInOneFolder_MakesAnAlbumPerArtist()
     {
         MediaFile first = Audio("Hits/a.mp3", false, file => file.Tags = new MediaFileTags
         {
@@ -68,11 +69,30 @@ public class FolderProcessorTests
 
         ProcessedFolder folder = FolderProcessor.Process("Hits", [first, second]);
 
-        folder.Tracks.Should().AllSatisfy(track =>
+        folder.Tracks.Select(track => track.Album!.AlbumArtist).Should().BeEquivalentTo("A", "B");
+        folder.Tracks.Select(track => track.Album!.Key).Distinct().Should().HaveCount(2);
+    }
+
+    [Test]
+    public void Process_TracksWithoutArtist_ShareAnAlbumOnlyWithinTheirAlbumFolder()
+    {
+        // Only files in the folder of a source (or a disc folder in it) have no artist from their path.
+        static MediaFile Untitled(string path) => Audio(path, false, file => file.Tags = new MediaFileTags
         {
-            track.Album!.IsCompilation.Should().BeTrue();
-            track.Album.AlbumArtist.Should().BeNull();
+            Album = "Hits",
         });
+        var source = Guid.NewGuid();
+
+        AlbumAssignment root = FolderProcessor.Process(string.Empty, [Untitled("a.mp3")], sourceId: source)
+            .Tracks.Single().Album!;
+        string disc = FolderProcessor.Process("CD2", [Untitled("CD2/b.mp3")], sourceId: source)
+            .Tracks.Single().Album!.Key;
+        string otherSource = FolderProcessor.Process(string.Empty, [Untitled("a.mp3")], sourceId: Guid.NewGuid())
+            .Tracks.Single().Album!.Key;
+
+        root.AlbumArtist.Should().BeNull();
+        disc.Should().Be(root.Key);
+        otherSource.Should().NotBe(root.Key);
     }
 
     [Test]

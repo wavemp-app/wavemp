@@ -708,6 +708,10 @@ namespace WaveMP.Data.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
+                    b.Property<int>("AlbumGroupingVersion")
+                        .HasColumnType("integer")
+                        .HasColumnName("album_grouping_version");
+
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");

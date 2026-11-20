@@ -30,6 +30,14 @@ public static class ScannerVersions
     public const int LyricsMetadata = 1;
 
     /// <summary>
+    /// Version of the rules that form albums. Version 2 identifies an album by its artist (the album artist, otherwise
+    /// the artist of the track) and title, wherever its tracks lie, instead of per folder with compilations of several
+    /// artists. Raising it makes the next scan form the albums of all stored folders again, without reading files (see
+    /// <see cref="MediaSource.AlbumGroupingVersion"/>).
+    /// </summary>
+    public const int AlbumGrouping = 2;
+
+    /// <summary>
     /// The current version of the metadata of a kind of file.
     /// </summary>
     public static int MetadataOf(MediaFileKind kind)

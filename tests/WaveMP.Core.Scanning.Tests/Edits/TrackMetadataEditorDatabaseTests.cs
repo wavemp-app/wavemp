@@ -147,6 +147,73 @@ public class TrackMetadataEditorDatabaseTests
     }
 
     [Test]
+    public async Task UpdateAsync_ArtistOfSongsWithoutArtist_MovesThemIntoTheirOwnAlbumsWithoutUnrelatedCovers()
+    {
+        // Songs without artist in the folder of the source, one with its own cover; an unrelated album of the same
+        // name with a cover in its folder.
+        await AudioAsync("Alpha.mp3", new TestTags { Title = "Alpha", Album = "Hits" });
+        await AudioAsync("Beta.mp3", new TestTags { Title = "Beta", Album = "Hits" });
+        await AudioAsync("Gamma.mp3", new TestTags { Title = "Gamma", Album = "Hits" });
+        await TestMediaGenerator.CreateImageAsync(_media.Combine("Gamma.jpg"), 120, 120);
+        await AudioAsync("Various/Hits/01.mp3", new TestTags { Title = "X", Artist = "X", Album = "Hits" });
+        await AudioAsync("Various/Hits/02.mp3", new TestTags { Title = "Y", Artist = "Y", Album = "Hits" });
+        await TestMediaGenerator.CreateImageAsync(_media.Combine("Various/Hits/cover.jpg"), 200, 200);
+        await ScanAsync();
+
+        await UpdateAsync(await TrackIdAsync("Alpha"), new TagChanges { Artist = new TagChange<string?>("Ann") });
+        await UpdateAsync(await TrackIdAsync("Beta"), new TagChanges { Artist = new TagChange<string?>("Bob") });
+        await UpdateAsync(await TrackIdAsync("Gamma"), new TagChanges { Artist = new TagChange<string?>("Gina") });
+
+        await using WaveMpDbContext db = _database.CreateDbContext();
+        List<Track> tracks = await db.Tracks
+            .Include(track => track.Covers).ThenInclude(cover => cover.MediaFile)
+            .Include(track => track.Album!).ThenInclude(album => album.AlbumArtist)
+            .Include(track => track.Album!).ThenInclude(album => album.Covers).ThenInclude(cover => cover.MediaFile)
+            .ToListAsync();
+        Track Song(string title) => tracks.Single(track => track.Title == title);
+
+        foreach ((string title, string artist) in new[] { ("Alpha", "Ann"), ("Beta", "Bob"), ("Gamma", "Gina") })
+        {
+            Album album = Song(title).Album!;
+            (album.Title, album.AlbumArtist!.Name).Should().Be(("Hits", artist));
+            album.Covers.Should().BeEmpty();
+            tracks.Count(track => track.AlbumId == album.Id).Should().Be(1);
+        }
+
+        Song("Alpha").Covers.Should().BeEmpty();
+        Song("Beta").Covers.Should().BeEmpty();
+        Song("Gamma").Covers.Should().ContainSingle()
+            .Which.MediaFile!.RelativePath.Should().Be("Gamma.jpg");
+        Song("X").Album!.Covers.Should().ContainSingle()
+            .Which.MediaFile!.RelativePath.Should().Be("Various/Hits/cover.jpg");
+        Song("Y").AlbumId!.Value.Should().NotBe(Song("X").AlbumId!.Value);
+        (await db.Albums.CountAsync()).Should().Be(5);
+    }
+
+    [Test]
+    public async Task UpdateAsync_AlbumArtistAndAlbum_MoveTheSongIntoTheMatchingAlbumOfAnotherFolder()
+    {
+        await AudioAsync("One/01.mp3", new TestTags { Title = "First", Artist = "K.Flay", Album = "2 Weak" });
+        await AudioAsync("Two/02.mp3", new TestTags { Title = "Second", Artist = "Guest", Album = "Other" });
+        await ScanAsync();
+        Guid albumId;
+        await using (WaveMpDbContext before = _database.CreateDbContext())
+        {
+            albumId = (await before.Tracks.SingleAsync(track => track.Title == "First")).AlbumId!.Value;
+        }
+
+        await UpdateAsync(await TrackIdAsync("Second"), new TagChanges
+        {
+            AlbumArtist = new TagChange<string?>("k.flay"),
+            Album = new TagChange<string?>(" 2 weak "),
+        });
+
+        await using WaveMpDbContext db = _database.CreateDbContext();
+        (await db.Tracks.SingleAsync(track => track.Title == "Second")).AlbumId.Should().Be(albumId);
+        (await db.Albums.Select(album => album.Id).ToListAsync()).Should().Equal(albumId);
+    }
+
+    [Test]
     public async Task UpdateAsync_ArtistInOtherCase_TakesOverTheSpellingForAllTracks()
     {
         await AudioAsync("Band/01 - One.mp3", new TestTags { Title = "One", Artist = "the band" });

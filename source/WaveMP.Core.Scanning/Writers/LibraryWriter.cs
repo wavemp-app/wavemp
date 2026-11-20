@@ -67,7 +67,7 @@ public sealed class LibraryWriter(ILibraryScanRepository library)
         FolderWriteResult result = await WriteTracksAsync(
             sourceId,
             plan.RelativePath,
-            FolderProcessor.Process(plan.RelativePath, files, ChoicesOf(stored.Tracks, files)),
+            FolderProcessor.Process(plan.RelativePath, files, ChoicesOf(stored.Tracks, files), sourceId),
             stored.Tracks,
             now,
             cancellationToken);
@@ -89,7 +89,11 @@ public sealed class LibraryWriter(ILibraryScanRepository library)
         FolderWriteResult result = await WriteTracksAsync(
             sourceId,
             directoryPath,
-            FolderProcessor.Process(directoryPath, stored.Files, ChoicesOf(stored.Tracks, stored.Files)),
+            FolderProcessor.Process(
+                directoryPath,
+                stored.Files,
+                ChoicesOf(stored.Tracks, stored.Files),
+                sourceId),
             stored.Tracks,
             now,
             cancellationToken);
@@ -407,7 +411,7 @@ public sealed class LibraryWriter(ILibraryScanRepository library)
                 NormalizedTitle = MetadataText.ToKey(assignment.Title)!,
                 AlbumKey = assignment.Key,
                 AlbumArtistId = await GetArtistIdAsync(assignment.AlbumArtist, cache, now, cancellationToken),
-                IsCompilation = assignment.IsCompilation,
+                IsCompilation = false,
                 Year = assignment.Year,
                 FirstSeenAt = now,
                 UpdatedAt = now,

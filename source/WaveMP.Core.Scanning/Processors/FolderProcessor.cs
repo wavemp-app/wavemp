@@ -11,8 +11,8 @@ namespace WaveMP.Core.Scanning.Processors;
 /// <summary>
 /// Derives the tracks of a folder from its media files, without touching the database: groups the files by base
 /// name, chooses the files of the highest quality (or the files the admin selected), finds a file name pattern of the
-/// folder, resolves the metadata of every track and the album artists of the folder, and orders the covers of every
-/// track.
+/// folder, resolves the metadata and the album of every track (see <see cref="AlbumResolver"/>), and orders the covers
+/// of every track.
 /// </summary>
 public static class FolderProcessor
 {
@@ -20,10 +20,13 @@ public static class FolderProcessor
     /// <param name="files">The media files of the folder.</param>
     /// <param name="choices">The files the admin selected, by the normalized base name of the track. A selected file
     /// that is not part of the track (or not of the category) is ignored, and the quality rule chooses.</param>
+    /// <param name="sourceId">The media source of the folder; keeps albums without any artist apart from those of
+    /// other sources.</param>
     public static ProcessedFolder Process(
         string directoryPath,
         IReadOnlyList<MediaFile> files,
-        IReadOnlyDictionary<string, FileChoices>? choices = null)
+        IReadOnlyDictionary<string, FileChoices>? choices = null,
+        Guid? sourceId = null)
     {
         IReadOnlyList<FileGroup> groups = FileGrouper.Group(files);
         FileGroup[] trackGroups = [.. groups.Where(group => group.IsTrack)];
@@ -42,7 +45,9 @@ public static class FolderProcessor
             tracks.Add((group, choice, audio, video, TrackMetadataResolver.Resolve(ToMediaTags(source.Tags), path)));
         }
 
-        IReadOnlyList<AlbumAssignment?> albums = AlbumArtistResolver.Resolve([.. tracks.Select(track => track.Metadata)]);
+        IReadOnlyList<AlbumAssignment?> albums = AlbumResolver.Resolve(
+            [.. tracks.Select(track => track.Metadata)],
+            AlbumFolderOf(sourceId, directoryPath));
 
         return new ProcessedFolder(
             [.. tracks.Select((track, index) => new ProcessedTrack(
@@ -53,6 +58,16 @@ public static class FolderProcessor
                 track.Video,
                 OrderCovers(track.Group, track.Audio, track.Choice.Cover)))],
             [.. groups.Where(group => !group.IsTrack)]);
+    }
+
+    /// <summary>
+    /// Identifies the album folder of a folder for albums without any artist: the folder above a disc folder such as
+    /// <c>CD1</c>, otherwise the folder itself, in its media source. Albums with an artist ignore it.
+    /// </summary>
+    internal static string AlbumFolderOf(Guid? sourceId, string directoryPath)
+    {
+        string albumFolder = AlbumCoverCandidates.ParentOfDiscFolder(directoryPath) ?? directoryPath;
+        return (sourceId ?? Guid.Empty).ToString("N") + "/" + albumFolder;
     }
 
     /// <summary>

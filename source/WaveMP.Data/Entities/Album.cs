@@ -1,7 +1,8 @@
 namespace WaveMP.Data.Entities;
 
 /// <summary>
-/// An album, unique by its album artist (or compilation) and title. Created by the scan and removed once it has no
+/// An album, unique by its artist and title as the metadata names them: the album artist of its tracks, otherwise
+/// their artist (albums without any artist are kept apart per folder). Created by the scan and removed once it has no
 /// tracks. The spelling of the title and the year follow the folder of the album that was written last.
 /// </summary>
 public class Album
@@ -16,19 +17,21 @@ public class Album
     public required string NormalizedTitle { get; set; }
 
     /// <summary>
-    /// SHA-256 (hex) of the normalized album artist (or compilation) and title; carries the unique index.
+    /// SHA-256 (hex) of the normalized artist and title; carries the unique index.
     /// </summary>
     public required string AlbumKey { get; set; }
 
     /// <summary>
-    /// Artist of the album; <c>null</c> for compilations and albums without a known artist.
+    /// Artist of the album: the album artist of its tracks, otherwise their artist; <c>null</c> for albums without a
+    /// known artist.
     /// </summary>
     public Guid? AlbumArtistId { get; set; }
 
     public Artist? AlbumArtist { get; set; }
 
     /// <summary>
-    /// Tracks of several artists without a common album artist. Clients show their own text for it.
+    /// Tracks of several artists without a common album artist. No longer set by the scan, since an album is identified
+    /// by one artist; kept for the compatibility of the API.
     /// </summary>
     public required bool IsCompilation { get; set; }
 

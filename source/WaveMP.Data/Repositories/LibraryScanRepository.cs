@@ -47,6 +47,41 @@ internal sealed class LibraryScanRepository(WaveMpDbContext dbContext) : ILibrar
         return dbContext.MediaFiles.CountAsync(file => file.SourceId == sourceId, cancellationToken);
     }
 
+    public async Task<IReadOnlyList<Guid>> GetSourcesToRegroupAsync(
+        int version,
+        CancellationToken cancellationToken = default)
+    {
+        return await dbContext.MediaSources.AsNoTracking()
+            .Where(source => source.AlbumGroupingVersion < version)
+            .OrderBy(source => source.Id)
+            .Select(source => source.Id)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<string>> GetTrackDirectoriesAsync(
+        Guid sourceId,
+        CancellationToken cancellationToken = default)
+    {
+        return await dbContext.Tracks.AsNoTracking()
+            .Where(track => track.SourceId == sourceId)
+            .Select(track => track.DirectoryPath)
+            .Distinct()
+            .OrderBy(directory => directory)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task SetAlbumGroupingVersionAsync(
+        Guid sourceId,
+        int version,
+        CancellationToken cancellationToken = default)
+    {
+        await dbContext.MediaSources
+            .Where(source => source.Id == sourceId)
+            .ExecuteUpdateAsync(
+                setters => setters.SetProperty(source => source.AlbumGroupingVersion, version),
+                cancellationToken);
+    }
+
     public async Task<StoredFolder> LoadFolderAsync(
         Guid sourceId,
         string directoryPath,
