@@ -71,7 +71,7 @@ export async function removePlaylistEntry(id: string, entryId: string): Promise<
     await playlist(id).tracks.byEntryId(entryId).delete()
 }
 
-/** The own cover of a playlist as square WebP in the size (96, 300 or 1000). */
+/** The own cover of a playlist as square WebP; the API rounds the size up to 96, 300 or 1000. */
 export function fetchPlaylistCover(id: string, size: CoverSize): Promise<ArrayBuffer | undefined> {
     return playlist(id).cover.get({ queryParameters: { size } })
 }

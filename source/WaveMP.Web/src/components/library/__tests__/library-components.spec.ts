@@ -507,9 +507,7 @@ describe('LibraryCover', () => {
     })
 
     it('loads the size the cover is shown with', async () => {
-        const measure = vi
-            .spyOn(HTMLElement.prototype, 'getBoundingClientRect')
-            .mockReturnValue({ width: 48, height: 48 } as DOMRect)
+        const measure = vi.spyOn(HTMLElement.prototype, 'offsetWidth', 'get').mockReturnValue(48)
         vi.stubGlobal('devicePixelRatio', 2)
 
         const { wrapper } = await mountWith(LibraryCover, {
@@ -519,6 +517,85 @@ describe('LibraryCover', () => {
         })
 
         expect(covers.fetchAlbumCover).toHaveBeenCalledWith('mini', 96)
+        wrapper.unmount()
+        measure.mockRestore()
+    })
+
+    it('loads sharp covers on phones with a pixel density of 3', async () => {
+        const measure = vi.spyOn(HTMLElement.prototype, 'offsetWidth', 'get').mockReturnValue(44)
+        vi.stubGlobal('devicePixelRatio', 3)
+
+        const { wrapper } = await mountWith(LibraryCover, {
+            kind: 'album',
+            id: 'mini',
+            available: true,
+        })
+
+        expect(covers.fetchAlbumCover).toHaveBeenCalledWith('mini', 192)
+        wrapper.unmount()
+        measure.mockRestore()
+    })
+
+    it('loads a larger picture when the cover grows and keeps the smaller one meanwhile', async () => {
+        let width = 44
+        const measure = vi
+            .spyOn(HTMLElement.prototype, 'offsetWidth', 'get')
+            .mockImplementation(() => width)
+        vi.stubGlobal('devicePixelRatio', 3)
+        let resize: (entries: { target: Element }[]) => void = () => {}
+        vi.stubGlobal(
+            'ResizeObserver',
+            class {
+                constructor(callback: typeof resize) {
+                    resize = callback
+                }
+
+                observe = vi.fn()
+                unobserve = vi.fn()
+                disconnect = vi.fn()
+            },
+        )
+        let finishLarge: (buffer: ArrayBuffer) => void = () => {}
+        covers.fetchAlbumCover.mockImplementation((_: string, size: number) =>
+            size === 1000
+                ? new Promise<ArrayBuffer>((resolve) => {
+                      finishLarge = resolve
+                  })
+                : Promise.resolve(new Uint8Array([1]).buffer),
+        )
+        let created = 0
+        vi.stubGlobal('URL', {
+            ...URL,
+            createObjectURL: () => `blob:album-${++created}`,
+            revokeObjectURL: vi.fn(),
+        })
+
+        const { wrapper } = await mountWith(LibraryCover, {
+            kind: 'album',
+            id: 'playing',
+            available: true,
+        })
+        const image = () => wrapper.get('[data-part="cover-image"]').attributes('src')
+        expect(covers.fetchAlbumCover).toHaveBeenLastCalledWith('playing', 192)
+        expect(image()).toBe('blob:album-1')
+
+        // The mini player becomes the full-screen player.
+        width = 300
+        resize([{ target: wrapper.element }])
+        await flushPromises()
+        expect(covers.fetchAlbumCover).toHaveBeenLastCalledWith('playing', 1000)
+        expect(image()).toBe('blob:album-1')
+
+        finishLarge(new Uint8Array([2]).buffer)
+        await flushPromises()
+        expect(image()).toBe('blob:album-2')
+
+        // Smaller again: the sharp picture stays.
+        width = 44
+        resize([{ target: wrapper.element }])
+        await flushPromises()
+        expect(covers.fetchAlbumCover).toHaveBeenCalledTimes(2)
+        expect(image()).toBe('blob:album-2')
         wrapper.unmount()
         measure.mockRestore()
     })
