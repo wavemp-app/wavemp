@@ -10,12 +10,14 @@ public sealed class AlbumReferenceDto
     public required string Title { get; init; }
 
     /// <summary>
-    /// Album artist; null for compilations and albums without a known artist.
+    /// Artist of the album: the album artist of its tracks, otherwise their artist; null for albums without a known
+    /// artist.
     /// </summary>
     public ArtistReferenceDto? Artist { get; init; }
 
     /// <summary>
-    /// Tracks of several artists without a common album artist. Clients show their own text for it.
+    /// Tracks of several artists without a common album artist. Always false since an album is identified by one
+    /// artist and title; kept for compatibility.
     /// </summary>
     public required bool IsCompilation { get; init; }
 }

@@ -22,12 +22,14 @@ public class CoverChoicesTests
         IReadOnlyList<IReadOnlyList<CoverCandidateRow>> lists =
             CoverChoices.ForAlbum(CoverPriority.AlbumFirst, [_second, _album, _first]);
 
-        // The album, its tracks without own cover and the first track share one list; the second track puts its own
-        // cover before the cover of the first track.
+        // Every track shows its own cover after the cover of the album, never the cover of another track; the tracks
+        // without a cover of their own show only the cover of the album.
         lists.Select(CoverChoices.KeyOf).Should().BeEquivalentTo(
         [
             CoverChoices.KeyOf([_album, _first, _second]),
-            CoverChoices.KeyOf([_album, _second, _first]),
+            CoverChoices.KeyOf([_album, _first]),
+            CoverChoices.KeyOf([_album, _second]),
+            CoverChoices.KeyOf([_album]),
         ]);
         lists.Should().AllSatisfy(list => list[0].Should().Be(_album));
     }
@@ -38,15 +40,15 @@ public class CoverChoicesTests
         IReadOnlyList<IReadOnlyList<CoverCandidateRow>> lists =
             CoverChoices.ForAlbum(CoverPriority.TrackFirst, [_second, _album, _first]);
 
-        CoverCandidateRow[] ofFirst = [_first, _album, _second];
-        CoverCandidateRow[] ofSecond = [_second, _album, _first];
+        CoverCandidateRow[] ofFirst = [_first, _album];
+        CoverCandidateRow[] ofSecond = [_second, _album];
         bool firstIsLower = _firstTrackId.CompareTo(_secondTrackId) < 0;
 
         lists.Select(CoverChoices.KeyOf).Should().Equal(
             CoverChoices.KeyOf([_first, _second, _album]),
             CoverChoices.KeyOf(firstIsLower ? ofFirst : ofSecond),
             CoverChoices.KeyOf(firstIsLower ? ofSecond : ofFirst),
-            CoverChoices.KeyOf([_album, _first, _second]));
+            CoverChoices.KeyOf([_album]));
     }
 
     [Test]
@@ -61,7 +63,7 @@ public class CoverChoicesTests
 
         lists[0].Should().Equal(first, second, album);
         lists.Where(list => list[0] == album).Should().ContainSingle()
-            .Which.Should().Equal(album, first, second);
+            .Which.Should().Equal(album);
     }
 
     [Test]
@@ -75,7 +77,9 @@ public class CoverChoicesTests
         lists.Select(CoverChoices.KeyOf).Should().BeEquivalentTo(
         [
             CoverChoices.KeyOf([_album, _first, second]),
-            CoverChoices.KeyOf([second, _album, _first]),
+            CoverChoices.KeyOf([_album, _first]),
+            CoverChoices.KeyOf([second, _album]),
+            CoverChoices.KeyOf([_album]),
         ]);
     }
 
@@ -91,9 +95,21 @@ public class CoverChoicesTests
         CoverCandidateRow second = _second with { AlbumCoverPriority = CoverPriority.TrackFirst };
 
         CoverChoices.ForTrack(_firstTrackId, CoverPriority.TrackFirst, [second, album, first])
-            .Should().Equal(album, first, second);
+            .Should().Equal(album, first);
         CoverChoices.ForTrack(_secondTrackId, CoverPriority.AlbumFirst, [second, album, first])
-            .Should().Equal(second, album, first);
+            .Should().Equal(second, album);
+    }
+
+    [Test]
+    public void ForTrack_PictureFileOfTheTrack_ComesFirstUnlessTheTrackItselfShowsTheAlbumCoverFirst()
+    {
+        CoverCandidateRow picture = _first with { Source = CoverSource.File };
+        CoverCandidateRow pictureWithRule = picture with { TrackCoverPriority = CoverPriority.AlbumFirst };
+
+        CoverChoices.ForTrack(_firstTrackId, CoverPriority.AlbumFirst, [_album, picture, _second])
+            .Should().Equal(picture, _album);
+        CoverChoices.ForTrack(_firstTrackId, CoverPriority.TrackFirst, [_album, pictureWithRule])
+            .Should().Equal(_album, pictureWithRule);
     }
 
     [Test]
@@ -192,7 +208,7 @@ public class CoverChoicesTests
             number,
             trackId is null ? null : $"Track {number}",
             true,
-            CoverSource.File,
+            trackId is null ? CoverSource.File : CoverSource.Embedded,
             MediaSource.DefaultId,
             "Album/picture.jpg",
             "image/jpeg",

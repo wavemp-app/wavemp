@@ -150,8 +150,9 @@ public sealed class TracksController(
     }
 
     /// <summary>
-    /// Returns the cover of a track as picture. By default the cover of its album comes before its own cover; if the
-    /// preferred cover is missing, the other one is used, and finally the cover of another track of the album. With
+    /// Returns the cover of a track as picture: a cover chosen in its files, then a picture with its base name, then by
+    /// default the cover of its album before its other covers (embedded pictures); if the preferred cover is missing,
+    /// the other one is used. A track never shows the cover of another track; without any cover it has none. With
     /// size, the picture is scaled to fit into a square of 96, 192, 300, 600, 1000 or 2000 pixels (the requested size
     /// rounded up, at most 2000; never enlarged) and delivered as WebP from the cache; without size, as stored (JPEG,
     /// PNG, WebP, GIF or BMP). Every picture carries a strong ETag of its version and size, Last-Modified and

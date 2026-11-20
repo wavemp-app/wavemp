@@ -14,19 +14,23 @@ public class CoverResolverTests
     private static readonly Guid _secondTrackId = Guid.NewGuid();
 
     private static readonly CoverCandidateRow _album = AlbumCover("album");
-    private static readonly CoverCandidateRow _own = TrackCover("own", _trackId, 1, 5);
+    private static readonly CoverCandidateRow _own = TrackCover("own", _trackId, 1, 5) with
+    {
+        Source = CoverSource.Embedded,
+    };
+    private static readonly CoverCandidateRow _ownFile = TrackCover("own-file", _trackId, 1, 5);
     private static readonly CoverCandidateRow _secondTrack = TrackCover("second", _secondTrackId, 2, 1);
     private static readonly CoverCandidateRow _firstTrack = TrackCover("first", _firstTrackId, 1, 1);
 
     [Test]
-    public void OrderForTrack_AlbumFirst_PutsTheAlbumCoverBeforeTheOwnAndTheOtherTracksCovers()
+    public void OrderForTrack_AlbumFirst_PutsTheAlbumCoverBeforeTheEmbeddedCoverAndLeavesOtherTracksOut()
     {
         IReadOnlyList<CoverCandidateRow> ordered = CoverResolver.OrderForTrack(
             _trackId,
             CoverPriority.AlbumFirst,
             [_secondTrack, _own, _firstTrack, _album]);
 
-        ordered.Should().Equal(_album, _own, _firstTrack, _secondTrack);
+        ordered.Should().Equal(_album, _own);
     }
 
     [Test]
@@ -37,7 +41,32 @@ public class CoverResolverTests
             CoverPriority.TrackFirst,
             [_secondTrack, _album, _firstTrack, _own]);
 
-        ordered.Should().Equal(_own, _album, _firstTrack, _secondTrack);
+        ordered.Should().Equal(_own, _album);
+    }
+
+    [TestCase(CoverPriority.AlbumFirst)]
+    [TestCase(CoverPriority.TrackFirst)]
+    public void OrderForTrack_PictureFileWithTheNameOfTheTrack_ComesBeforeTheAlbumCoverWhateverTheRule(
+        CoverPriority priority)
+    {
+        IReadOnlyList<CoverCandidateRow> ordered = CoverResolver.OrderForTrack(
+            _trackId,
+            priority,
+            [_own, _album, _ownFile]);
+
+        ordered[0].Should().Be(_ownFile);
+    }
+
+    [Test]
+    public void OrderForTrack_PictureFileWithAlbumFirstRuleOfTheTrack_FollowsTheRule()
+    {
+        IReadOnlyList<CoverCandidateRow> ordered = CoverResolver.OrderForTrack(
+            _trackId,
+            CoverPriority.AlbumFirst,
+            [_ownFile, _album],
+            ownFileFirst: false);
+
+        ordered.Should().Equal(_album, _ownFile);
     }
 
     [Test]
@@ -49,9 +78,9 @@ public class CoverResolverTests
         IReadOnlyList<CoverCandidateRow> ordered = CoverResolver.OrderForTrack(
             _trackId,
             CoverPriority.AlbumFirst,
-            [_secondTrack, otherSelected, _album, selected]);
+            [_secondTrack, otherSelected, _ownFile, _album, selected]);
 
-        ordered.Should().Equal(selected, _album, otherSelected, _secondTrack);
+        ordered.Should().Equal(selected, _ownFile, _album);
     }
 
     [Test]
@@ -62,26 +91,37 @@ public class CoverResolverTests
             CoverPriority.AlbumFirst,
             [_firstTrack, _own]);
 
-        ordered.Should().Equal(_own, _firstTrack);
+        ordered.Should().Equal(_own);
+    }
+
+    [Test]
+    public void OrderForTrack_OnlyCoversOfOtherTracks_ShowsNoCover()
+    {
+        IReadOnlyList<CoverCandidateRow> ordered = CoverResolver.OrderForTrack(
+            _trackId,
+            CoverPriority.TrackFirst,
+            [_firstTrack, _secondTrack]);
+
+        ordered.Should().BeEmpty();
     }
 
     [Test]
     public void OrderForTrack_SeveralOwnCovers_PutsThePrimaryAndPictureFilesFirst()
     {
-        CoverCandidateRow embedded = _own with
+        CoverCandidateRow embedded = _ownFile with
         {
             CoverId = Guid.NewGuid(),
             Source = CoverSource.Embedded,
             IsPrimary = false,
         };
-        CoverCandidateRow secondary = _own with { CoverId = Guid.NewGuid(), IsPrimary = false };
+        CoverCandidateRow secondary = _ownFile with { CoverId = Guid.NewGuid(), IsPrimary = false };
 
         IReadOnlyList<CoverCandidateRow> ordered = CoverResolver.OrderForTrack(
             _trackId,
             CoverPriority.TrackFirst,
-            [embedded, secondary, _own]);
+            [embedded, secondary, _ownFile]);
 
-        ordered.Should().Equal(_own, secondary, embedded);
+        ordered.Should().Equal(_ownFile, secondary, embedded);
     }
 
     [Test]

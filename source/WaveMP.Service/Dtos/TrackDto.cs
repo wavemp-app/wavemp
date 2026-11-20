@@ -46,7 +46,7 @@ public sealed class TrackDto
     public required bool HasVideo { get; init; }
 
     /// <summary>
-    /// Whether a cover exists (GetTrackCover): of the track, of its album or of another track of its album.
+    /// Whether a cover exists (GetTrackCover): of the track or of its album.
     /// </summary>
     public required bool HasCover { get; init; }
 

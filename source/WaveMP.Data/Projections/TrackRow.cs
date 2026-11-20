@@ -19,8 +19,8 @@ namespace WaveMP.Data.Projections;
 /// <param name="Duration">Duration of the primary audio file, otherwise of the primary video file.</param>
 /// <param name="HasAudio">Whether an audio file exists.</param>
 /// <param name="HasVideo">Whether a video file exists.</param>
-/// <param name="HasCover">Whether a cover exists: the track's own, its album's or one of another track of the album.
-/// </param>
+/// <param name="HasCover">Whether a cover exists: the track's own or its album's, also online covers of
+/// both.</param>
 /// <param name="FirstSeenAt">When the track was found for the first time.</param>
 /// <param name="IsFavorite">Whether the user of the query marked the track as favorite.</param>
 /// <param name="Rating">Rating of the user of the query, 1 to 5 stars; 0 if the user did not rate the track.</param>

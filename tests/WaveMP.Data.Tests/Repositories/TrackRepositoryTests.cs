@@ -216,7 +216,7 @@ public class TrackRepositoryTests : LibraryDatabaseTests
     }
 
     [Test]
-    public async Task ListAsync_TrackOfAnAlbumWhoseOtherTrackHasACover_HasACover()
+    public async Task ListAsync_TrackOfAnAlbumWhoseOtherTrackHasACover_HasNoCover()
     {
         LibrarySeed seed = new();
         Album album = seed.Album("Album");
@@ -227,7 +227,8 @@ public class TrackRepositoryTests : LibraryDatabaseTests
 
         IReadOnlyList<TrackRow> tracks = (await ListAsync(Query())).Items;
 
-        tracks.Should().OnlyContain(track => track.HasCover);
+        tracks.Single(track => track.Title == "First").HasCover.Should().BeTrue();
+        tracks.Single(track => track.Title == "Second").HasCover.Should().BeFalse();
     }
 
     [Test]

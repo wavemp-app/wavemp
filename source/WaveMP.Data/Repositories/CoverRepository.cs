@@ -19,17 +19,12 @@ internal sealed class CoverRepository(WaveMpDbContext dbContext) : ICoverReposit
             return null;
         }
 
+        // A track shows its own covers and those of its album, never the cover of another track.
         if (track.AlbumId is { } albumId)
         {
             return await ListAsync(
-                dbContext.Covers.Where(cover =>
-                    cover.TrackId == trackId
-                    || cover.AlbumId == albumId
-                    || (cover.Track != null && cover.Track.AlbumId == albumId)),
-                dbContext.OnlineCovers.Where(cover =>
-                    cover.TrackId == trackId
-                    || cover.AlbumId == albumId
-                    || (cover.Track != null && cover.Track.AlbumId == albumId)),
+                dbContext.Covers.Where(cover => cover.TrackId == trackId || cover.AlbumId == albumId),
+                dbContext.OnlineCovers.Where(cover => cover.TrackId == trackId || cover.AlbumId == albumId),
                 cancellationToken);
         }
 

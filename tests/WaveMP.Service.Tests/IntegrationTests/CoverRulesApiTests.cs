@@ -10,8 +10,10 @@ namespace WaveMP.Service.Tests.IntegrationTests;
 
 /// <summary>
 /// Cover rules on all three levels through the API: the global rule of the library settings, the rule of an album and
-/// the rule of a track, with fallback and preview. The album has a picture in its folder (wide) and one song with a
-/// picture of its own (tall); the second song has none. The file watcher is off, so only the API changes the library.
+/// the rule of a track, with fallback and preview. The album has a picture in its folder (wide), one song with a
+/// picture file of its own (tall), which it always shows first unless its own rule says otherwise, one song with an
+/// embedded picture (square), which follows the rules, and one song without a cover. The file watcher is off, so only
+/// the API changes the library.
 /// </summary>
 [TestFixture]
 [Category("Integration")]
@@ -25,6 +27,7 @@ public class CoverRulesApiTests
     private Guid _albumId;
     private Guid _songId;
     private Guid _plainId;
+    private Guid _embeddedId;
     private byte[] _albumPicture = null!;
     private byte[] _songPicture = null!;
 
@@ -37,6 +40,14 @@ public class CoverRulesApiTests
         await TestMediaGenerator.CreateImageAsync(_media.Combine("Band/Album/01 Song.jpg"), 100, 200);
         await AudioAsync("Band/Album/01 Song.mp3", "Song", "1");
         await AudioAsync("Band/Album/02 Plain.mp3", "Plain", "2");
+        string embedded = _media.Combine("embedded.jpg");
+        await TestMediaGenerator.CreateImageAsync(embedded, 150, 150);
+        await TestMediaGenerator.CreateAudioAsync(
+            _media.Combine("Band/Album/03 Embedded.mp3"),
+            AudioFormat.Mp3,
+            new TestTags { Title = "Embedded", Artist = "Band", Album = "Album", Track = "3" },
+            embeddedCoverPath: embedded);
+        File.Delete(embedded);
         _albumPicture = await File.ReadAllBytesAsync(_media.Combine("Band/Album/cover.jpg"));
         _songPicture = await File.ReadAllBytesAsync(_media.Combine("Band/Album/01 Song.jpg"));
 
@@ -63,6 +74,7 @@ public class CoverRulesApiTests
             (await _admin.GetJsonAsync<PageDto<TrackDto>>("/api/v1/tracks?limit=100")).Items;
         _songId = tracks.Single(track => track.Title == "Song").Id;
         _plainId = tracks.Single(track => track.Title == "Plain").Id;
+        _embeddedId = tracks.Single(track => track.Title == "Embedded").Id;
         _albumId = tracks.Single(track => track.Title == "Song").Album!.Id;
     }
 
@@ -87,6 +99,7 @@ public class CoverRulesApiTests
         await SetRuleAsync($"/api/v1/albums/{_albumId}/cover-rule", "Inherit");
         await SetRuleAsync($"/api/v1/tracks/{_songId}/cover-rule", "Inherit");
         await SetRuleAsync($"/api/v1/tracks/{_plainId}/cover-rule", "Inherit");
+        await SetRuleAsync($"/api/v1/tracks/{_embeddedId}/cover-rule", "Inherit");
         await _admin.WaitForJobsIdleAsync();
     }
 
@@ -138,7 +151,9 @@ public class CoverRulesApiTests
         album.InheritedPriority.Should().Be(CoverPriorityDto.AlbumFirst);
         album.EffectivePriority.Should().Be(CoverPriorityDto.AlbumFirst);
         track.Should().BeEquivalentTo(album);
-        (await TrackCoverAsync(_songId)).Should().Equal(_albumPicture);
+        (await TrackCoverAsync(_songId)).Should().Equal(_songPicture);
+        (await TrackCoverAsync(_plainId)).Should().Equal(_albumPicture);
+        (await ImageProbe.GetSizeAsync(await TrackCoverAsync(_embeddedId))).Should().Be((200, 100));
         (await AlbumCoverAsync()).Should().Equal(_albumPicture);
     }
 
@@ -153,6 +168,23 @@ public class CoverRulesApiTests
         (await _admin.GetJsonAsync<CoverRuleDto>($"/api/v1/tracks/{_songId}/cover-rule")).Should().BeEquivalentTo(rule);
         (await TrackCoverAsync(_songId)).Should().Equal(_songPicture);
         (await AlbumCoverAsync()).Should().Equal(_albumPicture);
+    }
+
+    [Test]
+    public async Task SetTrackCoverRule_TrackFirstWithAnEmbeddedPicture_ShowsTheEmbeddedPicture()
+    {
+        await SetRuleAsync($"/api/v1/tracks/{_embeddedId}/cover-rule", "TrackFirst");
+
+        (await ImageProbe.GetSizeAsync(await TrackCoverAsync(_embeddedId))).Should().Be((150, 150));
+    }
+
+    [Test]
+    public async Task SetTrackCoverRule_AlbumFirst_ShowsTheAlbumCoverBeforeThePictureFileOfTheTrack()
+    {
+        await SetGlobalAsync("TrackFirst");
+        await SetRuleAsync($"/api/v1/tracks/{_songId}/cover-rule", "AlbumFirst");
+
+        (await TrackCoverAsync(_songId)).Should().Equal(_albumPicture);
     }
 
     [Test]
@@ -195,11 +227,13 @@ public class CoverRulesApiTests
         settings.CoverPriority.Should().Be(CoverPriorityDto.TrackFirst);
         (await _admin.GetJsonAsync<LibrarySettingsDto>("/api/v1/settings/library")).CoverPriority
             .Should().Be(CoverPriorityDto.TrackFirst);
-        (await TrackCoverAsync(_songId)).Should().Equal(_songPicture);
+        (await ImageProbe.GetSizeAsync(await TrackCoverAsync(_embeddedId))).Should().Be((150, 150));
 
         await SetRuleAsync($"/api/v1/albums/{_albumId}/cover-rule", "AlbumFirst");
 
-        (await TrackCoverAsync(_songId)).Should().Equal(_albumPicture);
+        // The rule of the album applies to its songs, but a picture file of a song still comes first for it.
+        (await ImageProbe.GetSizeAsync(await TrackCoverAsync(_embeddedId))).Should().Be((200, 100));
+        (await TrackCoverAsync(_songId)).Should().Equal(_songPicture);
         (await _admin.GetJsonAsync<CoverRuleDto>($"/api/v1/albums/{_albumId}/cover-rule")).InheritedPriority
             .Should().Be(CoverPriorityDto.TrackFirst);
     }
@@ -223,16 +257,19 @@ public class CoverRulesApiTests
         HttpResponseMessage album = await _admin.GetAsync(
             $"/api/v1/albums/{_albumId}/cover-rule/preview?rule=TrackFirst");
         HttpResponseMessage inherit = await _admin.GetAsync(
-            $"/api/v1/tracks/{_songId}/cover-rule/preview?rule=Inherit");
+            $"/api/v1/tracks/{_embeddedId}/cover-rule/preview?rule=Inherit");
+        HttpResponseMessage albumFirst = await _admin.GetAsync(
+            $"/api/v1/tracks/{_songId}/cover-rule/preview?rule=AlbumFirst");
 
         track.StatusCode.Should().Be(HttpStatusCode.OK);
         track.Content.Headers.ContentType!.MediaType.Should().Be("image/webp");
         (await ImageProbe.GetSizeAsync(await track.Content.ReadAsByteArrayAsync())).Should().Be((48, 96));
         (await album.Content.ReadAsByteArrayAsync()).Should().Equal(_songPicture);
-        (await inherit.Content.ReadAsByteArrayAsync()).Should().Equal(_albumPicture);
+        (await ImageProbe.GetSizeAsync(await inherit.Content.ReadAsByteArrayAsync())).Should().Be((200, 100));
+        (await albumFirst.Content.ReadAsByteArrayAsync()).Should().Equal(_albumPicture);
         (await _admin.GetJsonAsync<CoverRuleDto>($"/api/v1/tracks/{_songId}/cover-rule")).Rule
             .Should().Be(CoverRuleOptionDto.Inherit);
-        (await TrackCoverAsync(_songId)).Should().Equal(_albumPicture);
+        (await TrackCoverAsync(_songId)).Should().Equal(_songPicture);
     }
 
     [TestCase("")]

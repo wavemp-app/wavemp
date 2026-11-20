@@ -16,8 +16,8 @@ namespace WaveMP.Data.Projections;
 /// <param name="BaseName">File name of the track without extension.</param>
 /// <param name="HasAudio">Whether an audio file exists.</param>
 /// <param name="HasVideo">Whether a video file exists.</param>
-/// <param name="HasCover">Whether a cover exists: the track's own, its album's or one of another track of the album.
-/// </param>
+/// <param name="HasCover">Whether a cover exists: the track's own or its album's, also online covers of
+/// both.</param>
 /// <param name="FirstSeenAt">When the track was found for the first time.</param>
 /// <param name="MissingTags">The checked fields the tags of its file lack: of the audio file the track plays, for
 /// tracks with a video only of the video.</param>

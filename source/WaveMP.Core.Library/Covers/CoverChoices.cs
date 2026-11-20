@@ -31,7 +31,7 @@ public static class CoverChoices
             lists.Add(ForTrack(trackId, global, candidates));
         }
 
-        // The tracks without a cover of their own share one list; only the rule of the album matters for them.
+        // The tracks without a cover of their own share one list: the covers of the album, by the rule of the album.
         lists.Add(CoverResolver.OrderForTrack(Guid.Empty, albumPriority, candidates));
 
         HashSet<string> seen = new(StringComparer.Ordinal);
@@ -43,14 +43,18 @@ public static class CoverChoices
     /// </summary>
     /// <param name="trackId">Id of the track.</param>
     /// <param name="global">The global cover rule of the library settings.</param>
-    /// <param name="candidates">The covers of the track, of its album and of the other tracks of its album.</param>
+    /// <param name="candidates">The covers of the track and of its album; covers of other tracks are left out.</param>
     public static IReadOnlyList<CoverCandidateRow> ForTrack(
         Guid trackId,
         CoverPriority global,
         IEnumerable<CoverCandidateRow> candidates)
     {
         CoverCandidateRow[] rows = [.. candidates];
-        return CoverResolver.OrderForTrack(trackId, CoverRules.ForTrack(trackId, global, rows), rows);
+        return CoverResolver.OrderForTrack(
+            trackId,
+            CoverRules.ForTrack(trackId, global, rows),
+            rows,
+            CoverRules.TrackRuleOf(trackId, rows) != CoverPriority.AlbumFirst);
     }
 
     /// <summary>
@@ -73,7 +77,7 @@ public static class CoverChoices
     /// <param name="trackId">Id of the track.</param>
     /// <param name="global">The global cover rule of the library settings.</param>
     /// <param name="rule">The rule of the track to try; <c>null</c> inherits the rule of its album.</param>
-    /// <param name="candidates">The covers of the track, of its album and of the other tracks of its album.</param>
+    /// <param name="candidates">The covers of the track and of its album; covers of other tracks are left out.</param>
     public static IReadOnlyList<CoverCandidateRow> PreviewForTrack(
         Guid trackId,
         CoverPriority global,
@@ -82,7 +86,7 @@ public static class CoverChoices
     {
         CoverCandidateRow[] rows = [.. candidates];
         CoverPriority priority = CoverRules.Effective(global, CoverRules.AlbumRuleOf(rows), rule);
-        return CoverResolver.OrderForTrack(trackId, priority, rows);
+        return CoverResolver.OrderForTrack(trackId, priority, rows, rule != CoverPriority.AlbumFirst);
     }
 
     /// <summary>

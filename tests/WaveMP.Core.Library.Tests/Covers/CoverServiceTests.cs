@@ -56,6 +56,19 @@ public class CoverServiceTests
     }
 
     [Test]
+    public async Task GetTrackCandidatesAsync_PictureFileOfTheTrack_ComesBeforeTheAlbumCoverByDefault()
+    {
+        CoverCandidateRow album = AlbumCover();
+        CoverCandidateRow picture = TrackCover(_trackId) with { Source = CoverSource.File };
+        CoverCandidateRow other = TrackCover(Guid.NewGuid());
+        _covers.GetTrackCandidatesAsync(_trackId, Arg.Any<CancellationToken>()).Returns([album, other, picture]);
+
+        CoverCandidates candidates = await _service.GetTrackCandidatesAsync(_trackId);
+
+        candidates.Ordered.Should().Equal(picture, album);
+    }
+
+    [Test]
     public async Task GetTrackCandidatesAsync_TrackFirst_PutsTheOwnCoverFirst()
     {
         _settings.Current.Returns(new LibrarySettings { CoverPriority = CoverPriority.TrackFirst });
@@ -209,9 +222,10 @@ public class CoverServiceTests
 
         lists.Select(CoverChoices.KeyOf).Should().OnlyHaveUniqueItems();
         lists.Should().ContainEquivalentOf(new[] { album, own }, options => options.WithStrictOrdering());
+        lists.Should().ContainEquivalentOf(new[] { album }, options => options.WithStrictOrdering());
         lists.Should().ContainEquivalentOf(new[] { otherAlbum }, options => options.WithStrictOrdering());
         lists.Should().ContainEquivalentOf(new[] { loose }, options => options.WithStrictOrdering());
-        lists.Should().HaveCount(3);
+        lists.Should().HaveCount(4);
     }
 
     [Test]
@@ -266,9 +280,9 @@ public class CoverServiceTests
             1,
             "Song",
             true,
-            CoverSource.File,
+            CoverSource.Embedded,
             MediaSource.DefaultId,
-            "Album/Song.jpg",
+            "Album/Song.mp3",
             null,
             100,
             DateTimeOffset.UnixEpoch);

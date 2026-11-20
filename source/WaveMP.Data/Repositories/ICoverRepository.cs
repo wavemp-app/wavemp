@@ -10,8 +10,8 @@ namespace WaveMP.Data.Repositories;
 public interface ICoverRepository
 {
     /// <summary>
-    /// The covers of the track, of its album and of the other tracks of its album, in no particular order; <c>null</c>
-    /// if the track does not exist.
+    /// The covers of the track and of its album (never those of other tracks), in no particular order; <c>null</c> if
+    /// the track does not exist.
     /// </summary>
     Task<IReadOnlyList<CoverCandidateRow>?> GetTrackCandidatesAsync(
         Guid trackId,

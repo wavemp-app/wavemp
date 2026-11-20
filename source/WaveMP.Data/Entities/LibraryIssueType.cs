@@ -6,8 +6,7 @@ namespace WaveMP.Data.Entities;
 public enum LibraryIssueType
 {
     /// <summary>
-    /// The track has no cover: neither its own nor one of its album or of another track of its album, also no online
-    /// cover.
+    /// The track has no cover: neither its own nor one of its album, also no online cover.
     /// </summary>
     MissingCover,
 

@@ -9,8 +9,8 @@ namespace WaveMP.Data.Repositories;
 
 /// <summary>
 /// The tags of a track are those of its primary audio file, for a track with a video only those of its primary video;
-/// a track has a cover like in the rest of the library: its own, its album's, one of another track of its album or an
-/// online cover of one of them.
+/// a track has a cover like in the rest of the library: its own or its album's, also an online cover of
+/// either.
 /// </summary>
 internal sealed class LibraryIssueRepository(WaveMpDbContext dbContext) : ILibraryIssueRepository
 {
@@ -420,20 +420,19 @@ internal sealed class LibraryIssueRepository(WaveMpDbContext dbContext) : ILibra
     }
 
     /// <summary>
-    /// Albums with a cover of their own, or a track with a cover of its own (also online covers of both).
+    /// Albums with a cover of their own (also an online cover). The covers of their tracks do not count, since a track
+    /// never shows the cover of another track.
     /// </summary>
     private async Task<HashSet<Guid>> AlbumsWithCoverAsync(CancellationToken cancellationToken)
     {
         List<Guid> albumCovers = await dbContext.Covers.AsNoTracking()
-            .Select(cover => cover.AlbumId ?? cover.Track!.AlbumId)
-            .Where(albumId => albumId != null)
-            .Select(albumId => albumId!.Value)
+            .Where(cover => cover.AlbumId != null)
+            .Select(cover => cover.AlbumId!.Value)
             .Distinct()
             .ToListAsync(cancellationToken);
         List<Guid> onlineCovers = await dbContext.OnlineCovers.AsNoTracking()
-            .Select(cover => cover.AlbumId ?? cover.Track!.AlbumId)
-            .Where(albumId => albumId != null)
-            .Select(albumId => albumId!.Value)
+            .Where(cover => cover.AlbumId != null)
+            .Select(cover => cover.AlbumId!.Value)
             .Distinct()
             .ToListAsync(cancellationToken);
         return [.. albumCovers, .. onlineCovers];

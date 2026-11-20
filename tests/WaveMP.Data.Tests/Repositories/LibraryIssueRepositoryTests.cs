@@ -56,7 +56,8 @@ public class LibraryIssueRepositoryTests : LibraryDatabaseTests
             false,
             true,
             []));
-        Row(rows, sibling).HasCover.Should().BeTrue("another track of its album has a cover");
+        Row(rows, sibling).HasCover.Should().BeFalse("a track never shows the cover of another track");
+        Row(rows, ownCover).HasCover.Should().BeTrue();
         Row(rows, sibling).MissingTags.Should().Equal(MetadataTag.Artist, MetadataTag.Album);
         Row(rows, ownCover).MissingTags.Should().Equal(MetadataTag.Title);
         Row(rows, noCover).HasCover.Should().BeFalse();
@@ -67,7 +68,7 @@ public class LibraryIssueRepositoryTests : LibraryDatabaseTests
     }
 
     [Test]
-    public async Task ListTracksAsync_OnlineCovers_CountAsCoversOfTheTrackAndItsAlbum()
+    public async Task ListTracksAsync_OnlineCovers_CountAsCoversOfTheirTrackOnly()
     {
         LibrarySeed seed = new();
         Album album = seed.Album("Album");
@@ -87,7 +88,7 @@ public class LibraryIssueRepositoryTests : LibraryDatabaseTests
         IReadOnlyList<LibraryCheckTrackRow> rows = await repository.ListTracksAsync();
 
         Row(rows, first).HasCover.Should().BeTrue();
-        Row(rows, second).HasCover.Should().BeTrue();
+        Row(rows, second).HasCover.Should().BeFalse("a track never shows the cover of another track");
         Row(rows, single).HasCover.Should().BeTrue();
         Row(rows, without).HasCover.Should().BeFalse();
     }

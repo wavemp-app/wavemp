@@ -13,7 +13,7 @@ public class CoverRepositoryTests : LibraryDatabaseTests
     protected override string DatabaseName => "wavemp_tests_library_covers";
 
     [Test]
-    public async Task GetTrackCandidatesAsync_TrackOfAnAlbum_ReturnsItsOwnTheAlbumAndTheOtherTracksCovers()
+    public async Task GetTrackCandidatesAsync_TrackOfAnAlbum_ReturnsItsOwnAndTheAlbumCoversButNotThoseOfOtherTracks()
     {
         LibrarySeed seed = new();
         Album album = seed.Album("Album");
@@ -35,10 +35,11 @@ public class CoverRepositoryTests : LibraryDatabaseTests
         await SaveAsync(seed);
         CoverRepository repository = new(CreateDbContext());
 
-        IReadOnlyList<CoverCandidateRow> candidates = (await repository.GetTrackCandidatesAsync(second.Id))!;
+        IReadOnlyList<CoverCandidateRow> candidates = (await repository.GetTrackCandidatesAsync(first.Id))!;
 
-        candidates.Select(candidate => candidate.CoverId).Should().BeEquivalentTo(
-            [albumCover.Id, firstCover.Id, secondCover.Id]);
+        candidates.Select(candidate => candidate.CoverId).Should().BeEquivalentTo([albumCover.Id, firstCover.Id]);
+        (await repository.GetTrackCandidatesAsync(second.Id))!.Select(candidate => candidate.CoverId)
+            .Should().BeEquivalentTo([albumCover.Id, secondCover.Id]);
         candidates.Single(candidate => candidate.CoverId == firstCover.Id).Should().BeEquivalentTo(
             new CoverCandidateRow(
                 firstCover.Id,
