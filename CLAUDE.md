@@ -4,7 +4,7 @@ Richtlinien für Claude Code bei der Arbeit an **WaveMP – a nostalgic media pl
 
 ## Projekt
 
-WaveMP ist ein selbst gehosteter Media Player für Musik und Musikvideos, ausgeliefert als Docker-Image. Die Optik orientiert sich an den klassischen Desktop-Media-Playern der Frutiger-Aero-Ära (Glas, Glanz, Hellblau, weiche Verläufe). Der Server scannt einen eingebundenen Medienordner, speichert die Bibliothek in einer Datenbank und stellt sie einer Web-App bereit. Native Apps (macOS, iOS, iPadOS, Android, Windows, Linux) folgen in eigenen Repositories der Organisation und nutzen dieselbe API.
+WaveMP ist ein selbst gehosteter Media Player für Musik und Musikvideos, ausgeliefert als Docker-Image. Die Optik orientiert sich an den klassischen Desktop-Media-Playern der Frutiger-Aero-Ära (Glas, Glanz, Hellblau, weiche Verläufe). Der Server scannt einen eingebundenen Medienordner, speichert die Bibliothek in einer Datenbank und stellt sie einer Web-App bereit. Native Apps (iOS, iPadOS, macOS, tvOS, watchOS, Windows, Android, Linux) folgen in eigenen Repositories der Organisation und nutzen dieselbe API. Jeder App-Typ hat einen eigenen Meilenstein (M10 Apple, M11 Windows, M12 Android, M13 Linux) und wird in einem eigenen Workflow-Lauf umgesetzt.
 
 ## Namen
 
@@ -15,7 +15,7 @@ WaveMP ist ein selbst gehosteter Media Player für Musik und Musikvideos, ausgel
 | Image Docker Hub | `wavemp/wavemp` (Docker Hub erlaubt keine Bindestriche im Namespace) |
 | Image GHCR | `ghcr.io/wavemp-app/wavemp` |
 | Website (GitHub Pages) | `https://wavemp-app.github.io` |
-| Spätere App-Repositories | `wavemp-app/wavemp-apple`, `wavemp-app/wavemp-android`, `wavemp-app/wavemp-desktop` |
+| Spätere App-Repositories | `wavemp-app/wavemp-apple` (iOS, iPadOS, macOS, tvOS, watchOS), `wavemp-app/wavemp-windows`, `wavemp-app/wavemp-android`, `wavemp-app/wavemp-linux` |
 
 ## Tech-Stack
 
@@ -118,7 +118,7 @@ Neue Projekte und Ordner fügen sich in diese Struktur ein. Abweichungen nur, we
 - Paging, Sortierung und Filter über Query-Parameter; Collections sind immer gepaged.
 - Versioniert unter `/api/v1`. Breaking Changes nur in einer neuen Version.
 - Das OpenAPI-Dokument wird generiert und aktuell gehalten. Es ist der **einzige Vertrag** zwischen Server und Clients.
-- Clients (Web-App und die nativen Apps) erhalten **keine Shared Libraries** aus diesem Projekt. Sie generieren ihre API-Schnittstellen aus dem OpenAPI-Dokument mit Microsoft Kiota. Einzige Ausnahme sind die Apple-Apps: Kiota unterstützt Swift nicht stabil, dort wird Apples `swift-openapi-generator` verwendet.
+- Clients (Web-App und die nativen Apps) erhalten **keine Shared Libraries** aus diesem Projekt. Sie generieren ihre API-Schnittstellen aus dem OpenAPI-Dokument mit Microsoft Kiota. Ausnahmen, weil Kiota die Sprache nicht (stabil) unterstützt: die Apple-Apps mit Apples `swift-openapi-generator` und die Linux-App (Rust) mit `progenitor`.
 - Das OpenAPI-Dokument muss deshalb vollständig und generatorfreundlich sein: eindeutige `operationId`s, benannte Schemas, korrekt beschriebene Response-Typen und Statuscodes, Enums als benannte Typen.
 - DTOs liegen im `.Service`-Projekt und werden nicht mit den Entities aus `.Data` vermischt.
 - Medien-Streaming unterstützt HTTP-Range-Requests; transcodierte Inhalte laufen über HLS.
@@ -147,6 +147,7 @@ Neue Projekte und Ordner fügen sich in diese Struktur ein. Abweichungen nur, we
 
 - Das Projekt steht unter der MIT-Lizenz.
 - Nur Abhängigkeiten mit MIT-kompatiblen Lizenzen (MIT, BSD, Apache-2.0, ISC, MPL-2.0, LGPL bei dynamischer Einbindung). **Keine GPL- oder AGPL-Abhängigkeiten** in NuGet oder npm.
+- Offizielle SDKs und Frameworks der Plattform-Hersteller (Apple, Google, Microsoft) sind in den nativen Apps erlaubt, auch wenn sie nicht Open Source sind, z. B. das Google Cast SDK oder Apple-Frameworks wie CarPlay. Inoffizielle Nachbauten oder Wrapper solcher SDKs sind nicht erlaubt. Für alle anderen Abhängigkeiten gilt die Regel oben.
 - Vor dem Hinzufügen eines Pakets die Lizenz prüfen und in der Commit-Beschreibung nennen.
 - ffmpeg wird als externer Prozess aufgerufen, nie gelinkt. Der Lizenzhinweis wird mit dem Image ausgeliefert.
 - Fremde Docker-Images in Dockerfile und CI werden per Digest gepinnt (`image@sha256:...`), nicht nur per Tag.
@@ -174,7 +175,7 @@ Neue Projekte und Ordner fügen sich in diese Struktur ein. Abweichungen nur, we
 
 ## Issues und Projekt
 
-- **Einzige Quelle:** Was umgesetzt wird, steht in den Issues von `wavemp-app/wavemp`, zugeordnet zu den Milestones `M1` bis `M10` und im Org-Projekt "WaveMP Roadmap". Ein Workflow-Lauf setzt einen Meilenstein um: die offenen Issues des Milestones nacheinander, aufsteigend nach WMP-Nummer.
+- **Einzige Quelle:** Was umgesetzt wird, steht in den Issues von `wavemp-app/wavemp`, zugeordnet zu den Milestones `M1` bis `M15` und im Org-Projekt "WaveMP Roadmap". Ein Workflow-Lauf setzt einen Meilenstein um: die offenen Issues des Milestones nacheinander, aufsteigend nach WMP-Nummer.
 - **Titel-Schema:**
   - `WMP-{N}: {Titel}`: Punkte des Maintainers (Roadmap und eigene Bugs).
   - `[Bug] {Titel}` und `[Feature] {Titel}`: von Nutzern über die Issue-Formulare gemeldet, Labels `community` und `triage`.
