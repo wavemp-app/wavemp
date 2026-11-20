@@ -10,6 +10,7 @@
     "menu": "Menu",
     "home": "Home",
     "nowPlaying": "Now Playing",
+    "nowPlayingShort": "Playing",
     "library": "Library",
     "playlists": "Playlists",
     "equalizer": "Equalizer"

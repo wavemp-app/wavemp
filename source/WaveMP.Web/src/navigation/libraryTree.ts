@@ -8,6 +8,11 @@ export type MainTab = 'home' | 'now-playing' | 'library' | 'playlists'
 export interface MainNavigationItem {
     readonly id: MainTab
     readonly labelKey: string
+    /**
+     * Shorter label for the bottom navigation, where the entries share the width of a phone; the
+     * full label stays the tooltip and the accessible name of the entry.
+     */
+    readonly shortLabelKey?: string
     readonly icon: IconSlotName
     readonly to: RouteLocationRaw
 }
@@ -17,6 +22,7 @@ export const mainNavigation: readonly MainNavigationItem[] = [
     {
         id: 'now-playing',
         labelKey: 'nav.nowPlaying',
+        shortLabelKey: 'nav.nowPlayingShort',
         icon: 'now-playing',
         to: { name: 'now-playing' },
     },

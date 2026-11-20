@@ -3,15 +3,23 @@ import { expect, type Locator, type Page } from '@playwright/test'
 /** Address of the home page, the start page after the profile selection. */
 export const homeUrl = /^https?:\/\/[^/]+\/$/
 
-/** Labels of the main navigation: tabs on the desktop, bottom navigation on mobile. */
+/**
+ * Full names of the entries of the main navigation: tabs on the desktop, bottom navigation on
+ * mobile. An entry with a short label in the bottom navigation carries its full name as tooltip.
+ */
 export async function navigationLabels(page: Page): Promise<string[]> {
-    const labels = page
-        .locator(
-            "[data-part='tab'] > [data-part='label'], [data-part='bottom-nav-item'] > [data-part='label']",
-        )
+    const entries = page
+        .locator("[data-part='tab'], [data-part='bottom-nav-item']")
         .filter({ visible: true })
-    await expect(labels).toHaveCount(4)
-    return labels.allTextContents()
+    await expect(entries).toHaveCount(4)
+    return entries.evaluateAll((items) =>
+        items.map(
+            (item) =>
+                item.getAttribute('title') ??
+                item.querySelector(":scope > [data-part='label']")?.textContent ??
+                '',
+        ),
+    )
 }
 
 /** The profile button in the header of the app. */

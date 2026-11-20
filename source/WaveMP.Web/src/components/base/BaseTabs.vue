@@ -9,6 +9,11 @@ import type { PartName } from '@/themes/parts'
 export interface TabItem {
     readonly id: string
     readonly label: string
+    /**
+     * Full name of an entry whose label is shortened; it becomes the tooltip and the accessible
+     * name of the entry.
+     */
+    readonly fullLabel?: string
     readonly icon: IconSlotName
     readonly to: RouteLocationRaw
 }
@@ -57,6 +62,8 @@ const indicator = useIndicator(navigation, '[aria-current="page"]', () => [
             <a
                 :data-part="part === 'tabs' ? 'tab' : 'bottom-nav-item'"
                 :href="href"
+                :title="item.fullLabel"
+                :aria-label="item.fullLabel"
                 :aria-current="item.id === active ? 'page' : undefined"
                 :data-state="item.id === active ? 'active' : undefined"
                 @click="navigate"
