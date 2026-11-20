@@ -87,4 +87,19 @@ public sealed class PlaybackStateController(IPlaybackStateService states) : Cont
                 throw new InvalidOperationException($"Unknown status {status}.");
         }
     }
+
+    /// <summary>
+    /// Clears the saved playback state of the current profile, so the next start of a client begins without a queue
+    /// (<c>GET</c> then answers 404). Succeeds also without a saved state. A device that still plays saves its state
+    /// again; clients stop their own player before they clear the state.
+    /// </summary>
+    /// <param name="cancellationToken">Aborts the request.</param>
+    /// <response code="204">The profile has no saved state.</response>
+    [HttpDelete(Name = "ClearMyPlaybackState")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> ClearMyPlaybackStateAsync(CancellationToken cancellationToken)
+    {
+        await states.ClearAsync(User.GetUserId(), cancellationToken);
+        return NoContent();
+    }
 }

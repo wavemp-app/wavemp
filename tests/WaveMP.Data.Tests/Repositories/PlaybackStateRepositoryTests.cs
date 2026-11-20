@@ -147,6 +147,44 @@ public class PlaybackStateRepositoryTests : LibraryDatabaseTests
     }
 
     [Test]
+    public async Task DeleteAsync_SavedState_RemovesItAndKeepsTheStatesOfOtherUsers()
+    {
+        User user = await AddUserAsync();
+        User other = await AddUserAsync();
+        await CreateRepository().SaveAsync(NewState(user.Id, "phone", _start));
+        await CreateRepository().SaveAsync(NewState(other.Id, "tablet", _start));
+
+        bool deleted = await CreateRepository().DeleteAsync(user.Id);
+
+        deleted.Should().BeTrue();
+        (await CreateRepository().FindAsync(user.Id)).Should().BeNull();
+        (await CreateRepository().FindAsync(other.Id))!.DeviceId.Should().Be("tablet");
+    }
+
+    [Test]
+    public async Task DeleteAsync_NothingSaved_ReturnsFalse()
+    {
+        User user = await AddUserAsync();
+
+        bool deleted = await CreateRepository().DeleteAsync(user.Id);
+
+        deleted.Should().BeFalse();
+    }
+
+    [Test]
+    public async Task SaveAsync_AfterDelete_SavesAnOlderStateAgain()
+    {
+        User user = await AddUserAsync();
+        await CreateRepository().SaveAsync(NewState(user.Id, "phone", _start));
+        await CreateRepository().DeleteAsync(user.Id);
+
+        bool saved = await CreateRepository().SaveAsync(NewState(user.Id, "laptop", _start.AddSeconds(-1)));
+
+        saved.Should().BeTrue();
+        (await CreateRepository().FindAsync(user.Id))!.DeviceId.Should().Be("laptop");
+    }
+
+    [Test]
     public async Task DeletingTheUser_Always_DeletesItsState()
     {
         User user = await AddUserAsync();

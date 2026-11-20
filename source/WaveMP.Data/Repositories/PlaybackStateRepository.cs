@@ -48,4 +48,12 @@ internal sealed class PlaybackStateRepository(WaveMpDbContext dbContext) : IPlay
             },
             cancellationToken);
     }
+
+    public async Task<bool> DeleteAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        int deleted = await dbContext.PlaybackStates
+            .Where(state => state.UserId == userId)
+            .ExecuteDeleteAsync(cancellationToken);
+        return deleted > 0;
+    }
 }

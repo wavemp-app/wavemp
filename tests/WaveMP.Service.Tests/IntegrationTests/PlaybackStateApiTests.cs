@@ -66,9 +66,11 @@ public class PlaybackStateApiTests
     {
         HttpResponseMessage read = await _anonymous.GetAsync(Path);
         HttpResponseMessage saved = await _anonymous.PutAsJsonAsync(Path, State("phone", [Track("First")], 0));
+        HttpResponseMessage cleared = await _anonymous.DeleteAsync(Path);
 
         await read.ShouldBeProblemAsync(HttpStatusCode.Unauthorized, "auth.unauthorized");
         await saved.ShouldBeProblemAsync(HttpStatusCode.Unauthorized, "auth.unauthorized");
+        await cleared.ShouldBeProblemAsync(HttpStatusCode.Unauthorized, "auth.unauthorized");
     }
 
     [Test]
@@ -139,6 +141,48 @@ public class PlaybackStateApiTests
         state.CurrentIndex.Should().Be(1);
         state.Device.Id.Should().Be("phone");
         await foreign.ShouldBeProblemAsync(HttpStatusCode.NotFound, "playback.state_not_found");
+    }
+
+    [Test]
+    public async Task ClearMyPlaybackState_SavedState_RemovesItForEveryDeviceOfTheProfileOnly()
+    {
+        Profile profile = await CreateProfileAsync();
+        using HttpClient phone = profile.Client;
+        using HttpClient laptop = _factory.CreateAuthorizedClient((await _anonymous.CreateSessionAsync(profile.Id)).Token);
+        using HttpClient other = (await CreateProfileAsync()).Client;
+        await SaveAsync(phone, State("phone", [Track("First")], 0));
+        await SaveAsync(other, State("tablet", [Track("Second")], 0));
+
+        HttpResponseMessage response = await laptop.DeleteAsync(Path);
+
+        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        await (await phone.GetAsync(Path)).ShouldBeProblemAsync(HttpStatusCode.NotFound, "playback.state_not_found");
+        (await other.GetJsonAsync<PlaybackStateDto>(Path)).Device.Id.Should().Be("tablet");
+    }
+
+    [Test]
+    public async Task ClearMyPlaybackState_NothingSaved_ReturnsNoContent()
+    {
+        using HttpClient client = (await CreateProfileAsync()).Client;
+
+        HttpResponseMessage response = await client.DeleteAsync(Path);
+
+        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+    }
+
+    [Test]
+    public async Task ClearMyPlaybackState_ThenSave_SavesTheStateOfTheDeviceAgain()
+    {
+        using HttpClient client = (await CreateProfileAsync()).Client;
+        DateTimeOffset now = DateTimeOffset.UtcNow;
+        await SaveAsync(client, State("phone", [Track("First")], 0, now.AddSeconds(-5)));
+        (await client.DeleteAsync(Path)).StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        await SaveAsync(client, State("laptop", [Track("Third")], 0, now.AddSeconds(-10)));
+
+        PlaybackStateDto state = await client.GetJsonAsync<PlaybackStateDto>(Path);
+        state.Device.Id.Should().Be("laptop");
+        state.Items.Single().Track.Title.Should().Be("Third");
     }
 
     [Test]

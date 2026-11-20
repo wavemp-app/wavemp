@@ -252,6 +252,18 @@ public class PlaybackStateServiceTests
         view!.Source.Should().BeNull();
     }
 
+    [TestCase(true)]
+    [TestCase(false)]
+    public async Task ClearAsync_Always_DeletesTheStateOfTheUser(bool saved)
+    {
+        _states.DeleteAsync(_userId, Arg.Any<CancellationToken>()).Returns(saved);
+
+        bool cleared = await _service.ClearAsync(_userId);
+
+        cleared.Should().Be(saved);
+        await _states.Received(1).DeleteAsync(_userId, Arg.Any<CancellationToken>());
+    }
+
     private void Saved(PlaybackState state, params TrackRow[] rows)
     {
         _states.FindAsync(_userId, Arg.Any<CancellationToken>()).Returns(state);

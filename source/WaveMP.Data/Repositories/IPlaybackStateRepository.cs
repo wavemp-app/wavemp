@@ -19,4 +19,9 @@ public interface IPlaybackStateRepository
     /// </summary>
     /// <exception cref="UserNotFoundException">The user of the state does not exist.</exception>
     Task<bool> SaveAsync(PlaybackState state, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Removes the playback state of the user. Returns <c>false</c> if none was saved.
+    /// </summary>
+    Task<bool> DeleteAsync(Guid userId, CancellationToken cancellationToken = default);
 }

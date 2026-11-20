@@ -83,6 +83,11 @@ internal sealed class PlaybackStateService(
             : PlaybackStateSaveStatus.Outdated;
     }
 
+    public Task<bool> ClearAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        return states.DeleteAsync(userId, cancellationToken);
+    }
+
     /// <summary>
     /// PostgreSQL keeps microseconds; the time is compared with the precision it is read with later.
     /// </summary>

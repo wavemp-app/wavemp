@@ -21,4 +21,10 @@ public interface IPlaybackStateService
         Guid userId,
         SavePlaybackStateCommand command,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Forgets where the user stopped listening, so the clients start without a queue. A device that still plays
+    /// saves its state again. Returns <c>false</c> if no state was saved.
+    /// </summary>
+    Task<bool> ClearAsync(Guid userId, CancellationToken cancellationToken = default);
 }
