@@ -116,9 +116,11 @@ function bottomNav(page: Page): Locator {
     return page.locator("[data-part='app'] > [data-part='bottom-nav']")
 }
 
+// The German short label holds a soft hyphen, so it breaks as "Wieder-gabe" where it needs two
+// lines.
 const languages = [
     { language: 'en', short: 'Playing', full: 'Now Playing' },
-    { language: 'de', short: 'Wiedergabe', full: 'Aktuelle Wiedergabe' },
+    { language: 'de', short: 'Wieder­gabe', full: 'Aktuelle Wiedergabe' },
 ] as const
 
 for (const target of shippedThemeTargets()) {

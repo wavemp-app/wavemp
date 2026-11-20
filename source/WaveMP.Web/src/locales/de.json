@@ -10,7 +10,7 @@
     "menu": "Menü",
     "home": "Startseite",
     "nowPlaying": "Aktuelle Wiedergabe",
-    "nowPlayingShort": "Wiedergabe",
+    "nowPlayingShort": "Wieder\u00adgabe",
     "library": "Bibliothek",
     "playlists": "Playlists",
     "equalizer": "Equalizer"
@@ -147,7 +147,7 @@
     "sleepTimerEndOfQueue": "Am Ende der Warteschlange",
     "sleepTimerRemaining": "Stoppt in {time}",
     "sleepTimerEndOfTrackShort": "Titelende",
-    "sleepTimerEndOfQueueShort": "Warteschlangenende",
+    "sleepTimerEndOfQueueShort": "Warteschlangen\u00adende",
     "resume": {
       "label": "Weiterhören",
       "from": "Weiterhören von {device}",
@@ -1395,7 +1395,7 @@
     "jobCount": "{running} von {max}",
     "stats": {
       "label": "Status der Transcodierung",
-      "hardware": "Hardwarebeschleunigung",
+      "hardware": "Hardware\u00adbeschleunigung",
       "ffmpeg": "ffmpeg verfügbar",
       "cache": "Cache beschreibbar",
       "jobs": "Laufende Transcodierungen",

@@ -104,6 +104,15 @@ describe('message files', () => {
                 expect(invalid).toEqual([])
             })
 
+            it('places soft hyphens only between two letters of a word', () => {
+                // A soft hyphen (U+00AD) marks where a long word may break with a hyphen, e.g. in
+                // the narrow labels of the bottom navigation; the browser shows it only there.
+                const invalid = [...messages].filter(
+                    ([, value]) => !/^(?:[^­]|(?<=\p{L})­(?=\p{L}))*$/u.test(value),
+                )
+                expect(invalid).toEqual([])
+            })
+
             it('uses camelCase keys', () => {
                 const invalid = [...messages.keys()].filter(
                     (key) => !key.split('.').every((part) => /^[a-z][A-Za-z0-9]*$/.test(part)),
@@ -112,6 +121,20 @@ describe('message files', () => {
             })
         })
     }
+})
+
+describe('soft hyphens', () => {
+    it('break the long German words of narrow labels', () => {
+        const german = flatten(readMessages('de'))
+
+        expect(german.get('nav.nowPlayingShort')).toBe('Wieder­gabe')
+        expect(german.get('adminTranscoding.stats.hardware')).toBe('Hardware­beschleunigung')
+        expect(german.get('player.sleepTimerEndOfQueueShort')).toBe('Warteschlangen­ende')
+    })
+
+    it('are not needed in English', () => {
+        expect([...english].filter(([, value]) => value.includes('­'))).toEqual([])
+    })
 })
 
 describe('message keys in the source code', () => {

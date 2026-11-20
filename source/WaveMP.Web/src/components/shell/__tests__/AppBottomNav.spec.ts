@@ -18,7 +18,7 @@ async function mountBottomNav(language: 'en' | 'de') {
 describe('AppBottomNav', () => {
     it.each([
         ['en', ['Home', 'Playing', 'Library', 'Playlists'], 'Now Playing'],
-        ['de', ['Startseite', 'Wiedergabe', 'Bibliothek', 'Playlists'], 'Aktuelle Wiedergabe'],
+        ['de', ['Startseite', 'Wieder­gabe', 'Bibliothek', 'Playlists'], 'Aktuelle Wiedergabe'],
     ] as const)('shows the short label of Now Playing in %s', async (language, labels, full) => {
         const wrapper = await mountBottomNav(language)
 
