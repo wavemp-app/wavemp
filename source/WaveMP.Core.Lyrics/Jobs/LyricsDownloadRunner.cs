@@ -13,11 +13,13 @@ namespace WaveMP.Core.Lyrics.Jobs;
 
 /// <summary>
 /// Goes through the tracks without lyrics file that were never looked up, then those whose lookup found no lyrics
-/// longer than <see cref="LyricsOptions.LookUpAgainAfter"/> ago, oldest first, in batches, and downloads their lyrics
-/// one after another (the requests are spaced by the request interval). If LRCLIB refuses requests or cannot be
-/// reached, the track is tried again after a wait (as long as LRCLIB asks, within the limits of the options); after
-/// the last attempt the run fails, and the next run goes on where it stopped. Switching the download off stops the run
-/// after the current track.
+/// longer than <see cref="LyricsOptions.LookUpAgainAfter"/> ago and those that had lyrics in their tags at the check
+/// (looked at again after that wait, or at once when a scan read their audio or video file after the check, because
+/// the tags may have lost their lyrics; if they still carry lyrics, LRCLIB is not asked), oldest first, in batches,
+/// and downloads their lyrics one after another (the requests are spaced by the request interval). If LRCLIB refuses
+/// requests or cannot be reached, the track is tried again after a wait (as long as LRCLIB asks, within the limits of
+/// the options); after the last attempt the run fails, and the next run goes on where it stopped. Switching the
+/// download off stops the run after the current track.
 /// </summary>
 internal sealed class LyricsDownloadRunner(
     ILyricsRepository repository,
@@ -78,8 +80,9 @@ internal sealed class LyricsDownloadRunner(
     }
 
     /// <summary>
-    /// Tracks whose lookup found no lyrics before this time are looked up again; <c>null</c> if no track is looked up
-    /// again (the wait is zero or less, or longer than the time since the earliest possible time).
+    /// Tracks whose lookup found no lyrics or that already had lyrics before this time are looked up again; <c>null</c>
+    /// if no track is looked up again after a wait (the wait is zero or less, or longer than the time since the
+    /// earliest possible time).
     /// </summary>
     internal static DateTimeOffset? LookUpAgainBefore(DateTimeOffset now, TimeSpan lookUpAgainAfter)
     {

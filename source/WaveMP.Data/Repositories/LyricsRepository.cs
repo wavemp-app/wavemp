@@ -19,23 +19,21 @@ internal sealed class LyricsRepository(WaveMpDbContext dbContext) : ILyricsRepos
         CancellationToken cancellationToken = default)
     {
         Guid[] skipped = [.. excluded];
-        IQueryable<Track> candidates = dbContext.Tracks.AsNoTracking();
-        if (lookUpAgainBefore is { } before)
-        {
-            candidates = candidates.Where(track =>
+        bool lookUpAgain = lookUpAgainBefore is not null;
+        DateTimeOffset before = lookUpAgainBefore.GetValueOrDefault();
+        IQueryable<Track> tracks = dbContext.Tracks.AsNoTracking()
+            .Where(track =>
                 !dbContext.LyricsDownloads.Any(download => download.TrackId == track.Id)
                 || dbContext.LyricsDownloads.Any(download => download.TrackId == track.Id
-                    && (download.Status == LyricsDownloadStatus.NotFound
-                        || download.Status == LyricsDownloadStatus.Instrumental)
-                    && download.CheckedAt < before));
-        }
-        else
-        {
-            candidates = candidates.Where(track =>
-                !dbContext.LyricsDownloads.Any(download => download.TrackId == track.Id));
-        }
-
-        IQueryable<Track> tracks = candidates
+                    && ((download.Status == LyricsDownloadStatus.NotNeeded
+                            && track.Files.Any(file => file.IsPrimary
+                                && (file.Kind == MediaFileKind.Audio || file.Kind == MediaFileKind.Video)
+                                && file.ScannedAt > download.CheckedAt))
+                        || (lookUpAgain
+                            && (download.Status == LyricsDownloadStatus.NotFound
+                                || download.Status == LyricsDownloadStatus.Instrumental
+                                || download.Status == LyricsDownloadStatus.NotNeeded)
+                            && download.CheckedAt < before))))
             .Where(track => !track.Files.Any(file => file.Kind == MediaFileKind.Lyrics))
             .Where(track => !skipped.Contains(track.Id))
             .OrderBy(track => dbContext.LyricsDownloads.Any(download => download.TrackId == track.Id))

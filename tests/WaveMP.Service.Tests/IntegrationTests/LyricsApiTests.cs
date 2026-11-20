@@ -41,6 +41,7 @@ public class LyricsApiTests
         await File.WriteAllTextAsync(_media.Combine("Band/Album/Synced.lrc"), EnhancedLrc);
         await AudioAsync("Tagged", lyrics: "First tag line\nSecond tag line");
         await AudioAsync("Tagged Busy", lyrics: "Tag lyrics");
+        await AudioAsync("Losing", lyrics: "Lyrics that leave the tags");
         await AudioAsync("Plain");
         await AudioAsync("Missing");
         await AudioAsync("Instrumental");
@@ -56,6 +57,12 @@ public class LyricsApiTests
             SyncedLyrics = "[00:00.10]Downloaded line",
         }]));
         Answer("Instrumental", LrclibResponse.Found([new LrclibRecord { Id = 2, Duration = 1, Instrumental = true }]));
+        Answer("Losing", LrclibResponse.Found([new LrclibRecord
+        {
+            Id = 3,
+            Duration = 1,
+            SyncedLyrics = "[00:00.10]Line from LRCLIB",
+        }]));
         Answer("Tagged", LrclibResponse.Unavailable);
         Answer("Tagged Busy", LrclibResponse.RateLimited(TimeSpan.FromSeconds(30)));
 
@@ -194,6 +201,36 @@ public class LyricsApiTests
                 && query.AlbumName == "Album"
                 && query.Duration > TimeSpan.Zero),
             Arg.Any<CancellationToken>());
+    }
+
+    [Test]
+    public async Task ScanAfterTheTagsLostTheirLyrics_DownloadsTheLyrics()
+    {
+        await SwitchOnAsync();
+        string path = _media.Combine("Band/Album/Losing.mp3");
+        await _lrclib.DidNotReceive().GetAsync(
+            Arg.Is<LrclibQuery>(query => query.TrackName == "Losing"),
+            Arg.Any<CancellationToken>());
+        (await _user.GetJsonAsync<LyricsDto>($"/api/v1/tracks/{Track("Losing").Id}/lyrics"))
+            .Source.Should().Be(LyricsSourceDto.Tags);
+
+        using (var file = TagLib.File.Create(path))
+        {
+            file.Tag.Lyrics = null;
+            file.Save();
+        }
+
+        File.SetLastWriteTimeUtc(path, DateTime.UtcNow.AddMinutes(1));
+        HttpResponseMessage response = await _admin.PostAsync("/api/v1/scans", null);
+        ScanDto queued = (await response.Content.ReadFromJsonAsync<ScanDto>(HttpClientExtensions.JsonOptions))!;
+        (await _admin.WaitForScanAsync(queued.Id)).Status.Should().Be(JobRunStatusDto.Succeeded);
+        await _admin.WaitForJobsIdleAsync();
+
+        LyricsDto lyrics = await _user.GetJsonAsync<LyricsDto>($"/api/v1/tracks/{Track("Losing").Id}/lyrics");
+        lyrics.Source.Should().Be(LyricsSourceDto.File);
+        lyrics.Lines.Select(line => line.Text).Should().Equal("Line from LRCLIB");
+        (await File.ReadAllTextAsync(_media.Combine("Band/Album/Losing.lrc")))
+            .Should().Be("[00:00.10]Line from LRCLIB");
     }
 
     [Test]

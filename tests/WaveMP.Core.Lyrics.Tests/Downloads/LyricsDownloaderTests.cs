@@ -154,6 +154,25 @@ public class LyricsDownloaderTests
     }
 
     [Test]
+    public async Task DownloadAsync_AutomaticForTrackWhoseTagsLostTheirLyrics_DownloadsThemAndReplacesTheResult()
+    {
+        _repository.FindTrackAsync(_trackId, Arg.Any<CancellationToken>()).Returns(Row() with
+        {
+            Download = new LyricsDownloadRow(LyricsDownloadStatus.NotNeeded, null, DateTimeOffset.UnixEpoch),
+        });
+        _lrclib.GetAsync(Arg.Any<LrclibQuery>(), Arg.Any<CancellationToken>())
+            .Returns(LrclibResponse.Found([_synced]));
+
+        LyricsDownloadResult result = await _downloader.DownloadAsync(_trackId, LyricsDownloadMode.Automatic);
+
+        result.Outcome.Should().Be(LyricsDownloadOutcome.SavedToFile);
+        await _files.Received(1).CreateAsync(MediaSource.DefaultId, "Band/Song.lrc", "[00:01.00]Synced", Arg.Any<CancellationToken>());
+        await _repository.Received(1).SaveDownloadAsync(
+            Arg.Is<LyricsDownload>(download => download.Status == LyricsDownloadStatus.SavedToFile),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Test]
     public async Task DownloadAsync_NoExactMatch_SearchesAndTakesTheBestRecord()
     {
         LrclibRecord plain = _synced with { Id = 2, SyncedLyrics = null };

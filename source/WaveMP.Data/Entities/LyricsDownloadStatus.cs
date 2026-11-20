@@ -26,7 +26,9 @@ public enum LyricsDownloadStatus
     Instrumental,
 
     /// <summary>
-    /// The track already had lyrics (a lyrics file or lyrics in its tags), so nothing was downloaded.
+    /// The track already had lyrics (a lyrics file or lyrics in its tags), so nothing was downloaded. The download job
+    /// checks the track again once a scan read one of its primary audio or video files after the check, and after the
+    /// wait for tracks without lyrics, because the tags may have lost their lyrics in the meantime.
     /// </summary>
     NotNeeded,
 }

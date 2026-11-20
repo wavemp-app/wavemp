@@ -41,8 +41,10 @@ public sealed class LyricsOptions
 
     /// <summary>
     /// How long the download job waits before it looks up a track again whose lookup found no lyrics (LRCLIB had none
-    /// or listed the track as instrumental), because LRCLIB grows over time. Zero or less never looks such a track up
-    /// again; an admin can still download its lyrics at any time.
+    /// or listed the track as instrumental), because LRCLIB grows over time. Tracks that already had lyrics in their
+    /// tags are checked again after the same wait (and at once when a scan read their files after the check); LRCLIB
+    /// is asked only if the tags lost their lyrics. Zero or less never looks such a track up again after a wait; an
+    /// admin can still download its lyrics at any time.
     /// </summary>
     public TimeSpan LookUpAgainAfter { get; set; } = TimeSpan.FromDays(30);
 
