@@ -150,10 +150,11 @@ public class FfmpegTranscodeTests
             durationSeconds: DurationSeconds);
         TranscodeVariant variant = TestVariants.Video(Input(path, 320, 240));
 
-        Probe first = await ProbeSegmentAsync(variant, 0);
+        // The first request starts the transcode at the segment, as a seek does. After a request for the first
+        // segment, whether the next one seeks would depend on how far ffmpeg got in the meantime.
         Probe seek = await ProbeSegmentAsync(variant, 3);
 
-        first.Codecs.Should().BeEquivalentTo("h264", "aac");
+        _cache.CommitCount.Should().Be(1, "only the requested segment was transcoded");
         seek.Codecs.Should().BeEquivalentTo("h264", "aac");
         seek.StartTime.Should().BeInRange(5.9, 8.0, "the segment keeps its position in the file");
     }

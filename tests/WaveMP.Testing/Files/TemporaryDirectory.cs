@@ -39,14 +39,14 @@ public sealed class TemporaryDirectory : IDisposable
             return;
         }
 
-        // Read-only files cannot be deleted on Windows.
-        foreach (string file in Directory.EnumerateFiles(Path, "*", SearchOption.AllDirectories))
-        {
-            File.SetAttributes(file, FileAttributes.Normal);
-        }
-
         try
         {
+            // Read-only files cannot be deleted on Windows.
+            foreach (string file in Directory.EnumerateFiles(Path, "*", SearchOption.AllDirectories))
+            {
+                File.SetAttributes(file, FileAttributes.Normal);
+            }
+
             Directory.Delete(Path, recursive: true);
         }
         catch (IOException)
