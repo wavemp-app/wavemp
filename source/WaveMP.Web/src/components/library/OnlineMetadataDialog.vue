@@ -326,7 +326,8 @@ async function apply(): Promise<void> {
         const coverChanged =
             cover === OnlineCoverOutcomeObject.MediaFolder ||
             cover === OnlineCoverOutcomeObject.DataFolder
-        if (coverChanged) {
+        // Written tags may move songs into other albums, which may show other covers.
+        if (coverChanged || tags.value) {
             covers.invalidate()
         }
         results.value = messages

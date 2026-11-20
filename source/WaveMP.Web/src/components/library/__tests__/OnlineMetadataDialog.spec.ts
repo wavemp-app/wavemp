@@ -212,6 +212,21 @@ describe('OnlineMetadataDialog', () => {
         wrapper.unmount()
     })
 
+    it('loads the covers again after writing tags, since the song may belong to another album', async () => {
+        api.applyTrackOnline.mockResolvedValue({ cover: 'None' })
+        const wrapper = await mountDialog({ hasCover: true })
+        const invalidate = vi.spyOn(useCoversStore(), 'invalidate')
+
+        await checkbox(wrapper, 'year').setValue(true)
+        await applyButton(wrapper).trigger('click')
+        await flushPromises()
+
+        expect(api.applyTrackOnline.mock.calls[0]![1]).not.toBeNull()
+        expect(api.applyTrackOnline.mock.calls[0]![2]).toBeNull()
+        expect(invalidate).toHaveBeenCalledTimes(1)
+        wrapper.unmount()
+    })
+
     it('loads the fields and the cover of another match', async () => {
         const wrapper = await mountDialog()
 

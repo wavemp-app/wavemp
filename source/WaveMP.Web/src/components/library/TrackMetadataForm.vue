@@ -24,6 +24,7 @@ import {
     type MetadataField,
     type MetadataForm,
 } from '@/library/metadata'
+import { useCoversStore } from '@/stores/covers'
 
 /**
  * The metadata editor of a track for admins, used in the dialog of a song and in the review
@@ -31,7 +32,8 @@ import {
  * are written into the tags of the audio file of the track; without an audio file or if it cannot
  * be written, the fields are disabled with a hint. Only changed fields are sent; empty fields
  * remove the value from the tags. The buttons belong to the page or dialog around it: a submit
- * button with the form id saves.
+ * button with the form id saves. A write may move the song into another album, so the loaded covers
+ * of albums and songs are loaded again.
  */
 export type MetadataSaveOutcome = 'saved' | 'unchanged' | 'invalid' | 'failed' | 'busy'
 
@@ -54,6 +56,7 @@ const emit = defineEmits<{
 }>()
 
 const { t } = useI18n()
+const covers = useCoversStore()
 const fallbackId = useId()
 const id = computed(() => props.formId ?? fallbackId)
 
@@ -198,6 +201,7 @@ async function save(): Promise<MetadataSaveOutcome> {
     saving.value = true
     try {
         const saved = await updateTrackMetadata(props.trackId, changes)
+        covers.invalidate()
         if (saved) {
             apply(saved)
             emit('saved', saved)

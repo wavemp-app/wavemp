@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
+import { createPinia, setActivePinia } from 'pinia'
 import type { TrackMetadata } from '@/api/generated/models'
 import { createWaveMpI18n } from '@/i18n'
 
@@ -11,6 +12,7 @@ const api = vi.hoisted(() => ({
 vi.mock('@/library/api', () => api)
 
 const TrackMetadataDialog = (await import('../TrackMetadataDialog.vue')).default
+const { useCoversStore } = await import('@/stores/covers')
 
 const metadata: TrackMetadata = {
     trackId: 'song',
@@ -58,6 +60,7 @@ function saveButton(wrapper: Wrapper) {
 
 describe('TrackMetadataDialog', () => {
     beforeEach(() => {
+        setActivePinia(createPinia())
         api.getTrackMetadata.mockReset()
         api.updateTrackMetadata.mockReset()
         api.getTrackMetadata.mockResolvedValue(metadata)
@@ -121,13 +124,28 @@ describe('TrackMetadataDialog', () => {
         wrapper.unmount()
     })
 
+    it('loads the covers again after a write, since the song may belong to another album', async () => {
+        api.updateTrackMetadata.mockResolvedValue({ ...metadata, artist: 'Other Band' })
+        const wrapper = await mountDialog()
+        const invalidate = vi.spyOn(useCoversStore(), 'invalidate')
+
+        await input(wrapper, 'artist').setValue('Other Band')
+        await submit(wrapper)
+
+        expect(invalidate).toHaveBeenCalledTimes(1)
+        expect(invalidate).toHaveBeenCalledWith()
+        wrapper.unmount()
+    })
+
     it('closes without a request if nothing changed', async () => {
         const wrapper = await mountDialog()
+        const invalidate = vi.spyOn(useCoversStore(), 'invalidate')
 
         await input(wrapper, 'artist').setValue(' Band ')
         await submit(wrapper)
 
         expect(api.updateTrackMetadata).not.toHaveBeenCalled()
+        expect(invalidate).not.toHaveBeenCalled()
         expect(wrapper.emitted('update:open')?.at(-1)).toEqual([false])
         wrapper.unmount()
     })
