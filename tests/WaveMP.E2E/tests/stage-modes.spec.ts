@@ -1,4 +1,5 @@
 import {
+    devices,
     expect,
     test,
     type APIRequestContext,
@@ -6,6 +7,7 @@ import {
     type Page,
     type Request,
 } from '@playwright/test'
+import { shippedThemeTargets, themeProfileName, type ThemeTarget } from '../screenshots/themes'
 import {
     adminHeaders,
     createUser,
@@ -14,6 +16,7 @@ import {
     uniqueSuffix,
     type TestUser,
 } from './helpers/api'
+import { loadVideosOnlyWhenPlayed } from './helpers/media'
 import { homeUrl, profileTile } from './helpers/navigation'
 import { adminStorageState, emptyStorageState } from './helpers/storage'
 
@@ -316,6 +319,111 @@ test.describe('with a profile of its own', () => {
             await expect(stage).toHaveAttribute('data-state', 'visualization')
             await expect(viewSegment(page, 'visualization')).toHaveAttribute('aria-checked', 'true')
         })
+    })
+})
+
+/**
+ * Chooses the views of the stage by tap on a phone in every shipped theme: the video, the cover,
+ * the visualization and the video again, while the song plays on.
+ */
+function tapThroughTheViews(phone: string): void {
+    for (const target of shippedThemeTargets()) {
+        test(`switches the view by tap in ${target.name} (${target.variant})`, async ({
+            page,
+            request,
+        }) => {
+            test.skip(
+                test.info().project.name !== 'mobile',
+                'Runs in the project of the phone only',
+            )
+            const user = await createThemedUser(request, target, phone)
+            try {
+                await page.goto('/profiles')
+                await profileTile(page, user.name).tap()
+                await expect(page).toHaveURL(homeUrl)
+                await expect(page.locator('html')).toHaveAttribute('data-theme', target.theme)
+                await expect(page.locator('html')).toHaveAttribute(
+                    'data-theme-variant',
+                    target.variant,
+                )
+
+                await page.goto(`/library/tracks/${await findTrackId(request, 'Loose Song')}`)
+                await part(page, 'detail-actions').locator("[data-item='play']").tap()
+                await expect(part(page, 'now-playing-title').first()).toHaveText('Loose Song')
+                await page
+                    .locator("[data-part='app'] a[href='/now-playing']")
+                    .filter({ visible: true })
+                    .tap()
+                await expect(page).toHaveURL(/\/now-playing$/)
+
+                // A new profile starts with the video; it is shown once it follows the audio.
+                const stage = part(page, 'stage')
+                await expect(stage).toHaveAttribute('data-state', 'video', { timeout: 15_000 })
+                await expectVideoInSync(page)
+
+                await viewSegment(page, 'cover').tap()
+                await expect(stage).toHaveAttribute('data-state', 'cover')
+                await expect(viewSegment(page, 'cover')).toHaveAttribute('aria-checked', 'true')
+                await expect(stageView(page, 'cover')).toHaveAttribute('data-state', 'active')
+
+                await viewSegment(page, 'visualization').tap()
+                await expect(stage).toHaveAttribute('data-state', 'visualization')
+                await expect(viewSegment(page, 'visualization')).toHaveAttribute(
+                    'aria-checked',
+                    'true',
+                )
+                await expect(part(page, 'visualization')).toBeVisible()
+
+                await viewSegment(page, 'video').tap()
+                await expect(stage).toHaveAttribute('data-state', 'video', { timeout: 15_000 })
+                await expect(viewSegment(page, 'video')).toHaveAttribute('aria-checked', 'true')
+                await expect(part(page, 'video')).toBeVisible()
+                await expectVideoInSync(page)
+                await expect(part(page, 'transport')).toHaveAttribute('data-state', /\bplaying\b/)
+                await expectStoredViewMode(request, user.id, 'Video')
+            } finally {
+                await deleteUser(request, user.id)
+            }
+        })
+    }
+}
+
+/** A profile of its own with the theme and variant of the target. */
+async function createThemedUser(
+    request: APIRequestContext,
+    target: ThemeTarget,
+    phone: string,
+): Promise<TestUser> {
+    const user = await createUser(request, `${themeProfileName(target)} ${phone} ${uniqueSuffix()}`)
+    const response = await request.patch('/api/v1/me/settings', {
+        data: {
+            language: 'en',
+            theme: { id: target.theme, appearance: target.variant === 'dark' ? 'Dark' : 'Light' },
+        },
+        headers: await sessionHeaders(request, user.id),
+    })
+    expect(response.status()).toBe(200)
+    return user
+}
+
+// The switch of the views by tap on the phones: Android in the project "mobile" (Pixel 7), and an
+// iPhone whose videos load like in Safari, only once they are played. Both run in the project
+// "mobile" only, which emulates touch and the mobile layout.
+test.describe('on a phone', () => {
+    test.use({ storageState: emptyStorageState, locale: 'en-US' })
+
+    test.describe('with Android', () => {
+        tapThroughTheViews('Android')
+    })
+
+    test.describe('with an iPhone', () => {
+        const { defaultBrowserType: _, ...iPhone } = devices['iPhone 13']
+        test.use(iPhone)
+        test.beforeEach(async ({ page }) => {
+            await loadVideosOnlyWhenPlayed(page)
+        })
+
+        tapThroughTheViews('iPhone')
     })
 })
 
