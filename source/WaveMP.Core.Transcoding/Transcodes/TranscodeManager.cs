@@ -306,14 +306,21 @@ internal sealed class TranscodeManager(
         }
         finally
         {
-            lock (_lock)
-            {
-                _jobs.Remove(job);
-            }
-
             job.Finish(state);
-            job.Process.Dispose();
-            cache.DeleteTemporaryDirectory(job.Folder);
+            try
+            {
+                job.Process.Dispose();
+                cache.DeleteTemporaryDirectory(job.Folder);
+            }
+            finally
+            {
+                // Only now, so Dispose also waits for the clean-up of a job that was stopped earlier, e.g. by a seek.
+                // An ended job no longer takes a slot or gets requests.
+                lock (_lock)
+                {
+                    _jobs.Remove(job);
+                }
+            }
         }
     }
 

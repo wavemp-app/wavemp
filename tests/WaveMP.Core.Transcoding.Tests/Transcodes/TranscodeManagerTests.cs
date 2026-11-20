@@ -358,6 +358,31 @@ public class TranscodeManagerTests
             .Should().Be(SegmentStatus.Unavailable);
     }
 
+    [Test]
+    public async Task Dispose_StoppedTranscodeStillCleaningUp_WaitsForTheCleanUp()
+    {
+        // A transcode stopped by a seek cleans up in the background while the new one runs.
+        _options.SegmentWaitTimeout = TimeSpan.FromMilliseconds(50);
+        using ManualResetEventSlim cleaning = new();
+        using ManualResetEventSlim release = new();
+        _cache.DeletingTemporaryDirectory = _ =>
+        {
+            cleaning.Set();
+            release.Wait(TimeSpan.FromSeconds(10));
+        };
+        await _manager.GetSegmentAsync(TestVariants.Video(), 0, null);
+        _manager.Cancel(_manager.ListJobs().Single().Id).Should().BeTrue();
+        cleaning.Wait(TimeSpan.FromSeconds(10)).Should().BeTrue();
+
+        var dispose = Task.Run(_manager.Dispose);
+
+        Task first = await Task.WhenAny(dispose, Task.Delay(TimeSpan.FromMilliseconds(200)));
+        first.Should().NotBeSameAs(dispose, "the stopped transcode is still cleaning up");
+        release.Set();
+        await dispose.WaitAsync(TimeSpan.FromSeconds(10));
+        Directory.Exists(_processes.Last.Folder).Should().BeFalse();
+    }
+
     private async Task<FakeFfmpegProcess> WaitForProcessAsync(int count)
     {
         await WaitUntilAsync(() => _processes.Started.Count >= count);

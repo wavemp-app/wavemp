@@ -13,6 +13,11 @@ internal sealed class FolderCacheStore(string rootPath) : ICacheStore
 
     public int CommitCount { get; private set; }
 
+    /// <summary>
+    /// Called with the folder before a temporary folder is deleted, e.g. to hold the clean-up of a transcode.
+    /// </summary>
+    public Action<string>? DeletingTemporaryDirectory { get; set; }
+
     public string TemporaryRoot => Path.Combine(RootPath, "tmp");
 
     public string GetAreaPath(CacheArea area)
@@ -56,6 +61,7 @@ internal sealed class FolderCacheStore(string rootPath) : ICacheStore
 
     public void DeleteTemporaryDirectory(string path)
     {
+        DeletingTemporaryDirectory?.Invoke(path);
         if (Directory.Exists(path))
         {
             Directory.Delete(path, recursive: true);
@@ -65,8 +71,17 @@ internal sealed class FolderCacheStore(string rootPath) : ICacheStore
     public bool Commit(CacheArea area, string name, string temporaryPath)
     {
         string target = PathOf(area, name);
-        Directory.CreateDirectory(Path.GetDirectoryName(target)!);
-        File.Move(temporaryPath, target, overwrite: true);
+        try
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(target)!);
+            File.Move(temporaryPath, target, overwrite: true);
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+        {
+            // Like the real cache: e.g. a segment that is read or replaced at the same time on Windows.
+            return false;
+        }
+
         CommitCount++;
         return true;
     }
