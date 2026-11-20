@@ -185,6 +185,7 @@ public class ModelTests
     [TestCase(nameof(UserSettings.SleepTimerFadeSeconds), 10)]
     [TestCase(nameof(UserSettings.AutoplayEnabled), true)]
     [TestCase(nameof(UserSettings.AutoplayIncludeVideoOnly), true)]
+    [TestCase(nameof(UserSettings.VideoAmbientMode), true)]
     [TestCase(nameof(UserSettings.VisualizationAutoChange), true)]
     [TestCase(nameof(UserSettings.VisualizationAutoChangeSeconds), 30)]
     public void UserSettings_PlaybackSettings_HaveTheDefaultsOfANewProfile(string property, object expected)
@@ -210,6 +211,7 @@ public class ModelTests
         settings.SleepTimerFadeSeconds.Should().Be(10);
         settings.AutoplayEnabled.Should().BeTrue();
         settings.AutoplayIncludeVideoOnly.Should().BeTrue();
+        settings.VideoAmbientMode.Should().BeTrue();
         settings.VisualizationModule.Should().Be(VisualizationModule.Milkdrop);
         settings.VisualizationPreset.Should().BeNull();
         settings.VisualizationAutoChange.Should().BeTrue();

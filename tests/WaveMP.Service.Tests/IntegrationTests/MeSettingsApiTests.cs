@@ -291,6 +291,25 @@ public class MeSettingsApiTests
             settings.Crossfade.AlbumsGapless.Should().BeTrue();
             settings.SleepTimer.FadeSeconds.Should().Be(10);
             settings.Autoplay.Should().BeEquivalentTo(new { Enabled = true, IncludeVideoOnly = true });
+            settings.Video.AmbientMode.Should().BeTrue();
+        }
+    }
+
+    [Test]
+    public async Task UpdateMySettings_WithVideoAmbientMode_KeepsItForTheProfileAndTheOtherSettings()
+    {
+        (Guid _, HttpClient client) = await CreateProfileAsync();
+        using (client)
+        {
+            await PatchAsync(client, new { autoplay = new { enabled = false } });
+
+            HttpResponseMessage response = await PatchAsync(client, new { video = new { ambientMode = false } });
+            UserSettingsDto read = await client.GetJsonAsync<UserSettingsDto>("/api/v1/me/settings");
+
+            response.StatusCode.Should().Be(HttpStatusCode.OK);
+            (await response.Content.ReadAsStringAsync()).Should().Contain("\"video\":{\"ambientMode\":false}");
+            read.Video.AmbientMode.Should().BeFalse();
+            read.Autoplay.Enabled.Should().BeFalse();
         }
     }
 

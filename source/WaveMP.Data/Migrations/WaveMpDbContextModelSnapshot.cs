@@ -1782,6 +1782,11 @@ namespace WaveMP.Data.Migrations
                         .HasDefaultValue("midnight")
                         .HasColumnName("theme_id");
 
+                    b.Property<bool>("VideoAmbientMode")
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true)
+                        .HasColumnName("video_ambient_mode");
+
                     b.Property<bool>("VisualizationAutoChange")
                         .HasColumnType("boolean")
                         .HasDefaultValue(true)

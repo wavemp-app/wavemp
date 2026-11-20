@@ -148,6 +148,12 @@ public class UserSettings
     public int VisualizationAutoChangeSeconds { get; set; } = 30;
 
     /// <summary>
+    /// Whether videos show the ambient light, soft light in the colors of the current picture, in the free area around
+    /// their picture; on by default.
+    /// </summary>
+    public bool VideoAmbientMode { get; set; } = true;
+
+    /// <summary>
     /// How much detail the visualization draws; <see cref="VisualizationQuality.Auto"/> by default, which lets the
     /// player choose the level by the frame rate of the device.
     /// </summary>

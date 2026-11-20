@@ -20672,6 +20672,17 @@
               }
             ]
           },
+          "video": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "Changes of the videos.",
+                "$ref": "#/components/schemas/UpdateVideoSettings"
+              }
+            ]
+          },
           "visualization": {
             "oneOf": [
               {
@@ -20685,6 +20696,19 @@
           }
         },
         "description": "Changes the settings of the current profile. Missing or null values stay unchanged, also within the groups."
+      },
+      "UpdateVideoSettings": {
+        "type": "object",
+        "properties": {
+          "ambientMode": {
+            "type": [
+              "null",
+              "boolean"
+            ],
+            "description": "Whether videos show the ambient light in the free area around their picture."
+          }
+        },
+        "description": "Changes the videos of the Now Playing view of the current profile. Missing or null values stay unchanged."
       },
       "UpdateVisualizationSettings": {
         "type": "object",
@@ -20844,6 +20868,7 @@
           "crossfade",
           "sleepTimer",
           "autoplay",
+          "video",
           "visualization"
         ],
         "type": "object",
@@ -20883,6 +20908,10 @@
           "autoplay": {
             "description": "Autoplay at the end of a list.",
             "$ref": "#/components/schemas/AutoplaySettings"
+          },
+          "video": {
+            "description": "Videos of the Now Playing view.",
+            "$ref": "#/components/schemas/VideoSettings"
           },
           "visualization": {
             "description": "Visualization of the Now Playing view.",
@@ -21016,6 +21045,19 @@
           "Matroska"
         ],
         "type": "string"
+      },
+      "VideoSettings": {
+        "required": [
+          "ambientMode"
+        ],
+        "type": "object",
+        "properties": {
+          "ambientMode": {
+            "type": "boolean",
+            "description": "Whether videos show the ambient light: soft light in the colors of the current picture in the free area around it; true by default. Clients that show videos without a free area around them ignore it."
+          }
+        },
+        "description": "Videos of the Now Playing view of the current profile."
       },
       "VisualizationModule": {
         "enum": [

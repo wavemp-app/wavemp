@@ -54,6 +54,11 @@ public sealed class UserSettingsDto
     public required AutoplaySettingsDto Autoplay { get; init; }
 
     /// <summary>
+    /// Videos of the Now Playing view.
+    /// </summary>
+    public required VideoSettingsDto Video { get; init; }
+
+    /// <summary>
     /// Visualization of the Now Playing view.
     /// </summary>
     public required VisualizationSettingsDto Visualization { get; init; }

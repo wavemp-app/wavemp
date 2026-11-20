@@ -146,6 +146,11 @@ internal sealed class UserSettingsService(IUserRepository users) : IUserSettings
         {
             settings.AutoplayIncludeVideoOnly = videoOnly;
         }
+
+        if (command.VideoAmbientMode is { } ambientMode)
+        {
+            settings.VideoAmbientMode = ambientMode;
+        }
     }
 
     private static void Validate(UpdateUserSettingsCommand command)

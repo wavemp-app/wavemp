@@ -179,6 +179,35 @@ public class UserSettingsServiceTests
         result.SleepTimerFadeSeconds.Should().Be(10);
         result.AutoplayEnabled.Should().BeTrue();
         result.AutoplayIncludeVideoOnly.Should().BeTrue();
+        result.VideoAmbientMode.Should().BeTrue();
+    }
+
+    [Test]
+    public async Task UpdateAsync_WithVideoAmbientMode_SavesItAndKeepsTheOtherSettings()
+    {
+        User user = Given("en");
+        user.Settings!.AutoplayEnabled = false;
+
+        UserSettings? result = await _service.UpdateAsync(
+            user.Id,
+            new UpdateUserSettingsCommand(VideoAmbientMode: false));
+
+        result!.VideoAmbientMode.Should().BeFalse();
+        result.AutoplayEnabled.Should().BeFalse();
+        await _users.Received(1).UpdateAsync(user, Arg.Any<CancellationToken>());
+    }
+
+    [Test]
+    public async Task UpdateAsync_WithoutVideoAmbientMode_KeepsIt()
+    {
+        User user = Given("en");
+        user.Settings!.VideoAmbientMode = false;
+
+        UserSettings? result = await _service.UpdateAsync(
+            user.Id,
+            new UpdateUserSettingsCommand(AutoplayEnabled: true));
+
+        result!.VideoAmbientMode.Should().BeFalse();
     }
 
     [Test]

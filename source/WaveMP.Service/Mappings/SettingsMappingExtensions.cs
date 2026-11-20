@@ -36,6 +36,7 @@ public static class SettingsMappingExtensions
                 Enabled = settings.AutoplayEnabled,
                 IncludeVideoOnly = settings.AutoplayIncludeVideoOnly,
             },
+            Video = new VideoSettingsDto { AmbientMode = settings.VideoAmbientMode },
             Visualization = new VisualizationSettingsDto
             {
                 Module = settings.VisualizationModule.ToDto(),
@@ -73,7 +74,8 @@ public static class SettingsMappingExtensions
             request.Theme?.Id,
             request.Theme?.Appearance?.ToEntity(),
             request.Autoplay?.Enabled,
-            request.Autoplay?.IncludeVideoOnly);
+            request.Autoplay?.IncludeVideoOnly,
+            request.Video?.AmbientMode);
     }
 
     public static ThemeAppearanceDto ToDto(this ThemeAppearance appearance)

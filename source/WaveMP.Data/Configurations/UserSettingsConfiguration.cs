@@ -105,6 +105,11 @@ internal sealed class UserSettingsConfiguration : IEntityTypeConfiguration<UserS
             .HasDefaultValue(true)
             .ValueGeneratedNever();
 
+        // The ambient light of videos is on for existing profiles as for new ones, like autoplay.
+        builder.Property(settings => settings.VideoAmbientMode)
+            .HasDefaultValue(true)
+            .ValueGeneratedNever();
+
         // Like the playback settings above: existing rows get the defaults of a new profile, and the entity always
         // writes its values (VisualizationAutoChange and VisualizationAutoChangeSeconds differ from the defaults of
         // their CLR types).

@@ -82,6 +82,7 @@ public class SettingsMappingExtensionsTests
             SleepTimerFadeSeconds = 45,
             AutoplayEnabled = false,
             AutoplayIncludeVideoOnly = true,
+            VideoAmbientMode = false,
         };
 
         UserSettingsDto dto = settings.ToDto();
@@ -97,6 +98,7 @@ public class SettingsMappingExtensionsTests
         dto.Crossfade.Should().BeEquivalentTo(new { Seconds = 8, AlbumsGapless = false });
         dto.SleepTimer.FadeSeconds.Should().Be(45);
         dto.Autoplay.Should().BeEquivalentTo(new { Enabled = false, IncludeVideoOnly = true });
+        dto.Video.AmbientMode.Should().BeFalse();
     }
 
     [Test]
@@ -126,6 +128,7 @@ public class SettingsMappingExtensionsTests
             Crossfade = new UpdateCrossfadeSettingsDto { Seconds = 4, AlbumsGapless = true },
             SleepTimer = new UpdateSleepTimerSettingsDto { FadeSeconds = 20 },
             Autoplay = new UpdateAutoplaySettingsDto { IncludeVideoOnly = false },
+            Video = new UpdateVideoSettingsDto { AmbientMode = false },
         };
 
         UpdateUserSettingsCommand command = request.ToCommand();
@@ -142,6 +145,7 @@ public class SettingsMappingExtensionsTests
             SleepTimerFadeSeconds = 20,
             AutoplayEnabled = (bool?)null,
             AutoplayIncludeVideoOnly = false,
+            VideoAmbientMode = false,
         });
     }
 

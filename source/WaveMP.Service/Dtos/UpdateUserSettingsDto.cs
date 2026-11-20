@@ -59,6 +59,11 @@ public sealed class UpdateUserSettingsDto
     public UpdateAutoplaySettingsDto? Autoplay { get; init; }
 
     /// <summary>
+    /// Changes of the videos.
+    /// </summary>
+    public UpdateVideoSettingsDto? Video { get; init; }
+
+    /// <summary>
     /// Changes of the visualization.
     /// </summary>
     public UpdateVisualizationSettingsDto? Visualization { get; init; }
