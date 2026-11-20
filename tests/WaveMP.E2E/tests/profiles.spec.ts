@@ -8,6 +8,7 @@ import {
     profileButton,
     profileTile,
 } from './helpers/navigation'
+import { chooseLanguage } from './helpers/settings'
 import { emptyStorageState } from './helpers/storage'
 
 // Selecting, remembering and switching profiles and the language per profile. These tests sign
@@ -82,7 +83,8 @@ test('keeps the language per profile', async ({ page }) => {
     await expect(page).toHaveURL(/\/settings$/)
     // One entry per translation file, each named in its own language.
     await expect(page.locator("[data-field='language'] option")).toHaveText(['Deutsch', 'English'])
-    await page.locator("[data-field='language'] [data-part='select']").selectOption('de')
+    // Waits until the language is saved: the songs page below must not load before it.
+    await chooseLanguage(page, 'de')
 
     await expect(page.locator('html')).toHaveAttribute('lang', 'de')
     expect(await navigationLabels(page)).toEqual(['Startseite', 'Aktuelle Wiedergabe', 'Bibliothek', 'Playlists'])
