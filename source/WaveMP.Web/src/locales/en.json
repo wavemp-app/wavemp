@@ -735,6 +735,18 @@
     "pinOn": "This profile is protected with a PIN.",
     "pinOff": "This profile has no PIN. Anyone can select it.",
     "openPin": "Set up the PIN",
+    "resume": {
+      "title": "Playback state",
+      "hint": "WaveMP remembers the queue and the position of this profile, so you can continue on any device, also after a reload.",
+      "clear": "Clear playback state",
+      "cleared": "The playback state is cleared. The player starts empty on every device.",
+      "clearError": "The playback state could not be cleared. Try again.",
+      "clearDialog": {
+        "title": "Clear playback state",
+        "text": "Stop playback here and forget the queue and the position of this profile? A device that is still playing saves its queue again.",
+        "confirm": "Clear"
+      }
+    },
     "avatar": "Profile picture",
     "avatarOn": "This profile shows a picture.",
     "avatarOff": "This profile shows its initials.",

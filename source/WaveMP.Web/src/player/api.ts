@@ -95,3 +95,8 @@ export function getPlaybackState(): Promise<PlaybackState | undefined> {
 export function savePlaybackState(state: UpdatePlaybackState): Promise<void> {
     return apiClient.api.v1.me.playbackState.put(state)
 }
+
+/** Clears the saved playback state of the current profile; succeeds also without one. */
+export function clearPlaybackState(): Promise<void> {
+    return apiClient.api.v1.me.playbackState.delete()
+}

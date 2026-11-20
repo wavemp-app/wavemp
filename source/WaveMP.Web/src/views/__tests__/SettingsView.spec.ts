@@ -8,8 +8,15 @@ import { FakeCastLayer } from '@/casting/__tests__/fakes'
 import { createWaveMpI18n } from '@/i18n'
 import { castDependencies } from '@/stores/cast'
 import { useHealthStore } from '@/stores/health'
+import { useResumeStore } from '@/stores/resume'
 import { useSessionStore } from '@/stores/session'
 import { appVersion } from '@/version'
+
+vi.mock('@/player/api', () => ({
+    getPlaybackState: vi.fn(() => Promise.resolve(undefined)),
+    savePlaybackState: vi.fn(() => Promise.resolve()),
+    clearPlaybackState: vi.fn(() => Promise.resolve()),
+}))
 
 vi.mock('@/profiles/avatarApi', () => ({
     listAvatarPresets: vi.fn(() => Promise.resolve(['bubble'])),
@@ -606,5 +613,40 @@ describe('SettingsView PIN', () => {
 
         expect(wrapper.get('[data-part="dialog"][data-item="avatar"]').isVisible()).toBe(true)
         expect(wrapper.find('[data-part="avatar-editor"]').exists()).toBe(true)
+    })
+
+    it('clears the playback state after the confirmation', async () => {
+        const { wrapper } = mountView()
+        const resume = useResumeStore()
+        const clear = vi.spyOn(resume, 'clear').mockResolvedValue()
+        const section = wrapper.get('[data-part="section"][data-item="resume"]')
+        const dialog = wrapper.get('[data-part="dialog"][data-item="clear-playback-state"]')
+
+        expect(section.get('[data-part="section-title"]').text()).toBe('Playback state')
+        await section.get('[data-item="clear-playback-state"]').trigger('click')
+        await flushPromises()
+        expect(clear).not.toHaveBeenCalled()
+        expect(dialog.get('[data-part="dialog-title"]').text()).toBe('Clear playback state')
+
+        await dialog.get('[data-item="confirm-clear-playback-state"]').trigger('click')
+        await flushPromises()
+
+        expect(clear).toHaveBeenCalledOnce()
+        expect(section.get('[data-part="alert"]').attributes('data-state')).toBe('success')
+        expect(section.get('[data-part="alert"]').text()).toContain(
+            'The playback state is cleared.',
+        )
+    })
+
+    it('reports when the playback state cannot be cleared', async () => {
+        const { wrapper } = mountView()
+        vi.spyOn(useResumeStore(), 'clear').mockRejectedValue(new Error('offline'))
+
+        await wrapper.get('[data-item="confirm-clear-playback-state"]').trigger('click')
+        await flushPromises()
+
+        const alert = wrapper.get('[data-item="resume"] [data-part="alert"]')
+        expect(alert.attributes('data-state')).toBe('error')
+        expect(alert.text()).toContain('The playback state could not be cleared.')
     })
 })

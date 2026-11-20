@@ -3,7 +3,7 @@ import { ref, watch } from 'vue'
 import type { PlaybackState } from '@/api/generated/models'
 import { createLatestValueSender } from '@/api/latestValue'
 import { statusOf } from '@/api/problems'
-import { getPlaybackState, savePlaybackState } from '@/player/api'
+import { clearPlaybackState, getPlaybackState, savePlaybackState } from '@/player/api'
 import { deviceId, deviceName } from '@/player/device'
 import {
     fromSavedState,
@@ -51,6 +51,9 @@ export interface ResumeNotice {
  * when something changed. Saves go out one after the other, only the latest waits. The most
  * recently changed state wins: when another device saved a newer one, or when the page comes back
  * to the front while nothing plays here, the player takes over the newer state of the other device.
+ *
+ * Clearing the saved state (in the settings) stops the player here and empties its queue first, so
+ * this device does not save it again; the next start begins without a queue.
  */
 export const useResumeStore = defineStore('resume', () => {
     const session = useSessionStore()
@@ -73,6 +76,8 @@ export const useResumeStore = defineStore('resume', () => {
     let foreign = false
     let delayed: number | null = null
     let ticker: number | null = null
+    /** The latest save handed to the sender; clearing waits until it has reached the server. */
+    let pending: Promise<unknown> = Promise.resolve()
 
     const sender = createLatestValueSender((state: SavedState) =>
         // Without a time of change the server takes the time the save arrives, so clocks of the
@@ -184,7 +189,9 @@ export const useResumeStore = defineStore('resume', () => {
         lastSignature = signature
         const own = generation
         foreign = false
-        sender.send(state).catch((error: unknown) => {
+        const saved = sender.send(state)
+        pending = saved.catch(() => undefined)
+        saved.catch((error: unknown) => {
             if (own !== generation) {
                 return
             }
@@ -233,6 +240,24 @@ export const useResumeStore = defineStore('resume', () => {
 
     function dismiss(): void {
         notice.value = null
+    }
+
+    /**
+     * Forgets where the profile stopped listening: stops the player and empties its queue, waits
+     * for a save on its way (it would bring the state back) and clears the saved state. Fails if
+     * the server cannot clear it; the player stays empty then.
+     */
+    async function clear(): Promise<void> {
+        cancelDelayed()
+        notice.value = null
+        player.clear()
+        await pending
+        sender.reset()
+        lastSignature = null
+        adoptedChangedAt = null
+        adoptedKey = null
+        foreign = false
+        await clearPlaybackState()
     }
 
     // A new session (another profile, or none) loads its own state.
@@ -300,5 +325,5 @@ export const useResumeStore = defineStore('resume', () => {
         window.addEventListener('focus', () => void checkOtherDevices())
     }
 
-    return { notice, device, resume, dismiss, saveNow, checkOtherDevices }
+    return { notice, device, resume, dismiss, clear, saveNow, checkOtherDevices }
 })

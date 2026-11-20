@@ -735,6 +735,18 @@
     "pinOn": "Dieses Profil ist mit einer PIN geschützt.",
     "pinOff": "Dieses Profil hat keine PIN. Jeder kann es auswählen.",
     "openPin": "PIN einrichten",
+    "resume": {
+      "title": "Wiedergabestand",
+      "hint": "WaveMP merkt sich die Warteschlange und die Position dieses Profils, damit du auf jedem Gerät und nach dem Neuladen weiterhören kannst.",
+      "clear": "Wiedergabestand löschen",
+      "cleared": "Der Wiedergabestand ist gelöscht. Der Player startet auf jedem Gerät leer.",
+      "clearError": "Der Wiedergabestand konnte nicht gelöscht werden. Versuche es noch einmal.",
+      "clearDialog": {
+        "title": "Wiedergabestand löschen",
+        "text": "Die Wiedergabe hier beenden und die Warteschlange und die Position dieses Profils vergessen? Ein Gerät, das noch spielt, speichert seine Warteschlange erneut.",
+        "confirm": "Löschen"
+      }
+    },
     "avatar": "Profilbild",
     "avatarOn": "Dieses Profil zeigt ein Bild.",
     "avatarOff": "Dieses Profil zeigt seine Initialen.",

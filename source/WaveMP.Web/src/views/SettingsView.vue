@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n'
 import BaseAlert from '@/components/base/BaseAlert.vue'
 import BaseButton from '@/components/base/BaseButton.vue'
 import BaseCheckbox from '@/components/base/BaseCheckbox.vue'
+import BaseDialog from '@/components/base/BaseDialog.vue'
 import BaseLink from '@/components/base/BaseLink.vue'
 import BaseSegmentedField from '@/components/base/BaseSegmentedField.vue'
 import type { SegmentOption } from '@/components/base/BaseSegmentedControl.vue'
@@ -26,6 +27,7 @@ import { maxCrossfadeSeconds, type CrossfadeSettings } from '@/player/crossfade'
 import { useCastStore } from '@/stores/cast'
 import { useEqualizerStore } from '@/stores/equalizer'
 import { useHealthStore } from '@/stores/health'
+import { useResumeStore } from '@/stores/resume'
 import { useSessionStore } from '@/stores/session'
 import { isThemeAppearance } from '@/themes/choice'
 import {
@@ -44,6 +46,7 @@ const session = useSessionStore()
 const equalizer = useEqualizerStore()
 const health = useHealthStore()
 const cast = useCastStore()
+const resume = useResumeStore()
 const format = useFormat()
 
 const aboutTitleId = useId()
@@ -52,10 +55,37 @@ const themeLabelId = useId()
 const themeHintId = useId()
 const avatarTitleId = useId()
 const pinTitleId = useId()
+const resumeTitleId = useId()
 const scrobblingTitleId = useId()
 const subsonicTitleId = useId()
 
 const avatarOpen = ref(false)
+
+const clearResumeOpen = ref(false)
+const clearingResume = ref(false)
+const resumeMessage = ref<{ tone: 'success' | 'error'; text: string } | null>(null)
+
+/**
+ * Clears the playback state of the profile: the player here stops and empties, and the next
+ * start begins without a queue on every device.
+ */
+async function clearResume(): Promise<void> {
+    if (clearingResume.value) {
+        return
+    }
+
+    clearingResume.value = true
+    resumeMessage.value = null
+    try {
+        await resume.clear()
+        resumeMessage.value = { tone: 'success', text: t('settings.resume.cleared') }
+    } catch {
+        resumeMessage.value = { tone: 'error', text: t('settings.resume.clearError') }
+    } finally {
+        clearingResume.value = false
+        clearResumeOpen.value = false
+    }
+}
 
 /** The own profile as the avatar dialog shows it. */
 const avatarProfile = computed<AvatarDialogProfile | null>(() => {
@@ -455,6 +485,43 @@ async function changeSleepTimerFade(value: string): Promise<void> {
                 @update:model-value="changeQuality"
             />
         </form>
+        <section data-part="section" data-item="resume" :aria-labelledby="resumeTitleId">
+            <h2 :id="resumeTitleId" data-part="section-title">
+                {{ t('settings.resume.title') }}
+            </h2>
+            <p data-part="form-note">{{ t('settings.resume.hint') }}</p>
+            <BaseAlert
+                v-if="resumeMessage"
+                :tone="resumeMessage.tone"
+                :message="resumeMessage.text"
+            />
+            <div data-part="view-actions">
+                <BaseButton
+                    data-item="clear-playback-state"
+                    icon="clear-queue"
+                    :label="t('settings.resume.clear')"
+                    :disabled="clearingResume"
+                    @click="clearResumeOpen = true"
+                />
+            </div>
+        </section>
+        <BaseDialog
+            v-model:open="clearResumeOpen"
+            data-item="clear-playback-state"
+            :title="t('settings.resume.clearDialog.title')"
+        >
+            <p>{{ t('settings.resume.clearDialog.text') }}</p>
+            <template #footer>
+                <BaseButton :label="t('actions.cancel')" @click="clearResumeOpen = false" />
+                <BaseButton
+                    variant="primary"
+                    data-item="confirm-clear-playback-state"
+                    :label="t('settings.resume.clearDialog.confirm')"
+                    :disabled="clearingResume"
+                    @click="clearResume"
+                />
+            </template>
+        </BaseDialog>
         <section data-part="section" data-item="avatar" :aria-labelledby="avatarTitleId">
             <h2 :id="avatarTitleId" data-part="section-title">{{ t('settings.avatar') }}</h2>
             <p data-part="form-note" data-field="avatar-status">

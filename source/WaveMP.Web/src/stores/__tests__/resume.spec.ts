@@ -11,6 +11,7 @@ import {
 } from '@/api/generated/models'
 import type { EngineEvents } from '@/player/engine'
 import {
+    clearPlaybackState,
     getPlayback,
     getPlaybackState,
     recordPlay,
@@ -33,6 +34,7 @@ vi.mock('@/player/api', () => ({
     reportNowPlaying: vi.fn(),
     getPlaybackState: vi.fn(),
     savePlaybackState: vi.fn(),
+    clearPlaybackState: vi.fn(),
 }))
 
 class FakeEngine implements PlayerEngine {
@@ -164,6 +166,7 @@ describe('resume store', () => {
         vi.mocked(reportNowPlaying).mockReset().mockResolvedValue(undefined)
         vi.mocked(getPlaybackState).mockReset()
         vi.mocked(savePlaybackState).mockReset().mockResolvedValue(undefined)
+        vi.mocked(clearPlaybackState).mockReset().mockResolvedValue(undefined)
         playerDependencies.createEngine = (events) => (engine = new FakeEngine(events))
         playerDependencies.audioFormats = () => ['Mp3']
         playerDependencies.random = () => 0
@@ -450,6 +453,67 @@ describe('resume store', () => {
             await flushPromises()
 
             expect(player.current?.track.id).toBe('b')
+        })
+    })
+
+    describe('clearing', () => {
+        it('empties the player and clears the saved state without saving it again', async () => {
+            const { player, resume } = await start(
+                saved({ device: { id: 'phone', name: 'iPhone' } }),
+            )
+            expect(resume.notice).not.toBeNull()
+            player.play()
+            await flushPromises()
+            vi.mocked(savePlaybackState).mockClear()
+
+            await resume.clear()
+            timers.runTimeouts()
+            timers.tick()
+            await flushPromises()
+
+            expect(clearPlaybackState).toHaveBeenCalledOnce()
+            expect(player.queue.items).toEqual([])
+            expect(player.playback).toBe('idle')
+            expect(resume.notice).toBeNull()
+            expect(timers.intervals.size).toBe(0)
+            expect(savePlaybackState).not.toHaveBeenCalled()
+        })
+
+        it('waits for a save on its way before it clears the state', async () => {
+            const { player, resume } = await start(notFound())
+            let finishSave: () => void = () => undefined
+            vi.mocked(savePlaybackState).mockImplementation(
+                () => new Promise<void>((resolve) => (finishSave = resolve)),
+            )
+            player.playTracks(abc, 0)
+            await flushPromises()
+            expect(savePlaybackState).toHaveBeenCalledOnce()
+
+            const cleared = resume.clear()
+            await flushPromises()
+            expect(clearPlaybackState).not.toHaveBeenCalled()
+
+            finishSave()
+            await cleared
+            expect(clearPlaybackState).toHaveBeenCalledOnce()
+        })
+
+        it('saves the next list again after clearing', async () => {
+            const { player, resume } = await start(saved())
+            await resume.clear()
+            vi.mocked(savePlaybackState).mockClear()
+
+            player.playTracks(abc, 2)
+            await flushPromises()
+
+            expect(savedBodies().map((body) => body.currentIndex)).toEqual([2])
+        })
+
+        it('passes on a failure of the server', async () => {
+            const { resume } = await start(notFound())
+            vi.mocked(clearPlaybackState).mockRejectedValue(new Error('offline'))
+
+            await expect(resume.clear()).rejects.toThrow('offline')
         })
     })
 })
