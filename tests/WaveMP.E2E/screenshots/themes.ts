@@ -171,6 +171,11 @@ export interface ThemeView {
      * lists every profile of the instance, so the regression leaves it out.
      */
     readonly stable: boolean
+    /**
+     * Areas of the app (parts below `app`) photographed on their own as well, e.g. the bottom
+     * navigation, so a change of them shows clearly; the file name is "<view>-<part>".
+     */
+    readonly details?: readonly string[]
     /** Opens the view; the page has the session of the theme profile. */
     open(page: Page, request: APIRequestContext): Promise<void>
 }
@@ -305,6 +310,7 @@ export const themeViews: readonly ThemeView[] = [
         name: 'phone-now-playing',
         device: 'phone',
         stable: true,
+        details: ['bottom-nav'],
         open: openNowPlaying,
     },
     {
@@ -323,6 +329,11 @@ export const themeViews: readonly ThemeView[] = [
         open: openShortcuts,
     },
 ]
+
+/** The area of the app shown in a detail screenshot of a view. */
+export function detailLocator(page: Page, detail: string): Locator {
+    return page.locator(`[data-part='app'] > [data-part='${detail}']`)
+}
 
 /** Selects the profile on the profile selection, so the page has its session. */
 export async function enterAs(page: Page, profile: ThemeProfile): Promise<void> {

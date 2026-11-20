@@ -4,6 +4,7 @@ import { checkContrast, formatContrastFailures } from '../../screenshots/contras
 import {
     createThemeProfile,
     deleteThemeProfile,
+    detailLocator,
     dynamicParts,
     shippedThemeTargets,
     targetKey,
@@ -16,7 +17,8 @@ import { cutStatLabels, formatCutLabels } from '../helpers/labels'
 // Screenshot and contrast regression of the shipped themes: every theme and variant shows the
 // views of screenshots/themes.ts on the desktop and on a phone, with a profile of its own that
 // uses the theme. Each view must reach the contrast of WCAG 2.2 AA (screenshots/contrast.ts), show
-// the labels of its status tiles in full and match its baseline in tests/themes/baselines.
+// the labels of its status tiles in full and match its baseline in tests/themes/baselines. Areas
+// a view names in `details` (e.g. the bottom navigation on the phone) have baselines of their own.
 //
 // The baselines are taken in the Playwright image of the CI (fonts and rendering of Linux), so
 // the screenshots are compared only there (CI) or when E2E_VISUAL=1 asks for it, and only views
@@ -65,22 +67,31 @@ for (const target of shippedThemeTargets()) {
                         )
                         .toEqual([])
 
-                    const name = `${targetKey(target)}-${view.name}.png`
-                    if (
-                        updating ||
-                        (compare &&
-                            existsSync(
-                                testInfo.snapshotPath(name, {
-                                    kind: 'screenshot',
-                                }),
-                            ))
-                    ) {
-                        await expect.soft(page).toHaveScreenshot(name, {
-                            animations: 'disabled',
-                            caret: 'hide',
-                            mask: dynamicParts(page),
-                            maxDiffPixelRatio: 0.005,
-                        })
+                    // The view, and the areas of it photographed on their own.
+                    const shots = [
+                        { name: `${targetKey(target)}-${view.name}.png`, subject: page },
+                        ...(view.details ?? []).map((detail) => ({
+                            name: `${targetKey(target)}-${view.name}-${detail}.png`,
+                            subject: detailLocator(page, detail),
+                        })),
+                    ]
+                    for (const { name, subject } of shots) {
+                        if (
+                            updating ||
+                            (compare &&
+                                existsSync(
+                                    testInfo.snapshotPath(name, {
+                                        kind: 'screenshot',
+                                    }),
+                                ))
+                        ) {
+                            await expect.soft(subject).toHaveScreenshot(name, {
+                                animations: 'disabled',
+                                caret: 'hide',
+                                mask: dynamicParts(page),
+                                maxDiffPixelRatio: 0.005,
+                            })
+                        }
                     }
                 },
             )
