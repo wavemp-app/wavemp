@@ -330,13 +330,19 @@ a[data-part='breadcrumb-link']:hover {
     border-radius: 0;
 }
 
+/* Headings of the list; the current one keeps the white text of the teal bar below. */
 [data-part='tree'] > [data-part='tree-node'] > [data-part='tree-item'],
 [data-part='tree-node'] > [data-part='tree-item'][aria-expanded] {
-    color: #3f454c;
     font-weight: var(--wmp-font-weight-bold);
 }
 
-[data-part='tree-item']:hover:not([aria-disabled='true']) {
+[data-part='tree'] > [data-part='tree-node'] > [data-part='tree-item']:not([aria-current='page']),
+[data-part='tree-node'] > [data-part='tree-item'][aria-expanded]:not([aria-current='page']) {
+    color: #3f454c;
+}
+
+/* The current entry keeps its teal bar under the pointer, so its white text stays readable. */
+[data-part='tree-item']:hover:not([aria-disabled='true'], [aria-current='page']) {
     background: rgb(255 255 255 / 55%);
 }
 
