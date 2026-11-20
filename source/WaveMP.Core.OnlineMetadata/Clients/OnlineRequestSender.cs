@@ -45,11 +45,6 @@ internal sealed class OnlineRequestSender(
                 return OnlineResponse<byte[]>.Failed(OnlineStatus.Disabled);
             }
 
-            if (queued)
-            {
-                await queue.WaitAsync(cancellationToken);
-            }
-
             TimeSpan? retryAfter;
             try
             {
@@ -59,10 +54,7 @@ internal sealed class OnlineRequestSender(
                     request.Headers.UserAgent.Add(product);
                 }
 
-                using HttpResponseMessage response = await http.SendAsync(
-                    request,
-                    HttpCompletionOption.ResponseHeadersRead,
-                    cancellationToken);
+                using HttpResponseMessage response = await SendAsync(request, queued, cancellationToken);
                 if (response.StatusCode == HttpStatusCode.NotFound)
                 {
                     return OnlineResponse<byte[]>.Failed(OnlineStatus.NotFound);
@@ -108,6 +100,24 @@ internal sealed class OnlineRequestSender(
             ? named
             : baseDelay * Math.Pow(2, Math.Max(0, attempt - 1));
         return wait > maxDelay ? maxDelay : wait;
+    }
+
+    /// <summary>
+    /// Sends <paramref name="request"/> and returns once the headers of the answer are there; a queued request holds
+    /// its turn in the queue of MusicBrainz until then, so requests start strictly one after the other.
+    /// </summary>
+    private async Task<HttpResponseMessage> SendAsync(
+        HttpRequestMessage request,
+        bool queued,
+        CancellationToken cancellationToken)
+    {
+        if (!queued)
+        {
+            return await http.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+        }
+
+        using IDisposable turn = await queue.EnterAsync(cancellationToken);
+        return await http.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
     }
 
     private async Task<OnlineResponse<byte[]>> ReadAsync(

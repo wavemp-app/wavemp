@@ -16,9 +16,11 @@ internal sealed class MusicBrainzRequestQueue(
     private DateTimeOffset? _last;
 
     /// <summary>
-    /// Waits until the next request may start; the caller sends it right after.
+    /// Waits until the next request may start and returns its turn. The caller sends the request while it holds the
+    /// turn and disposes it once the request is sent, so the next request cannot start before this one has left and
+    /// the interval counts from the real start of each request.
     /// </summary>
-    public async Task WaitAsync(CancellationToken cancellationToken)
+    public async Task<IDisposable> EnterAsync(CancellationToken cancellationToken)
     {
         await _gate.WaitAsync(cancellationToken);
         try
@@ -33,10 +35,12 @@ internal sealed class MusicBrainzRequestQueue(
             }
 
             _last = timeProvider.GetUtcNow();
+            return new Turn(_gate);
         }
-        finally
+        catch
         {
             _gate.Release();
+            throw;
         }
     }
 
@@ -46,5 +50,21 @@ internal sealed class MusicBrainzRequestQueue(
     internal static TimeSpan WaitTime(DateTimeOffset? last, DateTimeOffset now, TimeSpan interval)
     {
         return last is { } previous && previous + interval > now ? previous + interval - now : TimeSpan.Zero;
+    }
+
+    /// <summary>
+    /// The turn of one request; disposing it lets the next request in, once.
+    /// </summary>
+    private sealed class Turn(SemaphoreSlim gate) : IDisposable
+    {
+        private int _released;
+
+        public void Dispose()
+        {
+            if (Interlocked.Exchange(ref _released, 1) == 0)
+            {
+                gate.Release();
+            }
+        }
     }
 }

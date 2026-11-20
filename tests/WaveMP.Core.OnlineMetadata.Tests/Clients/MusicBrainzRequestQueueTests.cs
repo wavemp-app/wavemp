@@ -34,6 +34,23 @@ public class MusicBrainzRequestQueueTests
     }
 
     [Test]
+    public async Task Search_AfterFailedRequest_NextRequestGetsItsTurn()
+    {
+        using OnlineClients clients = new(new OnlineMetadataSettings
+        {
+            Enabled = true,
+            MusicBrainzRequestIntervalMilliseconds = 0,
+        });
+        clients.Handler.Fail(new HttpRequestException("No route to host")).Respond(HttpStatusCode.OK, Empty);
+
+        await clients.MusicBrainz.SearchRecordingsAsync("first");
+        await clients.MusicBrainz.SearchRecordingsAsync("second").WaitAsync(TimeSpan.FromSeconds(10));
+
+        clients.Handler.Requests.Should().HaveCount(2);
+        clients.Clock.Delays.Should().Equal(TimeSpan.FromSeconds(1));
+    }
+
+    [Test]
     public async Task Search_OwnMirrorWithInterval_KeepsItsInterval()
     {
         using OnlineClients clients = new(new OnlineMetadataSettings
