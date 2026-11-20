@@ -59,7 +59,7 @@ export interface Album extends AdditionalDataHolder, Parsable {
      */
     id?: Guid | null;
     /**
-     * Tracks of several artists without a common album artist. Clients show their own text for it.
+     * Tracks of several artists without a common album artist. Always false since an album is identified by one artist and title; kept for compatibility.
      */
     isCompilation?: boolean | null;
     /**
@@ -113,7 +113,7 @@ export interface AlbumReference extends AdditionalDataHolder, Parsable {
      */
     id?: Guid | null;
     /**
-     * Tracks of several artists without a common album artist. Clients show their own text for it.
+     * Tracks of several artists without a common album artist. Always false since an album is identified by one artist and title; kept for compatibility.
      */
     isCompilation?: boolean | null;
     /**
@@ -9464,7 +9464,7 @@ export interface Track extends AdditionalDataHolder, Parsable {
      */
     hasAudio?: boolean | null;
     /**
-     * Whether a cover exists (GetTrackCover): of the track, of its album or of another track of its album.
+     * Whether a cover exists (GetTrackCover): of the track or of its album.
      */
     hasCover?: boolean | null;
     /**

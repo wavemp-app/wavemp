@@ -10257,7 +10257,7 @@
         "tags": [
           "Tracks"
         ],
-        "summary": "Returns the cover of a track as picture. By default the cover of its album comes before its own cover; if the preferred cover is missing, the other one is used, and finally the cover of another track of the album. With size, the picture is scaled to fit into a square of 96, 192, 300, 600, 1000 or 2000 pixels (the requested size rounded up, at most 2000; never enlarged) and delivered as WebP from the cache; without size, as stored (JPEG, PNG, WebP, GIF or BMP). Every picture carries a strong ETag of its version and size, Last-Modified and Cache-Control: private, no-cache; a request with a matching If-None-Match returns 304. Besides the session token, it accepts the signed cover URL of the playback endpoints for casting devices (query uid, sid, exp and sig), because they cannot send a token header.",
+        "summary": "Returns the cover of a track as picture: a cover chosen in its files, then a picture with its base name, then by default the cover of its album before its other covers (embedded pictures); if the preferred cover is missing, the other one is used. A track never shows the cover of another track; without any cover it has none. With size, the picture is scaled to fit into a square of 96, 192, 300, 600, 1000 or 2000 pixels (the requested size rounded up, at most 2000; never enlarged) and delivered as WebP from the cache; without size, as stored (JPEG, PNG, WebP, GIF or BMP). Every picture carries a strong ETag of its version and size, Last-Modified and Cache-Control: private, no-cache; a request with a matching If-None-Match returns 304. Besides the session token, it accepts the signed cover URL of the playback endpoints for casting devices (query uid, sid, exp and sig), because they cannot send a token header.",
         "operationId": "GetTrackCover",
         "parameters": [
           {
@@ -12603,14 +12603,14 @@
                 "type": "null"
               },
               {
-                "description": "Album artist; null for compilations and albums without a known artist.",
+                "description": "Artist of the album: the album artist of its tracks, otherwise their artist; null for albums without a known artist.",
                 "$ref": "#/components/schemas/ArtistReference"
               }
             ]
           },
           "isCompilation": {
             "type": "boolean",
-            "description": "Tracks of several artists without a common album artist. Clients show their own text for it."
+            "description": "Tracks of several artists without a common album artist. Always false since an album is identified by one artist and title; kept for compatibility."
           },
           "year": {
             "type": [
@@ -12706,14 +12706,14 @@
                 "type": "null"
               },
               {
-                "description": "Album artist; null for compilations and albums without a known artist.",
+                "description": "Artist of the album: the album artist of its tracks, otherwise their artist; null for albums without a known artist.",
                 "$ref": "#/components/schemas/ArtistReference"
               }
             ]
           },
           "isCompilation": {
             "type": "boolean",
-            "description": "Tracks of several artists without a common album artist. Clients show their own text for it."
+            "description": "Tracks of several artists without a common album artist. Always false since an album is identified by one artist and title; kept for compatibility."
           }
         },
         "description": "The album of a track."
@@ -17573,7 +17573,7 @@
           },
           "hasCover": {
             "type": "boolean",
-            "description": "Whether a cover exists (GetTrackCover): of the track, of its album or of another track of its album."
+            "description": "Whether a cover exists (GetTrackCover): of the track or of its album."
           },
           "firstSeenAt": {
             "type": "string",
