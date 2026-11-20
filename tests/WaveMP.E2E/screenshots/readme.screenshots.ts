@@ -25,9 +25,9 @@ import {
 } from './helpers'
 
 // The screenshots of the README, taken with the synthetic test media (sine tones and test pictures)
-// and two profiles created for them: Alex with playlists, favorites, ratings and plays, and Sam.
-// They are written to assets/screenshots and replace the files there; the profiles and the export of
-// the database made for the backup page are removed afterwards.
+// and two profiles created for them: Alex with playlists, a smart playlist, favorites, ratings and
+// plays, and Sam. They are written to assets/screenshots and replace the files there; the profiles
+// and the export of the database made for the backup page are removed afterwards.
 
 const outputDirectory = screenshotsDirectory
 const desktop = { width: 1440, height: 900 }
@@ -38,6 +38,19 @@ test.use({ storageState: emptyStorageState, viewport: desktop, deviceScaleFactor
 let alex: TestUser
 let sam: TestUser
 let alexHeaders: Record<string, string>
+
+/**
+ * Closes the offer to continue the playback of an earlier test, which runs in its own browser and
+ * so counts as another device.
+ */
+async function dismissResume(page: Page): Promise<void> {
+    const notice = part(page, 'resume-notice')
+    await notice.waitFor({ timeout: 3000 }).catch(() => undefined)
+    if (await notice.isVisible()) {
+        await notice.locator("[data-part='btn-dismiss-resume']").click()
+        await expect(notice).toBeHidden()
+    }
+}
 
 async function save(page: Page, name: string): Promise<void> {
     await saveAs(page, `${outputDirectory}${name}`)
@@ -58,6 +71,17 @@ test.beforeAll(async ({ request }) => {
     ;[alex, sam] = await createProfiles(request, ['Alex', 'Sam'])
     alexHeaders = await sessionHeaders(request, alex.id)
     await prepareProfile(request, alexHeaders)
+    await send(request, alexHeaders, 'post', '/api/v1/me/smart-playlists', {
+        name: 'Best of E2E',
+        match: 'Any',
+        rules: [
+            { field: 'Rating', operator: 'AtLeast', number: 4 },
+            { field: 'Favorite', operator: 'IsTrue' },
+        ],
+        sort: 'Rating',
+        direction: 'Desc',
+        limit: 50,
+    })
 })
 
 test.afterAll(async ({ request }) => {
@@ -96,7 +120,85 @@ test('now playing', async ({ page, request }) => {
     await pause(page)
     await page.locator("[data-part='app'] a[href='/now-playing']").filter({ visible: true }).click()
     await expect(part(page, 'queue')).toBeVisible()
+    // Autoplay below the queue has chosen the songs that follow the album.
+    await expect(part(page, 'autoplay-item').first()).toBeVisible()
     await save(page, 'now-playing')
+})
+
+test('context menu', async ({ page }) => {
+    await selectProfile(page, alex.name)
+    await page.goto('/library/songs')
+    await dismissResume(page)
+    const row = part(page, 'list-row').filter({ hasText: 'Second Song' }).first()
+    await row.click({ button: 'right' })
+    const menu = page.locator("[data-part='context-menu'][data-state='open']")
+    await expect(menu).toBeVisible()
+    // The submenu of the rating, opened like with the mouse.
+    await menu.locator("[data-part='menu-item'][data-item='rate']").hover()
+    await expect(page.locator("[data-part='context-menu'][data-kind='submenu']")).toBeVisible()
+    await page.waitForTimeout(300)
+    await page.screenshot({ path: `${outputDirectory}context-menu.png` })
+})
+
+test('smart playlist', async ({ page, request }) => {
+    await selectProfile(page, alex.name)
+    const smart = await request.get('/api/v1/me/smart-playlists?limit=100', {
+        headers: alexHeaders,
+    })
+    const id = ((await smart.json()).items as { id: string; name: string }[]).find(
+        (item) => item.name === 'Best of E2E',
+    )!.id
+    await page.goto(`/playlists/smart/${id}/edit`)
+    await dismissResume(page)
+    await expect(part(page, 'smart-rule')).toHaveCount(2)
+    await save(page, 'smart-playlist')
+})
+
+test('mini player', async ({ page, request }) => {
+    // The mini player in the window of the app, as in browsers without floating windows; in
+    // Chromium it opens in a window of its own.
+    await page.addInitScript(() => {
+        delete (window as { documentPictureInPicture?: unknown }).documentPictureInPicture
+    })
+    await selectProfile(page, alex.name)
+    await page.goto(`/library/albums/${await findAlbumId(request, 'E2E Album')}`)
+    await part(page, 'detail-actions').locator("[data-item='play']").click()
+    await expect(part(page, 'now-playing-title').filter({ visible: true }).first()).toHaveText(
+        'First Song',
+    )
+    await pause(page)
+    await part(page, 'btn-compact').click()
+    const player = page.locator("[data-part='compact-player-panel']")
+    await expect(player).toBeVisible()
+    await page.mouse.move(0, 0)
+    await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur())
+    await page.waitForTimeout(500)
+    // Only the player with its shadow, not the empty window around it.
+    const box = (await player.boundingBox())!
+    const margin = 32
+    await page.screenshot({
+        path: `${outputDirectory}mini-player.png`,
+        clip: {
+            x: box.x - margin,
+            y: box.y - margin,
+            width: box.width + 2 * margin,
+            height: box.height + 2 * margin,
+        },
+    })
+})
+
+test('media folders', async ({ browser }) => {
+    const page = await adminPage(browser)
+    await page.goto('/admin/library')
+    await expect(page.locator("[data-part='source-item']").first()).toBeVisible()
+    await page.locator("[data-part='section'][data-item='media-sources']").scrollIntoViewIfNeeded()
+    await page.locator("[data-item='add-source']").click()
+    const dialog = page.locator("dialog[data-part='dialog'][open]")
+    await dialog.getByLabel('Name').fill('Music videos')
+    await dialog.getByLabel('Folder in the container').fill('/videos')
+    await save(page, 'admin-media-folders')
+    await dialog.getByRole('button', { name: 'Cancel' }).click()
+    await page.context().close()
 })
 
 test('visualization A-Force', async ({ page, request }) => {

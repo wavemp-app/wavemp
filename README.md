@@ -55,8 +55,12 @@ WaveMP brings back the glossy, glassy look of the classic desktop media players 
 | **Home** with your playlists, the songs you played recently and new albums | **A-Force**, one of WaveMP's own visualizations |
 | ![The visualization BlackCap on Now Playing](assets/screenshots/visualization-blackcap.png) | ![A classic Milkdrop preset on Now Playing](assets/screenshots/visualization-milkdrop.png) |
 | **BlackCap**, the calm 3D visualization | Classic **Milkdrop** presets |
-| ![Now Playing with the cover and the queue](assets/screenshots/now-playing.png) | ![The page of an album](assets/screenshots/album.png) |
-| **Now Playing** with cover and queue | An **album** with its songs |
+| ![Now Playing with the cover, the queue and the songs of autoplay](assets/screenshots/now-playing.png) | ![The page of an album](assets/screenshots/album.png) |
+| **Now Playing** with cover, queue and **autoplay**, which keeps the music going with similar songs | An **album** with its songs |
+| ![The context menu of a song with the submenu for the rating](assets/screenshots/context-menu.png) | ![The rules of a smart playlist](assets/screenshots/smart-playlist.png) |
+| The **context menu** of a song, here rating it | A **smart playlist** that fills itself from rules |
+| ![The mini player with cover and controls](assets/screenshots/mini-player.png) | ![Adding a second media folder in the administration](assets/screenshots/admin-media-folders.png) |
+| The **mini player** for the corner of the screen | Several **media folders**, for example one for music videos |
 | ![The profile selection](assets/screenshots/profiles.png) | ![The backups in the administration](assets/screenshots/admin-backups.png) |
 | **Profiles** instead of a login | **Administration** of the daily backups |
 
@@ -246,7 +250,7 @@ Then open **Administration > Library**. Under **Media folders**, an admin adds a
 - A new or moved folder is scanned at once. Each folder is scanned and watched on its own; a folder that is missing or cannot be read is skipped and shown as a problem of the scan, and the songs of the other folders stay as they are.
 - Switching a folder off keeps its songs in the library, but they are no longer updated. Removing a folder removes its songs with their ratings, favorites and playlist entries from the library; the files themselves stay untouched.
 - Files of one song still belong together by their base name in the same folder (see [Organizing Your Media](#organizing-your-media)), so the files of a song cannot be spread over two media folders.
-- As soon as there is more than one media folder, the songs, recently added songs, albums and artists of the library can be filtered by media folder.
+- As soon as there is more than one media folder, the songs, recently added songs, albums, artists, genres and years of the library can be filtered by media folder.
 
 ### Media folder access
 
@@ -494,7 +498,7 @@ The core data of MusicBrainz is in the public domain (CC0). The covers in the Co
 23. **Autoplay.** When the queue has ended and repeat is off, autoplay goes on with similar songs until you stop. It chooses more songs of the artists in the list (artists that appear more often come more often), and when they run out songs of the same genres from similar decades. Your favorites and songs with four or five stars come a little more often, songs with one star never, and songs you played in the last 24 hours only when nothing else is left. Songs that only have a music video are included; turn that off under **Settings > Include songs that only have a music video**. **Now Playing** shows the next songs under **Autoplay** below the queue: choose one to play it at once (skipping those before it), remove a song with its button, or turn autoplay off there. The autoplay button in the transport bar, between crossfade and stop (in the expanded player on smartphones), switches it on and off. Autoplay is on for every profile until you turn it off, here or under **Settings > Autoplay**; the choice is stored with your profile and applies on all devices. Songs you add to the queue come before the songs of autoplay.
 24. **Sleep timer.** The moon button in the transport bar stops the music after 15 to 120 minutes, at the end of the current song or at the end of the queue; the button shows the remaining time, and **Off** cancels it. Shortly before the stop the music fades out (ten seconds by default, set under **Settings > Sleep timer fade-out**), then the player pauses. The timer runs on the device that plays and is not stored.
 25. **Mini player.** The compact mode button at the right of the transport bar (desktop) opens the mini player: cover, title, artist, progress, previous, play and pause, next and the volume of the running song, and its music video while the **Video** view is chosen on **Now Playing**. In Chrome and Edge it is a small floating window that stays above your other windows, so you can control the music while you work in other programs; you can resize it, and it shows the cover beside the controls when it is wide. The music keeps playing in the WaveMP window, so leave that window open. Other browsers, such as Firefox and Safari, show the mini player in the WaveMP window instead, with nothing else around it; make the window small to keep it at hand. The button again, the button in the mini player or Escape closes it.
-26. **Continue where you stopped.** WaveMP remembers for each profile what you listened to: the queue, the song and the position in it, shuffle, repeat and the album or playlist it came from. After a reload or the next start the player shows that song paused at its position; **Play** goes on from there. The state follows your profile to your other devices: open WaveMP on another device and it shows **Continue listening from** the device you listened on last (for example *Firefox · Windows*); **Continue** plays on there. The device that changed the state last wins; a device that comes back to the front while it is paused takes over a newer state of another device.
+26. **Continue where you stopped.** WaveMP remembers for each profile what you listened to: the queue, the song and the position in it, shuffle, repeat and the album or playlist it came from. After a reload or the next start the player shows that song paused at its position; **Play** goes on from there. The state follows your profile to your other devices: open WaveMP on another device and it shows **Continue listening from** the device you listened on last (for example *Firefox · Windows*); **Continue** plays on there. The device that changed the state last wins; a device that comes back to the front while it is paused takes over a newer state of another device. To start over, **Settings > Playback state > Clear playback state** stops the player of this device, empties its queue and forgets the saved state, so every device starts with an empty player; a device that is still playing saves its queue again.
 27. **Use the keyboard.** On a computer or a tablet with a keyboard, WaveMP reacts to these keys:
 
     | Key | Action |
@@ -590,12 +594,13 @@ A few rules keep the translations working:
 - Keep the placeholders in curly braces exactly as they are, for example `{name}` or `{count}`; WaveMP replaces them with names and numbers. Weblate marks a translation that changes them.
 - Do not use HTML or the characters `<`, `>`, `@`, `|` and `$`; they have a special meaning for the translation library of the web app. The checks of the pull request reject them.
 - The key of a text (for example `settings.languageHint`) tells where it appears; the English text is the reference. Weblate shows both, and maintainers add explanations to texts that need them.
+- Long compound words in short labels may get soft hyphens (U+00AD, written as `\u00ad` in the files) between two letters, for example `Wieder\u00adgabe`; the browser breaks the word there with a hyphen when the label needs a second line and shows nothing otherwise.
 
 ### Translation files
 
 The web app has one JSON file per language in `source/WaveMP.Web/src/locales`, named after its BCP 47 language tag (`en.json`, `de.json`, `pt-BR.json`, `zh-Hans.json`). `en.json` is the source: every text of the app is added there first, with a camelCase key nested by area. The build includes every file in the folder, so a new file adds its language to the selection without further changes; a language with a region falls back to the language without it (`de-AT` shows `de`), and every language falls back to English. The texts never use plural forms: numbers stand in phrases that fit every count, like `Songs: {count}`.
 
-The unit tests of the web app check every file: its name is a valid language tag, it has no keys that `en.json` lacks, no empty texts, the same placeholders as English and no markup. English and German are maintained with the code and must always be complete; the other languages may be incomplete.
+The unit tests of the web app check every file: its name is a valid language tag, it has no keys that `en.json` lacks, no empty texts, the same placeholders as English, no markup and soft hyphens only between two letters. English and German are maintained with the code and must always be complete; the other languages may be incomplete.
 
 The profiles store their language as language tag through the API (`language` in `/api/v1/me/settings`). The server accepts any valid tag, so other clients can offer languages the web app does not have yet; the web app shows English for those.
 
