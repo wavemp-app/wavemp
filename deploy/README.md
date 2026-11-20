@@ -45,7 +45,7 @@ Before the pull request, in a clone of `truenas/apps` with the folder copied to
 ```
 
 `ci.py` also refreshes `lib_version_hash` and `item.yaml`. The icon and the screenshots are hosted
-on the CDN of TrueNAS: attach `assets/logo/wavemp-logo-512.png` and the pictures of
+on the CDN of TrueNAS: attach `assets/logo/wavemp-logo-default-512.png` and the pictures of
 `assets/screenshots/catalogs/` to the pull request and replace the addresses in `app.yaml` and
 `item.yaml` with the CDN addresses the reviewer gives you.
 
@@ -67,9 +67,9 @@ Applications then reads the templates from `main`, so changes reach Unraid with 
 `docker-compose.yml` with the `x-casaos` metadata of the store (title, tagline, description and
 install tips in English and German, category, architectures, icon and screenshots), plus the icon
 (`icon.svg`, `icon.png`) and the screenshots (`screenshot-1.png` to `screenshot-3.png`). The icon and
-the screenshots are copies of `assets/logo/wavemp-logo.svg`, `assets/logo/wavemp-logo-512.png` and
-`assets/screenshots/catalogs/home.png`, `now-playing.png` and `album.png`; the check fails if they
-differ. CasaOS has no hidden or required input fields: the database password is an ordinary
+the screenshots are copies of `assets/logo/wavemp-logo-default.svg`,
+`assets/logo/wavemp-logo-default-512.png` and `assets/screenshots/catalogs/home.png`,
+`now-playing.png` and `album.png`; the check fails if they differ. CasaOS has no hidden or required input fields: the database password is an ordinary
 environment variable (`casaos` by default) that the install tips ask to change in both containers.
 CasaOS creates the folders of the app as root as well. The image starts as root, hands its data
 folder to the user of the system, which CasaOS and ZimaOS fill into `$PUID` and `$PGID`, and then

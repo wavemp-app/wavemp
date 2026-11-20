@@ -297,7 +297,7 @@ describe('findDeployProblems', () => {
     test('reports addresses of files of the repository that do not exist', () => {
         write(
             'deploy/README.md',
-            'Icon: https://raw.githubusercontent.com/wavemp-app/wavemp/main/assets/logo/wavemp-logo.svg\n' +
+            'Icon: https://raw.githubusercontent.com/wavemp-app/wavemp/main/assets/logo/wavemp-logo-default.svg\n' +
                 'Missing: https://raw.githubusercontent.com/wavemp-app/wavemp/main/assets/missing.png\n',
         )
 
@@ -311,7 +311,7 @@ describe('findDeployProblems', () => {
         write('deploy/casaos/WaveMP/screenshot-1.png', 'an older screenshot')
 
         assert.deepEqual(findDeployProblems(fixture), [
-            'deploy/casaos/WaveMP/icon.png is missing (copy of assets/logo/wavemp-logo-512.png)',
+            'deploy/casaos/WaveMP/icon.png is missing (copy of assets/logo/wavemp-logo-default-512.png)',
             'deploy/casaos/WaveMP/screenshot-1.png differs from assets/screenshots/catalogs/home.png; copy it again',
         ])
     })

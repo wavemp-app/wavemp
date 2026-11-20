@@ -8,7 +8,7 @@ description: WaveMP is a nostalgic media player for your self-hosted music and m
   videos.
 home: https://wavemp-app.github.io
 host_mounts: []
-icon: https://raw.githubusercontent.com/wavemp-app/wavemp/main/assets/logo/wavemp-logo-512.png
+icon: https://raw.githubusercontent.com/wavemp-app/wavemp/main/assets/logo/wavemp-logo-default-512.png
 keywords:
 - music
 - music videos

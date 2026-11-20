@@ -36,8 +36,8 @@ export const postgresRepositories = new Set([
 
 /** Files of the CasaOS app folder and the files in assets/ they are copies of. */
 export const casaosAssetSources = {
-    'icon.svg': 'assets/logo/wavemp-logo.svg',
-    'icon.png': 'assets/logo/wavemp-logo-512.png',
+    'icon.svg': 'assets/logo/wavemp-logo-default.svg',
+    'icon.png': 'assets/logo/wavemp-logo-default-512.png',
     'screenshot-1.png': 'assets/screenshots/catalogs/home.png',
     'screenshot-2.png': 'assets/screenshots/catalogs/now-playing.png',
     'screenshot-3.png': 'assets/screenshots/catalogs/album.png',

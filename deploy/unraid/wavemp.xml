@@ -16,7 +16,7 @@ WaveMP needs a PostgreSQL 18 database: install the template wavemp-db first, and
   <Category>MediaApp:Music MediaApp:Video MediaServer:Music MediaServer:Video</Category>
   <WebUI>http://[IP]:[PORT:8080]/</WebUI>
   <TemplateURL>https://raw.githubusercontent.com/wavemp-app/wavemp/main/deploy/unraid/wavemp.xml</TemplateURL>
-  <Icon>https://raw.githubusercontent.com/wavemp-app/wavemp/main/assets/logo/wavemp-logo-512.png</Icon>
+  <Icon>https://raw.githubusercontent.com/wavemp-app/wavemp/main/assets/logo/wavemp-logo-default-512.png</Icon>
   <ExtraParams>--restart unless-stopped</ExtraParams>
   <PostArgs/>
   <CPUset/>
