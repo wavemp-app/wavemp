@@ -121,3 +121,63 @@ test('plays a song of the list by double click and shows the queue', async ({ pa
     await expect(part(page, 'stage-title')).toHaveText('First Song')
     await expect(items.nth(0)).toHaveAttribute('aria-current', 'true')
 })
+
+/** Requests of the page to a path that wait until the test lets them go. */
+async function hold(page: Page, path: RegExp): Promise<() => void> {
+    let release: () => void = () => undefined
+    const released = new Promise<void>((resolve) => (release = resolve))
+    await page.route(
+        (url) => path.test(url.pathname),
+        async (route) => {
+            await released
+            await route.fallback()
+        },
+    )
+    return release
+}
+
+test('keeps a seek made while the song is still loading', async ({ page, isMobile }) => {
+    const slider = part(page, 'seek').getByRole('slider')
+    async function seekToOneSecond(): Promise<void> {
+        await slider.focus()
+        await page.keyboard.press('Home')
+        await page.keyboard.press('ArrowRight')
+        await expect(slider).toHaveAttribute('aria-valuenow', '1')
+    }
+
+    // The audio of the first song waits: the seek comes before the browser knows its length.
+    const releaseStream = await hold(page, /^\/api\/v1\/tracks\/[^/]+\/stream$/)
+    await openAlbum(page)
+    await part(page, 'detail-actions').locator("[data-item='play']").click()
+    await part(page, 'btn-play').click()
+    await expect(part(page, 'btn-play')).toHaveAttribute('data-state', 'paused')
+    await expect(part(page, 'now-playing-title')).toHaveText('First Song')
+    await expect(transport(page)).not.toHaveAttribute('data-state', /\bloading\b/)
+    if (isMobile) {
+        await part(page, 'now-playing-mini').click()
+        await expect(transport(page)).toHaveAttribute('data-state', /\bexpanded\b/)
+    }
+
+    await seekToOneSecond()
+    releaseStream()
+    await page.waitForTimeout(1500)
+    await expect(slider).toHaveAttribute('aria-valuenow', '1')
+
+    // The second song is still requested from the server: it starts at the position of the seek.
+    const releasePlayback = await hold(page, /^\/api\/v1\/tracks\/[^/]+\/playback$/)
+    await part(page, 'btn-next').click()
+    await expect(part(page, 'now-playing-title')).toHaveText('Second Song')
+    await expect(transport(page)).toHaveAttribute('data-state', /\bloading\b/)
+    await seekToOneSecond()
+    releasePlayback()
+    await expect(transport(page)).not.toHaveAttribute('data-state', /\bloading\b/)
+    await page.waitForTimeout(1500)
+    await expect(slider).toHaveAttribute('aria-valuenow', '1')
+
+    // Play goes on from there, not from the start of the song.
+    await part(page, 'btn-play').click()
+    await expect(transport(page)).toHaveAttribute('data-state', /\bplaying\b/)
+    await part(page, 'btn-play').click()
+    await expect(part(page, 'btn-play')).toHaveAttribute('data-state', 'paused')
+    expect(Number(await slider.getAttribute('aria-valuenow'))).toBeGreaterThanOrEqual(1)
+})

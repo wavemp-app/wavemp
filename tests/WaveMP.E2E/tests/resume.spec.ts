@@ -102,15 +102,13 @@ test.describe('resume playback', () => {
             await expect(part(page, 'transport')).toHaveAttribute('data-state', /\bexpanded\b/)
         }
 
-        // Seeking while paused saves shortly after. Right after the start the browser may still
-        // move the audio back to its start, so the test seeks again until the position holds.
-        await expect(async () => {
-            await part(page, 'seek').getByRole('slider').focus()
-            await page.keyboard.press('Home')
-            await page.keyboard.press('ArrowRight')
-            await page.waitForTimeout(1000)
-            expect(await position(page)).toBe(1)
-        }).toPass({ timeout: 15_000 })
+        // Seeking while paused saves shortly after. The position holds, even right after the start.
+        await part(page, 'seek').getByRole('slider').focus()
+        await page.keyboard.press('Home')
+        await page.keyboard.press('ArrowRight')
+        expect(await position(page)).toBe(1)
+        await page.waitForTimeout(1000)
+        expect(await position(page)).toBe(1)
         await expect
             .poll(() => savedPoint(request, user), { timeout: 15_000 })
             .toEqual({ title: 'First Song', seconds: 1 })
