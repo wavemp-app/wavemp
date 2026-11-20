@@ -310,6 +310,11 @@
         --wmp-key-size: 1.625rem;
     }
 
+    /* The dark variant of a theme shows the dark variant of the logo. */
+    :root[data-theme-variant='dark'] {
+        --wmp-image-logo: url('/logo/wavemp-logo-dark.svg') center / contain no-repeat;
+    }
+
     /* Document defaults; the root shows the theme color where a browser shows more than the page. */
     html {
         background-color: var(--wmp-theme-color);

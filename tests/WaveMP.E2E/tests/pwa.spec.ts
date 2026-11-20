@@ -58,18 +58,22 @@ test('uses the WaveMP logo as favicon and app logo', async ({ page, request }) =
 
     await expect(page.locator('link[rel="icon"][type="image/svg+xml"]')).toHaveAttribute(
         'href',
-        '/logo/wavemp-logo.svg',
+        '/logo/favicon.svg',
     )
     await expect(page.locator('link[rel="icon"][href="/favicon.ico"]')).toHaveCount(1)
+    // The light variant of a theme shows the logo, the dark variant its dark variant.
+    const variant = await page.locator(':root').getAttribute('data-theme-variant')
     await expect(page.locator("[data-part='header'] [data-part='logo-image']")).toHaveCSS(
         'background-image',
-        /\/logo\/wavemp-logo\.svg/,
+        variant === 'dark' ? /\/logo\/wavemp-logo-dark\.svg/ : /\/logo\/wavemp-logo\.svg/,
     )
 
-    const logo = await request.get('/logo/wavemp-logo.svg')
-    expect(logo.status()).toBe(200)
-    expect(logo.headers()['content-type']).toContain('image/svg+xml')
-    expect(await logo.text()).toContain('aria-label="WaveMP"')
+    for (const path of ['/logo/wavemp-logo.svg', '/logo/wavemp-logo-dark.svg']) {
+        const logo = await request.get(path)
+        expect(logo.status(), path).toBe(200)
+        expect(logo.headers()['content-type'], path).toContain('image/svg+xml')
+        expect(await logo.text(), path).toContain('aria-label="WaveMP"')
+    }
 
     // ICO header: reserved 0, type 1 (icon).
     const favicon = await request.get('/favicon.ico')
@@ -80,6 +84,25 @@ test('uses the WaveMP logo as favicon and app logo', async ({ page, request }) =
     for (const path of ['/brand/logo.svg', '/brand/pwa-512x512.png']) {
         expect((await request.get(path)).status(), path).toBe(404)
     }
+})
+
+test('shows the dark logo in the favicon while the browser is in dark mode', async ({ page }) => {
+    const shown = () =>
+        page.evaluate(() =>
+            ['light', 'dark'].filter(
+                (scheme) =>
+                    getComputedStyle(document.querySelector(`[data-scheme='${scheme}']`)!)
+                        .display !== 'none',
+            ),
+        )
+
+    await page.emulateMedia({ colorScheme: 'light' })
+    const response = await page.goto('/logo/favicon.svg')
+    expect(response?.headers()['content-type']).toContain('image/svg+xml')
+    expect(await shown()).toEqual(['light'])
+
+    await page.emulateMedia({ colorScheme: 'dark' })
+    expect(await shown()).toEqual(['dark'])
 })
 
 test('caches the app shell but never the API and works offline', async ({ page, context }) => {

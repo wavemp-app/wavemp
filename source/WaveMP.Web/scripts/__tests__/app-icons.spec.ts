@@ -7,24 +7,33 @@ import { Resvg } from '@resvg/resvg-js'
 import { describe, expect, it } from 'vitest'
 
 import {
+    adaptiveSvgStyle,
+    composeAdaptiveSvg,
     composeIconSvg,
     createAppIcons,
     createHeadLinks,
     createManifestIcons,
+    darkLogoPath,
+    defaultLogoFiles,
     encodeIco,
     faviconSizes,
+    faviconSvgPath,
     logoExportSizes,
     logoPath,
     optimizeLogo,
     parseSvg,
     pngSize,
     renderPng,
+    squareTileCorners,
 } from '../app-icons.ts'
 import { appIcons } from '../vite-plugin-app-icons.ts'
 
 const logoDirectory = fileURLToPath(new URL('../../../../assets/logo/', import.meta.url))
-const sourceLogo = readFileSync(path.join(logoDirectory, 'wavemp-logo-teal-wave-round.svg'), 'utf8')
-const logo = readFileSync(path.join(logoDirectory, 'wavemp-logo.svg'), 'utf8')
+const readLogo = (file: string) => readFileSync(path.join(logoDirectory, file), 'utf8')
+const sourceLogo = readLogo(defaultLogoFiles.light.source)
+const sourceDarkLogo = readLogo(defaultLogoFiles.dark.source)
+const logo = readLogo(defaultLogoFiles.light.target)
+const darkLogo = readLogo(defaultLogoFiles.dark.target)
 
 /** RGBA pixels of an SVG rendered at its own size. */
 function pixels(svg: string): Uint8Array {
@@ -41,10 +50,16 @@ function maxDifference(a: Uint8Array, b: Uint8Array): number {
     return max
 }
 
+/** RGBA value of a pixel of a rendered SVG. */
+function pixelAt(svg: string, size: number, x: number, y: number): number[] {
+    const rendered = new Resvg(svg, { fitTo: { mode: 'width', value: size } }).render()
+    const index = (y * rendered.width + x) * 4
+    return [...rendered.pixels.subarray(index, index + 4)]
+}
+
 /** Alpha value of a pixel of a rendered SVG. */
 function alphaAt(svg: string, size: number, x: number, y: number): number {
-    const rendered = new Resvg(svg, { fitTo: { mode: 'width', value: size } }).render()
-    return rendered.pixels[(y * rendered.width + x) * 4 + 3]!
+    return pixelAt(svg, size, x, y)[3]!
 }
 
 function rootElement(svg: string): string {
@@ -60,35 +75,57 @@ describe('optimizeLogo', () => {
         expect(root).toContain('aria-label="WaveMP"')
     })
 
-    it('makes the logo smaller without changing a pixel', () => {
-        const optimized = optimizeLogo(sourceLogo)
+    it.each([
+        ['light', sourceLogo],
+        ['dark', sourceDarkLogo],
+    ])('makes the %s logo smaller without changing a pixel', (_, source) => {
+        const optimized = optimizeLogo(source)
 
-        expect(optimized.length).toBeLessThan(sourceLogo.length)
-        expect(maxDifference(pixels(optimized), pixels(sourceLogo))).toBe(0)
+        expect(optimized.length).toBeLessThan(source.length)
+        expect(maxDifference(pixels(optimized), pixels(source))).toBe(0)
     })
 })
 
 describe('logo files under /assets/logo', () => {
-    it('contain the optimized logo, visually identical to the source', () => {
-        const root = rootElement(logo)
+    it('make the Fluent logo and its dark variant the default logo', () => {
+        expect(defaultLogoFiles.light).toEqual({
+            source: 'wavemp-logo-fluent.svg',
+            target: 'wavemp-logo-default.svg',
+        })
+        expect(defaultLogoFiles.dark).toEqual({
+            source: 'wavemp-logo-fluent-dark.svg',
+            target: 'wavemp-logo-default-dark.svg',
+        })
+    })
+
+    it.each([
+        ['wavemp-logo-default.svg', logo, sourceLogo],
+        ['wavemp-logo-default-dark.svg', darkLogo, sourceDarkLogo],
+    ])('contain the optimized %s, visually identical to its source', (_, optimized, source) => {
+        const root = rootElement(optimized)
 
         expect(root).toContain('viewBox="0 0 512 512"')
         expect(root).toContain('role="img"')
         expect(root).toContain('aria-label="WaveMP"')
-        expect(logo.length).toBeLessThan(sourceLogo.length)
-        expect(maxDifference(pixels(logo), pixels(sourceLogo))).toBe(0)
+        expect(optimized.length).toBeLessThan(source.length)
+        expect(maxDifference(pixels(optimized), pixels(source))).toBe(0)
     })
 
-    it.each(logoExportSizes)('contain a PNG export of %i pixels', (size) => {
-        const png = new Uint8Array(
-            readFileSync(path.join(logoDirectory, `wavemp-logo-${size}.png`)),
-        )
+    it.each(logoExportSizes)('contain a PNG export of the default logo of %i pixels', (size) => {
+        const file = defaultLogoFiles.pngExport(size)
+        const png = new Uint8Array(readFileSync(path.join(logoDirectory, file)))
 
+        expect(file).toBe(`wavemp-logo-default-${size}.png`)
         expect(pngSize(png)).toEqual({ width: size, height: size })
+        // npm run logo:export renders the default logo the same way.
+        expect(png).toEqual(renderPng(composeIconSvg(logo, 'transparent'), size))
     })
 
     it.each([
         'wavemp-logo-teal-wave-round.svg',
+        'wavemp-logo.svg',
+        'wavemp-logo-256.png',
+        'wavemp-logo-512.png',
         'wavemp-logo-fluent.svg',
         'wavemp-logo-fluent-dark.svg',
         'wavemp-logo-mono-white.svg',
@@ -108,6 +145,25 @@ describe('parseSvg', () => {
     it('rejects documents without an svg root or viewBox', () => {
         expect(() => parseSvg('<html></html>')).toThrow(/<svg> root/)
         expect(() => parseSvg('<svg width="10"><rect/></svg>')).toThrow(/viewBox/)
+    })
+})
+
+describe('squareTileCorners', () => {
+    it('removes the round corners of every rect that covers the tile', () => {
+        const content =
+            '<clipPath id="b"><rect width="480" height="480" x="16" y="16" rx="108"/></clipPath>' +
+            '<rect x="16" y="16" rx="108" ry="90" width="480" height="480" fill="red"/>' +
+            '<rect width="100" height="100" x="16" y="16" rx="20"/>'
+
+        expect(squareTileCorners(content)).toBe(
+            '<clipPath id="b"><rect width="480" height="480" x="16" y="16"/></clipPath>' +
+                '<rect x="16" y="16" width="480" height="480" fill="red"/>' +
+                '<rect width="100" height="100" x="16" y="16" rx="20"/>',
+        )
+    })
+
+    it('rejects a logo without a tile', () => {
+        expect(() => squareTileCorners('<circle r="10"/>')).toThrow(/no tile/)
     })
 })
 
@@ -131,6 +187,58 @@ describe('composeIconSvg', () => {
         ] as const) {
             expect(alphaAt(svg, 64, x, y), `${x},${y}`).toBe(255)
         }
+    })
+
+    it('continues the tile and the water seamlessly into the corners', () => {
+        const svg = composeIconSvg(logo, 'full-bleed')
+        // Each corner and a pixel further inside, which the round tile covers as well.
+        const pairs = [
+            [0, 0, 6, 6],
+            [63, 0, 57, 6],
+            [0, 63, 6, 59],
+            [63, 63, 57, 59],
+        ] as const
+
+        for (const [x, y, insideX, insideY] of pairs) {
+            const corner = pixelAt(svg, 64, x, y)
+            const inside = pixelAt(svg, 64, insideX, insideY)
+            const difference = Math.max(...corner.map((value, i) => Math.abs(value - inside[i]!)))
+            expect(difference, `${x},${y}`).toBeLessThanOrEqual(16)
+        }
+    })
+
+    it('shows the tile of the logo unchanged inside its round corners', () => {
+        const fullBleed = pixelAt(composeIconSvg(logo, 'full-bleed'), 480, 240, 240)
+        const original = pixelAt(logo, 512, 256, 256)
+
+        expect(fullBleed).toEqual(original)
+    })
+})
+
+describe('composeAdaptiveSvg', () => {
+    const adaptive = composeAdaptiveSvg(logo, darkLogo)
+    /** The favicon as the browser shows it in dark mode. */
+    const darkScheme = adaptive.replace(
+        adaptiveSvgStyle,
+        '[data-scheme=light]{display:none}[data-scheme=dark]{display:inline}',
+    )
+
+    it('switches to the dark logo with the dark mode of the browser', () => {
+        expect(adaptive).toContain('@media (prefers-color-scheme:dark)')
+        expect(rootElement(adaptive)).toContain('viewBox="0 0 512 512"')
+        expect(rootElement(adaptive)).toContain('aria-label="WaveMP"')
+    })
+
+    it('shows the light logo by default and the dark logo in dark mode, both unchanged', () => {
+        expect(maxDifference(pixels(adaptive), pixels(logo))).toBe(0)
+        expect(maxDifference(pixels(darkScheme), pixels(darkLogo))).toBe(0)
+    })
+
+    it('gives the ids of both logos their own prefix', () => {
+        const ids = [...adaptive.matchAll(/\sid="([^"]+)"/g)].map((match) => match[1])
+
+        expect(ids.length).toBeGreaterThan(0)
+        expect(new Set(ids).size).toBe(ids.length)
     })
 })
 
@@ -181,14 +289,24 @@ describe('encodeIco', () => {
 })
 
 describe('createAppIcons', () => {
-    const icons = createAppIcons(logo)
+    const icons = createAppIcons(logo, darkLogo)
     const byName = new Map(icons.map((icon) => [icon.fileName, icon]))
 
-    it('contains the logo unchanged', () => {
-        const svg = byName.get(logoPath.slice(1))
+    it.each([
+        [logoPath, logo],
+        [darkLogoPath, darkLogo],
+    ])('contains %s unchanged', (iconPath, expected) => {
+        const svg = byName.get(iconPath.slice(1))
 
         expect(svg?.contentType).toBe('image/svg+xml')
-        expect(new TextDecoder().decode(svg?.data)).toBe(logo)
+        expect(new TextDecoder().decode(svg?.data)).toBe(expected)
+    })
+
+    it('contains the SVG favicon that follows the dark mode', () => {
+        const svg = byName.get(faviconSvgPath.slice(1))
+
+        expect(svg?.contentType).toBe('image/svg+xml')
+        expect(new TextDecoder().decode(svg?.data)).toBe(composeAdaptiveSvg(logo, darkLogo))
     })
 
     it('contains a favicon.ico with all favicon sizes', () => {
@@ -226,7 +344,7 @@ describe('createAppIcons', () => {
 })
 
 describe('createManifestIcons', () => {
-    const files = new Set(createAppIcons(logo).map((icon) => `/${icon.fileName}`))
+    const files = new Set(createAppIcons(logo, darkLogo).map((icon) => `/${icon.fileName}`))
     const icons = createManifestIcons()
 
     it('contains the sizes and purposes that installable web apps need', () => {
@@ -247,13 +365,13 @@ describe('createManifestIcons', () => {
 })
 
 describe('createHeadLinks', () => {
-    it('links the favicon, the SVG logo and the Apple touch icon, all generated', () => {
-        const files = new Set(createAppIcons(logo).map((icon) => `/${icon.fileName}`))
+    it('links the favicon, the SVG favicon and the Apple touch icon, all generated', () => {
+        const files = new Set(createAppIcons(logo, darkLogo).map((icon) => `/${icon.fileName}`))
         const links = createHeadLinks()
 
         expect(links.map((link) => `${link.rel} ${link.href}`)).toEqual([
             'icon /favicon.ico',
-            `icon ${logoPath}`,
+            'icon /logo/favicon.svg',
             'apple-touch-icon /logo/apple-touch-icon-180x180.png',
         ])
         for (const link of links) {
@@ -264,7 +382,10 @@ describe('createHeadLinks', () => {
 
 describe('appIcons (Vite plugin)', () => {
     it('adds the icon links to the head of index.html', () => {
-        const plugin = appIcons({ logo: path.join(logoDirectory, 'wavemp-logo.svg') })
+        const plugin = appIcons({
+            logo: path.join(logoDirectory, defaultLogoFiles.light.target),
+            darkLogo: path.join(logoDirectory, defaultLogoFiles.dark.target),
+        })
         const transform = plugin.transformIndexHtml as unknown as () => {
             attrs: Record<string, string>
         }[]

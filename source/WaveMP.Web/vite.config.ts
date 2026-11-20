@@ -52,10 +52,15 @@ export default defineConfig({
     plugins: [
         vue(),
         ...(previewTheme ? [] : [vueDevTools()]),
-        // Favicon, PWA icons and Apple touch icon, generated from the logo during the build (served
-        // under /logo and /favicon.ico).
+        // Favicon, PWA icons and Apple touch icon, generated from the default logo and its dark
+        // variant during the build (served under /logo and /favicon.ico).
         appIcons({
-            logo: fileURLToPath(new URL('../../assets/logo/wavemp-logo.svg', import.meta.url)),
+            logo: fileURLToPath(
+                new URL('../../assets/logo/wavemp-logo-default.svg', import.meta.url),
+            ),
+            darkLogo: fileURLToPath(
+                new URL('../../assets/logo/wavemp-logo-default-dark.svg', import.meta.url),
+            ),
         }),
         // Precompiles the messages in src/locales, so the app uses the runtime-only build of
         // vue-i18n (no message compiler and no eval at runtime).

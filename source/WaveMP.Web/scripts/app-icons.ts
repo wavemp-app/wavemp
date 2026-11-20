@@ -1,7 +1,8 @@
-// App icons of WaveMP, all derived from the logo /assets/logo/wavemp-logo.svg: the optimized logo
-// itself (svgo), its PNG exports and the icons of the web app (favicon, PWA and Apple touch
-// icons). Used by the Vite plugin (vite-plugin-app-icons.ts) during the build and by
-// export-logo.ts for the files under /assets/logo.
+// App icons of WaveMP, all derived from the default logo /assets/logo/wavemp-logo-default.svg (the
+// Fluent logo) and its dark variant wavemp-logo-default-dark.svg: the optimized logos themselves
+// (svgo), their PNG exports and the icons of the web app (favicon, PWA and Apple touch icons). Used
+// by the Vite plugin (vite-plugin-app-icons.ts) during the build and by export-logo.ts for the
+// files under /assets/logo.
 
 import { Resvg } from '@resvg/resvg-js'
 import { optimize } from 'svgo'
@@ -31,8 +32,8 @@ export interface HeadLink {
 
 /**
  * How an icon shows the logo: "transparent" keeps the logo with its transparent margin and round
- * corners; "full-bleed" lets the glass tile of the logo fill the whole square on its own
- * background, for icons the platform masks itself (maskable PWA icons, Apple touch icon).
+ * corners; "full-bleed" lets the tile of the logo fill the whole square, for icons the platform
+ * masks itself (maskable PWA icons, Apple touch icon).
  */
 export type IconStyle = 'transparent' | 'full-bleed'
 
@@ -48,11 +49,30 @@ export const appIconDirectory = 'logo'
 /** Path of the logo in the web app; the default of the theme variable --wmp-image-logo. */
 export const logoPath = `/${appIconDirectory}/wavemp-logo.svg`
 
+/** Path of the dark variant of the logo in the web app (dark variants of themes). */
+export const darkLogoPath = `/${appIconDirectory}/wavemp-logo-dark.svg`
+
+/**
+ * Path of the SVG favicon: the logo, which shows its dark variant while the browser or the system
+ * is in dark mode (prefers-color-scheme).
+ */
+export const faviconSvgPath = `/${appIconDirectory}/favicon.svg`
+
 /** Sizes of the favicon.ico (the browser picks the size it needs). */
 export const faviconSizes = [16, 32, 48] as const
 
 /** Sizes of the PNG exports under /assets/logo (e.g. for app catalogs). */
 export const logoExportSizes = [256, 512] as const
+
+/**
+ * The default logo under /assets/logo: the source logos of the maintainer (never changed) and the
+ * optimized copies and PNG exports made from them by export-logo.ts.
+ */
+export const defaultLogoFiles = {
+    light: { source: 'wavemp-logo-fluent.svg', target: 'wavemp-logo-default.svg' },
+    dark: { source: 'wavemp-logo-fluent-dark.svg', target: 'wavemp-logo-default-dark.svg' },
+    pngExport: (size: number) => `wavemp-logo-default-${size}.png`,
+} as const
 
 const appleTouchIcon: PngIcon = {
     fileName: `${appIconDirectory}/apple-touch-icon-180x180.png`,
@@ -67,15 +87,40 @@ const manifestPngIcons: PngIcon[] = [
     { fileName: `${appIconDirectory}/pwa-maskable-512x512.png`, size: 512, style: 'full-bleed' },
 ]
 
-// The glass tile of the logo (viewBox 0 0 512 512) is the square from 16 to 496 with round
-// corners. Full-bleed icons show exactly this square and fill the round corners with the
-// gradient of the tile, so masks of any shape cut into the tile, never into empty space.
-const logoTileViewBox = '16 16 480 480'
-const tileGradientStops: [offset: number, color: string][] = [
-    [0, '#33b4e4'],
-    [0.55, '#1786c6'],
-    [1, '#0b5c98'],
-]
+// The tile of the logo (viewBox 0 0 512 512) is the square from 16 to 496 with round corners: a
+// rect that fills it, and the same rect as clip path of the water. Full-bleed icons show exactly
+// this square with square corners, so the gradient and the water reach the edges and masks of any
+// shape cut into the tile, never into empty space.
+const logoTile = { x: 16, y: 16, size: 480 }
+const logoTileViewBox = `${logoTile.x} ${logoTile.y} ${logoTile.size} ${logoTile.size}`
+
+/**
+ * Removes the round corners (rx, ry) of every rect that covers exactly the tile of the logo.
+ * Throws if the logo has no such rect, so a new logo without a tile is noticed.
+ */
+export function squareTileCorners(content: string): string {
+    let found = false
+    const result = content.replace(/<rect\b[^>]*>/g, (rect) => {
+        const attribute = (name: string) =>
+            Number(new RegExp(`\\s${name}="([^"]*)"`).exec(rect)?.[1] ?? Number.NaN)
+        const isTile =
+            attribute('x') === logoTile.x &&
+            attribute('y') === logoTile.y &&
+            attribute('width') === logoTile.size &&
+            attribute('height') === logoTile.size
+        if (!isTile) {
+            return rect
+        }
+
+        found = true
+        return rect.replace(/\s(?:rx|ry)="[^"]*"/g, '')
+    })
+    if (!found) {
+        throw new Error(`The logo has no tile (a rect at ${logoTileViewBox}).`)
+    }
+
+    return result
+}
 
 /**
  * Optimizes the source logo with svgo: smaller, visually identical, and it keeps the viewBox
@@ -117,7 +162,7 @@ export function parseSvg(svg: string): { viewBox: string; content: string } {
 
 /**
  * The SVG of an icon in the given style: the logo as it is ("transparent") or its tile edge to
- * edge on the tile gradient ("full-bleed").
+ * edge with square corners ("full-bleed").
  */
 export function composeIconSvg(logoSvg: string, style: IconStyle): string {
     const { viewBox, content } = parseSvg(logoSvg)
@@ -125,17 +170,39 @@ export function composeIconSvg(logoSvg: string, style: IconStyle): string {
         return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${viewBox}">${content}</svg>`
     }
 
-    const stops = tileGradientStops
-        .map(([offset, color]) => `<stop offset="${offset}" stop-color="${color}"/>`)
-        .join('')
+    return (
+        `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${logoTileViewBox}">` +
+        `${squareTileCorners(content)}</svg>`
+    )
+}
+
+/** Style of the SVG favicon that switches between its light and its dark logo. */
+export const adaptiveSvgStyle =
+    '[data-scheme=dark]{display:none}' +
+    '@media (prefers-color-scheme:dark){[data-scheme=light]{display:none}[data-scheme=dark]{display:inline}}'
+
+/** Gives every id of an SVG document (and every reference to it) the prefix. */
+function prefixIds(svg: string, prefix: string): string {
+    return optimize(svg, {
+        plugins: [{ name: 'prefixIds', params: { prefix, delim: '-' } }],
+    }).data
+}
+
+/**
+ * The SVG favicon: the light logo, and the dark one while the browser or the system is in dark
+ * mode. The ids of both logos get their own prefix, so they do not collide in one document.
+ */
+export function composeAdaptiveSvg(lightSvg: string, darkSvg: string): string {
+    const light = parseSvg(prefixIds(lightSvg, 'wmp-light'))
+    const dark = parseSvg(prefixIds(darkSvg, 'wmp-dark'))
 
     return (
-        `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">` +
-        `<defs><linearGradient id="wmp-app-icon-tile" x1="0" y1="0" x2="0.35" y2="1">` +
-        `${stops}</linearGradient></defs>` +
-        `<rect width="512" height="512" fill="url(#wmp-app-icon-tile)"/>` +
-        `<svg width="512" height="512" viewBox="${logoTileViewBox}">${content}</svg>` +
-        `</svg>`
+        `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${light.viewBox}" role="img" ` +
+        `aria-label="WaveMP">` +
+        `<style>${adaptiveSvgStyle}</style>` +
+        `<svg data-scheme="light" viewBox="${light.viewBox}">${light.content}</svg>` +
+        `<svg data-scheme="dark" viewBox="${dark.viewBox}">${dark.content}</svg>` +
+        `</svg>\n`
     )
 }
 
@@ -201,8 +268,12 @@ export function encodeIco(images: { size: number; png: Uint8Array }[]): Uint8Arr
     return ico
 }
 
-/** All icons of the web app, generated from the optimized logo. */
-export function createAppIcons(logoSvg: string): AppIconFile[] {
+/**
+ * All icons of the web app, generated from the optimized logo and its dark variant. The dark
+ * variant is used where the platform switches the icon with its dark mode (the SVG favicon) and
+ * by the dark variants of themes; all other icons show the light logo.
+ */
+export function createAppIcons(logoSvg: string, darkLogoSvg: string): AppIconFile[] {
     const transparent = composeIconSvg(logoSvg, 'transparent')
     const fullBleed = composeIconSvg(logoSvg, 'full-bleed')
     const png = (icon: PngIcon): AppIconFile => ({
@@ -210,13 +281,16 @@ export function createAppIcons(logoSvg: string): AppIconFile[] {
         contentType: 'image/png',
         data: renderPng(icon.style === 'transparent' ? transparent : fullBleed, icon.size),
     })
+    const svg = (iconPath: string, data: string): AppIconFile => ({
+        fileName: iconPath.slice(1),
+        contentType: 'image/svg+xml',
+        data: new TextEncoder().encode(data),
+    })
 
     return [
-        {
-            fileName: logoPath.slice(1),
-            contentType: 'image/svg+xml',
-            data: new TextEncoder().encode(logoSvg),
-        },
+        svg(logoPath, logoSvg),
+        svg(darkLogoPath, darkLogoSvg),
+        svg(faviconSvgPath, composeAdaptiveSvg(logoSvg, darkLogoSvg)),
         {
             fileName: 'favicon.ico',
             contentType: 'image/x-icon',
@@ -245,9 +319,10 @@ export function createManifestIcons(): ManifestIcon[] {
 /** Icon links in the head of index.html (favicon, SVG icon, Apple touch icon). */
 export function createHeadLinks(): HeadLink[] {
     return [
-        // sizes on the ICO lets browsers that support SVG icons prefer the SVG.
+        // sizes on the ICO lets browsers that support SVG icons prefer the SVG, which follows the
+        // dark mode of the browser.
         { rel: 'icon', href: '/favicon.ico', sizes: '32x32' },
-        { rel: 'icon', href: logoPath, type: 'image/svg+xml', sizes: 'any' },
+        { rel: 'icon', href: faviconSvgPath, type: 'image/svg+xml', sizes: 'any' },
         { rel: 'apple-touch-icon', href: `/${appleTouchIcon.fileName}` },
     ]
 }

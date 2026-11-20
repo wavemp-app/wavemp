@@ -17,8 +17,9 @@ COPY source/WaveMP.Web/package.json source/WaveMP.Web/package-lock.json ./
 RUN npm ci
 # Graphics, icons and themes, served unchanged by the web app (Vite publicDir).
 COPY assets/web/ /src/assets/web/
-# The logo; the build generates the favicon, the PWA icons and the Apple touch icon from it.
-COPY assets/logo/wavemp-logo.svg /src/assets/logo/
+# The default logo and its dark variant; the build generates the favicon, the PWA icons and the
+# Apple touch icon from them.
+COPY assets/logo/wavemp-logo-default.svg assets/logo/wavemp-logo-default-dark.svg /src/assets/logo/
 COPY source/WaveMP.Web/ ./
 # Major and minor version for builds without VERSION (the web app then reports <major>.<minor>.0-dev).
 COPY Directory.Build.props /src/
@@ -89,13 +90,13 @@ FROM mcr.microsoft.com/dotnet/aspnet:10.0-alpine@sha256:21c3f9798416cba4c0576a94
 # Image metadata (OCI labels). The CI adds version, revision, creation time and the GitHub
 # repository details. OCI has no label for a logo, so the icon is given in the labels that
 # container managers read: Unraid (net.unraid.docker.icon) and Artifact Hub
-# (io.artifacthub.package.logo-url), both pointing to the PNG export of the logo.
+# (io.artifacthub.package.logo-url), both pointing to the PNG export of the default logo.
 LABEL org.opencontainers.image.title="WaveMP" \
       org.opencontainers.image.description="A nostalgic media player for your self-hosted music and music videos." \
       org.opencontainers.image.source="https://github.com/wavemp-app/wavemp" \
       org.opencontainers.image.licenses="MIT" \
-      net.unraid.docker.icon="https://raw.githubusercontent.com/wavemp-app/wavemp/main/assets/logo/wavemp-logo-512.png" \
-      io.artifacthub.package.logo-url="https://raw.githubusercontent.com/wavemp-app/wavemp/main/assets/logo/wavemp-logo-512.png"
+      net.unraid.docker.icon="https://raw.githubusercontent.com/wavemp-app/wavemp/main/assets/logo/wavemp-logo-default-512.png" \
+      io.artifacthub.package.logo-url="https://raw.githubusercontent.com/wavemp-app/wavemp/main/assets/logo/wavemp-logo-default-512.png"
 
 # The Alpine base image runs .NET in invariant globalization mode, without ICU. WaveMP needs ICU
 # for Unicode normalization (profile names, tags) and culture-aware comparisons, so ICU with the
