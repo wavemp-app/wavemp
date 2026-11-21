@@ -697,7 +697,7 @@ Every group in which one entry is the active one gives the theme the same means 
 - The state is an attribute of the entry: `aria-current="page"` and `data-state="active"`, or `aria-checked="true"`.
 - The group has an `indicator` as its first child: empty, `aria-hidden`, hidden by the base (`display: none`) and laid over the active entry (`position: absolute` in the group, `left: var(--wmp-indicator-x)`, `top: var(--wmp-indicator-y)`, `inline-size: var(--wmp-indicator-width)`, `block-size: var(--wmp-indicator-height)`; in a `segmented-control` the whole height). A theme shows it and decides its shape, for example a line below the entry or a sliding pane of glass behind it. The group is a containing block (`position: relative`).
 - The group carries the runtime variables `--wmp-item-count`, `--wmp-active-index`, `--wmp-indicator-x`, `--wmp-indicator-y`, `--wmp-indicator-width` and `--wmp-indicator-height` (see [Runtime variables](#runtime-variables)). The app measures the box again when the active entry changes and when the group or its entries change their size. Without an active entry (`--wmp-active-index: -1`) the box has no size.
-- Two things follow from the measuring, and all shipped themes handle them in CSS only. An indicator without an active entry is a box without size, so it should paint nothing outside its box: no outer `box-shadow`, `outline` or `border` (a glow can be a `filter: drop-shadow()`, which follows painted content and draws nothing for an empty box). And the variables are set for the first time after the page is drawn and again after it is rebuilt, so an indicator with an unconditional `transition` slides in from the corner of the group. Let it move only while the person works with the group (`:hover`, `:focus-within`, `:active`), as in the example below; a click or an arrow key still animates it, and the screenshots of the regression stay stable.
+- Two things follow from the measuring, and all shipped themes handle them in CSS only. An indicator without an active entry is a box without size, so it should paint nothing outside its box: no outer `box-shadow`, `outline` or `border` (a glow can be a `filter: drop-shadow()`, which follows painted content and draws nothing for an empty box). And the variables are set for the first time after the page is drawn and again after it is rebuilt, so an indicator with an unconditional `transition` slides in from the corner of the group. Let it move only while the person works with the group (`:hover`, `:focus-within`, `:active`), as the base does with the durations of [Motion](#motion) and as in the example below; a click or an arrow key still animates it, and the screenshots of the regression stay stable.
 - `rating` and `playlist-cover` carry `--wmp-item-count` and `--wmp-active-index` only.
 
 Example of a line that slides below the active tab:
@@ -714,8 +714,8 @@ Example of a line that slides below the active tab:
 
 [data-part='tabs']:is(:hover, :focus-within, :active) > [data-part='indicator'] {
     transition:
-        left 0.25s ease,
-        inline-size 0.25s ease;
+        left var(--wmp-motion-duration-slow) var(--wmp-motion-easing-standard),
+        inline-size var(--wmp-motion-duration-slow) var(--wmp-motion-easing-standard);
 }
 ```
 
@@ -1042,6 +1042,38 @@ The story of the recap takes its colors from the variables of its design. The de
 | `--wmp-recap-transition-duration` | `0.6s` | Duration of the entrance of a section; the base leaves the entrance out for `prefers-reduced-motion: reduce` |
 | `--wmp-chart-height` | `12rem` | Height of the bars of a `chart` on the statistics page |
 | `--wmp-chart-bar-color` | `var(--wmp-color-accent)` | Color of the bars of a `chart` on the statistics page |
+
+### Motion
+
+The base animates the interface subtly and fast, with the durations and easings of these variables. What answers an action moves from where it comes from; what only appears fades in:
+
+| Interaction | What the base does | Duration and easing |
+|---|---|---|
+| Hover and press | Background color, border color, text color, shadow and opacity of buttons (`data-variant`), `tab`, `bottom-nav-item`, `admin-nav-item`, `recap-nav-item`, `tree-item`, `menu-item`, `list-row`, `queue-item`, `tile`, `profile-tile`, `theme-option`, `file-choice`, `online-match`, `color-swatch` and `avatar-preset` fade. Pressed buttons (not `segment`s and checkboxes), `tile`s and `profile-tile`s shrink to `--wmp-motion-press-scale` | fast, standard |
+| Segmented controls, tabs and the other groups of [Active element of a group](#active-element-of-a-group) | The `indicator` slides to the new active entry (`left`, `top`, `inline-size`, `block-size`, `opacity`) while the person works with the group (`:hover`, `:focus-within`, `:active`); the first measuring and changes of the layout put it in place at once. A theme only has to show the `indicator` | medium, standard |
+| Menus (`context-menu`, also submenus) | Grow out of their top left corner, the point they open at, from `--wmp-motion-scale` and fade in; they fade out faster and take no pointer while they do | in: medium, enter; out: fast, exit |
+| Dialogs (`dialog` and its `::backdrop`) | Grow out of the middle from `--wmp-motion-scale` and fade in, the backdrop fades; both fade out | in: slow, enter; out: medium, exit |
+| Side navigation | On phones the drawer (`sidebar`) slides in from its edge and the `sidebar-backdrop` fades; on the desktop the sidebar column narrows and widens when the person uses `btn-sidebar-toggle` (a collapsed state loaded at the start applies at once) | slow; drawer in: enter, out: exit |
+| Pages | The page (`[data-view]` in `content`) fades in when it opens, also when it comes back with back or forward | slow, standard |
+| Entries of lists | `list-row`, `tile`, `queue-item`, `tree-item` and `profile-tile` fade in when they appear: loaded, added, loaded more or in a group that opens | medium, standard |
+
+| Variable | Default | Used for |
+|---|---|---|
+| `--wmp-motion-duration-fast` | `120ms` | Hover and press, menus closing |
+| `--wmp-motion-duration-medium` | `180ms` | The `indicator`, menus opening, dialogs closing, entries of lists |
+| `--wmp-motion-duration-slow` | `250ms` | Dialogs opening, the side navigation, pages |
+| `--wmp-motion-duration-fade` | `100ms` | The fades that replace the movement for `prefers-reduced-motion: reduce` |
+| `--wmp-motion-easing-standard` | `cubic-bezier(0.2, 0, 0, 1)` | Changes of something that stays: hover, press, the `indicator`, pages, lists |
+| `--wmp-motion-easing-enter` | `cubic-bezier(0, 0, 0, 1)` | Something that opens: menus, dialogs, the drawer |
+| `--wmp-motion-easing-exit` | `cubic-bezier(0.3, 0, 1, 1)` | Something that closes |
+| `--wmp-motion-scale` | `0.96` | Scale a menu or dialog grows from and shrinks to |
+| `--wmp-motion-press-scale` | `0.97` | Scale of a pressed button, `tile` or `profile-tile` |
+
+- **Tuning:** set the variables on `:root`, for example slower menus and dialogs with `--wmp-motion-duration-medium: 220ms`, or a springy easing with `--wmp-motion-easing-enter: cubic-bezier(0.3, 1.35, 0.5, 1)`. Keep the durations short (roughly 120 to 250 ms), so the interface never waits for its animations.
+- **Switching off:** `--wmp-motion-duration-fast`, `-medium` and `-slow` of `0s` switch the motion of the base off; `--wmp-motion-press-scale: 1` keeps pressed elements in place.
+- **Own transitions:** the base sets `transition-property`, `transition-duration` and `transition-timing-function` (and `animation` for pages and lists); a `transition` or `animation` of the theme on the same part replaces them. Use the variables in them as well, so the theme stays consistent, and keep the properties of the base the theme still wants, for example `scale` for the press of buttons and tiles. A theme that sets `opacity` or `scale` on `context-menu` or `dialog` should do so only while they are open (`:popover-open`, `[open]`), otherwise it hides their fade.
+- **Reduced motion:** with `prefers-reduced-motion: reduce` nothing moves or grows: the base sets `--wmp-motion-scale` and `--wmp-motion-press-scale` to `1` with a priority no theme overrides, ends every transition and animation at once and keeps only short fades of `--wmp-motion-duration-fade` for menus, dialogs, the drawer (which fades instead of sliding) and pages. Movements of the theme itself need a `@media (prefers-reduced-motion: reduce)` rule of the theme as well, as in all shipped themes.
+- The screenshots of the [regression](#regression) are taken with reduced motion and with animations stopped, so the motion never shows up in them.
 
 ### Runtime variables
 
@@ -1489,6 +1521,7 @@ The themes shipped with WaveMP name the version they are written for in the comm
 ### Changelog
 
 - **Version 5:** visualizations. Changed: the `visualization` is no longer a placeholder: the state `placeholder` is gone, its `icon` and `label` moved into the new `visualization-message`, and the base lays out the `visualization` as a positioned box (no longer a grid) with the background `--wmp-stage-view-background`; themes that styled `visualization > icon` or `visualization > label` have to style `visualization-message > icon` and `visualization-message > label`; `btn-fullscreen` also lies in `visualization-controls`, so theme rules for `btn-fullscreen` that should only apply to the video need `video-stage > btn-fullscreen`. Added: the states `idle`, `loading`, `waiting`, `running`, `paused`, `unsupported`, `failed` and `fullscreen` of `visualization` and its attribute `data-module`; the parts `visualization-canvas`, `visualization-message`, `visualization-controls`, `btn-preset-previous`, `btn-preset-next` and `btn-auto-change` (states `on` and `off`, `aria-pressed`); the values `visualization-preset` and `visualization-auto-change` of `data-field`; the icon slots `preset-previous`, `preset-next` and `auto-change`.
+    - Additions without a version change: the motion system (see [Motion](#motion)). The variables `--wmp-motion-duration-fast`, `--wmp-motion-duration-medium`, `--wmp-motion-duration-slow`, `--wmp-motion-duration-fade`, `--wmp-motion-easing-standard`, `--wmp-motion-easing-enter`, `--wmp-motion-easing-exit`, `--wmp-motion-scale` and `--wmp-motion-press-scale`; the base now animates hover and press, the `indicator` of groups while the person works with them, `context-menu`s, `dialog`s, the drawer and the collapsing sidebar, pages and entries of lists. The drawer on phones slides with these variables (it used to take `0.2s`). Existing parts and states are unchanged; a theme with its own `transition` on a pressed part keeps `scale` in it to keep the press.
     - Additions without a version change: the logo as a link and touch targets on phones. The `logo` in `header` is an `a` that leads to the start page (it was a `span`; its children stay the same, the base sets `color: inherit` and no underline); the `checkbox` of a `review-item` lies in the new part `review-select` (a `label`, state `disabled`), which takes the touch; the variable `--wmp-touch-target-size` and the minimum sizes of [Touch targets](#touch-targets) below 64rem; there `--wmp-field-height` is `2.75rem` (was `2.5rem`), the `meta-item`s of `list-group-meta` stand in a wrapping row, and the `seek` of the full-screen player is as high as a touch target.
     - Additions without a version change: the video badge in lists of songs. The `badge` of a song with a video comes before the title `label` in the `list-cell` `title` (it used to follow it); the state `has-video` of `list` while one of its songs has a video, in which the base gives the `list-column` and the `list-cell`s `title` a column of the new variable `--wmp-list-badge-width` for the badge, so the titles stay in line. Themes that put space before the badge (`margin-inline-start`) should drop it.
     - Additions without a version change: the ambient light of videos. The parts `video-ambient` (states `off`, `waiting`, `running`, `paused` and `static`) between `video-backdrop` and `video` in `video-stage`, and two `video-ambient-canvas`es in it (states `current` and `previous`); the variables `--wmp-video-ambient-intensity`, `--wmp-video-ambient-blur`, `--wmp-video-ambient-saturation`, `--wmp-video-ambient-scale`, `--wmp-video-ambient-transition-duration` and `--wmp-video-ambient-fade-duration`; the runtime variable `--wmp-video-ambient-color`; the `data-field` `video-ambient` on the settings page.

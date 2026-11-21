@@ -29,6 +29,9 @@ export default defineConfig({
             use: {
                 ...devices['Desktop Chrome'],
                 locale: 'en-US',
+                // Pages, lists, menus and dialogs only fade briefly, so no picture catches them
+                // half shown (motion system, THEMING.md "Motion").
+                reducedMotion: 'reduce',
                 // Headless Chromium draws the visualizations with WebGL 2 in software.
                 launchOptions: {
                     args: ['--enable-unsafe-swiftshader', '--use-angle=swiftshader'],

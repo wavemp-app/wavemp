@@ -57,5 +57,21 @@
             transition-duration: 0.01ms !important;
             scroll-behavior: auto !important;
         }
+
+        /*
+         * The motion system keeps short fades where something opens or appears: menus, dialogs,
+         * the drawer and pages (tokens.css takes their movement away).
+         */
+        :is(
+            [data-part='context-menu'],
+            [data-part='dialog'],
+            [data-part='app'] > [data-part='sidebar'],
+            [data-part='app'] > [data-part='sidebar-backdrop'],
+            [data-part='content'] > [data-view]
+        ),
+        [data-part='dialog']::backdrop {
+            animation-duration: var(--wmp-motion-duration-fade) !important;
+            transition-duration: var(--wmp-motion-duration-fade) !important;
+        }
     }
 }

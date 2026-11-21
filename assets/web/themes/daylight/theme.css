@@ -606,8 +606,9 @@ a[data-part='breadcrumb-link']:hover {
     border: 1px solid transparent;
     border-radius: var(--wmp-radius-m);
     transition:
-        background-color 0.15s ease,
-        border-color 0.15s ease;
+        background-color var(--wmp-motion-duration-fast) var(--wmp-motion-easing-standard),
+        border-color var(--wmp-motion-duration-fast) var(--wmp-motion-easing-standard),
+        scale var(--wmp-motion-duration-fast) var(--wmp-motion-easing-standard);
 }
 
 [data-part='tile']:hover,
@@ -1331,9 +1332,9 @@ a[data-part='breadcrumb-link']:hover {
 
 [data-part='bottom-nav']:is(:hover, :focus-within, :active) > [data-part='indicator'] {
     transition:
-        left 0.25s ease,
-        margin-inline 0.25s ease,
-        inline-size 0.25s ease;
+        left var(--wmp-motion-duration-slow) var(--wmp-motion-easing-standard),
+        margin-inline var(--wmp-motion-duration-slow) var(--wmp-motion-easing-standard),
+        inline-size var(--wmp-motion-duration-slow) var(--wmp-motion-easing-standard);
 }
 
 [data-part='bottom-nav-item'] {
@@ -1423,9 +1424,10 @@ a[data-part='breadcrumb-link']:hover {
     border: 1px solid transparent;
     border-radius: var(--wmp-radius-l);
     transition:
-        background 0.15s ease,
-        border-color 0.15s ease,
-        opacity 0.15s ease;
+        background var(--wmp-motion-duration-fast) var(--wmp-motion-easing-standard),
+        border-color var(--wmp-motion-duration-fast) var(--wmp-motion-easing-standard),
+        opacity var(--wmp-motion-duration-fast) var(--wmp-motion-easing-standard),
+        scale var(--wmp-motion-duration-fast) var(--wmp-motion-easing-standard);
 }
 
 [data-part='profile-tile'] > [data-part='avatar'] {
@@ -1657,8 +1659,8 @@ a[data-part='breadcrumb-link']:hover {
 [data-part='admin-nav']:is(:hover, :focus-within, :active) > [data-part='indicator'],
 [data-part='recap-nav']:is(:hover, :focus-within, :active) > [data-part='indicator'] {
     transition:
-        left 0.25s ease,
-        inline-size 0.25s ease;
+        left var(--wmp-motion-duration-slow) var(--wmp-motion-easing-standard),
+        inline-size var(--wmp-motion-duration-slow) var(--wmp-motion-easing-standard);
 }
 
 [data-part='section-title'] {

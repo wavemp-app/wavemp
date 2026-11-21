@@ -629,8 +629,9 @@ a[data-part='breadcrumb-link']:hover {
 [data-part='tile'] {
     border: 1px solid transparent;
     transition:
-        background-color 0.15s ease,
-        border-color 0.15s ease;
+        background-color var(--wmp-motion-duration-fast) var(--wmp-motion-easing-standard),
+        border-color var(--wmp-motion-duration-fast) var(--wmp-motion-easing-standard),
+        scale var(--wmp-motion-duration-fast) var(--wmp-motion-easing-standard);
 }
 
 [data-part='tile']:is(:hover, :focus-visible) {
@@ -1252,8 +1253,9 @@ a[data-part='breadcrumb-link']:hover {
         0 4px 12px rgb(0 20 80 / 30%);
     color: #10204a;
     transition:
-        transform 0.15s ease,
-        box-shadow 0.15s ease;
+        transform var(--wmp-motion-duration-fast) var(--wmp-motion-easing-standard),
+        box-shadow var(--wmp-motion-duration-fast) var(--wmp-motion-easing-standard),
+        scale var(--wmp-motion-duration-fast) var(--wmp-motion-easing-standard);
 }
 
 [data-part='profile-tile'] > [data-part='label'] {
@@ -1896,10 +1898,10 @@ a[data-part='breadcrumb-link']:hover {
     ):is(:hover, :focus-within, :active)
     > [data-part='indicator'] {
     transition:
-        left 0.25s ease,
-        inset-block-start 0.25s ease,
-        inline-size 0.25s ease,
-        block-size 0.25s ease;
+        left var(--wmp-motion-duration-slow) var(--wmp-motion-easing-standard),
+        inset-block-start var(--wmp-motion-duration-slow) var(--wmp-motion-easing-standard),
+        inline-size var(--wmp-motion-duration-slow) var(--wmp-motion-easing-standard),
+        block-size var(--wmp-motion-duration-slow) var(--wmp-motion-easing-standard);
 }
 
 @media (prefers-reduced-motion: reduce) {

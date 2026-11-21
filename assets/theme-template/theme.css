@@ -85,6 +85,13 @@
     --wmp-play-button-size: 3.25rem;
 
     /*
+     * Motion: durations and easings of hover, press, menus, dialogs, the drawer, pages and lists.
+     * Durations of 0s switch the motion off; prefers-reduced-motion is handled by WaveMP.
+     */
+    --wmp-motion-duration-medium: 200ms;
+    --wmp-motion-easing-enter: cubic-bezier(0.2, 0.9, 0.3, 1);
+
+    /*
      * Fonts: installed on the device, or WOFF2 files of the package under a license that allows
      * it, for example 'My Font', system-ui, sans-serif.
      */
@@ -154,8 +161,8 @@
     border-radius: var(--wmp-radius-round);
     background: var(--wmp-color-accent);
     transition:
-        inset-inline-start 0.25s ease,
-        inline-size 0.25s ease;
+        inset-inline-start var(--wmp-motion-duration-slow) var(--wmp-motion-easing-standard),
+        inline-size var(--wmp-motion-duration-slow) var(--wmp-motion-easing-standard);
 }
 
 /* Covers get rounded corners everywhere. */

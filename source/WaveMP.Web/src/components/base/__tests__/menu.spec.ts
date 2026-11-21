@@ -4,6 +4,8 @@ import {
     firstEnabledIndex,
     isMenuKey,
     lastEnabledIndex,
+    layoutRect,
+    layoutSize,
     nextEnabledIndex,
     submenuPosition,
 } from '../menu'
@@ -81,5 +83,23 @@ describe('isMenuKey', () => {
         expect(isMenuKey({ key: 'F10', shiftKey: true })).toBe(true)
         expect(isMenuKey({ key: 'F10', shiftKey: false })).toBe(false)
         expect(isMenuKey({ key: 'Enter', shiftKey: true })).toBe(false)
+    })
+})
+
+describe('layoutSize', () => {
+    it('takes the size of the layout, not the scaled box of a menu that is still growing', () => {
+        const element = { offsetWidth: 200, offsetHeight: 300 }
+        expect(layoutSize(element)).toEqual({ width: 200, height: 300 })
+    })
+})
+
+describe('layoutRect', () => {
+    it('places the size at the top left corner', () => {
+        expect(layoutRect({ x: 100, y: 40 }, { width: 200, height: 300 })).toEqual({
+            left: 100,
+            top: 40,
+            right: 300,
+            bottom: 340,
+        })
     })
 })

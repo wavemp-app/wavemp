@@ -1055,8 +1055,8 @@ a[data-part='breadcrumb-link']:hover {
 :is([data-part='tabs'], [data-part='bottom-nav']):is(:hover, :focus-within, :active)
     > [data-part='indicator'] {
     transition:
-        left 0.25s ease,
-        inline-size 0.25s ease;
+        left var(--wmp-motion-duration-slow) var(--wmp-motion-easing-standard),
+        inline-size var(--wmp-motion-duration-slow) var(--wmp-motion-easing-standard);
 }
 
 :is([data-part='tabs'], [data-part='bottom-nav']):not(:has([aria-current='page']))

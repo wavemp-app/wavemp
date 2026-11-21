@@ -144,10 +144,14 @@
             overflow: auto !important;
             padding-block: env(safe-area-inset-top) env(safe-area-inset-bottom);
             box-shadow: 0 0 2rem rgb(0 0 0 / 35%);
-            /* Closing: hidden after the slide; opening: visible at once, so it can take the focus. */
+            /*
+             * Slides in from its edge (motion system, motion.css). Closing: hidden after the
+             * slide; opening: visible at once, so it can take the focus.
+             */
             transition:
-                transform 0.2s ease,
-                visibility 0s linear 0.2s;
+                transform var(--wmp-motion-duration-slow) var(--wmp-motion-easing-exit),
+                opacity var(--wmp-motion-duration-slow) var(--wmp-motion-easing-exit),
+                visibility 0s linear var(--wmp-motion-duration-slow);
         }
 
         [data-part='app'] > [data-part='sidebar'][data-state~='closed'] {
@@ -159,7 +163,8 @@
             visibility: visible !important;
             transform: none !important;
             transition:
-                transform 0.2s ease,
+                transform var(--wmp-motion-duration-slow) var(--wmp-motion-easing-enter),
+                opacity var(--wmp-motion-duration-slow) var(--wmp-motion-easing-enter),
                 visibility 0s;
         }
 
@@ -170,8 +175,41 @@
             display: block !important;
         }
 
+        /* The backdrop fades in and out with the drawer. */
+        [data-part='app'] > [data-part='sidebar-backdrop'] {
+            transition:
+                opacity var(--wmp-motion-duration-slow) var(--wmp-motion-easing-standard),
+                display var(--wmp-motion-duration-slow) allow-discrete;
+        }
+
         [data-part='app'] > [data-part='sidebar-backdrop'][data-state~='closed'] {
             display: none !important;
+            opacity: 0;
+        }
+
+        @starting-style {
+            [data-part='app'] > [data-part='sidebar-backdrop'][data-state~='open'] {
+                opacity: 0;
+            }
+        }
+
+        /* Reduced motion: the drawer fades instead of sliding (reset.css shortens the fade). */
+        @media (prefers-reduced-motion: reduce) {
+            [data-part='app'] > [data-part='sidebar'][data-state~='closed'] {
+                transform: none !important;
+                opacity: 0;
+            }
+
+            [data-part='app'] > [data-part='sidebar'][data-state~='closed'],
+            [data-part='app'] > [data-part='sidebar'][data-state~='open'] {
+                transition:
+                    opacity var(--wmp-motion-duration-fade) linear,
+                    visibility 0s linear var(--wmp-motion-duration-fade);
+            }
+
+            [data-part='app'] > [data-part='sidebar'][data-state~='open'] {
+                transition-delay: 0s;
+            }
         }
 
         /* The drawer always shows the whole tree; collapsing is for the desktop only. */

@@ -183,6 +183,17 @@
             --wmp-sidebar-width: var(--wmp-sidebar-collapsed-width);
         }
 
+        /*
+         * The sidebar narrows and widens (motion system, motion.css) when the person uses its
+         * toggle; a setting loaded at the start or a change of the window applies at once.
+         */
+        [data-part='app']:has(
+            > [data-part='sidebar'] [data-part='btn-sidebar-toggle']:is(:hover, :focus)
+        ) {
+            transition: grid-template-columns var(--wmp-motion-duration-slow)
+                var(--wmp-motion-easing-standard);
+        }
+
         [data-part='bottom-nav'],
         [data-part='btn-menu'],
         [data-part='sidebar-backdrop'],

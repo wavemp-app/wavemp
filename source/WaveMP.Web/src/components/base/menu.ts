@@ -65,6 +65,24 @@ export interface Rect {
 }
 
 /**
+ * Size of a menu in its layout, without the scale it grows from while it opens (motion system):
+ * the position is computed for the menu as it ends up, not for a frame of its animation.
+ */
+export function layoutSize(element: Pick<HTMLElement, 'offsetWidth' | 'offsetHeight'>): Size {
+    return { width: element.offsetWidth, height: element.offsetHeight }
+}
+
+/** Box of a menu in its layout: placed at a point (its top left corner) with its layout size. */
+export function layoutRect(position: Point, size: Size): Rect {
+    return {
+        left: position.x,
+        top: position.y,
+        right: position.x + size.width,
+        bottom: position.y + size.height,
+    }
+}
+
+/**
  * Position of a submenu: beside its menu at the height of its entry, on the right if it fits there,
  * otherwise on the left; always kept within the viewport.
  */

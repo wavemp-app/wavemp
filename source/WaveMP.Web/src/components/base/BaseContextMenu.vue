@@ -6,6 +6,8 @@ import {
     firstEnabledIndex,
     isMenuKey,
     lastEnabledIndex,
+    layoutRect,
+    layoutSize,
     nextEnabledIndex,
     submenuPosition,
 } from './menu'
@@ -89,12 +91,10 @@ async function openAt(pointX: number, pointY: number): Promise<void> {
     isOpen.value = true
     await nextTick()
 
-    const rect = element.getBoundingClientRect()
-    const position = clampMenuPosition(
-        { x: pointX, y: pointY },
-        { width: rect.width, height: rect.height },
-        { width: window.innerWidth, height: window.innerHeight },
-    )
+    const position = clampMenuPosition({ x: pointX, y: pointY }, layoutSize(element), {
+        width: window.innerWidth,
+        height: window.innerHeight,
+    })
     x.value = position.x
     y.value = position.y
     focusEntry(element, props.items, firstEnabledIndex(entriesOf(props.items)))
@@ -152,11 +152,13 @@ async function openSubmenu(item: MenuItem, focus: 'first' | 'none'): Promise<voi
     }
     await nextTick()
 
-    const size = element.getBoundingClientRect()
+    // Measured in the layout, so a menu that is still growing (motion system) is placed right.
+    const menuRect = layoutRect({ x: x.value, y: y.value }, layoutSize(menu.value))
+    const entryTop = menuRect.top + menu.value.clientTop + anchor.offsetTop - menu.value.scrollTop
     const position = submenuPosition(
-        anchor.getBoundingClientRect(),
-        menu.value.getBoundingClientRect(),
-        { width: size.width, height: size.height },
+        { left: menuRect.left, top: entryTop, right: menuRect.right, bottom: entryTop },
+        menuRect,
+        layoutSize(element),
         { width: window.innerWidth, height: window.innerHeight },
     )
     submenuX.value = position.x

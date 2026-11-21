@@ -808,8 +808,9 @@ a[data-part="breadcrumb-link"]:hover {
     border: 1px solid transparent;
     border-radius: 0.25rem;
     transition:
-        background-color 0.15s ease,
-        border-color 0.15s ease;
+        background-color var(--wmp-motion-duration-fast) var(--wmp-motion-easing-standard),
+        border-color var(--wmp-motion-duration-fast) var(--wmp-motion-easing-standard),
+        scale var(--wmp-motion-duration-fast) var(--wmp-motion-easing-standard);
 }
 
 [data-part="tile"]:hover,
@@ -1111,8 +1112,9 @@ a[data-part="breadcrumb-link"]:hover {
 [data-part="profile-tile"] {
     border-radius: 0.5rem;
     transition:
-        background 0.15s ease,
-        opacity 0.15s ease;
+        background var(--wmp-motion-duration-fast) var(--wmp-motion-easing-standard),
+        opacity var(--wmp-motion-duration-fast) var(--wmp-motion-easing-standard),
+        scale var(--wmp-motion-duration-fast) var(--wmp-motion-easing-standard);
 }
 
 [data-part="profile-tile"] > [data-part="label"] {

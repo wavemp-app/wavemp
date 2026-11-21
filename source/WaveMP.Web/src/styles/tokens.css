@@ -344,6 +344,33 @@
         /* Charts of the statistics */
         --wmp-chart-height: 12rem;
         --wmp-chart-bar-color: var(--wmp-color-accent);
+
+        /*
+         * Motion (THEMING.md, section "Motion"): what answers an action of the person moves from
+         * where it comes from (the indicator to the new option, a menu out of the point it opens
+         * at, a dialog out of the middle, the drawer from its edge); what only appears (a page,
+         * the entries of a list) fades in. Durations of 0s switch the motion off.
+         */
+        --wmp-motion-duration-fast: 120ms;
+        --wmp-motion-duration-medium: 180ms;
+        --wmp-motion-duration-slow: 250ms;
+        --wmp-motion-duration-fade: 100ms;
+        --wmp-motion-easing-standard: cubic-bezier(0.2, 0, 0, 1);
+        --wmp-motion-easing-enter: cubic-bezier(0, 0, 0, 1);
+        --wmp-motion-easing-exit: cubic-bezier(0.3, 0, 1, 1);
+        --wmp-motion-scale: 0.96;
+        --wmp-motion-press-scale: 0.97;
+    }
+
+    /*
+     * Reduced motion: nothing moves or grows, whatever the theme sets (a layered !important wins
+     * over the theme); menus, dialogs, the drawer and pages only fade (reset.css).
+     */
+    @media (prefers-reduced-motion: reduce) {
+        :root {
+            --wmp-motion-scale: 1 !important;
+            --wmp-motion-press-scale: 1 !important;
+        }
     }
 
     /* The dark variant of a theme shows the dark variant of the logo. */

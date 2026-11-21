@@ -1,0 +1,166 @@
+/*
+ * Motion system of the base (THEMING.md, section "Motion"). Everything takes its durations and
+ * easings from the --wmp-motion-* variables (tokens.css), so a theme tunes or switches off the
+ * motion with them, or replaces single transitions and animations with its own rules. What answers
+ * an action moves from where it comes from; what only appears fades in:
+ *   - hover and press: colors and shadows fade, buttons and tiles give way a little when pressed;
+ *   - the indicator of a group slides to the new active entry while the person works with it;
+ *   - menus grow out of the point they open at, dialogs out of the middle, both fade out faster;
+ *   - the drawer slides in from its edge (mobile.css), the collapsing sidebar narrows (layout.css);
+ *   - pages and the entries of lists fade in.
+ * With prefers-reduced-motion nothing moves; menus, dialogs, the drawer and pages only fade
+ * (reset.css, tokens.css).
+ */
+@layer wavemp.components {
+    /* --- Hover and press ------------------------------------------------------------------ */
+
+    :is(
+        [data-variant],
+        [data-part='tab'],
+        [data-part='bottom-nav-item'],
+        [data-part='admin-nav-item'],
+        [data-part='recap-nav-item'],
+        [data-part='tree-item'],
+        [data-part='menu-item'],
+        [data-part='list-row'],
+        [data-part='queue-item'],
+        [data-part='tile'],
+        [data-part='profile-tile'],
+        [data-part='theme-option'],
+        [data-part='file-choice'],
+        [data-part='online-match'],
+        [data-part='color-swatch'],
+        [data-part='avatar-preset']
+    ) {
+        transition-property: background-color, border-color, color, box-shadow, opacity, scale;
+        transition-duration: var(--wmp-motion-duration-fast);
+        transition-timing-function: var(--wmp-motion-easing-standard);
+    }
+
+    /* Segments and checkboxes stay in line with their neighbors; everything else gives way. */
+    :is(
+            :where(button, a)[data-variant]:not([data-part='segment'], [data-variant='checkbox']),
+            [data-part='tile'],
+            [data-part='profile-tile']
+        ):active:not(:disabled, [aria-disabled='true']) {
+        scale: var(--wmp-motion-press-scale);
+    }
+
+    /* --- Indicator of a group ------------------------------------------------------------- */
+
+    /*
+     * Only while the person works with the group: the first measuring and changes of the layout
+     * put the indicator in place at once, so it never slides in from a corner of the group.
+     */
+    :is(
+            [data-part='tabs'],
+            [data-part='bottom-nav'],
+            [data-part='admin-nav'],
+            [data-part='recap-nav'],
+            [data-part='tree'],
+            [data-part='color-picker'],
+            [data-part='avatar-presets'],
+            [data-part='segmented-control'],
+            [data-part='theme-picker'],
+            [data-part='file-choices'],
+            [data-part='online-matches']
+        ):is(:hover, :focus-within, :active)
+        > [data-part='indicator'] {
+        transition-property: left, top, inline-size, block-size, opacity;
+        transition-duration: var(--wmp-motion-duration-medium);
+        transition-timing-function: var(--wmp-motion-easing-standard);
+    }
+
+    /* --- Menus ---------------------------------------------------------------------------- */
+
+    /*
+     * Menus grow out of the point they open at and fade out faster than they came. A closing menu
+     * stays in the top layer until it has faded (overlay), but no longer takes the pointer.
+     */
+    [data-part='context-menu'] {
+        transform-origin: top left;
+        transition-property: opacity, scale, display, overlay;
+        transition-duration: var(--wmp-motion-duration-fast);
+        transition-timing-function: var(--wmp-motion-easing-exit);
+        transition-behavior: allow-discrete;
+    }
+
+    [data-part='context-menu']:not(:popover-open) {
+        opacity: 0;
+        scale: var(--wmp-motion-scale);
+        pointer-events: none;
+    }
+
+    [data-part='context-menu']:popover-open {
+        transition-duration: var(--wmp-motion-duration-medium);
+        transition-timing-function: var(--wmp-motion-easing-enter);
+    }
+
+    @starting-style {
+        [data-part='context-menu']:popover-open {
+            opacity: 0;
+            scale: var(--wmp-motion-scale);
+        }
+    }
+
+    /* --- Dialogs -------------------------------------------------------------------------- */
+
+    [data-part='dialog'],
+    [data-part='dialog']::backdrop {
+        transition-property: opacity, scale, display, overlay;
+        transition-duration: var(--wmp-motion-duration-medium);
+        transition-timing-function: var(--wmp-motion-easing-exit);
+        transition-behavior: allow-discrete;
+    }
+
+    [data-part='dialog']:not([open]) {
+        scale: var(--wmp-motion-scale);
+        pointer-events: none;
+    }
+
+    :is([data-part='dialog']:not([open]), [data-part='dialog']:not([open])::backdrop) {
+        opacity: 0;
+    }
+
+    :is([data-part='dialog'][open], [data-part='dialog'][open]::backdrop) {
+        transition-duration: var(--wmp-motion-duration-slow);
+        transition-timing-function: var(--wmp-motion-easing-enter);
+    }
+
+    @starting-style {
+        [data-part='dialog'][open] {
+            opacity: 0;
+            scale: var(--wmp-motion-scale);
+        }
+
+        [data-part='dialog'][open]::backdrop {
+            opacity: 0;
+        }
+    }
+
+    /* --- Pages and lists ------------------------------------------------------------------ */
+
+    /* A page fades in when it opens, also when it comes back from the background (back, forward). */
+    [data-part='content'] > [data-view] {
+        animation: wmp-motion-fade-in var(--wmp-motion-duration-slow)
+            var(--wmp-motion-easing-standard);
+    }
+
+    /* Entries of lists fade in when they appear: loaded, added, more of them or a group opened. */
+    :is(
+        [data-part='list-row'],
+        [data-part='tile'],
+        [data-part='queue-item'],
+        [data-part='tree-item'],
+        [data-part='profile-tile']
+    ) {
+        animation: wmp-motion-fade-in var(--wmp-motion-duration-medium)
+            var(--wmp-motion-easing-standard);
+    }
+
+    @keyframes wmp-motion-fade-in {
+        from {
+            opacity: 0;
+        }
+    }
+}
