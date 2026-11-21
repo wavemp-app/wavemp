@@ -3,8 +3,9 @@
 // remembered in localStorage, so a profile with an uploaded theme sees it from the first paint;
 // the server stays the source of truth and the list is loaded again after a profile is selected.
 // Only addresses of theme files of the server itself are taken, from the API and from storage.
+// Themes the server blocked (they break a security rule of its version) are not taken.
 
-import { ThemeVariantObject, type Theme } from '@/api/generated/models'
+import { ThemeStatusObject, ThemeVariantObject, type Theme } from '@/api/generated/models'
 import { isValidThemeId } from './choice'
 import { themes as shippedThemes, type ThemeDefinition, type ThemeVariant } from './themes'
 
@@ -124,11 +125,19 @@ export function toThemeDefinition(theme: Theme): ThemeDefinition | null {
     )
 }
 
-/** The valid uploaded themes of an answer of the API, each id once. */
+/** Whether the server blocked the theme because it breaks a security rule; it serves no files then. */
+export function isBlockedTheme(theme: Theme): boolean {
+    return theme.status === ThemeStatusObject.Blocked
+}
+
+/**
+ * The valid uploaded themes of an answer of the API, each id once. Blocked themes are left out, so
+ * they cannot be chosen and profiles that chose one see the default theme.
+ */
 export function toThemeDefinitions(list: readonly Theme[]): ThemeDefinition[] {
     const definitions: ThemeDefinition[] = []
     for (const theme of list) {
-        const definition = toThemeDefinition(theme)
+        const definition = isBlockedTheme(theme) ? null : toThemeDefinition(theme)
         if (definition && !definitions.some((known) => known.id === definition.id)) {
             definitions.push(definition)
         }

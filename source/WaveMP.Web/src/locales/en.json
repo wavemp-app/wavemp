@@ -1532,6 +1532,8 @@
     "installedAt": "Installed on {date}",
     "outdated": "Outdated",
     "outdatedHint": "This version of WaveMP checks themes more strictly than the one that installed this theme. Profiles still see the theme as it is. Fix these problems and upload a new version:",
+    "blocked": "Blocked",
+    "blockedHint": "This theme contains content that this version of WaveMP no longer allows for security reasons. It is blocked: profiles that chose it see Midnight instead. Fix these problems and upload a new version to use it again:",
     "problemList": "Problems of {name}",
     "replace": "Upload a new version of {name}",
     "delete": "Delete {name}",

@@ -34,8 +34,8 @@ public sealed class ThemeFilesController(IThemeStore store) : ControllerBase
     /// <param name="name">Name of the file: 32 hexadecimal digits and the extension css, svg, png, webp or
     /// woff2.</param>
     /// <response code="200">The file.</response>
-    /// <response code="404">The theme does not exist or has no such file (code
-    /// <c>theme.file_not_found</c>).</response>
+    /// <response code="404">The theme does not exist, has no such file or is blocked because it breaks a security
+    /// rule of this version (code <c>theme.file_not_found</c>).</response>
     [HttpGet(Name = "GetThemeFile")]
     [ProducesResponseType<Stream>(
         StatusCodes.Status200OK,

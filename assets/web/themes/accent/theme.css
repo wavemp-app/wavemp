@@ -1693,7 +1693,7 @@ a[data-part='breadcrumb-link']:hover {
     color: var(--wmp-color-success);
 }
 
-[data-part='badge']:is([data-state~='failed'], [data-state~='interrupted'], [data-state~='issue'], [data-state~='missing'], [data-state~='authorization-failed']) {
+[data-part='badge']:is([data-state~='failed'], [data-state~='blocked'], [data-state~='interrupted'], [data-state~='issue'], [data-state~='missing'], [data-state~='authorization-failed']) {
     border-color: color-mix(in srgb, var(--wmp-color-danger), transparent 50%);
     color: var(--wmp-color-danger);
 }

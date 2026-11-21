@@ -1550,7 +1550,11 @@
         --_badge-color: var(--wmp-color-success);
     }
 
-    [data-part='badge']:is([data-state~='failed'], [data-state~='interrupted']) {
+    [data-part='badge']:is(
+        [data-state~='failed'],
+        [data-state~='interrupted'],
+        [data-state~='blocked']
+    ) {
         --_badge-color: var(--wmp-color-danger);
     }
 
@@ -4627,7 +4631,7 @@
         background: var(--wmp-color-surface);
     }
 
-    /* The problems of an outdated theme take a row of their own below its info and its buttons. */
+    /* The problems of an outdated or blocked theme take a row of their own below info and buttons. */
     [data-part='theme-problems'] {
         display: grid;
         flex: 1 1 100%;

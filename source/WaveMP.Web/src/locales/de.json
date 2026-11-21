@@ -1532,6 +1532,8 @@
     "installedAt": "Installiert am {date}",
     "outdated": "Veraltet",
     "outdatedHint": "Diese Version von WaveMP prüft Designs strenger als die, mit der dieses Design installiert wurde. Profile sehen das Design weiterhin so, wie es ist. Behebe diese Probleme und lade eine neue Version hoch:",
+    "blocked": "Gesperrt",
+    "blockedHint": "Dieses Design enthält Inhalte, die diese Version von WaveMP aus Sicherheitsgründen nicht mehr erlaubt. Es ist gesperrt: Profile, die es gewählt haben, sehen stattdessen Midnight. Behebe diese Probleme und lade eine neue Version hoch, um es wieder zu nutzen:",
     "problemList": "Probleme von {name}",
     "replace": "Neue Version von {name} hochladen",
     "delete": "{name} löschen",

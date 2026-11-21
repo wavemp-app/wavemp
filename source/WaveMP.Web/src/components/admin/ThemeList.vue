@@ -6,14 +6,15 @@ import { toThemePackageErrors } from '@/admin/themeErrors'
 import ThemeErrorList from '@/components/admin/ThemeErrorList.vue'
 import BaseButton from '@/components/base/BaseButton.vue'
 import { useFormat } from '@/composables/useFormat'
-import { toThemeDefinition } from '@/themes/custom'
+import { isBlockedTheme, toThemeDefinition } from '@/themes/custom'
 import { hasVariants, themePreview } from '@/themes/themes'
 
 /**
  * The uploaded themes with their preview, author, version, size and installation date; each with
  * a button to upload a new version and one to delete it. A theme that no longer passes the checks
  * of the server (the server checks installed themes again on every start) is marked as outdated
- * and lists its problems.
+ * and lists its problems; one that breaks a security rule is marked as blocked, because the server
+ * no longer serves it and its profiles see the default theme.
  */
 const props = withDefaults(
     defineProps<{
@@ -43,13 +44,17 @@ const rows = computed(() =>
         }
 
         const variant = definition.variants[0]
+        const blocked = isBlockedTheme(theme)
         const outdated = theme.status === ThemeStatusObject.Outdated
+        /** Outdated or blocked: the theme lists its problems. */
+        const status = blocked ? 'blocked' : outdated ? 'outdated' : null
         return [
             {
                 theme,
                 definition,
                 variant,
-                preview: themePreview(definition, variant),
+                // The server no longer serves the files of a blocked theme, its preview included.
+                preview: blocked ? '' : themePreview(definition, variant),
                 variants: definition.variants.join(' '),
                 variantsLabel: hasVariants(definition)
                     ? t('settings.themeVariants.both')
@@ -57,10 +62,10 @@ const rows = computed(() =>
                 installedAt: theme.installedAt
                     ? format.date(theme.installedAt, { dateStyle: 'medium' })
                     : '',
-                outdated,
-                problems: outdated ? toThemePackageErrors(theme.problems) : [],
+                status,
+                problems: status ? toThemePackageErrors(theme.problems) : [],
                 state:
-                    [props.busy === definition.id ? 'busy' : '', outdated ? 'outdated' : '']
+                    [props.busy === definition.id ? 'busy' : '', status ?? '']
                         .filter(Boolean)
                         .join(' ') || undefined,
             },
@@ -104,8 +109,8 @@ function previewFailed(preview: string): void {
             <div data-part="theme-info">
                 <span data-part="theme-name">{{ row.definition.name }}</span>
                 <span data-part="theme-meta">
-                    <span v-if="row.outdated" data-part="badge" data-state="outdated">
-                        <span data-part="label">{{ t('adminThemes.outdated') }}</span>
+                    <span v-if="row.status" data-part="badge" :data-state="row.status">
+                        <span data-part="label">{{ t(`adminThemes.${row.status}`) }}</span>
                     </span>
                     <span data-part="label">{{
                         t('adminThemes.by', { author: row.theme.author ?? '' })
@@ -138,8 +143,8 @@ function previewFailed(preview: string): void {
                     @click="emit('delete', row.theme)"
                 />
             </div>
-            <div v-if="row.outdated" data-part="theme-problems">
-                <p data-part="form-note">{{ t('adminThemes.outdatedHint') }}</p>
+            <div v-if="row.status" data-part="theme-problems" :data-state="row.status">
+                <p data-part="form-note">{{ t(`adminThemes.${row.status}Hint`) }}</p>
                 <ThemeErrorList
                     :errors="row.problems"
                     :label="t('adminThemes.problemList', { name: row.definition.name })"

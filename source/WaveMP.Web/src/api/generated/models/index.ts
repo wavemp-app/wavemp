@@ -10257,7 +10257,7 @@ export interface Theme extends AdditionalDataHolder, Parsable {
      */
     previews?: ThemePreview[] | null;
     /**
-     * Why the theme is outdated (`status` `Outdated`), with the codes of a rejected package (e.g. `manifest.unsupported_api_version` or `svg.not_cleaned`) and the files they concern; empty for a current theme.
+     * Why the theme is outdated or blocked (`status` `Outdated` or `Blocked`), with the codes of a rejected package (e.g. `manifest.unsupported_api_version` or `svg.script`) and the files they concern; empty for a current theme.
      */
     problems?: ThemeError[] | null;
     /**
@@ -10265,11 +10265,11 @@ export interface Theme extends AdditionalDataHolder, Parsable {
      */
     sizeBytes?: number | null;
     /**
-     * Whether the theme passes the checks of this version of the server; installed themes are checked again on every start.
+     * Whether the theme passes the checks of this version of the server; installed themes are checked again on every start. Clients neither offer nor apply a `Blocked` theme and show the default theme instead.
      */
     status?: ThemeStatus | null;
     /**
-     * Address of the CSS file of the theme, relative to the root of the server. It needs no session; its content never changes, a new version of the theme has a new address.
+     * Address of the CSS file of the theme, relative to the root of the server. It needs no session; its content never changes, a new version of the theme has a new address. The files of a blocked theme (`status` `Blocked`) are not served.
      */
     stylesheetUrl?: string | null;
     /**
@@ -11962,7 +11962,7 @@ export const EqualizerFilterTypeObject = {
     HighShelf: "HighShelf",
 } as const;
 /**
- * The selected curve; Flat by default.
+ * The preset.
  */
 export const EqualizerPresetObject = {
     Flat: "Flat",
@@ -12541,11 +12541,12 @@ export const ThemeErrorCodeObject = {
     SvgNot_cleaned: "svg.not_cleaned",
 } as const;
 /**
- * Whether the theme passes the checks of this version of the server; installed themes are checked again on every start.
+ * Whether the theme passes the checks of this version of the server; installed themes are checked again on every start. Clients neither offer nor apply a `Blocked` theme and show the default theme instead.
  */
 export const ThemeStatusObject = {
     Current: "Current",
     Outdated: "Outdated",
+    Blocked: "Blocked",
 } as const;
 /**
  * A variant of a theme.

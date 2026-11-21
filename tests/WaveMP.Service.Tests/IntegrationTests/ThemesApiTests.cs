@@ -316,7 +316,54 @@ public class ThemesApiTests
     }
 
     [Test]
-    public async Task ListThemes_ThemeThatTheRulesOfANewerVersionReject_IsOutdatedUntilItIsReplaced()
+    public async Task ListThemes_ThemeThatBreaksASecurityRuleOfANewerVersion_IsBlockedUntilItIsReplaced()
+    {
+        using TemporaryDirectory data = new();
+        Dictionary<string, string?> settings = new() { ["DATA_PATH"] = data.Path };
+        await using (WaveMpWebApplicationFactory first = new(settings: settings))
+        {
+            using HttpClient admin = await first.CreateAdminClientAsync();
+            HttpResponseMessage installed = await admin.PostAsync("/api/v1/themes", Zip(new ThemePackageBuilder().Build()));
+            installed.StatusCode.Should().Be(HttpStatusCode.Created, await installed.Content.ReadAsStringAsync());
+            (await admin.PatchAsJsonAsync("/api/v1/me/settings", new { theme = new { id = "aurora" } }))
+                .StatusCode.Should().Be(HttpStatusCode.OK);
+        }
+
+        // As if the version that installed the theme had let the script through.
+        string svg = Directory.GetFiles(Path.Combine(data.Path, "themes", "aurora", "files"), "*.svg").Single();
+        await File.WriteAllTextAsync(svg, """<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>""");
+
+        await using WaveMpWebApplicationFactory second = new(settings: settings);
+        using HttpClient restarted = await second.CreateAdminClientAsync();
+        using HttpClient anonymous = second.CreateClient();
+        PageDto<ThemeDto> list = await restarted.GetJsonAsync<PageDto<ThemeDto>>("/api/v1/themes");
+
+        ThemeDto theme = list.Items.Should().ContainSingle().Subject;
+        theme.Status.Should().Be(ThemeStatusDto.Blocked);
+        theme.Problems.Should().BeEquivalentTo([new { Code = ThemeErrorCodeDto.SvgScript, Path = "images/glass.svg" }]);
+        await (await anonymous.GetAsync(theme.StylesheetUrl))
+            .ShouldBeProblemAsync(HttpStatusCode.NotFound, "theme.file_not_found");
+        foreach (ThemePreviewDto preview in theme.Previews)
+        {
+            (await anonymous.GetAsync(preview.Url)).StatusCode.Should().Be(HttpStatusCode.NotFound);
+        }
+
+        // The profile keeps its choice; the clients show the default theme while the theme is blocked.
+        (await restarted.GetJsonAsync<UserSettingsDto>("/api/v1/me/settings")).Theme.Id.Should().Be("aurora");
+
+        HttpResponseMessage replaced = await restarted.PutAsync(
+            "/api/v1/themes/aurora",
+            Zip(new ThemePackageBuilder().Build()));
+
+        replaced.StatusCode.Should().Be(HttpStatusCode.OK, await replaced.Content.ReadAsStringAsync());
+        ThemeDto current = (await restarted.GetJsonAsync<PageDto<ThemeDto>>("/api/v1/themes")).Items.Single();
+        current.Status.Should().Be(ThemeStatusDto.Current);
+        current.Problems.Should().BeEmpty();
+        (await anonymous.GetAsync(current.StylesheetUrl)).StatusCode.Should().Be(HttpStatusCode.OK);
+    }
+
+    [Test]
+    public async Task ListThemes_ThemeForAThemeApiVersionANewerVersionNoLongerSupports_IsOutdatedAndStillServed()
     {
         using TemporaryDirectory data = new();
         Dictionary<string, string?> settings = new() { ["DATA_PATH"] = data.Path };
@@ -327,27 +374,25 @@ public class ThemesApiTests
             installed.StatusCode.Should().Be(HttpStatusCode.Created, await installed.Content.ReadAsStringAsync());
         }
 
-        // As if the version that installed the theme had let the script through.
-        string svg = Directory.GetFiles(Path.Combine(data.Path, "themes", "aurora", "files"), "*.svg").Single();
-        await File.WriteAllTextAsync(svg, """<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>""");
+        // As if the theme was written for a theme API version this version no longer supports.
+        string description = Path.Combine(data.Path, "themes", "aurora", "theme.json");
+        JsonObject json = JsonNode.Parse(await File.ReadAllTextAsync(description))!.AsObject();
+        json["themeApi"] = 0;
+        await File.WriteAllTextAsync(description, json.ToJsonString());
 
         await using WaveMpWebApplicationFactory second = new(settings: settings);
         using HttpClient restarted = await second.CreateAdminClientAsync();
-        PageDto<ThemeDto> list = await restarted.GetJsonAsync<PageDto<ThemeDto>>("/api/v1/themes");
+        using HttpClient anonymous = second.CreateClient();
+        ThemeDto theme = (await restarted.GetJsonAsync<PageDto<ThemeDto>>("/api/v1/themes")).Items
+            .Should().ContainSingle().Subject;
 
-        ThemeDto theme = list.Items.Should().ContainSingle().Subject;
         theme.Status.Should().Be(ThemeStatusDto.Outdated);
-        theme.Problems.Should().BeEquivalentTo([new { Code = ThemeErrorCodeDto.SvgScript, Path = "images/glass.svg" }]);
-        (await restarted.GetAsync(theme.StylesheetUrl)).StatusCode.Should().Be(HttpStatusCode.OK);
-
-        HttpResponseMessage replaced = await restarted.PutAsync(
-            "/api/v1/themes/aurora",
-            Zip(new ThemePackageBuilder().Build()));
-
-        replaced.StatusCode.Should().Be(HttpStatusCode.OK, await replaced.Content.ReadAsStringAsync());
-        ThemeDto current = (await restarted.GetJsonAsync<PageDto<ThemeDto>>("/api/v1/themes")).Items.Single();
-        current.Status.Should().Be(ThemeStatusDto.Current);
-        current.Problems.Should().BeEmpty();
+        theme.Problems.Should().ContainSingle().Which.Code.Should().Be(ThemeErrorCodeDto.UnsupportedApiVersion);
+        (await anonymous.GetAsync(theme.StylesheetUrl)).StatusCode.Should().Be(HttpStatusCode.OK);
+        foreach (ThemePreviewDto preview in theme.Previews)
+        {
+            (await anonymous.GetAsync(preview.Url)).StatusCode.Should().Be(HttpStatusCode.OK);
+        }
     }
 
     [Test]

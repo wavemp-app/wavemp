@@ -32,7 +32,8 @@ public sealed class ThemeDto
 
     /// <summary>
     /// Address of the CSS file of the theme, relative to the root of the server. It needs no session; its content
-    /// never changes, a new version of the theme has a new address.
+    /// never changes, a new version of the theme has a new address. The files of a blocked theme (<c>status</c>
+    /// <c>Blocked</c>) are not served.
     /// </summary>
     public required string StylesheetUrl { get; init; }
 
@@ -53,14 +54,14 @@ public sealed class ThemeDto
 
     /// <summary>
     /// Whether the theme passes the checks of this version of the server; installed themes are checked again on every
-    /// start.
+    /// start. Clients neither offer nor apply a <c>Blocked</c> theme and show the default theme instead.
     /// </summary>
     public required ThemeStatusDto Status { get; init; }
 
     /// <summary>
-    /// Why the theme is outdated (<c>status</c> <c>Outdated</c>), with the codes of a rejected package (e.g.
-    /// <c>manifest.unsupported_api_version</c> or <c>svg.not_cleaned</c>) and the files they concern; empty for a
-    /// current theme.
+    /// Why the theme is outdated or blocked (<c>status</c> <c>Outdated</c> or <c>Blocked</c>), with the codes of a
+    /// rejected package (e.g. <c>manifest.unsupported_api_version</c> or <c>svg.script</c>) and the files they
+    /// concern; empty for a current theme.
     /// </summary>
     public required IReadOnlyList<ThemeErrorDto> Problems { get; init; }
 }

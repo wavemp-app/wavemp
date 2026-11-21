@@ -170,7 +170,9 @@ internal sealed class ThemeStore(IOptions<ThemeOptions> options, TimeProvider ti
 
     public Stream? OpenFile(string id, string name)
     {
-        if (!ThemeFiles.IsValidName(name) || Find(id) is not { } theme || !theme.Files.Contains(name))
+        // A blocked theme fails a security rule of this version: none of its files is served any more.
+        if (!ThemeFiles.IsValidName(name) || Find(id) is not { } theme || theme.IsBlocked ||
+            !theme.Files.Contains(name))
         {
             return null;
         }
@@ -305,7 +307,8 @@ internal sealed class ThemeStore(IOptions<ThemeOptions> options, TimeProvider ti
 
     /// <summary>
     /// Checks an installed theme again with the rules of this version (see <see cref="InstalledThemeCheck"/>). An
-    /// outdated theme is still offered; the admins see its problems and can upload a new version.
+    /// outdated theme is still offered, a blocked one (it fails a security rule) is no longer served; the admins see
+    /// the problems and can upload a new version.
     /// </summary>
     private async Task<InstalledTheme> CheckAsync(InstalledTheme theme, CancellationToken cancellationToken)
     {
@@ -331,13 +334,28 @@ internal sealed class ThemeStore(IOptions<ThemeOptions> options, TimeProvider ti
             return theme;
         }
 
-        logger.LogWarning(
-            "The theme {ThemeId} {Version} does not pass the checks of this version of WaveMP ({Problems}); it is " +
-            "offered as it is until an admin uploads a new version",
-            theme.Id,
-            theme.Version,
-            string.Join(", ", problems.Select(problem => problem.Code).Distinct()));
-        return theme with { Problems = problems };
+        InstalledTheme result = theme with { Problems = problems };
+        string codes = string.Join(", ", problems.Select(problem => problem.Code).Distinct());
+        if (result.IsBlocked)
+        {
+            logger.LogWarning(
+                "The theme {ThemeId} {Version} fails security checks of this version of WaveMP ({Problems}); it is " +
+                "blocked and its profiles see the default theme until an admin uploads a new version",
+                theme.Id,
+                theme.Version,
+                codes);
+        }
+        else
+        {
+            logger.LogWarning(
+                "The theme {ThemeId} {Version} does not pass the checks of this version of WaveMP ({Problems}); it " +
+                "is offered as it is until an admin uploads a new version",
+                theme.Id,
+                theme.Version,
+                codes);
+        }
+
+        return result;
     }
 
     private async Task<InstalledTheme?> ReadDescriptionAsync(string folder, CancellationToken cancellationToken)

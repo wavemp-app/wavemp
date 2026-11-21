@@ -9249,7 +9249,7 @@
             }
           },
           "404": {
-            "description": "The theme does not exist or has no such file (code `theme.file_not_found`).",
+            "description": "The theme does not exist, has no such file or is blocked because it breaks a security rule of this version (code `theme.file_not_found`).",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -9266,7 +9266,7 @@
         "tags": [
           "Themes"
         ],
-        "summary": "Lists the uploaded themes by name. Each one names whether it passes the checks of this version of the server (`status`); an outdated theme lists its `problems` and is still offered until an admin uploads a new version.",
+        "summary": "Lists the uploaded themes by name. Each one names whether it passes the checks of this version of the server (`status`); an outdated theme lists its `problems` and is still offered until an admin uploads a new version. A blocked theme (it breaks a security rule of this version) lists its `problems` as well, but its files are no longer served and clients show the default theme instead.",
         "operationId": "ListThemes",
         "parameters": [
           {
@@ -18490,7 +18490,7 @@
           },
           "stylesheetUrl": {
             "type": "string",
-            "description": "Address of the CSS file of the theme, relative to the root of the server. It needs no session; its content never changes, a new version of the theme has a new address."
+            "description": "Address of the CSS file of the theme, relative to the root of the server. It needs no session; its content never changes, a new version of the theme has a new address. The files of a blocked theme (`status` `Blocked`) are not served."
           },
           "previews": {
             "type": "array",
@@ -18510,7 +18510,7 @@
             "format": "date-time"
           },
           "status": {
-            "description": "Whether the theme passes the checks of this version of the server; installed themes are checked again on every start.",
+            "description": "Whether the theme passes the checks of this version of the server; installed themes are checked again on every start. Clients neither offer nor apply a `Blocked` theme and show the default theme instead.",
             "$ref": "#/components/schemas/ThemeStatus"
           },
           "problems": {
@@ -18518,7 +18518,7 @@
             "items": {
               "$ref": "#/components/schemas/ThemeError"
             },
-            "description": "Why the theme is outdated (`status` `Outdated`), with the codes of a rejected package (e.g. `manifest.unsupported_api_version` or `svg.not_cleaned`) and the files they concern; empty for a current theme."
+            "description": "Why the theme is outdated or blocked (`status` `Outdated` or `Blocked`), with the codes of a rejected package (e.g. `manifest.unsupported_api_version` or `svg.script`) and the files they concern; empty for a current theme."
           }
         },
         "description": "A theme an admin uploaded. The themes shipped with WaveMP are part of the clients and not listed here."
@@ -18753,7 +18753,8 @@
       "ThemeStatus": {
         "enum": [
           "Current",
-          "Outdated"
+          "Outdated",
+          "Blocked"
         ],
         "type": "string",
         "description": "Whether an uploaded theme passes the checks of this version of the server. Installed themes are checked again on every start, because a newer version may reject more in theme packages or no longer support an old theme API version."

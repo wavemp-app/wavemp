@@ -62,14 +62,26 @@ public sealed record InstalledTheme
     /// <summary>
     /// What the rules of this version of WaveMP reject in the installed theme, found when the themes are read on
     /// start (see <see cref="InstalledThemeCheck"/>). Empty for a theme that passes them; otherwise the theme is
-    /// outdated and still offered as it is until an admin uploads a new version. Not stored in <c>theme.json</c>.
+    /// outdated or blocked (see <see cref="Status"/>) until an admin uploads a new version. Not stored in
+    /// <c>theme.json</c>.
     /// </summary>
     [JsonIgnore]
     public IReadOnlyList<ThemeError> Problems { get; init; } = [];
 
     /// <summary>
-    /// Whether the theme no longer passes the rules of this version (see <see cref="Problems"/>).
+    /// Whether the theme passes the rules of this version (see <see cref="Problems"/>): a theme that fails a security
+    /// rule is blocked, one that fails only other rules is outdated.
     /// </summary>
     [JsonIgnore]
-    public bool IsOutdated => Problems.Count > 0;
+    public InstalledThemeStatus Status => Problems.Count == 0
+        ? InstalledThemeStatus.Current
+        : Problems.Any(problem => problem.Code.IsSecurityRule())
+            ? InstalledThemeStatus.Blocked
+            : InstalledThemeStatus.Outdated;
+
+    /// <summary>
+    /// Whether the theme fails a security rule; its files are not served then.
+    /// </summary>
+    [JsonIgnore]
+    public bool IsBlocked => Status == InstalledThemeStatus.Blocked;
 }

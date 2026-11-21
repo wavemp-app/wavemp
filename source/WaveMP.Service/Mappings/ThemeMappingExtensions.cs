@@ -27,7 +27,7 @@ public static class ThemeMappingExtensions
                 })],
             SizeBytes = theme.SizeBytes,
             InstalledAt = theme.InstalledAt,
-            Status = theme.IsOutdated ? ThemeStatusDto.Outdated : ThemeStatusDto.Current,
+            Status = theme.Status.ToDto(),
             Problems = [.. theme.Problems.Select(problem => problem.ToDto())],
         };
     }
@@ -39,6 +39,17 @@ public static class ThemeMappingExtensions
             ThemeVariant.Light => ThemeVariantDto.Light,
             ThemeVariant.Dark => ThemeVariantDto.Dark,
             _ => throw new ArgumentOutOfRangeException(nameof(variant), variant, "Unknown theme variant."),
+        };
+    }
+
+    public static ThemeStatusDto ToDto(this InstalledThemeStatus status)
+    {
+        return status switch
+        {
+            InstalledThemeStatus.Current => ThemeStatusDto.Current,
+            InstalledThemeStatus.Outdated => ThemeStatusDto.Outdated,
+            InstalledThemeStatus.Blocked => ThemeStatusDto.Blocked,
+            _ => throw new ArgumentOutOfRangeException(nameof(status), status, "Unknown theme status."),
         };
     }
 

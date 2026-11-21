@@ -1451,6 +1451,7 @@ a[data-part='breadcrumb-link']:hover {
 
 [data-part='badge']:is(
     [data-state~='failed'],
+    [data-state~='blocked'],
     [data-state~='interrupted'],
     [data-state~='issue'],
     [data-state~='missing'],

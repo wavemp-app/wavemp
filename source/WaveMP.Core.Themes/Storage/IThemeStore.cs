@@ -41,7 +41,8 @@ public interface IThemeStore
     Task<bool> DeleteAsync(string id, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Opens a file of an installed theme for reading, or returns <c>null</c> if the theme or the file does not exist.
+    /// Opens a file of an installed theme for reading, or returns <c>null</c> if the theme or the file does not exist
+    /// or the theme is blocked (<see cref="InstalledTheme.IsBlocked"/>).
     /// </summary>
     Stream? OpenFile(string id, string name);
 }

@@ -1430,7 +1430,7 @@ a[data-part="breadcrumb-link"]:hover {
     color: #1d4a27;
 }
 
-[data-part="badge"]:is([data-state~="failed"], [data-state~="interrupted"]) {
+[data-part="badge"]:is([data-state~="failed"], [data-state~="blocked"], [data-state~="interrupted"]) {
     border-color: #efb7b7;
     background: linear-gradient(#fff8f8, #fadcdc);
     color: #5c1f1f;

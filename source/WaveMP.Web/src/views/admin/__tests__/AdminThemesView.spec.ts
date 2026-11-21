@@ -99,8 +99,8 @@ describe('AdminThemesView', () => {
             ...aurora,
             status: 'Outdated',
             problems: [
-                { code: 'svg.script', path: 'images/glass.svg' },
-                { code: 'css.import', path: 'theme.css', line: 12 },
+                { code: 'manifest.unsupported_api_version', field: 'themeApi', min: 6, max: 7 },
+                { code: 'css.layer', path: 'theme.css', line: 12 },
             ],
         }
         const { wrapper } = await mountView([outdated])
@@ -117,12 +117,41 @@ describe('AdminThemesView', () => {
         )
         const errors = problems.findAll('[data-part="theme-error"]')
         expect(errors.map((error) => error.attributes('data-item'))).toEqual([
-            'svg.script',
-            'css.import',
+            'manifest.unsupported_api_version',
+            'css.layer',
         ])
         expect(errors[1]!.get('[data-part="theme-error-location"]').text()).toBe(
             'theme.css, line 12',
         )
+
+        wrapper.unmount()
+    })
+
+    it('marks a blocked theme, loads no preview and lists its problems', async () => {
+        const blocked: Theme = {
+            ...aurora,
+            status: 'Blocked',
+            problems: [
+                { code: 'svg.script', path: 'images/glass.svg' },
+                { code: 'css.import', path: 'theme.css', line: 12 },
+            ],
+        }
+        const { wrapper } = await mountView([blocked])
+
+        const item = wrapper.get('[data-part="theme-item"]')
+        expect(item.attributes('data-state')).toBe('blocked')
+        expect(item.get('[data-part="badge"][data-state="blocked"]').text()).toBe('Blocked')
+        expect(item.find('[data-part="badge"][data-state="outdated"]').exists()).toBe(false)
+        expect(item.find('[data-part="theme-preview-image"]').exists()).toBe(false)
+        expect(item.get('[data-part="theme-preview"]').attributes('data-state')).toBe('missing')
+        const problems = item.get('[data-part="theme-problems"]')
+        expect(problems.attributes('data-state')).toBe('blocked')
+        expect(problems.get('[data-part="form-note"]').text()).toContain('see Midnight instead')
+        expect(
+            problems.findAll('[data-part="theme-error"]').map((e) => e.attributes('data-item')),
+        ).toEqual(['svg.script', 'css.import'])
+        // An admin can still upload a fixed version or delete it.
+        expect(item.get('[data-item="replace"]').attributes('disabled')).toBeUndefined()
 
         wrapper.unmount()
     })

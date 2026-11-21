@@ -19,7 +19,7 @@ export interface ThemesRequestBuilder extends BaseRequestBuilder<ThemesRequestBu
      */
      byId(id: string) : ThemesItemRequestBuilder;
     /**
-     * Lists the uploaded themes by name. Each one names whether it passes the checks of this version of the server (`status`); an outdated theme lists its `problems` and is still offered until an admin uploads a new version.
+     * Lists the uploaded themes by name. Each one names whether it passes the checks of this version of the server (`status`); an outdated theme lists its `problems` and is still offered until an admin uploads a new version. A blocked theme (it breaks a security rule of this version) lists its `problems` as well, but its files are no longer served and clients show the default theme instead.
      * @param requestConfiguration Configuration for the request such as headers, query parameters, and middleware options.
      * @returns {Promise<ThemePage>}
      * @throws {ValidationProblem} error when the service returns a 400 status code
@@ -41,7 +41,7 @@ export interface ThemesRequestBuilder extends BaseRequestBuilder<ThemesRequestBu
      */
      post(body: ArrayBuffer | undefined, requestConfiguration?: RequestConfiguration<object> | undefined) : Promise<Theme | undefined>;
     /**
-     * Lists the uploaded themes by name. Each one names whether it passes the checks of this version of the server (`status`); an outdated theme lists its `problems` and is still offered until an admin uploads a new version.
+     * Lists the uploaded themes by name. Each one names whether it passes the checks of this version of the server (`status`); an outdated theme lists its `problems` and is still offered until an admin uploads a new version. A blocked theme (it breaks a security rule of this version) lists its `problems` as well, but its files are no longer served and clients show the default theme instead.
      * @param requestConfiguration Configuration for the request such as headers, query parameters, and middleware options.
      * @returns {RequestInformation}
      */
@@ -55,7 +55,7 @@ export interface ThemesRequestBuilder extends BaseRequestBuilder<ThemesRequestBu
      toPostRequestInformation(body: ArrayBuffer | undefined, requestConfiguration?: RequestConfiguration<object> | undefined) : RequestInformation;
 }
 /**
- * Lists the uploaded themes by name. Each one names whether it passes the checks of this version of the server (`status`); an outdated theme lists its `problems` and is still offered until an admin uploads a new version.
+ * Lists the uploaded themes by name. Each one names whether it passes the checks of this version of the server (`status`); an outdated theme lists its `problems` and is still offered until an admin uploads a new version. A blocked theme (it breaks a security rule of this version) lists its `problems` as well, but its files are no longer served and clients show the default theme instead.
  */
 export interface ThemesRequestBuilderGetQueryParameters {
     /**

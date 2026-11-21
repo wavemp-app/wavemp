@@ -117,7 +117,7 @@ public class ThemeStoreTests
     }
 
     [Test]
-    public async Task InitializeAsync_ThemeThatPassesTheRules_IsNotOutdated()
+    public async Task InitializeAsync_ThemeThatPassesTheRules_IsCurrent()
     {
         await _store.SaveAsync(Theme(), replace: false);
 
@@ -125,13 +125,13 @@ public class ThemeStoreTests
         await restarted.InitializeAsync();
 
         InstalledTheme theme = restarted.Find("aurora")!;
-        theme.IsOutdated.Should().BeFalse();
+        theme.Status.Should().Be(InstalledThemeStatus.Current);
         theme.Problems.Should().BeEmpty();
         theme.Sources.Should().ContainValues("theme.css", "images/glass.svg", "preview-dark.png");
     }
 
     [Test]
-    public async Task InitializeAsync_ThemeThatTheseRulesReject_IsOfferedAsOutdated()
+    public async Task InitializeAsync_ThemeThatBreaksASecurityRuleOfThisVersion_IsBlockedAndNotServed()
     {
         InstalledTheme installed = (await _store.SaveAsync(Theme(), replace: false)).Theme!;
         string glass = installed.Sources.Single(pair => pair.Value == "images/glass.svg").Key;
@@ -144,9 +144,51 @@ public class ThemeStoreTests
         await restarted.InitializeAsync();
 
         InstalledTheme theme = restarted.List().Should().ContainSingle().Subject;
-        theme.IsOutdated.Should().BeTrue();
+        theme.Status.Should().Be(InstalledThemeStatus.Blocked);
+        theme.IsBlocked.Should().BeTrue();
         theme.Problems.Should().Equal(new ThemeError(ThemeErrorCode.SvgScript, "images/glass.svg"));
         (await File.ReadAllTextAsync(_folder.Combine("themes/aurora/theme.json"))).Should().NotContain("problems");
+        theme.Files.Should().AllSatisfy(name => restarted.OpenFile("aurora", name).Should().BeNull());
+    }
+
+    [Test]
+    public async Task InitializeAsync_ThemeForAnOlderThemeApi_IsOutdatedAndStillServed()
+    {
+        InstalledTheme installed = (await _store.SaveAsync(Theme(), replace: false)).Theme!;
+        string description = _folder.Combine("themes/aurora/theme.json");
+        System.Text.Json.Nodes.JsonObject json =
+            System.Text.Json.Nodes.JsonNode.Parse(await File.ReadAllTextAsync(description))!.AsObject();
+        json["themeApi"] = ThemeApiVersions.Oldest - 1;
+        await File.WriteAllTextAsync(description, json.ToJsonString());
+
+        using ThemeStore restarted = CreateStore();
+        await restarted.InitializeAsync();
+
+        InstalledTheme theme = restarted.Find("aurora")!;
+        theme.Status.Should().Be(InstalledThemeStatus.Outdated);
+        theme.IsBlocked.Should().BeFalse();
+        theme.Problems.Should().ContainSingle().Which.Code.Should().Be(ThemeErrorCode.UnsupportedApiVersion);
+        await using Stream? stylesheet = restarted.OpenFile("aurora", installed.Stylesheet);
+        stylesheet.Should().NotBeNull();
+    }
+
+    [Test]
+    public async Task SaveAsync_NewVersionOfABlockedTheme_IsCurrentAndServedAgain()
+    {
+        InstalledTheme installed = (await _store.SaveAsync(Theme(), replace: false)).Theme!;
+        string glass = installed.Sources.Single(pair => pair.Value == "images/glass.svg").Key;
+        await File.WriteAllTextAsync(
+            _folder.Combine($"themes/aurora/files/{glass}"),
+            """<svg xmlns="http://www.w3.org/2000/svg" onload="alert(1)"/>""");
+        using ThemeStore restarted = CreateStore();
+        await restarted.InitializeAsync();
+        restarted.Find("aurora")!.Status.Should().Be(InstalledThemeStatus.Blocked);
+
+        ThemeStoreResult result = await restarted.SaveAsync(Theme(color: "#000000"), replace: true);
+
+        result.Theme!.Status.Should().Be(InstalledThemeStatus.Current);
+        await using Stream? stylesheet = restarted.OpenFile("aurora", result.Theme.Stylesheet);
+        stylesheet.Should().NotBeNull();
     }
 
     [Test]

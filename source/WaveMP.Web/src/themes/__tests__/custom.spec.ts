@@ -127,6 +127,26 @@ describe('uploaded themes', () => {
         ).toEqual(['Aurora'])
     })
 
+    it('are left out of the registry while the server blocks them', () => {
+        const blocked: Theme = { ...aurora, status: 'Blocked' }
+
+        customThemes.value = toThemeDefinitions([
+            blocked,
+            {
+                ...aurora,
+                id: 'borealis',
+                stylesheetUrl: file('borealis', 'a', 'css'),
+                status: 'Outdated',
+            },
+        ])
+
+        expect(customThemes.value.map((theme) => theme.id)).toEqual(['borealis'])
+        expect(isThemeId('aurora')).toBe(false)
+        expect(resolveThemeId('aurora')).toBe('midnight')
+        // The administration still shows the blocked theme with its problems.
+        expect(toThemeDefinition(blocked)?.id).toBe('aurora')
+    })
+
     it('can be chosen once they are known', () => {
         expect(isThemeId('aurora')).toBe(false)
         expect(resolveThemeId('aurora')).toBe('midnight')
