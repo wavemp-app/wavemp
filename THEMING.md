@@ -1296,7 +1296,7 @@ The screenshot and contrast check of tests/WaveMP.E2E opens fixed views of the a
 - desktop (1280 by 800): `profiles`, `home`, `playlists` (the overview of the playlists, with the current entry on the first level of the sidebar), `album`, `artists`, `songs-menu` (the songs with an open context menu), `now-playing` (with the cover), `settings` (with the theme picker), `admin` (the transcoding page), `shortcuts` (the overview of the keyboard shortcuts),
 - phone (Pixel 7): `phone-library`, `phone-now-playing`, `phone-settings`, each with the bottom navigation, and `phone-shortcuts` (the overview of the keyboard shortcuts). The regression also compares the bottom navigation of `phone-now-playing` on its own (`phone-now-playing-bottom-nav`).
 
-The player of every view shows the same saved playback state: E2E Album, paused at the start of First Song. `phone-library` shows it as saved on another device, with the notice "Continue listening from", and `songs-menu` shows an empty player, as its menu reaches over the transport. Before each view, the check sets this state for the profile of the theme through the API and waits until the player shows it; the pages never change it and nothing plays, so the screenshots depend neither on the views before, nor on earlier runs against the same instance, nor on how far a song got.
+The player of every view shows the same saved playback state: E2E Album, paused at the start of First Song. `phone-library` shows it as saved on another device, with the notice "Continue listening from". The menu of `songs-menu` reaches over the transport and casts its shadow on the time of the song. Before each view, the check sets this state for the profile of the theme through the API and waits until the player shows it; the pages never change it and nothing plays, so the screenshots depend neither on the views before, nor on earlier runs against the same instance, nor on how far a song got.
 
 ```bash
 cd tests/WaveMP.E2E
@@ -1317,7 +1317,7 @@ Every text must reach the contrast of WCAG 2.2 AA against what is drawn behind i
 [album] 3.12:1 < 4.5:1  text "Play"  detail-info > detail-actions > button[play] > label  (rgb(255 255 255 / 100%))
 ```
 
-Exempt like in WCAG are disabled controls and the logo, and also the initials of avatars (the profile chooses their color) and the placeholder glyphs of missing covers (decoration). Texts and icons filled with a gradient or picture cannot be measured; `contrast.txt` lists them for a manual check. Disabled and secondary content (for example the built-in admin with `--wmp-profile-secondary-opacity`) still needs 4.5:1 when it can be used.
+Exempt like in WCAG are disabled controls and the logo, and also the initials of avatars (the profile chooses their color) and the placeholder glyphs of missing covers (decoration). Texts and icons filled with a gradient or picture cannot be measured; `contrast.txt` lists them for a manual check. Disabled and secondary content (for example the built-in admin with `--wmp-profile-secondary-opacity`) still needs 4.5:1 when it can be used. Text that a menu or dialog only partly covers is left out, but text in the shadow of an open menu is not: it needs the same ratio, so choose muted text colors with some margin (the time in the transport under the context menu of `songs-menu`, for example).
 
 ### Regression
 

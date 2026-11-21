@@ -381,12 +381,11 @@ export const themeViews: readonly ThemeView[] = [
         },
     },
     {
-        // Without a song in the player: the open menu reaches over the transport, and its shadow
-        // would fall on the time of the song.
+        // With the song of the saved state in the player: the open menu reaches over the
+        // transport and casts its shadow on the time of the song, which keeps its contrast too.
         name: 'songs-menu',
         device: 'desktop',
         stable: true,
-        player: 'none',
         async open(page) {
             await page.goto('/library/songs')
             const row = part(page, 'list-row').filter({ hasText: 'Second Song' }).first()
