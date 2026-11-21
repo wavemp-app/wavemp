@@ -907,6 +907,36 @@
         --wmp-icon-size: var(--wmp-icon-size-s);
     }
 
+    /*
+     * Lists with a song with a video (state has-video) keep a column of --wmp-list-badge-width at
+     * the start of the title cells for the video badge, so all titles of the list stay in line
+     * whether the song has a video or not; the column header "Title" stands above the titles.
+     */
+    [data-part='list'][data-state~='has-video']
+        :is([data-part='list-column'], [data-part='list-cell'])[data-column='title'] {
+        display: grid;
+        grid-template-columns: var(--wmp-list-badge-width) minmax(0, 1fr);
+        align-items: center;
+        column-gap: var(--wmp-space-s);
+    }
+
+    [data-part='list'][data-state~='has-video']
+        :is([data-part='list-column'], [data-part='list-cell'])[data-column='title']
+        > [data-part='label'] {
+        grid-row: 1;
+        grid-column: 2;
+        min-inline-size: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    [data-part='list-cell'][data-column='title'] > [data-part='badge'] {
+        grid-row: 1;
+        grid-column: 1;
+        justify-self: center;
+        margin-inline: 0;
+    }
+
     /* --- Avatar and alert ---------------------------------------------------------------- */
 
     /* Initials on the color of the profile; containers set the size with --_avatar-size. */

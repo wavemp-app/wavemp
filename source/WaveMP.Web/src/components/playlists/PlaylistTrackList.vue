@@ -20,7 +20,12 @@ import RatingStars from '@/components/collection/RatingStars.vue'
 import ItemMenuButton from '@/components/menus/ItemMenuButton.vue'
 import { useFormat } from '@/composables/useFormat'
 import { useSortableList } from '@/composables/useSortableList'
-import { artistLabelKey, durationSeconds, trackRowState } from '@/library/presentation'
+import {
+    artistLabelKey,
+    durationSeconds,
+    trackListState,
+    trackRowState,
+} from '@/library/presentation'
 import type { PlayerSource } from '@/player/resume'
 import { useContextMenuStore } from '@/stores/contextMenu'
 import { usePlayerStore } from '@/stores/player'
@@ -104,6 +109,8 @@ const groups = computed<ListGroup<Row>[]>(() => [
 
 const rowsById = computed(() => new Map(groups.value[0]!.rows.map((row) => [row.id, row])))
 const tracks = computed(() => props.rows.map((row) => row.track))
+/** "has-video" keeps a column for the video badge before the titles of all rows. */
+const listState = computed(() => trackListState(tracks.value, props.state))
 
 const rowsElement = computed(() => {
     const element: unknown = list.value?.$el
@@ -189,7 +196,7 @@ function openRowMenu(rowId: string, x: number, y: number): void {
         :columns="columns"
         :groups="groups"
         :label="label"
-        :state="state"
+        :state="listState"
         row-menu
         activate-on-tap
         multi-select
@@ -210,7 +217,6 @@ function openRowMenu(rowId: string, x: number, y: number): void {
                 {{ format.number(row.index + 1) }}
             </template>
             <template v-else-if="column.id === 'title'">
-                <span data-part="label">{{ row.entry.track.title }}</span>
                 <span
                     v-if="row.entry.track.hasVideo"
                     data-part="badge"
@@ -222,6 +228,7 @@ function openRowMenu(rowId: string, x: number, y: number): void {
                         row.entry.track.hasAudio ? t('list.hasVideo') : t('list.videoOnly')
                     }}</span>
                 </span>
+                <span data-part="label">{{ row.entry.track.title }}</span>
             </template>
             <template v-else-if="column.id === 'duration'">
                 {{

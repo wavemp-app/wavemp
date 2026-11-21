@@ -324,4 +324,20 @@ describe('PlaylistTrackList', () => {
         )
         wrapper.unmount()
     })
+
+    it('shows the video badge before the title and keeps its column in the list', async () => {
+        const wrapper = await mountWith(PlaylistTrackList, {
+            rows,
+            label: 'Road Trip',
+            state: 'busy',
+        })
+
+        expect(wrapper.get('[data-part="list"]').attributes('data-state')).toBe('busy has-video')
+        const clip = wrapper.findAll('[data-part="list-cell"][data-column="title"]')[1]!.element
+        expect([...clip.children].map((child) => child.getAttribute('data-part'))).toEqual([
+            'badge',
+            'label',
+        ])
+        wrapper.unmount()
+    })
 })

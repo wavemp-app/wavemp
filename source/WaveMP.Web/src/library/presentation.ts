@@ -37,6 +37,22 @@ export function trackRowState(track: Pick<Track, 'hasAudio' | 'hasVideo'>): stri
     return track.hasAudio ? ['has-video'] : ['has-video', 'video-only']
 }
 
+/**
+ * data-state of a list of tracks: the given tokens plus "has-video" if one of the tracks has a
+ * video, so the list keeps a column for the video badge before the titles. Undefined without tokens.
+ */
+export function trackListState(
+    tracks: readonly Pick<Track, 'hasVideo'>[],
+    state?: string,
+): string | undefined {
+    const tokens = (state ?? '').split(' ').filter((token) => token && token !== 'has-video')
+    if (tracks.some((track) => track.hasVideo)) {
+        tokens.push('has-video')
+    }
+
+    return tokens.length > 0 ? tokens.join(' ') : undefined
+}
+
 /** Message key of how a track can be played: audio and video, audio only or video only. */
 export function mediaKey(track: Pick<Track, 'hasAudio' | 'hasVideo'>): string {
     if (track.hasAudio && track.hasVideo) {

@@ -319,6 +319,7 @@
             minmax(0, 1.5fr) 6.5rem minmax(2rem, auto);
         --wmp-shelf-tile-width: var(--wmp-tile-width);
         --wmp-list-group-info-width: 11rem;
+        --wmp-list-badge-width: var(--wmp-icon-size-s);
         --wmp-avatar-size: 2rem;
         --wmp-avatar-size-l: 6rem;
         --wmp-swatch-size: 2rem;

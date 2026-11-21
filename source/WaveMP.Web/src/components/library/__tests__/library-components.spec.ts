@@ -237,6 +237,26 @@ describe('TrackGroupList', () => {
             'has-video video-only',
         )
         expect(rows[2]!.get('[data-part="badge"] [data-part="label"]').text()).toBe('Video only')
+        // The badge sits before the title, in a column the list keeps for all rows.
+        expect(wrapper.get('[data-part="list"]').attributes('data-state')).toBe('has-video')
+        const title = rows[1]!.get('[data-part="list-cell"][data-column="title"]').element
+        expect([...title.children].map((child) => child.getAttribute('data-part'))).toEqual([
+            'badge',
+            'label',
+        ])
+        expect(title.lastElementChild!.textContent).toBe('Closing')
+        wrapper.unmount()
+    })
+
+    it('keeps no column for the video badge in lists without a video', async () => {
+        const { wrapper } = await mountWith(TrackGroupList, {
+            groups: groupTracksByAlbum(tracks.slice(0, 1)),
+            label: 'Songs',
+            state: 'placeholder',
+        })
+
+        expect(wrapper.get('[data-part="list"]').attributes('data-state')).toBe('placeholder')
+        expect(wrapper.find('[data-part="badge"]').exists()).toBe(false)
         wrapper.unmount()
     })
 

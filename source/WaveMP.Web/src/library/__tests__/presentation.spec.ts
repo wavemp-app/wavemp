@@ -5,6 +5,7 @@ import {
     fileKindKey,
     fileKindToken,
     mediaKey,
+    trackListState,
     trackRowState,
 } from '../presentation'
 
@@ -40,6 +41,20 @@ describe('trackRowState and mediaKey', () => {
         expect(mediaKey({ hasAudio: true, hasVideo: true })).toBe('track.media.audioAndVideo')
         expect(mediaKey({ hasAudio: true, hasVideo: false })).toBe('track.media.audio')
         expect(mediaKey({ hasAudio: false, hasVideo: true })).toBe('track.media.video')
+    })
+})
+
+describe('trackListState', () => {
+    it('marks lists with a video so they keep the column of the video badge', () => {
+        expect(trackListState([{ hasVideo: false }, { hasVideo: true }])).toBe('has-video')
+        expect(trackListState([{ hasVideo: true }], 'busy')).toBe('busy has-video')
+    })
+
+    it('keeps the given tokens of lists without a video', () => {
+        expect(trackListState([{ hasVideo: false }])).toBeUndefined()
+        expect(trackListState([])).toBeUndefined()
+        expect(trackListState([{ hasVideo: false }], 'placeholder busy')).toBe('placeholder busy')
+        expect(trackListState([{ hasVideo: false }], 'has-video')).toBeUndefined()
     })
 })
 

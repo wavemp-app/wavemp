@@ -13,7 +13,12 @@ import MetaItem from './MetaItem.vue'
 import ItemMenuButton from '@/components/menus/ItemMenuButton.vue'
 import { useFormat } from '@/composables/useFormat'
 import type { TrackGroup } from '@/library/grouping'
-import { artistLabelKey, durationSeconds, trackRowState } from '@/library/presentation'
+import {
+    artistLabelKey,
+    durationSeconds,
+    trackListState,
+    trackRowState,
+} from '@/library/presentation'
 import type { PlayerSource } from '@/player/resume'
 import { useContextMenuStore } from '@/stores/contextMenu'
 import { usePlayerStore } from '@/stores/player'
@@ -105,6 +110,8 @@ function trackArtist(track: Track): string {
 }
 
 const allTracks = computed(() => props.groups.flatMap((group) => group.tracks))
+/** "has-video" keeps a column for the video badge before the titles of all rows. */
+const listState = computed(() => trackListState(allTracks.value, props.state))
 
 function openMenu(rowId: string, x: number, y: number): void {
     const chosen = new Set(selection.value.includes(rowId) ? selection.value : [rowId])
@@ -150,7 +157,7 @@ function activate(rowId: string): void {
         :columns="columns"
         :groups="listGroups"
         :label="label"
-        :state="state"
+        :state="listState"
         row-menu
         activate-on-tap
         multi-select
@@ -211,7 +218,6 @@ function activate(rowId: string): void {
                 {{ row.track.trackNumber ? format.number(row.track.trackNumber) : '' }}
             </template>
             <template v-else-if="column.id === 'title'">
-                <span data-part="label">{{ row.track.title }}</span>
                 <span
                     v-if="row.track.hasVideo"
                     data-part="badge"
@@ -223,6 +229,7 @@ function activate(rowId: string): void {
                         row.track.hasAudio ? t('list.hasVideo') : t('list.videoOnly')
                     }}</span>
                 </span>
+                <span data-part="label">{{ row.track.title }}</span>
             </template>
             <template v-else-if="column.id === 'duration'">
                 {{
