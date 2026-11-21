@@ -160,6 +160,24 @@ describe('ReviewList', () => {
         expect(row.attributes('data-state')).toBe('reviewed')
         expect(row.get('[data-state="reviewed"]').text()).toBe('Reviewed')
         expect(row.get('input[data-part="checkbox"]').attributes('disabled')).toBeDefined()
+        expect(row.get('[data-part="review-select"]').attributes('data-state')).toBe('disabled')
+        wrapper.unmount()
+    })
+
+    it('puts the checkbox in an area of its own that takes the touch', async () => {
+        const { wrapper } = await mountWithRouter(ReviewList, {
+            items,
+            reviewed: new Set(),
+            selected: new Set(),
+            label: 'Songs',
+        })
+
+        const area = wrapper.findAll('[data-part="review-select"]')[0]!
+        expect(area.element.tagName).toBe('LABEL')
+        expect(area.attributes('data-state')).toBeUndefined()
+        expect(area.get('input[data-part="checkbox"]').attributes('aria-label')).toBe(
+            'Select First',
+        )
         wrapper.unmount()
     })
 

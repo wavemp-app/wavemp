@@ -387,6 +387,7 @@ export const parts = [
     'review-bulk',
     'review-list',
     'review-item',
+    'review-select',
     'review-info',
     'review-title',
     'review-meta',

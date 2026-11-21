@@ -65,14 +65,20 @@ function onChange(item: TrackReview, event: Event): void {
             data-part="review-item"
             :data-state="stateOf(item)"
         >
-            <input
-                type="checkbox"
-                data-part="checkbox"
-                :checked="selected.has(idOf(item))"
-                :disabled="isReviewed(item, reviewed)"
-                :aria-label="t('reviewInbox.select', { title: item.title ?? '' })"
-                @change="onChange(item, $event)"
-            />
+            <!-- The label around the box is the area a finger taps (touch target on phones). -->
+            <label
+                data-part="review-select"
+                :data-state="isReviewed(item, reviewed) ? 'disabled' : undefined"
+            >
+                <input
+                    type="checkbox"
+                    data-part="checkbox"
+                    :checked="selected.has(idOf(item))"
+                    :disabled="isReviewed(item, reviewed)"
+                    :aria-label="t('reviewInbox.select', { title: item.title ?? '' })"
+                    @change="onChange(item, $event)"
+                />
+            </label>
             <LibraryCover kind="track" :id="item.trackId" :available="!!item.hasCover" />
             <div data-part="review-info">
                 <BaseLink

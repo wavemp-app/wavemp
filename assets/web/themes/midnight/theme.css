@@ -1683,8 +1683,7 @@ a[data-part="breadcrumb-link"]:hover {
         );
     }
 
-    /* Logo and page title stay available to assistive technology only. */
-    [data-part="logo"],
+    /* The page title stays available to assistive technology only. */
     [data-part="content-title"] {
         position: absolute;
         inline-size: 1px;
@@ -1694,26 +1693,17 @@ a[data-part="breadcrumb-link"]:hover {
         white-space: nowrap;
     }
 
-    /* The profile selection has no header, so it shows the logo. */
-    [data-part="profile-select"] > [data-part="logo"] {
-        position: static;
-        inline-size: auto;
-        block-size: auto;
-        overflow: visible;
-        clip-path: none;
-    }
-
     [data-part="header"] {
-        grid-template-areas: "nav-history tabs server-status btn-profile";
-        grid-template-columns: auto minmax(0, 1fr) auto auto;
+        grid-template-areas: "logo nav-history tabs server-status btn-profile";
+        grid-template-columns: auto auto minmax(0, 1fr) auto auto;
         gap: 1.5rem;
         padding-inline: 0.625rem 1rem;
     }
 
     /* The entry of the review inbox (admins only) takes the free cell before the server status. */
     [data-part="header"]:has(> [data-part="btn-review-inbox"]) {
-        grid-template-areas: "nav-history tabs . server-status btn-profile";
-        grid-template-columns: auto minmax(0, 1fr) auto auto auto;
+        grid-template-areas: "logo nav-history tabs . server-status btn-profile";
+        grid-template-columns: auto auto minmax(0, 1fr) auto auto auto;
     }
 
     [data-part="tabs"] {

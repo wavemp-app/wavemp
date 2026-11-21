@@ -248,8 +248,16 @@
         display: inline-flex;
         align-items: center;
         gap: var(--wmp-space-s);
+        color: inherit;
         font-weight: var(--wmp-font-weight-bold);
+        text-decoration: none;
         white-space: nowrap;
+    }
+
+    /* In the header the logo is a link to the start page; it keeps its look. */
+    a[data-part='logo'] {
+        justify-self: start;
+        border-radius: var(--wmp-radius-s);
     }
 
     [data-part='logo-image'] {
@@ -4197,6 +4205,17 @@
 
     [data-part='review-item'][data-state~='selected'] {
         border-color: var(--wmp-color-accent);
+    }
+
+    /* The area around the checkbox of a song, which also selects it. */
+    [data-part='review-select'] {
+        display: inline-grid;
+        place-items: center;
+        cursor: pointer;
+    }
+
+    [data-part='review-select'][data-state~='disabled'] {
+        cursor: default;
     }
 
     [data-part='review-item'][data-state~='reviewed'] {

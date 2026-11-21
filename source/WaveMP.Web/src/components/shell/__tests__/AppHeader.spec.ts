@@ -62,6 +62,23 @@ describe('AppHeader', () => {
         wrapper.unmount()
     })
 
+    it('links the logo to the start page', async () => {
+        const wrapper = await mountHeader('User')
+        const router = wrapper.vm.$router
+
+        const logo = wrapper.get('[data-part="header"] > [data-part="logo"]')
+        expect(logo.element.tagName).toBe('A')
+        expect(logo.attributes('href')).toBe('/')
+        expect(logo.attributes('aria-label')).toBe('WaveMP, go to the start page')
+        expect(logo.find('[data-part="logo-image"]').exists()).toBe(true)
+        expect(logo.get('[data-part="label"]').text()).toBe('WaveMP')
+
+        await logo.trigger('click', { button: 0 })
+        await flushPromises()
+        expect(router.currentRoute.value.name).toBe('home')
+        wrapper.unmount()
+    })
+
     it('hides the review inbox from other profiles', async () => {
         const wrapper = await mountHeader('User')
 

@@ -3,6 +3,7 @@ import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import BaseButton from '@/components/base/BaseButton.vue'
+import BaseLink from '@/components/base/BaseLink.vue'
 import BaseRoundButton from '@/components/base/BaseRoundButton.vue'
 import BaseTabs from '@/components/base/BaseTabs.vue'
 import ProfileMenu, { type ProfileMenuProfile } from './ProfileMenu.vue'
@@ -75,10 +76,11 @@ onUnmounted(() => {
             aria-controls="wavemp-sidebar"
             @click="emit('toggleSidebar')"
         />
-        <span data-part="logo">
+        <!-- The logo leads to the start page, like the tab and the entry of the bottom navigation. -->
+        <BaseLink part="logo" :to="{ name: 'home' }" :aria-label="t('nav.logo')">
             <span data-part="logo-image" aria-hidden="true"></span>
             <span data-part="label">{{ t('app.name') }}</span>
-        </span>
+        </BaseLink>
         <div data-part="nav-history" role="group" :aria-label="t('nav.history')">
             <BaseRoundButton
                 part="btn-back"

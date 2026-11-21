@@ -63,6 +63,8 @@ These parts are grids with named areas:
 
 The `list` is no grid with areas but one grid with columns: `list-header`, `list-group`, `list-group-rows` and `list-row` are subgrids (`grid-template-columns: subgrid`) that span all columns of the list, so column headers and cells share the same columns and stay in line while the list scrolls and its width changes. Its columns are `--wmp-list-columns`; on the desktop, the base puts a first column of `--wmp-list-group-info-width` in front of them for `list-group-info` (`grid-column: 1`), lets `list-group-rows` and the first `list-column` start in the second column and lets `list-group-header` span all columns. On mobile, `list-group-info` spans all columns above the rows. Column headers and cells get the padding at the start and end of the row (`--wmp-space-s` on the first and the last one); `list-header` and `list-row` have no padding and no border of their own. A theme keeps them in line as long as it gives `list-column` and `list-cell` the same padding and border widths, and draws frames of rows inside them (for example with an inset `box-shadow`) instead of with a `border`. Column headers clip their content at their column; the `label` of the column header `favorite` is too wide for the heart column and is kept for assistive technology only. The video `badge` of a song sits before its title in the `list-cell` `title`; while one song of the list has a video (state `has-video` of `list`), the column header and the cells `title` are grids with a first column of `--wmp-list-badge-width` for the badge and a second one for the `label`, so the titles of songs with and without a video stay in line on the desktop and on phones.
 
+The `logo` in `header` is a link to the start page on every device; the base keeps the color of the header for it and draws no underline.
+
 On the desktop, the profile can collapse the sidebar with `btn-sidebar-toggle`; the choice is kept per profile. The collapsed `sidebar` has the state `collapsed` and shows only the icons of the tree: the base hides the `label`s of the `tree-item`s visually (they show as tooltip and stay for assistive technology), leaves out `tree-toggle` and the indentation. While it is collapsed, the base sets `--wmp-sidebar-width` on `app` to `--wmp-sidebar-collapsed-width`, so the base layout and every theme layout that sizes the sidebar column with `var(--wmp-sidebar-width)` narrow it; a theme that sets `--wmp-sidebar-width` should do so on `:root`, not on `app`. On mobile the drawer always shows the whole tree and the mobile base hides `btn-sidebar-toggle`.
 
 Example of a desktop layout with the sidebar on the right:
@@ -79,6 +81,10 @@ Example of a desktop layout with the sidebar on the right:
     }
 }
 ```
+
+### Touch targets
+
+Below 64rem, everything a finger taps is at least `--wmp-touch-target-size` high, and never less than `2.75rem` (44 pixels): the `logo` in `header`, `btn-review-inbox`, the `tree-item`s of the drawer, the `segment`s, `now-playing-mini`, checkbox `field`s, the `select`s and inputs (through `--wmp-field-height`) and all buttons. Buttons with only an icon (`btn-item-menu`, also on tiles, `btn-favorite`, `btn-clear` of `search`) and `review-select` are also at least as wide; the `segment`s of a `segmented-control` are as high and keep the width of their label; `tree-toggle` takes a column of that width and height at the start of its `tree-item`, and the base indents every level of the tree by that column (the start padding of `tree-item` is part of the protected layout), so the entries of a node start below its icon. The minimum sizes are `!important` inside the mobile layer: a theme can make a target larger, not smaller. Links (`link`, `review-title`, `file-selection-title`, `library-issue-title`) are inline blocks with a padding above and below their line, which a theme cannot change either, so they reach the same height without a background of their own. A horizontal `slider` is as high as a touch target and a vertical one as wide (the `slider-thumb` stays small; the whole slider takes the touch); the thin `seek` of the mini player is no touch target. The `chart-bar`s of the statistics are exempt, the table below the chart lists the same numbers. On phones the `meta-item`s of a `list-group-meta` stand in a row that wraps, so their links do not pile up next to the cover, and every `meta-item` of a `detail-info` is as high as a touch target, with name and value centered in it.
 
 ## Variants
 
@@ -122,7 +128,7 @@ The color changes with the song; a theme can let it fade with `transition` on th
 | `app` | `div` | | Grid of all main areas |
 | `header` | `header` | `app` | Top bar |
 | `btn-menu` | `button` (`aria-expanded`, `aria-controls`) | `header` | Opens the sidebar as drawer (mobile) |
-| `logo` | `span` | `header`, `profile-select` | App logo with `logo-image` and `label` |
+| `logo` | `a` (in `header`), `span` (in `profile-select`) | `header`, `profile-select` | App logo with `logo-image` and `label`; in `header` a link to the start page |
 | `logo-image` | `span` | `logo` | Graphic of the logo (`--wmp-image-logo`) |
 | `nav-history` | `div` (`role="group"`) | `header` | Back and forward buttons |
 | `btn-back` | `button` | `nav-history` | Back in the history |
@@ -458,7 +464,8 @@ The color changes with the song; a theme can let it fade with `transition` on th
 | `library-issue-item` | `problem` or `hint` (videos without audio and songs without video are hints only) |
 | `empty-state` in `data-view="admin-checks"` | `clean` when the last check found no problems, `unchecked` before the first check, `filtered` when no problem matches the filter or search |
 | `review-list` | `ul` (`aria-label`, `aria-busy` while it loads again) | `section` | Songs of the review inbox, one `review-item` each |
-| `review-item` | `li` | `review-list` | One song: a `checkbox` (disabled once the song is reviewed), its `cover` and `review-info` |
+| `review-item` | `li` | `review-list` | One song: `review-select`, its `cover` and `review-info` |
+| `review-select` | `label` | `review-item` | The area around the `checkbox` of the song (disabled once the song is reviewed, then with the state `disabled`); a tap on it selects the song |
 | `review-info` | `div` | `review-item` | `review-title`, artist and album as `label` (`data-field="context"`), `file-path` (folder and base name of the files) and `review-meta` |
 | `review-title` | `a` | `review-info` | Title of the song; opens it in the metadata editor of the review inbox |
 | `review-meta` | `span` | `review-info` | A `badge` `reviewed` for songs reviewed since the list was loaded, when the song was added as `label` (`data-field="first-seen-at"`) and `review-tags` |
@@ -484,7 +491,7 @@ The color changes with the song; a theme can let it fade with `transition` on th
 | `slider-fill` | `div` | `slider-track` | Filled part of the track |
 | `slider-thumb` | `div` (`role="slider"`) | `slider` | Knob, focusable |
 | `field` | `label`, or `div` around a `color-picker` or a `segmented-control` | `form`, any | Text field or selection with `label`, `input`, `select`, `color-picker` or `segmented-control` (few fixed options, for example the ReplayGain mode, the role of a profile and the hardware acceleration), and optionally `field-hint` and `field-error`; with `data-variant="checkbox"` a `checkbox` before its `label` |
-| `checkbox` | `input type="checkbox"` (`:checked`) | `field`, `review-item` | Checkbox of a field with `data-variant="checkbox"`; in `review-item` on its own, named by `aria-label` |
+| `checkbox` | `input type="checkbox"` (`:checked`) | `field`, `review-select` | Checkbox of a field with `data-variant="checkbox"`; in `review-select` without a visible label, named by `aria-label` |
 | `form` | `form` | `view`, `dialog-body` | Form with fields |
 | `field-row` | `div` | `form` | Short fields side by side, for example year, track and disc number in the metadata editor |
 | `form-note` | `p` | `form` | Note of a form, for example the file the metadata editor writes |
@@ -664,6 +671,7 @@ The internal component overview (`/dev/components`) uses its own parts starting 
 | `online-match` | `selected` for the selected match |
 | `online-compare-row` | for a field `missing` (the song or album has no value, the match has one), `different`, `same` or `unknown` (the match knows no value); for the cover `none`, `loading`, `ready`, `missing` (the release has no cover) or `error` |
 | `review-item` | `unreviewed` or `reviewed` (reviewed since the list was loaded); additionally `selected` for a song selected for the bulk action and `missing-tags` if its file lacks tags |
+| `review-select` | `disabled` while its checkbox is disabled (the song is reviewed) |
 | `review-bulk` | `selected` while songs are selected, otherwise `empty` |
 | `empty-state` in `data-view="admin-review-track"` | `finished` when no unreviewed song follows in the list |
 | `playlist-cover-slide` | `active` for the song cover that is shown |
@@ -972,6 +980,7 @@ The graphic of each icon slot is a variable as well, see [Icons](#icons).
 | `--wmp-button-height` | `2rem` | Minimum height of buttons |
 | `--wmp-field-height` | `2rem` | Minimum height of inputs |
 | `--wmp-round-button-size` | `2rem` | Size of round buttons |
+| `--wmp-touch-target-size` | `2.75rem` | Minimum size of touch targets below 64rem (see [Touch targets](#touch-targets)); values below `2.75rem` count as `2.75rem` |
 | `--wmp-play-button-size` | `3rem` | Size of `btn-play` |
 | `--wmp-slider-thumb-size` | `0.875rem` | Size of `slider-thumb` |
 | `--wmp-equalizer-slider-height` | `10rem` | Height of the vertical `slider`s in `equalizer-band` |
@@ -1011,7 +1020,7 @@ The graphic of each icon slot is a variable as well, see [Icons](#icons).
 | `--wmp-lyrics-active-scale` | `1.12` | Scale of the active `lyrics-line` |
 | `--wmp-lyrics-transition-duration` | `0.35s` | Duration of the change of color and size of the lines; the base leaves it out for `prefers-reduced-motion: reduce` |
 
-On mobile, the base sets touch-friendly values for `--wmp-button-height`, `--wmp-round-button-size`, `--wmp-field-height` and `--wmp-swatch-size` on `app`, and its own `--wmp-list-columns` on `list` (in playlists with the handle); the columns `artist`, `album`, `detail` and `rating` are left out there.
+On mobile, the base sets touch-friendly values (`2.75rem`) for `--wmp-button-height`, `--wmp-round-button-size`, `--wmp-field-height` and `--wmp-swatch-size` on `app`, and its own `--wmp-list-columns` on `list` (in playlists with the handle); the columns `artist`, `album`, `detail` and `rating` are left out there.
 
 ### Recap and statistics
 
@@ -1480,6 +1489,7 @@ The themes shipped with WaveMP name the version they are written for in the comm
 ### Changelog
 
 - **Version 5:** visualizations. Changed: the `visualization` is no longer a placeholder: the state `placeholder` is gone, its `icon` and `label` moved into the new `visualization-message`, and the base lays out the `visualization` as a positioned box (no longer a grid) with the background `--wmp-stage-view-background`; themes that styled `visualization > icon` or `visualization > label` have to style `visualization-message > icon` and `visualization-message > label`; `btn-fullscreen` also lies in `visualization-controls`, so theme rules for `btn-fullscreen` that should only apply to the video need `video-stage > btn-fullscreen`. Added: the states `idle`, `loading`, `waiting`, `running`, `paused`, `unsupported`, `failed` and `fullscreen` of `visualization` and its attribute `data-module`; the parts `visualization-canvas`, `visualization-message`, `visualization-controls`, `btn-preset-previous`, `btn-preset-next` and `btn-auto-change` (states `on` and `off`, `aria-pressed`); the values `visualization-preset` and `visualization-auto-change` of `data-field`; the icon slots `preset-previous`, `preset-next` and `auto-change`.
+    - Additions without a version change: the logo as a link and touch targets on phones. The `logo` in `header` is an `a` that leads to the start page (it was a `span`; its children stay the same, the base sets `color: inherit` and no underline); the `checkbox` of a `review-item` lies in the new part `review-select` (a `label`, state `disabled`), which takes the touch; the variable `--wmp-touch-target-size` and the minimum sizes of [Touch targets](#touch-targets) below 64rem; there `--wmp-field-height` is `2.75rem` (was `2.5rem`), the `meta-item`s of `list-group-meta` stand in a wrapping row, and the `seek` of the full-screen player is as high as a touch target.
     - Additions without a version change: the video badge in lists of songs. The `badge` of a song with a video comes before the title `label` in the `list-cell` `title` (it used to follow it); the state `has-video` of `list` while one of its songs has a video, in which the base gives the `list-column` and the `list-cell`s `title` a column of the new variable `--wmp-list-badge-width` for the badge, so the titles stay in line. Themes that put space before the badge (`margin-inline-start`) should drop it.
     - Additions without a version change: the ambient light of videos. The parts `video-ambient` (states `off`, `waiting`, `running`, `paused` and `static`) between `video-backdrop` and `video` in `video-stage`, and two `video-ambient-canvas`es in it (states `current` and `previous`); the variables `--wmp-video-ambient-intensity`, `--wmp-video-ambient-blur`, `--wmp-video-ambient-saturation`, `--wmp-video-ambient-scale`, `--wmp-video-ambient-transition-duration` and `--wmp-video-ambient-fade-duration`; the runtime variable `--wmp-video-ambient-color`; the `data-field` `video-ambient` on the settings page.
     - Additions without a version change: the recap and the statistics. The pages `data-view="recap"`, `statistics`, `shared-recaps` and `shared-recap` with their states, `recap-nav` and `recap-nav-item`, `recap-period` (the `segmented-control` `recap-period` and the `field-row` `custom-period`), `recap-layout`, `recap-stage`, `recap-panel`, the story `recap-story` (attributes `data-recap-design` and `data-decoration`, states `playing`, `paused` and `loading`) with `recap-backdrop`, `recap-progress`, `recap-progress-segment`, `recap-progress-fill`, `recap-slides`, `recap-slide` (`data-kind`), `recap-cover`, `recap-slide-title`, `recap-figure`, `recap-figure-label`, `recap-ranking`, `recap-ranking-item` (`data-rank`), `recap-rank`, `recap-ranking-info`, `recap-ranking-title`, `recap-ranking-subtitle`, `recap-ranking-value`, `recap-facts`, `recap-fact`, `recap-fact-value`, `recap-caption`, `recap-controls`, `btn-recap-previous`, `btn-recap-pause` and `btn-recap-next`; `recap-export`; `recap-share-list`, `recap-share-item`, `recap-share-info`, `recap-share-title`, `recap-share-meta` and `recap-share-actions`; the bar chart `chart`, `chart-bars`, `chart-bar`, `chart-bar-fill`, `chart-bar-label` and `chart-tooltip` with the runtime variable `--wmp-bar-value`; the tables `stats-table-scroll`, `stats-table`, `stats-table-row`, `stats-table-heading` and `stats-table-cell`; `--wmp-progress-value` also on `recap-progress-segment`; the recap variables (`--wmp-recap-background-start` to `--wmp-recap-transition-duration`), `--wmp-chart-height` and `--wmp-chart-bar-color`; further values of `data-item`, `data-field` and `data-column`; the icon slots `tree-recap`, `tree-statistics`, `tree-shared-recaps`, `recap`, `statistics`, `shared-recaps`, `recap-previous`, `recap-next`, `save-picture` and `save-video`; the node `recap` of the sidebar tree with `statistics` and `shared-recaps`.

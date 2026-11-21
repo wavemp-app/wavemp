@@ -1769,8 +1769,7 @@ a[data-part='breadcrumb-link']:hover {
         padding-block-end: env(safe-area-inset-bottom);
     }
 
-    /* Logo and page title stay available to assistive technology only. */
-    [data-part='logo'],
+    /* The page title stays available to assistive technology only. */
     [data-part='content-title'] {
         position: absolute;
         inline-size: 1px;
@@ -1778,15 +1777,6 @@ a[data-part='breadcrumb-link']:hover {
         overflow: hidden;
         clip-path: inset(50%);
         white-space: nowrap;
-    }
-
-    /* The profile selection has no header, so it shows the logo. */
-    [data-part='profile-select'] > [data-part='logo'] {
-        position: static;
-        inline-size: auto;
-        block-size: auto;
-        overflow: visible;
-        clip-path: none;
     }
 
     /* Transport bar: controls, display, rating and modes. */
@@ -1985,10 +1975,10 @@ a[data-part='breadcrumb-link']:hover {
         margin: var(--wmp-space-xs) 0 0;
     }
 
-    /* Header: history at the start, the tabs as one capsule in the middle, status and profile. */
+    /* Header: logo and history at the start, the tabs as one capsule in the middle, status and profile. */
     [data-part='header'] {
-        grid-template-areas: 'nav-history . btn-review-inbox server-status btn-profile';
-        grid-template-columns: auto minmax(0, 1fr) auto auto auto;
+        grid-template-areas: 'logo nav-history . btn-review-inbox server-status btn-profile';
+        grid-template-columns: auto auto minmax(0, 1fr) auto auto auto;
         gap: 0.75rem;
         padding-inline: 1rem;
         border-block-start: 1px solid rgb(0 0 0 / 10%);
@@ -1998,8 +1988,8 @@ a[data-part='breadcrumb-link']:hover {
     }
 
     [data-part='header']:has(> [data-part='btn-review-inbox']) {
-        grid-template-areas: 'nav-history . btn-review-inbox server-status btn-profile';
-        grid-template-columns: auto minmax(0, 1fr) auto auto auto;
+        grid-template-areas: 'logo nav-history . btn-review-inbox server-status btn-profile';
+        grid-template-columns: auto auto minmax(0, 1fr) auto auto auto;
     }
 
     [data-part='header'] > [data-part='btn-review-inbox'] {

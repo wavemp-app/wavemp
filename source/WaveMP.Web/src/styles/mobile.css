@@ -12,7 +12,7 @@
         [data-part='app'] {
             --wmp-button-height: 2.75rem;
             --wmp-round-button-size: 2.75rem;
-            --wmp-field-height: 2.5rem;
+            --wmp-field-height: 2.75rem;
             --wmp-swatch-size: 2.75rem;
 
             display: grid !important;
@@ -325,7 +325,7 @@
         }
 
         [data-part='transport'][data-state~='expanded'] > [data-part='seek'] [data-part='slider'] {
-            min-block-size: calc(var(--wmp-slider-thumb-size) + 0.25rem);
+            min-block-size: var(--_touch-target);
         }
 
         [data-part='transport'][data-state~='expanded']
@@ -451,7 +451,116 @@
             line-clamp: 2 !important;
         }
 
+        /* --- Touch targets -------------------------------------------------------------- */
+
+        /*
+         * Everything a finger taps is at least --wmp-touch-target-size (never less than 2.75rem)
+         * high, buttons with only an icon also as wide; elements with a label keep its width (a
+         * minimum width would let them shrink below their label in a full row, for example the
+         * segments of a segmented control). The minimum sizes are !important inside this
+         * layer: a theme can make a target larger, never smaller. Areas that are already
+         * larger keep their size. Links get the height as padding around their line, so text
+         * links keep their place in the text and a list of links gets room between its entries.
+         * Exempt are the bars of charts (the table below a chart lists the same numbers) and the
+         * knob of a slider, whose whole slider takes the touch.
+         */
+        :root {
+            --_touch-target: max(2.75rem, var(--wmp-touch-target-size));
+        }
+
+        :is(
+            [data-part='header'] > [data-part='logo'],
+            [data-part='btn-review-inbox'],
+            [data-part='tree-item'],
+            [data-part='now-playing-mini'],
+            [data-part='field'][data-variant='checkbox'],
+            [data-part='segment']
+        ) {
+            min-block-size: var(--_touch-target) !important;
+        }
+
+        :is(
+            [data-part='btn-item-menu'],
+            [data-part='btn-favorite'],
+            [data-part='search'] > [data-part='btn-clear'],
+            [data-part='review-select']
+        ) {
+            min-block-size: var(--_touch-target) !important;
+            min-inline-size: var(--_touch-target) !important;
+        }
+
+        /*
+         * The arrow of a node of the sidebar tree opens and closes it on its own, in a column as
+         * wide as a touch target; every level is indented by that column, so the entries of a
+         * node start below its icon.
+         */
+        [data-part='tree-item'] {
+            padding-inline-start: calc(
+                var(--wmp-space-s) + (var(--wmp-tree-level, 1) - 1) *
+                    (var(--_touch-target) + var(--wmp-space-xs))
+            ) !important;
+        }
+
+        [data-part='tree-toggle'] {
+            place-items: center;
+            align-self: stretch;
+            min-block-size: var(--_touch-target) !important;
+            min-inline-size: var(--_touch-target) !important;
+        }
+
+        :is(
+            [data-part='link'],
+            [data-part='review-title'],
+            [data-part='file-selection-title'],
+            [data-part='library-issue-title']
+        ) {
+            display: inline-block;
+            max-inline-size: 100%;
+            padding-block: max(0px, (var(--_touch-target) - 1lh) / 2) !important;
+            vertical-align: middle;
+        }
+
+        [data-part='slider']:not([data-orientation='vertical']) {
+            min-block-size: var(--_touch-target);
+        }
+
+        [data-part='slider'][data-orientation='vertical'] {
+            min-inline-size: var(--_touch-target);
+        }
+
         /* --- Content details (not protected, themes may adjust them) ---------------------- */
+
+        /*
+         * The details of a group (album, artist, genre, year) stand in one row that wraps, so
+         * their links do not pile up to a high column next to the cover.
+         */
+        [data-part='list-group-meta'] {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            column-gap: var(--wmp-space-m);
+            row-gap: 0;
+        }
+
+        [data-part='list-group-meta'] > [data-part='meta-item'] {
+            max-inline-size: 100%;
+        }
+
+        [data-part='list-group-meta'] [data-part='meta-value'] > [data-part='link'] {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            vertical-align: top;
+        }
+
+        /*
+         * The details of a detail page: every line as high as the lines with a link, name and
+         * value centered in it, so the list keeps one rhythm.
+         */
+        [data-part='detail-info'] > [data-part='meta-item'] {
+            align-items: center;
+            min-block-size: var(--_touch-target);
+        }
 
         [data-part='list'] {
             --wmp-list-columns: 2rem minmax(0, 1fr) auto auto;
