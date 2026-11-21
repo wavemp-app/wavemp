@@ -1296,7 +1296,7 @@ The screenshot and contrast check of tests/WaveMP.E2E opens fixed views of the a
 - desktop (1280 by 800): `profiles`, `home`, `playlists` (the overview of the playlists, with the current entry on the first level of the sidebar), `album`, `artists`, `songs-menu` (the songs with an open context menu), `now-playing` (with the cover), `settings` (with the theme picker), `admin` (the transcoding page), `shortcuts` (the overview of the keyboard shortcuts),
 - phone (Pixel 7): `phone-library`, `phone-now-playing`, `phone-settings`, each with the bottom navigation, and `phone-shortcuts` (the overview of the keyboard shortcuts). The regression also compares the bottom navigation of `phone-now-playing` on its own (`phone-now-playing-bottom-nav`).
 
-The player of every view shows the same saved playback state: E2E Album, paused at the start of First Song. `phone-library` shows it as saved on another device, with the notice "Continue listening from", and `songs-menu` shows an empty player, as its menu reaches over the transport. Nothing plays during the check, so the screenshots do not depend on how far a song got.
+The player of every view shows the same saved playback state: E2E Album, paused at the start of First Song. `phone-library` shows it as saved on another device, with the notice "Continue listening from", and `songs-menu` shows an empty player, as its menu reaches over the transport. Before each view, the check sets this state for the profile of the theme through the API and waits until the player shows it; the pages never change it and nothing plays, so the screenshots depend neither on the views before, nor on earlier runs against the same instance, nor on how far a song got.
 
 ```bash
 cd tests/WaveMP.E2E
