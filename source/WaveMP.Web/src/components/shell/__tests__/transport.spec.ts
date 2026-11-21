@@ -7,11 +7,17 @@ import {
     nextRepeatMode,
     sleepTimerStateTokens,
     transportIcons,
+    transportNeedsVideo,
+    transportNeedsVisualization,
     transportStateTokens,
+    transportView,
+    transportViewChoice,
     type TransportCast,
+    type TransportStage,
     type TransportState,
 } from '../transport'
 import { createWaveMpI18n } from '@/i18n'
+import { PlayerViewModeObject } from '@/api/generated/models'
 
 const idle: TransportState = {
     playback: 'idle',
@@ -57,6 +63,59 @@ describe('transport logic', () => {
         expect(transportStateTokens('idle', false)).toBe('idle')
         expect(transportStateTokens('playing', true)).toBe('playing expanded')
         expect(transportStateTokens('playing', false, true)).toBe('playing loading')
+    })
+
+    it('adds the swipe and the view switch of the full-screen player', () => {
+        expect(transportStateTokens('playing', true, false, { swipe: 'dragging' })).toBe(
+            'playing expanded dragging',
+        )
+        expect(
+            transportStateTokens('paused', true, true, { swipe: 'dismissing', viewSwitch: true }),
+        ).toBe('paused loading expanded dismissing view-switch')
+        expect(transportStateTokens('playing', true, false, { swipe: 'idle' })).toBe(
+            'playing expanded',
+        )
+        // Only the full-screen player is swiped and has the view switch.
+        expect(
+            transportStateTokens('playing', false, false, { swipe: 'settling', viewSwitch: true }),
+        ).toBe('playing')
+    })
+
+    it('chooses the view of the full-screen player like the stage', () => {
+        const stage = (patch: Partial<TransportStage>): TransportStage => ({
+            mode: PlayerViewModeObject.Cover,
+            view: 'cover',
+            hasVideo: true,
+            casting: false,
+            ...patch,
+        })
+
+        expect(transportView(null)).toBe('cover')
+        expect(transportView(stage({ view: 'video' }))).toBe('video')
+        expect(transportView(stage({ view: 'visualization' }))).toBe('visualization')
+        // The lyrics stay on Now Playing.
+        expect(transportView(stage({ view: 'lyrics' }))).toBe('cover')
+
+        const video = stage({ mode: PlayerViewModeObject.Video })
+        expect(transportViewChoice(video)).toBe(PlayerViewModeObject.Video)
+        expect(transportViewChoice({ ...video, hasVideo: false })).toBe(PlayerViewModeObject.Cover)
+        const visualization = stage({ mode: PlayerViewModeObject.Visualization })
+        expect(transportViewChoice(visualization)).toBe(PlayerViewModeObject.Visualization)
+        expect(transportViewChoice({ ...visualization, casting: true })).toBe(
+            PlayerViewModeObject.Cover,
+        )
+        expect(transportViewChoice(stage({ mode: PlayerViewModeObject.Lyrics }))).toBe(
+            PlayerViewModeObject.Cover,
+        )
+
+        expect(transportNeedsVideo(video)).toBe(true)
+        expect(transportNeedsVideo({ ...video, hasVideo: false })).toBe(false)
+        expect(transportNeedsVideo({ ...video, casting: true })).toBe(false)
+        expect(transportNeedsVideo(visualization)).toBe(false)
+        expect(transportNeedsVideo(null)).toBe(false)
+        expect(transportNeedsVisualization(visualization)).toBe(true)
+        expect(transportNeedsVisualization({ ...visualization, casting: true })).toBe(false)
+        expect(transportNeedsVisualization(video)).toBe(false)
     })
 
     it('builds the state tokens of the sleep timer', () => {

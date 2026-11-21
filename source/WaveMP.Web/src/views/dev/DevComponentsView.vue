@@ -25,6 +25,7 @@ import type {
     TrackReviewSort,
 } from '@/api/generated/models'
 import {
+    PlayerViewModeObject,
     RecapPeriodObject,
     SmartPlaylistFieldObject,
     SmartPlaylistOperatorObject,
@@ -526,6 +527,36 @@ const transports = computed(() => [
         label: t('dev.transportStates.expanded'),
         state: { ...idle, ...track.value, playback: 'playing' as const },
         expanded: true,
+        stage: {
+            mode: PlayerViewModeObject.Cover,
+            view: 'cover' as const,
+            hasVideo: true,
+            casting: false,
+        },
+    },
+    {
+        id: 'expanded-video',
+        label: t('dev.transportStates.expandedVideo'),
+        state: { ...idle, ...track.value, playback: 'playing' as const },
+        expanded: true,
+        stage: {
+            mode: PlayerViewModeObject.Video,
+            view: 'video' as const,
+            hasVideo: true,
+            casting: false,
+        },
+    },
+    {
+        id: 'expanded-visualization',
+        label: t('dev.transportStates.expandedVisualization'),
+        state: { ...idle, ...track.value, playback: 'playing' as const },
+        expanded: true,
+        stage: {
+            mode: PlayerViewModeObject.Visualization,
+            view: 'visualization' as const,
+            hasVideo: false,
+            casting: false,
+        },
     },
 ])
 
@@ -1797,6 +1828,7 @@ const sampleTranscodeJobs = computed<TranscodeJob[]>(() => {
                     :state="transport.state"
                     :expanded="transport.expanded"
                     :resume="transport.resume"
+                    :stage="transport.stage"
                 />
             </div>
         </section>

@@ -133,6 +133,8 @@
     "modes": "Player-Modi",
     "compactMode": "Miniplayer",
     "open": "Player öffnen",
+    "chooseView": "Ansicht des Players wählen",
+    "views": "Ansicht des Players",
     "showNowPlaying": "Aktuelle Wiedergabe anzeigen",
     "close": "Player schließen",
     "messages": {
@@ -596,6 +598,8 @@
       "message": "Hinweis (Format nicht unterstützt)",
       "resume": "Weiterhören von einem anderen Gerät",
       "expanded": "Erweitert (mobiler Vollbild-Player)",
+      "expandedVideo": "Erweitert mit dem Video",
+      "expandedVisualization": "Erweitert mit der Visualisierung",
       "sleepTimer": "Sleep-Timer läuft",
       "crossfade": "Überblenden an",
       "autoplay": "Autoplay an",

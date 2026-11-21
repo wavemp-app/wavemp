@@ -190,10 +190,17 @@
     color-scheme: dark;
 }
 
-/* Buttons in the blue bars draw white symbols; hearts and stars keep their own colors. */
+/*
+ * Buttons in the blue bars draw white symbols; hearts and stars keep their own colors, and so do
+ * the light segments of the view switch of the full-screen player.
+ */
 :where([data-part='header'], [data-part='transport'], [data-part='bottom-nav'])
-    [data-variant]:not([data-part='btn-favorite'], [data-part='rating-star']) {
+    [data-variant]:not([data-part='btn-favorite'], [data-part='rating-star'], [data-part='segment']) {
     --wmp-icon-fill: #ffffff;
+}
+
+[data-part='player-view-switch'] {
+    --wmp-icon-fill: #2f55a8;
 }
 
 [data-part='header'] {

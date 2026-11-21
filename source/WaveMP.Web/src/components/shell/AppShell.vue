@@ -7,7 +7,7 @@ import AppHeader from './AppHeader.vue'
 import AppSidebar from './AppSidebar.vue'
 import AppToolbar from './AppToolbar.vue'
 import AppTransport from './AppTransport.vue'
-import type { SleepTimerChoice } from './transport'
+import type { SleepTimerChoice, TransportStage } from './transport'
 import { contentAreaId } from '@/router/scroll'
 import BaseAlert from '@/components/base/BaseAlert.vue'
 import CompactPlayer from '@/components/player/CompactPlayer.vue'
@@ -20,6 +20,7 @@ import { useMediaQuery } from '@/composables/useMediaQuery'
 import { miniPlayerShowsVideo } from '@/player/miniPlayer'
 import { useCollectionStore } from '@/stores/collection'
 import { useContextMenuStore } from '@/stores/contextMenu'
+import { useFullPlayerStore } from '@/stores/fullPlayer'
 import { useHealthStore } from '@/stores/health'
 import { useMiniPlayerStore } from '@/stores/miniPlayer'
 import { usePageTitleStore } from '@/stores/pageTitle'
@@ -61,7 +62,15 @@ useCoverColor()
 const sidebarOpen = ref(false)
 /** The desktop sidebar shows only its icons; kept per profile. The mobile drawer is unchanged. */
 const sidebarCollapsed = computed(() => isDesktop.value && session.sidebarCollapsed)
-const playerExpanded = ref(false)
+const fullPlayer = useFullPlayerStore()
+const playerExpanded = computed(() => fullPlayer.expanded)
+/** The views of the full-screen player, like the stage of Now Playing. */
+const transportStage = computed<TransportStage>(() => ({
+    mode: player.viewMode,
+    view: player.stageView,
+    hasVideo: player.hasVideo,
+    casting: player.casting,
+}))
 /** The mini player shows in the window of the app; the app is hidden meanwhile. */
 const compactInline = computed(() => miniPlayer.mode === 'inline')
 /** The mini player shows the video of the song, like the stage would. */
@@ -116,18 +125,18 @@ function chooseSleepTimer(choice: SleepTimerChoice): void {
 }
 
 function openEqualizer(): void {
-    playerExpanded.value = false
+    fullPlayer.collapse()
     void router.push({ name: 'equalizer' })
 }
 
 function expandPlayer(): void {
-    playerExpanded.value = true
+    fullPlayer.expand()
     void focus('[data-part="btn-collapse"]')
 }
 
 function collapsePlayer(): void {
-    if (playerExpanded.value) {
-        playerExpanded.value = false
+    if (fullPlayer.expanded) {
+        fullPlayer.collapse()
         void focus('[data-part="now-playing-mini"]')
     }
 }
@@ -175,7 +184,7 @@ watch(
     () => route.fullPath,
     () => {
         sidebarOpen.value = false
-        playerExpanded.value = false
+        fullPlayer.collapse()
         collection.clearError()
         contextMenu.clearError()
     },
@@ -232,6 +241,9 @@ onUnmounted(() => {
             :expanded="playerExpanded"
             :compact="miniPlayer.isOpen"
             :resume="resume.notice"
+            :stage="transportStage"
+            :audio="player.analyser"
+            :visualization="session.visualization"
             @play="player.play"
             @pause="player.pause"
             @stop="player.stop"
@@ -253,6 +265,9 @@ onUnmounted(() => {
             @collapse="collapsePlayer"
             @resume="resume.resume"
             @dismiss-resume="resume.dismiss"
+            @select-view="player.selectViewMode"
+            @attach-video="player.attachVideo"
+            @detach-video="player.detachVideo"
         />
         <AppBottomNav />
         <ContextMenuHost />

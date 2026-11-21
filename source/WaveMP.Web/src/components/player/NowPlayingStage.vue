@@ -62,6 +62,8 @@ const props = withDefaults(
         casting?: boolean
         /** The notice while casting, e.g. "Playing on Living Room". */
         castNotice?: string
+        /** Whether the full-screen player covers the stage; its visualization rests meanwhile. */
+        covered?: boolean
     }>(),
     {
         track: undefined,
@@ -78,6 +80,7 @@ const props = withDefaults(
         clock: undefined,
         casting: false,
         castNotice: '',
+        covered: false,
     },
 )
 
@@ -287,7 +290,7 @@ const subtitle = computed(() => {
             >
                 <StageVisualization
                     ref="stageVisualization"
-                    :active="view === 'visualization'"
+                    :active="view === 'visualization' && !covered"
                     :audio="audio"
                     :settings="visualization"
                     @update="emit('updateVisualization', $event)"

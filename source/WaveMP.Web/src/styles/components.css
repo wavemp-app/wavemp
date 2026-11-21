@@ -2728,6 +2728,108 @@
         inline-size: 100%;
     }
 
+    /*
+     * The cover of now-playing-mini lies in player-media; on the bar the wrapper does not take part
+     * in the layout. The full-screen player (mobile.css) stacks the video and the visualization over
+     * the cover, in its square, and shows the chosen view.
+     */
+    [data-part='player-media'] {
+        display: contents;
+    }
+
+    :is([data-part='player-video'], [data-part='player-visualization']) {
+        display: none;
+    }
+
+    /* The grip of the full-screen player; only there (mobile.css). */
+    [data-part='swipe-grip'] {
+        display: none;
+        inline-size: 2.5rem;
+        block-size: 0.3125rem;
+        border-radius: var(--wmp-radius-round);
+        background: currentColor;
+        opacity: 0.35;
+    }
+
+    /* The view switch of the full-screen player fades in when the cover is tapped. */
+    [data-part='player-view-switch'] {
+        display: flex;
+        justify-content: center;
+        transition: opacity var(--wmp-motion-duration-medium) var(--wmp-motion-easing-enter);
+    }
+
+    @starting-style {
+        [data-part='player-view-switch'][data-state~='open'] {
+            opacity: 0;
+        }
+    }
+
+    /*
+     * A text too long for its place (BaseMarquee): cut off with an ellipsis while it does not move
+     * (prefers-reduced-motion); otherwise it rests at its start with its end fading out, scrolls
+     * slowly by --wmp-marquee-distance in --wmp-marquee-duration, rests at its end with its start
+     * fading out and comes back to its start with a short fade.
+     */
+    [data-part='marquee'] {
+        display: block;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    [data-part='marquee']:is(
+        [data-state~='waiting'],
+        [data-state~='scrolling'],
+        [data-state~='end']
+    ) {
+        inline-size: max-content;
+        max-inline-size: none;
+        overflow: visible;
+        text-overflow: clip;
+    }
+
+    [data-part='marquee']:is([data-state~='scrolling'], [data-state~='end']) {
+        translate: calc(-1 * var(--wmp-marquee-distance, 0px)) 0;
+    }
+
+    [data-part='marquee'][data-state~='scrolling'] {
+        transition: translate var(--wmp-marquee-duration, 0s) linear;
+    }
+
+    [data-part='marquee'][data-state~='waiting'] {
+        animation: wmp-motion-fade-in var(--wmp-motion-duration-slow)
+            var(--wmp-motion-easing-standard);
+    }
+
+    /* The place never grows with its text, also where it is centered (full-screen player). */
+    [data-part]:has(> [data-part='marquee']) {
+        overflow: hidden;
+        min-inline-size: 0;
+        max-inline-size: 100%;
+    }
+
+    [data-part]:has(> [data-part='marquee'][data-state~='waiting']) {
+        mask-image: linear-gradient(
+            to right,
+            #000000 calc(100% - var(--wmp-marquee-fade-size)),
+            transparent
+        );
+    }
+
+    [data-part]:has(> [data-part='marquee'][data-state~='scrolling']) {
+        mask-image: linear-gradient(
+            to right,
+            transparent,
+            #000000 var(--wmp-marquee-fade-size),
+            #000000 calc(100% - var(--wmp-marquee-fade-size)),
+            transparent
+        );
+    }
+
+    [data-part]:has(> [data-part='marquee'][data-state~='end']) {
+        mask-image: linear-gradient(to right, transparent, #000000 var(--wmp-marquee-fade-size));
+    }
+
     [data-part='mode-switch'] {
         display: flex;
         align-items: center;

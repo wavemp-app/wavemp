@@ -1,22 +1,35 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onBeforeUnmount, ref, useId, watch } from 'vue'
 import { I18nT, useI18n } from 'vue-i18n'
 import BaseButton from '@/components/base/BaseButton.vue'
 import BaseIcon from '@/components/base/BaseIcon.vue'
 import BaseCover from '@/components/base/BaseCover.vue'
+import BaseMarquee from '@/components/base/BaseMarquee.vue'
+import BaseSegmentedControl, {
+    type SegmentOption,
+} from '@/components/base/BaseSegmentedControl.vue'
 import BaseSlider from '@/components/base/BaseSlider.vue'
 import FavoriteButton from '@/components/collection/FavoriteButton.vue'
 import CastButton from '@/components/player/CastButton.vue'
+import PlayerVisualization from '@/components/player/PlayerVisualization.vue'
 import RatingStars from '@/components/collection/RatingStars.vue'
 import SleepTimerControl from '@/components/player/SleepTimerControl.vue'
 import LibraryCover from '@/components/library/LibraryCover.vue'
 import { useFormat } from '@/composables/useFormat'
 import { useMediaQuery } from '@/composables/useMediaQuery'
+import { useSwipeDismiss } from '@/composables/useSwipeDismiss'
+import { PlayerViewModeObject, type PlayerViewMode } from '@/api/generated/models'
+import type { VisualizationSettings } from '@/visualization/settings'
 import { castStatusText } from '@/casting/presentation'
 import { desktopMediaQuery } from '@/themes/breakpoints'
 import {
     transportIcons,
+    transportNeedsVideo,
+    transportNeedsVisualization,
     transportStateTokens,
+    transportView,
+    transportViewChoice,
+    type TransportStage,
     type PlayerMessage,
     type SleepTimerChoice,
     type TransportResume,
@@ -29,6 +42,12 @@ import {
  * and the stars of the current track save the favorite and the rating of the profile themselves.
  * While a casting device plays, the bar names it and greys out the crossfade and the equalizer.
  * The compact mode button opens and closes the mini player (desktop only).
+ *
+ * The full-screen player (mobile) closes with its button or by swiping it down (useSwipeDismiss).
+ * Like the stage of Now Playing, it shows the cover, the video or the visualization the profile
+ * chose; tapping the cover and title opens its view switch. Its video element is handed to the
+ * player (attachVideo) and taken back before it goes (detachVideo). Title and artist scroll when
+ * they are too long for their place (BaseMarquee).
  */
 const props = withDefaults(
     defineProps<{
@@ -39,8 +58,21 @@ const props = withDefaults(
         compact?: boolean
         /** The state of another device was taken over: the notice to continue from there. */
         resume?: TransportResume | null
+        /** The views of the full-screen player; without it, it shows the cover only. */
+        stage?: TransportStage | null
+        /** The output of the player for the visualization of the full-screen player. */
+        audio?: AnalyserNode | null
+        /** The visualization settings of the profile. */
+        visualization?: VisualizationSettings
     }>(),
-    { expanded: false, compact: false, resume: null },
+    {
+        expanded: false,
+        compact: false,
+        resume: null,
+        stage: null,
+        audio: null,
+        visualization: undefined,
+    },
 )
 
 const emit = defineEmits<{
@@ -67,6 +99,12 @@ const emit = defineEmits<{
     /** Plays the state taken over from another device. */
     resume: []
     dismissResume: []
+    /** The view switch of the full-screen player chose a view (the same choice as on Now Playing). */
+    selectView: [mode: PlayerViewMode]
+    /** The video element of the full-screen player is shown; the player shows videos there. */
+    attachVideo: [element: HTMLVideoElement]
+    /** The video element of the full-screen player closes. */
+    detachVideo: [element: HTMLVideoElement]
 }>()
 
 const { t } = useI18n()
@@ -78,9 +116,124 @@ const idle = computed(() => props.state.playback === 'idle')
 const empty = computed(() => !props.state.trackId)
 const playing = computed(() => props.state.playback === 'playing')
 const icons = computed(() => transportIcons(props.state))
+const root = ref<HTMLElement | null>(null)
+const videoElement = ref<HTMLVideoElement | null>(null)
+const viewSwitchOpen = ref(false)
+const viewSwitchId = useId()
+
+const swipe = useSwipeDismiss(root, {
+    enabled: () => props.expanded && !isDesktop.value,
+    onDismiss: () => emit('collapse'),
+})
+const swipePhase = swipe.phase
+const swipeOffset = swipe.offset
+const swipeProgress = swipe.progress
+const swipeDuration = swipe.duration
+
 const tokens = computed(() =>
-    transportStateTokens(props.state.playback, props.expanded, props.state.loading ?? false),
+    transportStateTokens(props.state.playback, props.expanded, props.state.loading ?? false, {
+        swipe: swipePhase.value,
+        viewSwitch: viewSwitchOpen.value,
+    }),
 )
+
+/** The views of the full-screen player; on the bar it shows the cover only. */
+const fullScreen = computed(() => props.expanded)
+const needsVideo = computed(() => fullScreen.value && transportNeedsVideo(props.stage))
+const needsVisualization = computed(
+    () => fullScreen.value && transportNeedsVisualization(props.stage),
+)
+const shownView = computed(() => (fullScreen.value ? transportView(props.stage) : 'cover'))
+/** data-state of player-media: the shown view, and "loading" while the chosen video loads. */
+const mediaTokens = computed(() =>
+    needsVideo.value && shownView.value !== 'video'
+        ? `${shownView.value} loading`
+        : shownView.value,
+)
+
+const viewOptions = computed<SegmentOption[]>(() => [
+    {
+        value: PlayerViewModeObject.Cover,
+        item: 'cover',
+        icon: 'view-cover',
+        label: t('nowPlaying.viewCover'),
+    },
+    {
+        value: PlayerViewModeObject.Video,
+        item: 'video',
+        icon: 'view-video',
+        label: t('nowPlaying.viewVideo'),
+        disabled: !props.stage?.hasVideo,
+    },
+    {
+        value: PlayerViewModeObject.Visualization,
+        item: 'visualization',
+        icon: 'view-visualization',
+        label: props.stage?.casting
+            ? t('cast.unavailableWhileCasting', { name: t('nowPlaying.viewVisualization') })
+            : t('nowPlaying.viewVisualization'),
+        disabled: !!props.stage?.casting,
+    },
+])
+
+const viewChoice = computed(() =>
+    props.stage ? transportViewChoice(props.stage) : PlayerViewModeObject.Cover,
+)
+
+function selectView(value: string): void {
+    const option = viewOptions.value.find((item) => item.value === value)
+    if (option && !option.disabled) {
+        emit('selectView', option.value as PlayerViewMode)
+    }
+}
+
+/** What the button with cover and title does, for assistive technology. */
+const miniPlayerLabel = computed(() => {
+    if (isDesktop.value) {
+        return t('player.showNowPlaying')
+    }
+
+    return props.expanded ? t('player.chooseView') : t('player.open')
+})
+
+/** aria-expanded of the button: the full-screen player on the bar, the view switch in it. */
+const miniPlayerExpanded = computed(() => {
+    if (isDesktop.value) {
+        return undefined
+    }
+
+    return (props.expanded ? viewSwitchOpen.value : false) ? 'true' : 'false'
+})
+
+// The view switch starts closed every time the full-screen player opens.
+watch(
+    () => props.expanded,
+    (expanded) => {
+        if (!expanded) {
+            viewSwitchOpen.value = false
+        }
+    },
+)
+
+// The video element comes and goes with the chosen video; the player follows it.
+watch(
+    videoElement,
+    (element, previous) => {
+        if (previous) {
+            emit('detachVideo', previous)
+        }
+        if (element) {
+            emit('attachVideo', element)
+        }
+    },
+    { flush: 'post' },
+)
+
+onBeforeUnmount(() => {
+    if (videoElement.value) {
+        emit('detachVideo', videoElement.value)
+    }
+})
 
 const messageText = computed(() => {
     const messages: Record<PlayerMessage, string> = {
@@ -128,12 +281,26 @@ function onMiniPlayer(): void {
         emit('showNowPlaying')
     } else if (!props.expanded) {
         emit('expand')
+    } else {
+        viewSwitchOpen.value = !viewSwitchOpen.value
     }
 }
 </script>
 
 <template>
-    <section data-part="transport" :aria-label="t('player.label')" :data-state="tokens">
+    <section
+        ref="root"
+        data-part="transport"
+        :aria-label="t('player.label')"
+        :data-state="tokens"
+        :style="{
+            '--wmp-swipe-offset': `${swipeOffset}px`,
+            '--wmp-swipe-progress': swipeProgress,
+            '--wmp-swipe-duration': `${swipeDuration}ms`,
+        }"
+    >
+        <!-- The grip of the full-screen player that shows it can be swiped down (mobile). -->
+        <span data-part="swipe-grip" aria-hidden="true"></span>
         <div data-part="seek" :data-state="idle ? 'disabled' : undefined">
             <BaseSlider
                 :model-value="state.position"
@@ -160,27 +327,59 @@ function onMiniPlayer(): void {
             type="button"
             data-part="now-playing-mini"
             :data-state="state.title ? undefined : 'empty'"
-            :aria-expanded="isDesktop ? undefined : expanded ? 'true' : 'false'"
+            :aria-expanded="miniPlayerExpanded"
+            :aria-controls="expanded && stage ? viewSwitchId : undefined"
             @click="onMiniPlayer"
         >
-            <LibraryCover
-                v-if="state.trackId"
-                kind="track"
-                :id="state.trackId"
-                :available="state.hasCover ?? false"
-            />
-            <BaseCover v-else />
+            <span data-part="player-media" :data-state="mediaTokens">
+                <LibraryCover
+                    v-if="state.trackId"
+                    kind="track"
+                    :id="state.trackId"
+                    :available="state.hasCover ?? false"
+                />
+                <BaseCover v-else />
+                <video
+                    v-if="needsVideo"
+                    ref="videoElement"
+                    data-part="player-video"
+                    aria-hidden="true"
+                    muted
+                    playsinline
+                    disablepictureinpicture
+                ></video>
+                <PlayerVisualization
+                    v-if="needsVisualization"
+                    :active="shownView === 'visualization'"
+                    :audio="audio"
+                    :settings="visualization"
+                />
+            </span>
             <span data-part="now-playing-meta">
-                <span data-part="now-playing-title">{{
-                    state.title ?? t('player.nothingPlaying')
-                }}</span>
-                <span data-part="now-playing-artist">{{ state.artist }}</span>
+                <BaseMarquee
+                    part="now-playing-title"
+                    :text="state.title ?? t('player.nothingPlaying')"
+                />
+                <BaseMarquee part="now-playing-artist" :text="state.artist ?? ''" />
                 <span v-if="castStatus" data-part="cast-status">{{ castStatus }}</span>
             </span>
-            <span data-part="label">{{
-                isDesktop ? t('player.showNowPlaying') : t('player.open')
-            }}</span>
+            <span data-part="label">{{ miniPlayerLabel }}</span>
         </button>
+        <div
+            v-if="expanded && stage"
+            :id="viewSwitchId"
+            data-part="player-view-switch"
+            :data-state="viewSwitchOpen ? 'open' : 'closed'"
+            :hidden="!viewSwitchOpen || undefined"
+        >
+            <BaseSegmentedControl
+                item="player-view"
+                :label="t('player.views')"
+                :options="viewOptions"
+                :model-value="viewChoice"
+                @update:model-value="selectView"
+            />
+        </div>
         <div
             data-part="now-playing-actions"
             role="group"

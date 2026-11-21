@@ -3,7 +3,10 @@
 
 import type { CastAvailability, CastConnection, CastTechnology } from '@/casting/types'
 import type { SleepTimerMode } from '@/player/sleepTimer'
+import { PlayerViewModeObject, type PlayerViewMode } from '@/api/generated/models'
+import type { StageView } from '@/player/videoSync'
 import type { IconSlotName } from '@/themes/iconSlots'
+import type { SwipePhase } from './swipe'
 
 export type PlaybackState = 'idle' | 'playing' | 'paused'
 
@@ -136,11 +139,87 @@ export function transportIcons(
     }
 }
 
-/** data-state tokens of the transport bar, e.g. "playing loading expanded". */
+/** What the gesture and the view switch of the full-screen player add to the state of the bar. */
+export interface TransportStateExtras {
+    /** Phase of swiping the full-screen player down. */
+    readonly swipe?: SwipePhase
+    /** Whether the view switch of the full-screen player is open. */
+    readonly viewSwitch?: boolean
+}
+
+/**
+ * data-state tokens of the transport bar, e.g. "playing loading expanded"; while the full-screen
+ * player is swiped, the phase ("dragging", "settling" or "dismissing"), and "view-switch"
+ * while its view switch is open.
+ */
 export function transportStateTokens(
     playback: PlaybackState,
     expanded: boolean,
     loading = false,
+    extras: TransportStateExtras = {},
 ): string {
-    return [playback, ...(loading ? ['loading'] : []), ...(expanded ? ['expanded'] : [])].join(' ')
+    const swipe = expanded && extras.swipe && extras.swipe !== 'idle' ? [extras.swipe] : []
+    const viewSwitch = expanded && extras.viewSwitch ? ['view-switch'] : []
+    return [
+        playback,
+        ...(loading ? ['loading'] : []),
+        ...(expanded ? ['expanded'] : []),
+        ...swipe,
+        ...viewSwitch,
+    ].join(' ')
+}
+
+/** What the full-screen player shows in the place of the cover. */
+export type TransportView = 'cover' | 'video' | 'visualization'
+
+/**
+ * The views of the full-screen player (mobile): like the stage of Now Playing, it shows the cover,
+ * the video or the visualization the profile chose, and its view switch chooses among them.
+ */
+export interface TransportStage {
+    /** The view mode chosen by the profile. */
+    readonly mode: PlayerViewMode
+    /** What the stage of the player shows (StageView of the player store). */
+    readonly view: StageView
+    /** Whether the current song has a music video. */
+    readonly hasVideo: boolean
+    /** Whether a casting device plays (it shows the video; the browser does not hear the music). */
+    readonly casting: boolean
+}
+
+/** What the full-screen player shows: the lyrics stay on the stage of Now Playing. */
+export function transportView(stage: TransportStage | null | undefined): TransportView {
+    const view = stage?.view ?? 'cover'
+    return view === 'lyrics' ? 'cover' : view
+}
+
+/**
+ * The checked option of the view switch of the full-screen player: the chosen mode, but the cover
+ * for a song without a video while the video is chosen, while casting for the visualization, and
+ * while the lyrics are chosen (the player has no lyrics view).
+ */
+export function transportViewChoice(stage: TransportStage): PlayerViewMode {
+    switch (stage.mode) {
+        case PlayerViewModeObject.Video:
+            return stage.hasVideo ? stage.mode : PlayerViewModeObject.Cover
+        case PlayerViewModeObject.Visualization:
+            return stage.casting ? PlayerViewModeObject.Cover : stage.mode
+        case PlayerViewModeObject.Lyrics:
+            return PlayerViewModeObject.Cover
+        default:
+            return stage.mode
+    }
+}
+
+/**
+ * Whether the full-screen player needs its video element: the profile chose the video, the song has
+ * one and no casting device plays. The video shows once it is ready (view "video").
+ */
+export function transportNeedsVideo(stage: TransportStage | null | undefined): boolean {
+    return !!stage && stage.mode === PlayerViewModeObject.Video && stage.hasVideo && !stage.casting
+}
+
+/** Whether the full-screen player draws the visualization: chosen and no casting device plays. */
+export function transportNeedsVisualization(stage: TransportStage | null | undefined): boolean {
+    return !!stage && stage.mode === PlayerViewModeObject.Visualization && !stage.casting
 }

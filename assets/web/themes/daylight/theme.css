@@ -1163,13 +1163,14 @@ a[data-part='breadcrumb-link']:hover {
     box-shadow: inset 0 1px #ffffff;
 }
 
-[data-part='transport'] [data-variant]:not([data-part='btn-favorite'], [data-part='btn-play']) {
+[data-part='transport']
+    [data-variant]:not([data-part='btn-favorite'], [data-part='btn-play'], [data-part='segment']) {
     --wmp-icon-fill: #0b4f94;
 
     color: #0b4f94;
 }
 
-[data-part='transport'] :is(button, a):hover:not(:disabled) [data-part='icon'],
+[data-part='transport'] :is(button, a):hover:not(:disabled, [aria-checked='true']) [data-part='icon'],
 [data-part='transport'] [aria-pressed='true'] [data-part='icon'] {
     --wmp-icon-fill: linear-gradient(#2a8be0, #0b4f94);
 

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, shallowRef, toRaw, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import BaseButton from '@/components/base/BaseButton.vue'
 import BaseIcon from '@/components/base/BaseIcon.vue'
@@ -7,17 +7,10 @@ import BaseSegmentedControl, {
     type SegmentOption,
 } from '@/components/base/BaseSegmentedControl.vue'
 import BaseSelect, { type SelectOption } from '@/components/base/BaseSelect.vue'
-import { useInView } from '@/composables/useInView'
+import { useVisualization } from '@/composables/useVisualization'
 import { canFullscreen, enterFullscreen, exitFullscreen, isFullscreen } from '@/player/fullscreen'
-import {
-    drawingSize,
-    VisualizationController,
-    type VisualizationState,
-} from '@/visualization/controller'
-import type { VisualizationPreset } from '@/visualization/module'
 import { adjacentPreset } from '@/visualization/presets'
-import { visualizationDependencies, visualizationModuleChoices } from '@/visualization/modules'
-import type { QualityLevel } from '@/visualization/quality'
+import { visualizationModuleChoices } from '@/visualization/modules'
 import {
     defaultVisualizationSettings,
     type VisualizationSettings,
@@ -27,11 +20,11 @@ import {
 /**
  * The visualization of the Now Playing stage: the module of the profile (Milkdrop presets, the
  * style variants of A-Force or the scenes of BlackCap) draws the output of the player into a canvas,
- * in sync with the music, at the quality of the profile. Its controls choose the module and the
- * preset, turn the automatic change on and off and show the visualization in full screen (also with
- * a double click). The module loads when the view is shown the first time; nothing is drawn while
- * the view is hidden, the page is in the background or the stage is out of the viewport. Choices
- * are handed to the profile with update.
+ * in sync with the music, at the quality of the profile (useVisualization). Its controls choose the
+ * module and the preset, turn the automatic change on and off and show the visualization in full
+ * screen (also with a double click). The module loads when the view is shown the first time;
+ * nothing is drawn while the view is hidden, the page is in the background or the stage is out of
+ * the viewport. Choices are handed to the profile with update.
  */
 const props = withDefaults(
     defineProps<{
@@ -53,20 +46,16 @@ const { t } = useI18n()
 
 const container = ref<HTMLElement | null>(null)
 const canvas = ref<HTMLCanvasElement | null>(null)
-/** Changes when a renderer released its canvas, so Vue creates a new canvas element. */
-const canvasKey = ref(0)
-const state = ref<VisualizationState>('idle')
-const presets = shallowRef<readonly VisualizationPreset[]>([])
-const preset = ref('')
-const quality = ref<QualityLevel>('high')
 const fullscreen = ref(false)
 const fullscreenAvailable = ref(false)
-const pageVisible = ref(typeof document === 'undefined' || document.visibilityState !== 'hidden')
-const inView = useInView(container, '0px')
 
-const visible = computed(
-    () => props.active && pageVisible.value && (inView.value || fullscreen.value),
-)
+const visualization = useVisualization(container, canvas, {
+    active: () => props.active,
+    audio: () => props.audio,
+    settings: () => props.settings,
+    fullscreen: () => fullscreen.value,
+})
+const { canvasKey, state, presets, preset, quality } = visualization
 
 const ready = computed(() => presets.value.length > 0)
 
@@ -105,72 +94,14 @@ const moduleOptions = computed<SegmentOption[]>(() =>
     })),
 )
 
-let controller: VisualizationController | null = null
-
-/** The analyser itself: Web Audio refuses reactive proxies of its nodes. */
-function audioNode(): AnalyserNode | null {
-    return props.audio ? toRaw(props.audio) : null
-}
-let resizeObserver: ResizeObserver | null = null
-
-function createController(): VisualizationController {
-    const created = new VisualizationController(
-        visualizationDependencies.module(props.settings.module),
-        props.settings.preset,
-        { enabled: props.settings.autoChange, seconds: props.settings.autoChangeSeconds },
-        {
-            state: (value) => (state.value = value),
-            presets: (value) => (presets.value = value),
-            preset: (value) => (preset.value = value ?? ''),
-            canvasReleased: () => canvasKey.value++,
-            quality: (value) => (quality.value = value),
-        },
-        visualizationDependencies.clock,
-    )
-    created.setQuality(props.settings.quality)
-    state.value = created.currentState
-    presets.value = created.presets
-    preset.value = created.preset ?? ''
-    quality.value = created.quality
-    return created
-}
-
-/** Hands the size of the visualization in device pixels to the controller. */
-function updateSize(width: number, height: number): void {
-    if (width > 0 && height > 0) {
-        const size = drawingSize(width, height, visualizationDependencies.devicePixelRatio())
-        controller?.resize(size.width, size.height)
-    }
-}
-
-function measure(): void {
-    const element = container.value
-    if (element) {
-        updateSize(element.clientWidth, element.clientHeight)
-    }
-}
-
-function start(): void {
-    controller = createController()
-    measure()
-    controller.setCanvas(canvas.value)
-    controller.setAudio(audioNode())
-    controller.setVisible(visible.value)
-}
-
-function stop(): void {
-    controller?.dispose()
-    controller = null
-}
-
 function selectPreset(value: string): void {
-    if (!controller || !presets.value.some((item) => item.id === value)) {
+    if (!visualization.hasPreset(value)) {
         return
     }
 
     // The choice goes to the profile first: showing a preset may take a moment (its shaders compile).
     emit('update', { preset: value })
-    controller.selectPreset(value)
+    visualization.selectPreset(value)
 }
 
 function step(offset: -1 | 1): void {
@@ -213,66 +144,16 @@ async function toggleFullscreen(): Promise<void> {
     updateFullscreen()
 }
 
-function onVisibilityChange(): void {
-    pageVisible.value = document.visibilityState !== 'hidden'
-}
-
-watch(visible, (value) => controller?.setVisible(value))
-watch(
-    () => props.audio,
-    () => controller?.setAudio(audioNode()),
-)
-watch(canvas, (value) => controller?.setCanvas(value), { flush: 'post' })
-watch(
-    () => [props.settings.autoChange, props.settings.autoChangeSeconds] as const,
-    ([enabled, seconds]) => controller?.setAutoChange({ enabled, seconds }),
-)
-watch(
-    () => props.settings.preset,
-    (value) => controller?.setStoredPreset(value),
-)
-watch(
-    () => props.settings.quality,
-    (value) => controller?.setQuality(value),
-)
-// Another module: the visualization starts again with it.
-watch(
-    () => props.settings.module,
-    () => {
-        stop()
-        canvasKey.value++
-        start()
-    },
-)
-
 onMounted(() => {
-    const element = container.value!
-    fullscreenAvailable.value = canFullscreen(element)
+    fullscreenAvailable.value = canFullscreen(container.value!)
     document.addEventListener('fullscreenchange', updateFullscreen)
-    document.addEventListener('visibilitychange', onVisibilityChange)
-    if (typeof ResizeObserver !== 'undefined') {
-        resizeObserver = new ResizeObserver((entries) => {
-            const box = entries[0]?.contentRect
-            if (box) {
-                updateSize(box.width, box.height)
-            }
-        })
-        resizeObserver.observe(element)
-    }
-
-    start()
 })
 
 onBeforeUnmount(() => {
     document.removeEventListener('fullscreenchange', updateFullscreen)
-    document.removeEventListener('visibilitychange', onVisibilityChange)
-    resizeObserver?.disconnect()
-    resizeObserver = null
     if (fullscreen.value && container.value) {
         void exitFullscreen(container.value)
     }
-
-    stop()
 })
 
 /** Full screen for the context menu of the stage. */

@@ -5,6 +5,7 @@ import { castStatusText } from '@/casting/presentation'
 import NowPlayingStage from '@/components/player/NowPlayingStage.vue'
 import AutoplayList from '@/components/player/AutoplayList.vue'
 import PlayQueue from '@/components/player/PlayQueue.vue'
+import { useFullPlayerStore } from '@/stores/fullPlayer'
 import { usePlayerStore } from '@/stores/player'
 import { useSessionStore } from '@/stores/session'
 import type { VisualizationSettingsChange } from '@/visualization/settings'
@@ -16,6 +17,7 @@ import type { VisualizationSettingsChange } from '@/visualization/settings'
 const { t } = useI18n()
 const player = usePlayerStore()
 const session = useSessionStore()
+const fullPlayer = useFullPlayerStore()
 
 /** "Playing on ..." while a casting device plays. */
 const castNotice = computed(() => {
@@ -49,6 +51,7 @@ function updateVisualization(change: VisualizationSettingsChange): void {
             :clock="player.livePosition"
             :casting="player.casting"
             :cast-notice="castNotice"
+            :covered="fullPlayer.expanded"
             @select-mode="player.selectViewMode"
             @attach-video="player.attachVideo"
             @detach-video="player.detachVideo"

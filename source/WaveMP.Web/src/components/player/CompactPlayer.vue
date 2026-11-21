@@ -3,6 +3,7 @@ import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import BaseButton from '@/components/base/BaseButton.vue'
 import BaseCover from '@/components/base/BaseCover.vue'
+import BaseMarquee from '@/components/base/BaseMarquee.vue'
 import BaseSlider from '@/components/base/BaseSlider.vue'
 import LibraryCover from '@/components/library/LibraryCover.vue'
 import { transportIcons, type TransportState } from '@/components/shell/transport'
@@ -15,7 +16,8 @@ import { miniPlayerStateTokens } from '@/player/miniPlayer'
  * only, like the transport bar. It is shown in the floating window of the browser (kind "window")
  * or, where the browser has none, as compact view in the window of the app (kind "inline"); the
  * DOM is the same, the theme can tell both apart by data-kind. While it shows a video, its video
- * element is handed to the player (attach) and taken back before it goes (detach).
+ * element is handed to the player (attach) and taken back before it goes (detach). Title and artist
+ * scroll when they are too long for their place (BaseMarquee).
  */
 const props = withDefaults(
     defineProps<{
@@ -111,10 +113,11 @@ onBeforeUnmount(() => {
                 ></video>
             </div>
             <div data-part="compact-player-info" :data-state="state.title ? undefined : 'empty'">
-                <span data-part="compact-player-title">{{
-                    state.title ?? t('player.nothingPlaying')
-                }}</span>
-                <span data-part="compact-player-artist">{{ state.artist }}</span>
+                <BaseMarquee
+                    part="compact-player-title"
+                    :text="state.title ?? t('player.nothingPlaying')"
+                />
+                <BaseMarquee part="compact-player-artist" :text="state.artist ?? ''" />
             </div>
             <div data-part="compact-player-seek" :data-state="idle ? 'disabled' : undefined">
                 <BaseSlider

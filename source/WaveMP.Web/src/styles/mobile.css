@@ -308,6 +308,118 @@
             padding: max(var(--wmp-space-s), env(safe-area-inset-top)) var(--wmp-space-l)
                 max(var(--wmp-space-xl), env(safe-area-inset-bottom));
             overflow: auto !important;
+            overscroll-behavior: contain;
+            /* Swiping down: the player follows the finger (useSwipeDismiss). */
+            translate: 0 var(--wmp-swipe-offset, 0px) !important;
+        }
+
+        /* The open view switch takes a row below the cover and the title. */
+        [data-part='app']
+            > [data-part='transport'][data-state~='expanded'][data-state~='view-switch'] {
+            grid-template-areas:
+                'btn-collapse'
+                'now-playing-mini'
+                'player-view-switch'
+                'now-playing-actions'
+                'seek'
+                'transport-controls'
+                'mode-switch' !important;
+            grid-template-rows: auto minmax(0, 1fr) auto auto auto auto auto !important;
+        }
+
+        [data-part='transport'][data-state~='expanded'][data-state~='dragging'] {
+            cursor: grabbing;
+            user-select: none;
+        }
+
+        /*
+         * After the finger let go, the player snaps back or leaves the screen in
+         * --wmp-swipe-duration; leaving, it keeps the speed of the finger.
+         */
+        [data-part='transport'][data-state~='expanded'][data-state~='settling'] {
+            transition: translate var(--wmp-swipe-duration) var(--wmp-motion-easing-standard);
+        }
+
+        [data-part='transport'][data-state~='expanded'][data-state~='dismissing'] {
+            transition: translate var(--wmp-swipe-duration) linear;
+        }
+
+        /* The grip at the top, in the middle of the row of btn-collapse. */
+        [data-part='transport'][data-state~='expanded'] > [data-part='swipe-grip'] {
+            grid-area: btn-collapse !important;
+            display: block !important;
+            justify-self: center;
+            align-self: center;
+        }
+
+        [data-part='transport'][data-state~='expanded'] > [data-part='player-view-switch'] {
+            grid-area: player-view-switch !important;
+        }
+
+        /*
+         * The cover takes the room the other rows leave (a size container), so the player fits
+         * the screen also with the view switch open. The views of the player lie on the cover, in
+         * its square: the video (whole, on the background of the stage) and the visualization;
+         * the chosen one fades in when it is ready.
+         */
+        [data-part='transport'][data-state~='expanded'] [data-part='player-media'] {
+            --_player-media-size: min(80vw, 45dvh, 100cqb);
+
+            display: grid !important;
+            flex: 1 1 0 !important;
+            align-self: stretch !important;
+            place-items: center;
+            min-block-size: 0 !important;
+            container-type: size;
+        }
+
+        [data-part='transport'][data-state~='expanded']
+            [data-part='player-media']
+            > :is(
+                [data-part='cover'],
+                [data-part='player-video'],
+                [data-part='player-visualization']
+            ) {
+            grid-area: 1 / 1 !important;
+            inline-size: var(--_player-media-size) !important;
+            block-size: var(--_player-media-size) !important;
+        }
+
+        [data-part='transport'][data-state~='expanded']
+            [data-part='player-media']
+            > :is([data-part='player-video'], [data-part='player-visualization']) {
+            position: relative !important;
+            display: block !important;
+            overflow: hidden;
+            border-radius: var(--wmp-radius-m);
+            background: var(--wmp-stage-view-background);
+            opacity: 0;
+            transition: opacity var(--wmp-stage-transition-duration) ease-in-out;
+        }
+
+        [data-part='transport'][data-state~='expanded'] [data-part='player-video'] {
+            object-fit: contain;
+        }
+
+        [data-part='transport'][data-state~='expanded']
+            [data-part='player-media'][data-state~='video']
+            > [data-part='player-video'],
+        [data-part='transport'][data-state~='expanded']
+            [data-part='player-media'][data-state~='visualization']
+            > [data-part='player-visualization'] {
+            opacity: 1;
+        }
+
+        [data-part='player-visualization'] > [data-part='visualization-canvas'] {
+            position: absolute;
+            inset: 0;
+            inline-size: 100%;
+            block-size: 100%;
+        }
+
+        [data-part='player-visualization']:not([data-state~='running'], [data-state~='paused'])
+            > [data-part='visualization-canvas'] {
+            visibility: hidden;
         }
 
         [data-part='transport'][data-state~='expanded'] > [data-part='now-playing-actions'] {
@@ -336,17 +448,11 @@
         }
 
         [data-part='transport'][data-state~='expanded'] > [data-part='now-playing-mini'] {
+            align-self: stretch !important;
             flex-direction: column;
             justify-content: center;
             gap: var(--wmp-space-l);
             text-align: center;
-            cursor: default;
-        }
-
-        [data-part='transport'][data-state~='expanded']
-            [data-part='now-playing-mini']
-            [data-part='cover'] {
-            inline-size: min(80vw, 45dvh);
         }
 
         [data-part='transport'][data-state~='expanded'] [data-part='now-playing-meta'] {

@@ -345,6 +345,9 @@
         --wmp-chart-height: 12rem;
         --wmp-chart-bar-color: var(--wmp-color-accent);
 
+        /* Long titles (BaseMarquee): how wide their cut-off end fades out. */
+        --wmp-marquee-fade-size: 1.5rem;
+
         /*
          * Motion (THEMING.md, section "Motion"): what answers an action of the person moves from
          * where it comes from (the indicator to the new option, a menu out of the point it opens

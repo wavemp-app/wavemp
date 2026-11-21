@@ -41,6 +41,11 @@ const runtimeVariables = [
     '--wmp-crop-y',
     '--wmp-cover-color',
     '--wmp-cover-color-contrast',
+    '--wmp-marquee-distance',
+    '--wmp-marquee-duration',
+    '--wmp-swipe-offset',
+    '--wmp-swipe-progress',
+    '--wmp-swipe-duration',
 ]
 
 function read(file: string): string {

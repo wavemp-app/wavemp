@@ -133,6 +133,8 @@
     "modes": "Player modes",
     "compactMode": "Mini player",
     "open": "Open player",
+    "chooseView": "Choose what the player shows",
+    "views": "Player view",
     "showNowPlaying": "Show Now Playing",
     "close": "Close player",
     "messages": {
@@ -596,6 +598,8 @@
       "message": "Notice (format not supported)",
       "resume": "Continue listening from another device",
       "expanded": "Expanded (full-screen player on mobile)",
+      "expandedVideo": "Expanded with the video",
+      "expandedVisualization": "Expanded with the visualization",
       "sleepTimer": "Sleep timer running",
       "crossfade": "Crossfade on",
       "autoplay": "Autoplay on",
