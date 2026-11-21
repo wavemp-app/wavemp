@@ -1,4 +1,5 @@
 using WaveMP.Core.Playlists.Playlists;
+using WaveMP.Core.Playlists.SmartPlaylists;
 using WaveMP.Core.Subsonic.Media;
 using WaveMP.Core.Subsonic.Requests;
 using WaveMP.Core.Subsonic.Responses;
@@ -144,11 +145,33 @@ public static class SubsonicElements
             .Set("name", playlist.Name)
             .Set("owner", owner)
             .Set("public", false)
+            .Set("readonly", false)
             .Set("songCount", playlist.TrackCount)
             .Set("duration", (int)Math.Round(playlist.DurationMilliseconds / 1000))
             .Set("created", playlist.CreatedAt)
             .Set("changed", playlist.UpdatedAt)
             .Set("coverArt", SubsonicIds.PlaylistCover(playlist.Id));
+    }
+
+    /// <summary>
+    /// A smart playlist of the user as a read-only playlist (<c>readonly</c> of OpenSubsonic): its songs follow its
+    /// rules, so apps cannot change them. Id and cover id carry the prefix of smart playlists.
+    /// </summary>
+    public static SubsonicElement SmartPlaylist(SmartPlaylistItem item, string owner, string name = "playlist")
+    {
+        SmartPlaylist playlist = item.Playlist;
+        string id = SubsonicIds.SmartPlaylist(playlist.Id);
+        return new SubsonicElement(name)
+            .Set("id", id)
+            .Set("name", playlist.Name)
+            .Set("owner", owner)
+            .Set("public", false)
+            .Set("readonly", true)
+            .Set("songCount", item.Summary.TrackCount)
+            .Set("duration", (int)Math.Round(item.Summary.DurationMilliseconds / 1000))
+            .Set("created", playlist.CreatedAt)
+            .Set("changed", playlist.UpdatedAt)
+            .Set("coverArt", id);
     }
 
     private static int? Seconds(TimeSpan? duration)

@@ -1,16 +1,21 @@
 using WaveMP.Core.Playlists.Playlists;
+using WaveMP.Core.Playlists.SmartPlaylists;
 using WaveMP.Core.Subsonic.Authentication;
 using WaveMP.Core.Subsonic.Browsing;
 using WaveMP.Core.Subsonic.Elements;
 using WaveMP.Core.Subsonic.Requests;
 using WaveMP.Core.Subsonic.Responses;
 using WaveMP.Core.Users.Profiles;
+using WaveMP.Data.Projections;
 using WaveMP.Data.Queries;
 using WaveMP.Data.Repositories;
 
 namespace WaveMP.Core.Subsonic.Playlists;
 
-internal sealed class SubsonicPlaylistService(IPlaylistService playlists, SubsonicElementLoader loader)
+internal sealed class SubsonicPlaylistService(
+    IPlaylistService playlists,
+    ISmartPlaylistService smartPlaylists,
+    SubsonicElementLoader loader)
     : ISubsonicPlaylistService
 {
     public async Task<SubsonicResponse> GetPlaylistsAsync(
@@ -24,12 +29,17 @@ internal sealed class SubsonicPlaylistService(IPlaylistService playlists, Subson
             return SubsonicResponse.Failed(SubsonicErrorCode.NotAuthorized);
         }
 
-        Page<PlaylistItem> page = await playlists.ListAsync(
-            new PlaylistListQuery(user.Id, 0, SubsonicLimits.Unlimited),
-            cancellationToken);
+        var query = new PlaylistListQuery(user.Id, 0, SubsonicLimits.Unlimited);
+        Page<PlaylistItem> page = await playlists.ListAsync(query, cancellationToken);
+        Page<SmartPlaylistItem> smart = await smartPlaylists.ListAsync(query, cancellationToken);
+
+        // The normal playlists come first, then the smart ones, each sorted by name.
         return SubsonicResponse.Ok(new SubsonicElement("playlists").AddList(
             "playlist",
-            page.Items.Select(item => SubsonicElements.Playlist(item, user.Name))));
+            [
+                .. page.Items.Select(item => SubsonicElements.Playlist(item, user.Name)),
+                .. smart.Items.Select(item => SubsonicElements.SmartPlaylist(item, user.Name)),
+            ]));
     }
 
     public async Task<SubsonicResponse> GetPlaylistAsync(
@@ -40,6 +50,13 @@ internal sealed class SubsonicPlaylistService(IPlaylistService playlists, Subson
         if (!parameters.Has("id"))
         {
             return SubsonicResponse.Failed(SubsonicErrorCode.MissingParameter);
+        }
+
+        if (SubsonicIds.IsSmartPlaylist(parameters.Get("id")))
+        {
+            return SubsonicIds.ParseSmartPlaylist(parameters.Get("id")) is { } smartId
+                ? await SmartPlaylistAsync(user, smartId, cancellationToken)
+                : SubsonicResponse.Failed(SubsonicErrorCode.NotFound);
         }
 
         return parameters.GetId("id") is { } id
@@ -60,6 +77,11 @@ internal sealed class SubsonicPlaylistService(IPlaylistService playlists, Subson
         string? name = parameters.Get("name");
         if (parameters.Has("playlistId"))
         {
+            if (SubsonicIds.IsSmartPlaylist(parameters.Get("playlistId")))
+            {
+                return await SmartPlaylistReadOnlyAsync(user, parameters.Get("playlistId"), cancellationToken);
+            }
+
             if (parameters.GetId("playlistId") is not { } playlistId
                 || await playlists.GetAsync(user.Id, playlistId, cancellationToken) is null)
             {
@@ -122,6 +144,11 @@ internal sealed class SubsonicPlaylistService(IPlaylistService playlists, Subson
         if (!parameters.Has("playlistId"))
         {
             return SubsonicResponse.Failed(SubsonicErrorCode.MissingParameter);
+        }
+
+        if (SubsonicIds.IsSmartPlaylist(parameters.Get("playlistId")))
+        {
+            return await SmartPlaylistReadOnlyAsync(user, parameters.Get("playlistId"), cancellationToken);
         }
 
         if (parameters.GetId("playlistId") is not { } playlistId
@@ -199,9 +226,12 @@ internal sealed class SubsonicPlaylistService(IPlaylistService playlists, Subson
             return SubsonicResponse.Failed(SubsonicErrorCode.MissingParameter);
         }
 
-        return parameters.GetId("id") is { } id && await playlists.DeleteAsync(user.Id, id, cancellationToken)
-            ? SubsonicResponse.Ok()
-            : SubsonicResponse.Failed(SubsonicErrorCode.NotFound);
+        // Deleting a smart playlist in an app deletes it, as in the web app; its songs stay in the library.
+        bool deleted = SubsonicIds.IsSmartPlaylist(parameters.Get("id"))
+            ? SubsonicIds.ParseSmartPlaylist(parameters.Get("id")) is { } smartId
+                && await smartPlaylists.DeleteAsync(user.Id, smartId, cancellationToken)
+            : parameters.GetId("id") is { } id && await playlists.DeleteAsync(user.Id, id, cancellationToken);
+        return deleted ? SubsonicResponse.Ok() : SubsonicResponse.Failed(SubsonicErrorCode.NotFound);
     }
 
     private async Task<SubsonicResponse> PlaylistAsync(
@@ -230,6 +260,46 @@ internal sealed class SubsonicPlaylistService(IPlaylistService playlists, Subson
                 "entry",
                 cancellationToken));
         return SubsonicResponse.Ok(element);
+    }
+
+    /// <summary>
+    /// A smart playlist with its songs of right now, computed as for the tracks of the smart playlist in the REST API.
+    /// </summary>
+    private async Task<SubsonicResponse> SmartPlaylistAsync(
+        SubsonicUser user,
+        Guid smartPlaylistId,
+        CancellationToken cancellationToken)
+    {
+        SmartPlaylistItem? playlist = await smartPlaylists.GetAsync(user.Id, smartPlaylistId, cancellationToken);
+        Page<TrackRow>? tracks = await smartPlaylists.ListTracksAsync(
+            user.Id,
+            smartPlaylistId,
+            0,
+            SubsonicLimits.Unlimited,
+            cancellationToken);
+        if (playlist is null || tracks is null)
+        {
+            return SubsonicResponse.Failed(SubsonicErrorCode.NotFound);
+        }
+
+        SubsonicElement element = SubsonicElements.SmartPlaylist(playlist, user.Name);
+        element.AddList("entry", await loader.SongsAsync(user.Id, tracks.Items, "entry", cancellationToken));
+        return SubsonicResponse.Ok(element);
+    }
+
+    /// <summary>
+    /// The answer to a change of a smart playlist: its songs follow its rules, so the user may not change them; a
+    /// smart playlist that does not exist is not found.
+    /// </summary>
+    private async Task<SubsonicResponse> SmartPlaylistReadOnlyAsync(
+        SubsonicUser user,
+        string? value,
+        CancellationToken cancellationToken)
+    {
+        return SubsonicIds.ParseSmartPlaylist(value) is { } smartId
+            && await smartPlaylists.GetAsync(user.Id, smartId, cancellationToken) is not null
+                ? SubsonicResponse.Failed(SubsonicErrorCode.NotAuthorized)
+                : SubsonicResponse.Failed(SubsonicErrorCode.NotFound);
     }
 
     private static bool IsUser(SubsonicUser user, string userName)

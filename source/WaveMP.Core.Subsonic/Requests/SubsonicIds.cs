@@ -5,10 +5,12 @@ using WaveMP.Data.Entities;
 namespace WaveMP.Core.Subsonic.Requests;
 
 /// <summary>
-/// The ids of the Subsonic API. Artists, albums, songs and playlists keep the ids of WaveMP. Cover ids carry the kind
-/// of their owner as prefix (<c>al-</c> album, <c>tr-</c> track, <c>pl-</c> playlist), so <c>getCoverArt</c> knows
-/// where to look; a plain id is looked up as track, album and playlist in turn. Music folders are the media sources;
-/// their ids are whole numbers, as the specification asks, derived from the id of the source.
+/// The ids of the Subsonic API. Artists, albums, songs and playlists keep the ids of WaveMP. Smart playlists are listed
+/// as playlists; their ids carry the prefix <c>sp-</c>, so they cannot collide with the ids of normal playlists. Cover
+/// ids carry the kind of their owner as prefix (<c>al-</c> album, <c>tr-</c> track, <c>pl-</c> playlist, <c>sp-</c>
+/// smart playlist), so <c>getCoverArt</c> knows where to look; a plain id is looked up as track, album and playlist in
+/// turn. Music folders are the media sources; their ids are whole numbers, as the specification asks, derived from the
+/// id of the source.
 /// </summary>
 public static class SubsonicIds
 {
@@ -43,6 +45,11 @@ public static class SubsonicIds
     public const string TrackCoverPrefix = "tr-";
     public const string PlaylistCoverPrefix = "pl-";
 
+    /// <summary>
+    /// Prefix of the ids of smart playlists, as playlist and as cover.
+    /// </summary>
+    public const string SmartPlaylistPrefix = "sp-";
+
     public static string Format(Guid id)
     {
         return id.ToString("D");
@@ -72,6 +79,30 @@ public static class SubsonicIds
     }
 
     /// <summary>
+    /// The id of a smart playlist; it is its cover id as well.
+    /// </summary>
+    public static string SmartPlaylist(Guid smartPlaylistId)
+    {
+        return SmartPlaylistPrefix + Format(smartPlaylistId);
+    }
+
+    /// <summary>
+    /// Whether the value names a smart playlist by its prefix, even with an invalid id after it.
+    /// </summary>
+    public static bool IsSmartPlaylist(string? value)
+    {
+        return value?.Trim().StartsWith(SmartPlaylistPrefix, StringComparison.OrdinalIgnoreCase) == true;
+    }
+
+    /// <summary>
+    /// The id of the smart playlist in the value; <c>null</c> if it is no id of a smart playlist.
+    /// </summary>
+    public static Guid? ParseSmartPlaylist(string? value)
+    {
+        return IsSmartPlaylist(value) ? Parse(value!.Trim()[SmartPlaylistPrefix.Length..]) : null;
+    }
+
+    /// <summary>
     /// The owner of a cover id; <c>null</c> if the value is no cover id.
     /// </summary>
     public static SubsonicCoverId? ParseCover(string? value)
@@ -82,6 +113,7 @@ public static class SubsonicIds
             (AlbumCoverPrefix, SubsonicCoverOwner.Album),
             (TrackCoverPrefix, SubsonicCoverOwner.Track),
             (PlaylistCoverPrefix, SubsonicCoverOwner.Playlist),
+            (SmartPlaylistPrefix, SubsonicCoverOwner.SmartPlaylist),
         })
         {
             if (text.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))

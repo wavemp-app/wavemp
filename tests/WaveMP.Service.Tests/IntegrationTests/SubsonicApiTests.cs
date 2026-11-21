@@ -555,6 +555,94 @@ public class SubsonicApiTests
     }
 
     [Test]
+    public async Task SmartPlaylists_AreListedAsReadOnlyPlaylistsWithTheirSongsOfRightNow()
+    {
+        SubsonicProfile profile = await CreateProfileAsync();
+        string normal = (await JsonAsync("createPlaylist", $"{profile.PasswordAuth}&name=Road&songId={Track("Third").Id}"))
+            .GetProperty("playlist").GetProperty("id").GetString()!;
+        HttpResponseMessage response = await profile.Client.PostAsJsonAsync("/api/v1/me/smart-playlists", new
+        {
+            name = "Rock",
+            rules = new[] { new { field = "Genre", @operator = "Is", text = "rock" } },
+            sort = "Title",
+            direction = "Desc",
+        });
+        response.StatusCode.Should().Be(HttpStatusCode.Created, await response.Content.ReadAsStringAsync());
+        SmartPlaylistDto smart =
+            (await response.Content.ReadFromJsonAsync<SmartPlaylistDto>(HttpClientExtensions.JsonOptions))!;
+        string id = $"sp-{smart.Id}";
+
+        XElement playlists = (await XmlAsync("getPlaylists", profile.PasswordAuth)).Element(_ns + "playlists")!;
+        playlists.Elements(_ns + "playlist").Select(playlist => playlist.Attribute("id")!.Value)
+            .Should().Equal(normal, id);
+        XElement listed = playlists.Elements(_ns + "playlist").Last();
+        listed.Attribute("name")!.Value.Should().Be("Rock");
+        listed.Attribute("readonly")!.Value.Should().Be("true");
+        listed.Attribute("songCount")!.Value.Should().Be("2");
+        listed.Attribute("coverArt")!.Value.Should().Be(id);
+        playlists.Elements(_ns + "playlist").First().Attribute("readonly")!.Value.Should().Be("false");
+
+        // The songs are those of the smart playlist in the REST API, in its order.
+        JsonElement playlist = (await JsonAsync("getPlaylist", $"{profile.PasswordAuth}&id={id}")).GetProperty("playlist");
+        PageDto<TrackDto> tracks =
+            await profile.Client.GetJsonAsync<PageDto<TrackDto>>($"/api/v1/me/smart-playlists/{smart.Id}/tracks");
+        playlist.GetProperty("id").GetString().Should().Be(id);
+        playlist.GetProperty("readonly").GetBoolean().Should().BeTrue();
+        playlist.GetProperty("owner").GetString().Should().Be(profile.Name);
+        playlist.GetProperty("entry").EnumerateArray().Select(entry => entry.GetProperty("id").GetString())
+            .Should().Equal(tracks.Items.Select(track => track.Id.ToString()));
+        playlist.GetProperty("entry").EnumerateArray().Select(entry => entry.GetProperty("title").GetString())
+            .Should().Equal("Second", "First");
+
+        HttpResponseMessage cover = await _anonymous.GetAsync($"/rest/getCoverArt?{profile.PasswordAuth}&id={id}");
+        cover.StatusCode.Should().Be(HttpStatusCode.OK);
+        cover.Content.Headers.ContentType!.MediaType.Should().StartWith("image/");
+
+        // Other profiles do not see it, and unknown or invalid ids are not found.
+        (await ErrorCodeAsync("getPlaylist", $"{_profile.PasswordAuth}&id={id}")).Should().Be(70);
+        (await ErrorCodeAsync("getPlaylist", $"{profile.PasswordAuth}&id=sp-{Guid.NewGuid()}")).Should().Be(70);
+        (await ErrorCodeAsync("getPlaylist", $"{profile.PasswordAuth}&id=sp-nothing")).Should().Be(70);
+        (await ErrorCodeAsync("getCoverArt", $"{_profile.PasswordAuth}&id={id}")).Should().Be(70);
+    }
+
+    [Test]
+    public async Task SmartPlaylists_CannotBeChangedButCanBeDeleted()
+    {
+        SubsonicProfile profile = await CreateProfileAsync();
+        HttpResponseMessage response = await profile.Client.PostAsJsonAsync(
+            "/api/v1/me/smart-playlists",
+            new { name = "Everything", rules = Array.Empty<object>() });
+        response.StatusCode.Should().Be(HttpStatusCode.Created, await response.Content.ReadAsStringAsync());
+        SmartPlaylistDto smart =
+            (await response.Content.ReadFromJsonAsync<SmartPlaylistDto>(HttpClientExtensions.JsonOptions))!;
+        string id = $"sp-{smart.Id}";
+        TrackDto third = Track("Third");
+
+        (await ErrorCodeAsync("updatePlaylist", $"{profile.PasswordAuth}&playlistId={id}&name=Other"))
+            .Should().Be(50);
+        (await ErrorCodeAsync("updatePlaylist", $"{profile.PasswordAuth}&playlistId={id}&songIdToAdd={third.Id}"))
+            .Should().Be(50);
+        (await ErrorCodeAsync("createPlaylist", $"{profile.PasswordAuth}&playlistId={id}&songId={third.Id}"))
+            .Should().Be(50);
+        (await ErrorCodeAsync("updatePlaylist", $"{profile.PasswordAuth}&playlistId=sp-{Guid.NewGuid()}&name=Other"))
+            .Should().Be(70);
+        (await ErrorCodeAsync("updatePlaylist", $"{_profile.PasswordAuth}&playlistId={id}&name=Other"))
+            .Should().Be(70);
+        (await ErrorCodeAsync("deletePlaylist", $"{_profile.PasswordAuth}&id={id}")).Should().Be(70);
+        SmartPlaylistDto unchanged =
+            await profile.Client.GetJsonAsync<SmartPlaylistDto>($"/api/v1/me/smart-playlists/{smart.Id}");
+        unchanged.Name.Should().Be("Everything");
+
+        (await JsonAsync("deletePlaylist", $"{profile.PasswordAuth}&id={id}"))
+            .GetProperty("status").GetString().Should().Be("ok");
+        (await profile.Client.GetAsync($"/api/v1/me/smart-playlists/{smart.Id}"))
+            .StatusCode.Should().Be(HttpStatusCode.NotFound);
+        (await ErrorCodeAsync("getPlaylist", $"{profile.PasswordAuth}&id={id}")).Should().Be(70);
+        (await ErrorCodeAsync("deletePlaylist", $"{profile.PasswordAuth}&id={id}")).Should().Be(70);
+        (await _admin.GetJsonAsync<PageDto<TrackDto>>("/api/v1/tracks?limit=100")).Items.Should().HaveCount(3);
+    }
+
+    [Test]
     public async Task Stream_CommonFormat_DeliversTheFileWithRanges()
     {
         TrackDto first = Track("First");

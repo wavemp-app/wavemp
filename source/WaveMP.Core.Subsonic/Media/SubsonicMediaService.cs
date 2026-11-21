@@ -2,6 +2,7 @@ using WaveMP.Core.Caching.Covers;
 using WaveMP.Core.Library.Covers;
 using WaveMP.Core.Playlists.Covers;
 using WaveMP.Core.Playlists.Playlists;
+using WaveMP.Core.Playlists.SmartPlaylists;
 using WaveMP.Core.Settings.Groups;
 using WaveMP.Core.Settings.Snapshots;
 using WaveMP.Core.Streaming.Sources;
@@ -20,6 +21,7 @@ internal sealed class SubsonicMediaService(
     ICoverCacheService covers,
     IPlaylistService playlists,
     IPlaylistCoverService playlistCovers,
+    ISmartPlaylistService smartPlaylists,
     ISettingsSnapshot<LibrarySettings> librarySettings,
     ISettingsSnapshot<TranscodingSettings> transcodingSettings) : ISubsonicMediaService
 {
@@ -120,6 +122,14 @@ internal sealed class SubsonicMediaService(
             result = await GetPlaylistCoverAsync(user.Id, cover.Id, size, cancellationToken);
         }
 
+        if (cover.Owner is SubsonicCoverOwner.SmartPlaylist)
+        {
+            SmartPlaylistItem? smart = await smartPlaylists.GetAsync(user.Id, cover.Id, cancellationToken);
+            result = smart is null
+                ? CoverDeliveryResult.OwnerNotFound
+                : await GetFirstTrackCoverAsync(smart.Cover, size, cancellationToken);
+        }
+
         return result is { Status: CoverStatus.Found, Delivery: { } delivery }
             ? new SubsonicCoverResult(null, delivery)
             : new SubsonicCoverResult(SubsonicErrorCode.NotFound, null);
@@ -145,7 +155,18 @@ internal sealed class SubsonicMediaService(
             return await playlistCovers.GetAsync(userId, playlistId, size, cancellationToken);
         }
 
-        foreach (Guid trackId in playlist.Cover.TrackIds)
+        return await GetFirstTrackCoverAsync(playlist.Cover, size, cancellationToken);
+    }
+
+    /// <summary>
+    /// The cover of the first of the cover tracks of a playlist that has a cover.
+    /// </summary>
+    private async Task<CoverDeliveryResult> GetFirstTrackCoverAsync(
+        PlaylistCover cover,
+        int? size,
+        CancellationToken cancellationToken)
+    {
+        foreach (Guid trackId in cover.TrackIds)
         {
             CoverDeliveryResult track = await covers.GetTrackCoverAsync(trackId, size, cancellationToken);
             if (track.Status == CoverStatus.Found)

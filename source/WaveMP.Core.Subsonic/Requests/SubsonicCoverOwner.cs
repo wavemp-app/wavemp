@@ -13,4 +13,9 @@ public enum SubsonicCoverOwner
     Album,
     Track,
     Playlist,
+
+    /// <summary>
+    /// A smart playlist; its cover is the cover of one of its first songs.
+    /// </summary>
+    SmartPlaylist,
 }

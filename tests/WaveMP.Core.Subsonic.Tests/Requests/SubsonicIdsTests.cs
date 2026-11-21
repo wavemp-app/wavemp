@@ -37,6 +37,43 @@ public class SubsonicIdsTests
     }
 
     [Test]
+    public void SmartPlaylist_CarriesThePrefixAndIsItsOwnCoverId()
+    {
+        string id = SubsonicIds.SmartPlaylist(_id);
+
+        id.Should().Be("sp-0f8fad5b-d9cb-469f-a165-70867728950e");
+        SubsonicIds.IsSmartPlaylist(id).Should().BeTrue();
+        SubsonicIds.ParseSmartPlaylist(id).Should().Be(_id);
+        SubsonicIds.ParseSmartPlaylist(" SP-0f8fad5b-d9cb-469f-a165-70867728950e ").Should().Be(_id);
+        SubsonicIds.ParseCover(id).Should().Be(new SubsonicCoverId(SubsonicCoverOwner.SmartPlaylist, _id));
+    }
+
+    [Test]
+    public void SmartPlaylist_IdsOfNormalPlaylistsAreNoSmartPlaylists()
+    {
+        // The prefix keeps the two kinds apart, so a plain id never reaches the smart playlists.
+        SubsonicIds.IsSmartPlaylist(SubsonicIds.Format(_id)).Should().BeFalse();
+        SubsonicIds.ParseSmartPlaylist(SubsonicIds.Format(_id)).Should().BeNull();
+        SubsonicIds.Parse(SubsonicIds.SmartPlaylist(_id)).Should().BeNull();
+    }
+
+    [TestCase("sp-")]
+    [TestCase("sp-nothing")]
+    public void ParseSmartPlaylist_PrefixWithoutId_IsSmartButHasNoId(string value)
+    {
+        SubsonicIds.IsSmartPlaylist(value).Should().BeTrue();
+        SubsonicIds.ParseSmartPlaylist(value).Should().BeNull();
+    }
+
+    [TestCase(null)]
+    [TestCase("")]
+    [TestCase("pl-0f8fad5b-d9cb-469f-a165-70867728950e")]
+    public void IsSmartPlaylist_OtherValues_IsFalse(string? value)
+    {
+        SubsonicIds.IsSmartPlaylist(value).Should().BeFalse();
+    }
+
+    [Test]
     public void ParseCover_PlainId_CanBeAnyOwner()
     {
         // Some apps ask for the cover with the id of the song or album.

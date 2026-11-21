@@ -6,7 +6,10 @@ namespace WaveMP.Core.Subsonic.Playlists;
 
 /// <summary>
 /// The playlists of the user in the Subsonic API: read, create, change and delete. Playlists of other users are
-/// neither listed nor found; comments and public playlists do not exist in WaveMP and are ignored.
+/// neither listed nor found; comments and public playlists do not exist in WaveMP and are ignored. The smart playlists
+/// of the user are listed after the normal ones as read-only playlists (ids with the prefix
+/// <see cref="Requests.SubsonicIds.SmartPlaylistPrefix"/>); their songs are computed on every request, apps cannot
+/// change them, and deleting one deletes the smart playlist.
 /// </summary>
 public interface ISubsonicPlaylistService
 {
@@ -22,7 +25,7 @@ public interface ISubsonicPlaylistService
 
     /// <summary>
     /// Creates a playlist with <c>name</c> and the songs <c>songId</c>, or with <c>playlistId</c> replaces the songs
-    /// of an existing one. Returns the playlist with its songs.
+    /// of an existing one. Returns the playlist with its songs. Smart playlists cannot be changed.
     /// </summary>
     Task<SubsonicResponse> CreatePlaylistAsync(
         SubsonicUser user,
@@ -31,13 +34,16 @@ public interface ISubsonicPlaylistService
 
     /// <summary>
     /// Renames a playlist (<c>name</c>), removes songs by their index before the change (<c>songIndexToRemove</c>) and
-    /// adds songs at the end (<c>songIdToAdd</c>).
+    /// adds songs at the end (<c>songIdToAdd</c>). Smart playlists cannot be changed.
     /// </summary>
     Task<SubsonicResponse> UpdatePlaylistAsync(
         SubsonicUser user,
         SubsonicParameters parameters,
         CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Deletes a playlist, or a smart playlist by its prefixed id; the songs stay in the library.
+    /// </summary>
     Task<SubsonicResponse> DeletePlaylistAsync(
         SubsonicUser user,
         SubsonicParameters parameters,
