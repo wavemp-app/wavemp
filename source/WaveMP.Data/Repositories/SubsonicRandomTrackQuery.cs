@@ -7,4 +7,10 @@ namespace WaveMP.Data.Repositories;
 /// <param name="Genre">Only tracks of this genre, without regard to case.</param>
 /// <param name="FromYear">Only tracks of this year or later.</param>
 /// <param name="ToYear">Only tracks of this year or earlier.</param>
-public sealed record SubsonicRandomTrackQuery(int Size, string? Genre = null, int? FromYear = null, int? ToYear = null);
+/// <param name="SourceId">Only tracks of this media source.</param>
+public sealed record SubsonicRandomTrackQuery(
+    int Size,
+    string? Genre = null,
+    int? FromYear = null,
+    int? ToYear = null,
+    Guid? SourceId = null);

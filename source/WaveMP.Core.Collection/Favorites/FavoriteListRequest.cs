@@ -9,4 +9,10 @@ namespace WaveMP.Core.Collection.Favorites;
 /// <param name="Offset">Number of favorites to skip.</param>
 /// <param name="Limit">Maximum number of favorites of the page.</param>
 /// <param name="Type">Only favorites of this type.</param>
-public sealed record FavoriteListRequest(Guid UserId, int Offset, int Limit, FavoriteType? Type = null);
+/// <param name="SourceId">Only favorites with tracks of this media source.</param>
+public sealed record FavoriteListRequest(
+    Guid UserId,
+    int Offset,
+    int Limit,
+    FavoriteType? Type = null,
+    Guid? SourceId = null);

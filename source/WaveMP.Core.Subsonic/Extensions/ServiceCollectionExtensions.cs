@@ -30,6 +30,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ISubsonicAccountService, SubsonicAccountService>();
         services.AddScoped<ISubsonicAuthenticator, SubsonicAuthenticator>();
         services.AddScoped<SubsonicElementLoader>();
+        services.AddScoped<SubsonicMusicFolders>();
         services.AddScoped<ISubsonicBrowsingService, SubsonicBrowsingService>();
         services.AddScoped<ISubsonicPlaylistService, SubsonicPlaylistService>();
         services.AddScoped<ISubsonicAnnotationService, SubsonicAnnotationService>();

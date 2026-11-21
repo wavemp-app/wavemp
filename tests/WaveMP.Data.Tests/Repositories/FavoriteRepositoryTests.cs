@@ -176,6 +176,44 @@ public class FavoriteRepositoryTests : LibraryDatabaseTests
     }
 
     [Test]
+    public async Task ListAsync_WithSource_KeepsTheFavoritesWithTracksOfTheSource()
+    {
+        StandardLibrary library = await SeedStandardLibraryAsync();
+        User user = await AddUserAsync();
+        LibrarySeed seed = new();
+        MediaSource other = seed.Source();
+        Artist singer = seed.Artist("Singer Elsewhere");
+        Artist albumArtist = seed.Artist("Album Artist Elsewhere");
+        Album album = seed.Album("Album Elsewhere", albumArtist);
+        Track song = seed.Track("Song Elsewhere", singer, album, source: other);
+        seed.Favorite(user, song, _start);
+        seed.Favorite(user, album, _start.AddMinutes(1));
+        seed.Favorite(user, singer, _start.AddMinutes(2));
+        seed.Favorite(user, albumArtist, _start.AddMinutes(3));
+        seed.Favorite(user, library.Ballad, _start.AddMinutes(4));
+        seed.Favorite(user, library.FirstAlbum, _start.AddMinutes(5));
+        seed.Favorite(user, library.Beta, _start.AddMinutes(6));
+        await SaveAsync(seed);
+
+        Page<FavoriteRow> elsewhere = await CreateRepository().ListAsync(
+            new FavoriteListQuery(user.Id, 0, 10, SourceId: other.Id));
+        Page<FavoriteRow> albums = await CreateRepository().ListAsync(
+            new FavoriteListQuery(user.Id, 0, 10, FavoriteType.Album, other.Id));
+        Page<FavoriteRow> first = await CreateRepository().ListAsync(
+            new FavoriteListQuery(user.Id, 0, 10, SourceId: MediaSource.DefaultId));
+        Page<FavoriteRow> unknown = await CreateRepository().ListAsync(
+            new FavoriteListQuery(user.Id, 0, 10, SourceId: Guid.NewGuid()));
+
+        elsewhere.Items.Select(row => row.ItemId).Should().Equal(albumArtist.Id, singer.Id, album.Id, song.Id);
+        albums.Items.Select(row => row.ItemId).Should().Equal(album.Id);
+        first.Items.Select(row => row.ItemId).Should().Equal(
+            library.Beta.Id,
+            library.FirstAlbum.Id,
+            library.Ballad.Id);
+        unknown.Total.Should().Be(0);
+    }
+
+    [Test]
     public async Task DeleteTargets_WithExecuteDelete_RemovesTheirFavorites()
     {
         StandardLibrary library = await SeedStandardLibraryAsync();

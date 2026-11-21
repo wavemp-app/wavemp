@@ -48,7 +48,7 @@ internal sealed class FavoriteService(
         CancellationToken cancellationToken = default)
     {
         Page<FavoriteRow> page = await favorites.ListAsync(
-            new FavoriteListQuery(request.UserId, request.Offset, request.Limit, request.Type),
+            new FavoriteListQuery(request.UserId, request.Offset, request.Limit, request.Type, request.SourceId),
             cancellationToken);
 
         // One after the other: the repositories share the database context of the request.

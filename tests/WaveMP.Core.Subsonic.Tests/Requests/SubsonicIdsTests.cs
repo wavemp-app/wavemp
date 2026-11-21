@@ -1,5 +1,6 @@
 using AwesomeAssertions;
 using WaveMP.Core.Subsonic.Requests;
+using WaveMP.Data.Entities;
 
 namespace WaveMP.Core.Subsonic.Tests.Requests;
 
@@ -48,5 +49,28 @@ public class SubsonicIdsTests
     public void ParseCover_Invalid_ReturnsNull(string? value)
     {
         SubsonicIds.ParseCover(value).Should().BeNull();
+    }
+
+    [Test]
+    public void MusicFolder_FirstSource_KeepsTheIdOfTheOneFolderOfEarlierVersions()
+    {
+        SubsonicIds.MusicFolder(MediaSource.DefaultId).Should().Be(SubsonicIds.DefaultMusicFolderId).And.Be(1);
+    }
+
+    [Test]
+    public void MusicFolder_OtherSource_IsAFixedNumber()
+    {
+        // The id must stay the same across starts and versions, or apps lose the folder they remember.
+        SubsonicIds.MusicFolder(_id).Should().Be(1303713389);
+    }
+
+    [Test]
+    public void MusicFolder_OtherSources_GetDifferentPositiveIdsAboveTheFirstFolder()
+    {
+        Guid[] ids = [.. Enumerable.Range(2, 1000).Select(number => Guid.Parse($"019a0000-0000-7000-8000-{number:D12}"))];
+
+        int[] folders = [.. ids.Select(SubsonicIds.MusicFolder)];
+
+        folders.Should().OnlyHaveUniqueItems().And.OnlyContain(folder => folder > SubsonicIds.DefaultMusicFolderId);
     }
 }

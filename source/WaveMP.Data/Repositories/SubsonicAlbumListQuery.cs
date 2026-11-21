@@ -10,10 +10,14 @@ namespace WaveMP.Data.Repositories;
 /// <param name="FromYear">First year of <see cref="SubsonicAlbumOrder.Year"/>.</param>
 /// <param name="ToYear">Last year of <see cref="SubsonicAlbumOrder.Year"/>; before <paramref name="FromYear"/>, the
 /// newest albums come first.</param>
+/// <param name="SourceId">Only albums with at least one track of this media source; the plays and ratings of
+/// <see cref="SubsonicAlbumOrder.Frequent"/>, <see cref="SubsonicAlbumOrder.Recent"/> and
+/// <see cref="SubsonicAlbumOrder.Highest"/> count only for the tracks of this source.</param>
 public sealed record SubsonicAlbumListQuery(
     SubsonicAlbumOrder Order,
     Guid UserId,
     int Offset,
     int Size,
     int FromYear = 0,
-    int ToYear = 0);
+    int ToYear = 0,
+    Guid? SourceId = null);

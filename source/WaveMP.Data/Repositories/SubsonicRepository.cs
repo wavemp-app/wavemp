@@ -209,17 +209,27 @@ internal sealed class SubsonicRepository(WaveMpDbContext dbContext) : ISubsonicR
         CancellationToken cancellationToken = default)
     {
         Guid userId = query.UserId;
+        IQueryable<Album> sourceAlbums = dbContext.Albums.AsNoTracking();
+        IQueryable<PlayHistoryEntry> history = dbContext.PlayHistory;
+        IQueryable<TrackRating> ratings = dbContext.TrackRatings;
+        if (query.SourceId is { } sourceId)
+        {
+            sourceAlbums = sourceAlbums.Where(album => album.Tracks.Any(track => track.SourceId == sourceId));
+            history = history.Where(entry => entry.Track!.SourceId == sourceId);
+            ratings = ratings.Where(rating => rating.Track!.SourceId == sourceId);
+        }
+
         IQueryable<Guid> ids;
         switch (query.Order)
         {
             case SubsonicAlbumOrder.Random:
-                return await dbContext.Albums.AsNoTracking()
+                return await sourceAlbums
                     .OrderBy(_ => EF.Functions.Random())
                     .Take(query.Size)
                     .Select(album => album.Id)
                     .ToListAsync(cancellationToken);
             case SubsonicAlbumOrder.Frequent or SubsonicAlbumOrder.Recent:
-                IQueryable<Plays> plays = dbContext.PlayHistory
+                IQueryable<Plays> plays = history
                     .Where(entry => entry.UserId == userId && entry.Track!.AlbumId != null)
                     .GroupBy(entry => entry.Track!.AlbumId!.Value)
                     .Select(group => new Plays
@@ -240,7 +250,7 @@ internal sealed class SubsonicRepository(WaveMpDbContext dbContext) : ISubsonicR
                         .Select(play => play.Id);
                 break;
             case SubsonicAlbumOrder.Highest:
-                ids = dbContext.TrackRatings
+                ids = ratings
                     .Where(rating => rating.UserId == userId && rating.Track!.AlbumId != null)
                     .GroupBy(rating => rating.Track!.AlbumId!.Value)
                     .Select(group => new Rated
@@ -257,7 +267,7 @@ internal sealed class SubsonicRepository(WaveMpDbContext dbContext) : ISubsonicR
             default:
                 int from = Math.Min(query.FromYear, query.ToYear);
                 int to = Math.Max(query.FromYear, query.ToYear);
-                IQueryable<Album> albums = dbContext.Albums
+                IQueryable<Album> albums = sourceAlbums
                     .Where(album => album.Year != null && album.Year >= from && album.Year <= to);
                 ids = (query.FromYear <= query.ToYear
                         ? albums.OrderBy(album => album.Year)
@@ -276,6 +286,11 @@ internal sealed class SubsonicRepository(WaveMpDbContext dbContext) : ISubsonicR
         CancellationToken cancellationToken = default)
     {
         IQueryable<Track> tracks = dbContext.Tracks.AsNoTracking();
+        if (query.SourceId is { } sourceId)
+        {
+            tracks = tracks.Where(track => track.SourceId == sourceId);
+        }
+
         if (query.Genre is { } genre)
         {
             string pattern = LikePatterns.Escape(genre);

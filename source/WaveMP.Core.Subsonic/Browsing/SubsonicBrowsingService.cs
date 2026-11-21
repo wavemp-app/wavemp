@@ -1,9 +1,7 @@
-using Microsoft.Extensions.Options;
 using WaveMP.Core.Collection.Favorites;
 using WaveMP.Core.Library.Albums;
 using WaveMP.Core.Library.Artists;
 using WaveMP.Core.Library.Tracks;
-using WaveMP.Core.Metadata.Options;
 using WaveMP.Core.Subsonic.Authentication;
 using WaveMP.Core.Subsonic.Elements;
 using WaveMP.Core.Subsonic.Requests;
@@ -23,41 +21,44 @@ internal sealed class SubsonicBrowsingService(
     IFavoriteService favorites,
     ISubsonicRepository repository,
     SubsonicElementLoader loader,
-    IOptions<MediaLibraryOptions> mediaOptions) : ISubsonicBrowsingService
+    SubsonicMusicFolders musicFolders) : ISubsonicBrowsingService
 {
-    /// <summary>
-    /// Name of the music folder when the media folder has no name of its own (e.g. the root of a drive).
-    /// </summary>
-    private const string FallbackFolderName = "media";
-
     public SubsonicResponse GetMusicFolders()
     {
-        string root = mediaOptions.Value.RootPath.TrimEnd('/', '\\');
-        string name = Path.GetFileName(root) is { Length: > 0 } folder ? folder : FallbackFolderName;
-        return SubsonicResponse.Ok(new SubsonicElement("musicFolders").AddList(
-            "musicFolder",
-            [new SubsonicElement("musicFolder").Set("id", SubsonicIds.MusicFolderId).Set("name", name)]));
+        return SubsonicResponse.Ok(new SubsonicElement("musicFolders").AddList("musicFolder", musicFolders.List()));
     }
 
     public async Task<SubsonicResponse> GetIndexesAsync(
         SubsonicUser user,
+        SubsonicParameters parameters,
         CancellationToken cancellationToken = default)
     {
+        if (musicFolders.Resolve(parameters) is not { } folder)
+        {
+            return SubsonicResponse.Failed(SubsonicErrorCode.NotFound);
+        }
+
         DateTimeOffset? changedAt = await repository.GetLibraryChangedAtAsync(cancellationToken);
         SubsonicElement indexes = new SubsonicElement("indexes")
             .Set("lastModified", changedAt?.ToUnixTimeMilliseconds() ?? 0L)
             .Set("ignoredArticles", SubsonicIndexes.IgnoredArticles);
-        indexes.AddList("index", await IndexesAsync(user, cancellationToken));
+        indexes.AddList("index", await IndexesAsync(user, folder.SourceId, cancellationToken));
         return SubsonicResponse.Ok(indexes);
     }
 
     public async Task<SubsonicResponse> GetArtistsAsync(
         SubsonicUser user,
+        SubsonicParameters parameters,
         CancellationToken cancellationToken = default)
     {
+        if (musicFolders.Resolve(parameters) is not { } folder)
+        {
+            return SubsonicResponse.Failed(SubsonicErrorCode.NotFound);
+        }
+
         SubsonicElement result = new SubsonicElement("artists")
             .Set("ignoredArticles", SubsonicIndexes.IgnoredArticles);
-        result.AddList("index", await IndexesAsync(user, cancellationToken));
+        result.AddList("index", await IndexesAsync(user, folder.SourceId, cancellationToken));
         return SubsonicResponse.Ok(result);
     }
 
@@ -181,6 +182,12 @@ internal sealed class SubsonicBrowsingService(
             return SubsonicResponse.Failed(SubsonicErrorCode.MissingParameter);
         }
 
+        if (musicFolders.Resolve(parameters) is not { } folder)
+        {
+            return SubsonicResponse.Failed(SubsonicErrorCode.NotFound);
+        }
+
+        Guid? sourceId = folder.SourceId;
         int size = SubsonicLimits.Size(
             parameters.GetInt("size"),
             SubsonicLimits.DefaultListSize,
@@ -256,7 +263,9 @@ internal sealed class SubsonicBrowsingService(
                 return [];
             }
 
-            IReadOnlyList<Guid> ids = await repository.ListAlbumIdsAsync(query, cancellationToken);
+            IReadOnlyList<Guid> ids = await repository.ListAlbumIdsAsync(
+                query with { SourceId = sourceId },
+                cancellationToken);
             return await loader.AlbumsByIdsAsync(listUser.Id, ids, cancellationToken: cancellationToken);
         }
 
@@ -274,7 +283,14 @@ internal sealed class SubsonicBrowsingService(
             }
 
             Page<AlbumRow> page = await albums.ListAsync(
-                new AlbumListRequest(listOffset, listSize, sort, direction, Genre: genre, UserId: listUser.Id),
+                new AlbumListRequest(
+                    listOffset,
+                    listSize,
+                    sort,
+                    direction,
+                    Genre: genre,
+                    UserId: listUser.Id,
+                    SourceId: sourceId),
                 cancellationToken);
             return await loader.AlbumsAsync(listUser.Id, page.Items, cancellationToken: cancellationToken);
         }
@@ -287,7 +303,7 @@ internal sealed class SubsonicBrowsingService(
             }
 
             Page<FavoriteItem> page = await favorites.ListAsync(
-                new FavoriteListRequest(listUser.Id, listOffset, listSize, FavoriteType.Album),
+                new FavoriteListRequest(listUser.Id, listOffset, listSize, FavoriteType.Album, sourceId),
                 cancellationToken);
             return await loader.AlbumsAsync(
                 listUser.Id,
@@ -301,6 +317,11 @@ internal sealed class SubsonicBrowsingService(
         SubsonicParameters parameters,
         CancellationToken cancellationToken = default)
     {
+        if (musicFolders.Resolve(parameters) is not { } folder)
+        {
+            return SubsonicResponse.Failed(SubsonicErrorCode.NotFound);
+        }
+
         int size = SubsonicLimits.Size(
             parameters.GetInt("size"),
             SubsonicLimits.DefaultListSize,
@@ -314,7 +335,8 @@ internal sealed class SubsonicBrowsingService(
                     size,
                     string.IsNullOrWhiteSpace(genre) ? null : genre.Trim(),
                     parameters.GetInt("fromYear"),
-                    parameters.GetInt("toYear")),
+                    parameters.GetInt("toYear"),
+                    folder.SourceId),
                 cancellationToken);
             songs = await loader.SongsByIdsAsync(user.Id, ids, cancellationToken: cancellationToken);
         }
@@ -332,6 +354,13 @@ internal sealed class SubsonicBrowsingService(
             return SubsonicResponse.Failed(SubsonicErrorCode.MissingParameter);
         }
 
+        if (musicFolders.Resolve(parameters) is not { } folder)
+        {
+            return SubsonicResponse.Failed(SubsonicErrorCode.NotFound);
+        }
+
+        Guid? sourceId = folder.SourceId;
+
         // Apps send "" (with the quotes) to list everything.
         string? query = rawQuery.Replace("\"", string.Empty, StringComparison.Ordinal).Trim() is { Length: > 0 } text
             ? text
@@ -345,7 +374,12 @@ internal sealed class SubsonicBrowsingService(
         if (artistCount > 0)
         {
             Page<ArtistRow> page = await artists.ListAsync(
-                new ArtistListRequest(Offset("artistOffset"), artistCount, Search: query, UserId: user.Id),
+                new ArtistListRequest(
+                    Offset("artistOffset"),
+                    artistCount,
+                    Search: query,
+                    UserId: user.Id,
+                    SourceId: sourceId),
                 cancellationToken);
             artistItems = await loader.ArtistsAsync(user.Id, page.Items, cancellationToken: cancellationToken);
         }
@@ -354,7 +388,12 @@ internal sealed class SubsonicBrowsingService(
         if (albumCount > 0)
         {
             Page<AlbumRow> page = await albums.ListAsync(
-                new AlbumListRequest(Offset("albumOffset"), albumCount, Search: query, UserId: user.Id),
+                new AlbumListRequest(
+                    Offset("albumOffset"),
+                    albumCount,
+                    Search: query,
+                    UserId: user.Id,
+                    SourceId: sourceId),
                 cancellationToken);
             albumItems = await loader.AlbumsAsync(user.Id, page.Items, cancellationToken: cancellationToken);
         }
@@ -363,7 +402,12 @@ internal sealed class SubsonicBrowsingService(
         if (songCount > 0)
         {
             Page<TrackRow> page = await trackService.ListAsync(
-                new TrackListRequest(Offset("songOffset"), songCount, Search: query, UserId: user.Id),
+                new TrackListRequest(
+                    Offset("songOffset"),
+                    songCount,
+                    Search: query,
+                    UserId: user.Id,
+                    SourceId: sourceId),
                 cancellationToken);
             songItems = await loader.SongsAsync(user.Id, page.Items, cancellationToken: cancellationToken);
         }
@@ -387,16 +431,22 @@ internal sealed class SubsonicBrowsingService(
 
     public async Task<SubsonicResponse> GetStarred2Async(
         SubsonicUser user,
+        SubsonicParameters parameters,
         CancellationToken cancellationToken = default)
     {
+        if (musicFolders.Resolve(parameters) is not { } folder)
+        {
+            return SubsonicResponse.Failed(SubsonicErrorCode.NotFound);
+        }
+
         Page<FavoriteItem> artistFavorites = await favorites.ListAsync(
-            new FavoriteListRequest(user.Id, 0, SubsonicLimits.Unlimited, FavoriteType.Artist),
+            new FavoriteListRequest(user.Id, 0, SubsonicLimits.Unlimited, FavoriteType.Artist, folder.SourceId),
             cancellationToken);
         Page<FavoriteItem> albumFavorites = await favorites.ListAsync(
-            new FavoriteListRequest(user.Id, 0, SubsonicLimits.Unlimited, FavoriteType.Album),
+            new FavoriteListRequest(user.Id, 0, SubsonicLimits.Unlimited, FavoriteType.Album, folder.SourceId),
             cancellationToken);
         Page<FavoriteItem> trackFavorites = await favorites.ListAsync(
-            new FavoriteListRequest(user.Id, 0, SubsonicLimits.Unlimited, FavoriteType.Track),
+            new FavoriteListRequest(user.Id, 0, SubsonicLimits.Unlimited, FavoriteType.Track, folder.SourceId),
             cancellationToken);
 
         SubsonicElement result = new("starred2");
@@ -422,14 +472,15 @@ internal sealed class SubsonicBrowsingService(
     }
 
     /// <summary>
-    /// All artists, grouped into indexes.
+    /// All artists (of the source, if given), grouped into indexes.
     /// </summary>
     private async Task<IReadOnlyList<SubsonicElement>> IndexesAsync(
         SubsonicUser user,
+        Guid? sourceId,
         CancellationToken cancellationToken)
     {
         Page<ArtistRow> page = await artists.ListAsync(
-            new ArtistListRequest(0, SubsonicLimits.Unlimited, UserId: user.Id),
+            new ArtistListRequest(0, SubsonicLimits.Unlimited, UserId: user.Id, SourceId: sourceId),
             cancellationToken);
         IReadOnlyDictionary<Guid, DateTimeOffset> stars = await repository.ListStarredAtAsync(
             user.Id,

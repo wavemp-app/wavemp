@@ -5,16 +5,23 @@ using WaveMP.Core.Subsonic.Responses;
 namespace WaveMP.Core.Subsonic.Browsing;
 
 /// <summary>
-/// The endpoints of the Subsonic API that browse and search the library. The library has one music folder (the media
-/// folder); <c>musicFolderId</c> is accepted and needs no filter.
+/// The endpoints of the Subsonic API that browse and search the library. Every active media source is a music folder;
+/// <c>musicFolderId</c> narrows <c>getIndexes</c>, <c>getArtists</c>, <c>getAlbumList2</c>, <c>getRandomSongs</c>,
+/// <c>search3</c> and <c>getStarred2</c> to the tracks of its source and fails with "not found" for an unknown folder.
 /// </summary>
 public interface ISubsonicBrowsingService
 {
     SubsonicResponse GetMusicFolders();
 
-    Task<SubsonicResponse> GetIndexesAsync(SubsonicUser user, CancellationToken cancellationToken = default);
+    Task<SubsonicResponse> GetIndexesAsync(
+        SubsonicUser user,
+        SubsonicParameters parameters,
+        CancellationToken cancellationToken = default);
 
-    Task<SubsonicResponse> GetArtistsAsync(SubsonicUser user, CancellationToken cancellationToken = default);
+    Task<SubsonicResponse> GetArtistsAsync(
+        SubsonicUser user,
+        SubsonicParameters parameters,
+        CancellationToken cancellationToken = default);
 
     Task<SubsonicResponse> GetArtistAsync(
         SubsonicUser user,
@@ -59,5 +66,8 @@ public interface ISubsonicBrowsingService
         SubsonicParameters parameters,
         CancellationToken cancellationToken = default);
 
-    Task<SubsonicResponse> GetStarred2Async(SubsonicUser user, CancellationToken cancellationToken = default);
+    Task<SubsonicResponse> GetStarred2Async(
+        SubsonicUser user,
+        SubsonicParameters parameters,
+        CancellationToken cancellationToken = default);
 }

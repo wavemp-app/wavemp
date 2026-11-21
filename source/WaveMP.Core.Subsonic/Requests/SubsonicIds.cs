@@ -1,16 +1,43 @@
+using System.Buffers.Binary;
+using System.Security.Cryptography;
+using WaveMP.Data.Entities;
+
 namespace WaveMP.Core.Subsonic.Requests;
 
 /// <summary>
 /// The ids of the Subsonic API. Artists, albums, songs and playlists keep the ids of WaveMP. Cover ids carry the kind
 /// of their owner as prefix (<c>al-</c> album, <c>tr-</c> track, <c>pl-</c> playlist), so <c>getCoverArt</c> knows
-/// where to look; a plain id is looked up as track, album and playlist in turn.
+/// where to look; a plain id is looked up as track, album and playlist in turn. Music folders are the media sources;
+/// their ids are whole numbers, as the specification asks, derived from the id of the source.
 /// </summary>
 public static class SubsonicIds
 {
     /// <summary>
-    /// The one music folder of WaveMP: the media folder.
+    /// The music folder of the first media source (<see cref="MediaSource.DefaultId"/>). It keeps the id of the one
+    /// music folder of earlier versions, so apps that remember it still find it.
     /// </summary>
-    public const int MusicFolderId = 1;
+    public const int DefaultMusicFolderId = 1;
+
+    /// <summary>
+    /// The id of the music folder of a media source: <see cref="DefaultMusicFolderId"/> for the first source,
+    /// otherwise a positive number from a hash of the id of the source, the same on every start.
+    /// </summary>
+    public static int MusicFolder(Guid sourceId)
+    {
+        if (sourceId == MediaSource.DefaultId)
+        {
+            return DefaultMusicFolderId;
+        }
+
+        Span<byte> bytes = stackalloc byte[16];
+        sourceId.TryWriteBytes(bytes, bigEndian: true, out _);
+        Span<byte> hash = stackalloc byte[SHA256.HashSizeInBytes];
+        SHA256.HashData(bytes, hash);
+        int value = BinaryPrimitives.ReadInt32BigEndian(hash) & int.MaxValue;
+
+        // 0 and 1 stay free: 1 belongs to the first source, and some apps take 0 for "no folder".
+        return value <= DefaultMusicFolderId ? value + 2 : value;
+    }
 
     public const string AlbumCoverPrefix = "al-";
     public const string TrackCoverPrefix = "tr-";
