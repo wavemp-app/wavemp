@@ -268,6 +268,98 @@ public class LyricsApiTests
         await busy.ShouldBeProblemAsync(HttpStatusCode.ServiceUnavailable, "lyrics.rate_limited");
     }
 
+    [TestCase("GET", "/api/v1/lyrics-lookups/summary")]
+    [TestCase("DELETE", "/api/v1/lyrics-lookups")]
+    [TestCase("GET", "/api/v1/tracks/{0}/lyrics/lookup")]
+    [TestCase("DELETE", "/api/v1/tracks/{0}/lyrics/lookup")]
+    public async Task LyricsLookups_WithoutTokenOrAsUser_AreRejected(string method, string path)
+    {
+        string url = string.Format(System.Globalization.CultureInfo.InvariantCulture, path, Track("Missing").Id);
+
+        await (await _anonymous.SendAsync(new HttpRequestMessage(new HttpMethod(method), url)))
+            .ShouldBeProblemAsync(HttpStatusCode.Unauthorized, "auth.unauthorized");
+        await (await _user.SendAsync(new HttpRequestMessage(new HttpMethod(method), url)))
+            .ShouldBeProblemAsync(HttpStatusCode.Forbidden, "auth.forbidden");
+    }
+
+    [Test]
+    public async Task DeleteTrackLyricsLookup_LookupWithoutLyrics_ForgetsItAndKeepsResultsWithLyrics()
+    {
+        await SwitchOnAsync();
+        string instrumental = $"/api/v1/tracks/{Track("Instrumental").Id}/lyrics";
+        await (await _admin.PostAsync($"{instrumental}/download", null))
+            .ShouldBeProblemAsync(HttpStatusCode.NotFound, "lyrics.instrumental");
+
+        LyricsLookupDto lookup = await _admin.GetJsonAsync<LyricsLookupDto>($"{instrumental}/lookup");
+        lookup.Status.Should().Be(LyricsLookupStatusDto.Instrumental);
+        lookup.IsForgettable.Should().BeTrue();
+        (await _admin.DeleteAsync($"{instrumental}/lookup")).StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        await (await _admin.GetAsync($"{instrumental}/lookup"))
+            .ShouldBeProblemAsync(HttpStatusCode.NotFound, "lyrics.lookup_not_found");
+        await (await _admin.DeleteAsync($"{instrumental}/lookup"))
+            .ShouldBeProblemAsync(HttpStatusCode.NotFound, "lyrics.lookup_not_found");
+        string plain = $"/api/v1/tracks/{Track("Plain").Id}/lyrics/lookup";
+        (await _admin.GetJsonAsync<LyricsLookupDto>(plain)).Status.Should().Be(LyricsLookupStatusDto.SavedToFile);
+        await (await _admin.DeleteAsync(plain))
+            .ShouldBeProblemAsync(HttpStatusCode.Conflict, "lyrics.lookup_found_lyrics");
+        (await _admin.GetJsonAsync<LyricsLookupDto>(plain)).IsForgettable.Should().BeFalse();
+        await (await _admin.GetAsync($"/api/v1/tracks/{Guid.NewGuid()}/lyrics/lookup"))
+            .ShouldBeProblemAsync(HttpStatusCode.NotFound, "track.not_found");
+        await (await _admin.DeleteAsync($"/api/v1/tracks/{Guid.NewGuid()}/lyrics/lookup"))
+            .ShouldBeProblemAsync(HttpStatusCode.NotFound, "track.not_found");
+    }
+
+    [Test]
+    public async Task DeleteLyricsLookups_LookupsWithoutLyrics_TheNextRunLooksTheTracksUpAgainAtOnce()
+    {
+        await SwitchOnAsync();
+        Guid missing = Track("Missing").Id;
+        await (await _admin.PostAsync($"/api/v1/tracks/{missing}/lyrics/download", null))
+            .ShouldBeProblemAsync(HttpStatusCode.NotFound, "lyrics.download_not_found");
+        LyricsLookupSummaryDto before = await _admin.GetJsonAsync<LyricsLookupSummaryDto>(
+            "/api/v1/lyrics-lookups/summary");
+        before.NotFoundCount.Should().BeGreaterThanOrEqualTo(1);
+        before.LookUpAgainAfterMinutes.Should().Be(30 * 24 * 60);
+
+        // Within the wait the job does not ask LRCLIB again.
+        int asked = LookupsOf("Missing");
+        await RunLyricsDownloadAsync();
+        LookupsOf("Missing").Should().Be(asked);
+
+        (await _admin.DeleteAsync("/api/v1/lyrics-lookups")).StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        LyricsLookupSummaryDto after = await _admin.GetJsonAsync<LyricsLookupSummaryDto>(
+            "/api/v1/lyrics-lookups/summary");
+        after.NotFoundCount.Should().Be(0);
+        after.InstrumentalCount.Should().Be(0);
+        await (await _admin.GetAsync($"/api/v1/tracks/{missing}/lyrics/lookup"))
+            .ShouldBeProblemAsync(HttpStatusCode.NotFound, "lyrics.lookup_not_found");
+        (await _admin.GetJsonAsync<LyricsLookupDto>($"/api/v1/tracks/{Track("Plain").Id}/lyrics/lookup"))
+            .Status.Should().Be(LyricsLookupStatusDto.SavedToFile);
+
+        await RunLyricsDownloadAsync();
+
+        LookupsOf("Missing").Should().BeGreaterThan(asked);
+        (await _admin.GetJsonAsync<LyricsLookupDto>($"/api/v1/tracks/{missing}/lyrics/lookup"))
+            .Status.Should().Be(LyricsLookupStatusDto.NotFound);
+    }
+
+    private int LookupsOf(string title)
+    {
+        return _lrclib.ReceivedCalls()
+            .Count(call => call.GetArguments().OfType<LrclibQuery>().Any(query => query.TrackName == title));
+    }
+
+    private async Task RunLyricsDownloadAsync()
+    {
+        await _admin.WaitForJobsIdleAsync();
+        HttpResponseMessage response = await _admin.PostAsync("/api/v1/jobs/lyrics-download/runs", null);
+        response.StatusCode.Should().Be(HttpStatusCode.Accepted, await response.Content.ReadAsStringAsync());
+        JobRunDto run = (await response.Content.ReadFromJsonAsync<JobRunDto>(HttpClientExtensions.JsonOptions))!;
+        (await _admin.WaitForJobRunAsync("lyrics-download", run.Id)).Status.Should().Be(JobRunStatusDto.Succeeded);
+    }
+
     private void Answer(string title, LrclibResponse response)
     {
         _lrclib.GetAsync(Arg.Is<LrclibQuery>(query => query.TrackName == title), Arg.Any<CancellationToken>())

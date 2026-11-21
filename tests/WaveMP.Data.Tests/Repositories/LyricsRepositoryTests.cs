@@ -181,6 +181,91 @@ public class LyricsRepositoryTests : LibraryDatabaseTests
     }
 
     [Test]
+    public async Task CountDownloadsAsync_Results_CountsThemPerStatus()
+    {
+        LibrarySeed seed = new();
+        Track first = seed.Track("First");
+        Track second = seed.Track("Second");
+        Track instrumental = seed.Track("Instrumental");
+        Track saved = seed.Track("Saved");
+        seed.Track("Never looked up");
+        await SaveAsync(seed);
+        LyricsRepository repository = new(CreateDbContext());
+        DateTimeOffset checkedAt = LibrarySeed.DefaultTime;
+        await repository.SaveDownloadAsync(Download(first, LyricsDownloadStatus.NotFound, null, checkedAt));
+        await repository.SaveDownloadAsync(Download(second, LyricsDownloadStatus.NotFound, null, checkedAt));
+        await repository.SaveDownloadAsync(
+            Download(instrumental, LyricsDownloadStatus.Instrumental, null, checkedAt));
+        await repository.SaveDownloadAsync(Download(saved, LyricsDownloadStatus.SavedToFile, null, checkedAt));
+
+        IReadOnlyDictionary<LyricsDownloadStatus, int> counts =
+            await new LyricsRepository(CreateDbContext()).CountDownloadsAsync();
+
+        counts.Should().BeEquivalentTo(new Dictionary<LyricsDownloadStatus, int>
+        {
+            [LyricsDownloadStatus.NotFound] = 2,
+            [LyricsDownloadStatus.Instrumental] = 1,
+            [LyricsDownloadStatus.SavedToFile] = 1,
+        });
+    }
+
+    [Test]
+    public async Task DeleteDownloadsAsync_Statuses_RemovesOnlyTheseResultsSoTheTracksAreLookedUpAgain()
+    {
+        LibrarySeed seed = new();
+        Track notFound = seed.Track("Not found", firstSeenAt: LibrarySeed.DefaultTime);
+        Track instrumental = seed.Track("Instrumental", firstSeenAt: LibrarySeed.DefaultTime.AddDays(1));
+        Track saved = seed.Track("Saved");
+        Track notNeeded = seed.Track("Not needed");
+        await SaveAsync(seed);
+        LyricsRepository repository = new(CreateDbContext());
+        DateTimeOffset checkedAt = LibrarySeed.DefaultTime.AddDays(10);
+        await repository.SaveDownloadAsync(Download(notFound, LyricsDownloadStatus.NotFound, null, checkedAt));
+        await repository.SaveDownloadAsync(
+            Download(instrumental, LyricsDownloadStatus.Instrumental, null, checkedAt));
+        await repository.SaveDownloadAsync(
+            Download(saved, LyricsDownloadStatus.SavedToDatabase, "[00:01.00]Line", checkedAt));
+        await repository.SaveDownloadAsync(Download(notNeeded, LyricsDownloadStatus.NotNeeded, null, checkedAt));
+        (await repository.ListTracksToLookUpAsync(10, [], null)).Should().BeEmpty();
+
+        int removed = await new LyricsRepository(CreateDbContext()).DeleteDownloadsAsync(
+            [LyricsDownloadStatus.NotFound, LyricsDownloadStatus.Instrumental]);
+
+        removed.Should().Be(2);
+        LyricsRepository reader = new(CreateDbContext());
+        (await reader.ListTracksToLookUpAsync(10, [], null)).Select(row => row.TrackId)
+            .Should().Equal(notFound.Id, instrumental.Id);
+        (await reader.FindTrackAsync(saved.Id))!.Download.Should().Be(
+            new LyricsDownloadRow(LyricsDownloadStatus.SavedToDatabase, "[00:01.00]Line", checkedAt));
+        (await reader.FindTrackAsync(notNeeded.Id))!.Download!.Status.Should().Be(LyricsDownloadStatus.NotNeeded);
+    }
+
+    [Test]
+    public async Task DeleteDownloadsAsync_Track_RemovesOnlyItsResultWithOneOfTheStatuses()
+    {
+        LibrarySeed seed = new();
+        Track track = seed.Track("Song");
+        Track other = seed.Track("Other");
+        Track saved = seed.Track("Saved");
+        await SaveAsync(seed);
+        LyricsRepository repository = new(CreateDbContext());
+        DateTimeOffset checkedAt = LibrarySeed.DefaultTime;
+        await repository.SaveDownloadAsync(Download(track, LyricsDownloadStatus.NotFound, null, checkedAt));
+        await repository.SaveDownloadAsync(Download(other, LyricsDownloadStatus.NotFound, null, checkedAt));
+        await repository.SaveDownloadAsync(Download(saved, LyricsDownloadStatus.SavedToFile, null, checkedAt));
+        LyricsDownloadStatus[] statuses = [LyricsDownloadStatus.NotFound, LyricsDownloadStatus.Instrumental];
+
+        (await repository.DeleteDownloadsAsync(statuses, track.Id)).Should().Be(1);
+        (await repository.DeleteDownloadsAsync(statuses, track.Id)).Should().Be(0);
+        (await repository.DeleteDownloadsAsync(statuses, saved.Id)).Should().Be(0);
+
+        LyricsRepository reader = new(CreateDbContext());
+        (await reader.FindTrackAsync(track.Id))!.Download.Should().BeNull();
+        (await reader.FindTrackAsync(other.Id))!.Download.Should().NotBeNull();
+        (await reader.FindTrackAsync(saved.Id))!.Download.Should().NotBeNull();
+    }
+
+    [Test]
     public async Task DeletingATrack_RemovesItsLookup()
     {
         LibrarySeed seed = new();

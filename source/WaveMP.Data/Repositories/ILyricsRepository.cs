@@ -38,4 +38,23 @@ public interface ILyricsRepository
     /// longer exists.
     /// </summary>
     Task<bool> SaveDownloadAsync(LyricsDownload download, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// The number of stored lookup results per status, over all tracks. Statuses without a result are missing.
+    /// </summary>
+    Task<IReadOnlyDictionary<LyricsDownloadStatus, int>> CountDownloadsAsync(
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Removes the stored lookup results with one of the given statuses, of all tracks or of one track, so the
+    /// download job looks these tracks up again like tracks that were never looked up. Returns the number of removed
+    /// results.
+    /// </summary>
+    /// <param name="statuses">Statuses of the results to remove.</param>
+    /// <param name="trackId">Only the result of this track; <c>null</c> for all tracks.</param>
+    /// <param name="cancellationToken">Aborts the removal.</param>
+    Task<int> DeleteDownloadsAsync(
+        IReadOnlyCollection<LyricsDownloadStatus> statuses,
+        Guid? trackId = null,
+        CancellationToken cancellationToken = default);
 }

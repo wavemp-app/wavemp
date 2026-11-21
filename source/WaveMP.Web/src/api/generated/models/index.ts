@@ -1008,6 +1008,24 @@ export function createLyricsLineFromDiscriminatorValue(parseNode: ParseNode | un
 /**
  * Creates a new instance of the appropriate class based on discriminator value
  * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {LyricsLookup}
+ */
+// @ts-ignore
+export function createLyricsLookupFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoLyricsLookup;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {LyricsLookupSummary}
+ */
+// @ts-ignore
+export function createLyricsLookupSummaryFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoLyricsLookupSummary;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
  * @returns {LyricsWord}
  */
 // @ts-ignore
@@ -3098,6 +3116,32 @@ export function deserializeIntoLyricsLine(lyricsLine: Partial<LyricsLine> | unde
         "startMilliseconds": n => { lyricsLine.startMilliseconds = n.getNumberValue(); },
         "text": n => { lyricsLine.text = n.getStringValue(); },
         "words": n => { lyricsLine.words = n.getCollectionOfObjectValues<LyricsWord>(createLyricsWordFromDiscriminatorValue); },
+    }
+}
+/**
+ * The deserialization information for the current model
+ * @param LyricsLookup The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoLyricsLookup(lyricsLookup: Partial<LyricsLookup> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "checkedAt": n => { lyricsLookup.checkedAt = n.getDateValue(); },
+        "isForgettable": n => { lyricsLookup.isForgettable = n.getBooleanValue(); },
+        "status": n => { lyricsLookup.status = n.getEnumValue<LyricsLookupStatus>(LyricsLookupStatusObject); },
+    }
+}
+/**
+ * The deserialization information for the current model
+ * @param LyricsLookupSummary The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoLyricsLookupSummary(lyricsLookupSummary: Partial<LyricsLookupSummary> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "instrumentalCount": n => { lyricsLookupSummary.instrumentalCount = n.getNumberValue(); },
+        "lookUpAgainAfterMinutes": n => { lyricsLookupSummary.lookUpAgainAfterMinutes = n.getNumberValue(); },
+        "notFoundCount": n => { lyricsLookupSummary.notFoundCount = n.getNumberValue(); },
     }
 }
 /**
@@ -5700,6 +5744,41 @@ export interface LyricsLine extends AdditionalDataHolder, Parsable {
      */
     words?: LyricsWord[] | null;
 }
+/**
+ * The stored result of the last lookup of the lyrics of a track in the online lyrics service (LRCLIB).
+ */
+export interface LyricsLookup extends AdditionalDataHolder, Parsable {
+    /**
+     * When the track was looked up.
+     */
+    checkedAt?: Date | null;
+    /**
+     * Whether the result can be forgotten (`DELETE /api/v1/tracks/{id}/lyrics/lookup`): only lookups that found no lyrics (not found or instrumental).
+     */
+    isForgettable?: boolean | null;
+    /**
+     * What the lookup found.
+     */
+    status?: LyricsLookupStatus | null;
+}
+export type LyricsLookupStatus = (typeof LyricsLookupStatusObject)[keyof typeof LyricsLookupStatusObject];
+/**
+ * The stored lookups of lyrics that found no lyrics, over all tracks.
+ */
+export interface LyricsLookupSummary extends AdditionalDataHolder, Parsable {
+    /**
+     * Tracks the online lyrics service lists as instrumental.
+     */
+    instrumentalCount?: number | null;
+    /**
+     * How long the download job waits before it looks up such a track again, in minutes (configuration `Lyrics__LookUpAgainAfter`); `null` if it never does.
+     */
+    lookUpAgainAfterMinutes?: number | null;
+    /**
+     * Tracks the online lyrics service had no lyrics for.
+     */
+    notFoundCount?: number | null;
+}
 export type LyricsSource = (typeof LyricsSourceObject)[keyof typeof LyricsSourceObject];
 export type LyricsType = (typeof LyricsTypeObject)[keyof typeof LyricsTypeObject];
 /**
@@ -7837,6 +7916,34 @@ export function serializeLyricsLine(writer: SerializationWriter, lyricsLine: Par
     writer.writeStringValue("text", lyricsLine.text);
     writer.writeCollectionOfObjectValues<LyricsWord>("words", lyricsLine.words, serializeLyricsWord);
     writer.writeAdditionalData(lyricsLine.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param LyricsLookup The instance to serialize from.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeLyricsLookup(writer: SerializationWriter, lyricsLookup: Partial<LyricsLookup> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!lyricsLookup || isSerializingDerivedType) { return; }
+    writer.writeDateValue("checkedAt", lyricsLookup.checkedAt);
+    writer.writeBooleanValue("isForgettable", lyricsLookup.isForgettable);
+    writer.writeEnumValue<LyricsLookupStatus>("status", lyricsLookup.status);
+    writer.writeAdditionalData(lyricsLookup.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param LyricsLookupSummary The instance to serialize from.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeLyricsLookupSummary(writer: SerializationWriter, lyricsLookupSummary: Partial<LyricsLookupSummary> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!lyricsLookupSummary || isSerializingDerivedType) { return; }
+    writer.writeNumberValue("instrumentalCount", lyricsLookupSummary.instrumentalCount);
+    writer.writeNumberValue("lookUpAgainAfterMinutes", lyricsLookupSummary.lookUpAgainAfterMinutes);
+    writer.writeNumberValue("notFoundCount", lyricsLookupSummary.notFoundCount);
+    writer.writeAdditionalData(lyricsLookupSummary.additionalData);
 }
 /**
  * Serializes information the current object
@@ -11855,7 +11962,7 @@ export const EqualizerFilterTypeObject = {
     HighShelf: "HighShelf",
 } as const;
 /**
- * The preset.
+ * The selected curve; Flat by default.
  */
 export const EqualizerPresetObject = {
     Flat: "Flat",
@@ -12037,6 +12144,16 @@ export const LibraryIssueTypeObject = {
     AudioWithoutVideo: "AudioWithoutVideo",
 } as const;
 /**
+ * What the lookup found.
+ */
+export const LyricsLookupStatusObject = {
+    SavedToFile: "SavedToFile",
+    SavedToDatabase: "SavedToDatabase",
+    NotFound: "NotFound",
+    Instrumental: "Instrumental",
+    NotNeeded: "NotNeeded",
+} as const;
+/**
  * Where the lyrics come from.
  */
 export const LyricsSourceObject = {
@@ -12202,6 +12319,8 @@ export const ProblemCodeObject = {
     LyricsInstrumental: "lyrics.instrumental",
     LyricsService_unavailable: "lyrics.service_unavailable",
     LyricsRate_limited: "lyrics.rate_limited",
+    LyricsLookup_not_found: "lyrics.lookup_not_found",
+    LyricsLookup_found_lyrics: "lyrics.lookup_found_lyrics",
     ScrobblingNot_configured: "scrobbling.not_configured",
     ScrobblingToken_invalid: "scrobbling.token_invalid",
     ScrobblingService_unavailable: "scrobbling.service_unavailable",

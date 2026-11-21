@@ -3,6 +3,7 @@ import { onMounted, ref, useId } from 'vue'
 import { useI18n } from 'vue-i18n'
 import AdminNav from '@/components/admin/AdminNav.vue'
 import LibrarySettingsForm from '@/components/admin/LibrarySettingsForm.vue'
+import LyricsLookupPanel from '@/components/admin/LyricsLookupPanel.vue'
 import MediaSourcesPanel from '@/components/admin/MediaSourcesPanel.vue'
 import OnlineMetadataSettingsForm from '@/components/admin/OnlineMetadataSettingsForm.vue'
 import ScanHistory from '@/components/admin/ScanHistory.vue'
@@ -15,7 +16,7 @@ import { useScansStore } from '@/stores/scans'
 
 /**
  * Admin page of the library: the media folders, start a scan, follow it, see its result, the
- * history and settings.
+ * history, settings and the results of the lyrics lookup.
  */
 const { t } = useI18n()
 const scans = useScansStore()
@@ -27,6 +28,7 @@ const scanTitleId = useId()
 const historyTitleId = useId()
 const settingsTitleId = useId()
 const onlineTitleId = useId()
+const lyricsLookupsTitleId = useId()
 
 const polling = usePolling(refresh, 1000)
 
@@ -134,6 +136,16 @@ onMounted(async () => {
                 {{ t('adminLibrary.settingsTitle') }}
             </h2>
             <LibrarySettingsForm />
+        </section>
+        <section
+            data-part="section"
+            data-item="lyrics-lookups"
+            :aria-labelledby="lyricsLookupsTitleId"
+        >
+            <h2 :id="lyricsLookupsTitleId" data-part="section-title">
+                {{ t('lyricsLookups.title') }}
+            </h2>
+            <LyricsLookupPanel />
         </section>
         <section data-part="section" data-item="online-metadata" :aria-labelledby="onlineTitleId">
             <h2 :id="onlineTitleId" data-part="section-title">

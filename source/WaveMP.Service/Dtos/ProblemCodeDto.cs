@@ -377,6 +377,20 @@ public enum ProblemCodeDto
     LyricsRateLimited,
 
     /// <summary>
+    /// The track has no stored result of the online lyrics lookup: it was never looked up, or its result was forgotten
+    /// (404).
+    /// </summary>
+    [JsonStringEnumMemberName("lyrics.lookup_not_found")]
+    LyricsLookupNotFound,
+
+    /// <summary>
+    /// The online lyrics lookup of the track found lyrics or the track already had lyrics; only results without lyrics
+    /// (not found or instrumental) can be forgotten (409).
+    /// </summary>
+    [JsonStringEnumMemberName("lyrics.lookup_found_lyrics")]
+    LyricsLookupFoundLyrics,
+
+    /// <summary>
     /// The scrobbling service cannot be connected because the server has no API account for it: Last.fm needs the
     /// environment variables LASTFM_API_KEY and LASTFM_SHARED_SECRET (409).
     /// </summary>

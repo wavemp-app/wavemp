@@ -1,5 +1,8 @@
 using AwesomeAssertions;
 using WaveMP.Core.Lyrics.Documents;
+using WaveMP.Core.Lyrics.Lookups;
+using WaveMP.Data.Entities;
+using WaveMP.Data.Projections;
 using WaveMP.Service.Dtos;
 using WaveMP.Service.Mappings;
 
@@ -66,5 +69,33 @@ public class LyricsMappingExtensionsTests
             .Should().Equal(Enum.GetValues<LyricsType>().Select(type => type.ToString()));
         Enum.GetValues<LyricsSource>().Select(source => source.ToDto().ToString())
             .Should().Equal(Enum.GetValues<LyricsSource>().Select(source => source.ToString()));
+        Enum.GetValues<LyricsDownloadStatus>().Select(status => status.ToDto().ToString())
+            .Should().Equal(Enum.GetValues<LyricsDownloadStatus>().Select(status => status.ToString()));
+    }
+
+    [Test]
+    public void ToDto_Lookups_TellWhichCanBeForgotten()
+    {
+        DateTimeOffset checkedAt = new(2026, 10, 1, 12, 0, 0, TimeSpan.Zero);
+
+        new LyricsDownloadRow(LyricsDownloadStatus.Instrumental, null, checkedAt).ToDto().Should().BeEquivalentTo(
+            new LyricsLookupDto
+            {
+                Status = LyricsLookupStatusDto.Instrumental,
+                CheckedAt = checkedAt,
+                IsForgettable = true,
+            });
+        new LyricsDownloadRow(LyricsDownloadStatus.SavedToDatabase, "Line", checkedAt).ToDto().IsForgettable
+            .Should().BeFalse();
+    }
+
+    [Test]
+    public void ToDto_LookupSummary_GivesTheWaitInWholeMinutes()
+    {
+        new LyricsLookupSummary(3, 1, TimeSpan.FromDays(30)).ToDto().Should().BeEquivalentTo(
+            new LyricsLookupSummaryDto { NotFoundCount = 3, InstrumentalCount = 1, LookUpAgainAfterMinutes = 43_200 });
+        new LyricsLookupSummary(0, 0, TimeSpan.FromSeconds(90)).ToDto().LookUpAgainAfterMinutes.Should().Be(2);
+        new LyricsLookupSummary(0, 0, TimeSpan.MaxValue).ToDto().LookUpAgainAfterMinutes.Should().Be(int.MaxValue);
+        new LyricsLookupSummary(0, 0, null).ToDto().LookUpAgainAfterMinutes.Should().BeNull();
     }
 }

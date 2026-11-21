@@ -87,6 +87,31 @@ internal sealed class LyricsRepository(WaveMpDbContext dbContext) : ILyricsRepos
         }
     }
 
+    public async Task<IReadOnlyDictionary<LyricsDownloadStatus, int>> CountDownloadsAsync(
+        CancellationToken cancellationToken = default)
+    {
+        return await dbContext.LyricsDownloads.AsNoTracking()
+            .GroupBy(download => download.Status)
+            .Select(group => new { Status = group.Key, Count = group.Count() })
+            .ToDictionaryAsync(item => item.Status, item => item.Count, cancellationToken);
+    }
+
+    public async Task<int> DeleteDownloadsAsync(
+        IReadOnlyCollection<LyricsDownloadStatus> statuses,
+        Guid? trackId = null,
+        CancellationToken cancellationToken = default)
+    {
+        LyricsDownloadStatus[] removed = [.. statuses];
+        IQueryable<LyricsDownload> downloads = dbContext.LyricsDownloads
+            .Where(download => removed.Contains(download.Status));
+        if (trackId is { } id)
+        {
+            downloads = downloads.Where(download => download.TrackId == id);
+        }
+
+        return await downloads.ExecuteDeleteAsync(cancellationToken);
+    }
+
     private IQueryable<LyricsTrackRow> Rows(IQueryable<Track> tracks)
     {
         return tracks.Select(track => new LyricsTrackRow(

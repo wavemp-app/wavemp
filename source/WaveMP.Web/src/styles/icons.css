@@ -467,6 +467,10 @@
         --_icon: var(--wmp-icon-download-lyrics);
     }
 
+    [data-icon='forget-lyrics-lookup'] {
+        --_icon: var(--wmp-icon-forget-lyrics-lookup);
+    }
+
     [data-icon='search-online'] {
         --_icon: var(--wmp-icon-search-online);
     }

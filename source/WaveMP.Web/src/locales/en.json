@@ -1955,7 +1955,35 @@
       "serviceUnavailable": "LRCLIB cannot be reached. Check the internet connection of the server.",
       "rateLimited": "LRCLIB refuses requests for a while. Try again later.",
       "failed": "The lyrics could not be downloaded."
+    },
+    "lookup": {
+      "notFound": "LRCLIB had no lyrics for this song on {date}.",
+      "instrumental": "LRCLIB listed this song as instrumental on {date}.",
+      "forget": "Forget result",
+      "forgetting": "Forgetting result",
+      "forgotten": "Result forgotten. The next lyrics download looks this song up again.",
+      "errors": {
+        "foundLyrics": "The last lookup found lyrics. Only results without lyrics can be forgotten.",
+        "failed": "The result could not be forgotten."
+      }
     }
+  },
+  "lyricsLookups": {
+    "title": "Lyrics lookup",
+    "loading": "Loading the results of the lyrics lookup",
+    "stats": {
+      "label": "Songs without lyrics on LRCLIB",
+      "notFound": "No lyrics found",
+      "instrumental": "Listed as instrumental",
+      "wait": "Looked up again after",
+      "never": "Never"
+    },
+    "hint": "Forget the results so the next lyrics download looks these songs up again at once. It runs after every scan, or you start it on the Jobs page.",
+    "forget": "Forget results",
+    "forgetting": "Forgetting results",
+    "forgotten": "Results forgotten. The next lyrics download looks these songs up again.",
+    "loadError": "The results of the lyrics lookup could not be loaded.",
+    "forgetError": "The results could not be forgotten."
   },
   "recap": {
     "title": "Recap",

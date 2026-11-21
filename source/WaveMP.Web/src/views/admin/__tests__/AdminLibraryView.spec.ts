@@ -12,6 +12,15 @@ import { useLibrarySettingsStore } from '@/stores/librarySettings'
 import { useMediaSourcesStore } from '@/stores/mediaSources'
 import { useScansStore } from '@/stores/scans'
 
+vi.mock('@/lyrics/lookupApi', () => ({
+    getLyricsLookupSummary: vi.fn().mockResolvedValue({
+        notFoundCount: 2,
+        instrumentalCount: 1,
+        lookUpAgainAfterMinutes: 43_200,
+    }),
+    forgetLyricsLookups: vi.fn(),
+}))
+
 vi.mock('@/library/onlineMetadata', () => ({
     getOnlineMetadataSettings: vi.fn().mockResolvedValue({
         enabled: false,
@@ -91,7 +100,14 @@ describe('AdminLibraryView', () => {
             wrapper.get('[data-view="admin-library"]').find('[data-part="admin-nav"]').exists(),
         ).toBe(true)
         expect(wrapper.findAll('[data-part="section-title"]').map((title) => title.text())).toEqual(
-            ['Media folders', 'Scan', 'History', 'Settings', 'Online search for album info'],
+            [
+                'Media folders',
+                'Scan',
+                'History',
+                'Settings',
+                'Lyrics lookup',
+                'Online search for album info',
+            ],
         )
         expect(wrapper.get('[data-part="scan-status"]').attributes('data-state')).toBe('idle')
         expect(wrapper.find('[data-part="stat-list"]').exists()).toBe(true)

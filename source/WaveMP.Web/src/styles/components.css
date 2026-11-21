@@ -1338,7 +1338,8 @@
     [data-part='cache-usage'],
     [data-part='transcoding-status'],
     [data-part='backup-status'],
-    [data-part='library-check-status'] {
+    [data-part='library-check-status'],
+    [data-part='lyrics-lookups'] {
         display: grid;
         gap: var(--wmp-space-m);
         min-inline-size: 0;
@@ -1352,7 +1353,8 @@
             [data-part='cache-usage'],
             [data-part='transcoding-status'],
             [data-part='backup-status'],
-            [data-part='library-check-status']
+            [data-part='library-check-status'],
+            [data-part='lyrics-lookups']
         )
         > [data-part='label'] {
         overflow-wrap: anywhere;

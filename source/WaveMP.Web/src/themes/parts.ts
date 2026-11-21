@@ -328,6 +328,7 @@ export const parts = [
     'job-meta',
     'job-actions',
     'cache-usage',
+    'lyrics-lookups',
     'transcoding-status',
     'transcode-list',
     'transcode-item',

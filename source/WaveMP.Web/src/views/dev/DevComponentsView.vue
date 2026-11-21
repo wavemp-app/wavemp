@@ -8,6 +8,7 @@ import { useI18n } from 'vue-i18n'
 import type {
     Backup,
     CacheUsage,
+    LyricsLookupSummary,
     FileSelectionFilter,
     FileSelectionSort,
     LibraryIssueSort,
@@ -39,6 +40,7 @@ import ThemeList from '@/components/admin/ThemeList.vue'
 import type { ThemePackageError } from '@/admin/themeErrors'
 import BackupStatusPanel from '@/components/admin/BackupStatus.vue'
 import CacheUsagePanel from '@/components/admin/CacheUsage.vue'
+import LyricsLookupResults from '@/components/admin/LyricsLookupResults.vue'
 import FileChoiceGroup from '@/components/admin/FileChoiceGroup.vue'
 import FileSelectionFilters from '@/components/admin/FileSelectionFilters.vue'
 import FileSelectionList from '@/components/admin/FileSelectionList.vue'
@@ -954,6 +956,11 @@ const sampleCacheUsage: CacheUsage = {
     covers: { sizeBytes: 1_240_000_000, entryCount: 5_321 },
     transcodes: { sizeBytes: 0, entryCount: 0 },
 }
+const sampleLyricsLookups: LyricsLookupSummary = {
+    notFoundCount: 128,
+    instrumentalCount: 14,
+    lookUpAgainAfterMinutes: 43_200,
+}
 const sampleTranscodingStatus: TranscodingStatus = {
     available: true,
     ffmpegAvailable: true,
@@ -1563,6 +1570,11 @@ const sampleTranscodeJobs = computed<TranscodeJob[]>(() => {
                         <BaseProgress :label="t('adminLibrary.progressLabel')" :value="0.4" />
                         <BaseProgress :label="t('adminLibrary.progressLabel')" />
                     </form>
+                </section>
+                <section data-part="section" data-item="lyrics-lookups">
+                    <h2 data-part="section-title">{{ t('lyricsLookups.title') }}</h2>
+                    <LyricsLookupResults :summary="sampleLyricsLookups" result="forgotten" />
+                    <LyricsLookupResults :summary="null" />
                 </section>
             </div>
             <div data-part="view" data-view="admin-jobs">

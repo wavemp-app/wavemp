@@ -1,4 +1,7 @@
 using WaveMP.Core.Lyrics.Documents;
+using WaveMP.Core.Lyrics.Lookups;
+using WaveMP.Data.Entities;
+using WaveMP.Data.Projections;
 using WaveMP.Service.Dtos;
 
 namespace WaveMP.Service.Mappings;
@@ -50,6 +53,41 @@ public static class LyricsMappingExtensions
             LyricsSource.Download => LyricsSourceDto.Download,
             LyricsSource.Tags => LyricsSourceDto.Tags,
             _ => throw new ArgumentOutOfRangeException(nameof(source), source, "Unknown lyrics source."),
+        };
+    }
+
+    public static LyricsLookupDto ToDto(this LyricsDownloadRow lookup)
+    {
+        return new LyricsLookupDto
+        {
+            Status = lookup.Status.ToDto(),
+            CheckedAt = lookup.CheckedAt,
+            IsForgettable = LyricsLookupResult.IsForgettableStatus(lookup.Status),
+        };
+    }
+
+    public static LyricsLookupStatusDto ToDto(this LyricsDownloadStatus status)
+    {
+        return status switch
+        {
+            LyricsDownloadStatus.SavedToFile => LyricsLookupStatusDto.SavedToFile,
+            LyricsDownloadStatus.SavedToDatabase => LyricsLookupStatusDto.SavedToDatabase,
+            LyricsDownloadStatus.NotFound => LyricsLookupStatusDto.NotFound,
+            LyricsDownloadStatus.Instrumental => LyricsLookupStatusDto.Instrumental,
+            LyricsDownloadStatus.NotNeeded => LyricsLookupStatusDto.NotNeeded,
+            _ => throw new ArgumentOutOfRangeException(nameof(status), status, "Unknown lyrics lookup status."),
+        };
+    }
+
+    public static LyricsLookupSummaryDto ToDto(this LyricsLookupSummary summary)
+    {
+        return new LyricsLookupSummaryDto
+        {
+            NotFoundCount = summary.NotFound,
+            InstrumentalCount = summary.Instrumental,
+            LookUpAgainAfterMinutes = summary.LookUpAgainAfter is { } wait
+                ? (int)Math.Min(int.MaxValue, Math.Ceiling(wait.TotalMinutes))
+                : null,
         };
     }
 

@@ -24,6 +24,8 @@ import { JobsRequestBuilderNavigationMetadata, JobsRequestBuilderRequestsMetadat
 // @ts-ignore
 import { LibraryRequestBuilderNavigationMetadata, type LibraryRequestBuilder } from './library/index.js';
 // @ts-ignore
+import { LyricsLookupsRequestBuilderNavigationMetadata, LyricsLookupsRequestBuilderRequestsMetadata, type LyricsLookupsRequestBuilder } from './lyricsLookups/index.js';
+// @ts-ignore
 import { MeRequestBuilderNavigationMetadata, type MeRequestBuilder } from './me/index.js';
 // @ts-ignore
 import { OnlineReleasesRequestBuilderNavigationMetadata, type OnlineReleasesRequestBuilder } from './onlineReleases/index.js';
@@ -108,6 +110,10 @@ export interface V1RequestBuilder extends BaseRequestBuilder<V1RequestBuilder> {
      * The library property
      */
     get library(): LibraryRequestBuilder;
+    /**
+     * The lyricsLookups property
+     */
+    get lyricsLookups(): LyricsLookupsRequestBuilder;
     /**
      * The me property
      */
@@ -222,6 +228,10 @@ export const V1RequestBuilderNavigationMetadata: Record<Exclude<keyof V1RequestB
     },
     library: {
         navigationMetadata: LibraryRequestBuilderNavigationMetadata,
+    },
+    lyricsLookups: {
+        requestsMetadata: LyricsLookupsRequestBuilderRequestsMetadata,
+        navigationMetadata: LyricsLookupsRequestBuilderNavigationMetadata,
     },
     me: {
         navigationMetadata: MeRequestBuilderNavigationMetadata,

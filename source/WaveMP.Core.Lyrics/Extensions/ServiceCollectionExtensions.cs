@@ -8,6 +8,7 @@ using WaveMP.Core.Jobs.Extensions;
 using WaveMP.Core.Lyrics.Downloads;
 using WaveMP.Core.Lyrics.Files;
 using WaveMP.Core.Lyrics.Jobs;
+using WaveMP.Core.Lyrics.Lookups;
 using WaveMP.Core.Lyrics.Options;
 using WaveMP.Core.Lyrics.Services;
 using WaveMP.Core.Settings.Groups;
@@ -19,9 +20,9 @@ public static class ServiceCollectionExtensions
 {
     /// <summary>
     /// Registers the lyrics: reading them from lyrics files, the database and tags, the download from LRCLIB (settings
-    /// from the section <c>Lyrics</c>) and the job <c>lyrics-download</c>, which is started after scans and when the
-    /// download is switched on. Needs <c>AddWaveMpData</c>, <c>AddWaveMpSettings</c>, <c>AddWaveMpMetadata</c>,
-    /// <c>AddWaveMpJobs</c> and <c>AddWaveMpScanning</c>.
+    /// from the section <c>Lyrics</c>), its stored results and the job <c>lyrics-download</c>, which is started after
+    /// scans and when the download is switched on. Needs <c>AddWaveMpData</c>, <c>AddWaveMpSettings</c>,
+    /// <c>AddWaveMpMetadata</c>, <c>AddWaveMpJobs</c> and <c>AddWaveMpScanning</c>.
     /// </summary>
     public static IServiceCollection AddWaveMpLyrics(this IServiceCollection services)
     {
@@ -38,6 +39,7 @@ public static class ServiceCollectionExtensions
             provider.GetRequiredService<ILogger<LrclibClient>>()));
         services.AddScoped<ILyricsDownloader, LyricsDownloader>();
         services.AddScoped<ILyricsDownloadRunner, LyricsDownloadRunner>();
+        services.AddScoped<ILyricsLookupService, LyricsLookupService>();
 
         services.AddWaveMpJob<LyricsDownloadJob>(JobIds.LyricsDownload);
 

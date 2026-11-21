@@ -1955,7 +1955,35 @@
       "serviceUnavailable": "LRCLIB ist nicht erreichbar. Prüfe die Internetverbindung des Servers.",
       "rateLimited": "LRCLIB lehnt Anfragen gerade ab. Versuche es später noch einmal.",
       "failed": "Der Songtext konnte nicht heruntergeladen werden."
+    },
+    "lookup": {
+      "notFound": "LRCLIB hatte am {date} keinen Songtext für diesen Titel.",
+      "instrumental": "LRCLIB führte diesen Titel am {date} als instrumental.",
+      "forget": "Ergebnis vergessen",
+      "forgetting": "Ergebnis wird vergessen",
+      "forgotten": "Ergebnis vergessen. Der nächste Songtext-Download sucht diesen Titel erneut.",
+      "errors": {
+        "foundLyrics": "Die letzte Suche hat einen Songtext gefunden. Nur Ergebnisse ohne Songtext lassen sich vergessen.",
+        "failed": "Das Ergebnis konnte nicht vergessen werden."
+      }
     }
+  },
+  "lyricsLookups": {
+    "title": "Songtext-Suche",
+    "loading": "Ergebnisse der Songtext-Suche werden geladen",
+    "stats": {
+      "label": "Titel ohne Songtext auf LRCLIB",
+      "notFound": "Kein Songtext gefunden",
+      "instrumental": "Als instrumental geführt",
+      "wait": "Neue Suche nach",
+      "never": "Nie"
+    },
+    "hint": "Vergiss die Ergebnisse, damit der nächste Songtext-Download diese Titel sofort erneut sucht. Er läuft nach jedem Scan, oder du startest ihn auf der Seite Jobs.",
+    "forget": "Ergebnisse vergessen",
+    "forgetting": "Ergebnisse werden vergessen",
+    "forgotten": "Ergebnisse vergessen. Der nächste Songtext-Download sucht diese Titel erneut.",
+    "loadError": "Die Ergebnisse der Songtext-Suche konnten nicht geladen werden.",
+    "forgetError": "Die Ergebnisse konnten nicht vergessen werden."
   },
   "recap": {
     "title": "Rückblick",

@@ -3514,6 +3514,228 @@
         ]
       }
     },
+    "/api/v1/tracks/{id}/lyrics/lookup": {
+      "get": {
+        "tags": [
+          "Lyrics"
+        ],
+        "summary": "Returns the stored result of the last lookup of the lyrics of a track in LRCLIB, for admins only. The download job looks up a track whose lookup found no lyrics (not found or instrumental) again after a wait (configuration `Lyrics__LookUpAgainAfter`), or at once once the result is forgotten.",
+        "operationId": "GetTrackLyricsLookup",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Id of the track.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "The result of the last lookup.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LyricsLookup"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The track does not exist (code `track.not_found`) or has no stored result (code `lyrics.lookup_not_found`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "Lyrics"
+        ],
+        "summary": "Forgets the stored result of the lookup of the lyrics of a track in LRCLIB if it found no lyrics (not found or instrumental), for admins only. The next run of the download job (`lyrics-download`) then looks the track up again at once instead of after the wait. Results that found lyrics are kept.",
+        "operationId": "DeleteTrackLyricsLookup",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Id of the track.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "The result is forgotten."
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The track does not exist (code `track.not_found`) or has no stored result (code `lyrics.lookup_not_found`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The lookup found lyrics or the track already had lyrics (code `lyrics.lookup_found_lyrics`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/api/v1/lyrics-lookups/summary": {
+      "get": {
+        "tags": [
+          "LyricsLookups"
+        ],
+        "summary": "Returns how many tracks have a stored lookup that found no lyrics, and how long the download job waits before it looks them up again.",
+        "operationId": "GetLyricsLookupSummary",
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "The numbers of the lookups without lyrics.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LyricsLookupSummary"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/api/v1/lyrics-lookups": {
+      "delete": {
+        "tags": [
+          "LyricsLookups"
+        ],
+        "summary": "Forgets the stored lookups of all tracks that found no lyrics (not found or instrumental), so the next run of the download job looks these tracks up again at once. Results that found lyrics are kept, also lyrics stored in the database.",
+        "operationId": "DeleteLyricsLookups",
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "The lookups without lyrics are forgotten."
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
     "/api/v1/me/settings": {
       "get": {
         "tags": [
@@ -15493,6 +15715,69 @@
         },
         "description": "A line of lyrics. An empty text marks a part without singing."
       },
+      "LyricsLookup": {
+        "required": [
+          "status",
+          "checkedAt",
+          "isForgettable"
+        ],
+        "type": "object",
+        "properties": {
+          "status": {
+            "description": "What the lookup found.",
+            "$ref": "#/components/schemas/LyricsLookupStatus"
+          },
+          "checkedAt": {
+            "type": "string",
+            "description": "When the track was looked up.",
+            "format": "date-time"
+          },
+          "isForgettable": {
+            "type": "boolean",
+            "description": "Whether the result can be forgotten (`DELETE /api/v1/tracks/{id}/lyrics/lookup`): only lookups that found no lyrics (not found or instrumental)."
+          }
+        },
+        "description": "The stored result of the last lookup of the lyrics of a track in the online lyrics service (LRCLIB)."
+      },
+      "LyricsLookupStatus": {
+        "enum": [
+          "SavedToFile",
+          "SavedToDatabase",
+          "NotFound",
+          "Instrumental",
+          "NotNeeded"
+        ],
+        "type": "string",
+        "description": "What the last lookup of the lyrics of a track in the online lyrics service (LRCLIB) found."
+      },
+      "LyricsLookupSummary": {
+        "required": [
+          "notFoundCount",
+          "instrumentalCount"
+        ],
+        "type": "object",
+        "properties": {
+          "notFoundCount": {
+            "type": "integer",
+            "description": "Tracks the online lyrics service had no lyrics for.",
+            "format": "int32"
+          },
+          "instrumentalCount": {
+            "type": "integer",
+            "description": "Tracks the online lyrics service lists as instrumental.",
+            "format": "int32"
+          },
+          "lookUpAgainAfterMinutes": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "description": "How long the download job waits before it looks up such a track again, in minutes (configuration `Lyrics__LookUpAgainAfter`); `null` if it never does.",
+            "format": "int32"
+          }
+        },
+        "description": "The stored lookups of lyrics that found no lyrics, over all tracks."
+      },
       "LyricsSource": {
         "enum": [
           "File",
@@ -16737,6 +17022,8 @@
           "lyrics.instrumental",
           "lyrics.service_unavailable",
           "lyrics.rate_limited",
+          "lyrics.lookup_not_found",
+          "lyrics.lookup_found_lyrics",
           "scrobbling.not_configured",
           "scrobbling.token_invalid",
           "scrobbling.service_unavailable",
@@ -21240,6 +21527,9 @@
     },
     {
       "name": "Lyrics"
+    },
+    {
+      "name": "LyricsLookups"
     },
     {
       "name": "Me"

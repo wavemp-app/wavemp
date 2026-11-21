@@ -6,6 +6,8 @@ import { createLyricsFromDiscriminatorValue, createProblemDetailsFromDiscriminat
 // @ts-ignore
 import { DownloadRequestBuilderRequestsMetadata, type DownloadRequestBuilder } from './download/index.js';
 // @ts-ignore
+import { LookupRequestBuilderRequestsMetadata, type LookupRequestBuilder } from './lookup/index.js';
+// @ts-ignore
 import { type BaseRequestBuilder, type KeysToExcludeForNavigationMetadata, type NavigationMetadata, type Parsable, type ParsableFactory, type RequestConfiguration, type RequestInformation, type RequestsMetadata } from '@microsoft/kiota-abstractions';
 
 /**
@@ -16,6 +18,10 @@ export interface LyricsRequestBuilder extends BaseRequestBuilder<LyricsRequestBu
      * The download property
      */
     get download(): DownloadRequestBuilder;
+    /**
+     * The lookup property
+     */
+    get lookup(): LookupRequestBuilder;
     /**
      * Returns the lyrics of a track from the source of the highest priority that has lyrics: the lyrics file, then downloaded lyrics stored in the database, then the tags. Synchronized lyrics carry the start of every line (and of every word for word-synchronized lyrics) in milliseconds; static lyrics have no times.
      * @param requestConfiguration Configuration for the request such as headers, query parameters, and middleware options.
@@ -41,6 +47,9 @@ export const LyricsRequestBuilderUriTemplate = "{+baseurl}/api/v1/tracks/{id}/ly
 export const LyricsRequestBuilderNavigationMetadata: Record<Exclude<keyof LyricsRequestBuilder, KeysToExcludeForNavigationMetadata>, NavigationMetadata> = {
     download: {
         requestsMetadata: DownloadRequestBuilderRequestsMetadata,
+    },
+    lookup: {
+        requestsMetadata: LookupRequestBuilderRequestsMetadata,
     },
 };
 /**

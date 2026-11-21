@@ -62,3 +62,52 @@ export function downloadFailureOf(code: string | null | undefined): {
     const failure = downloadFailures[code ?? ''] ?? unknownFailure
     return { labelKey: failure.labelKey, tone: failure.notice ? 'info' : 'error' }
 }
+
+const lookupNotes: Record<string, Labeled> = {
+    NotFound: { labelKey: 'trackLyrics.lookup.notFound' },
+    Instrumental: { labelKey: 'trackLyrics.lookup.instrumental' },
+}
+
+/**
+ * Message key of the stored lookup of a song that found no lyrics, or null for results with
+ * lyrics, which the lyrics summary already describes.
+ */
+export function lookupNoteKey(status: string | null | undefined): string | null {
+    return lookupNotes[status ?? '']?.labelKey ?? null
+}
+
+const minutesPerHour = 60
+const minutesPerDay = 24 * minutesPerHour
+
+/**
+ * The wait of the lyrics download before it looks up a song without lyrics again, as a number and
+ * a unit for Intl.NumberFormat: whole days if it is at least a day, otherwise whole hours (at least
+ * one); null if it never looks such a song up again.
+ */
+export function lookUpAgainWait(
+    minutes: number | null | undefined,
+): { readonly value: number; readonly unit: 'day' | 'hour' } | null {
+    if (minutes === null || minutes === undefined || minutes <= 0) {
+        return null
+    }
+
+    if (minutes >= minutesPerDay) {
+        return { value: Math.round(minutes / minutesPerDay), unit: 'day' }
+    }
+
+    return { value: Math.max(1, Math.round(minutes / minutesPerHour)), unit: 'hour' }
+}
+
+/**
+ * Message key of forgetting the lookup of a song, from the problem code of a failed answer: a
+ * result that is already gone counts as forgotten (null).
+ */
+export function forgetFailureKey(code: string | null | undefined): string | null {
+    if (code === ProblemCodeObject.LyricsLookup_not_found) {
+        return null
+    }
+
+    return code === ProblemCodeObject.LyricsLookup_found_lyrics
+        ? 'trackLyrics.lookup.errors.foundLyrics'
+        : 'trackLyrics.lookup.errors.failed'
+}
