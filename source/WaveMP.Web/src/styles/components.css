@@ -3467,8 +3467,7 @@
     /*
      * The visualization: its canvas fills the view, also in full screen. Until it draws, a message
      * (loading, waiting for the music, unsupported, failed) shows an icon in the middle with a short
-     * hint below. The controls lie at the bottom edge; with a mouse they show on hover and focus, on
-     * touch screens always.
+     * hint below. Nothing lies on the picture: the controls are a toolbar below the views.
      */
     [data-part='visualization'] {
         position: relative;
@@ -3518,61 +3517,76 @@
         font-size: var(--wmp-font-size-s);
     }
 
+    /*
+     * The controls of the visualization: a toolbar right below the views of the stage, as wide as
+     * they are, never on the picture. On a narrow stage the buttons fill one row (previous preset,
+     * the preset list, next preset, automatic change, full screen) and the choice of the module a
+     * second one; on a wide stage all of them share one row, the module choice before the last two
+     * buttons. The buttons keep their places whatever the preset is called.
+     */
+    [data-part='stage-views'] + [data-part='visualization-controls'] {
+        margin-block-start: calc(var(--wmp-space-s) - var(--wmp-space-l));
+    }
+
     [data-part='visualization-controls'] {
-        position: absolute;
-        inset-inline: 0;
-        inset-block-end: 0;
-        display: flex;
-        flex-wrap: wrap;
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr) auto auto auto;
+        grid-template-areas:
+            'previous picker next auto-change fullscreen'
+            'module module module module module';
         align-items: center;
-        justify-content: center;
         gap: var(--wmp-space-xs);
-        padding: var(--wmp-space-s);
-        opacity: 0;
+        box-sizing: border-box;
+        inline-size: 100%;
+        max-inline-size: 64rem;
     }
 
-    [data-part='visualization']:hover > [data-part='visualization-controls'],
-    [data-part='visualization-controls']:focus-within {
-        opacity: 1;
-    }
-
-    @media (hover: none) {
+    @container wavemp-stage (width >= 44rem) {
         [data-part='visualization-controls'] {
-            opacity: 1;
+            grid-template-columns: auto minmax(0, 18rem) auto minmax(0, 1fr) auto auto auto;
+            grid-template-areas: 'previous picker next . module auto-change fullscreen';
         }
     }
 
-    [data-part='visualization-controls'] > [data-part='field'] {
-        flex: 0 1 16rem;
+    [data-part='visualization-controls'] > [data-part='btn-preset-previous'] {
+        grid-area: previous;
+    }
+
+    [data-part='visualization-controls'] > [data-part='btn-preset-picker'] {
+        grid-area: picker;
+        justify-content: space-between;
         min-inline-size: 0;
     }
 
-    /* The menu of the presets names itself through its label, which stays for assistive technology. */
-    [data-part='visualization-controls'] > [data-part='field'] > [data-part='label'] {
-        position: absolute;
-        inline-size: 1px;
-        block-size: 1px;
+    [data-part='btn-preset-picker'] > [data-part='label'] {
+        min-inline-size: 0;
         overflow: hidden;
-        clip-path: inset(50%);
-        white-space: nowrap;
+        text-overflow: ellipsis;
     }
 
-    [data-part='visualization-controls'] [data-part='select'] {
-        inline-size: 100%;
+    [data-part='btn-preset-picker'] > [data-part='icon'] {
+        flex: none;
     }
 
-    [data-part='visualization-controls'] > [data-variant='icon'] {
-        color: #ffffff;
+    [data-part='visualization-controls'] > [data-part='btn-preset-next'] {
+        grid-area: next;
     }
 
+    [data-part='visualization-controls'] > [data-part='btn-auto-change'] {
+        grid-area: auto-change;
+    }
+
+    /* Not in the corner of a picture like the full-screen button of the video. */
     [data-part='visualization-controls'] > [data-part='btn-fullscreen'] {
         position: static;
+        grid-area: fullscreen;
+        color: inherit;
         opacity: 1;
     }
 
-    /* The choice of the module keeps its size; on narrow stages it wraps into a row of its own. */
     [data-part='visualization-controls'] > [data-part='segmented-control'] {
-        flex: none;
+        grid-area: module;
+        justify-self: center;
     }
 
     /*
@@ -3998,6 +4012,49 @@
         background: var(--wmp-menu-background);
         color: var(--wmp-menu-color);
         box-shadow: 0 0.5rem 1.5rem rgb(0 0 0 / 25%);
+    }
+
+    /*
+     * A menu of choices above the element that opens it: at least as wide as the element, at most
+     * as tall as the room above it (--wmp-menu-max-height) and --wmp-menu-list-max-height; longer
+     * lists scroll inside the menu.
+     */
+    [data-part='context-menu'][data-placement='above'] {
+        min-inline-size: max(12rem, var(--wmp-menu-anchor-width, 0px));
+        max-inline-size: min(var(--wmp-menu-list-max-width), calc(100vw - 2 * var(--wmp-space-xs)));
+        max-block-size: min(var(--wmp-menu-max-height, 100vh), var(--wmp-menu-list-max-height));
+        overflow-y: auto;
+        overscroll-behavior: contain;
+    }
+
+    /* On phones the menu of choices is a sheet along the bottom edge of the screen. */
+    [data-part='context-menu'][data-placement='sheet'] {
+        inset-inline: 0;
+        inset-block: auto 0;
+        inline-size: auto;
+        max-block-size: var(--wmp-sheet-max-height);
+        padding-block-end: calc(var(--wmp-space-s) + env(safe-area-inset-bottom, 0px));
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        border-inline: 0;
+        border-block-end: 0;
+        border-radius: var(--wmp-radius-l) var(--wmp-radius-l) 0 0;
+    }
+
+    [data-part='context-menu'][data-placement='sheet']::backdrop {
+        background: var(--wmp-backdrop-color);
+    }
+
+    [data-part='context-menu'][data-placement='sheet'] > [data-part='menu-item'] {
+        min-block-size: var(--wmp-touch-target-size);
+    }
+
+    [data-part='context-menu']:is([data-placement='above'], [data-placement='sheet'])
+        > [data-part='menu-item']
+        > [data-part='label'] {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
     }
 
     [data-part='menu-item'] {

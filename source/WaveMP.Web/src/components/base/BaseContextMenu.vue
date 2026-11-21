@@ -5,11 +5,17 @@ import {
     clampMenuPosition,
     firstEnabledIndex,
     isMenuKey,
+    isTypeaheadKey,
     lastEnabledIndex,
     layoutRect,
     layoutSize,
+    menuAbovePosition,
     nextEnabledIndex,
+    roomAbove,
     submenuPosition,
+    typeaheadIndex,
+    type MenuPlacement,
+    type Rect,
 } from './menu'
 import type { IconSlotName } from '@/themes/iconSlots'
 
@@ -28,7 +34,10 @@ export interface MenuItem {
 /**
  * Context menu on the Popover API: light dismiss and Escape come from the browser. An entry with
  * children opens them as a submenu (a nested popover) beside it: by pointer, with Enter, Space or
- * the right arrow key; the left arrow key and Escape close it again.
+ * the right arrow key; the left arrow key and Escape close it again. Typing letters moves to the
+ * next entry whose label starts with them. A context menu opens at a point (openAt); a menu of
+ * choices opens above the element that opens it or as a sheet at the bottom of the screen
+ * (openAnchored), with the chosen entry focused, and scrolls when it is taller than its room.
  */
 const props = defineProps<{
     items: readonly MenuItem[]
@@ -49,7 +58,22 @@ const submenuId = ref<string | null>(null)
 const submenuX = ref(0)
 const submenuY = ref(0)
 const submenuElementId = useId()
+const placement = ref<MenuPlacement>('point')
+/** Height the menu may take at most (placement above), in pixels; null without a limit. */
+const maxHeight = ref<number | null>(null)
+/** Width of the element the menu opens from (placement above), in pixels. */
+const anchorWidth = ref<number | null>(null)
 let returnFocus: HTMLElement | null = null
+let typed = ''
+let typedAt = 0
+
+/** Typed letters belong together while they follow each other within this time. */
+const typeaheadTimeout = 700
+
+/** A length in pixels for a runtime variable; without a value the variable stays unset. */
+function pixels(value: number | null): string | undefined {
+    return value === null ? undefined : `${value}px`
+}
 
 const hasSubmenus = computed(() => props.items.some((item) => item.children))
 const submenuItem = computed(() => props.items.find((item) => item.id === submenuId.value))
@@ -83,6 +107,9 @@ async function openAt(pointX: number, pointY: number): Promise<void> {
     }
 
     closeSubmenu()
+    placement.value = 'point'
+    maxHeight.value = null
+    anchorWidth.value = null
     x.value = pointX
     y.value = pointY
     if (!element.matches?.(':popover-open')) {
@@ -98,6 +125,71 @@ async function openAt(pointX: number, pointY: number): Promise<void> {
     x.value = position.x
     y.value = position.y
     focusEntry(element, props.items, firstEnabledIndex(entriesOf(props.items)))
+}
+
+/**
+ * Opens a menu of choices from the element that opens it (its box in viewport coordinates): above
+ * it, at least as wide as it and at most as tall as the room above, or as a sheet at the bottom of
+ * the screen. The chosen entry (checked) is focused, otherwise the first one.
+ */
+async function openAnchored(anchor: Rect, where: 'above' | 'sheet'): Promise<void> {
+    const element = menu.value
+    if (!element) {
+        return
+    }
+
+    if (!isOpen.value) {
+        returnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null
+    }
+
+    closeSubmenu()
+    placement.value = where
+    anchorWidth.value = where === 'above' ? anchor.right - anchor.left : null
+    maxHeight.value = where === 'above' ? roomAbove(anchor) : null
+    x.value = where === 'above' ? anchor.left : 0
+    y.value = where === 'above' ? anchor.top : 0
+    if (!element.matches?.(':popover-open')) {
+        element.showPopover?.()
+    }
+    isOpen.value = true
+    await nextTick()
+
+    if (where === 'above') {
+        const layout = menuAbovePosition(anchor, layoutSize(element), {
+            width: window.innerWidth,
+            height: window.innerHeight,
+        })
+        x.value = layout.x
+        y.value = layout.y
+    }
+
+    const entries = entriesOf(props.items)
+    const checked = entries.findIndex((entry) => entry.checked && !entry.disabled)
+    focusEntry(element, props.items, checked >= 0 ? checked : firstEnabledIndex(entries))
+}
+
+/** Moves the focus to the entry whose label starts with the typed letters; true if it took the key. */
+function typeahead(
+    event: KeyboardEvent,
+    container: HTMLElement | null,
+    items: readonly MenuItem[],
+) {
+    if (!isTypeaheadKey(event)) {
+        return false
+    }
+
+    const now = event.timeStamp
+    typed = now - typedAt > typeaheadTimeout ? event.key : typed + event.key
+    typedAt = now
+    const entries = entriesOf(items)
+    const current = entries.findIndex(
+        (item) => item.id === (event.target as HTMLElement).dataset.item,
+    )
+    const next = typeaheadIndex(entries, current, typed, document.documentElement.lang || undefined)
+    if (next >= 0) {
+        focusEntry(container, items, next)
+    }
+    return true
 }
 
 function close(): void {
@@ -264,6 +356,11 @@ function onSubmenuKeydown(event: KeyboardEvent): void {
     if (next !== null) {
         event.preventDefault()
         focusEntry(submenu.value, submenuEntries.value, next)
+        return
+    }
+
+    if (typeahead(event, submenu.value, submenuEntries.value)) {
+        event.preventDefault()
     }
 }
 
@@ -294,10 +391,16 @@ function onKeydown(event: KeyboardEvent): void {
         event.preventDefault()
         closeSubmenu()
         focusEntry(menu.value, props.items, next)
+        return
+    }
+
+    if (typeahead(event, menu.value, props.items)) {
+        event.preventDefault()
+        closeSubmenu()
     }
 }
 
-defineExpose({ openAt, close, isOpen })
+defineExpose({ openAt, openAnchored, close, isOpen })
 </script>
 
 <template>
@@ -308,7 +411,13 @@ defineExpose({ openAt, close, isOpen })
         popover="auto"
         :aria-label="label"
         :data-state="isOpen ? 'open' : 'closed'"
-        :style="{ '--wmp-menu-x': `${x}px`, '--wmp-menu-y': `${y}px` }"
+        :data-placement="placement"
+        :style="{
+            '--wmp-menu-x': pixels(x),
+            '--wmp-menu-y': pixels(y),
+            '--wmp-menu-max-height': pixels(maxHeight),
+            '--wmp-menu-anchor-width': pixels(anchorWidth),
+        }"
         @toggle="onToggle"
         @keydown="onKeydown"
         @contextmenu.prevent

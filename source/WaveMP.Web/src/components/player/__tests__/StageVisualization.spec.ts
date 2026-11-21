@@ -27,6 +27,15 @@ describe('StageVisualization', () => {
 
     type Wrapper = ReturnType<typeof mountVisualization>
 
+    /** The presets and the preset choice the component exposes for its controls. */
+    function exposed(wrapper: Wrapper) {
+        return wrapper.vm as unknown as {
+            presetChoices: { id: string; label: string }[]
+            preset: string
+            selectPreset: (id: string) => void
+        }
+    }
+
     function state(wrapper: Wrapper): string | undefined {
         return wrapper.get('[data-part="visualization"]').attributes('data-state')
     }
@@ -80,9 +89,14 @@ describe('StageVisualization', () => {
             wrapper.get('[data-part="visualization-canvas"]').element,
         )
         expect(module.renderer?.showPreset).toHaveBeenCalledWith('B', 0)
-        const select = wrapper.get('[data-field="visualization-preset"] select')
-        expect((select.element as HTMLSelectElement).value).toBe('B')
-        expect(wrapper.findAll('option').map((option) => option.text())).toEqual(['A', 'B', 'C'])
+        expect(exposed(wrapper).preset).toBe('B')
+        expect(exposed(wrapper).presetChoices.map((choice) => choice.label)).toEqual([
+            'A',
+            'B',
+            'C',
+        ])
+        // Nothing lies on the picture: the controls are a toolbar of the stage.
+        expect(wrapper.find('[data-part="visualization-controls"]').exists()).toBe(false)
 
         clock.frame()
         expect(module.renderer?.render).toHaveBeenCalledTimes(1)
@@ -110,7 +124,6 @@ describe('StageVisualization', () => {
         expect(state(wrapper)).toBe('paused')
         expect(clock.frames.size).toBe(0)
         expect(clock.timers.size).toBe(0)
-        expect(wrapper.get('[data-part="btn-fullscreen"]').attributes('disabled')).toBeDefined()
 
         await wrapper.setProps({ active: true })
         expect(state(wrapper)).toBe('running')
@@ -145,10 +158,12 @@ describe('StageVisualization', () => {
     it('shows a chosen preset and hands it to the profile', async () => {
         const wrapper = await loaded({ settings: { ...defaultVisualizationSettings, preset: 'A' } })
 
-        await wrapper.get('[data-field="visualization-preset"] select').setValue('C')
+        exposed(wrapper).selectPreset('C')
+        exposed(wrapper).selectPreset('unknown')
 
         expect(module.renderer?.showPreset).toHaveBeenLastCalledWith('C', 1)
         expect(wrapper.emitted('update')).toEqual([[{ preset: 'C' }]])
+        expect(exposed(wrapper).preset).toBe('C')
         wrapper.unmount()
     })
 
@@ -159,28 +174,9 @@ describe('StageVisualization', () => {
             emittedBefore = wrapper.emitted('update')?.slice()
         })
 
-        await wrapper.get('[data-part="btn-preset-next"]').trigger('click')
+        exposed(wrapper).selectPreset('B')
 
         expect(emittedBefore).toEqual([[{ preset: 'B' }]])
-        wrapper.unmount()
-    })
-
-    it('steps to the previous and the next preset', async () => {
-        const wrapper = await loaded({ settings: { ...defaultVisualizationSettings, preset: 'A' } })
-
-        await wrapper.get('[data-part="btn-preset-next"]').trigger('click')
-        await wrapper.get('[data-part="btn-preset-previous"]').trigger('click')
-        await wrapper.get('[data-part="btn-preset-previous"]').trigger('click')
-
-        expect(wrapper.emitted('update')).toEqual([
-            [{ preset: 'B' }],
-            [{ preset: 'A' }],
-            [{ preset: 'C' }],
-        ])
-        expect(
-            (wrapper.get('[data-field="visualization-preset"] select').element as HTMLSelectElement)
-                .value,
-        ).toBe('C')
         wrapper.unmount()
     })
 
@@ -193,38 +189,8 @@ describe('StageVisualization', () => {
         expect(clock.elapse()).toEqual([15000])
         await flushPromises()
 
-        expect(
-            (wrapper.get('[data-field="visualization-preset"] select').element as HTMLSelectElement)
-                .value,
-        ).toBe('B')
+        expect(exposed(wrapper).preset).toBe('B')
         expect(wrapper.emitted('update')).toBeUndefined()
-        wrapper.unmount()
-    })
-
-    it('turns the automatic change on and off', async () => {
-        const wrapper = await loaded()
-        const button = wrapper.get('[data-part="btn-auto-change"]')
-
-        expect(button.attributes('aria-pressed')).toBe('true')
-        expect(button.attributes('data-state')).toBe('on')
-        await button.trigger('click')
-        expect(wrapper.emitted('update')).toEqual([[{ autoChange: false }]])
-
-        await wrapper.setProps({ settings: { ...defaultVisualizationSettings, autoChange: false } })
-        expect(button.attributes('aria-pressed')).toBe('false')
-        expect(button.attributes('data-state')).toBe('off')
-        expect(clock.timers.size).toBe(0)
-        wrapper.unmount()
-    })
-
-    it('disables the preset controls until the presets are loaded', async () => {
-        const wrapper = mountVisualization()
-        await flushPromises()
-
-        expect(wrapper.get('[data-part="btn-preset-next"]').attributes('disabled')).toBeDefined()
-        expect(
-            wrapper.get('[data-field="visualization-preset"] select').attributes('disabled'),
-        ).toBeDefined()
         wrapper.unmount()
     })
 
@@ -267,38 +233,6 @@ describe('StageVisualization', () => {
         wrapper.unmount()
     })
 
-    it('offers the modules as a segmented control and hands a choice to the profile', async () => {
-        const wrapper = await loaded()
-        const group = wrapper.get(
-            '[data-part="visualization-controls"] [data-part="segmented-control"]',
-        )
-        const segments = group.findAll('[data-part="segment"]')
-
-        expect(group.attributes('role')).toBe('radiogroup')
-        expect(group.attributes('data-item')).toBe('visualization-module')
-        expect(segments.map((segment) => segment.attributes('data-item'))).toEqual([
-            'milkdrop',
-            'aforce',
-            'blackcap',
-        ])
-        expect(segments.map((segment) => segment.text())).toEqual([
-            'Milkdrop',
-            'A-Force',
-            'BlackCap',
-        ])
-        expect(segments[0]!.attributes('aria-checked')).toBe('true')
-
-        await segments[0]!.trigger('click')
-        expect(wrapper.emitted('update')).toBeUndefined()
-        await segments[1]!.trigger('click')
-        await segments[2]!.trigger('click')
-        expect(wrapper.emitted('update')).toEqual([
-            [{ module: 'AForce' }],
-            [{ module: 'BlackCap' }],
-        ])
-        wrapper.unmount()
-    })
-
     it('starts again with another module of the profile', async () => {
         const wrapper = await loaded()
         const first = module.renderer
@@ -320,15 +254,10 @@ describe('StageVisualization', () => {
         expect(state(wrapper)).toBe('running')
         expect(other.renderer?.showPreset).toHaveBeenCalledWith('ember', 0)
         // The styles of A-Force carry message keys and show in the language of the app.
-        expect(wrapper.findAll('option').map((option) => option.text())).toEqual([
-            'Aurora',
-            'Ember',
+        expect(exposed(wrapper).presetChoices).toEqual([
+            { id: 'aurora', label: 'Aurora' },
+            { id: 'ember', label: 'Ember' },
         ])
-        expect(
-            wrapper
-                .findAll('[data-part="segment"]')
-                .map((segment) => segment.attributes('aria-checked')),
-        ).toEqual(['false', 'true', 'false'])
         wrapper.unmount()
     })
 
@@ -352,12 +281,10 @@ describe('StageVisualization', () => {
         )
         expect(state(wrapper)).toBe('running')
         expect(other.renderer?.showPreset).toHaveBeenCalledWith('tide', 0)
-        expect(wrapper.findAll('option').map((option) => option.text())).toEqual(['Lumen', 'Tide'])
-        expect(
-            wrapper
-                .findAll('[data-part="segment"]')
-                .map((segment) => segment.attributes('aria-checked')),
-        ).toEqual(['false', 'false', 'true'])
+        expect(exposed(wrapper).presetChoices.map((choice) => choice.label)).toEqual([
+            'Lumen',
+            'Tide',
+        ])
         wrapper.unmount()
     })
 

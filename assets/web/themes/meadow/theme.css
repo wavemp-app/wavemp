@@ -1,5 +1,5 @@
 /*
- * Theme "Meadow" for WaveMP, theme API version 6 (see THEMING.md).
+ * Theme "Meadow" for WaveMP, theme API version 7 (see THEMING.md).
  *
  * A cheerful, chunky desktop look on a sunny day: a strong blue window frame with a glossy title
  * bar and transport bar, the client area inside it with rounded edges, a periwinkle task pane with
@@ -867,16 +867,12 @@ a[data-part='breadcrumb-link']:hover {
     filter: drop-shadow(0 0 6px rgb(140 230 110 / 80%));
 }
 
-/* The controls of the visualization float as a blue capsule like the transport bar. */
+/* The controls of the visualization lie in a blue bar below the picture, like the transport bar. */
 [data-part='visualization-controls'] {
     --wmp-color-focus: #ffd84d;
 
-    inset-inline: 50% auto;
-    inset-block-end: 0.75rem;
-    inline-size: max-content;
-    max-inline-size: calc(100% - 1.5rem);
     padding: 0.25rem 0.5rem;
-    border-radius: var(--wmp-radius-round);
+    border-radius: 1.25rem;
     background: linear-gradient(
         rgb(59 128 238 / 92%) 0%,
         rgb(15 79 207 / 92%) 40%,
@@ -885,7 +881,6 @@ a[data-part='breadcrumb-link']:hover {
     box-shadow:
         inset 0 1px rgb(255 255 255 / 35%),
         0 2px 8px rgb(0 10 50 / 45%);
-    translate: -50% 0;
 }
 
 [data-part='visualization-controls'] > [data-variant='icon'] {
@@ -899,11 +894,23 @@ a[data-part='breadcrumb-link']:hover {
     filter: drop-shadow(0 0 3px rgb(140 230 110 / 90%));
 }
 
-[data-part='visualization-controls'] [data-part='select'] {
+[data-part='btn-preset-picker'] {
+    --wmp-icon-fill: #ffffff;
+
     border-color: rgb(255 255 255 / 45%);
     border-radius: var(--wmp-radius-round);
     background: rgb(0 18 70 / 45%);
+    box-shadow: none;
     color: #ffffff;
+}
+
+[data-part='btn-preset-picker']:is(:hover, [aria-expanded='true']):not(:disabled) {
+    background: rgb(0 18 70 / 65%);
+}
+
+[data-part='btn-preset-picker']:disabled {
+    background: rgb(0 18 70 / 30%);
+    color: rgb(255 255 255 / 70%);
 }
 
 [data-part='visualization-controls'] > [data-part='segmented-control'] {

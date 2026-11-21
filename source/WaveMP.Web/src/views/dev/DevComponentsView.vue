@@ -91,6 +91,9 @@ import TrackFileList from '@/components/library/TrackFileList.vue'
 import TrackGroupList from '@/components/library/TrackGroupList.vue'
 import EqualizerPanel from '@/components/player/EqualizerPanel.vue'
 import NowPlayingStage from '@/components/player/NowPlayingStage.vue'
+import VisualizationControls from '@/components/player/VisualizationControls.vue'
+import { aforceStyles } from '@/visualization/modules/aforce/styles'
+import { defaultVisualizationSettings, type VisualizationSettings } from '@/visualization/settings'
 import AutoplayList from '@/components/player/AutoplayList.vue'
 import CompactPlayer from '@/components/player/CompactPlayer.vue'
 import PlayQueue from '@/components/player/PlayQueue.vue'
@@ -248,6 +251,15 @@ const sampleViewMode = ref<PlayerViewMode>('Video')
 const sampleVideoTrack = computed(() => sampleTracks(t).find((track) => track.hasVideo))
 const sampleLyricsTrack = computed(() => sampleTracks(t).find((track) => !track.hasVideo))
 const sampleLyricsMode = ref<PlayerViewMode>('Lyrics')
+// The controls of the visualization, which the stage shows only while a visualization draws.
+const sampleVisualization = ref<VisualizationSettings>({
+    ...defaultVisualizationSettings,
+    module: 'AForce',
+})
+const sampleVisualizationPresets = computed(() =>
+    aforceStyles.map((style) => ({ id: style.id, label: t(style.labelKey) })),
+)
+const sampleVisualizationPreset = ref('nebula')
 const sampleTrackLyrics = computed(() =>
     sampleLyricsTrack.value ? sampleLyrics(t, sampleLyricsTrack.value.id ?? '') : null,
 )
@@ -2003,6 +2015,28 @@ const sampleTranscodeJobs = computed<TranscodeJob[]>(() => {
                             video-state="failed"
                             @select-mode="sampleViewMode = $event"
                         />
+                    </div>
+                </div>
+                <div data-part="dev-sample">
+                    <div data-part="view" data-view="now-playing">
+                        <div data-part="stage">
+                            <VisualizationControls
+                                :presets="sampleVisualizationPresets"
+                                :preset="sampleVisualizationPreset"
+                                :settings="sampleVisualization"
+                                fullscreen-available
+                                @select-preset="sampleVisualizationPreset = $event"
+                                @select-module="
+                                    sampleVisualization = { ...sampleVisualization, module: $event }
+                                "
+                                @toggle-auto-change="
+                                    sampleVisualization = {
+                                        ...sampleVisualization,
+                                        autoChange: !sampleVisualization.autoChange,
+                                    }
+                                "
+                            />
+                        </div>
                     </div>
                 </div>
                 <div data-part="dev-sample">

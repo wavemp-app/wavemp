@@ -213,6 +213,8 @@
       "dusk": "Dämmerung"
     },
     "visualizationPreset": "Preset",
+    "visualizationPresetChoice": "Preset: {name}",
+    "visualizationPresets": "Presets",
     "previousPreset": "Vorheriges Preset",
     "nextPreset": "Nächstes Preset",
     "autoChange": "Presets automatisch wechseln",

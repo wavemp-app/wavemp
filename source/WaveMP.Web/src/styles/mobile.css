@@ -618,7 +618,8 @@
             [data-part='tree-item'],
             [data-part='now-playing-mini'],
             [data-part='field'][data-variant='checkbox'],
-            [data-part='segment']
+            [data-part='segment'],
+            [data-part='btn-preset-picker']
         ) {
             min-block-size: var(--_touch-target) !important;
         }
@@ -627,7 +628,8 @@
             [data-part='btn-item-menu'],
             [data-part='btn-favorite'],
             [data-part='search'] > [data-part='btn-clear'],
-            [data-part='review-select']
+            [data-part='review-select'],
+            [data-part='visualization-controls'] > [data-variant='icon']
         ) {
             min-block-size: var(--_touch-target) !important;
             min-inline-size: var(--_touch-target) !important;

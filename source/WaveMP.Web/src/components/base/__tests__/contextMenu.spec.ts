@@ -115,4 +115,68 @@ describe('BaseContextMenu', () => {
         expect(wrapper.vm.isOpen).toBe(false)
         wrapper.unmount()
     })
+
+    it('opens a menu of choices above its button with the chosen entry focused', async () => {
+        const choices: MenuItem[] = [
+            { id: 'aurora', label: 'Aurora', checked: false },
+            { id: 'nebula', label: 'Nebula', checked: true },
+            { id: 'ember', label: 'Ember', checked: false },
+        ]
+        const wrapper = mount(BaseContextMenu, {
+            props: { items: choices, label: 'Presets' },
+            attachTo: document.body,
+        })
+
+        await wrapper.vm.openAnchored({ left: 40, top: 500, right: 240, bottom: 532 }, 'above')
+        await flushPromises()
+
+        const menu = wrapper.get('[data-part="context-menu"]')
+        expect(menu.attributes('data-placement')).toBe('above')
+        expect(menu.attributes('data-state')).toBe('open')
+        expect(menu.attributes('style')).toContain('--wmp-menu-max-height: 492px')
+        expect(menu.attributes('style')).toContain('--wmp-menu-anchor-width: 200px')
+        expect(menu.attributes('style')).toContain('--wmp-menu-x: 40px')
+        expect(document.activeElement).toBe(entry('nebula'))
+
+        // Typing jumps to the entry with the letters.
+        entry('nebula').dispatchEvent(new KeyboardEvent('keydown', { key: 'e', bubbles: true }))
+        await flushPromises()
+        expect(document.activeElement).toBe(entry('ember'))
+
+        entry('ember').click()
+        await flushPromises()
+        expect(wrapper.emitted('select')).toEqual([['ember']])
+
+        // A context menu at a point loses the limits of the menu above a button.
+        await wrapper.vm.openAt(10, 20)
+        await flushPromises()
+        expect(menu.attributes('data-placement')).toBe('point')
+        expect(menu.attributes('style')).not.toContain('--wmp-menu-max-height')
+        wrapper.unmount()
+    })
+
+    it('opens a menu of choices as a sheet', async () => {
+        const wrapper = mount(BaseContextMenu, {
+            props: { items, label: 'Song actions' },
+            attachTo: document.body,
+        })
+
+        await wrapper.vm.openAnchored({ left: 0, top: 300, right: 100, bottom: 340 }, 'sheet')
+        await flushPromises()
+
+        const menu = wrapper.get('[data-part="context-menu"]')
+        expect(menu.attributes('data-placement')).toBe('sheet')
+        expect(menu.attributes('style')).not.toContain('--wmp-menu-max-height')
+        expect(document.activeElement).toBe(entry('play'))
+        wrapper.unmount()
+    })
+
+    it('moves to an entry by its first letters in a context menu as well', async () => {
+        const wrapper = await open()
+
+        entry('play').dispatchEvent(new KeyboardEvent('keydown', { key: 'd', bubbles: true }))
+        await flushPromises()
+        expect(document.activeElement).toBe(entry('details'))
+        wrapper.unmount()
+    })
 })

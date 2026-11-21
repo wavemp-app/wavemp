@@ -1,5 +1,5 @@
 /*
- * Theme "Midnight" for WaveMP, theme API version 6 (see THEMING.md).
+ * Theme "Midnight" for WaveMP, theme API version 7 (see THEMING.md).
  *
  * A dark glass look: a glossy black header and transport bar with round glass buttons and a
  * glowing blue play button, a light toolbar, a white sidebar and a white library list grouped by
@@ -582,22 +582,17 @@ a[data-part="breadcrumb-link"]:hover {
 }
 
 /*
- * The controls of the visualization float as a dark glass capsule above its bottom edge, like the
- * view switch below the stage; the automatic change glows light blue while it is on.
+ * The controls of the visualization lie in a dark glass bar below the picture, like the view switch
+ * below the stage; the automatic change glows light blue while it is on.
  */
 [data-part="visualization-controls"] {
-    inset-inline: 50% auto;
-    inset-block-end: 0.75rem;
-    inline-size: max-content;
-    max-inline-size: calc(100% - 1.5rem);
     padding: 0.25rem 0.5rem;
-    border-radius: 999px;
+    border-radius: 1.25rem;
     background: linear-gradient(rgb(74 79 87 / 85%) 0%, rgb(36 39 44 / 85%) 46%, rgb(8 9 11 / 85%) 54%, rgb(28 31 35 / 85%) 100%);
     box-shadow:
         inset 0 1px rgb(255 255 255 / 28%),
         0 0 0 1px #000000,
         0 2px 6px rgb(0 0 0 / 50%);
-    translate: -50% 0;
 }
 
 [data-part="visualization-controls"] > [data-variant="icon"] {
@@ -620,11 +615,29 @@ a[data-part="breadcrumb-link"]:hover {
     filter: drop-shadow(0 0 3px #4aa8ff);
 }
 
-[data-part="visualization-controls"] [data-part="select"] {
+/* The preset list opens from a small display in the bar: light blue glowing text on black glass. */
+[data-part="btn-preset-picker"] {
+    --wmp-icon-fill: #8fd2ff;
+
     border-color: rgb(143 210 255 / 35%);
     border-radius: 999px;
+    background: linear-gradient(#020509, #0b1a2c);
+    box-shadow: inset 0 1px 3px rgb(0 0 0 / 80%), 0 1px rgb(255 255 255 / 8%);
+    color: #d8eeff;
+    text-shadow: 0 0 6px rgb(74 168 255 / 70%);
+}
+
+[data-part="btn-preset-picker"]:is(:hover, [aria-expanded="true"]):not(:disabled) {
+    border-color: rgb(143 210 255 / 70%);
+    background: linear-gradient(#04101d, #12304f);
+}
+
+[data-part="btn-preset-picker"]:disabled {
+    --wmp-icon-fill: #5c636c;
+
     background: rgb(0 0 0 / 45%);
-    color: #ffffff;
+    color: #8b939c;
+    text-shadow: none;
 }
 
 /* The choice of the module sits in the capsule as a darker groove with the segments of the views. */

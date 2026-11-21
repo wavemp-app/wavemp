@@ -140,6 +140,30 @@ async function showVisualization(page: Page, request: APIRequestContext): Promis
     return part(page, 'visualization')
 }
 
+/** The list of presets (a menu beside the controls; its entries are in the page while it is closed). */
+function presetMenu(page: Page): Locator {
+    return page.locator(
+        "[data-part='app'] [data-part='context-menu'][data-kind='visualization-presets']",
+    )
+}
+
+function presetEntries(page: Page): Locator {
+    return presetMenu(page).locator("[data-part='menu-item']")
+}
+
+/** The entry of the shown preset. */
+function shownPreset(page: Page): Locator {
+    return presetMenu(page).locator("[data-part='menu-item'][aria-checked='true']")
+}
+
+/** Opens the list of presets with its button and chooses an entry. */
+async function choosePreset(page: Page, entry: Locator): Promise<void> {
+    await part(page, 'btn-preset-picker').click()
+    await expect(presetMenu(page)).toHaveAttribute('data-state', 'open')
+    await entry.click()
+    await expect(presetMenu(page)).toHaveAttribute('data-state', 'closed')
+}
+
 function moduleSegment(page: Page, item: string): Locator {
     return page.locator(
         `[data-part='app'] [data-part='visualization-controls'] [data-item='visualization-module'] [data-part='segment'][data-item='${item}']`,
@@ -200,28 +224,25 @@ function visualizationTests(): void {
 
         await expect(part(page, 'visualization-canvas')).toBeVisible()
         await expect(part(page, 'visualization-message')).toHaveCount(0)
-        const preset = page.locator("[data-part='app'] [data-field='visualization-preset'] select")
-        await expect(preset).toBeEnabled()
-        expect(await preset.locator('option').count()).toBeGreaterThanOrEqual(100)
+        await expect(part(page, 'btn-preset-picker')).toBeEnabled()
+        const entries = presetEntries(page)
+        expect(await entries.count()).toBeGreaterThanOrEqual(100)
 
         // A chosen preset is stored with the profile. The visualization starts with a random preset,
         // so the test chooses the third one, or the fifth if it already shows the third.
-        const shown = await preset.inputValue()
-        const index =
-            (await preset.locator('option').nth(2).getAttribute('value')) === shown ? 4 : 2
-        const chosen = await preset.locator('option').nth(index).getAttribute('value')
-        await preset.selectOption(chosen!)
+        const shown = await shownPreset(page).getAttribute('data-item')
+        const index = (await entries.nth(2).getAttribute('data-item')) === shown ? 4 : 2
+        const chosen = await entries.nth(index).getAttribute('data-item')
+        await choosePreset(page, entries.nth(index))
+        await expect(shownPreset(page)).toHaveAttribute('data-item', chosen!)
         await settled
             .poll(async () => (await storedVisualization(request, user.id)).preset)
             .toBe(chosen)
 
         // The next button follows the list.
-        const following = await preset
-            .locator('option')
-            .nth(index + 1)
-            .getAttribute('value')
+        const following = await entries.nth(index + 1).getAttribute('data-item')
         await part(page, 'btn-preset-next').click()
-        await expect(preset).toHaveValue(following!)
+        await expect(shownPreset(page)).toHaveAttribute('data-item', following!)
         await settled
             .poll(async () => (await storedVisualization(request, user.id)).preset)
             .toBe(following)
@@ -254,7 +275,7 @@ function visualizationTests(): void {
         await expect(visualization).toHaveAttribute('data-state', /\brunning\b/, {
             timeout: 20_000,
         })
-        await expect(preset).toHaveValue(following!)
+        await expect(shownPreset(page)).toHaveAttribute('data-item', following!)
         await expect(autoChange).toHaveAttribute('aria-pressed', 'false')
     })
 
@@ -287,9 +308,8 @@ function visualizationTests(): void {
             .toMatchObject({ module: 'AForce', preset: null })
 
         // The style variants are the presets, with their names in the language of the app.
-        const preset = page.locator("[data-part='app'] [data-field='visualization-preset'] select")
-        await expect(preset).toBeEnabled()
-        await expect(preset.locator('option')).toHaveText([
+        await expect(part(page, 'btn-preset-picker')).toBeEnabled()
+        await expect(presetEntries(page)).toHaveText([
             'Aurora',
             'Nebula',
             'Ember',
@@ -308,14 +328,15 @@ function visualizationTests(): void {
         // A chosen style is kept with the profile; the next button follows the list. A-Force starts
         // with a random style, and choosing the shown one changes nothing, so the test chooses Ember,
         // or Prism if it already shows Ember.
-        const chosen = (await preset.inputValue()) === 'ember' ? 'prism' : 'ember'
+        const chosen =
+            (await shownPreset(page).getAttribute('data-item')) === 'ember' ? 'prism' : 'ember'
         const following = chosen === 'ember' ? 'lagoon' : 'eclipse'
-        await preset.selectOption(chosen)
+        await choosePreset(page, presetMenu(page).locator(`[data-item='${chosen}']`))
         await settled
             .poll(async () => (await storedVisualization(request, user.id)).preset)
             .toBe(chosen)
         await part(page, 'btn-preset-next').click()
-        await expect(preset).toHaveValue(following)
+        await expect(shownPreset(page)).toHaveAttribute('data-item', following)
         await expect(visualization).toHaveAttribute('data-state', /\brunning\b/)
 
         // After loading the app again, A-Force starts with the stored style.
@@ -328,7 +349,7 @@ function visualizationTests(): void {
         await expect(visualization).toHaveAttribute('data-state', /\brunning\b/, {
             timeout: 20_000,
         })
-        await expect(preset).toHaveValue(following)
+        await expect(shownPreset(page)).toHaveAttribute('data-item', following)
 
         // Back to Milkdrop.
         await moduleSegment(page, 'milkdrop').click()
@@ -368,9 +389,8 @@ function visualizationTests(): void {
             .toMatchObject({ module: 'BlackCap', preset: null })
 
         // The scenes are the presets, with their names in the language of the app.
-        const preset = page.locator("[data-part='app'] [data-field='visualization-preset'] select")
-        await expect(preset).toBeEnabled()
-        await expect(preset.locator('option')).toHaveText([
+        await expect(part(page, 'btn-preset-picker')).toBeEnabled()
+        await expect(presetEntries(page)).toHaveText([
             'Lumen',
             'Tide',
             'Orchid',
@@ -389,14 +409,15 @@ function visualizationTests(): void {
         // A chosen scene is kept with the profile; the next button follows the list. BlackCap starts
         // with a random scene, and choosing the shown one changes nothing, so the test chooses Halo,
         // or Tide if it already shows Halo.
-        const chosen = (await preset.inputValue()) === 'halo' ? 'tide' : 'halo'
+        const chosen =
+            (await shownPreset(page).getAttribute('data-item')) === 'halo' ? 'tide' : 'halo'
         const following = chosen === 'halo' ? 'dusk' : 'orchid'
-        await preset.selectOption(chosen)
+        await choosePreset(page, presetMenu(page).locator(`[data-item='${chosen}']`))
         await settled
             .poll(async () => (await storedVisualization(request, user.id)).preset)
             .toBe(chosen)
         await part(page, 'btn-preset-next').click()
-        await expect(preset).toHaveValue(following)
+        await expect(shownPreset(page)).toHaveAttribute('data-item', following)
         // The scenes blend into each other while the visualization keeps drawing.
         await expect(visualization).toHaveAttribute('data-state', /\brunning\b/)
         const blending = await canvas.screenshot()
@@ -413,7 +434,66 @@ function visualizationTests(): void {
         await expect(visualization).toHaveAttribute('data-state', /\brunning\b/, {
             timeout: 20_000,
         })
-        await expect(preset).toHaveValue(following)
+        await expect(shownPreset(page)).toHaveAttribute('data-item', following)
+    })
+
+    test('lays the controls below the picture and opens the presets the same way every time', async ({
+        page,
+        request,
+    }) => {
+        await drawAtLowQuality(request, user.id)
+        await turnOffAutoChange(request, user.id)
+        const visualization = await showVisualization(page, request)
+        const controls = part(page, 'visualization-controls')
+        await expect(controls).toBeVisible()
+        await expect(part(page, 'btn-preset-picker')).toBeEnabled({
+            timeout: 20_000,
+        })
+
+        // Nothing lies on the picture: the toolbar starts below it and is as wide as it.
+        const picture = (await visualization.boundingBox())!
+        const bar = (await controls.boundingBox())!
+        expect(bar.y).toBeGreaterThanOrEqual(picture.y + picture.height)
+        expect(Math.abs(bar.width - picture.width)).toBeLessThanOrEqual(1)
+        await expect(visualization.locator("[data-part='visualization-controls']")).toHaveCount(0)
+
+        // The buttons keep their places whatever the preset is called.
+        const places = async () =>
+            Promise.all(
+                ['btn-preset-previous', 'btn-preset-next', 'btn-auto-change', 'btn-fullscreen'].map(
+                    async (name) =>
+                        (await controls.locator(`[data-part='${name}']`).boundingBox())!.x,
+                ),
+            )
+        const before = await places()
+        await part(page, 'btn-preset-next').click()
+        await part(page, 'btn-preset-next').click()
+        expect(await places()).toEqual(before)
+
+        // The presets open above their button on the desktop, as a sheet at the bottom on phones;
+        // either way they stay on the screen. Below 64rem (1024 pixels) the mobile layout applies.
+        const phone = (page.viewportSize()?.width ?? 0) < 1024
+        for (let round = 0; round < 2; round++) {
+            await part(page, 'btn-preset-picker').click()
+            const menu = presetMenu(page)
+            await expect(menu).toHaveAttribute('data-state', 'open')
+            await expect(menu).toHaveAttribute('data-placement', phone ? 'sheet' : 'above')
+            await expect(shownPreset(page)).toBeFocused()
+            // Let it grow to its size (motion system).
+            await page.waitForTimeout(400)
+            const box = (await menu.boundingBox())!
+            const viewport = page.viewportSize()!
+            expect(box.y).toBeGreaterThanOrEqual(0)
+            expect(box.y + box.height).toBeLessThanOrEqual(viewport.height + 1)
+            if (phone) {
+                expect(Math.round(box.y + box.height)).toBe(viewport.height)
+            } else {
+                const button = (await part(page, 'btn-preset-picker').boundingBox())!
+                expect(box.y + box.height).toBeLessThanOrEqual(button.y)
+            }
+            await page.keyboard.press('Escape')
+            await expect(menu).toHaveAttribute('data-state', 'closed')
+        }
     })
 
     test('sets the quality of the visualization in the settings', async ({ page, request }) => {

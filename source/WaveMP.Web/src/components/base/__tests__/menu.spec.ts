@@ -3,11 +3,15 @@ import {
     clampMenuPosition,
     firstEnabledIndex,
     isMenuKey,
+    isTypeaheadKey,
     lastEnabledIndex,
     layoutRect,
     layoutSize,
+    menuAbovePosition,
     nextEnabledIndex,
+    roomAbove,
     submenuPosition,
+    typeaheadIndex,
 } from '../menu'
 
 const entries = [{ disabled: true }, {}, { separator: true }, {}, { disabled: true }]
@@ -101,5 +105,98 @@ describe('layoutRect', () => {
             right: 300,
             bottom: 340,
         })
+    })
+})
+
+describe('menuAbovePosition', () => {
+    const viewport = { width: 800, height: 600 }
+    const button = { left: 100, top: 400, right: 300, bottom: 432 }
+
+    it('puts the menu right above the button, at its start', () => {
+        expect(menuAbovePosition(button, { width: 200, height: 150 }, viewport)).toEqual({
+            x: 100,
+            y: 246,
+            maxHeight: 392,
+        })
+    })
+
+    it('keeps a long menu above the button and lets it scroll within the room', () => {
+        expect(menuAbovePosition(button, { width: 200, height: 1000 }, viewport)).toEqual({
+            x: 100,
+            y: 4,
+            maxHeight: 392,
+        })
+    })
+
+    it('keeps the menu within the viewport sideways', () => {
+        const right = { left: 700, top: 400, right: 790, bottom: 432 }
+        expect(menuAbovePosition(right, { width: 200, height: 100 }, viewport).x).toBe(596)
+        const left = { left: -20, top: 400, right: 80, bottom: 432 }
+        expect(menuAbovePosition(left, { width: 200, height: 100 }, viewport).x).toBe(4)
+    })
+
+    it('has no room above a button at the top edge', () => {
+        expect(roomAbove({ left: 0, top: 6, right: 10, bottom: 20 })).toBe(0)
+        expect(roomAbove(button)).toBe(392)
+    })
+})
+
+describe('typeaheadIndex', () => {
+    const presets = [
+        { label: 'Aurora' },
+        { label: 'Nebula' },
+        { label: 'Ember', disabled: true },
+        { separator: true },
+        { label: 'Eclipse' },
+        { label: 'nebula drift' },
+    ]
+
+    it('moves to the next entry that starts with the typed letter, ignoring case', () => {
+        expect(typeaheadIndex(presets, 0, 'n')).toBe(1)
+        expect(typeaheadIndex(presets, 1, 'N')).toBe(5)
+        expect(typeaheadIndex(presets, 5, 'n')).toBe(1)
+    })
+
+    it('skips disabled entries and separators', () => {
+        expect(typeaheadIndex(presets, 0, 'e')).toBe(4)
+    })
+
+    it('stays on the current entry while a longer text still fits it', () => {
+        expect(typeaheadIndex(presets, 1, 'neb')).toBe(1)
+        expect(typeaheadIndex(presets, 1, 'nebula d')).toBe(5)
+    })
+
+    it('cycles through the entries with one letter when it is typed again and again', () => {
+        expect(typeaheadIndex(presets, 1, 'nn')).toBe(5)
+    })
+
+    it('starts at the first entry when none is focused and finds nothing for other text', () => {
+        expect(typeaheadIndex(presets, -1, 'a')).toBe(0)
+        expect(typeaheadIndex(presets, 0, 'x')).toBe(-1)
+        expect(typeaheadIndex(presets, 0, '')).toBe(-1)
+        expect(typeaheadIndex([], 0, 'a')).toBe(-1)
+    })
+})
+
+describe('isTypeaheadKey', () => {
+    const key = (value: string, modifiers: Partial<KeyboardEvent> = {}) => ({
+        key: value,
+        ctrlKey: false,
+        metaKey: false,
+        altKey: false,
+        ...modifiers,
+    })
+
+    it('takes printable characters without modifiers', () => {
+        expect(isTypeaheadKey(key('a'))).toBe(true)
+        expect(isTypeaheadKey(key('7'))).toBe(true)
+    })
+
+    it('leaves out special keys, the space and shortcuts', () => {
+        expect(isTypeaheadKey(key('ArrowDown'))).toBe(false)
+        expect(isTypeaheadKey(key(' '))).toBe(false)
+        expect(isTypeaheadKey(key('a', { ctrlKey: true }))).toBe(false)
+        expect(isTypeaheadKey(key('a', { metaKey: true }))).toBe(false)
+        expect(isTypeaheadKey(key('a', { altKey: true }))).toBe(false)
     })
 })

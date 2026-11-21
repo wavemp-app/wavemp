@@ -1,5 +1,5 @@
 /*
- * Theme "Daylight" for WaveMP, theme API version 6 (see THEMING.md).
+ * Theme "Daylight" for WaveMP, theme API version 7 (see THEMING.md).
  *
  * The light sister of Midnight: the same full-bleed bands of split-gradient glass, held up to a
  * clear noon sky. Header, toolbar and transport bar run across the whole window; each is bright
@@ -1024,14 +1024,10 @@ a[data-part='breadcrumb-link']:hover {
     filter: drop-shadow(0 0 6px rgb(111 211 255 / 80%));
 }
 
-/* The controls of the visualization float as a white glass capsule above its bottom edge. */
+/* The controls of the visualization lie in a white glass bar below the picture. */
 [data-part='visualization-controls'] {
-    inset-inline: 50% auto;
-    inset-block-end: 0.75rem;
-    inline-size: max-content;
-    max-inline-size: calc(100% - 1.5rem);
     padding: 0.25rem 0.5rem;
-    border-radius: 999px;
+    border-radius: 1.25rem;
     background: linear-gradient(
         rgb(255 255 255 / 92%) 0%,
         rgb(240 248 255 / 92%) 48%,
@@ -1043,7 +1039,6 @@ a[data-part='breadcrumb-link']:hover {
         0 0 0 1px #9cc6e8,
         0 4px 14px rgb(5 20 40 / 35%);
     color: #0d2944;
-    translate: -50% 0;
 }
 
 [data-part='visualization-controls'] > [data-variant='icon'] {
@@ -1060,7 +1055,9 @@ a[data-part='breadcrumb-link']:hover {
     filter: drop-shadow(0 0 3px rgb(111 211 255 / 90%));
 }
 
-[data-part='visualization-controls'] [data-part='select'] {
+[data-part='btn-preset-picker'] {
+    --wmp-icon-fill: #0b4f94;
+
     border-radius: 999px;
 }
 

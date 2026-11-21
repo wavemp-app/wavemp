@@ -213,6 +213,8 @@
       "dusk": "Dusk"
     },
     "visualizationPreset": "Preset",
+    "visualizationPresetChoice": "Preset: {name}",
+    "visualizationPresets": "Presets",
     "previousPreset": "Previous preset",
     "nextPreset": "Next preset",
     "autoChange": "Change presets automatically",

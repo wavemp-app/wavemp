@@ -290,6 +290,9 @@
         --wmp-field-height: 2rem;
         --wmp-round-button-size: 2rem;
         --wmp-touch-target-size: 2.75rem;
+        --wmp-menu-list-max-width: 24rem;
+        --wmp-menu-list-max-height: 26rem;
+        --wmp-sheet-max-height: 60dvh;
         --wmp-play-button-size: 3rem;
         --wmp-slider-thumb-size: 0.875rem;
         --wmp-equalizer-slider-height: 10rem;

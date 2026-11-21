@@ -103,6 +103,40 @@
         }
     }
 
+    /* A menu above its button grows upwards out of it; a sheet slides up from the bottom edge. */
+    [data-part='context-menu'][data-placement='above'] {
+        transform-origin: bottom left;
+    }
+
+    [data-part='context-menu'][data-placement='sheet'] {
+        transition-property: opacity, translate, display, overlay;
+    }
+
+    [data-part='context-menu'][data-placement='sheet']:not(:popover-open) {
+        scale: none;
+        translate: 0 100%;
+    }
+
+    @starting-style {
+        [data-part='context-menu'][data-placement='sheet']:popover-open {
+            scale: none;
+            translate: 0 100%;
+        }
+    }
+
+    /* With reduced motion the sheet only fades. */
+    @media (prefers-reduced-motion: reduce) {
+        [data-part='context-menu'][data-placement='sheet']:not(:popover-open) {
+            translate: none;
+        }
+
+        @starting-style {
+            [data-part='context-menu'][data-placement='sheet']:popover-open {
+                translate: none;
+            }
+        }
+    }
+
     /* --- Dialogs -------------------------------------------------------------------------- */
 
     [data-part='dialog'],

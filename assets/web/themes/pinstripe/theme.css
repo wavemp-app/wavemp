@@ -1,5 +1,5 @@
 /*
- * Theme "Pinstripe" for WaveMP, theme API version 6 (see THEMING.md).
+ * Theme "Pinstripe" for WaveMP, theme API version 7 (see THEMING.md).
  *
  * A light hi-fi look on fine horizontal pinstripes. The transport bar moves to the top of the
  * window and forms one brushed-metal plate with the header: round gel buttons on the left, a
@@ -765,15 +765,11 @@ a[data-part='breadcrumb-link']:hover {
     --wmp-icon-fill: linear-gradient(#e9fbfc, #7fd8e0);
 }
 
-/* The controls of the visualization float as a small metal capsule above its bottom edge. */
+/* The controls of the visualization lie in a brushed metal bar below the picture. */
 [data-part='visualization-controls'] {
-    inset-inline: 50% auto;
-    inset-block-end: 0.75rem;
-    inline-size: max-content;
-    max-inline-size: calc(100% - 1.5rem);
     padding: 0.25rem 0.5rem;
     border: 1px solid #6c737b;
-    border-radius: var(--wmp-radius-round);
+    border-radius: 1.25rem;
     background:
         url('/themes/pinstripe/images/brushed-metal.svg') 0 0 / 640px 160px repeat,
         linear-gradient(#eceef1, #c9cdd3);
@@ -781,7 +777,6 @@ a[data-part='breadcrumb-link']:hover {
         inset 0 1px rgb(255 255 255 / 75%),
         0 3px 10px rgb(0 0 0 / 45%);
     color: #1d2126;
-    translate: -50% 0;
 }
 
 [data-part='visualization-controls'] > [data-variant='icon'] {
@@ -794,7 +789,9 @@ a[data-part='breadcrumb-link']:hover {
     --wmp-icon-fill: linear-gradient(#0a6570, #053f46);
 }
 
-[data-part='visualization-controls'] [data-part='select'] {
+[data-part='btn-preset-picker'] {
+    --wmp-icon-fill: #2b3036;
+
     border-radius: var(--wmp-radius-round);
 }
 

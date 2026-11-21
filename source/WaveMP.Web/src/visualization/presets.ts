@@ -38,11 +38,11 @@ export function randomPreset(
 }
 
 /** The preset before (-1) or after (1) the current one in the list, wrapping at both ends. */
-export function adjacentPreset(
-    presets: readonly VisualizationPreset[],
+export function adjacentPreset<T extends { readonly id: string }>(
+    presets: readonly T[],
     current: string | null,
     offset: -1 | 1,
-): VisualizationPreset | undefined {
+): T | undefined {
     if (presets.length === 0) {
         return undefined
     }

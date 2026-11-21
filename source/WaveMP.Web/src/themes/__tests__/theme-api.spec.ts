@@ -20,6 +20,8 @@ const runtimeVariables = [
     '--wmp-tree-level',
     '--wmp-menu-x',
     '--wmp-menu-y',
+    '--wmp-menu-max-height',
+    '--wmp-menu-anchor-width',
     '--wmp-profile-color',
     '--wmp-swatch-color',
     '--wmp-progress-value',

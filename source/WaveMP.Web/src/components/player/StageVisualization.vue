@@ -1,16 +1,10 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import BaseButton from '@/components/base/BaseButton.vue'
 import BaseIcon from '@/components/base/BaseIcon.vue'
-import BaseSegmentedControl, {
-    type SegmentOption,
-} from '@/components/base/BaseSegmentedControl.vue'
-import BaseSelect, { type SelectOption } from '@/components/base/BaseSelect.vue'
 import { useVisualization } from '@/composables/useVisualization'
 import { canFullscreen, enterFullscreen, exitFullscreen, isFullscreen } from '@/player/fullscreen'
-import { adjacentPreset } from '@/visualization/presets'
-import { visualizationModuleChoices } from '@/visualization/modules'
+import type { PresetChoice } from './visualizationControls'
 import {
     defaultVisualizationSettings,
     type VisualizationSettings,
@@ -20,11 +14,12 @@ import {
 /**
  * The visualization of the Now Playing stage: the module of the profile (Milkdrop presets, the
  * style variants of A-Force or the scenes of BlackCap) draws the output of the player into a canvas,
- * in sync with the music, at the quality of the profile (useVisualization). Its controls choose the
- * module and the preset, turn the automatic change on and off and show the visualization in full
- * screen (also with a double click). The module loads when the view is shown the first time;
- * nothing is drawn while the view is hidden, the page is in the background or the stage is out of
- * the viewport. Choices are handed to the profile with update.
+ * in sync with the music, at the quality of the profile (useVisualization). It holds no controls,
+ * so nothing covers the picture: the stage shows VisualizationControls below it, which use the
+ * presets, the preset choice and the full screen this component exposes. A double click shows the
+ * visualization in full screen and leaves it again. The module loads when the view is shown the
+ * first time; nothing is drawn while the view is hidden, the page is in the background or the stage
+ * is out of the viewport. A chosen preset is handed to the profile with update.
  */
 const props = withDefaults(
     defineProps<{
@@ -57,8 +52,6 @@ const visualization = useVisualization(container, canvas, {
 })
 const { canvasKey, state, presets, preset, quality } = visualization
 
-const ready = computed(() => presets.value.length > 0)
-
 const stateTokens = computed(() =>
     [state.value, fullscreen.value ? 'fullscreen' : undefined].filter(Boolean).join(' '),
 )
@@ -79,21 +72,15 @@ const message = computed(() => {
     }
 })
 
-const presetOptions = computed<SelectOption[]>(() =>
+/** The presets of the module with their labels in the language of the app. */
+const presetChoices = computed<PresetChoice[]>(() =>
     presets.value.map((item) => ({
-        value: item.id,
+        id: item.id,
         label: item.labelKey ? t(item.labelKey) : item.name,
     })),
 )
 
-const moduleOptions = computed<SegmentOption[]>(() =>
-    visualizationModuleChoices.map((choice) => ({
-        value: choice.id,
-        item: choice.id.toLowerCase(),
-        label: t(choice.labelKey),
-    })),
-)
-
+/** Shows a preset of the module and hands the choice to the profile. */
 function selectPreset(value: string): void {
     if (!visualization.hasPreset(value)) {
         return
@@ -102,24 +89,6 @@ function selectPreset(value: string): void {
     // The choice goes to the profile first: showing a preset may take a moment (its shaders compile).
     emit('update', { preset: value })
     visualization.selectPreset(value)
-}
-
-function step(offset: -1 | 1): void {
-    const next = adjacentPreset(presets.value, preset.value || null, offset)
-    if (next) {
-        selectPreset(next.id)
-    }
-}
-
-function selectModule(value: string): void {
-    const choice = visualizationModuleChoices.find((item) => item.id === value)
-    if (choice && choice.id !== props.settings.module) {
-        emit('update', { module: choice.id })
-    }
-}
-
-function toggleAutoChange(): void {
-    emit('update', { autoChange: !props.settings.autoChange })
 }
 
 function updateFullscreen(): void {
@@ -156,8 +125,15 @@ onBeforeUnmount(() => {
     }
 })
 
-/** Full screen for the context menu of the stage. */
-defineExpose({ fullscreen, fullscreenAvailable, toggleFullscreen })
+/** The presets and the full screen for the controls and the context menu of the stage. */
+defineExpose({
+    presetChoices,
+    preset,
+    selectPreset,
+    fullscreen,
+    fullscreenAvailable,
+    toggleFullscreen,
+})
 </script>
 
 <template>
@@ -179,60 +155,5 @@ defineExpose({ fullscreen, fullscreenAvailable, toggleFullscreen })
             <BaseIcon name="view-visualization" />
             <span data-part="label">{{ message }}</span>
         </p>
-        <div
-            data-part="visualization-controls"
-            role="group"
-            :aria-label="t('nowPlaying.visualizationControls')"
-            @dblclick.stop
-        >
-            <BaseButton
-                part="btn-preset-previous"
-                variant="icon"
-                icon="preset-previous"
-                :label="t('nowPlaying.previousPreset')"
-                :disabled="!ready"
-                @click="step(-1)"
-            />
-            <BaseSelect
-                data-field="visualization-preset"
-                :label="t('nowPlaying.visualizationPreset')"
-                :options="presetOptions"
-                :model-value="preset"
-                :disabled="!ready"
-                @update:model-value="selectPreset"
-            />
-            <BaseButton
-                part="btn-preset-next"
-                variant="icon"
-                icon="preset-next"
-                :label="t('nowPlaying.nextPreset')"
-                :disabled="!ready"
-                @click="step(1)"
-            />
-            <BaseButton
-                part="btn-auto-change"
-                variant="icon"
-                icon="auto-change"
-                :label="t('nowPlaying.autoChange')"
-                :pressed="settings.autoChange"
-                :state="settings.autoChange ? 'on' : 'off'"
-                @click="toggleAutoChange"
-            />
-            <BaseButton
-                part="btn-fullscreen"
-                variant="icon"
-                :icon="fullscreen ? 'exit-fullscreen' : 'fullscreen'"
-                :label="fullscreen ? t('nowPlaying.exitFullscreen') : t('nowPlaying.fullscreen')"
-                :disabled="!fullscreenAvailable || (!active && !fullscreen)"
-                @click="toggleFullscreen"
-            />
-            <BaseSegmentedControl
-                item="visualization-module"
-                :label="t('nowPlaying.visualizationModule')"
-                :options="moduleOptions"
-                :model-value="settings.module"
-                @update:model-value="selectModule"
-            />
-        </div>
     </div>
 </template>
