@@ -43,6 +43,7 @@ import {
     type SleepTimerSettings,
     type SleepTimerSettingsChange,
 } from '@/player/sleepTimer'
+import { createChangeTracker } from '@/session/changeTracker'
 import { createSettingSaver, mergeChanges } from '@/session/settingSaver'
 import {
     clearStoredSession,
@@ -235,6 +236,13 @@ export const useSessionStore = defineStore('session', () => {
     const sidebarCollapsedSender = createLatestValueSender((collapsed: boolean) =>
         patchSettings({ sidebarCollapsed: collapsed }),
     )
+    /**
+     * Changes of the settings saved without a setting saver, so a refresh does not replace one that
+     * is still being saved or was made after the refresh started (the savers do this themselves).
+     */
+    const playerViewModeChanges = createChangeTracker()
+    const sidebarCollapsedChanges = createChangeTracker()
+    const equalizerChanges = createChangeTracker()
 
     const isAuthenticated = computed(
         () =>
@@ -274,6 +282,8 @@ export const useSessionStore = defineStore('session', () => {
         replayGainSaver.reset()
         playerViewModeSender.reset()
         sidebarCollapsedSender.reset()
+        playerViewModeChanges.reset()
+        sidebarCollapsedChanges.reset()
     }
 
     function resetPlaybackSettings(): void {
@@ -284,6 +294,7 @@ export const useSessionStore = defineStore('session', () => {
         visualization.value = defaultVisualizationSettings
         video.value = defaultVideoSettings
         requests.equalizer++
+        equalizerChanges.reset()
         crossfadeSaver.reset()
         autoplaySaver.reset()
         sleepTimerSaver.reset()
@@ -385,13 +396,56 @@ export const useSessionStore = defineStore('session', () => {
         persist()
     }
 
-    /** Updates profile and language from the server; a rejected token ends the session. */
+    /**
+     * Starts reading the settings of the profile again. The returned function takes over the
+     * settings of the answer, except those whose change was being saved when reading started, is
+     * still being saved or was made meanwhile: the shown choice is newer than the answer then.
+     * Settings missing in the answer keep their values.
+     */
+    function startSettingsRefresh(): (settings: UserSettings | undefined) => void {
+        const loaders = [
+            languageSaver.load(),
+            themeSaver.load(),
+            replayGainSaver.load(),
+            crossfadeSaver.load(),
+            autoplaySaver.load(),
+            sleepTimerSaver.load(),
+            visualizationSaver.load(),
+            videoSaver.load(),
+        ]
+        const mayShowPlayerViewMode = playerViewModeChanges.read()
+        const mayShowSidebarCollapsed = sidebarCollapsedChanges.read()
+        const mayShowEqualizer = equalizerChanges.read()
+        return (settings) => {
+            for (const load of loaders) {
+                load(settings)
+            }
+
+            if (mayShowPlayerViewMode()) {
+                playerViewMode.value = toPlayerViewMode(settings) ?? playerViewMode.value
+            }
+
+            if (mayShowSidebarCollapsed()) {
+                sidebarCollapsed.value = settings?.sidebarCollapsed ?? sidebarCollapsed.value
+            }
+
+            if (mayShowEqualizer()) {
+                equalizer.value = toEqualizerSettings(settings?.equalizer) ?? equalizer.value
+            }
+        }
+    }
+
+    /**
+     * Updates profile and settings from the server; a rejected token ends the session. A setting
+     * changed on the page while the refresh runs keeps the choice (see startSettingsRefresh).
+     */
     async function refresh(): Promise<void> {
         const requestToken = token.value
         if (!requestToken) {
             return
         }
 
+        const takeOverSettings = startSettingsRefresh()
         try {
             const [session, settings] = await Promise.all([
                 apiClient.api.v1.sessions.current.get(),
@@ -402,12 +456,7 @@ export const useSessionStore = defineStore('session', () => {
             }
 
             applySession(session)
-            language.value = toLocale(settings?.language) ?? language.value
-            theme.value = toThemeChoice(settings?.theme) ?? theme.value
-            replayGain.value = toReplayGain(settings) ?? replayGain.value
-            playerViewMode.value = toPlayerViewMode(settings) ?? playerViewMode.value
-            sidebarCollapsed.value = settings?.sidebarCollapsed ?? sidebarCollapsed.value
-            applyPlaybackSettings(settings)
+            takeOverSettings(settings)
             persist()
         } catch (error) {
             if (isUnauthorized(error) && token.value === requestToken) {
@@ -446,6 +495,7 @@ export const useSessionStore = defineStore('session', () => {
     async function updatePlayerViewMode(mode: PlayerViewMode): Promise<void> {
         const requestToken = token.value
         playerViewMode.value = mode
+        const finish = playerViewModeChanges.change()
         try {
             const outcome = await playerViewModeSender.send(mode)
             if (
@@ -458,6 +508,8 @@ export const useSessionStore = defineStore('session', () => {
             }
         } catch {
             // The local choice applies; the server keeps the previous one.
+        } finally {
+            finish()
         }
     }
 
@@ -469,6 +521,7 @@ export const useSessionStore = defineStore('session', () => {
     async function updateSidebarCollapsed(collapsed: boolean): Promise<void> {
         const requestToken = token.value
         sidebarCollapsed.value = collapsed
+        const finish = sidebarCollapsedChanges.change()
         try {
             const outcome = await sidebarCollapsedSender.send(collapsed)
             if (
@@ -481,6 +534,8 @@ export const useSessionStore = defineStore('session', () => {
             }
         } catch {
             // The local choice applies; the server keeps the previous one.
+        } finally {
+            finish()
         }
     }
 
@@ -491,9 +546,14 @@ export const useSessionStore = defineStore('session', () => {
     async function updateEqualizer(change: UpdateEqualizerSettings): Promise<void> {
         const requestToken = token.value
         const request = ++requests.equalizer
-        const settings = await patchSettings({ equalizer: change })
-        if (token.value === requestToken && request === requests.equalizer) {
-            equalizer.value = toEqualizerSettings(settings?.equalizer) ?? equalizer.value
+        const finish = equalizerChanges.change()
+        try {
+            const settings = await patchSettings({ equalizer: change })
+            if (token.value === requestToken && request === requests.equalizer) {
+                equalizer.value = toEqualizerSettings(settings?.equalizer) ?? equalizer.value
+            }
+        } finally {
+            finish()
         }
     }
 

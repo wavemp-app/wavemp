@@ -908,4 +908,190 @@ describe('session store', () => {
             await sidebar
         })
     })
+
+    describe('refresh while settings change', () => {
+        /** Holds the answers of the server to the saved settings until the test gives them. */
+        function heldUpdates() {
+            const answers: ((value: unknown) => void)[] = []
+            api.updateSettings.mockImplementation(
+                () => new Promise((resolve) => answers.push(resolve)),
+            )
+            return answers
+        }
+
+        /** Holds the answer to the settings of the refresh until the test gives it. */
+        function heldRefresh() {
+            let answer: (value: unknown) => void = () => undefined
+            api.getCurrentSession.mockResolvedValue(created('a').session)
+            api.getSettings.mockImplementation(
+                () =>
+                    new Promise((resolve) => {
+                        answer = resolve
+                    }),
+            )
+            return (value: unknown) => answer(value)
+        }
+
+        const equalizer = {
+            enabled: false,
+            preset: 'Flat',
+            preampDb: 0,
+            gainsDb: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            customGainsDb: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        }
+        const oldTheme = { id: 'midnight', appearance: 'Light' }
+        const newTheme = { id: 'midnight', appearance: 'Dark' }
+
+        it('keeps a theme being saved when the refresh answers before the save', async () => {
+            saveStoredSession(stored('a'))
+            const updates = heldUpdates()
+            const answerRefresh = heldRefresh()
+            const session = useSessionStore()
+            session.restore()
+
+            const refreshing = session.refresh()
+            const saving = session.updateTheme({ id: 'midnight', appearance: 'dark' })
+            answerRefresh({ language: 'de', theme: oldTheme })
+            await refreshing
+            expect(session.theme).toEqual({ id: 'midnight', appearance: 'dark' })
+            expect(loadStoredSession()?.theme).toEqual({ id: 'midnight', appearance: 'dark' })
+            expect(session.language).toBe('de')
+
+            updates[0]!({ theme: newTheme })
+            await saving
+            expect(session.theme).toEqual({ id: 'midnight', appearance: 'dark' })
+        })
+
+        it('keeps a theme saved after the refresh started when the refresh answers last', async () => {
+            saveStoredSession(stored('a'))
+            const updates = heldUpdates()
+            const answerRefresh = heldRefresh()
+            const session = useSessionStore()
+            session.restore()
+
+            const refreshing = session.refresh()
+            const saving = session.updateTheme({ id: 'midnight', appearance: 'dark' })
+            updates[0]!({ theme: newTheme })
+            await saving
+            answerRefresh({ language: 'en', theme: oldTheme })
+            await refreshing
+
+            expect(session.theme).toEqual({ id: 'midnight', appearance: 'dark' })
+            expect(loadStoredSession()?.theme).toEqual({ id: 'midnight', appearance: 'dark' })
+        })
+
+        it('keeps a change that was being saved when the refresh started', async () => {
+            saveStoredSession(stored('a', 'en'))
+            const updates = heldUpdates()
+            const answerRefresh = heldRefresh()
+            const session = useSessionStore()
+            session.restore()
+
+            const saving = session.updateLanguage('de')
+            const refreshing = session.refresh()
+            updates[0]!({ language: 'de' })
+            await saving
+            answerRefresh({ language: 'en' })
+            await refreshing
+
+            expect(session.language).toBe('de')
+            expect(loadStoredSession()?.language).toBe('de')
+        })
+
+        it('takes over the settings of a refresh started after a change was saved', async () => {
+            saveStoredSession(stored('a', 'en'))
+            const updates = heldUpdates()
+            const answerRefresh = heldRefresh()
+            const session = useSessionStore()
+            session.restore()
+
+            const saving = session.updateLanguage('de')
+            updates[0]!({ language: 'de' })
+            await saving
+            const refreshing = session.refresh()
+            answerRefresh({ language: 'fr', theme: newTheme })
+            await refreshing
+
+            expect(session.language).toBe('fr')
+            expect(session.theme).toEqual({ id: 'midnight', appearance: 'dark' })
+        })
+
+        it('takes over the other settings while one is kept', async () => {
+            saveStoredSession(stored('a'))
+            heldUpdates()
+            const answerRefresh = heldRefresh()
+            const session = useSessionStore()
+            session.restore()
+
+            const refreshing = session.refresh()
+            void session.updateReplayGain('Track')
+            answerRefresh({
+                language: 'de',
+                replayGain: 'Album',
+                playerViewMode: 'Visualization',
+                crossfade: { enabled: true, seconds: 3, albumsGapless: false },
+            })
+            await refreshing
+
+            expect(session.replayGain).toBe('Track')
+            expect(session.playerViewMode).toBe('Visualization')
+            expect(session.crossfade).toEqual({ enabled: true, seconds: 3, albumsGapless: false })
+        })
+
+        it('keeps view mode and sidebar changed while the refresh runs', async () => {
+            saveStoredSession(stored('a'))
+            const updates = heldUpdates()
+            const answerRefresh = heldRefresh()
+            const session = useSessionStore()
+            session.restore()
+
+            const refreshing = session.refresh()
+            const viewMode = session.updatePlayerViewMode('Cover')
+            const sidebar = session.updateSidebarCollapsed(true)
+            updates[0]!({ playerViewMode: 'Cover' })
+            await viewMode
+            answerRefresh({ playerViewMode: 'Video', sidebarCollapsed: false })
+            await refreshing
+            expect(session.playerViewMode).toBe('Cover')
+            expect(session.sidebarCollapsed).toBe(true)
+
+            await settle()
+            updates[1]!({ sidebarCollapsed: true })
+            await sidebar
+            expect(session.sidebarCollapsed).toBe(true)
+        })
+
+        it('keeps the answer of an equalizer change saved while the refresh runs', async () => {
+            saveStoredSession(stored('a'))
+            const updates = heldUpdates()
+            const answerRefresh = heldRefresh()
+            const session = useSessionStore()
+            session.restore()
+
+            const refreshing = session.refresh()
+            const saving = session.updateEqualizer({ enabled: true, preset: 'Rock' })
+            updates[0]!({ equalizer: { ...equalizer, enabled: true, preset: 'Rock' } })
+            await saving
+            answerRefresh({ equalizer: { ...equalizer, enabled: false, preset: 'Flat' } })
+            await refreshing
+
+            expect(session.equalizer.enabled).toBe(true)
+            expect(session.equalizer.preset).toBe('Rock')
+        })
+
+        it('takes over the settings of a refresh after a view mode failed to save', async () => {
+            saveStoredSession(stored('a'))
+            api.updateSettings.mockRejectedValue(new TypeError('Failed to fetch'))
+            api.getCurrentSession.mockResolvedValue(created('a').session)
+            api.getSettings.mockResolvedValue({ playerViewMode: 'Video' })
+            const session = useSessionStore()
+            session.restore()
+
+            await session.updatePlayerViewMode('Cover')
+            expect(session.playerViewMode).toBe('Cover')
+            await session.refresh()
+
+            expect(session.playerViewMode).toBe('Video')
+        })
+    })
 })

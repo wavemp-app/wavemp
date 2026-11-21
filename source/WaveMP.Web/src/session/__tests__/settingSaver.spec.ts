@@ -189,6 +189,81 @@ describe('createSettingSaver', () => {
 
         expect(state.shown.seconds).toBe(8)
     })
+
+    describe('load', () => {
+        it('shows the value read when nothing is being saved', () => {
+            const { state, saver } = groupSaver()
+
+            saver.load()({ seconds: 9, albums: false })
+
+            expect(state.shown).toEqual({ seconds: 9, albums: false })
+        })
+
+        it('keeps the shown value when the answer does not hold the setting', () => {
+            const { state, saver } = groupSaver()
+
+            saver.load()(null as unknown as Group)
+
+            expect(state.shown).toEqual({ seconds: 5, albums: true })
+        })
+
+        it('keeps a change made while reading that is still being saved', () => {
+            const { state, saver } = groupSaver()
+            const show = saver.load()
+
+            void saver.save({ seconds: 8 })
+            show({ seconds: 5, albums: true })
+
+            expect(state.shown).toEqual({ seconds: 8, albums: true })
+        })
+
+        it('keeps a change made and saved while reading', async () => {
+            const { control, state, saver } = groupSaver()
+            const show = saver.load()
+
+            const saving = saver.save({ seconds: 8 })
+            control.answer(0, { seconds: 8, albums: true })
+            await saving
+            show({ seconds: 5, albums: true })
+
+            expect(state.shown).toEqual({ seconds: 8, albums: true })
+        })
+
+        it('keeps a change that was being saved when reading started', async () => {
+            const { control, state, saver } = groupSaver()
+            const saving = saver.save({ seconds: 8 })
+            const show = saver.load()
+
+            control.answer(0, { seconds: 8, albums: true })
+            await saving
+            show({ seconds: 5, albums: true })
+
+            expect(state.shown).toEqual({ seconds: 8, albums: true })
+        })
+
+        it('shows the value of a read that started after the change was saved', async () => {
+            const { control, state, saver } = groupSaver()
+            const saving = saver.save({ seconds: 8 })
+            control.answer(0, { seconds: 8, albums: true })
+            await saving
+
+            saver.load()({ seconds: 8, albums: false })
+
+            expect(state.shown).toEqual({ seconds: 8, albums: false })
+        })
+
+        it('ignores a read started before a reset', async () => {
+            const { state, saver } = groupSaver()
+            const show = saver.load()
+
+            saver.reset()
+            show({ seconds: 1, albums: false })
+
+            expect(state.shown).toEqual({ seconds: 5, albums: true })
+            saver.load()({ seconds: 2, albums: false })
+            expect(state.shown).toEqual({ seconds: 2, albums: false })
+        })
+    })
 })
 
 describe('mergeChanges', () => {

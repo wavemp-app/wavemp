@@ -5,6 +5,7 @@
 // Framework-free; the session store connects it to its state.
 
 import { createLatestValueSender } from '@/api/latestValue'
+import { createChangeTracker } from '@/session/changeTracker'
 
 export interface SettingSaverOptions<S, C, R> {
     /** The value the app shows now. */
@@ -24,13 +25,21 @@ export interface SettingSaverOptions<S, C, R> {
     merge?(waiting: C, newer: C): C
 }
 
-export interface SettingSaver<C> {
+export interface SettingSaver<C, R> {
     /**
      * Shows the change at once and saves it. The answer of the server is taken over once no newer
      * change waits. If saving fails and no newer change was made meanwhile, the value the server
      * saved last comes back. Errors are passed on.
      */
     save(change: C): Promise<void>
+    /**
+     * Starts reading the setting from the server outside of `save`, e.g. on a refresh of the
+     * profile. The returned function shows the value of the answer, unless a change was being
+     * saved when reading started, is still being saved or was made meanwhile, or the saver was
+     * reset; then the shown value stays, it is newer than the answer (see ChangeTracker). An answer
+     * that does not hold the setting changes nothing.
+     */
+    load(): (result: R) => void
     /**
      * Forgets the changes in flight and waiting, e.g. when another profile is selected, so nothing
      * chosen for the previous profile is sent or shown for the next one.
@@ -57,8 +66,9 @@ export function mergeChanges<C extends object>(waiting: C, newer: C): C {
 /** Creates a saver of one setting or group of settings, see SettingSaver. */
 export function createSettingSaver<S, C, R>(
     options: SettingSaverOptions<S, C, R>,
-): SettingSaver<C> {
+): SettingSaver<C, R> {
     const sender = createLatestValueSender(options.request, options.merge)
+    const tracker = createChangeTracker()
     /** Increases with every reset, so answers for an earlier profile are ignored. */
     let generation = 0
     /** Increases with every change, so only the latest change decides what is shown. */
@@ -76,6 +86,7 @@ export function createSettingSaver<S, C, R>(
         }
 
         pending++
+        const finish = tracker.change()
         options.set(options.apply(options.get(), change))
         try {
             const outcome = await sender.send(change)
@@ -97,8 +108,23 @@ export function createSettingSaver<S, C, R>(
 
             throw error
         } finally {
+            finish()
             if (own === generation) {
                 pending--
+            }
+        }
+    }
+
+    function load(): (result: R) => void {
+        const mayShow = tracker.read()
+        return (result) => {
+            if (!mayShow()) {
+                return
+            }
+
+            const value = options.read(result)
+            if (value !== null) {
+                options.set(value)
             }
         }
     }
@@ -109,7 +135,8 @@ export function createSettingSaver<S, C, R>(
         pending = 0
         saved = null
         sender.reset()
+        tracker.reset()
     }
 
-    return { save, reset }
+    return { save, load, reset }
 }

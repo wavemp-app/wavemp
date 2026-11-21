@@ -57,8 +57,8 @@ export async function chooseTheme(page: Page, themeId: string): Promise<void> {
 
 /**
  * Opens the settings page and waits until the app has loaded the settings of the profile again,
- * as it does on every start. A choice made before that answer arrives could be replaced by the
- * value the server had before.
+ * as it does on every start, so the page shows what the server saved. A choice made before that
+ * answer arrives is kept as well (the answer does not replace a setting changed meanwhile).
  */
 export async function openSettings(page: Page): Promise<void> {
     const loaded = page.waitForResponse(
