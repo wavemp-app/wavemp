@@ -1,5 +1,6 @@
 import { expect, test, type APIRequestContext, type Locator, type Page } from '@playwright/test'
 import { adminHeaders, findTrackId, uniqueSuffix } from './helpers/api'
+import { withoutSavedPlayback } from './helpers/player'
 
 // Playlists of the built-in admin profile with the synthetic test media of
 // scripts/generate-media.sh: E2E Album (with cover.jpg) holds First Song and Second Song.
@@ -15,6 +16,18 @@ function openDialog(page: Page): Locator {
 
 function rowTitles(page: Page): Locator {
     return part(page, 'list-row').locator("[data-column='title'] > [data-part='label']")
+}
+
+/**
+ * Waits until the page of the playlist has finished its last change: a move or a removal shows at
+ * once, but the page stays busy until it has loaded the playlist again, and the menu of an entry
+ * opened meanwhile offers to move and remove it only once that is done.
+ */
+async function expectPlaylistIdle(page: Page): Promise<void> {
+    await expect(page.locator("[data-part='view'][data-view='playlist']")).not.toHaveAttribute(
+        'aria-busy',
+        'true',
+    )
 }
 
 interface PlaylistSummary {
@@ -91,6 +104,9 @@ test.describe('on the desktop', () => {
         request,
     }) => {
         const name = `E2E Playlist ${uniqueSuffix()}`
+        // The tests of the built-in admin play at the same time; the player here must not take
+        // over what they saved, so it shows only what this test plays.
+        await withoutSavedPlayback(page)
         try {
             // Create
             await page.goto('/playlists')
@@ -132,6 +148,7 @@ test.describe('on the desktop', () => {
             await expect
                 .poll(() => entryTitles(request, id))
                 .toEqual(['Second Song', 'First Song', 'First Song'])
+            await expectPlaylistIdle(page)
 
             // Remove the last entry
             await part(page, 'list-row').nth(2).click({ button: 'right' })
@@ -140,6 +157,7 @@ test.describe('on the desktop', () => {
                 .click()
             await expect(rowTitles(page)).toHaveText(['Second Song', 'First Song'])
             await expect.poll(() => entryTitles(request, id)).toEqual(['Second Song', 'First Song'])
+            await expectPlaylistIdle(page)
 
             // Play; pausing right away keeps the short song from ending during the test.
             await part(page, 'detail-actions').locator("[data-item='play']").click()
