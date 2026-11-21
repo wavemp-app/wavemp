@@ -49,18 +49,18 @@ internal static class Plays
             playedAt, Single, "Single", null, null, null, null, null, null, null, TimeSpan.FromMinutes(2));
     }
 
-    public static TrackRow Row(Guid id, bool hasCover)
+    public static TrackRow Row(Guid id, bool hasCover, Guid? albumId = null, bool albumIsCompilation = false)
     {
         return new TrackRow(
             id,
             "Track " + id.ToString("N")[^2..],
             null,
             null,
+            albumId,
             null,
             null,
             null,
-            null,
-            false,
+            albumIsCompilation,
             null,
             null,
             null,

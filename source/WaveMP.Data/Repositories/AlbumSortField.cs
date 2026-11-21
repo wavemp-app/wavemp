@@ -8,7 +8,7 @@ public enum AlbumSortField
     Title,
 
     /// <summary>
-    /// Album artist, then title. Compilations and albums without artist come last.
+    /// Album artist, then title. Albums without artist come last.
     /// </summary>
     Artist,
 

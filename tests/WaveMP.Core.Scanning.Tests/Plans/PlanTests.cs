@@ -127,11 +127,12 @@ public class PlanTests
             ],
             ScannerVersions.MetadataOf);
 
-        plan.ChangedDirectories.Single().FilesToRead.Select(file => file.RelativePath).Should().Equal("A/song.mkv");
-        plan.FilesUnchanged.Should().Be(2);
+        plan.ChangedDirectories.Single().FilesToRead.Select(file => file.RelativePath)
+            .Should().Equal("A/song.mp3", "A/song.mkv");
+        plan.FilesUnchanged.Should().Be(1);
     }
 
-    [TestCase(MediaFileKind.Audio, 1)]
+    [TestCase(MediaFileKind.Audio, 2)]
     [TestCase(MediaFileKind.Video, 2)]
     [TestCase(MediaFileKind.Image, 1)]
     public void MetadataOf_Kind_ReturnsTheVersionOfTheKind(MediaFileKind kind, int expected)

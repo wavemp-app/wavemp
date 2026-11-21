@@ -112,5 +112,17 @@ public interface ILibraryScanRepository
     /// </summary>
     Task<(int Albums, int Artists)> DeleteOrphansAsync(CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Marks every album as a compilation whose artist has the normalized name
+    /// <paramref name="compilationArtistKey"/> or one of whose tracks is marked as part of a compilation in the tags
+    /// of the file it takes its metadata from (the primary audio file, otherwise the primary video), and every other
+    /// album as none. Albums whose value changes get <paramref name="now"/> as their change time. Returns the number
+    /// of changed albums.
+    /// </summary>
+    Task<int> UpdateAlbumCompilationsAsync(
+        string compilationArtistKey,
+        DateTimeOffset now,
+        CancellationToken cancellationToken = default);
+
     Task<LibraryTotals> CountLibraryAsync(CancellationToken cancellationToken = default);
 }

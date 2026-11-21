@@ -176,6 +176,7 @@ public static class FolderProcessor
             ReplayGainAlbumPeak = tags.ReplayGainAlbumPeak,
             MusicBrainzTrackId = tags.MusicBrainzTrackId,
             MusicBrainzReleaseId = tags.MusicBrainzReleaseId,
+            IsCompilation = tags.IsCompilation,
         };
     }
 }

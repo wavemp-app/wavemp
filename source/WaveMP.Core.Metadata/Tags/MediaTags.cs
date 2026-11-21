@@ -52,4 +52,10 @@ public sealed record MediaTags
     public string? MusicBrainzTrackId { get; init; }
 
     public string? MusicBrainzReleaseId { get; init; }
+
+    /// <summary>
+    /// Whether the file is marked as part of a compilation: ID3 <c>TCMP</c>, MP4 <c>cpil</c> or the Vorbis comment
+    /// <c>COMPILATION</c>.
+    /// </summary>
+    public bool IsCompilation { get; init; }
 }

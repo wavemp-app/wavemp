@@ -14,7 +14,10 @@ internal sealed class TagLibTagReader : ITagReader
         {
             using var file = TagLib.File.Create(path, TagLib.ReadStyle.None | TagLib.ReadStyle.PictureLazy);
             TagLib.Tag tag = file.Tag;
-            return new TagReadResult(TagReadStatus.Read, ToTags(tag), ToPicture(tag.Pictures));
+            return new TagReadResult(
+                TagReadStatus.Read,
+                ToTags(tag) with { IsCompilation = IsCompilation(file) },
+                ToPicture(tag.Pictures));
         }
         catch (TagLib.UnsupportedFormatException)
         {
@@ -61,6 +64,18 @@ internal sealed class TagLibTagReader : ITagReader
             MusicBrainzTrackId = MetadataText.Normalize(tag.MusicBrainzTrackId),
             MusicBrainzReleaseId = MetadataText.Normalize(tag.MusicBrainzReleaseId),
         };
+    }
+
+    /// <summary>
+    /// Whether one of the tags of the file marks it as part of a compilation. The common tag of TagLib# does not know
+    /// the flag, so the tag types that do are asked one by one: ID3v2 (<c>TCMP</c>), MP4 (<c>cpil</c>) and the
+    /// Vorbis comment of FLAC and Ogg (<c>COMPILATION</c>).
+    /// </summary>
+    private static bool IsCompilation(TagLib.File file)
+    {
+        return (file.GetTag(TagLib.TagTypes.Id3v2, false) as TagLib.Id3v2.Tag)?.IsCompilation == true
+            || (file.GetTag(TagLib.TagTypes.Apple, false) as TagLib.Mpeg4.AppleTag)?.IsCompilation == true
+            || (file.GetTag(TagLib.TagTypes.Xiph, false) as TagLib.Ogg.XiphComment)?.IsCompilation == true;
     }
 
     private static EmbeddedPicture? ToPicture(TagLib.IPicture[]? pictures)

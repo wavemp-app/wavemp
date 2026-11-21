@@ -63,6 +63,13 @@ internal sealed class ListeningStatisticsService(
                 .FirstOrDefault();
         }
 
+        // A track that moved to another album in the meantime does not tell about this one.
+        bool IsCompilation(CountedGroup album)
+        {
+            return album.TrackIds.Any(id =>
+                rows.TryGetValue(id, out TrackRow? row) && row.AlbumId == album.Id && row.AlbumIsCompilation);
+        }
+
         return new ListeningStatistics(
             from,
             to,
@@ -84,6 +91,7 @@ internal sealed class ListeningStatisticsService(
                 album.Name,
                 album.ArtistId,
                 album.ArtistName,
+                IsCompilation(album),
                 album.Plays,
                 album.ListeningTime,
                 album.Tracks,

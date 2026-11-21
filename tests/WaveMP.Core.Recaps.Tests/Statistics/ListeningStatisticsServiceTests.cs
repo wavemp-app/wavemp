@@ -136,6 +136,33 @@ public class ListeningStatisticsServiceTests
     }
 
     [Test]
+    public async Task GetAsync_Always_MarksTopAlbumsAsCompilationsAsTheirTracksNameThem()
+    {
+        DateTimeOffset day = new(2026, 11, 10, 12, 0, 0, TimeSpan.Zero);
+        _history.ListPlaysAsync(default, default, default, default).ReturnsForAnyArgs(
+        [
+            Plays.Of(Plays.Ballad, day),
+            Plays.Of(Plays.Opening, day.AddHours(1)),
+            Plays.Of(Plays.Closing, day.AddHours(2)),
+        ]);
+        _tracks.ListByIdsAsync(Arg.Any<IReadOnlyCollection<Guid>>(), _viewerId, Arg.Any<CancellationToken>())
+            .Returns(
+            [
+                Plays.Row(Plays.Ballad, hasCover: false, Plays.Daybreak, albumIsCompilation: true),
+                Plays.Row(Plays.Opening, hasCover: false, Plays.Daybreak, albumIsCompilation: true),
+                // Moved to another album, which is a compilation, since it was played.
+                Plays.Row(Plays.Closing, hasCover: false, Guid.NewGuid(), albumIsCompilation: true),
+            ]);
+
+        ListeningStatistics result = await _service.GetAsync(
+            Query(new DateOnly(2026, 11, 1), new DateOnly(2026, 11, 30), TimeZoneInfo.Utc));
+
+        result.TopAlbums.Select(album => (album.Id, album.IsCompilation)).Should().Equal(
+            (Plays.Daybreak, true),
+            (Plays.Evening, false));
+    }
+
+    [Test]
     public async Task GetAsync_Always_AsksForTheFirstPlaysOfThePlayedArtists()
     {
         DateTimeOffset day = new(2026, 11, 10, 12, 0, 0, TimeSpan.Zero);

@@ -637,6 +637,10 @@ namespace WaveMP.Data.Migrations
                                 .HasColumnType("character varying(512)")
                                 .HasColumnName("tags_genres");
 
+                            b1.Property<bool>("IsCompilation")
+                                .HasColumnType("boolean")
+                                .HasColumnName("tags_is_compilation");
+
                             b1.Property<string>("MusicBrainzReleaseId")
                                 .HasMaxLength(64)
                                 .HasColumnType("character varying(64)")

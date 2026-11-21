@@ -30,8 +30,9 @@ public class Album
     public Artist? AlbumArtist { get; set; }
 
     /// <summary>
-    /// Tracks of several artists without a common album artist. No longer set by the scan, since an album is identified
-    /// by one artist; kept for the compatibility of the API.
+    /// Whether the album is a compilation: at least one of its tracks is marked as part of a compilation in the tags of
+    /// the file it takes its metadata from, or its artist is "Various Artists". The scan sets it over all tracks of the
+    /// album once every folder is written.
     /// </summary>
     public required bool IsCompilation { get; set; }
 

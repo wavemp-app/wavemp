@@ -130,6 +130,7 @@ internal sealed class MediaMetadataReader(ITagReader tagReader, IMediaProber pro
             Genre = genre,
             Genres = genre,
             Composer = Get("composer"),
+            IsCompilation = Get("compilation") is { } compilation && compilation != "0",
         };
     }
 
@@ -154,6 +155,7 @@ internal sealed class MediaMetadataReader(ITagReader tagReader, IMediaProber pro
             Genre = tags.Genre ?? fallback.Genre,
             Genres = tags.Genres ?? fallback.Genres,
             Composer = tags.Composer ?? fallback.Composer,
+            IsCompilation = tags.IsCompilation || fallback.IsCompilation,
         };
     }
 

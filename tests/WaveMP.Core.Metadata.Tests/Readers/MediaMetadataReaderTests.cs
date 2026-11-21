@@ -53,6 +53,7 @@ public class MediaMetadataReaderTests
             ["totaldiscs"] = "3",
             ["date"] = "1999-01-01",
             ["genre"] = "Rock",
+            ["compilation"] = "1",
         });
 
         tags.Should().BeEquivalentTo(new MediaTags
@@ -69,7 +70,27 @@ public class MediaMetadataReaderTests
             Year = 1999,
             Genre = "Rock",
             Genres = "Rock",
+            IsCompilation = true,
         });
+    }
+
+    [TestCase("1", true)]
+    [TestCase(" 0 ", false)]
+    [TestCase("", false)]
+    public void FromProbeTags_CompilationTag_IsSetUnlessZeroOrEmpty(string value, bool expected)
+    {
+        MediaMetadataReader.FromProbeTags(new Dictionary<string, string> { ["compilation"] = value })
+            .IsCompilation.Should().Be(expected);
+    }
+
+    [Test]
+    public void Complete_CompilationFlagOfEitherSource_IsKept()
+    {
+        MediaMetadataReader.Complete(new MediaTags(), new MediaTags { IsCompilation = true })
+            .IsCompilation.Should().BeTrue();
+        MediaMetadataReader.Complete(new MediaTags { IsCompilation = true }, new MediaTags())
+            .IsCompilation.Should().BeTrue();
+        MediaMetadataReader.Complete(new MediaTags(), new MediaTags()).IsCompilation.Should().BeFalse();
     }
 
     [Test]

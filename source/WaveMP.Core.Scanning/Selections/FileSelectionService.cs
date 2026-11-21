@@ -120,6 +120,7 @@ internal sealed class FileSelectionService(
             await writer.RewriteFolderAsync(track.SourceId, track.DirectoryPath, now, CancellationToken.None);
             await library.DeleteOrphansAsync(CancellationToken.None);
             await writer.UpdateAlbumCoversAsync(settings.Current.AlbumCoverNames, CancellationToken.None);
+            await writer.UpdateAlbumCompilationsAsync(now, CancellationToken.None);
             logger.LogInformation(
                 "File selection of track {TrackId} changed: {Count} categories selected",
                 trackId,

@@ -63,4 +63,10 @@ public class MediaFileTags
     public string? MusicBrainzTrackId { get; set; }
 
     public string? MusicBrainzReleaseId { get; set; }
+
+    /// <summary>
+    /// Whether the file is marked as part of a compilation (ID3 <c>TCMP</c>, MP4 <c>cpil</c>, Vorbis comment
+    /// <c>COMPILATION</c>).
+    /// </summary>
+    public bool IsCompilation { get; set; }
 }

@@ -16,8 +16,9 @@ public sealed class AlbumReferenceDto
     public ArtistReferenceDto? Artist { get; init; }
 
     /// <summary>
-    /// Tracks of several artists without a common album artist. Always false since an album is identified by one
-    /// artist and title; kept for compatibility.
+    /// Whether the album is a compilation: at least one of its tracks is marked as part of a compilation in its tags
+    /// (ID3 TCMP, MP4 cpil, Vorbis comment COMPILATION) or its artist is "Various Artists" (letter case and spaces at
+    /// the start and end do not matter). Set by the scan.
     /// </summary>
     public required bool IsCompilation { get; init; }
 }

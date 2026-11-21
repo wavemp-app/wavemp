@@ -202,6 +202,27 @@ internal sealed class LibraryScanRepository(WaveMpDbContext dbContext) : ILibrar
         return (albums, artists);
     }
 
+    public async Task<int> UpdateAlbumCompilationsAsync(
+        string compilationArtistKey,
+        DateTimeOffset now,
+        CancellationToken cancellationToken = default)
+    {
+        // One statement for the whole library, since an album may span folders and sources. Only albums whose value
+        // differs are written, so their change time stays as long as nothing changes.
+        return await dbContext.Albums
+            .Where(album => album.IsCompilation != (
+                (album.AlbumArtist != null && album.AlbumArtist.NormalizedName == compilationArtistKey)
+                || dbContext.MediaFiles.Any(file => file.IsPrimary
+                    && file.Tags.IsCompilation
+                    && file.Track!.AlbumId == album.Id
+                    && (file.Kind == MediaFileKind.Audio || !file.Track.HasAudio))))
+            .ExecuteUpdateAsync(
+                setters => setters
+                    .SetProperty(album => album.IsCompilation, album => !album.IsCompilation)
+                    .SetProperty(album => album.UpdatedAt, now),
+                cancellationToken);
+    }
+
     public async Task<LibraryTotals> CountLibraryAsync(CancellationToken cancellationToken = default)
     {
         return new LibraryTotals(

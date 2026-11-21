@@ -68,12 +68,14 @@ public sealed record TopArtist(
 
 /// <summary>
 /// An album among the most played; <paramref name="CoverTrackId"/> is its most played track with a cover.
+/// <paramref name="IsCompilation"/> tells whether the album is a compilation now, as its played tracks name it.
 /// </summary>
 public sealed record TopAlbum(
     Guid Id,
     string Title,
     Guid? ArtistId,
     string? ArtistName,
+    bool IsCompilation,
     int Plays,
     TimeSpan ListeningTime,
     int Tracks,

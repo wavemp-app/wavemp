@@ -71,7 +71,7 @@ public static class SubsonicElements
     }
 
     /// <summary>
-    /// An album with its tags (<c>AlbumID3</c>). Compilations and albums without a known artist have no artist.
+    /// An album with its tags (<c>AlbumID3</c>). Albums without a known artist have no artist.
     /// </summary>
     public static SubsonicElement Album(AlbumRow album, SubsonicAlbumDetails? details, string name = "album")
     {

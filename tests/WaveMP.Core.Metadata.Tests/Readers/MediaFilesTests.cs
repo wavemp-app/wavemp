@@ -69,6 +69,47 @@ public class MediaFilesTests
         metadata.Duration.Should().BeCloseTo(TimeSpan.FromSeconds(1), TimeSpan.FromMilliseconds(200));
         metadata.Channels.Should().Be(2);
         metadata.IsWritable.Should().BeTrue();
+        metadata.Tags.IsCompilation.Should().BeFalse();
+    }
+
+    // MP4 cpil, the Vorbis comment COMPILATION of FLAC and Ogg, and for MP3 the user text frame that ffmpeg writes
+    // (see the next test for TCMP).
+    [TestCase(AudioFormat.Mp3, "mp3")]
+    [TestCase(AudioFormat.M4a, "m4a")]
+    [TestCase(AudioFormat.Flac, "flac")]
+    [TestCase(AudioFormat.Opus, "opus")]
+    public async Task ReadAsync_AudioWithCompilationFlag_ReadsTheFlag(AudioFormat format, string extension)
+    {
+        string flagged = _directory.Combine($"flagged.{extension}");
+        string unflagged = _directory.Combine($"unflagged.{extension}");
+        await TestMediaGenerator.CreateAudioAsync(flagged, format, _tags with { Compilation = "1" });
+        await TestMediaGenerator.CreateAudioAsync(unflagged, format, _tags with { Compilation = "0" });
+
+        MediaFileMetadata flaggedMetadata = await _reader.ReadAsync(flagged, MediaFileKind.Audio);
+        MediaFileMetadata unflaggedMetadata = await _reader.ReadAsync(unflagged, MediaFileKind.Audio);
+
+        flaggedMetadata.Tags.IsCompilation.Should().BeTrue();
+        flaggedMetadata.Tags.Album.Should().Be("Test Album");
+        unflaggedMetadata.Tags.IsCompilation.Should().BeFalse();
+    }
+
+    [TestCase(true)]
+    [TestCase(false)]
+    public async Task ReadAsync_Mp3WithTcmpFrame_ReadsTheFlag(bool isCompilation)
+    {
+        // ffmpeg writes the flag of MP3 files only as a user text frame, so the frame TCMP, as iTunes and most taggers
+        // write it, is set with TagLib# on the synthetic file.
+        string path = _directory.Combine("tcmp.mp3");
+        await TestMediaGenerator.CreateAudioAsync(path, AudioFormat.Mp3, _tags);
+        using (var file = TagLib.File.Create(path))
+        {
+            ((TagLib.Id3v2.Tag)file.GetTag(TagLib.TagTypes.Id3v2, true)).IsCompilation = isCompilation;
+            file.Save();
+        }
+
+        MediaFileMetadata metadata = await _reader.ReadAsync(path, MediaFileKind.Audio);
+
+        metadata.Tags.IsCompilation.Should().Be(isCompilation);
     }
 
     [Test]

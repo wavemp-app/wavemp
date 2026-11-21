@@ -295,7 +295,7 @@ internal sealed class TrackRepository(WaveMpDbContext dbContext) : ITrackReposit
                             AlbumWeight * EF.Functions.TrigramsWordSimilarity(search, track.Album!.Title))),
                     direction)
                 .ThenBy(track => track.Title),
-            // Album artist; tracks without album by their own artist. Compilations and unknown artists come last.
+            // Album artist; tracks without album by their own artist. Unknown artists come last.
             _ => ThenByAlbum(tracks
                 .OrderBy(
                     track => track.Album != null

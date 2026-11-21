@@ -5,9 +5,9 @@ namespace WaveMP.Data.Projections;
 /// </summary>
 /// <param name="Id">Id of the album.</param>
 /// <param name="Title">Title of the album.</param>
-/// <param name="ArtistId">Id of the album artist; <c>null</c> for compilations and unknown artists.</param>
+/// <param name="ArtistId">Id of the album artist; <c>null</c> for albums without a known artist.</param>
 /// <param name="ArtistName">Name of the album artist.</param>
-/// <param name="IsCompilation">Tracks of several artists without a common album artist.</param>
+/// <param name="IsCompilation">Whether the album is a compilation (see the album entity).</param>
 /// <param name="Year">Year of the album.</param>
 /// <param name="Genre">The first genre of its tracks in the order of disc and track number.</param>
 /// <param name="TrackCount">Number of tracks.</param>

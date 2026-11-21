@@ -48,7 +48,7 @@ public static class RecapMappingExtensions
                     Artist = album.ArtistId is { } artistId && album.ArtistName is { } artistName
                         ? new ArtistReferenceDto { Id = artistId, Name = artistName }
                         : null,
-                    IsCompilation = false,
+                    IsCompilation = album.IsCompilation,
                 },
                 Plays = album.Plays,
                 ListeningMilliseconds = ToMilliseconds(album.ListeningTime),

@@ -172,6 +172,15 @@ public sealed class LibraryWriter(ILibraryScanRepository library)
         await library.SaveChangesAsync(cancellationToken);
     }
 
+    /// <summary>
+    /// Marks the albums as compilations by the rules of <see cref="AlbumCompilations"/>, over the whole library since
+    /// an album may span folders. Returns the number of albums whose value changed.
+    /// </summary>
+    public Task<int> UpdateAlbumCompilationsAsync(DateTimeOffset now, CancellationToken cancellationToken = default)
+    {
+        return library.UpdateAlbumCompilationsAsync(AlbumCompilations.VariousArtistsKey, now, cancellationToken);
+    }
+
     private async Task<FolderWriteResult> WriteTracksAsync(
         Guid sourceId,
         string directoryPath,
@@ -411,6 +420,7 @@ public sealed class LibraryWriter(ILibraryScanRepository library)
                 NormalizedTitle = MetadataText.ToKey(assignment.Title)!,
                 AlbumKey = assignment.Key,
                 AlbumArtistId = await GetArtistIdAsync(assignment.AlbumArtist, cache, now, cancellationToken),
+                // Set over all its tracks once every folder is written (see UpdateAlbumCompilationsAsync).
                 IsCompilation = false,
                 Year = assignment.Year,
                 FirstSeenAt = now,
@@ -535,6 +545,7 @@ public sealed class LibraryWriter(ILibraryScanRepository library)
             ReplayGainAlbumPeak = tags.ReplayGainAlbumPeak,
             MusicBrainzTrackId = Truncate(tags.MusicBrainzTrackId, 64),
             MusicBrainzReleaseId = Truncate(tags.MusicBrainzReleaseId, 64),
+            IsCompilation = tags.IsCompilation,
         };
     }
 

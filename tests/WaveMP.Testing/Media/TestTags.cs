@@ -35,6 +35,12 @@ public sealed record TestTags
 
     public string? ReplayGainAlbumPeak { get; init; }
 
+    /// <summary>
+    /// Compilation flag, for example <c>1</c>; ffmpeg writes it as ID3 <c>TCMP</c>, MP4 <c>cpil</c> or the Vorbis
+    /// comment <c>compilation</c>.
+    /// </summary>
+    public string? Compilation { get; init; }
+
     internal IEnumerable<string> ToArguments()
     {
         (string Key, string? Value)[] values =
@@ -51,6 +57,7 @@ public sealed record TestTags
             ("REPLAYGAIN_TRACK_PEAK", ReplayGainTrackPeak),
             ("REPLAYGAIN_ALBUM_GAIN", ReplayGainAlbumGain),
             ("REPLAYGAIN_ALBUM_PEAK", ReplayGainAlbumPeak),
+            ("compilation", Compilation),
         ];
 
         foreach ((string key, string? value) in values)

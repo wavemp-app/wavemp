@@ -9,9 +9,10 @@ namespace WaveMP.Core.Scanning.Writers;
 public static class ScannerVersions
 {
     /// <summary>
-    /// Version of the metadata of audio files.
+    /// Version of the metadata of audio files. Version 2 adds the compilation flag of the tags, which marks albums as
+    /// compilations.
     /// </summary>
-    public const int AudioMetadata = 1;
+    public const int AudioMetadata = 2;
 
     /// <summary>
     /// Version of the metadata of videos. Version 2 adds the codec of the audio stream and the pixel format, which the

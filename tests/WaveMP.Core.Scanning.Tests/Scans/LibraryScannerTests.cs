@@ -290,6 +290,113 @@ public class LibraryScannerTests
         Album album = await LoadAlbumAsync(db, "Hits");
         album.AlbumArtist!.Name.Should().Be("Various Artists");
         album.Tracks.Should().HaveCount(2);
+        album.IsCompilation.Should().BeTrue();
+    }
+
+    [TestCase(" various ARTISTS ", true)]
+    [TestCase("Various Artists Collective", false)]
+    [TestCase("Various", false)]
+    public async Task Scan_AlbumArtist_MarksTheAlbumAsCompilationOnlyForVariousArtists(
+        string albumArtist,
+        bool isCompilation)
+    {
+        TestTags hits = new() { Album = "Hits", AlbumArtist = albumArtist };
+        await AudioAsync("Hits/01.mp3", tags: hits with { Title = "One", Artist = "A" });
+        await AudioAsync("Hits/02.mp3", tags: hits with { Title = "Two", Artist = "B" });
+
+        await ScanAsync();
+
+        await using WaveMpDbContext db = _database.CreateDbContext();
+        (await LoadAlbumAsync(db, "Hits")).IsCompilation.Should().Be(isCompilation);
+    }
+
+    // MP4 cpil, the Vorbis comment COMPILATION of FLAC and Ogg, and for MP3 the user text frame that ffmpeg writes
+    // (found through ffprobe); the frame TCMP is covered by the next test.
+    [TestCase(AudioFormat.Mp3, "mp3")]
+    [TestCase(AudioFormat.M4a, "m4a")]
+    [TestCase(AudioFormat.Flac, "flac")]
+    [TestCase(AudioFormat.Opus, "opus")]
+    public async Task Scan_CompilationFlagOnOneSong_MarksItsAlbumAsCompilation(AudioFormat format, string extension)
+    {
+        TestTags mix = new() { Album = "Mix", AlbumArtist = "DJ" };
+        await AudioAsync($"Mix/01.{extension}", format, mix with { Title = "One", Artist = "A", Compilation = "1" });
+        await AudioAsync($"Mix/02.{extension}", format, mix with { Title = "Two", Artist = "B" });
+        await AudioAsync(
+            $"Band/Record/01.{extension}",
+            format,
+            new TestTags { Title = "Three", Artist = "C", Album = "Record", Compilation = "0" });
+
+        await ScanAsync();
+
+        await using WaveMpDbContext db = _database.CreateDbContext();
+        Album album = await LoadAlbumAsync(db, "Mix");
+        album.Tracks.Should().HaveCount(2);
+        album.IsCompilation.Should().BeTrue();
+        (await LoadAlbumAsync(db, "Record")).IsCompilation.Should().BeFalse();
+    }
+
+    [Test]
+    public async Task Scan_Id3TcmpFrame_MarksTheAlbumAsCompilation()
+    {
+        await AudioAsync("Mix/01.mp3", tags: new TestTags { Title = "One", Artist = "A", Album = "Mix" });
+        SetTcmpFrame("Mix/01.mp3");
+
+        await ScanAsync();
+
+        await using WaveMpDbContext db = _database.CreateDbContext();
+        (await LoadAlbumAsync(db, "Mix")).IsCompilation.Should().BeTrue();
+    }
+
+    [Test]
+    public async Task Scan_FlaggedSongInAnotherFolder_KeepsTheAlbumACompilationWhenOnlyOneFolderIsReadAgain()
+    {
+        TestTags mix = new() { Album = "Mix", AlbumArtist = "DJ" };
+        await AudioAsync("Mix/CD1/01.mp3", tags: mix with { Title = "One", Artist = "A", Compilation = "1" });
+        await AudioAsync("Mix/CD2/01.mp3", tags: mix with { Title = "Two", Artist = "B" });
+        await ScanAsync();
+
+        await ChangeAudioAsync("Mix/CD2/01.mp3", mix with { Title = "Two again", Artist = "B" });
+        (await RefreshAsync("Mix/CD2", "Mix/CD2/01.mp3")).Should().BeTrue();
+
+        await using (WaveMpDbContext db = _database.CreateDbContext())
+        {
+            Album album = await LoadAlbumAsync(db, "Mix");
+            album.Tracks.Should().HaveCount(2);
+            album.IsCompilation.Should().BeTrue();
+        }
+
+        // Without the flag on any song, the album is no compilation any more.
+        await ChangeAudioAsync("Mix/CD1/01.mp3", mix with { Title = "One", Artist = "A" });
+        await ScanAsync();
+
+        await using WaveMpDbContext after = _database.CreateDbContext();
+        (await LoadAlbumAsync(after, "Mix")).IsCompilation.Should().BeFalse();
+    }
+
+    [Test]
+    public async Task Rescan_FilesReadByAnOlderVersion_MarkTheirAlbumsAsCompilations()
+    {
+        await AudioAsync("Mix/01.mp3", tags: new TestTags { Title = "One", Artist = "A", Album = "Mix" });
+        SetTcmpFrame("Mix/01.mp3");
+        await AudioAsync("Hits/01.mp3", tags: new TestTags { Album = "Hits", AlbumArtist = "Various Artists" });
+        await ScanAsync();
+
+        // The library as the version before the compilation flag left it: no flags and no compilations.
+        await using (WaveMpDbContext db = _database.CreateDbContext())
+        {
+            await db.MediaFiles.ExecuteUpdateAsync(setters => setters
+                .SetProperty(file => file.MetadataVersion, 1)
+                .SetProperty(file => file.Tags.IsCompilation, false));
+            await db.Albums.ExecuteUpdateAsync(setters => setters.SetProperty(album => album.IsCompilation, false));
+        }
+
+        ScanResult result = await ScanAsync();
+
+        result.Statistics.FilesUpdated.Should().Be(2);
+        await using WaveMpDbContext after = _database.CreateDbContext();
+        (await after.Albums.Select(album => album.IsCompilation).ToListAsync()).Should().Equal(true, true);
+        (await after.MediaFiles.SingleAsync(file => file.RelativePath == "Mix/01.mp3")).Tags.IsCompilation
+            .Should().BeTrue();
     }
 
     [Test]
@@ -940,6 +1047,17 @@ public class LibraryScannerTests
             bitrate,
             sampleRate,
             bitDepth);
+    }
+
+    /// <summary>
+    /// Sets the ID3 frame TCMP with TagLib#, since ffmpeg writes the compilation flag of MP3 files only as a user text
+    /// frame.
+    /// </summary>
+    private void SetTcmpFrame(string relativePath)
+    {
+        using var file = TagLib.File.Create(_media.Combine(relativePath));
+        ((TagLib.Id3v2.Tag)file.GetTag(TagLib.TagTypes.Id3v2, true)).IsCompilation = true;
+        file.Save();
     }
 
     private Task VideoAsync(string relativePath, int width, int height)
