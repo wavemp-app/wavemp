@@ -19,6 +19,7 @@ import type { SegmentOption } from '@/components/base/BaseSegmentedControl.vue'
 import BaseSegmentedField from '@/components/base/BaseSegmentedField.vue'
 import BaseSelect, { type SelectOption } from '@/components/base/BaseSelect.vue'
 import { useFormat } from '@/composables/useFormat'
+import { useSettingsLock } from '@/composables/useSettingsLock'
 import { validationMessagesByField } from '@/i18n/validation'
 import { useTranscodingStore } from '@/stores/transcoding'
 
@@ -45,6 +46,8 @@ const saving = ref(false)
 const saved = ref(false)
 const failed = ref(false)
 const errors = ref<Partial<Record<Field, string>>>({})
+/** Locked until the settings are loaded, so a loaded value never replaces what was typed. */
+const locked = useSettingsLock(saving, () => !!store.settings)
 
 function show(settings: TranscodingSettings | null): void {
     if (!settings) {
@@ -177,7 +180,7 @@ onMounted(async () => {
             :options="hardwareOptions"
             :hint="t('adminTranscoding.hardwareModeHint')"
             :error="errors.hardwareAcceleration"
-            :disabled="saving"
+            :disabled="locked"
         />
         <BaseSelect
             v-model="maxParallelJobs"
@@ -185,7 +188,7 @@ onMounted(async () => {
             :options="parallelOptions"
             :hint="t('adminTranscoding.maxParallelJobsHint')"
             :error="errors.maxParallelJobs"
-            :disabled="saving"
+            :disabled="locked"
         />
         <BaseSelect
             v-model="maxVideoHeight"
@@ -193,7 +196,7 @@ onMounted(async () => {
             :options="heightOptions"
             :hint="t('adminTranscoding.maxVideoHeightHint')"
             :error="errors.maxVideoHeight"
-            :disabled="saving"
+            :disabled="locked"
         />
         <BaseSelect
             v-model="audioBitrate"
@@ -201,7 +204,7 @@ onMounted(async () => {
             :options="bitrateOptions"
             :hint="t('adminTranscoding.audioBitrateHint')"
             :error="errors.audioBitrate"
-            :disabled="saving"
+            :disabled="locked"
         />
         <BaseAlert v-if="saved" tone="success" :message="t('adminTranscoding.saved')" />
         <BaseAlert v-if="failed" tone="error" :message="t('adminTranscoding.saveError')" />
@@ -210,7 +213,7 @@ onMounted(async () => {
                 type="submit"
                 variant="primary"
                 :label="t('adminTranscoding.save')"
-                :disabled="saving || !store.settings"
+                :disabled="locked"
             />
         </div>
     </form>

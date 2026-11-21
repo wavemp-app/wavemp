@@ -46,6 +46,50 @@ describe('TranscodingSettingsForm', () => {
         setActivePinia(createPinia())
     })
 
+    it('locks the fields until the settings are loaded', async () => {
+        const store = useTranscodingStore()
+        let answer: () => void = () => {}
+        vi.spyOn(store, 'loadSettings').mockImplementation(
+            () =>
+                new Promise<void>((resolve) => {
+                    store.settingsStatus = 'loading'
+                    answer = () => {
+                        store.settings = { ...settings, hardwareAcceleration: 'Off' }
+                        store.settingsStatus = 'ready'
+                        resolve()
+                    }
+                }),
+        )
+        const wrapper = mount(TranscodingSettingsForm, {
+            global: { plugins: [createWaveMpI18n('en')] },
+            attachTo: document.body,
+        })
+        await flushPromises()
+
+        const group = () => wrapper.get('[data-part="segmented-control"]')
+        expect(group().attributes('aria-disabled')).toBe('true')
+        // A click on a locked segment changes nothing.
+        await wrapper.get('[data-part="segment"][data-item="off"]').trigger('click')
+        for (const select of wrapper.findAll('select')) {
+            expect(select.attributes('disabled')).toBeDefined()
+        }
+        expect(wrapper.get('button[type="submit"]').attributes('disabled')).toBeDefined()
+
+        answer()
+        await flushPromises()
+
+        expect(
+            wrapper.get('[data-part="segment"][data-item="off"]').attributes('aria-checked'),
+        ).toBe('true')
+        expect(group().attributes('aria-disabled')).toBeUndefined()
+        expect((selects(wrapper).parallel.element as HTMLSelectElement).value).toBe('2')
+        for (const select of wrapper.findAll('select')) {
+            expect(select.attributes('disabled')).toBeUndefined()
+        }
+        expect(wrapper.get('button[type="submit"]').attributes('disabled')).toBeUndefined()
+        wrapper.unmount()
+    })
+
     it('shows the saved settings', async () => {
         const { wrapper } = await mountForm()
 

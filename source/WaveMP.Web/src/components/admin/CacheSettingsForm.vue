@@ -8,6 +8,7 @@ import BaseAlert from '@/components/base/BaseAlert.vue'
 import BaseButton from '@/components/base/BaseButton.vue'
 import BaseSelect, { type SelectOption } from '@/components/base/BaseSelect.vue'
 import { useFormat } from '@/composables/useFormat'
+import { useSettingsLock } from '@/composables/useSettingsLock'
 import { validationMessagesByField } from '@/i18n/validation'
 import { useCacheSettingsStore } from '@/stores/cacheSettings'
 
@@ -25,6 +26,8 @@ const saving = ref(false)
 const saved = ref(false)
 const failed = ref(false)
 const invalid = ref<string | undefined>(undefined)
+/** Locked until the settings are loaded, so a loaded value never replaces what was typed. */
+const locked = useSettingsLock(saving, () => !!store.settings)
 
 function show(settings: CacheSettings | null): void {
     if (settings?.maxSizeMegabytes) {
@@ -108,7 +111,7 @@ onMounted(async () => {
             :options="options"
             :hint="t('adminCache.maxSizeHint')"
             :error="invalid"
-            :disabled="saving"
+            :disabled="locked"
         />
         <BaseAlert v-if="saved" tone="success" :message="t('adminCache.saved')" />
         <BaseAlert v-if="failed" tone="error" :message="t('adminCache.saveError')" />
@@ -117,7 +120,7 @@ onMounted(async () => {
                 type="submit"
                 variant="primary"
                 :label="t('adminCache.save')"
-                :disabled="saving || !store.settings"
+                :disabled="locked"
             />
         </div>
     </form>

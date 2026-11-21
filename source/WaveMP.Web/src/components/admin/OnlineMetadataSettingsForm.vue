@@ -8,6 +8,7 @@ import BaseAlert from '@/components/base/BaseAlert.vue'
 import BaseButton from '@/components/base/BaseButton.vue'
 import BaseCheckbox from '@/components/base/BaseCheckbox.vue'
 import BaseTextField from '@/components/base/BaseTextField.vue'
+import { useSettingsLock } from '@/composables/useSettingsLock'
 import { validationMessagesByField } from '@/i18n/validation'
 import { getOnlineMetadataSettings, updateOnlineMetadataSettings } from '@/library/onlineMetadata'
 
@@ -35,6 +36,8 @@ const saving = ref(false)
 const saved = ref(false)
 const failed = ref(false)
 const invalid = ref<Partial<Record<Field, string>>>({})
+/** Locked until the settings are loaded, so a loaded value never replaces what was typed. */
+const locked = useSettingsLock(saving, () => status.value === 'ready')
 
 function show(settings: OnlineMetadataSettings | undefined): void {
     loaded.value = settings ?? null
@@ -148,7 +151,7 @@ onMounted(load)
             data-field="online-metadata-enabled"
             :label="t('onlineMetadataSettings.enabled')"
             :hint="t('onlineMetadataSettings.enabledHint')"
-            :disabled="saving || status !== 'ready'"
+            :disabled="locked"
         />
         <BaseTextField
             v-model="musicBrainzUrl"
@@ -158,7 +161,7 @@ onMounted(load)
             :hint="t('onlineMetadataSettings.musicBrainzUrlHint')"
             :error="invalid.musicBrainzUrl"
             :maxlength="2048"
-            :disabled="saving || status !== 'ready'"
+            :disabled="locked"
             autocomplete="off"
         />
         <BaseTextField
@@ -168,7 +171,7 @@ onMounted(load)
             :label="t('onlineMetadataSettings.coverArtArchiveUrl')"
             :error="invalid.coverArtArchiveUrl"
             :maxlength="2048"
-            :disabled="saving || status !== 'ready'"
+            :disabled="locked"
             autocomplete="off"
         />
         <BaseTextField
@@ -179,7 +182,7 @@ onMounted(load)
             :hint="t('onlineMetadataSettings.intervalHint')"
             :error="invalid.interval"
             :maxlength="5"
-            :disabled="saving || status !== 'ready'"
+            :disabled="locked"
             autocomplete="off"
         />
         <BaseAlert v-if="saved" tone="success" :message="t('onlineMetadataSettings.saved')" />
@@ -189,7 +192,7 @@ onMounted(load)
                 type="submit"
                 variant="primary"
                 :label="t('onlineMetadataSettings.save')"
-                :disabled="saving || status !== 'ready'"
+                :disabled="locked"
             />
         </div>
     </form>

@@ -13,6 +13,7 @@ import BaseSegmentedField from '@/components/base/BaseSegmentedField.vue'
 import BaseSelect, { type SelectOption } from '@/components/base/BaseSelect.vue'
 import BaseTextField from '@/components/base/BaseTextField.vue'
 import { useFormat } from '@/composables/useFormat'
+import { useSettingsLock } from '@/composables/useSettingsLock'
 import {
     coverPriorities,
     coverPriorityOf,
@@ -50,6 +51,8 @@ const saving = ref(false)
 const saved = ref(false)
 const failed = ref(false)
 const errors = ref<Partial<Record<Field, string>>>({})
+/** Locked until the settings are loaded, so a loaded value never replaces what was typed. */
+const locked = useSettingsLock(saving, () => !!store.settings)
 
 const fields: Record<string, Field> = {
     scanIntervalMinutes: 'interval',
@@ -195,41 +198,41 @@ onMounted(async () => {
             :options="intervalSelectOptions"
             :hint="t('adminLibrary.intervalHint')"
             :error="errors.interval"
-            :disabled="saving"
+            :disabled="locked"
         />
         <BaseCheckbox
             v-model="fileWatcher"
             :label="t('adminLibrary.fileWatcher')"
             :hint="t('adminLibrary.fileWatcherHint')"
-            :disabled="saving"
+            :disabled="locked"
         />
         <BaseTextField
             v-model="audio"
             :label="t('adminLibrary.audioExtensions')"
             :hint="t('adminLibrary.listHint')"
             :error="errors.audio"
-            :disabled="saving"
+            :disabled="locked"
         />
         <BaseTextField
             v-model="video"
             :label="t('adminLibrary.videoExtensions')"
             :hint="t('adminLibrary.listHint')"
             :error="errors.video"
-            :disabled="saving"
+            :disabled="locked"
         />
         <BaseTextField
             v-model="images"
             :label="t('adminLibrary.imageExtensions')"
             :hint="t('adminLibrary.listHint')"
             :error="errors.images"
-            :disabled="saving"
+            :disabled="locked"
         />
         <BaseTextField
             v-model="coverNames"
             :label="t('adminLibrary.albumCoverNames')"
             :hint="t('adminLibrary.coverNamesHint')"
             :error="errors.coverNames"
-            :disabled="saving"
+            :disabled="locked"
         />
         <BaseSegmentedField
             v-model="coverPriority"
@@ -239,21 +242,21 @@ onMounted(async () => {
             :options="coverPriorityOptions"
             :hint="t('adminLibrary.coverPriorityHint')"
             :error="errors.coverPriority"
-            :disabled="saving"
+            :disabled="locked"
         />
         <BaseCheckbox
             v-model="downloadLyrics"
             data-field="download-lyrics"
             :label="t('adminLibrary.downloadLyrics')"
             :hint="t('adminLibrary.downloadLyricsHint')"
-            :disabled="saving"
+            :disabled="locked"
         />
         <BaseCheckbox
             v-model="subsonicDownloads"
             data-field="subsonic-downloads"
             :label="t('adminLibrary.subsonicDownloads')"
             :hint="t('adminLibrary.subsonicDownloadsHint')"
-            :disabled="saving"
+            :disabled="locked"
         />
         <BaseAlert v-if="saved" tone="success" :message="t('adminLibrary.saved')" />
         <BaseAlert v-if="failed" tone="error" :message="t('adminLibrary.saveError')" />
@@ -262,7 +265,7 @@ onMounted(async () => {
                 type="submit"
                 variant="primary"
                 :label="t('adminLibrary.save')"
-                :disabled="saving || !store.settings"
+                :disabled="locked"
             />
         </div>
     </form>

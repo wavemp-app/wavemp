@@ -38,6 +38,53 @@ describe('LibrarySettingsForm', () => {
         setActivePinia(createPinia())
     })
 
+    it('locks the fields until the settings are loaded', async () => {
+        const store = useLibrarySettingsStore()
+        let answer: () => void = () => {}
+        vi.spyOn(store, 'load').mockImplementation(
+            () =>
+                new Promise<void>((resolve) => {
+                    store.status = 'loading'
+                    answer = () => {
+                        store.settings = settings
+                        store.status = 'ready'
+                        resolve()
+                    }
+                }),
+        )
+        const wrapper = mount(LibrarySettingsForm, {
+            global: { plugins: [createWaveMpI18n('en')] },
+            attachTo: document.body,
+        })
+        await flushPromises()
+
+        const fields = () => wrapper.findAll('select, input')
+        expect(fields().length).toBe(8)
+        for (const field of fields()) {
+            expect(field.attributes('disabled')).toBeDefined()
+        }
+        expect(wrapper.get('[data-part="segmented-control"]').attributes('aria-disabled')).toBe(
+            'true',
+        )
+        expect(wrapper.get('button[type="submit"]').attributes('disabled')).toBeDefined()
+
+        answer()
+        await flushPromises()
+
+        for (const field of fields()) {
+            expect(field.attributes('disabled')).toBeUndefined()
+        }
+        expect(
+            wrapper.get('[data-part="segmented-control"]').attributes('aria-disabled'),
+        ).toBeUndefined()
+        expect(wrapper.findAll('input[data-part="input"]')[0]!.element).toHaveProperty(
+            'value',
+            'mp3, flac',
+        )
+        expect(wrapper.get('button[type="submit"]').attributes('disabled')).toBeUndefined()
+        wrapper.unmount()
+    })
+
     it('shows the saved settings', async () => {
         const { wrapper } = await mountForm()
 

@@ -10,6 +10,7 @@ import BaseButton from '@/components/base/BaseButton.vue'
 import BaseSelect, { type SelectOption } from '@/components/base/BaseSelect.vue'
 import BaseTextField from '@/components/base/BaseTextField.vue'
 import { useFormat } from '@/composables/useFormat'
+import { useSettingsLock } from '@/composables/useSettingsLock'
 import { validationMessagesByField } from '@/i18n/validation'
 import { useBackupSettingsStore } from '@/stores/backupSettings'
 
@@ -38,7 +39,7 @@ const saved = ref(false)
 const failed = ref(false)
 const invalid = ref<Partial<Record<'scheduleTime' | 'retention', string>>>({})
 /** Locked until the settings are loaded, so a loaded value never replaces what was typed. */
-const locked = computed(() => saving.value || !store.settings)
+const locked = useSettingsLock(saving, () => !!store.settings)
 
 function show(settings: BackupSettings | null): void {
     if (settings?.scheduleTime) {

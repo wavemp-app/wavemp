@@ -25,6 +25,39 @@ describe('CacheSettingsForm', () => {
         setActivePinia(createPinia())
     })
 
+    it('locks the field until the settings are loaded', async () => {
+        const store = useCacheSettingsStore()
+        let answer: () => void = () => {}
+        vi.spyOn(store, 'load').mockImplementation(
+            () =>
+                new Promise<void>((resolve) => {
+                    store.status = 'loading'
+                    answer = () => {
+                        store.settings = { maxSizeMegabytes: 5000 }
+                        store.status = 'ready'
+                        resolve()
+                    }
+                }),
+        )
+        const wrapper = mount(CacheSettingsForm, {
+            global: { plugins: [createWaveMpI18n('en')] },
+            attachTo: document.body,
+        })
+        await flushPromises()
+
+        expect(wrapper.get('form').attributes('aria-busy')).toBe('true')
+        expect(wrapper.get('select').attributes('disabled')).toBeDefined()
+        expect(wrapper.get('button[type="submit"]').attributes('disabled')).toBeDefined()
+
+        answer()
+        await flushPromises()
+
+        expect((wrapper.get('select').element as HTMLSelectElement).value).toBe('5000')
+        expect(wrapper.get('select').attributes('disabled')).toBeUndefined()
+        expect(wrapper.get('button[type="submit"]').attributes('disabled')).toBeUndefined()
+        wrapper.unmount()
+    })
+
     it('shows the saved limit among the offered sizes', async () => {
         const { wrapper } = await mountForm()
 
