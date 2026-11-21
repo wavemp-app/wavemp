@@ -274,11 +274,19 @@ export async function deleteBackup(request: APIRequestContext, id: string): Prom
     expect([204, 404]).toContain(response.status())
 }
 
-/** Restores the default time and number of kept exports of the database backups. */
-export async function resetBackupSettings(request: APIRequestContext): Promise<void> {
+/** Changes the given settings of the database backups, like another admin would. */
+export async function updateBackupSettings(
+    request: APIRequestContext,
+    changes: { scheduleTime?: string; retentionCount?: number },
+): Promise<void> {
     const response = await request.patch('/api/v1/settings/backup', {
-        data: { scheduleTime: '03:00', retentionCount: 7 },
+        data: changes,
         headers: authorization(await adminToken(request)),
     })
     expect(response.status()).toBe(200)
+}
+
+/** Restores the default time and number of kept exports of the database backups. */
+export async function resetBackupSettings(request: APIRequestContext): Promise<void> {
+    await updateBackupSettings(request, { scheduleTime: '03:00', retentionCount: 7 })
 }

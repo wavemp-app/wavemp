@@ -165,11 +165,10 @@ describe('AdminTranscodingView', () => {
         await wrapper.get('form').trigger('submit')
         await flushPromises()
 
+        // Only the changed values, so settings changed elsewhere in the meantime stay as they are.
         expect(api.patch).toHaveBeenCalledWith({
             hardwareAcceleration: 'Off',
             maxParallelJobs: 4,
-            maxVideoHeight: 1080,
-            audioBitrateKbps: 192,
         })
         expect(wrapper.get('[data-item="settings"] [data-part="alert"]').text()).toBe(
             'The settings are saved.',

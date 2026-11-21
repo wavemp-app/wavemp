@@ -71,4 +71,34 @@ describe('BackupSettingsForm', () => {
         expect(wrapper.emitted('saved')).toHaveLength(1)
         wrapper.unmount()
     })
+
+    it('sends only the changed value and shows the settings the server answers with', async () => {
+        const { wrapper, update, answer } = mountLoading()
+        answer()
+        await flushPromises()
+        // The server has a time another admin saved after the form was loaded.
+        update.mockResolvedValue({ scheduleTime: '04:30', retentionCount: 14 })
+
+        await wrapper.get('select').setValue('14')
+        await wrapper.get('form').trigger('submit')
+        await flushPromises()
+
+        expect(update).toHaveBeenCalledWith({ retentionCount: 14 })
+        expect((wrapper.get('input').element as HTMLInputElement).value).toBe('04:30')
+        wrapper.unmount()
+    })
+
+    it('sends nothing unchanged', async () => {
+        const { wrapper, update, answer } = mountLoading()
+        answer()
+        await flushPromises()
+        update.mockResolvedValue(loaded)
+
+        await wrapper.get('form').trigger('submit')
+        await flushPromises()
+
+        expect(update).toHaveBeenCalledWith({})
+        expect(wrapper.get('[data-part="alert"]').text()).toBe('The settings are saved.')
+        wrapper.unmount()
+    })
 })

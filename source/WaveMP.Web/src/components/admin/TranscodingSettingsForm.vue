@@ -12,6 +12,7 @@ import {
     maxParallelJobOptions,
     maxVideoHeightOptions,
 } from '@/admin/transcoding'
+import { changedSettings } from '@/admin/settingsChanges'
 import BaseAlert from '@/components/base/BaseAlert.vue'
 import BaseButton from '@/components/base/BaseButton.vue'
 import type { SegmentOption } from '@/components/base/BaseSegmentedControl.vue'
@@ -23,7 +24,11 @@ import { useTranscodingStore } from '@/stores/transcoding'
 
 type Field = 'hardwareAcceleration' | 'maxParallelJobs' | 'maxVideoHeight' | 'audioBitrate'
 
-/** Settings of the transcoding: hardware acceleration, parallel transcodes and the quality. */
+/**
+ * Settings of the transcoding: hardware acceleration, parallel transcodes and the quality. Saving
+ * sends only the changed values, so settings changed elsewhere since the page was loaded stay as
+ * they are.
+ */
 const emit = defineEmits<{
     saved: []
 }>()
@@ -101,13 +106,17 @@ async function save(): Promise<void> {
     failed.value = false
     errors.value = {}
     try {
+        // Only the changed values: an unchanged field must not put back a value that was changed
+        // elsewhere since the form was loaded. The answer shows all settings of the server again.
         show(
-            await store.updateSettings({
-                hardwareAcceleration: hardware.value as HardwareAccelerationMode,
-                maxParallelJobs: Number(maxParallelJobs.value),
-                maxVideoHeight: Number(maxVideoHeight.value),
-                audioBitrateKbps: Number(audioBitrate.value),
-            }),
+            await store.updateSettings(
+                changedSettings(store.settings, {
+                    hardwareAcceleration: hardware.value as HardwareAccelerationMode,
+                    maxParallelJobs: Number(maxParallelJobs.value),
+                    maxVideoHeight: Number(maxVideoHeight.value),
+                    audioBitrateKbps: Number(audioBitrate.value),
+                }),
+            ),
         )
         saved.value = true
         emit('saved')

@@ -3,6 +3,7 @@ import { onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ProblemCodeObject, type OnlineMetadataSettings } from '@/api/generated/models'
 import { problemCodeOf, validationErrorsOf } from '@/api/problems'
+import { changedSettings } from '@/admin/settingsChanges'
 import BaseAlert from '@/components/base/BaseAlert.vue'
 import BaseButton from '@/components/base/BaseButton.vue'
 import BaseCheckbox from '@/components/base/BaseCheckbox.vue'
@@ -13,7 +14,8 @@ import { getOnlineMetadataSettings, updateOnlineMetadataSettings } from '@/libra
 /**
  * Settings of the online search for album info: the switch (off by default, then WaveMP sends no
  * request to MusicBrainz or the Cover Art Archive), the addresses of both services (own mirrors
- * allowed) and the pause between two requests to MusicBrainz.
+ * allowed) and the pause between two requests to MusicBrainz. Saving sends only the changed values,
+ * so settings changed elsewhere since the page was loaded stay as they are.
  */
 type Field = 'musicBrainzUrl' | 'coverArtArchiveUrl' | 'interval'
 
@@ -23,6 +25,8 @@ const intervalLimits = { min: 0, max: 60_000 } as const
 const { t } = useI18n()
 
 const status = ref<'loading' | 'error' | 'ready'>('loading')
+/** The settings the form shows as the server sent them; the base of the changes to save. */
+const loaded = ref<OnlineMetadataSettings | null>(null)
 const enabled = ref(false)
 const musicBrainzUrl = ref('')
 const coverArtArchiveUrl = ref('')
@@ -33,6 +37,7 @@ const failed = ref(false)
 const invalid = ref<Partial<Record<Field, string>>>({})
 
 function show(settings: OnlineMetadataSettings | undefined): void {
+    loaded.value = settings ?? null
     enabled.value = settings?.enabled ?? false
     musicBrainzUrl.value = settings?.musicBrainzUrl ?? ''
     coverArtArchiveUrl.value = settings?.coverArtArchiveUrl ?? ''
@@ -75,13 +80,17 @@ async function save(): Promise<void> {
 
     saving.value = true
     try {
+        // Only the changed values: an unchanged field must not put back a value that was changed
+        // elsewhere since the form was loaded. The answer shows all settings of the server again.
         show(
-            await updateOnlineMetadataSettings({
-                enabled: enabled.value,
-                musicBrainzUrl: musicBrainzUrl.value.trim(),
-                coverArtArchiveUrl: coverArtArchiveUrl.value.trim(),
-                musicBrainzRequestIntervalMilliseconds: milliseconds,
-            }),
+            await updateOnlineMetadataSettings(
+                changedSettings(loaded.value, {
+                    enabled: enabled.value,
+                    musicBrainzUrl: musicBrainzUrl.value.trim(),
+                    coverArtArchiveUrl: coverArtArchiveUrl.value.trim(),
+                    musicBrainzRequestIntervalMilliseconds: milliseconds,
+                }),
+            ),
         )
         saved.value = true
     } catch (error) {

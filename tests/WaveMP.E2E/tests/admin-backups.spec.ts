@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { deleteBackup, listBackups, resetBackupSettings } from './helpers/api'
+import { deleteBackup, listBackups, resetBackupSettings, updateBackupSettings } from './helpers/api'
 import { adminNavItem } from './helpers/navigation'
 
 // The backup page of the administration on the desktop and on the smartphone. The exports are
@@ -146,6 +146,20 @@ test.describe('changes', () => {
             await page.reload()
             await expect(page.getByLabel('Time of the daily backup')).toHaveValue('22:15')
             await expect(page.getByLabel('Exports to keep')).toHaveValue('14')
+
+            // Another admin changes the number of kept exports while the page is open. Saving
+            // the time sends only the time, so the number of the other admin stays.
+            await updateBackupSettings(request, { retentionCount: 30 })
+            await time.fill('04:45')
+            await page.getByRole('button', { name: 'Save' }).click()
+
+            await expect(page.locator("[data-part='alert'][data-state='success']")).toHaveText(
+                'The settings are saved.',
+            )
+            await expect(page.getByLabel('Exports to keep')).toHaveValue('30')
+            await page.reload()
+            await expect(page.getByLabel('Time of the daily backup')).toHaveValue('04:45')
+            await expect(page.getByLabel('Exports to keep')).toHaveValue('30')
         } finally {
             await resetBackupSettings(request)
         }

@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n'
 import type { BackupSettings } from '@/api/generated/models'
 import { problemCodeOf, validationErrorsOf } from '@/api/problems'
 import { backupRetentionOptions, isTimeOfDay } from '@/admin/presentation'
+import { changedSettings } from '@/admin/settingsChanges'
 import BaseAlert from '@/components/base/BaseAlert.vue'
 import BaseButton from '@/components/base/BaseButton.vue'
 import BaseSelect, { type SelectOption } from '@/components/base/BaseSelect.vue'
@@ -12,7 +13,11 @@ import { useFormat } from '@/composables/useFormat'
 import { validationMessagesByField } from '@/i18n/validation'
 import { useBackupSettingsStore } from '@/stores/backupSettings'
 
-/** Settings of the database backups: the time of the daily export and how many exports are kept. */
+/**
+ * Settings of the database backups: the time of the daily export and how many exports are kept.
+ * Saving sends only the changed values, so settings changed elsewhere since the page was loaded
+ * stay as they are.
+ */
 const props = defineProps<{
     /** IANA id of the time zone of the server, in which the time of the daily export is set. */
     timeZone?: string | null
@@ -76,11 +81,15 @@ async function save(): Promise<void> {
 
     saving.value = true
     try {
+        // Only the changed values: an unchanged field must not put back a value that was changed
+        // elsewhere since the form was loaded. The answer shows all settings of the server again.
         show(
-            await store.update({
-                scheduleTime: scheduleTime.value,
-                retentionCount: Number(retention.value),
-            }),
+            await store.update(
+                changedSettings(store.settings, {
+                    scheduleTime: scheduleTime.value,
+                    retentionCount: Number(retention.value),
+                }),
+            ),
         )
         saved.value = true
         emit('saved')
