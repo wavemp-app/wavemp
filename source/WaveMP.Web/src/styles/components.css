@@ -474,6 +474,35 @@
         justify-self: start;
     }
 
+    /*
+     * The segmented control of a form field never runs out of the field: where its options do not
+     * fit side by side (on a phone, or with long labels such as "Inherited (album cover first)"),
+     * the segments shrink and their labels wrap to more lines, so the field, its hint and the
+     * section around it keep their width. A word is only broken when it alone is too wide.
+     */
+    [data-part='field'] > [data-part='segmented-control'] > [data-part='segment'] {
+        flex: 0 1 auto;
+        min-inline-size: 0;
+        padding-block: calc(var(--wmp-space-xs) / 2);
+        text-align: center;
+        white-space: normal;
+        overflow-wrap: break-word;
+    }
+
+    [data-part='field']
+        > [data-part='segmented-control']
+        > [data-part='segment']
+        > :not([data-part='label']) {
+        flex: none;
+    }
+
+    [data-part='field']
+        > [data-part='segmented-control']
+        > [data-part='segment']
+        > [data-part='label'] {
+        min-inline-size: 0;
+    }
+
     [data-part='segmented-control'] > [data-part='indicator'] {
         position: absolute;
         inset-block: 0;

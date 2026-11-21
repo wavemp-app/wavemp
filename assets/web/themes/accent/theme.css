@@ -575,6 +575,14 @@
     opacity: 0.55;
 }
 
+/*
+ * The segments of a form field wrap their labels where they do not fit side by side, e.g. on a
+ * phone; the padding keeps the lines clear of the short line at the foot of the pane.
+ */
+[data-part='field'] > [data-part='segmented-control'] > [data-part='segment'] {
+    padding-block: 0.5rem;
+}
+
 [data-part='segmented-control'][aria-invalid='true'] {
     box-shadow: inset 0 0 0 1px var(--wmp-color-danger);
 }
@@ -1944,6 +1952,11 @@ a[data-part='breadcrumb-link']:hover {
 
     [data-part='transport']:not([data-state~='expanded']) {
         box-shadow: none;
+    }
+
+    /* Within the lower buttons of the desktop a label on one line keeps its height. */
+    [data-part='field'] > [data-part='segmented-control'] > [data-part='segment'] {
+        padding-block: 0.3125rem;
     }
 
     /*
