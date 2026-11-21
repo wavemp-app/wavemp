@@ -37,7 +37,7 @@ public sealed class SmartPlaylistDto
     public required long DurationMilliseconds { get; init; }
 
     /// <summary>
-    /// The covers of up to four of its first songs (Tracks), else none; never Custom.
+    /// The covers of up to twelve of its first songs (Tracks), else none; never Custom.
     /// </summary>
     public required PlaylistCoverDto Cover { get; init; }
 

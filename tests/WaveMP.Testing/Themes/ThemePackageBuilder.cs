@@ -43,7 +43,7 @@ public sealed class ThemePackageBuilder
 
     private readonly List<KeyValuePair<string, byte[]>> _files = [];
 
-    public ThemePackageBuilder(string id = "aurora", int themeApi = 5)
+    public ThemePackageBuilder(string id = "aurora", int themeApi = 6)
     {
         WithManifest(Manifest(id, themeApi));
         With("theme.css", Stylesheet);
@@ -55,7 +55,7 @@ public sealed class ThemePackageBuilder
     /// <summary>
     /// A manifest of a theme with a light and a dark variant and PNG previews.
     /// </summary>
-    public static string Manifest(string id = "aurora", int themeApi = 5, string name = "Aurora")
+    public static string Manifest(string id = "aurora", int themeApi = 6, string name = "Aurora")
     {
         return $$"""
             {

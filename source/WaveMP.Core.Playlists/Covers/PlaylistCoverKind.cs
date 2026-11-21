@@ -11,7 +11,7 @@ public enum PlaylistCoverKind
     Custom,
 
     /// <summary>
-    /// The covers of up to four of its tracks.
+    /// The covers of some of its tracks.
     /// </summary>
     Tracks,
 

@@ -25,6 +25,11 @@ const props = defineProps<{
     version?: string
 }>()
 
+const emit = defineEmits<{
+    /** The picture has been loaded (true) or the API has none (false), each time a load ends. */
+    settled: [loaded: boolean]
+}>()
+
 interface Held {
     kind: CoverKind
     id: string
@@ -90,6 +95,10 @@ async function update(): Promise<void> {
     const url = await loading
     if (held === wanted && (url || !previous)) {
         src.value = url
+    }
+
+    if (held === wanted) {
+        emit('settled', !!src.value)
     }
 }
 

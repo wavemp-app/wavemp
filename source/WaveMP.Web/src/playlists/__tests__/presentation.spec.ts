@@ -1,12 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { PlaylistCoverKindObject } from '@/api/generated/models'
-import {
-    coverUploadProblem,
-    coverViewOf,
-    maxCoverUploadBytes,
-    moveItem,
-    nextSlide,
-} from '../presentation'
+import { coverUploadProblem, coverViewOf, maxCoverUploadBytes, moveItem } from '../presentation'
 
 describe('coverUploadProblem', () => {
     it('accepts JPEG, PNG and WebP pictures up to the limit', () => {
@@ -70,14 +64,5 @@ describe('coverViewOf', () => {
         expect(coverViewOf({ kind: PlaylistCoverKindObject.Custom, version: null })).toEqual({
             kind: 'none',
         })
-    })
-})
-
-describe('nextSlide', () => {
-    it('goes through the slides and starts over', () => {
-        expect(nextSlide(0, 3)).toBe(1)
-        expect(nextSlide(2, 3)).toBe(0)
-        expect(nextSlide(0, 1)).toBe(0)
-        expect(nextSlide(4, 0)).toBe(0)
     })
 })

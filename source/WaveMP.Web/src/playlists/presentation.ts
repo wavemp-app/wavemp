@@ -1,4 +1,4 @@
-// Pure helpers of the playlists: the order of entries, the slides of a cover made of track covers
+// Pure helpers of the playlists: the order of entries, what a cover made of track covers shows
 // and the checks of a picture before it is uploaded as cover; the messages of failed changes.
 
 import {
@@ -15,9 +15,6 @@ export const coverUploadTypes = ['image/jpeg', 'image/png', 'image/webp'] as con
 
 /** Largest picture the API accepts by default (10 MiB); larger ones are refused before uploading. */
 export const maxCoverUploadBytes = 10 * 1024 * 1024
-
-/** Time each track cover of a playlist cover stays before the next one fades in. */
-export const coverSlideMilliseconds = 6000
 
 export type CoverUploadProblem = 'type' | 'size'
 
@@ -81,11 +78,6 @@ export function coverViewOf(cover: PlaylistCover | null | undefined): PlaylistCo
     return cover?.kind === PlaylistCoverKindObject.Tracks && trackIds.length > 0
         ? { kind: 'tracks', trackIds }
         : { kind: 'none' }
-}
-
-/** The slide after the current one, starting over after the last. */
-export function nextSlide(current: number, count: number): number {
-    return count <= 0 ? 0 : (current + 1) % count
 }
 
 /** Message key of a failed conversion of a smart playlist into a normal playlist. */

@@ -6319,7 +6319,7 @@ export interface Playlist extends AdditionalDataHolder, Parsable {
     updatedAt?: Date | null;
 }
 /**
- * The cover of a playlist: an uploaded picture (Custom), else the covers of up to four tracks of different albums from the start of the playlist (Tracks), else none.
+ * The cover of a playlist: an uploaded picture (Custom), else the covers of up to twelve tracks of different albums from the start of the playlist (Tracks), else none.
  */
 export interface PlaylistCover extends AdditionalDataHolder, Parsable {
     /**
@@ -6327,7 +6327,7 @@ export interface PlaylistCover extends AdditionalDataHolder, Parsable {
      */
     kind?: PlaylistCoverKind | null;
     /**
-     * Ids of the tracks whose covers make up the cover, in the order of the playlist; only with Tracks, otherwise empty. Their pictures come from the cover endpoint of the tracks.
+     * Ids of the tracks whose covers make up the cover, in the order of the playlist, at most twelve; only with Tracks, otherwise empty. Their pictures come from the cover endpoint of the tracks. The web app shows the first four as a 2x2 grid (repeating them when there are fewer) and lets the others take turns in its tiles.
      */
     trackIds?: Guid[] | null;
     /**
@@ -9907,7 +9907,7 @@ export interface SleepTimerSettings extends AdditionalDataHolder, Parsable {
  */
 export interface SmartPlaylist extends AdditionalDataHolder, Parsable {
     /**
-     * The covers of up to four of its first songs (Tracks), else none; never Custom.
+     * The covers of up to twelve of its first songs (Tracks), else none; never Custom.
      */
     cover?: PlaylistCover | null;
     /**

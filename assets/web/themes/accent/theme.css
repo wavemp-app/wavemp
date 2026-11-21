@@ -1,5 +1,5 @@
 /*
- * Theme "Accent" for WaveMP, theme API version 5 (see THEMING.md).
+ * Theme "Accent" for WaveMP, theme API version 6 (see THEMING.md).
  *
  * Flat panes of frosted glass on a soft-focus field. The field is a quiet wash of mist and a warm
  * glow, crossed by fine contour waves that stay sharp in the gaps and melt under the panes (backdrop
@@ -1027,6 +1027,12 @@ a[data-part='breadcrumb-link']:hover {
 
 [data-part='cover'][data-state~='placeholder'] {
     color: var(--wmp-color-text-muted);
+}
+
+/* The song covers in the grid of a playlist cover sit flush; the grid has the edge. */
+[data-part='playlist-cover-slide'] > [data-part='cover'] {
+    border-radius: 0;
+    box-shadow: none;
 }
 
 [data-part='tile'] > :is([data-part='cover'], [data-part='playlist-cover']),

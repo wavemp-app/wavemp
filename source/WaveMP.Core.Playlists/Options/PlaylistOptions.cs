@@ -29,12 +29,13 @@ public sealed class PlaylistOptions
     /// <summary>
     /// How many entries from the start of a playlist are searched for covers of its tracks.
     /// </summary>
-    public int CoverScanEntries { get; set; } = 50;
+    public int CoverScanEntries { get; set; } = 100;
 
     /// <summary>
-    /// How many covers of its tracks a playlist without an own cover shows at most.
+    /// How many covers of its tracks a playlist without an own cover names at most: clients show the first four as a
+    /// 2x2 grid and let the others take turns in its tiles.
     /// </summary>
-    public int CoverCount { get; set; } = 4;
+    public int CoverCount { get; set; } = 12;
 
     /// <summary>
     /// How many tracks the list of the recently played tracks holds at most.

@@ -9,6 +9,6 @@ namespace WaveMP.Core.Playlists.SmartPlaylists;
 /// </summary>
 /// <param name="Playlist">The smart playlist with its rules.</param>
 /// <param name="Summary">Number and total duration of its tracks right now.</param>
-/// <param name="Cover">The covers of up to four of its first tracks, from different albums, as for playlists without an
+/// <param name="Cover">The covers of some of its first tracks, from different albums, as for playlists without an
 /// own cover.</param>
 public sealed record SmartPlaylistItem(SmartPlaylist Playlist, SmartPlaylistSummary Summary, PlaylistCover Cover);

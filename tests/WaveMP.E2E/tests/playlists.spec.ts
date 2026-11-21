@@ -136,10 +136,16 @@ test.describe('on the desktop', () => {
             await part(page, 'sidebar').getByRole('treeitem', { name }).click()
             await expect(page).toHaveURL(new RegExp(`/playlists/${id}$`))
             await expect(rowTitles(page)).toHaveText(['First Song', 'Second Song', 'First Song'])
-            // Both songs come from the same album, so its cover stands for the playlist.
+            // Both songs come from the same album, so its cover fills all four tiles of the grid,
+            // which has nothing to change.
+            const cover = part(page, 'detail-header').locator("[data-part='playlist-cover']")
+            await expect(cover).toHaveAttribute('data-count', '1')
+            await expect(cover).not.toHaveAttribute('data-state', 'rotating')
+            const tiles = cover.locator("> [data-part='playlist-cover-tile']")
+            await expect(tiles).toHaveCount(4)
             await expect(
-                part(page, 'detail-header').locator("[data-part='playlist-cover']"),
-            ).toHaveAttribute('data-count', '1')
+                tiles.locator("> [data-part='playlist-cover-slide'][data-state='active']"),
+            ).toHaveCount(4)
 
             // Move the second entry up with its menu
             await part(page, 'list-row').nth(1).click({ button: 'right' })

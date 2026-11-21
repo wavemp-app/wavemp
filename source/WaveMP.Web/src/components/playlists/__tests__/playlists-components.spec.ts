@@ -1,9 +1,15 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { flushPromises, mount } from '@vue/test-utils'
+import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import type { Playlist, Track } from '@/api/generated/models'
 import { createWaveMpI18n } from '@/i18n'
+import {
+    coverChangeMilliseconds,
+    coverLoadTimeoutMilliseconds,
+    firstCoverChangeMilliseconds,
+    stillCoversFlag,
+} from '@/playlists/coverGrid'
 import { createRoutes } from '@/router/routes'
 
 const api = vi.hoisted(() => ({
@@ -38,6 +44,18 @@ const AddToPlaylistDialog = (await import('../AddToPlaylistDialog.vue')).default
 const PlaylistCover = (await import('../PlaylistCover.vue')).default
 const PlaylistEditDialog = (await import('../PlaylistEditDialog.vue')).default
 const PlaylistTrackList = (await import('../PlaylistTrackList.vue')).default
+
+/** The tracks whose covers a playlist cover shows, slide by slide. */
+function shownTracks(wrapper: VueWrapper): string[] {
+    return wrapper
+        .findAllComponents({ name: 'LibraryCover' })
+        .map((cover) => cover.props('id') as string)
+}
+
+/** The tracks whose covers were loaded, in order. */
+function fetchedTracks(): string[] {
+    return library.fetchTrackCover.mock.calls.map((call) => call[0] as string)
+}
 
 const roadTrip: Playlist = {
     id: 'road',
@@ -94,6 +112,8 @@ beforeEach(() => {
 
 afterEach(() => {
     vi.useRealTimers()
+    vi.unstubAllGlobals()
+    vi.restoreAllMocks()
     document.body.innerHTML = ''
 })
 
@@ -117,32 +137,103 @@ describe('PlaylistCover', () => {
         wrapper.unmount()
     })
 
-    it('shows the covers of its tracks one after the other', async () => {
+    it('shows the covers of its tracks as a 2x2 grid, repeating fewer than four', async () => {
         vi.useFakeTimers()
         const wrapper = await mountWith(PlaylistCover, {
             id: 'road',
-            cover: { kind: 'Tracks', trackIds: ['t1', 't2', 't3'] },
+            cover: { kind: 'Tracks', trackIds: ['t1', 't2'] },
         })
 
         const cover = wrapper.get('[data-part="playlist-cover"]')
-        const active = () =>
-            wrapper
-                .findAll('[data-part="playlist-cover-slide"]')
-                .map((slide) => slide.attributes('data-state') === 'active')
-        const variable = (name: string) =>
-            (cover.element as HTMLElement).style.getPropertyValue(name)
-        expect(cover.attributes('data-count')).toBe('3')
+        expect(cover.attributes('data-count')).toBe('2')
         expect(cover.attributes('aria-hidden')).toBe('true')
-        expect(active()).toEqual([true, false, false])
-        expect(variable('--wmp-item-count')).toBe('3')
-        expect(variable('--wmp-active-index')).toBe('0')
+        expect(cover.attributes('data-state')).toBeUndefined()
+        expect((cover.element as HTMLElement).style.getPropertyValue('--wmp-item-count')).toBe('2')
+        const tiles = wrapper.findAll('[data-part="playlist-cover-tile"]')
+        expect(tiles.map((tile) => tile.attributes('data-index'))).toEqual(['0', '1', '2', '3'])
+        expect(shownTracks(wrapper)).toEqual(['t1', 't2', 't2', 't1'])
 
-        await vi.advanceTimersByTimeAsync(6000)
-        expect(active()).toEqual([false, true, false])
-        expect(variable('--wmp-active-index')).toBe('1')
-        await vi.advanceTimersByTimeAsync(12000)
-        expect(active()).toEqual([true, false, false])
+        // Nothing waits for its turn, so nothing changes.
+        await vi.advanceTimersByTimeAsync(60_000)
+        expect(wrapper.findAll('[data-part="playlist-cover-slide"]')).toHaveLength(4)
         wrapper.unmount()
+    })
+
+    it('slides a waiting cover into one tile from its outer edge once it is loaded', async () => {
+        vi.useFakeTimers({ now: new Date('2040-01-01T00:00:00Z') })
+        vi.spyOn(Math, 'random').mockReturnValue(0)
+        library.fetchTrackCover.mockResolvedValue(new Uint8Array([1]).buffer)
+        vi.stubGlobal('URL', {
+            ...URL,
+            createObjectURL: () => 'blob:track',
+            revokeObjectURL: vi.fn(),
+        })
+        const wrapper = await mountWith(PlaylistCover, {
+            id: 'road',
+            cover: { kind: 'Tracks', trackIds: ['t1', 't2', 't3', 't4', 't5', 't6'] },
+        })
+        const tileAt = (index: number) =>
+            wrapper.findAll('[data-part="playlist-cover-tile"]')[index]!
+        const statesOf = (index: number) =>
+            tileAt(index)
+                .findAll('[data-part="playlist-cover-slide"]')
+                .map((slide) => slide.attributes('data-state'))
+        expect(wrapper.get('[data-part="playlist-cover"]').attributes('data-state')).toBe(
+            'rotating',
+        )
+        expect(fetchedTracks()).toEqual(['t1', 't2', 't3', 't4'])
+
+        // The first change comes after a calm pause: the cover waiting longest is added to the top
+        // start tile, invisible until its picture is loaded.
+        await vi.advanceTimersByTimeAsync(firstCoverChangeMilliseconds.min - 1)
+        expect(statesOf(0)).toEqual(['active'])
+        library.fetchTrackCover.mockReturnValueOnce(new Promise(() => {}))
+        await vi.advanceTimersByTimeAsync(1)
+        expect(statesOf(0)).toEqual(['active', 'loading'])
+        expect(tileAt(0).attributes('data-state')).toBe('changing')
+
+        // Meanwhile the next cover goes to another tile, from its outer edge, and slides in over
+        // the shown one once it is loaded.
+        await vi.advanceTimersByTimeAsync(coverChangeMilliseconds.min)
+        await flushPromises()
+        expect(statesOf(1)).toEqual(['active', 'entering'])
+        const entering = tileAt(1).findAll('[data-part="playlist-cover-slide"]')[1]!
+        expect(entering.attributes('data-from')).toBe('end')
+        expect(fetchedTracks()).toEqual(['t1', 't2', 't3', 't4', 't5', 't6'])
+
+        // A picture that never loads is given up; its cover waits for its turn again.
+        await vi.advanceTimersByTimeAsync(
+            coverLoadTimeoutMilliseconds - coverChangeMilliseconds.min,
+        )
+        expect(statesOf(0)).toEqual(['active'])
+        expect(tileAt(0).attributes('data-state')).toBeUndefined()
+
+        // Once the new cover is in place, it is the only one of its tile.
+        await entering.trigger('animationend')
+        expect(statesOf(1)).toEqual(['active'])
+        expect(tileAt(1).attributes('data-state')).toBeUndefined()
+        wrapper.unmount()
+    })
+
+    it('stands still for the automated screenshots', async () => {
+        vi.useFakeTimers()
+        ;(globalThis as Record<string, unknown>)[stillCoversFlag] = true
+        try {
+            const wrapper = await mountWith(PlaylistCover, {
+                id: 'road',
+                cover: { kind: 'Tracks', trackIds: ['t1', 't2', 't3', 't4', 't5'] },
+            })
+
+            expect(
+                wrapper.get('[data-part="playlist-cover"]').attributes('data-state'),
+            ).toBeUndefined()
+            await vi.advanceTimersByTimeAsync(60_000)
+            expect(wrapper.findAll('[data-part="playlist-cover-slide"]')).toHaveLength(4)
+            expect(library.fetchTrackCover).toHaveBeenCalledTimes(4)
+            wrapper.unmount()
+        } finally {
+            delete (globalThis as Record<string, unknown>)[stillCoversFlag]
+        }
     })
 })
 

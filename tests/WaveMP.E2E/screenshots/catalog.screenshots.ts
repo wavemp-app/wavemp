@@ -12,6 +12,7 @@ import {
     selectProfile,
     sessionHeaders,
     showVisualization,
+    stillCovers,
 } from './helpers'
 
 // The screenshots of the app catalogs (TrueNAS, Unraid, ZimaOS and CasaOS, see deploy/), taken like
@@ -27,6 +28,7 @@ test.use({
     viewport: { width: 1280, height: 720 },
     deviceScaleFactor: 1.5,
 })
+test.beforeEach(({ context }) => stillCovers(context))
 
 let alex: TestUser
 let sam: TestUser

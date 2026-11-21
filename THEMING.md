@@ -1,6 +1,6 @@
 # WaveMP Theme API
 
-Version 5
+Version 6
 
 This document describes how themes change the look of the WaveMP web app: the parts of the DOM a theme can address, their states, the CSS variables and the icons. It is meant for theme authors.
 
@@ -13,7 +13,7 @@ The DOM is the same for every theme. Every element a theme can address has a sta
 The root element carries the active theme, its shown variant and the version of this API:
 
 ```html
-<html lang="en" data-theme="midnight" data-theme-variant="dark" data-theme-api="5">
+<html lang="en" data-theme="midnight" data-theme-variant="dark" data-theme-api="6">
 ```
 
 Every profile chooses its theme on the settings page; the app switches it at once, without reloading the page. A theme can have a light and a dark variant, see [Variants](#variants).
@@ -225,8 +225,9 @@ The color changes with the song; a theme can let it fade with `transition` on th
 | `file-item` | `li` | `file-list` | One file with `file-path` and `file-meta` |
 | `file-path` | `span` | `file-item`, `file-selection-info`, `file-choice`, `review-info` | Path of the file relative to the media folder; in `file-selection-info` the folder and base name of the files of the song, in a `file-choice` the path of the file (or of a selected file that is gone) or, for the automatic choice, its name; in `review-info` the folder and base name of the files of the song |
 | `file-meta` | `span` | `file-item`, `file-selection-info`, `file-choice` | Kind, use and problem of the file as `badge` with a visible `label`, and its technical details (format, bitrate, resolution, size, ...) as `label`s; in `file-selection-info` the categories with a selection as `badge`s and the number of audio files, videos and covers as `label`s (`data-field` `audio`, `video`, `cover`); in a `file-choice` the kind, the `badge`s `embedded`, `active`, `best`, `lossless` or `missing` and the technical details, for the automatic choice the file it picks as `label` |
-| `playlist-cover` | `span` (`aria-hidden`, `data-count`) | `tile`, `detail-header`, `playlist-choice` | Cover of a playlist without a picture of its own: the covers of up to four of its songs (of different albums) as `playlist-cover-slide`s, shown one after the other; `data-count` and `--wmp-item-count` hold their number, `--wmp-active-index` the index of the shown slide. A playlist with its own picture shows a `cover` instead, one without any song cover a `cover` with the icon `playlist` |
-| `playlist-cover-slide` | `span` | `playlist-cover` | One song cover (a `cover`) of a `playlist-cover`; the shown one has the state `active`. The base stacks the slides and fades between them; with `prefers-reduced-motion` the slides do not change |
+| `playlist-cover` | `span` (`aria-hidden`, `data-count`) | `tile`, `detail-header`, `playlist-choice` | Cover of a playlist without a picture of its own: a 2x2 grid of four `playlist-cover-tile`s with the covers of up to twelve of its songs (of different albums); `data-count` and `--wmp-item-count` hold their number. The first four fill the tiles (with fewer, they repeat on the diagonal: AB/BA, AB/CA or all four the same); with more than four the tiles change one at a time (state `rotating`), calmly and never two at once on the page, while the cover is in view. The base lays out the grid with the gap `--wmp-playlist-cover-gap`. A playlist with its own picture shows a `cover` instead, one without any song cover a `cover` with the icon `playlist` |
+| `playlist-cover-tile` | `span` (`data-index`) | `playlist-cover` | One tile of the grid with its `playlist-cover-slide`s, in reading order: `data-index` `0` top start, `1` top end, `2` bottom start, `3` bottom end. State `changing` while a new cover enters it. The base clips the tile, so a new cover appears from its edge |
+| `playlist-cover-slide` | `span` (`data-from`) | `playlist-cover-tile` | One song cover (a `cover`) of a tile. The shown one is `active`; a new one is added above it in the state `loading` (invisible, while its picture loads), then becomes `entering` and slides in over the shown one from the outer edge of its tile named in `data-from` (`start` or `top` for the top start tile, `end` or `top` for the top end tile, `start` or `bottom` for the bottom start tile, `end` or `bottom` for the bottom end tile, chosen at random; `start` and `end` follow the writing direction). Once it is in place it becomes `active` and the slide below it goes. The base animates `entering` with `translate` (keyframes `wmp-playlist-cover-from-left`, `-right`, `-top` and `-bottom`) in `--wmp-playlist-cover-slide-duration` with `--wmp-playlist-cover-slide-easing`; with `prefers-reduced-motion` it fades in (`wmp-playlist-cover-fade-in`, `--wmp-playlist-cover-fade-duration`). A theme can replace the `animation` of `entering`; the change ends with its `animationend`, without an animation after a few seconds |
 | `playlist-choices` | `ul` (`aria-label`) | `dialog-body` | Playlists of the profile in the dialog "Add to playlist" |
 | `playlist-choice` | `button` | `playlist-choices` (in a `li`) | One playlist with its cover, its name as `label` and `playlist-choice-count`; adds the songs at its end |
 | `playlist-choice-count` | `span` | `playlist-choice` | Number of songs of the playlist |
@@ -683,7 +684,9 @@ The internal component overview (`/dev/components`) uses its own parts starting 
 | `review-select` | `disabled` while its checkbox is disabled (the song is reviewed) |
 | `review-bulk` | `selected` while songs are selected, otherwise `empty` |
 | `empty-state` in `data-view="admin-review-track"` | `finished` when no unreviewed song follows in the list |
-| `playlist-cover-slide` | `active` for the song cover that is shown |
+| `playlist-cover` | `rotating` while its tiles change: it has more than four song covers, is in view and the page is shown |
+| `playlist-cover-tile` | `changing` while a new song cover enters the tile |
+| `playlist-cover-slide` | `active` for the song cover that is shown, `loading` for a new one whose picture loads (invisible), `entering` while the new one slides or fades in |
 | `cover-preview` | `loading` while the cover of the chosen rule loads, `ready` while it shows one, `empty` without a cover |
 | `playlist-choice` | `busy` while the songs are being added to this playlist |
 
@@ -707,7 +710,7 @@ Every group in which one entry is the active one gives the theme the same means 
 - The group has an `indicator` as its first child: empty, `aria-hidden`, hidden by the base (`display: none`) and laid over the active entry (`position: absolute` in the group, `left: var(--wmp-indicator-x)`, `top: var(--wmp-indicator-y)`, `inline-size: var(--wmp-indicator-width)`, `block-size: var(--wmp-indicator-height)`; in a `segmented-control` the whole height). A theme shows it and decides its shape, for example a line below the entry or a sliding pane of glass behind it. The group is a containing block (`position: relative`).
 - The group carries the runtime variables `--wmp-item-count`, `--wmp-active-index`, `--wmp-indicator-x`, `--wmp-indicator-y`, `--wmp-indicator-width` and `--wmp-indicator-height` (see [Runtime variables](#runtime-variables)). The app measures the box again when the active entry changes and when the group or its entries change their size. Without an active entry (`--wmp-active-index: -1`) the box has no size.
 - Two things follow from the measuring, and all shipped themes handle them in CSS only. An indicator without an active entry is a box without size, so it should paint nothing outside its box: no outer `box-shadow`, `outline` or `border` (a glow can be a `filter: drop-shadow()`, which follows painted content and draws nothing for an empty box). And the variables are set for the first time after the page is drawn and again after it is rebuilt, so an indicator with an unconditional `transition` slides in from the corner of the group. Let it move only while the person works with the group (`:hover`, `:focus-within`, `:active`), as the base does with the durations of [Motion](#motion) and as in the example below; a click or an arrow key still animates it, and the screenshots of the regression stay stable.
-- `rating` and `playlist-cover` carry `--wmp-item-count` and `--wmp-active-index` only.
+- `rating` carries `--wmp-item-count` and `--wmp-active-index` only, `playlist-cover` only `--wmp-item-count` (the number of its song covers).
 
 Example of a line that slides below the active tab:
 
@@ -776,6 +779,8 @@ The base links states to graphics: buttons use the variables `--wmp-image-<varia
 | `data-kind` | `context-menu` | `submenu` for the submenu of an entry |
 | `data-words` | `lyrics` | `true` for synchronized lyrics with word timestamps |
 | `data-index` | `lyrics-line` | Index of the line, starting at 0 |
+| `data-index` | `playlist-cover-tile` | Position of the tile in the grid: `0` top start, `1` top end, `2` bottom start, `3` bottom end |
+| `data-from` | `playlist-cover-slide` | Edge a new song cover enters its tile from: `start`, `end` (following the writing direction), `top` or `bottom`; missing on the slides shown from the start |
 | `data-empty` | `lyrics-line` | `true` for a line without text, a part without singing |
 | `data-kind` | `backup-item` | What created the export: `schedule` (the daily backup), `manual` or `migration` (before an update of the database) |
 | `data-module` | `visualization` | The module that draws: `milkdrop`, `aforce` or `blackcap` |
@@ -785,7 +790,7 @@ The base links states to graphics: buttons use the variables `--wmp-image-<varia
 | `data-section` | `view` (library) | `recently-added`, `favorites`, `artists`, `albums`, `songs`, `genres`, `years` |
 | `data-value` | `rating` | Stars of the rating, `0` (none) to `5` |
 | `data-column` | `list-column`, `list-cell` | `number`, `title`, `duration`, `artist`, `rating`, `favorite`; in playlists also `handle` (first column, only where entries can be moved), `album` and `detail` (in "Recently played" the time of the last play, in the favorites the time the song was marked) |
-| `data-count` | `playlist-cover` | Number of song covers (1 to 4) |
+| `data-count` | `playlist-cover` | Number of song covers (1 to 12) |
 | `data-count` | `pin-dots` | Number of entered digits (0 to 8) |
 | `data-item` | `dialog`, `segmented-control`, `button` and `avatar-preset` of the avatar dialog | `avatar` (the `dialog`), `avatar-mode` (the `segmented-control` with the `segment`s `preset` and `upload`), the `button`s `choose-file`, `remove-avatar` and `save-avatar`, the id of an `avatar-preset` (`bubble`, `leaf`, `drop`, `sun`, `wave`, `cloud`, `star`, `fish`); on the settings page the `section` `avatar` with the `button` `change-avatar`, in `user-actions` the `button`s `edit`, `avatar` and `delete` |
 | `data-field` | `form-note` (settings) | `avatar-status`: whether the profile shows a picture |
@@ -1068,6 +1073,7 @@ The base animates the interface subtly and fast, with the durations and easings 
 | Entries of lists | `list-row`, `tile`, `queue-item`, `tree-item` and `profile-tile` fade in when they appear: loaded, added, loaded more or in a group that opens | medium, standard |
 | Full-screen player (mobile) | Follows the finger while it is swiped down (`dragging`), then snaps back (`settling`) or leaves the screen at the speed of the finger (`dismissing`) with `translate` and `--wmp-swipe-duration`; `player-view-switch` fades in | snapping back: standard; leaving: linear; switch: medium, enter |
 | Long titles (`marquee`) | A title or artist too long for its place scrolls to its end and back to its start, see `marquee` | `--wmp-marquee-duration`, linear |
+| Playlist covers (`playlist-cover`) | By themselves, calmly and one tile at a time: a new song cover slides into a tile of the grid from its outer edge, over the shown one; with reduced motion it crossfades, see `playlist-cover-slide` | `--wmp-playlist-cover-slide-duration` and `--wmp-playlist-cover-slide-easing`; reduced: `--wmp-playlist-cover-fade-duration` |
 
 | Variable | Default | Used for |
 |---|---|---|
@@ -1080,12 +1086,16 @@ The base animates the interface subtly and fast, with the durations and easings 
 | `--wmp-motion-easing-exit` | `cubic-bezier(0.3, 0, 1, 1)` | Something that closes |
 | `--wmp-motion-scale` | `0.96` | Scale a menu or dialog grows from and shrinks to |
 | `--wmp-motion-press-scale` | `0.97` | Scale of a pressed button, `tile` or `profile-tile` |
+| `--wmp-playlist-cover-gap` | `0px` | Space between the tiles of a `playlist-cover` |
+| `--wmp-playlist-cover-slide-duration` | `1.2s` | How long a new song cover slides into its tile; calm on purpose, as nobody waits for it |
+| `--wmp-playlist-cover-slide-easing` | `cubic-bezier(0.33, 0, 0, 1)` | Easing of the slide: fast at the edge, settling softly |
+| `--wmp-playlist-cover-fade-duration` | `1.2s` | How long the new song cover fades in with `prefers-reduced-motion: reduce` (the base keeps this fade, as it keeps the short fades of menus and dialogs) |
 
 - **Tuning:** set the variables on `:root`, for example slower menus and dialogs with `--wmp-motion-duration-medium: 220ms`, or a springy easing with `--wmp-motion-easing-enter: cubic-bezier(0.3, 1.35, 0.5, 1)`. Keep the durations short (roughly 120 to 250 ms), so the interface never waits for its animations.
 - **Switching off:** `--wmp-motion-duration-fast`, `-medium` and `-slow` of `0s` switch the motion of the base off; `--wmp-motion-press-scale: 1` keeps pressed elements in place.
 - **Own transitions:** the base sets `transition-property`, `transition-duration` and `transition-timing-function` (and `animation` for pages and lists); a `transition` or `animation` of the theme on the same part replaces them. Use the variables in them as well, so the theme stays consistent, and keep the properties of the base the theme still wants, for example `scale` for the press of buttons and tiles. A theme that sets `opacity` or `scale` on `context-menu` or `dialog` should do so only while they are open (`:popover-open`, `[open]`), otherwise it hides their fade.
 - **Reduced motion:** with `prefers-reduced-motion: reduce` nothing moves or grows: the base sets `--wmp-motion-scale` and `--wmp-motion-press-scale` to `1` with a priority no theme overrides, ends every transition and animation at once and keeps only short fades of `--wmp-motion-duration-fade` for menus, dialogs, the drawer (which fades instead of sliding) and pages. Movements of the theme itself need a `@media (prefers-reduced-motion: reduce)` rule of the theme as well, as in all shipped themes.
-- The screenshots of the [regression](#regression) are taken with reduced motion and with animations stopped, so the motion never shows up in them.
+- The screenshots of the [regression](#regression) are taken with reduced motion and with animations stopped, so the motion never shows up in them; the tiles of playlist covers do not change while they are taken.
 
 ### Runtime variables
 
@@ -1107,8 +1117,8 @@ The app sets these variables on single elements. Themes can read them, but never
 | `--wmp-video-ambient-color` | `video-ambient` | Average color of the picture of the video, for example `rgb(31 92 160)`, read once per video while the `video-ambient` is `static` (reduced motion); missing in the other states and without a picture |
 | `--wmp-line-progress` | the active `lyrics-line` | Share of the line that has passed, between 0 and 1, updated with every frame while the music plays |
 | `--wmp-word-progress` | the active `lyrics-word` | Share of the word that has passed, between 0 and 1, updated with every frame while the music plays |
-| `--wmp-item-count` | `segmented-control`, `theme-picker`, `tabs`, `bottom-nav`, `admin-nav`, `recap-nav`, `tree`, `color-picker`, `avatar-presets`, `rating`, `playlist-cover`, `lyrics`, `online-matches` | Number of entries of the group: `segment`s, `theme-option`s, `tab`s, `bottom-nav-item`s, `admin-nav-item`s, visible `tree-item`s, `color-swatch`es, `avatar-preset`s, `rating-star`s, `playlist-cover-slide`s, `lyrics-line`s or `online-match`es |
-| `--wmp-active-index` | the same | Index of the active entry, starting at 0: the checked `segment` or `theme-option`, the `tab`, `bottom-nav-item` or `admin-nav-item` of the current page, the `tree-item` of the current page among the visible items, the selected `color-swatch`, the chosen `avatar-preset`, the `rating-star` of the rating, the shown `playlist-cover-slide`, the current `lyrics-line` of synchronized lyrics or the selected `online-match`; `-1` without one |
+| `--wmp-item-count` | `segmented-control`, `theme-picker`, `tabs`, `bottom-nav`, `admin-nav`, `recap-nav`, `tree`, `color-picker`, `avatar-presets`, `rating`, `playlist-cover`, `lyrics`, `online-matches` | Number of entries of the group: `segment`s, `theme-option`s, `tab`s, `bottom-nav-item`s, `admin-nav-item`s, visible `tree-item`s, `color-swatch`es, `avatar-preset`s, `rating-star`s, song covers of a `playlist-cover`, `lyrics-line`s or `online-match`es |
+| `--wmp-active-index` | the same, except `playlist-cover` | Index of the active entry, starting at 0: the checked `segment` or `theme-option`, the `tab`, `bottom-nav-item` or `admin-nav-item` of the current page, the `tree-item` of the current page among the visible items, the selected `color-swatch`, the chosen `avatar-preset`, the `rating-star` of the rating, the current `lyrics-line` of synchronized lyrics or the selected `online-match`; `-1` without one |
 | `--wmp-indicator-x` | `segmented-control`, `theme-picker`, `tabs`, `bottom-nav`, `admin-nav`, `recap-nav`, `tree`, `color-picker`, `avatar-presets`, `online-matches` | Distance of the active entry from the left edge of the group (including its scrolled distance), in pixels, for example `84.5px`; `0px` without one |
 | `--wmp-indicator-y` | the same | Distance of the active entry from the top edge of the group (including its scrolled distance), in pixels; `0px` without one |
 | `--wmp-indicator-width` | the same | Width of the active entry in pixels; `0px` without one or while it is hidden, for example in a collapsed node of the tree |
@@ -1424,7 +1434,7 @@ Paths consist of letters, digits, `.`, `_` and `-`, separated by `/`; at most fi
     "name": "My Theme",
     "author": "Your Name",
     "version": "1.0.0",
-    "themeApi": 5,
+    "themeApi": 6,
     "variants": ["light", "dark"],
     "previews": { "light": "preview-light.svg", "dark": "preview-dark.svg" }
 }
@@ -1533,10 +1543,11 @@ A newer version of WaveMP may check theme packages more strictly, for example re
 
 The version of the theme API is in `data-theme-api` on the root element and at the top of this document. Changing or removing an existing part, state, attribute or variable increases the version. New parts, states, icon slots and variables do not.
 
-The themes shipped with WaveMP name the version they are written for in the comment at the top of their `theme.css` (for example `theme API version 5`); a test keeps it equal to the current version, so a theme is checked against every change before the version in its comment is raised.
+The themes shipped with WaveMP name the version they are written for in the comment at the top of their `theme.css` (for example `theme API version 6`); a test keeps it equal to the current version, so a theme is checked against every change before the version in its comment is raised.
 
 ### Changelog
 
+- **Version 6:** playlist covers as a grid. Changed: a `playlist-cover` is a 2x2 grid of the new `playlist-cover-tile`s (attribute `data-index`, state `changing`), and its `playlist-cover-slide`s lie in these tiles instead of directly in the `playlist-cover`; the base no longer stacks all slides of the cover and fades between them, but slides a new song cover into one tile at a time. `playlist-cover` carries only `--wmp-item-count` (no longer `--wmp-active-index`), and `data-count` goes up to 12. Added: the state `rotating` of `playlist-cover`, the states `loading` and `entering` and the attribute `data-from` of `playlist-cover-slide`, the variables `--wmp-playlist-cover-gap`, `--wmp-playlist-cover-slide-duration`, `--wmp-playlist-cover-slide-easing` and `--wmp-playlist-cover-fade-duration`. Themes that styled `playlist-cover > playlist-cover-slide` have to style `playlist-cover-tile > playlist-cover-slide`. Uploaded themes written for version 5 are still accepted.
 - **Version 5:** visualizations. Changed: the `visualization` is no longer a placeholder: the state `placeholder` is gone, its `icon` and `label` moved into the new `visualization-message`, and the base lays out the `visualization` as a positioned box (no longer a grid) with the background `--wmp-stage-view-background`; themes that styled `visualization > icon` or `visualization > label` have to style `visualization-message > icon` and `visualization-message > label`; `btn-fullscreen` also lies in `visualization-controls`, so theme rules for `btn-fullscreen` that should only apply to the video need `video-stage > btn-fullscreen`. Added: the states `idle`, `loading`, `waiting`, `running`, `paused`, `unsupported`, `failed` and `fullscreen` of `visualization` and its attribute `data-module`; the parts `visualization-canvas`, `visualization-message`, `visualization-controls`, `btn-preset-previous`, `btn-preset-next` and `btn-auto-change` (states `on` and `off`, `aria-pressed`); the values `visualization-preset` and `visualization-auto-change` of `data-field`; the icon slots `preset-previous`, `preset-next` and `auto-change`.
     - Additions without a version change: the full-screen player and long titles. The parts `swipe-grip` and `player-view-switch` (states `open` and `closed`, with the `segmented-control` `player-view`) in `transport`; `player-media` (states `cover`, `video`, `visualization` and `loading`) around the `cover` of `now-playing-mini`, with `player-video` and `player-visualization` in the full-screen player; `marquee` (states `fit`, `overflow`, `waiting`, `scrolling` and `end`) inside `now-playing-title`, `now-playing-artist`, `compact-player-title` and `compact-player-artist`, which hold their text there now; the states `view-switch`, `dragging`, `settling` and `dismissing` of `transport`; the variable `--wmp-marquee-fade-size` and the runtime variables `--wmp-marquee-distance`, `--wmp-marquee-duration`, `--wmp-swipe-offset`, `--wmp-swipe-progress` and `--wmp-swipe-duration`. In the full-screen player `now-playing-mini` opens and closes `player-view-switch` (`aria-expanded` tells that now).
     - Additions without a version change: the motion system (see [Motion](#motion)). The variables `--wmp-motion-duration-fast`, `--wmp-motion-duration-medium`, `--wmp-motion-duration-slow`, `--wmp-motion-duration-fade`, `--wmp-motion-easing-standard`, `--wmp-motion-easing-enter`, `--wmp-motion-easing-exit`, `--wmp-motion-scale` and `--wmp-motion-press-scale`; the base now animates hover and press, the `indicator` of groups while the person works with them, `context-menu`s, `dialog`s, the drawer and the collapsing sidebar, pages and entries of lists. The drawer on phones slides with these variables (it used to take `0.2s`). Existing parts and states are unchanged; a theme with its own `transition` on a pressed part keeps `scale` in it to keep the press.

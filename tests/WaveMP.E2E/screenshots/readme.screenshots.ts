@@ -22,6 +22,7 @@ import {
     send,
     sessionHeaders,
     showVisualization as showVisualizationOf,
+    stillCovers,
 } from './helpers'
 
 // The screenshots of the README, taken with the synthetic test media (sine tones and test pictures)
@@ -34,6 +35,7 @@ const desktop = { width: 1440, height: 900 }
 
 test.describe.configure({ mode: 'serial' })
 test.use({ storageState: emptyStorageState, viewport: desktop, deviceScaleFactor: 1 })
+test.beforeEach(({ context }) => stillCovers(context))
 
 let alex: TestUser
 let sam: TestUser

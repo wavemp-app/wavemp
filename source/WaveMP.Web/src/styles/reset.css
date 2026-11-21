@@ -73,5 +73,10 @@
             animation-duration: var(--wmp-motion-duration-fade) !important;
             transition-duration: var(--wmp-motion-duration-fade) !important;
         }
+
+        /* A new cover in the grid of a playlist cover crossfades calmly instead of sliding. */
+        [data-part='playlist-cover-slide'] {
+            animation-duration: var(--wmp-playlist-cover-fade-duration) !important;
+        }
     }
 }

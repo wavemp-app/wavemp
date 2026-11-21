@@ -1730,9 +1730,16 @@
 
     /* --- Playlists ---------------------------------------------------------------------- */
 
-    /* The covers of some tracks lie on top of each other; the active one fades in. */
+    /*
+     * A 2x2 grid of song covers. A new cover waits invisibly in its tile until its picture is
+     * loaded, then slides in over the shown one from the outer edge named in data-from (start and
+     * end follow the writing direction); with reduced motion it fades in (reset.css keeps the fade).
+     */
     [data-part='playlist-cover'] {
         display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-template-rows: repeat(2, minmax(0, 1fr));
+        gap: var(--wmp-playlist-cover-gap);
         flex: none;
         inline-size: var(--wmp-cover-size);
         aspect-ratio: 1;
@@ -1741,27 +1748,91 @@
         background: var(--wmp-image-cover-placeholder);
     }
 
+    [data-part='playlist-cover-tile'] {
+        display: grid;
+        min-inline-size: 0;
+        min-block-size: 0;
+        overflow: hidden;
+    }
+
     [data-part='playlist-cover-slide'] {
         display: grid;
         grid-area: 1 / 1;
         min-inline-size: 0;
-        opacity: 0;
-        transition: opacity 1.5s ease-in-out;
+        min-block-size: 0;
     }
 
-    [data-part='playlist-cover-slide'][data-state~='active'] {
-        opacity: 1;
+    [data-part='playlist-cover-slide'][data-state~='loading'] {
+        opacity: 0;
+    }
+
+    /* Without movement (reduced motion) the new cover fades in. */
+    [data-part='playlist-cover-slide'][data-state~='entering'] {
+        animation-name: wmp-playlist-cover-fade-in;
+        animation-duration: var(--wmp-playlist-cover-slide-duration);
+        animation-timing-function: var(--wmp-playlist-cover-slide-easing);
+        animation-fill-mode: both;
+    }
+
+    @media (prefers-reduced-motion: no-preference) {
+        [data-part='playlist-cover-slide'][data-state~='entering'][data-from='start'] {
+            animation-name: wmp-playlist-cover-from-left;
+        }
+
+        [data-part='playlist-cover-slide'][data-state~='entering'][data-from='end'] {
+            animation-name: wmp-playlist-cover-from-right;
+        }
+
+        [data-part='playlist-cover-slide'][data-state~='entering'][data-from='start']:dir(rtl) {
+            animation-name: wmp-playlist-cover-from-right;
+        }
+
+        [data-part='playlist-cover-slide'][data-state~='entering'][data-from='end']:dir(rtl) {
+            animation-name: wmp-playlist-cover-from-left;
+        }
+
+        [data-part='playlist-cover-slide'][data-state~='entering'][data-from='top'] {
+            animation-name: wmp-playlist-cover-from-top;
+        }
+
+        [data-part='playlist-cover-slide'][data-state~='entering'][data-from='bottom'] {
+            animation-name: wmp-playlist-cover-from-bottom;
+        }
+    }
+
+    @keyframes wmp-playlist-cover-from-left {
+        from {
+            translate: -100% 0;
+        }
+    }
+
+    @keyframes wmp-playlist-cover-from-right {
+        from {
+            translate: 100% 0;
+        }
+    }
+
+    @keyframes wmp-playlist-cover-from-top {
+        from {
+            translate: 0 -100%;
+        }
+    }
+
+    @keyframes wmp-playlist-cover-from-bottom {
+        from {
+            translate: 0 100%;
+        }
+    }
+
+    @keyframes wmp-playlist-cover-fade-in {
+        from {
+            opacity: 0;
+        }
     }
 
     [data-part='playlist-cover-slide'] > [data-part='cover'] {
         inline-size: 100%;
         border-radius: 0;
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-        [data-part='playlist-cover-slide'] {
-            transition: none;
-        }
     }
 
     [data-part='tile'] > [data-part='playlist-cover'] {

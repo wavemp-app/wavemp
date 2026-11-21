@@ -15,7 +15,7 @@ namespace WaveMP.Core.Themes.Manifests;
 ///   "name": "Aurora",
 ///   "author": "Jane Doe",
 ///   "version": "1.0.0",
-///   "themeApi": 5,
+///   "themeApi": 6,
 ///   "variants": ["light", "dark"],
 ///   "previews": { "light": "preview-light.webp", "dark": "preview-dark.webp" }
 /// }

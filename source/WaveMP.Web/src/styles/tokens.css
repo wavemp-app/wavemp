@@ -363,6 +363,16 @@
         --wmp-motion-easing-exit: cubic-bezier(0.3, 0, 1, 1);
         --wmp-motion-scale: 0.96;
         --wmp-motion-press-scale: 0.97;
+
+        /*
+         * Playlist covers made of song covers (a 2x2 grid): the space between the tiles, and how a
+         * new cover slides into its tile (or fades in with reduced motion). Calm on purpose: the
+         * tiles change by themselves, nobody waits for them.
+         */
+        --wmp-playlist-cover-gap: 0px;
+        --wmp-playlist-cover-slide-duration: 1.2s;
+        --wmp-playlist-cover-slide-easing: cubic-bezier(0.33, 0, 0, 1);
+        --wmp-playlist-cover-fade-duration: 1.2s;
     }
 
     /*

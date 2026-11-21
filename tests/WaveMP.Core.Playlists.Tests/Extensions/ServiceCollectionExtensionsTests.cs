@@ -58,7 +58,8 @@ public class ServiceCollectionExtensionsTests
         options.RootPath.Should().Be(Path.Combine(Path.GetFullPath("/data"), "playlists"));
         options.MaxEntries.Should().Be(10_000);
         options.MaxCoverBytes.Should().Be(10 * 1024 * 1024);
-        options.CoverCount.Should().Be(4);
+        options.CoverScanEntries.Should().Be(100);
+        options.CoverCount.Should().Be(12);
         options.RecentlyPlayedMaxTracks.Should().Be(100);
     }
 

@@ -1,5 +1,11 @@
 import { fileURLToPath } from 'node:url'
-import { expect, type APIRequestContext, type Locator, type Page } from '@playwright/test'
+import {
+    expect,
+    type APIRequestContext,
+    type BrowserContext,
+    type Locator,
+    type Page,
+} from '@playwright/test'
 import {
     createUser,
     deleteUser,
@@ -16,6 +22,17 @@ import { homeUrl, profileTile } from '../tests/helpers/navigation'
 export const screenshotsDirectory = fileURLToPath(
     new URL('../../../assets/screenshots/', import.meta.url),
 )
+
+/**
+ * Keeps the covers of playlists still in the pages of the context: the tiles of their grid would
+ * otherwise change by themselves (source/WaveMP.Web/src/playlists/coverGrid.ts, stillCoversFlag),
+ * and the screenshots have to look the same on every run.
+ */
+export async function stillCovers(context: BrowserContext): Promise<void> {
+    await context.addInitScript(() => {
+        ;(window as unknown as Record<string, unknown>).__WAVEMP_STILL_COVERS__ = true
+    })
+}
 
 /** Starts a session of a profile and returns the header that sends its token. */
 export async function sessionHeaders(

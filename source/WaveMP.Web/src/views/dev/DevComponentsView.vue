@@ -1156,12 +1156,30 @@ const sampleTranscodeJobs = computed<TranscodeJob[]>(() => {
             <div data-part="view" data-view="playlist">
                 <DetailHeader :title="t('placeholders.playlist', { number: 1 })">
                     <template #media>
-                        <span data-part="playlist-cover" data-count="2" aria-hidden="true">
-                            <span data-part="playlist-cover-slide" data-state="active">
-                                <BaseCover :src="sampleCover" />
-                            </span>
-                            <span data-part="playlist-cover-slide">
-                                <BaseCover :src="sampleCover" />
+                        <span
+                            data-part="playlist-cover"
+                            data-count="5"
+                            data-state="rotating"
+                            aria-hidden="true"
+                        >
+                            <span
+                                v-for="tile in 4"
+                                :key="tile"
+                                data-part="playlist-cover-tile"
+                                :data-index="tile - 1"
+                                :data-state="tile === 2 ? 'changing' : undefined"
+                            >
+                                <span data-part="playlist-cover-slide" data-state="active">
+                                    <BaseCover :src="sampleCover" />
+                                </span>
+                                <span
+                                    v-if="tile === 2"
+                                    data-part="playlist-cover-slide"
+                                    data-state="entering"
+                                    data-from="end"
+                                >
+                                    <BaseCover />
+                                </span>
                             </span>
                         </span>
                     </template>

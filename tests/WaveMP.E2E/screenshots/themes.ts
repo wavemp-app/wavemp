@@ -17,7 +17,7 @@ import {
     findUserByName,
 } from '../tests/helpers/api'
 import { homeUrl, profileTile } from '../tests/helpers/navigation'
-import { part, prepareProfile, send, sessionHeaders } from './helpers'
+import { part, prepareProfile, send, sessionHeaders, stillCovers } from './helpers'
 
 // The views every theme is checked and photographed with (THEMING.md, "Checking a theme"): the
 // screenshots for theme designers (theme.screenshots.ts), the preview pictures of the theme
@@ -581,6 +581,7 @@ export async function visitThemeViews(
         }
         const context = await browser.newContext(themeContextOptions(device, target.variant))
         try {
+            await stillCovers(context)
             await context.route('**/api/v1/me/playback-state', (route) =>
                 route.request().method() === 'GET'
                     ? route.fallback()

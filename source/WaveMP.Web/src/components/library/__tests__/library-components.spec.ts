@@ -526,6 +526,25 @@ describe('LibraryCover', () => {
         wrapper.unmount()
     })
 
+    it('reports when its picture has loaded, or that there is none', async () => {
+        const { wrapper } = await mountWith(LibraryCover, {
+            kind: 'album',
+            id: 'a',
+            available: true,
+        })
+        expect(wrapper.emitted('settled')).toEqual([[true]])
+        wrapper.unmount()
+
+        covers.fetchAlbumCover.mockResolvedValue(undefined)
+        const { wrapper: missing } = await mountWith(LibraryCover, {
+            kind: 'album',
+            id: 'gone',
+            available: true,
+        })
+        expect(missing.emitted('settled')).toEqual([[false]])
+        missing.unmount()
+    })
+
     it('loads the size the cover is shown with', async () => {
         const measure = vi.spyOn(HTMLElement.prototype, 'offsetWidth', 'get').mockReturnValue(48)
         vi.stubGlobal('devicePixelRatio', 2)
