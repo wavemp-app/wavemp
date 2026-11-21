@@ -3,8 +3,7 @@
 //                                  logo used everywhere
 //   wavemp-logo-default-dark.svg   optimized copy of wavemp-logo-fluent-dark.svg, its dark variant
 //   wavemp-logo-default-<n>.png    PNG exports of wavemp-logo-default.svg (e.g. for app catalogs)
-// The earlier logo (wavemp-logo.svg and its PNG exports, from wavemp-logo-teal-wave-round.svg) is
-// kept unchanged as an alternative and is not written here any more.
+// The original Aero logo wavemp-logo-teal-wave-round.svg is currently unused and not exported.
 // Files under /assets are never overwritten: existing files are skipped unless --force is given
 // (only after the maintainer allowed it). The icons of the web app are not written here; the
 // build generates them from the default logo and its dark variant.

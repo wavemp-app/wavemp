@@ -123,9 +123,6 @@ describe('logo files under /assets/logo', () => {
 
     it.each([
         'wavemp-logo-teal-wave-round.svg',
-        'wavemp-logo.svg',
-        'wavemp-logo-256.png',
-        'wavemp-logo-512.png',
         'wavemp-logo-fluent.svg',
         'wavemp-logo-fluent-dark.svg',
         'wavemp-logo-mono-white.svg',
