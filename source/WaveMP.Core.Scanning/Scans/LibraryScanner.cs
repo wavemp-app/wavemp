@@ -18,13 +18,14 @@ namespace WaveMP.Core.Scanning.Scans;
 
 /// <summary>
 /// Scans the media sources: forms the albums of sources again whose albums follow older rules (see
-/// <see cref="ScannerVersions.AlbumGrouping"/>), checks ffprobe and the folder of every source of the scope, walks the
-/// folders of the scope, compares them with the library, reads new and changed files in parallel, writes every changed
-/// folder at once, removes folders that are gone and finally updates album covers, removes artists and albums without
-/// tracks and counts the library. A source whose folder is missing or unreadable, or whose full scan finds no files at
-/// all while the library has files of it, is skipped with an issue and its library stays unchanged, so an unmounted
-/// folder never empties the library; if every source of the scan is skipped, the scan fails. Reading and writing a
-/// folder and the clean-up hold the <see cref="LibraryWriteLock"/>, so other writers wait at most for one folder.
+/// <see cref="ScannerVersions.AlbumGrouping"/>) and cleans up after that, checks ffprobe and the folder of every source
+/// of the scope, walks the folders of the scope, compares them with the library, reads new and changed files in
+/// parallel, writes every changed folder at once, removes folders that are gone and finally updates album covers,
+/// removes artists and albums without tracks and counts the library. A source whose folder is missing or unreadable,
+/// or whose full scan finds no files at all while the library has files of it, is skipped with an issue and its
+/// library stays unchanged, so an unmounted folder never empties the library; if every source of the scan is skipped,
+/// the scan fails. Reading and writing a folder and the clean-up hold the <see cref="LibraryWriteLock"/>, so other
+/// writers wait at most for one folder.
 /// </summary>
 internal sealed class LibraryScanner(
     ILibraryScanRepository library,
@@ -147,7 +148,7 @@ internal sealed class LibraryScanner(
         ScanOptions scanOptions = options.Value;
         LibrarySettings librarySettings = settings.Current;
         IssueCollector issues = new(scanOptions.MaxIssuesPerScan);
-        int tracksRegrouped = await RegroupAsync(cancellationToken);
+        int tracksRegrouped = await RegroupAsync(librarySettings, cancellationToken);
 
         MediaSourceInfo[] targets = [.. sources.Sources
             .Where(source => source.IsActive && scope.DirectoriesOf(source.Id) is not null)];
@@ -342,13 +343,21 @@ internal sealed class LibraryScanner(
     /// Forms the albums of every folder with tracks again from the stored files, without reading a file, for all
     /// sources (also deactivated ones) whose albums were formed with an older version of the rules
     /// (<see cref="ScannerVersions.AlbumGrouping"/>). Every folder is written on its own while holding the
-    /// <see cref="LibraryWriteLock"/>. Returns the number of tracks that changed.
+    /// <see cref="LibraryWriteLock"/>. Then removes albums and artists without tracks, updates album covers and
+    /// compilations and only then stores the version: the rest of the scan may fail (e.g. a folder that is not
+    /// mounted), and an interrupted run is repeated as a whole by the next scan. Returns the number of tracks that
+    /// changed.
     /// </summary>
-    private async Task<int> RegroupAsync(CancellationToken cancellationToken)
+    private async Task<int> RegroupAsync(LibrarySettings librarySettings, CancellationToken cancellationToken)
     {
         IReadOnlyList<Guid> sourceIds = await library.GetSourcesToRegroupAsync(
             ScannerVersions.AlbumGrouping,
             cancellationToken);
+        if (sourceIds.Count == 0)
+        {
+            return 0;
+        }
+
         int changed = 0;
         foreach (Guid sourceId in sourceIds)
         {
@@ -366,13 +375,23 @@ internal sealed class LibraryScanner(
                 }
             }
 
-            await library.SetAlbumGroupingVersionAsync(sourceId, ScannerVersions.AlbumGrouping, cancellationToken);
             logger.LogInformation(
                 "Albums of the media source {SourceId} formed again in {Folders} folders with the rules of version "
                 + "{Version}",
                 sourceId,
                 directories.Count,
                 ScannerVersions.AlbumGrouping);
+        }
+
+        using (await writeLock.AcquireAsync(cancellationToken))
+        {
+            await library.DeleteOrphansAsync(cancellationToken);
+            await writer.UpdateAlbumCoversAsync(librarySettings.AlbumCoverNames, cancellationToken);
+            await writer.UpdateAlbumCompilationsAsync(timeProvider.GetUtcNow(), cancellationToken);
+            foreach (Guid sourceId in sourceIds)
+            {
+                await library.SetAlbumGroupingVersionAsync(sourceId, ScannerVersions.AlbumGrouping, cancellationToken);
+            }
         }
 
         return changed;

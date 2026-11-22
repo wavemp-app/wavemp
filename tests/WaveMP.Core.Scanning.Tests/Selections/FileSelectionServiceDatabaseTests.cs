@@ -103,6 +103,35 @@ public class FileSelectionServiceDatabaseTests
     }
 
     [Test]
+    public async Task SetAsync_FileWithoutCompilationFlag_MovesTheSongOutOfTheCompilationAndBack()
+    {
+        TestTags hits = new() { Album = "Hits", Artist = "A" };
+        await TestMediaGenerator.CreateAudioAsync(
+            _media.Combine("Hits/Song.flac"),
+            AudioFormat.Flac,
+            hits with { Compilation = "1" });
+        await TestMediaGenerator.CreateAudioAsync(_media.Combine("Hits/Song.mp3"), AudioFormat.Mp3, hits);
+        await ScanAsync();
+        Guid trackId = await TrackIdAsync();
+        Dictionary<string, Guid> files = await FileIdsAsync();
+
+        async Task ExpectAlbumAsync(string? artist, bool isCompilation)
+        {
+            await using WaveMpDbContext db = _database.CreateDbContext();
+            Album album = await db.Albums.Include(item => item.AlbumArtist).SingleAsync();
+            (album.AlbumArtist?.Name, album.IsCompilation).Should().Be((artist, isCompilation));
+        }
+
+        await ExpectAlbumAsync(null, true);
+
+        await SetAsync(trackId, new FileChoices(files["Song.mp3"]));
+        await ExpectAlbumAsync("A", false);
+
+        await SetAsync(trackId, FileChoices.None);
+        await ExpectAlbumAsync(null, true);
+    }
+
+    [Test]
     public async Task Scan_SelectedFileDeleted_FallsBackVisiblyAndSelectsItAgainWhenItIsBack()
     {
         await CreateSongAsync();

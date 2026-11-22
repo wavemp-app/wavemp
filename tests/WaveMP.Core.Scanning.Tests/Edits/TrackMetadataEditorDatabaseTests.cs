@@ -213,6 +213,54 @@ public class TrackMetadataEditorDatabaseTests
         (await db.Albums.Select(album => album.Id).ToListAsync()).Should().Equal(albumId);
     }
 
+    [TestCase(AudioFormat.Mp3, "mp3")]
+    [TestCase(AudioFormat.M4a, "m4a")]
+    [TestCase(AudioFormat.Flac, "flac")]
+    public async Task UpdateAsync_AlbumArtistOfAFlaggedSong_MovesItOutOfTheCompilationAndBack(
+        AudioFormat format,
+        string extension)
+    {
+        TestTags hits = new() { Album = "Hits", Compilation = "1" };
+        await AudioAsync($"Hits/01.{extension}", hits with { Title = "One", Artist = "A" }, format);
+        await AudioAsync($"Hits/02.{extension}", hits with { Title = "Two", Artist = "B" }, format);
+        await ScanAsync();
+        Guid trackId = await TrackIdAsync("Two");
+        Guid compilationId;
+        await using (WaveMpDbContext db = _database.CreateDbContext())
+        {
+            compilationId = (await db.Albums.SingleAsync()).Id;
+        }
+
+        // The album has no artist, so the editor does not offer the artist of the song as album artist.
+        (await GetAsync(trackId))!.AlbumArtist.Should().BeNull();
+
+        TrackMetadataResult set = await UpdateAsync(
+            trackId,
+            new TagChanges { AlbumArtist = new TagChange<string?>("DJ") });
+
+        set.Metadata!.AlbumArtist.Should().Be("DJ");
+        await using (WaveMpDbContext db = _database.CreateDbContext())
+        {
+            Track moved = await db.Tracks
+                .Include(track => track.Album!).ThenInclude(album => album.AlbumArtist)
+                .SingleAsync(track => track.Id == trackId);
+            moved.AlbumId.Should().NotBe(compilationId);
+            moved.Album!.AlbumArtist!.Name.Should().Be("DJ");
+            moved.Album.IsCompilation.Should().BeTrue();
+        }
+
+        TrackMetadataResult cleared = await UpdateAsync(
+            trackId,
+            new TagChanges { AlbumArtist = new TagChange<string?>(null) });
+
+        cleared.Metadata!.AlbumArtist.Should().BeNull();
+        await using WaveMpDbContext after = _database.CreateDbContext();
+        (await after.Albums.Select(album => album.Id).ToListAsync()).Should().Equal(compilationId);
+        (await after.Tracks.Select(track => track.AlbumId).ToListAsync())
+            .Should().Equal(compilationId, compilationId);
+        (await after.Artists.Select(artist => artist.Name).ToListAsync()).Should().BeEquivalentTo("A", "B");
+    }
+
     [Test]
     public async Task UpdateAsync_ArtistInOtherCase_TakesOverTheSpellingForAllTracks()
     {
@@ -264,6 +312,12 @@ public class TrackMetadataEditorDatabaseTests
         (await db.MediaFiles.SingleAsync()).IsWritable.Should().BeFalse();
     }
 
+    private async Task<TrackMetadata?> GetAsync(Guid trackId)
+    {
+        await using AsyncServiceScope scope = _services.CreateAsyncScope();
+        return await scope.ServiceProvider.GetRequiredService<ITrackMetadataEditor>().GetAsync(trackId);
+    }
+
     private async Task<TrackMetadataResult> UpdateAsync(Guid trackId, TagChanges changes)
     {
         await using AsyncServiceScope scope = _services.CreateAsyncScope();
@@ -282,9 +336,9 @@ public class TrackMetadataEditorDatabaseTests
         await scope.ServiceProvider.GetRequiredService<ILibraryScanner>().ScanAsync(ScanScope.Full, Guid.NewGuid());
     }
 
-    private Task AudioAsync(string relativePath, TestTags tags)
+    private Task AudioAsync(string relativePath, TestTags tags, AudioFormat format = AudioFormat.Mp3)
     {
-        return TestMediaGenerator.CreateAudioAsync(_media.Combine(relativePath), AudioFormat.Mp3, tags);
+        return TestMediaGenerator.CreateAudioAsync(_media.Combine(relativePath), format, tags);
     }
 
     private static ServiceProvider CreateServices(string mediaPath)

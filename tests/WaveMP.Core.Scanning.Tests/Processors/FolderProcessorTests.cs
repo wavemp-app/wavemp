@@ -96,6 +96,60 @@ public class FolderProcessorTests
     }
 
     [Test]
+    public void Process_CompilationFlag_FormsOneAlbumPerAlbumFolderAndSource()
+    {
+        static MediaFile Flagged(string path, string artist) => Audio(path, false, file => file.Tags = new MediaFileTags
+        {
+            Artist = artist,
+            Album = "Hits",
+            IsCompilation = true,
+        });
+        var source = Guid.NewGuid();
+
+        ProcessedFolder first = FolderProcessor.Process(
+            "Hits/CD1",
+            [Flagged("Hits/CD1/a.mp3", "A"), Flagged("Hits/CD1/b.mp3", "B")],
+            sourceId: source);
+        AlbumAssignment second = FolderProcessor.Process("Hits/CD2", [Flagged("Hits/CD2/c.mp3", "C")], sourceId: source)
+            .Tracks.Single().Album!;
+        AlbumAssignment otherSource = FolderProcessor.Process(
+            "Hits/CD2",
+            [Flagged("Hits/CD2/c.mp3", "C")],
+            sourceId: Guid.NewGuid()).Tracks.Single().Album!;
+
+        second.AlbumArtist.Should().BeNull();
+        first.Tracks.Should().AllSatisfy(track => track.Album!.Key.Should().Be(second.Key));
+        otherSource.Key.Should().NotBe(second.Key);
+    }
+
+    [TestCase(false, null)]
+    [TestCase(true, "A")]
+    public void Process_FilesWithDifferentFlags_FollowThePrimaryAudioFile(bool selectLossy, string? expectedArtist)
+    {
+        MediaFile flagged = Audio("Hits/Song.flac", true, file => file.Tags = new MediaFileTags
+        {
+            Artist = "A",
+            Album = "Hits",
+            IsCompilation = true,
+        });
+        MediaFile unflagged = Audio("Hits/Song.mp3", false, file => file.Tags = new MediaFileTags
+        {
+            Artist = "A",
+            Album = "Hits",
+        });
+        Dictionary<string, FileChoices> choices = [];
+        if (selectLossy)
+        {
+            choices["SONG"] = new FileChoices(unflagged.Id);
+        }
+
+        ProcessedTrack track = FolderProcessor.Process("Hits", [flagged, unflagged], choices).Tracks.Single();
+
+        track.Album!.AlbumArtist.Should().Be(expectedArtist);
+        track.Metadata.IsCompilation.Should().Be(!selectLossy);
+    }
+
+    [Test]
     public void Process_TrackCovers_PictureFilesFirstThenEmbeddedPictures()
     {
         MediaFile primary = Audio("A/Song.flac", true, file => Embedded(file, 500));

@@ -7,15 +7,15 @@ namespace WaveMP.Core.Metadata.Resolutions;
 /// <summary>
 /// The identity of an album: its artist (the album artist, otherwise the artist of the track) and its title, both
 /// compared without regard to case and to white space at the start, at the end and in a row, hashed with SHA-256 to a
-/// short key of fixed length for the unique index. Folders do not define albums. Only albums without any artist are
-/// kept apart per folder (the parameter <c>folder</c> of <see cref="Create"/>), since nothing else tells unrelated ones
-/// apart.
+/// short key of fixed length for the unique index. Folders do not define albums with an artist. Albums without artist
+/// (tracks without any artist, and tracks with the compilation flag but without album artist) are kept apart per
+/// folder (the parameter <c>folder</c> of <see cref="Create"/>), since nothing else tells unrelated ones apart.
 /// </summary>
 public static class AlbumKeys
 {
     /// <param name="title">Title of the album.</param>
-    /// <param name="artist">The album artist, otherwise the artist of the track; <c>null</c> if neither is
-    /// known.</param>
+    /// <param name="artist">The artist of the album (see <see cref="AlbumResolver.ArtistOf"/>); <c>null</c> for albums
+    /// that are identified by their folder.</param>
     /// <param name="folder">Identifies the folder of an album without artist (e.g. source and path of the album
     /// folder); ignored for albums with an artist.</param>
     public static string Create(string title, string? artist, string? folder = null)

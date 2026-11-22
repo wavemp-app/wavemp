@@ -20,8 +20,8 @@ public static class FolderProcessor
     /// <param name="files">The media files of the folder.</param>
     /// <param name="choices">The files the admin selected, by the normalized base name of the track. A selected file
     /// that is not part of the track (or not of the category) is ignored, and the quality rule chooses.</param>
-    /// <param name="sourceId">The media source of the folder; keeps albums without any artist apart from those of
-    /// other sources.</param>
+    /// <param name="sourceId">The media source of the folder; keeps albums without artist, also those of
+    /// compilations, apart from those of other sources.</param>
     public static ProcessedFolder Process(
         string directoryPath,
         IReadOnlyList<MediaFile> files,
@@ -61,8 +61,9 @@ public static class FolderProcessor
     }
 
     /// <summary>
-    /// Identifies the album folder of a folder for albums without any artist: the folder above a disc folder such as
-    /// <c>CD1</c>, otherwise the folder itself, in its media source. Albums with an artist ignore it.
+    /// Identifies the album folder of a folder for albums without artist (see <see cref="AlbumResolver"/>): the folder
+    /// above a disc folder such as <c>CD1</c>, otherwise the folder itself, in its media source. Albums with an artist
+    /// ignore it.
     /// </summary>
     internal static string AlbumFolderOf(Guid? sourceId, string directoryPath)
     {

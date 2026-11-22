@@ -89,6 +89,92 @@ public class AlbumResolverTests
     }
 
     [Test]
+    public void Resolve_CompilationFlagWithoutAlbumArtist_IsOneAlbumOfTheFolder()
+    {
+        IReadOnlyList<AlbumAssignment?> result = AlbumResolver.Resolve(
+        [
+            Track("A", album: "Hits", isCompilation: true),
+            Track("B", album: " hits ", isCompilation: true),
+            Track(null, album: "Hits", isCompilation: true),
+            Track(null, album: "Hits"),
+        ],
+        "a/Hits");
+
+        result.Should().AllSatisfy(album => album.Should().Be(new AlbumAssignment(
+            "Hits",
+            null,
+            null,
+            AlbumKeys.Create("Hits", null, "a/Hits"))));
+    }
+
+    [Test]
+    public void Resolve_CompilationFlagInAnotherFolderOrWithAnotherTitle_IsAnotherAlbum()
+    {
+        IReadOnlyList<AlbumAssignment?> first = AlbumResolver.Resolve(
+        [
+            Track("A", album: "Hits", isCompilation: true),
+            Track("A", album: "More Hits", isCompilation: true),
+        ],
+        "a/One");
+        IReadOnlyList<AlbumAssignment?> second = AlbumResolver.Resolve(
+            [Track("A", album: "Hits", isCompilation: true)],
+            "a/Two");
+
+        first[1]!.Key.Should().NotBe(first[0]!.Key);
+        second[0]!.Key.Should().NotBe(first[0]!.Key);
+    }
+
+    [Test]
+    public void Resolve_CompilationFlagWithAlbumArtist_IgnoresTheFolder()
+    {
+        ResolvedTrackMetadata[] tracks = [Track("A", "DJ", "Mix", isCompilation: true)];
+
+        IReadOnlyList<AlbumAssignment?> first = AlbumResolver.Resolve(tracks, "a/One");
+        IReadOnlyList<AlbumAssignment?> second = AlbumResolver.Resolve(tracks, "b/Two");
+
+        first[0].Should().Be(new AlbumAssignment("Mix", "DJ", null, AlbumKeys.Create("Mix", "DJ")));
+        second[0].Should().Be(first[0]);
+    }
+
+    [Test]
+    public void Resolve_TracksWithoutFlagNextToFlaggedOnes_KeepTheKeyOfTheirArtist()
+    {
+        IReadOnlyList<AlbumAssignment?> result = AlbumResolver.Resolve(
+        [
+            Track("A", album: "Hits", isCompilation: true),
+            Track("A", album: "Hits"),
+            Track("B", album: "Hits"),
+            Track("C", "Various Artists", "Hits"),
+        ],
+        "a/Hits");
+
+        result.Select(album => album!.Key).Should().Equal(
+            AlbumKeys.Create("Hits", null, "a/Hits"),
+            AlbumKeys.Create("Hits", "A"),
+            AlbumKeys.Create("Hits", "B"),
+            AlbumKeys.Create("Hits", "Various Artists"));
+    }
+
+    [TestCase("")]
+    [TestCase("  ")]
+    public void Resolve_CompilationFlagWithBlankAlbumArtist_CountsAsWithoutAlbumArtist(string albumArtist)
+    {
+        IReadOnlyList<AlbumAssignment?> result = AlbumResolver.Resolve(
+            [Track("A", albumArtist, "Hits", isCompilation: true)],
+            "a/Hits");
+
+        result[0].Should().Be(new AlbumAssignment("Hits", null, null, AlbumKeys.Create("Hits", null, "a/Hits")));
+    }
+
+    [Test]
+    public void Resolve_CompilationFlagWithoutAlbum_GetsNoAlbum()
+    {
+        IReadOnlyList<AlbumAssignment?> result = AlbumResolver.Resolve([Track("A", isCompilation: true)], "a/Hits");
+
+        result.Should().AllSatisfy(album => album.Should().BeNull());
+    }
+
+    [Test]
     public void Resolve_TrackWithoutAlbum_GetsNoAlbum()
     {
         IReadOnlyList<AlbumAssignment?> result = AlbumResolver.Resolve([Track("A"), Track("A", album: "  ")]);
@@ -125,7 +211,8 @@ public class AlbumResolverTests
         string? artist,
         string? albumArtist = null,
         string? album = null,
-        int? year = null)
+        int? year = null,
+        bool isCompilation = false)
     {
         return new ResolvedTrackMetadata(
             "Title",
@@ -136,6 +223,7 @@ public class AlbumResolverTests
             null,
             null,
             year,
-            null);
+            null,
+            isCompilation);
     }
 }

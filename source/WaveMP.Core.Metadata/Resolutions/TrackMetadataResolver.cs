@@ -17,11 +17,13 @@ public static class TrackMetadataResolver
             : (path.Title, path.IsTitleFromPattern ? TrackMetadataSource.Path : TrackMetadataSource.FileName);
 
         // The artist of the folder becomes the album artist (e.g. a sampler named after its folder) only if the tags
-        // name neither an album artist nor another artist.
+        // name neither an album artist nor another artist. It never does with the compilation flag: without an album
+        // artist tag, such a track belongs to the compilation of its folder (see AlbumResolver).
         string? albumArtist = tags.AlbumArtist
-            ?? (tags.Artist is null || tags.Artist.Equals(path.Artist, StringComparison.OrdinalIgnoreCase)
-                ? path.AlbumArtist
-                : null);
+            ?? (!tags.IsCompilation
+                && (tags.Artist is null || tags.Artist.Equals(path.Artist, StringComparison.OrdinalIgnoreCase))
+                    ? path.AlbumArtist
+                    : null);
 
         return new ResolvedTrackMetadata(
             title,
@@ -32,6 +34,7 @@ public static class TrackMetadataResolver
             tags.TrackNumber ?? path.TrackNumber,
             tags.DiscNumber ?? path.DiscNumber,
             tags.Year ?? path.Year,
-            tags.Genre);
+            tags.Genre,
+            tags.IsCompilation);
     }
 }

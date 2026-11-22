@@ -97,4 +97,39 @@ public class TrackMetadataResolverTests
         result.Artist.Should().Be("B");
         result.AlbumArtist.Should().BeNull();
     }
+
+    [Test]
+    public void Resolve_CompilationFlagInASamplerFolder_TakesNoAlbumArtistFromTheFolder()
+    {
+        PathMetadata path = PathMetadataParser.Parse(["Various", "Hits"], "01 - A - X");
+
+        ResolvedTrackMetadata result = TrackMetadataResolver.Resolve(new MediaTags { IsCompilation = true }, path);
+
+        result.IsCompilation.Should().BeTrue();
+        result.Artist.Should().Be("A");
+        result.Album.Should().Be("Hits");
+        result.AlbumArtist.Should().BeNull();
+    }
+
+    [Test]
+    public void Resolve_CompilationFlagWithTheArtistOfThePath_TakesNoAlbumArtistFromTheFolder()
+    {
+        PathMetadata path = PathMetadataParser.Parse(["Various", "Hits"], "01 - A - X");
+        MediaTags tags = new() { Artist = "A", IsCompilation = true };
+
+        ResolvedTrackMetadata result = TrackMetadataResolver.Resolve(tags, path);
+
+        result.AlbumArtist.Should().BeNull();
+    }
+
+    [Test]
+    public void Resolve_CompilationFlagWithAlbumArtistTag_KeepsTheTag()
+    {
+        PathMetadata path = PathMetadataParser.Parse(["Various", "Hits"], "01 - A - X");
+        MediaTags tags = new() { AlbumArtist = "DJ", IsCompilation = true };
+
+        ResolvedTrackMetadata result = TrackMetadataResolver.Resolve(tags, path);
+
+        (result.IsCompilation, result.AlbumArtist).Should().Be((true, "DJ"));
+    }
 }

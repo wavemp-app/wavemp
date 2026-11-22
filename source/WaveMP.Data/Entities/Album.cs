@@ -2,8 +2,10 @@ namespace WaveMP.Data.Entities;
 
 /// <summary>
 /// An album, unique by its artist and title as the metadata names them: the album artist of its tracks, otherwise
-/// their artist (albums without any artist are kept apart per folder). Created by the scan and removed once it has no
-/// tracks. The spelling of the title and the year follow the folder of the album that was written last.
+/// their artist. Albums without artist (tracks without any artist, and tracks with the compilation flag but without
+/// album artist tag) are unique by their title and album folder in the media source instead. Created by the scan and
+/// removed once it has no tracks. The spelling of the title and the year follow the folder of the album that was
+/// written last.
 /// </summary>
 public class Album
 {
@@ -17,13 +19,14 @@ public class Album
     public required string NormalizedTitle { get; set; }
 
     /// <summary>
-    /// SHA-256 (hex) of the normalized artist and title; carries the unique index.
+    /// SHA-256 (hex) of the normalized artist (the album folder for albums without artist) and title; carries the
+    /// unique index.
     /// </summary>
     public required string AlbumKey { get; set; }
 
     /// <summary>
     /// Artist of the album: the album artist of its tracks, otherwise their artist; <c>null</c> for albums without a
-    /// known artist.
+    /// known artist and for compilations formed by the compilation flag without an album artist tag.
     /// </summary>
     public Guid? AlbumArtistId { get; set; }
 

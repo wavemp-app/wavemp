@@ -33,10 +33,12 @@ public static class ScannerVersions
     /// <summary>
     /// Version of the rules that form albums. Version 2 identifies an album by its artist (the album artist, otherwise
     /// the artist of the track) and title, wherever its tracks lie, instead of per folder with compilations of several
-    /// artists. Raising it makes the next scan form the albums of all stored folders again, without reading files (see
+    /// artists. Version 3 identifies the album of tracks with the compilation flag and without album artist tag by its
+    /// title and album folder in the media source, whatever the artists of the tracks are. Raising it makes the next
+    /// scan form the albums of all stored folders again, without reading files (see
     /// <see cref="MediaSource.AlbumGroupingVersion"/>).
     /// </summary>
-    public const int AlbumGrouping = 2;
+    public const int AlbumGrouping = 3;
 
     /// <summary>
     /// The current version of the metadata of a kind of file.

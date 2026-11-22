@@ -1,3 +1,4 @@
+using System.Data.Common;
 using AwesomeAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -460,6 +461,298 @@ public class LibraryScannerTests
         albums.Should().AllSatisfy(album => album.Covers.Should().ContainSingle());
         (await after.MediaSources.Select(source => source.AlbumGroupingVersion).Distinct().ToListAsync())
             .Should().Equal(ScannerVersions.AlbumGrouping);
+    }
+
+    [TestCase(AudioFormat.Mp3, "mp3")]
+    [TestCase(AudioFormat.M4a, "m4a")]
+    [TestCase(AudioFormat.Flac, "flac")]
+    [TestCase(AudioFormat.Opus, "opus")]
+    public async Task Scan_CompilationFlagWithoutAlbumArtist_IsOneAlbumOfTheFolder(AudioFormat format, string extension)
+    {
+        TestTags hits = new() { Album = "Hits", Compilation = "1" };
+        await AudioAsync($"Hits/01.{extension}", format, hits with { Title = "One", Artist = "A" });
+        await AudioAsync($"Hits/02.{extension}", format, hits with { Title = "Two", Artist = "B" });
+        await AudioAsync(
+            $"Hits/03.{extension}",
+            format,
+            hits with { Title = "Three", Artist = "C", AlbumArtist = " " });
+
+        await ScanAsync();
+
+        await using WaveMpDbContext db = _database.CreateDbContext();
+        Album album = await db.Albums.Include(item => item.Tracks).ThenInclude(track => track.Artist).SingleAsync();
+        (album.Title, album.AlbumArtistId, album.IsCompilation).Should().Be(("Hits", (Guid?)null, true));
+        album.Tracks.Select(track => (track.Title, track.Artist!.Name))
+            .Should().BeEquivalentTo([("One", "A"), ("Two", "B"), ("Three", "C")]);
+        (await db.Artists.Select(artist => artist.Name).ToListAsync()).Should().BeEquivalentTo("A", "B", "C");
+    }
+
+    [Test]
+    public async Task Scan_Id3TcmpFramesWithoutAlbumArtist_AreOneAlbum()
+    {
+        await AudioAsync("Hits/01.mp3", tags: new TestTags { Title = "One", Artist = "A", Album = "Hits" });
+        await AudioAsync("Hits/02.mp3", tags: new TestTags { Title = "Two", Artist = "B", Album = "Hits" });
+        SetTcmpFrame("Hits/01.mp3");
+        SetTcmpFrame("Hits/02.mp3");
+
+        await ScanAsync();
+
+        await using WaveMpDbContext db = _database.CreateDbContext();
+        Album album = await LoadAlbumAsync(db, "Hits");
+        (album.AlbumArtistId, album.Tracks.Count, album.IsCompilation).Should().Be(((Guid?)null, 2, true));
+    }
+
+    [Test]
+    public async Task Scan_CompilationFlagInASamplerFolder_TakesNoAlbumArtistFromTheFolder()
+    {
+        await AudioAsync("Sampler/Hits/01 - A - One.mp3", tags: new TestTags { Compilation = "1" });
+        await AudioAsync("Sampler/Hits/02 - B - Two.mp3", tags: new TestTags { Compilation = "1" });
+
+        await ScanAsync();
+
+        await using WaveMpDbContext db = _database.CreateDbContext();
+        Album album = await LoadAlbumAsync(db, "Hits");
+        (album.AlbumArtistId, album.Tracks.Count, album.IsCompilation).Should().Be(((Guid?)null, 2, true));
+        (await db.Artists.Select(artist => artist.Name).ToListAsync()).Should().BeEquivalentTo("A", "B");
+    }
+
+    [Test]
+    public async Task Scan_CompilationsOfTheSameNameInTwoFolders_AreTwoAlbums()
+    {
+        TestTags hits = new() { Album = "Hits", Compilation = "1" };
+        await AudioAsync("One/Hits/01.mp3", tags: hits with { Title = "One", Artist = "A" });
+        await AudioAsync("One/Hits/02.mp3", tags: hits with { Title = "Two", Artist = "B" });
+        await AudioAsync("Two/Hits/01.mp3", tags: hits with { Title = "Three", Artist = "A" });
+        await AudioAsync("Two/Hits/02.mp3", tags: hits with { Title = "Four", Artist = "B" });
+
+        await ScanAsync();
+
+        await using WaveMpDbContext db = _database.CreateDbContext();
+        List<Album> albums = await db.Albums.Include(album => album.Tracks).ToListAsync();
+        albums.Should().HaveCount(2);
+        albums.Should().AllSatisfy(album =>
+        {
+            (album.AlbumArtistId, album.Tracks.Count, album.IsCompilation).Should().Be(((Guid?)null, 2, true));
+            album.Tracks.Select(track => track.DirectoryPath).Distinct().Should().ContainSingle();
+        });
+    }
+
+    [Test]
+    public async Task Scan_CompilationsOfTheSameNameAndFolderInTwoSources_AreTwoAlbums()
+    {
+        using TemporaryDirectory other = new();
+        TestTags hits = new() { Album = "Hits", Compilation = "1" };
+        await AudioAsync("Hits/01.mp3", tags: hits with { Title = "One", Artist = "A" });
+        await AudioAsync("Hits/02.mp3", tags: hits with { Title = "Two", Artist = "B" });
+        await TestMediaGenerator.CreateAudioAsync(
+            other.Combine("Hits/01.mp3"),
+            AudioFormat.Mp3,
+            hits with { Title = "Three", Artist = "A" });
+        await TestMediaGenerator.CreateAudioAsync(
+            other.Combine("Hits/02.mp3"),
+            AudioFormat.Mp3,
+            hits with { Title = "Four", Artist = "B" });
+        await AddSourceAsync("Other", other.Path);
+
+        await ScanAsync();
+
+        await using WaveMpDbContext db = _database.CreateDbContext();
+        List<Album> albums = await db.Albums.Include(album => album.Tracks).ToListAsync();
+        albums.Should().HaveCount(2);
+        albums.Should().AllSatisfy(album =>
+        {
+            (album.AlbumArtistId, album.Tracks.Count, album.IsCompilation).Should().Be(((Guid?)null, 2, true));
+            album.Tracks.Select(track => track.SourceId).Distinct().Should().ContainSingle();
+        });
+    }
+
+    [Test]
+    public async Task Scan_CompilationInDiscFolders_IsOneAlbumWithTheCoverOfTheFolderAbove()
+    {
+        TestTags hits = new() { Album = "Hits", Compilation = "1" };
+        await AudioAsync("Hits/CD1/01.mp3", tags: hits with { Title = "One", Artist = "A" });
+        await AudioAsync("Hits/CD2/01.mp3", tags: hits with { Title = "Two", Artist = "B" });
+        await ImageAsync("Hits/cover.jpg", 100, 100);
+
+        await ScanAsync();
+
+        await using WaveMpDbContext db = _database.CreateDbContext();
+        Album album = await LoadAlbumAsync(db, "Hits");
+        (album.AlbumArtistId, album.Tracks.Count, album.IsCompilation).Should().Be(((Guid?)null, 2, true));
+        album.Covers.Should().ContainSingle().Which.MediaFile!.RelativePath.Should().Be("Hits/cover.jpg");
+    }
+
+    [TestCase(null)]
+    [TestCase("0")]
+    public async Task Scan_SongsWithoutTheCompilationFlag_KeepTheRuleOfArtistAndAlbumName(string? flag)
+    {
+        TestTags hits = new() { Album = "Hits", Compilation = flag };
+        await AudioAsync("One/01.mp3", tags: hits with { Title = "One", Artist = "A" });
+        await AudioAsync("One/02.mp3", tags: hits with { Title = "Two", Artist = "B" });
+        await AudioAsync("Two/01.mp3", tags: hits with { Title = "Three", Artist = "A" });
+
+        await ScanAsync();
+
+        await using WaveMpDbContext db = _database.CreateDbContext();
+        List<Album> albums = await db.Albums
+            .Include(album => album.AlbumArtist)
+            .Include(album => album.Tracks)
+            .ToListAsync();
+        albums.Select(album => (album.AlbumArtist!.Name, album.Tracks.Count, album.IsCompilation))
+            .Should().BeEquivalentTo([("A", 2, false), ("B", 1, false)]);
+    }
+
+    [Test]
+    public async Task Scan_CompilationFlagWithAlbumArtist_IsOneAlbumAcrossFolders()
+    {
+        TestTags mix = new() { Album = "Mix", AlbumArtist = "DJ", Compilation = "1" };
+        await AudioAsync("One/01.mp3", tags: mix with { Title = "One", Artist = "A" });
+        await AudioAsync("Two/01.mp3", tags: mix with { Title = "Two", Artist = "B" });
+
+        await ScanAsync();
+
+        await using WaveMpDbContext db = _database.CreateDbContext();
+        Album album = await LoadAlbumAsync(db, "Mix");
+        (album.AlbumArtist!.Name, album.Tracks.Count, album.IsCompilation).Should().Be(("DJ", 2, true));
+    }
+
+    [Test]
+    public async Task Scan_CompilationsOfGroupingVersion2_AreFormedAgainAsOneAlbumWithoutReadingFiles()
+    {
+        (Dictionary<string, Guid> trackIds, Guid unaffectedAlbumId) = await CreateLibraryOfGroupingVersion2Async();
+
+        ScanResult result = await ScanAsync();
+
+        result.Statistics.FilesUpdated.Should().Be(0);
+        result.Statistics.TracksUpdated.Should().Be(3);
+        Guid albumId = await ExpectRegroupedCompilationAsync(trackIds, unaffectedAlbumId);
+
+        ScanResult again = await ScanAsync();
+
+        (again.Statistics.FilesUpdated, again.Statistics.TracksUpdated).Should().Be((0, 0));
+        (await ExpectRegroupedCompilationAsync(trackIds, unaffectedAlbumId)).Should().Be(albumId);
+    }
+
+    [Test]
+    public async Task Scan_RegroupWithoutTheMediaFolder_LeavesAConsistentLibraryAlthoughTheScanFails()
+    {
+        (Dictionary<string, Guid> trackIds, Guid unaffectedAlbumId) = await CreateLibraryOfGroupingVersion2Async();
+        await using ServiceProvider services = CreateServices(_media.Combine("missing"));
+
+        Func<Task> act = () => ScanAsync(services: services);
+
+        (await act.Should().ThrowAsync<JobFailedException>()).Which.Code
+            .Should().Be(JobErrorCode.MediaFolderNotFound);
+        await ExpectRegroupedCompilationAsync(trackIds, unaffectedAlbumId);
+    }
+
+    [Test]
+    public async Task Scan_RegroupOfADeactivatedSource_LeavesAConsistentLibraryAlthoughNoSourceCanBeScanned()
+    {
+        (Dictionary<string, Guid> trackIds, Guid unaffectedAlbumId) = await CreateLibraryOfGroupingVersion2Async();
+        await SetActiveAsync(MediaSource.DefaultId, false);
+
+        Func<Task> act = () => ScanAsync();
+
+        (await act.Should().ThrowAsync<JobFailedException>()).Which.Code.Should().Be(JobErrorCode.NoMediaSources);
+        await ExpectRegroupedCompilationAsync(trackIds, unaffectedAlbumId);
+    }
+
+    [Test]
+    public async Task Scan_RegroupWithFailedCleanUp_KeepsTheOldVersionAndIsFinishedByTheNextScan()
+    {
+        (Dictionary<string, Guid> trackIds, Guid unaffectedAlbumId) = await CreateLibraryOfGroupingVersion2Async();
+        await using (WaveMpDbContext db = _database.CreateDbContext())
+        {
+            // The clean-up fails when it removes the old albums.
+            await db.Database.ExecuteSqlRawAsync(
+                """
+                CREATE FUNCTION fail_album_delete() RETURNS trigger LANGUAGE plpgsql
+                    AS 'BEGIN RAISE EXCEPTION ''albums cannot be deleted''; END';
+                CREATE TRIGGER fail_album_delete BEFORE DELETE ON albums
+                    FOR EACH ROW EXECUTE FUNCTION fail_album_delete();
+                """);
+        }
+
+        try
+        {
+            Func<Task> act = () => ScanAsync();
+
+            await act.Should().ThrowAsync<DbException>();
+            await using WaveMpDbContext db = _database.CreateDbContext();
+            (await db.MediaSources.SingleAsync()).AlbumGroupingVersion.Should().Be(2);
+        }
+        finally
+        {
+            await using WaveMpDbContext db = _database.CreateDbContext();
+            await db.Database.ExecuteSqlRawAsync("DROP FUNCTION fail_album_delete() CASCADE");
+        }
+
+        ScanResult result = await ScanAsync();
+
+        result.Statistics.FilesUpdated.Should().Be(0);
+        await ExpectRegroupedCompilationAsync(trackIds, unaffectedAlbumId);
+    }
+
+    [Test]
+    public async Task Rescan_FlaggedLibraryReadByAnOlderVersion_IsReadAgainAndFormsOneAlbum()
+    {
+        TestTags hits = new() { Album = "Hits", Compilation = "1" };
+        await AudioAsync("Hits/01.mp3", tags: hits with { Title = "One", Artist = "A" });
+        await AudioAsync("Hits/02.mp3", tags: hits with { Title = "Two", Artist = "B" });
+        await ImageAsync("Hits/cover.jpg", 100, 100);
+        await ScanAsync();
+
+        // The library as a version before the compilation flag left it: neither flags nor the current grouping.
+        await using (WaveMpDbContext db = _database.CreateDbContext())
+        {
+            await db.MediaFiles
+                .Where(file => file.Kind == MediaFileKind.Audio)
+                .ExecuteUpdateAsync(setters => setters
+                    .SetProperty(file => file.MetadataVersion, 1)
+                    .SetProperty(file => file.Tags.IsCompilation, false));
+            await db.MediaSources.ExecuteUpdateAsync(setters =>
+                setters.SetProperty(source => source.AlbumGroupingVersion, 2));
+        }
+
+        ScanResult result = await ScanAsync();
+
+        result.Statistics.FilesUpdated.Should().Be(2);
+        await using WaveMpDbContext after = _database.CreateDbContext();
+        Album album = await LoadAlbumAsync(after, "Hits");
+        (album.AlbumArtistId, album.Tracks.Count, album.IsCompilation).Should().Be(((Guid?)null, 2, true));
+        album.Covers.Should().ContainSingle();
+    }
+
+    [Test]
+    public async Task RefreshFolder_ChangedCompilationFlag_SplitsAndJoinsTheAlbum()
+    {
+        TestTags hits = new() { Album = "Hits" };
+        TestTags flagged = hits with { Compilation = "1" };
+        await AudioAsync("Hits/01.mp3", tags: flagged with { Title = "One", Artist = "A" });
+        await AudioAsync("Hits/02.mp3", tags: flagged with { Title = "Two", Artist = "B" });
+        await ScanAsync();
+
+        await ChangeAudioAsync("Hits/01.mp3", hits with { Title = "One", Artist = "A" });
+        await ChangeAudioAsync("Hits/02.mp3", hits with { Title = "Two", Artist = "B" });
+        (await RefreshAsync("Hits", "Hits/01.mp3", "Hits/02.mp3")).Should().BeTrue();
+
+        await using (WaveMpDbContext db = _database.CreateDbContext())
+        {
+            List<Album> albums = await db.Albums.Include(album => album.AlbumArtist).ToListAsync();
+            albums.Select(album => (album.AlbumArtist!.Name, album.IsCompilation))
+                .Should().BeEquivalentTo([("A", false), ("B", false)]);
+        }
+
+        await AudioAsync("Hits/01.mp3", tags: flagged with { Title = "One", Artist = "A" });
+        await AudioAsync("Hits/02.mp3", tags: flagged with { Title = "Two", Artist = "B" });
+        File.SetLastWriteTimeUtc(_media.Combine("Hits/01.mp3"), DateTime.UtcNow.AddMinutes(2));
+        File.SetLastWriteTimeUtc(_media.Combine("Hits/02.mp3"), DateTime.UtcNow.AddMinutes(2));
+        await ScanAsync();
+
+        await using WaveMpDbContext after = _database.CreateDbContext();
+        Album joined = await after.Albums.Include(album => album.Tracks).SingleAsync();
+        (joined.AlbumArtistId, joined.Tracks.Count, joined.IsCompilation).Should().Be(((Guid?)null, 2, true));
     }
 
     [Test]
@@ -973,6 +1266,88 @@ public class LibraryScannerTests
     {
         Track track = tracks.Single(item => item.DirectoryPath == directory && item.BaseName == baseName);
         return (track.Title, track.Artist?.Name, track.Album?.Title, track.TrackNumber, track.DiscNumber);
+    }
+
+    /// <summary>
+    /// A library as grouping version 2 left it: a flagged compilation as an album per artist (one of them the artist
+    /// of the folder, as album artist), each marked and with the cover of the folder, and an album without flag.
+    /// Returns the ids of the tracks by their path and the id of the album without flag.
+    /// </summary>
+    private async Task<(Dictionary<string, Guid> TrackIds, Guid UnaffectedAlbumId)>
+        CreateLibraryOfGroupingVersion2Async()
+    {
+        TestTags hits = new() { Album = "Hits", Compilation = "1" };
+        await AudioAsync("Sampler/Hits/01 - A - One.mp3", tags: hits with { Title = "One" });
+        await AudioAsync("Sampler/Hits/02 - B - Two.mp3", tags: hits with { Title = "Two", Artist = "Guest" });
+        await AudioAsync("Sampler/Hits/03 - C - Three.mp3", tags: hits with { Title = "Three", Artist = "Other" });
+        await ImageAsync("Sampler/Hits/cover.jpg", 100, 100);
+        await AudioAsync(
+            "Band/Record/01.mp3",
+            tags: new TestTags { Title = "Four", Artist = "Band", Album = "Record" });
+        await ScanAsync();
+
+        // Without the stored flag, the current rules form exactly the albums of version 2.
+        await using (WaveMpDbContext db = _database.CreateDbContext())
+        {
+            await db.MediaFiles.ExecuteUpdateAsync(setters =>
+                setters.SetProperty(file => file.Tags.IsCompilation, false));
+            await db.MediaSources.ExecuteUpdateAsync(setters =>
+                setters.SetProperty(source => source.AlbumGroupingVersion, 0));
+        }
+
+        await ScanAsync();
+
+        await using (WaveMpDbContext db = _database.CreateDbContext())
+        {
+            List<string> albumArtists = await db.Albums
+                .Where(album => album.Title == "Hits")
+                .Select(album => album.AlbumArtist!.Name)
+                .ToListAsync();
+            albumArtists.Should().BeEquivalentTo("Sampler", "Guest", "Other");
+            await db.MediaFiles
+                .Where(file => file.Kind == MediaFileKind.Audio && file.DirectoryPath == "Sampler/Hits")
+                .ExecuteUpdateAsync(setters => setters.SetProperty(file => file.Tags.IsCompilation, true));
+            await db.Albums
+                .Where(album => album.Title == "Hits")
+                .ExecuteUpdateAsync(setters => setters.SetProperty(album => album.IsCompilation, true));
+            await db.MediaSources.ExecuteUpdateAsync(setters =>
+                setters.SetProperty(source => source.AlbumGroupingVersion, 2));
+
+            return (
+                await db.Tracks.ToDictionaryAsync(
+                    track => track.DirectoryPath + "/" + track.BaseName,
+                    track => track.Id),
+                (await db.Albums.SingleAsync(album => album.Title == "Record")).Id);
+        }
+    }
+
+    /// <summary>
+    /// Expects the library of <see cref="CreateLibraryOfGroupingVersion2Async"/> formed again by the rules of now:
+    /// one compilation with mark and cover, nothing without tracks, and the ids that must stay. Returns the id of the
+    /// compilation.
+    /// </summary>
+    private async Task<Guid> ExpectRegroupedCompilationAsync(
+        Dictionary<string, Guid> trackIds,
+        Guid unaffectedAlbumId)
+    {
+        await using WaveMpDbContext db = _database.CreateDbContext();
+        (await db.Tracks.ToDictionaryAsync(track => track.DirectoryPath + "/" + track.BaseName, track => track.Id))
+            .Should().BeEquivalentTo(trackIds);
+        Album compilation = await LoadAlbumAsync(db, "Hits");
+        (compilation.AlbumArtistId, compilation.Tracks.Count, compilation.IsCompilation)
+            .Should().Be(((Guid?)null, 3, true));
+        compilation.Covers.Should().ContainSingle()
+            .Which.MediaFile!.RelativePath.Should().Be("Sampler/Hits/cover.jpg");
+        Album record = await LoadAlbumAsync(db, "Record");
+        (record.Id, record.IsCompilation).Should().Be((unaffectedAlbumId, false));
+        (await db.Albums.CountAsync()).Should().Be(2);
+
+        // The artist of the folder was only the album artist of an old album.
+        (await db.Artists.Select(artist => artist.Name).ToListAsync())
+            .Should().BeEquivalentTo("A", "Guest", "Other", "Band");
+        (await db.MediaSources.Select(source => source.AlbumGroupingVersion).ToListAsync())
+            .Should().Equal(ScannerVersions.AlbumGrouping);
+        return compilation.Id;
     }
 
     private static Task<Track> LoadTrackAsync(WaveMpDbContext db, string normalizedBaseName)

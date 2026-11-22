@@ -11,7 +11,7 @@ public sealed class AlbumReferenceDto
 
     /// <summary>
     /// Artist of the album: the album artist of its tracks, otherwise their artist; null for albums without a known
-    /// artist.
+    /// artist and for compilations formed by the compilation flag without an album artist tag.
     /// </summary>
     public ArtistReferenceDto? Artist { get; init; }
 
