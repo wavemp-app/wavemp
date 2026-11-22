@@ -5,7 +5,9 @@ namespace WaveMP.Data.Entities;
 /// their artist. Albums without artist (tracks without any artist, and tracks with the compilation flag but without
 /// album artist tag) are unique by their title and album folder in the media source instead. Created by the scan and
 /// removed once it has no tracks. The spelling of the title and the year follow the folder of the album that was
-/// written last.
+/// written last. When its tracks moved to other albums (see <see cref="AlbumMove"/>), its favorites, cover rule, online
+/// cover and <see cref="FirstSeenAt"/> go to those albums before it is removed
+/// (<see cref="Repositories.ILibraryScanRepository.DeleteOrphansAsync"/>).
 /// </summary>
 public class Album
 {
@@ -41,6 +43,10 @@ public class Album
 
     public int? Year { get; set; }
 
+    /// <summary>
+    /// When the scan first found the album; an album that got the tracks of removed albums keeps the earliest date of
+    /// them all.
+    /// </summary>
     public required DateTimeOffset FirstSeenAt { get; set; }
 
     public required DateTimeOffset UpdatedAt { get; set; }
@@ -48,7 +54,8 @@ public class Album
     /// <summary>
     /// The cover rule of the album, set by the admin: whether the album and its tracks show the cover of the album or
     /// the covers of the tracks first. <c>null</c> inherits the global rule of the library settings. A scan never
-    /// changes it. Stored as its name.
+    /// changes it, except that an album without a rule of its own takes the rule of an album whose tracks it got once
+    /// that album is removed. Stored as its name.
     /// </summary>
     public CoverPriority? CoverPriority { get; set; }
 

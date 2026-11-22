@@ -36,7 +36,9 @@ public static class ScannerVersions
     /// artists. Version 3 identifies the album of tracks with the compilation flag and without album artist tag by its
     /// title and album folder in the media source, whatever the artists of the tracks are. Raising it makes the next
     /// scan form the albums of all stored folders again, without reading files (see
-    /// <see cref="MediaSource.AlbumGroupingVersion"/>).
+    /// <see cref="MediaSource.AlbumGroupingVersion"/>). Songs that get another album this way are recorded as moves, so
+    /// the favorites, cover rule, online cover and first seen date of an album left empty follow its songs (see
+    /// <see cref="WaveMP.Data.Repositories.ILibraryScanRepository.DeleteOrphansAsync"/>).
     /// </summary>
     public const int AlbumGrouping = 3;
 

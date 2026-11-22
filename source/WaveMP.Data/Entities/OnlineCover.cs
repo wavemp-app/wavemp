@@ -4,7 +4,9 @@ namespace WaveMP.Data.Entities;
 /// A cover an admin applied from an online search for an album or a track, kept in the data folder because the media
 /// folder could not be written. It is shown before the other covers of its album or track. Exactly one of
 /// <see cref="AlbumId"/> and <see cref="TrackId"/> is set, and each album and track has at most one. Removed with its
-/// album or track; the file stays until the next online cover of the same owner or the cleanup on start.
+/// album or track; the file stays until the next online cover of the same owner or the cleanup on start. The cover of
+/// an album that is removed because its tracks moved goes to the album that got most of them, unless that album has
+/// one already (see <see cref="Repositories.ILibraryScanRepository.DeleteOrphansAsync"/>).
 /// </summary>
 public class OnlineCover
 {
