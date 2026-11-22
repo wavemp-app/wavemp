@@ -82,6 +82,8 @@ test('shows an error in the administration and loads the page again', async ({ p
 })
 
 test('shows an error for settings that cannot be loaded and loads them again', async ({ page }) => {
+    // On the phone the resume notice of a state saved by another device would cover the button.
+    await withoutSavedPlayback(page)
     const restore = await failRequests(page, /\/api\/v1\/settings\/backup(\?|$)/)
     await page.goto('/admin/backups')
 
