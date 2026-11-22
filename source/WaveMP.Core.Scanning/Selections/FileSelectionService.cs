@@ -118,7 +118,7 @@ internal sealed class FileSelectionService(
 
             // The selection is stored: the library follows it even if the client is gone by now.
             await writer.RewriteFolderAsync(track.SourceId, track.DirectoryPath, now, CancellationToken.None);
-            await library.DeleteOrphansAsync(CancellationToken.None);
+            await library.DeleteOrphansAsync(now, CancellationToken.None);
             await writer.UpdateAlbumCoversAsync(settings.Current.AlbumCoverNames, CancellationToken.None);
             await writer.UpdateAlbumCompilationsAsync(now, CancellationToken.None);
             logger.LogInformation(

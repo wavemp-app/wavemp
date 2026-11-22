@@ -27,6 +27,8 @@ public class WaveMpDbContext(DbContextOptions<WaveMpDbContext> options) : DbCont
 
     public DbSet<Album> Albums => Set<Album>();
 
+    public DbSet<AlbumMove> AlbumMoves => Set<AlbumMove>();
+
     public DbSet<Track> Tracks => Set<Track>();
 
     public DbSet<MediaFile> MediaFiles => Set<MediaFile>();
@@ -89,6 +91,7 @@ public class WaveMpDbContext(DbContextOptions<WaveMpDbContext> options) : DbCont
         modelBuilder.ApplyConfiguration(new MediaSourceConfiguration());
         modelBuilder.ApplyConfiguration(new ArtistConfiguration());
         modelBuilder.ApplyConfiguration(new AlbumConfiguration());
+        modelBuilder.ApplyConfiguration(new AlbumMoveConfiguration());
         modelBuilder.ApplyConfiguration(new TrackConfiguration());
         modelBuilder.ApplyConfiguration(new MediaFileConfiguration());
         modelBuilder.ApplyConfiguration(new CoverConfiguration());

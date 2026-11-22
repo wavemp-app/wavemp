@@ -81,6 +81,17 @@ public interface ILibraryScanRepository
     Task SaveChangesAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Records that songs left an album for another one, with the number of songs per pair of albums: adds the count
+    /// to the stored move of the pair or adds a new one. The moves are tracked entities saved with
+    /// <see cref="SaveChangesAsync"/>, in the same transaction as the tracks that moved, so a move survives an
+    /// interrupted scan. Pairs of the same album and counts below one are ignored.
+    /// </summary>
+    Task RecordAlbumMovesAsync(
+        IReadOnlyDictionary<(Guid FromAlbumId, Guid ToAlbumId), int> moves,
+        DateTimeOffset now,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Deletes the files and tracks of folders of a source that no longer exist (not their subfolders). Returns the
     /// number of deleted files and tracks.
     /// </summary>
@@ -107,10 +118,16 @@ public interface ILibraryScanRepository
     Task<IReadOnlyList<Cover>> LoadAlbumCoversAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Deletes albums without tracks and artists without tracks and albums. Returns the number of deleted albums and
-    /// artists.
+    /// Deletes albums without tracks and artists without tracks and albums, in one transaction. Before an album without
+    /// tracks is deleted, its data goes to the albums its songs moved to (see <see cref="RecordAlbumMovesAsync"/>):
+    /// the album favorites of all profiles, the cover rule, the online cover and the first seen date, by the rules of
+    /// <see cref="AlbumSuccessionPlanner"/>; a list in the player that was started from it continues with the album
+    /// that got most of its songs. Successors whose values change get <paramref name="now"/> as their change time.
+    /// Returns the number of deleted albums and artists.
     /// </summary>
-    Task<(int Albums, int Artists)> DeleteOrphansAsync(CancellationToken cancellationToken = default);
+    Task<(int Albums, int Artists)> DeleteOrphansAsync(
+        DateTimeOffset now,
+        CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Marks every album as a compilation whose artist has the normalized name

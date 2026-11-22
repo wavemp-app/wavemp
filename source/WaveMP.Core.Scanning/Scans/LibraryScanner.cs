@@ -121,7 +121,7 @@ internal sealed class LibraryScanner(
             read,
             timeProvider.GetUtcNow(),
             cancellationToken);
-        await library.DeleteOrphansAsync(cancellationToken);
+        await library.DeleteOrphansAsync(timeProvider.GetUtcNow(), cancellationToken);
         await writer.UpdateAlbumCoversAsync(librarySettings.AlbumCoverNames, cancellationToken);
         await writer.UpdateAlbumCompilationsAsync(timeProvider.GetUtcNow(), cancellationToken);
 
@@ -293,7 +293,7 @@ internal sealed class LibraryScanner(
 
             if (changed)
             {
-                await library.DeleteOrphansAsync(cancellationToken);
+                await library.DeleteOrphansAsync(timeProvider.GetUtcNow(), cancellationToken);
             }
 
             // A full scan always updates the album covers and compilations, so changed cover names apply without
@@ -385,7 +385,7 @@ internal sealed class LibraryScanner(
 
         using (await writeLock.AcquireAsync(cancellationToken))
         {
-            await library.DeleteOrphansAsync(cancellationToken);
+            await library.DeleteOrphansAsync(timeProvider.GetUtcNow(), cancellationToken);
             await writer.UpdateAlbumCoversAsync(librarySettings.AlbumCoverNames, cancellationToken);
             await writer.UpdateAlbumCompilationsAsync(timeProvider.GetUtcNow(), cancellationToken);
             foreach (Guid sourceId in sourceIds)

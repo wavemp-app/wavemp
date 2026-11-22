@@ -92,6 +92,36 @@ namespace WaveMP.Data.Migrations
                     b.ToTable("albums", (string)null);
                 });
 
+            modelBuilder.Entity("WaveMP.Data.Entities.AlbumMove", b =>
+                {
+                    b.Property<Guid>("FromAlbumId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("from_album_id");
+
+                    b.Property<Guid>("ToAlbumId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("to_album_id");
+
+                    b.Property<DateTimeOffset>("MovedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("moved_at");
+
+                    b.Property<int>("TrackCount")
+                        .HasColumnType("integer")
+                        .HasColumnName("track_count");
+
+                    b.HasKey("FromAlbumId", "ToAlbumId")
+                        .HasName("pk_album_moves");
+
+                    b.HasIndex("ToAlbumId")
+                        .HasDatabaseName("ix_album_moves_to_album_id");
+
+                    b.ToTable("album_moves", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_album_moves_distinct_albums", "from_album_id <> to_album_id");
+                        });
+                });
+
             modelBuilder.Entity("WaveMP.Data.Entities.Artist", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1835,6 +1865,27 @@ namespace WaveMP.Data.Migrations
                         .HasConstraintName("fk_albums_artists_album_artist_id");
 
                     b.Navigation("AlbumArtist");
+                });
+
+            modelBuilder.Entity("WaveMP.Data.Entities.AlbumMove", b =>
+                {
+                    b.HasOne("WaveMP.Data.Entities.Album", "FromAlbum")
+                        .WithMany()
+                        .HasForeignKey("FromAlbumId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_album_moves_albums_from_album_id");
+
+                    b.HasOne("WaveMP.Data.Entities.Album", "ToAlbum")
+                        .WithMany()
+                        .HasForeignKey("ToAlbumId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_album_moves_albums_to_album_id");
+
+                    b.Navigation("FromAlbum");
+
+                    b.Navigation("ToAlbum");
                 });
 
             modelBuilder.Entity("WaveMP.Data.Entities.Cover", b =>
