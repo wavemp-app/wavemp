@@ -11,7 +11,7 @@ export interface PlaylistTrackRow {
 </script>
 
 <script setup lang="ts">
-import { computed, ref, type ComponentPublicInstance } from 'vue'
+import { computed, onBeforeUnmount, ref, type ComponentPublicInstance } from 'vue'
 import { useI18n } from 'vue-i18n'
 import BaseIcon from '@/components/base/BaseIcon.vue'
 import BaseList, { type ListGroup, type ListRowBase } from '@/components/base/BaseList.vue'
@@ -26,6 +26,7 @@ import {
     trackListState,
     trackRowState,
 } from '@/library/presentation'
+import type { PlaylistEntryContext } from '@/menus/targets'
 import type { PlayerSource } from '@/player/resume'
 import { useContextMenuStore } from '@/stores/contextMenu'
 import { usePlayerStore } from '@/stores/player'
@@ -76,6 +77,11 @@ const contextMenu = useContextMenuStore()
 /** Ids of the selected rows. */
 const selection = ref<readonly string[]>([])
 const busy = computed(() => props.state?.split(' ').includes('busy') ?? false)
+/** The list has left the page; a menu opened from it has no rows to act on any more. */
+const unmounted = ref(false)
+onBeforeUnmount(() => {
+    unmounted.value = true
+})
 
 const columns = computed(() => [
     ...(props.sortable ? [{ id: 'handle', label: t('list.columns.handle') }] : []),
@@ -146,34 +152,66 @@ function activate(rowId: string): void {
     }
 }
 
+/** The rows with the ids as the list shows them now, in its order. */
+function currentRows(ids: ReadonlySet<string>): Row[] {
+    return unmounted.value ? [] : groups.value[0]!.rows.filter((row) => ids.has(row.id))
+}
+
+/**
+ * What the menu does with the entries with the ids. The menu stays open while the page saves a
+ * change or loads the playlist again, so nothing is copied: all is looked up by id when it is used.
+ */
+function entryContext(ids: ReadonlySet<string>): PlaylistEntryContext {
+    function moveBy(offset: -1 | 1): void {
+        const row = currentRows(ids)[0]
+        if (row) {
+            emit('move', row.index, row.index + offset)
+        }
+    }
+
+    return {
+        get busy() {
+            return busy.value
+        },
+        get canMoveUp() {
+            const row = currentRows(ids)[0]
+            return !!row && row.index > 0
+        },
+        get canMoveDown() {
+            const row = currentRows(ids)[0]
+            return !!row && row.index < props.rows.length - 1
+        },
+        get canRemove() {
+            return currentRows(ids).length > 0
+        },
+        moveUp: () => moveBy(-1),
+        moveDown: () => moveBy(1),
+        remove() {
+            const indexes = currentRows(ids).map((row) => row.index)
+            if (indexes.length > 0) {
+                emit('remove', indexes)
+            }
+        },
+    }
+}
+
 function openMenu(rowId: string, x: number, y: number): void {
     const chosen = new Set(selection.value.includes(rowId) ? selection.value : [rowId])
-    const rows = groups.value[0]!.rows.filter((row) => chosen.has(row.id))
-    const first = rows[0]
-    if (!first) {
+    const rows = currentRows(chosen)
+    if (rows.length === 0) {
         return
     }
 
-    const single = rows.length === 1 ? first : undefined
+    const single = rows.length === 1
     contextMenu.open(
         {
             type: 'song',
             tracks: rows.map((row) => row.entry.track),
-            playFrom: single ? () => playFrom(single.index) : undefined,
-            playlistEntry: props.sortable
-                ? {
-                      canMoveUp: first.index > 0,
-                      canMoveDown: first.index < props.rows.length - 1,
-                      busy: busy.value,
-                      moveUp: () => emit('move', first.index, first.index - 1),
-                      moveDown: () => emit('move', first.index, first.index + 1),
-                      remove: () =>
-                          emit(
-                              'remove',
-                              rows.map((row) => row.index),
-                          ),
-                  }
-                : undefined,
+            // Once the row is gone there is nothing to play on from, and Play plays the song alone.
+            get playFrom() {
+                return single && currentRows(chosen).length > 0 ? () => activate(rowId) : undefined
+            },
+            playlistEntry: props.sortable ? entryContext(chosen) : undefined,
         },
         x,
         y,

@@ -1,9 +1,11 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
+import { defineComponent, h } from 'vue'
 import { createPinia, setActivePinia } from 'pinia'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import type { Playlist, Track } from '@/api/generated/models'
 import { createWaveMpI18n } from '@/i18n'
+import type { SongTarget } from '@/menus/targets'
 import {
     coverChangeMilliseconds,
     coverLoadTimeoutMilliseconds,
@@ -11,6 +13,8 @@ import {
     stillCoversFlag,
 } from '@/playlists/coverGrid'
 import { createRoutes } from '@/router/routes'
+import { useContextMenuStore } from '@/stores/contextMenu'
+import { usePlayerStore } from '@/stores/player'
 
 const api = vi.hoisted(() => ({
     listPlaylists: vi.fn(),
@@ -44,6 +48,16 @@ const AddToPlaylistDialog = (await import('../AddToPlaylistDialog.vue')).default
 const PlaylistCover = (await import('../PlaylistCover.vue')).default
 const PlaylistEditDialog = (await import('../PlaylistEditDialog.vue')).default
 const PlaylistTrackList = (await import('../PlaylistTrackList.vue')).default
+const ContextMenuHost = (await import('@/components/menus/ContextMenuHost.vue')).default
+
+/** The list together with the context menu of the app; shown: false takes the list off the page. */
+const PlaylistTrackListWithMenu = defineComponent({
+    inheritAttrs: false,
+    props: { shown: { type: Boolean, default: true } },
+    setup(props, { attrs }) {
+        return () => [props.shown ? h(PlaylistTrackList as never, attrs) : null, h(ContextMenuHost)]
+    },
+})
 
 /** The tracks whose covers a playlist cover shows, slide by slide. */
 function shownTracks(wrapper: VueWrapper): string[] {
@@ -429,6 +443,173 @@ describe('PlaylistTrackList', () => {
             'badge',
             'label',
         ])
+        wrapper.unmount()
+    })
+})
+
+describe('the menu of a playlist entry', () => {
+    // jsdom has no Popover API and keeps the content of a closed popover from the focus, so a menu
+    // that opens loses the attribute here.
+    beforeAll(() => {
+        HTMLElement.prototype.showPopover = function (this: HTMLElement) {
+            this.removeAttribute('popover')
+        }
+    })
+    afterAll(() => {
+        // @ts-expect-error The stand-in is removed again.
+        delete HTMLElement.prototype.showPopover
+    })
+
+    const entries = ['first', 'second', 'third'].map((id) => ({
+        id: `entry-${id}`,
+        track: { id, title: id, hasAudio: true } as Track,
+    }))
+    const [first, second, third] = [entries[0]!, entries[1]!, entries[2]!]
+
+    async function mountList(props: Record<string, unknown> = {}) {
+        const move = vi.fn()
+        const remove = vi.fn()
+        const wrapper = await mountWith(PlaylistTrackListWithMenu, {
+            rows: entries,
+            label: 'Road Trip',
+            sortable: true,
+            state: 'busy',
+            onMove: move,
+            onRemove: remove,
+            ...props,
+        })
+        return { wrapper, move, remove }
+    }
+
+    async function openMenu(wrapper: VueWrapper, index: number) {
+        await wrapper.findAll('[data-part="list-row"]')[index]!.trigger('contextmenu')
+        await flushPromises()
+    }
+
+    function item(id: string) {
+        return document.querySelector<HTMLButtonElement>(
+            `[data-part="context-menu"] > [data-item="${id}"]`,
+        )
+    }
+
+    /** Which of move up, move down and remove can be chosen. */
+    function enabled(): string[] {
+        return ['move-up', 'move-down', 'remove-from-playlist'].filter(
+            (id) => item(id)?.disabled === false,
+        )
+    }
+
+    async function choose(id: string) {
+        item(id)!.click()
+        await flushPromises()
+    }
+
+    it.each([
+        { index: 0, expected: ['move-down', 'remove-from-playlist'] },
+        { index: 1, expected: ['move-up', 'move-down', 'remove-from-playlist'] },
+        { index: 2, expected: ['move-up', 'remove-from-playlist'] },
+    ])('offers what applies to row $index once the change is done', async ({ index, expected }) => {
+        const { wrapper } = await mountList()
+        await openMenu(wrapper, index)
+        expect(enabled()).toEqual([])
+        const focused = document.activeElement
+        expect(focused?.getAttribute('data-item')).toBe('play')
+
+        await wrapper.setProps({ state: undefined })
+        await flushPromises()
+
+        expect(enabled()).toEqual(expected)
+        expect(document.activeElement).toBe(focused)
+        expect(wrapper.get('[data-part="context-menu"]').attributes('data-state')).toBe('open')
+        wrapper.unmount()
+    })
+
+    it('only removes several chosen rows once the change is done', async () => {
+        const { wrapper, remove } = await mountList()
+        const shown = wrapper.findAll('[data-part="list-row"]')
+        await shown[0]!.trigger('click')
+        await shown[1]!.trigger('click', { ctrlKey: true })
+        await openMenu(wrapper, 1)
+        expect(enabled()).toEqual([])
+
+        await wrapper.setProps({ state: undefined, rows: [third, second, first] })
+        await flushPromises()
+
+        expect(enabled()).toEqual(['remove-from-playlist'])
+        await choose('remove-from-playlist')
+        expect(remove).toHaveBeenCalledWith([1, 2])
+        wrapper.unmount()
+    })
+
+    it.each([
+        { id: 'move-up', event: 'move', call: [1, 0] },
+        { id: 'move-down', event: 'move', call: [1, 2] },
+        { id: 'remove-from-playlist', event: 'remove', call: [[1]] },
+    ] as const)(
+        '$id acts on its row in the order loaded meanwhile',
+        async ({ id, event, call }) => {
+            const list = await mountList()
+            await openMenu(list.wrapper, 0)
+
+            await list.wrapper.setProps({ state: undefined, rows: [second, first, third] })
+            await flushPromises()
+            await choose(id)
+
+            expect(list[event]).toHaveBeenCalledExactlyOnceWith(...call)
+            list.wrapper.unmount()
+        },
+    )
+
+    it('plays from its row on in the order loaded meanwhile', async () => {
+        const playTracks = vi.spyOn(usePlayerStore(), 'playTracks').mockImplementation(vi.fn())
+        const { wrapper } = await mountList()
+        await openMenu(wrapper, 0)
+
+        await wrapper.setProps({ state: undefined, rows: [third, second, first] })
+        await flushPromises()
+        await choose('play')
+
+        expect(playTracks).toHaveBeenCalledExactlyOnceWith(
+            [third.track, second.track, first.track],
+            2,
+            { source: undefined },
+        )
+        wrapper.unmount()
+    })
+
+    it.each([
+        { gone: 'its row', change: { rows: [second, third] } as Record<string, unknown> },
+        { gone: 'the list', change: { shown: false } as Record<string, unknown> },
+    ])('offers no change and plays only the song without $gone', async ({ change }) => {
+        const playTracks = vi.spyOn(usePlayerStore(), 'playTracks').mockImplementation(vi.fn())
+        const { wrapper, move, remove } = await mountList({ state: undefined })
+        await openMenu(wrapper, 0)
+        expect(enabled()).toEqual(['move-down', 'remove-from-playlist'])
+
+        await wrapper.setProps(change)
+        await flushPromises()
+
+        expect(enabled()).toEqual([])
+        const target = useContextMenuStore().request!.target as SongTarget
+        target.playlistEntry!.moveUp()
+        target.playlistEntry!.moveDown()
+        target.playlistEntry!.remove()
+        expect(move).not.toHaveBeenCalled()
+        expect(remove).not.toHaveBeenCalled()
+        await choose('play')
+        expect(playTracks).toHaveBeenCalledOnce()
+        expect(playTracks.mock.calls[0]!.slice(0, 2)).toEqual([[first.track], 0])
+        wrapper.unmount()
+    })
+
+    it('has no entries of a playlist in lists that cannot be sorted', async () => {
+        const { wrapper } = await mountList({ sortable: false, state: undefined })
+        await openMenu(wrapper, 1)
+
+        expect(item('play')!.disabled).toBe(false)
+        expect(item('move-up')).toBeNull()
+        expect(item('move-down')).toBeNull()
+        expect(item('remove-from-playlist')).toBeNull()
         wrapper.unmount()
     })
 })

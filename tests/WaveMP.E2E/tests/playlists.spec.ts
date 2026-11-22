@@ -20,8 +20,8 @@ function rowTitles(page: Page): Locator {
 
 /**
  * Waits until the page of the playlist has finished its last change: a move or a removal shows at
- * once, but the page stays busy until it has loaded the playlist again, and the menu of an entry
- * opened meanwhile offers to move and remove it only once that is done.
+ * once, but the page stays busy until it has loaded the playlist again, and its buttons that change
+ * the playlist wait for that.
  */
 async function expectPlaylistIdle(page: Page): Promise<void> {
     await expect(page.locator("[data-part='view'][data-view='playlist']")).not.toHaveAttribute(
@@ -74,14 +74,125 @@ async function deletePlaylist(request: APIRequestContext, name: string): Promise
     }
 }
 
-async function entryTitles(request: APIRequestContext, id: string): Promise<string[]> {
+interface EntrySummary {
+    id: string
+    track: { title: string }
+}
+
+async function listEntries(request: APIRequestContext, id: string): Promise<EntrySummary[]> {
     const response = await request.get(`/api/v1/me/playlists/${id}/tracks?limit=100`, {
         headers: await adminHeaders(request),
     })
     expect(response.status()).toBe(200)
-    return ((await response.json()).items as { track: { title: string } }[]).map(
-        (entry) => entry.track.title,
+    return (await response.json()).items
+}
+
+async function entryTitles(request: APIRequestContext, id: string): Promise<string[]> {
+    return (await listEntries(request, id)).map((entry) => entry.track.title)
+}
+
+async function entryIds(request: APIRequestContext, id: string): Promise<string[]> {
+    return (await listEntries(request, id)).map((entry) => entry.id)
+}
+
+/** Holds back the GET requests of the playlist itself, the reload after a change, until release. */
+async function holdPlaylist(page: Page, id: string): Promise<() => void> {
+    let release!: () => void
+    const released = new Promise<void>((resolve) => (release = resolve))
+    await page.route(
+        (url) => url.pathname === `/api/v1/me/playlists/${id}`,
+        async (route) => {
+            if (route.request().method() !== 'GET') {
+                await route.fallback()
+                return
+            }
+
+            await released
+            await route.continue()
+        },
     )
+    return release
+}
+
+/** Where the open menu is in the layout, which its opening animation does not change. */
+function menuBox(menu: Locator): Promise<number[]> {
+    return menu.evaluate((element: HTMLElement) => [
+        element.offsetLeft,
+        element.offsetTop,
+        element.offsetWidth,
+        element.offsetHeight,
+    ])
+}
+
+interface MenuInput {
+    /** Opens the menu of a row. */
+    open(row: Locator): Promise<void>
+    /** Chooses move up in the menu after it got enabled. */
+    moveUp(page: Page, menu: Locator): Promise<void>
+}
+
+/**
+ * The race of a menu opened while the page saves: the reload after a move is held back, the menu
+ * of the middle row opens meanwhile and follows the page when the answer arrives.
+ */
+async function checkMenuOfBusyPlaylist(
+    page: Page,
+    request: APIRequestContext,
+    input: MenuInput,
+): Promise<void> {
+    const name = `E2E Busy ${uniqueSuffix()}`
+    const first = await findTrackId(request, 'First Song')
+    const second = await findTrackId(request, 'Second Song')
+    const id = await createPlaylist(request, name, [first, second, first])
+    let release: (() => void) | undefined
+    // The notice of a queue another test saved covers the last row of a short list on phones.
+    await withoutSavedPlayback(page)
+    try {
+        // The songs repeat, so the entries are compared by their ids.
+        const [top, middle, last] = await entryIds(request, id)
+        await page.goto(`/playlists/${id}`)
+        const rows = part(page, 'list-row')
+        await expect(rows).toHaveCount(3)
+        await expectPlaylistIdle(page)
+        release = await holdPlaylist(page, id)
+
+        const menu = page.locator("[data-part='context-menu'][data-state='open']:not([data-kind])")
+        await input.open(rows.nth(2))
+        await menu.locator("[data-item='move-up']").click()
+        const view = page.locator("[data-part='view'][data-view='playlist']")
+        await expect(view).toHaveAttribute('aria-busy', 'true')
+        await expect.poll(() => entryIds(request, id)).toEqual([top, last, middle])
+        await expect(menu).toHaveCount(0)
+
+        await input.open(rows.nth(1))
+        await expect(menu).toBeVisible()
+        const play = menu.locator("[data-item='play']")
+        await expect(play).toBeFocused()
+        const changes = ['move-up', 'move-down', 'remove-from-playlist'].map((item) =>
+            menu.locator(`[data-item='${item}']`),
+        )
+        for (const entry of changes) {
+            await expect(entry).toBeDisabled()
+        }
+        await expect(view).toHaveAttribute('aria-busy', 'true')
+        const box = await menuBox(menu)
+
+        release()
+
+        for (const entry of changes) {
+            await expect(entry).toBeEnabled()
+        }
+        await expect(menu).toBeVisible()
+        await expect(play).toBeFocused()
+        expect(await menuBox(menu)).toEqual(box)
+
+        await input.moveUp(page, menu)
+        await expect.poll(() => entryIds(request, id)).toEqual([last, top, middle])
+        await expectPlaylistIdle(page)
+    } finally {
+        release?.()
+        await deletePlaylist(request, name)
+    }
 }
 
 async function addFromSongMenu(page: Page, title: string, playlist: string): Promise<void> {
@@ -154,7 +265,6 @@ test.describe('on the desktop', () => {
             await expect
                 .poll(() => entryTitles(request, id))
                 .toEqual(['Second Song', 'First Song', 'First Song'])
-            await expectPlaylistIdle(page)
 
             // Remove the last entry
             await part(page, 'list-row').nth(2).click({ button: 'right' })
@@ -183,6 +293,48 @@ test.describe('on the desktop', () => {
         } finally {
             await deletePlaylist(request, name)
         }
+    })
+
+    test('enables the open menu of an entry when the change is saved', async ({
+        page,
+        request,
+    }) => {
+        await checkMenuOfBusyPlaylist(page, request, {
+            open: (row) => row.click({ button: 'right' }),
+            moveUp: (_, menu) => menu.locator("[data-item='move-up']").click(),
+        })
+    })
+
+    test('reaches the entries that became enabled with the keyboard', async ({ page, request }) => {
+        await checkMenuOfBusyPlaylist(page, request, {
+            async open(row) {
+                await row.focus()
+                await row.press('Shift+F10')
+            },
+            async moveUp(page, menu) {
+                await page.keyboard.press('End')
+                await expect(menu.locator("[data-item='remove-from-playlist']")).toBeFocused()
+                await page.keyboard.press('ArrowUp')
+                await expect(menu.locator("[data-item='move-down']")).toBeFocused()
+                await page.keyboard.press('ArrowUp')
+                await expect(menu.locator("[data-item='move-up']")).toBeFocused()
+                await page.keyboard.press('Enter')
+            },
+        })
+    })
+})
+
+test.describe('on the phone', () => {
+    test.skip(({ isMobile }) => !isMobile, 'The button of a row shows on touch screens.')
+
+    test('enables the open menu of an entry when the change is saved', async ({
+        page,
+        request,
+    }) => {
+        await checkMenuOfBusyPlaylist(page, request, {
+            open: (row) => row.locator("[data-part='btn-item-menu']").tap(),
+            moveUp: (_, menu) => menu.locator("[data-item='move-up']").tap(),
+        })
     })
 })
 

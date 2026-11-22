@@ -247,7 +247,7 @@ export const songActions: readonly MenuAction<SongTarget>[] = [
         label: 'contextMenu.removeFromPlaylist',
         icon: 'remove-from-playlist',
         visible: (target) => !!target.playlistEntry,
-        enabled: (target) => !target.playlistEntry?.busy,
+        enabled: (target) => !!target.playlistEntry?.canRemove && !target.playlistEntry.busy,
         run: (target) => target.playlistEntry?.remove(),
     },
 ]

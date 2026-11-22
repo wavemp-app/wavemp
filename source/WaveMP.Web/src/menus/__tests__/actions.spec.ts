@@ -247,6 +247,7 @@ describe('menu of songs', () => {
         const entry = {
             canMoveUp: false,
             canMoveDown: true,
+            canRemove: true,
             busy: false,
             moveUp: vi.fn(),
             moveDown: vi.fn(),
@@ -278,6 +279,19 @@ describe('menu of songs', () => {
             '-move-down',
             '-remove-from-playlist',
         ])
+
+        const gone: SongTarget = {
+            ...one,
+            playlistEntry: { ...entry, canMoveDown: false, canRemove: false },
+        }
+        expect(summary(resolveMenu(gone, services)).slice(-3)).toEqual([
+            '-move-up',
+            '-move-down',
+            '-remove-from-playlist',
+        ])
+        entry.remove.mockClear()
+        expect(await runMenuAction(gone, 'remove-from-playlist', services)).toBe(false)
+        expect(entry.remove).not.toHaveBeenCalled()
     })
 })
 

@@ -15,10 +15,15 @@ import type {
 } from '@/api/generated/models'
 import type { RouteLocationRaw } from 'vue-router'
 
-/** An entry of a playlist on the page of the playlist: it can be moved and removed there. */
+/**
+ * An entry of a playlist on the page of the playlist: it can be moved and removed there. The values
+ * follow the page while the menu is open, so they must never be copied (e.g. with a spread).
+ */
 export interface PlaylistEntryContext {
     readonly canMoveUp: boolean
     readonly canMoveDown: boolean
+    /** At least one of the chosen entries is still in the list. */
+    readonly canRemove: boolean
     /** A change of the playlist is running; the entries wait for it. */
     readonly busy: boolean
     moveUp(): void
