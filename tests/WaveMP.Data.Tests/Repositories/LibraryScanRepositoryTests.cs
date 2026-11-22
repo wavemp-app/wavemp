@@ -75,11 +75,73 @@ public class LibraryScanRepositoryTests : LibraryDatabaseTests
         LibraryScanRepository repository = CreateRepository();
 
         int before = await repository.CountFilesAsync(other.Id);
-        await repository.DeleteDirectoriesAsync(other.Id, ["Band"]);
+        await repository.DeleteDirectoriesAsync(other.Id, ["Band"], _day);
 
         before.Should().Be(2);
         (await CreateRepository().CountFilesAsync(other.Id)).Should().Be(0);
         (await CreateRepository().CountFilesAsync(MediaSource.DefaultId)).Should().Be(1);
+    }
+
+    [Test]
+    public async Task DeleteDirectoriesAsync_SameFilesElsewhere_RecordsAMoveToTheirAlbumAndDeletesTheFolder()
+    {
+        LibrarySeed seed = new();
+        MediaSource other = seed.Source();
+        Album old = seed.Album("Hits");
+        Album renamed = seed.Album("Hits");
+        Album moved = seed.Album("Hits");
+        SongIn(seed, old, "Hits/01.mp3", 1000);
+        SongIn(seed, old, "Hits/02.mp3", 2000);
+        SongIn(seed, old, "Hits/03.mp3", 3000);
+        Track video = SongIn(seed, old, "Hits/04.mkv", 4000, MediaFileKind.Video);
+        seed.File("Hits/04.mp3", MediaFileKind.Audio, video, size: 5000);
+        SongIn(seed, renamed, "Hits 2020/01.mp3", 1000);
+        SongIn(seed, renamed, "Hits 2020/02.mp3", 2000);
+        Track movedVideo = SongIn(seed, moved, "Sampler/Hits/04.mkv", 4000, MediaFileKind.Video, other);
+        seed.File("Sampler/Hits/04.mp3", MediaFileKind.Audio, movedVideo, size: 5000);
+        SongIn(seed, moved, "Sampler/Hits/03.mp3", 3000, source: other);
+        await SaveAsync(seed);
+        await AddMovesAsync((old, moved, 1));
+        DateTimeOffset now = _day.AddDays(30);
+
+        (int Files, int Tracks) deleted =
+            await CreateRepository().DeleteDirectoriesAsync(MediaSource.DefaultId, ["Hits"], now);
+
+        // A song is counted once, also when its audio and its video are found.
+        deleted.Should().Be((5, 4));
+        (await MovesAsync()).Should().BeEquivalentTo([(old.Id, renamed.Id, 2, now), (old.Id, moved.Id, 3, now)]);
+        WaveMpDbContext db = CreateDbContext();
+        (await db.Tracks.CountAsync(track => track.AlbumId == old.Id)).Should().Be(0);
+    }
+
+    [Test]
+    public async Task DeleteDirectoriesAsync_OtherSizeNameOrAlbum_RecordsNoMove()
+    {
+        LibrarySeed seed = new();
+        Album old = seed.Album("Hits");
+        Album deletedToo = seed.Album("Hits");
+        Album other = seed.Album("Hits");
+        SongIn(seed, old, "Hits/01.mp3", 1000);
+        SongIn(seed, old, "Hits/02.mp3", 2000);
+        SongIn(seed, old, "Hits/03.mp3", 3000);
+        SongIn(seed, old, "Hits/04.mp3", 4000);
+        SongIn(seed, old, "Hits/05.mp3", 5000);
+        SongIn(seed, old, "Hits/06.mp3", 6000);
+        SongIn(seed, other, "Hits 2020/01.mp3", 1001);
+        SongIn(seed, other, "Hits 2020/02.MP3", 2000);
+        SongIn(seed, other, "Hits 2020/03.mp3", 3000, MediaFileKind.Video);
+        Track copy = SongIn(seed, other, "Hits 2020/04.flac", 4000);
+        seed.File("Hits 2020/04.mp3", MediaFileKind.Audio, copy, isPrimary: false, size: 4000);
+        SongIn(seed, deletedToo, "Hits Old/05.mp3", 5000);
+        SongIn(seed, old, "Hits Copy/06.mp3", 6000);
+        await SaveAsync(seed);
+
+        await CreateRepository().DeleteDirectoriesAsync(MediaSource.DefaultId, ["Hits", "Hits Old"], _day);
+
+        (await MovesAsync()).Should().BeEmpty();
+        WaveMpDbContext db = CreateDbContext();
+        (await db.Tracks.Select(track => track.DirectoryPath).Distinct().ToListAsync())
+            .Should().BeEquivalentTo("Hits 2020", "Hits Copy");
     }
 
     [Test]
@@ -362,6 +424,23 @@ public class LibraryScanRepositoryTests : LibraryDatabaseTests
         Album album = seed.Album(title, firstSeenAt: firstSeenAt);
         seed.Track(title + " song", album: album);
         return album;
+    }
+
+    /// <summary>
+    /// A song of the album in the folder of <paramref name="relativePath"/> with that file as its primary file.
+    /// </summary>
+    private static Track SongIn(
+        LibrarySeed seed,
+        Album album,
+        string relativePath,
+        long size,
+        MediaFileKind kind = MediaFileKind.Audio,
+        MediaSource? source = null)
+    {
+        Track track = seed.Track(relativePath, album: album, source: source);
+        track.DirectoryPath = relativePath[..relativePath.LastIndexOf('/')];
+        seed.File(relativePath, kind, track, size: size);
+        return track;
     }
 
     private async Task AddMovesAsync(params (Album From, Album To, int TrackCount)[] moves)

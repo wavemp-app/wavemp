@@ -282,11 +282,14 @@ internal sealed class LibraryScanner(
             item.Plan.ChangedDirectories.Count > 0 || item.Plan.DeletedDirectories.Count > 0);
         using (await writeLock.AcquireAsync(cancellationToken))
         {
+            // The changed folders are written above, so a renamed or moved folder is found in its new place here and
+            // the data of its album follows the songs.
             foreach ((MediaSourceInfo source, ScanPlan plan) in plans)
             {
                 (int _, int deletedTracks) = await library.DeleteDirectoriesAsync(
                     source.Id,
                     plan.DeletedDirectories,
+                    timeProvider.GetUtcNow(),
                     cancellationToken);
                 tracksRemoved += deletedTracks;
             }

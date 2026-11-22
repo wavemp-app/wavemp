@@ -167,24 +167,34 @@ internal sealed class LibraryScanRepository(WaveMpDbContext dbContext) : ILibrar
         }
     }
 
-    public async Task<(int Files, int Tracks)> DeleteDirectoriesAsync(
+    public Task<(int Files, int Tracks)> DeleteDirectoriesAsync(
         Guid sourceId,
         IReadOnlyCollection<string> directories,
+        DateTimeOffset now,
         CancellationToken cancellationToken = default)
     {
         if (directories.Count == 0)
         {
-            return (0, 0);
+            return Task.FromResult((0, 0));
         }
 
         string[] paths = [.. directories];
-        int files = await dbContext.MediaFiles
-            .Where(file => file.SourceId == sourceId && paths.Contains(file.DirectoryPath))
-            .ExecuteDeleteAsync(cancellationToken);
-        int tracks = await dbContext.Tracks
-            .Where(track => track.SourceId == sourceId && paths.Contains(track.DirectoryPath))
-            .ExecuteDeleteAsync(cancellationToken);
-        return (files, tracks);
+        IExecutionStrategy strategy = dbContext.Database.CreateExecutionStrategy();
+        return strategy.ExecuteAsync(
+            async token =>
+            {
+                await using IDbContextTransaction transaction = await dbContext.Database.BeginTransactionAsync(token);
+                await RecordFolderMovesAsync(sourceId, paths, now, token);
+                int files = await dbContext.MediaFiles
+                    .Where(file => file.SourceId == sourceId && paths.Contains(file.DirectoryPath))
+                    .ExecuteDeleteAsync(token);
+                int tracks = await dbContext.Tracks
+                    .Where(track => track.SourceId == sourceId && paths.Contains(track.DirectoryPath))
+                    .ExecuteDeleteAsync(token);
+                await transaction.CommitAsync(token);
+                return (files, tracks);
+            },
+            cancellationToken);
     }
 
     public async Task<IReadOnlyList<AlbumFolder>> GetAlbumFoldersAsync(CancellationToken cancellationToken = default)
@@ -401,6 +411,44 @@ internal sealed class LibraryScanRepository(WaveMpDbContext dbContext) : ILibrar
                 """,
                 cancellationToken);
         }
+    }
+
+    /// <summary>
+    /// Records a move for every song of the deleted folders whose file lies elsewhere in the library now, so the album
+    /// of a renamed or moved folder (an album without artist is kept apart per folder) gives its data to the album of
+    /// the new folder once it is left empty. A song counts as moved when one of its primary files has the same kind,
+    /// file name and size as a primary file of a song outside the deleted folders. There is no time condition, so a
+    /// scan that is repeated after an interruption still finds the folder written by the interrupted run. The count of
+    /// a pair is the number of songs of the deleted folders; it is added to a stored move of the pair.
+    /// </summary>
+    private async Task RecordFolderMovesAsync(
+        Guid sourceId,
+        string[] paths,
+        DateTimeOffset now,
+        CancellationToken cancellationToken)
+    {
+        await dbContext.Database.ExecuteSqlAsync(
+            $"""
+            INSERT INTO album_moves (from_album_id, to_album_id, track_count, moved_at)
+            SELECT old_track.album_id, new_track.album_id, count(DISTINCT old_track.id), {now}
+            FROM tracks AS old_track
+            JOIN media_files AS old_file ON old_file.track_id = old_track.id AND old_file.is_primary
+            JOIN media_files AS new_file ON new_file.is_primary
+                AND new_file.kind = old_file.kind
+                AND new_file.file_name = old_file.file_name
+                AND new_file.size = old_file.size
+            JOIN tracks AS new_track ON new_track.id = new_file.track_id
+            WHERE old_track.source_id = {sourceId}
+                AND old_track.directory_path = ANY({paths})
+                AND old_track.album_id IS NOT NULL
+                AND new_track.album_id IS NOT NULL
+                AND new_track.album_id <> old_track.album_id
+                AND NOT (new_track.source_id = {sourceId} AND new_track.directory_path = ANY({paths}))
+            GROUP BY old_track.album_id, new_track.album_id
+            ON CONFLICT (from_album_id, to_album_id)
+            DO UPDATE SET track_count = album_moves.track_count + excluded.track_count, moved_at = excluded.moved_at
+            """,
+            cancellationToken);
     }
 
     private static IQueryable<MediaFileSnapshot> ToSnapshots(IQueryable<MediaFile> files)

@@ -93,11 +93,16 @@ public interface ILibraryScanRepository
 
     /// <summary>
     /// Deletes the files and tracks of folders of a source that no longer exist (not their subfolders). Returns the
-    /// number of deleted files and tracks.
+    /// number of deleted files and tracks. In the same transaction, it first records a move (see
+    /// <see cref="RecordAlbumMovesAsync"/>) from the album of every deleted song to the album of a song elsewhere in
+    /// the library whose primary file has the same kind, file name and size, so the data of an album whose folder was
+    /// renamed or moved follows its songs once <see cref="DeleteOrphansAsync"/> removes it. Folders written before
+    /// (the new folder of a scan) are therefore found; a folder that appears only later is not.
     /// </summary>
     Task<(int Files, int Tracks)> DeleteDirectoriesAsync(
         Guid sourceId,
         IReadOnlyCollection<string> directories,
+        DateTimeOffset now,
         CancellationToken cancellationToken = default);
 
     /// <summary>

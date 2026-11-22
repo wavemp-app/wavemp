@@ -1066,6 +1066,51 @@ public class LibraryScannerTests
         await ExpectAlbumDataAsync(albumId, data);
     }
 
+    [TestCase("Hits 2020", false)]
+    [TestCase("Hits 2020", true)]
+    [TestCase("Sampler/Hits", false)]
+    [TestCase("Sampler/Hits", true)]
+    public async Task Rescan_RenamedOrMovedFolderOfACompilation_CarriesTheAlbumDataOverToTheNewAlbum(
+        string newFolder,
+        bool partial)
+    {
+        // A flagged compilation without album artist is identified by its folder, so its folder gives a new album.
+        TestTags hits = new() { Album = "Hits", Compilation = "1" };
+        await AudioAsync("Hits/01.mp3", tags: hits with { Title = "One", Artist = "A" });
+        await AudioAsync("Hits/02.mp3", tags: hits with { Title = "Two", Artist = "B" });
+        await ImageAsync("Hits/cover.jpg", 100, 100);
+        await ScanAsync();
+        Guid oldId;
+        await using (WaveMpDbContext before = _database.CreateDbContext())
+        {
+            oldId = (await AlbumOfFolderAsync(before, "Hits"))!.Value;
+        }
+
+        AlbumData data = await GiveAlbumDataAsync(oldId, oldId, oldId);
+        Directory.CreateDirectory(Path.GetDirectoryName(_media.Combine(newFolder))!);
+        Directory.Move(_media.Combine("Hits"), _media.Combine(newFolder));
+
+        ScanScope? scope = partial ? ScanScope.Of(MediaSource.DefaultId, ["Hits", newFolder.Split('/')[0]]) : null;
+        ScanResult result = await ScanAsync(scope);
+
+        (result.Statistics.TracksAdded, result.Statistics.TracksRemoved).Should().Be((2, 2));
+        Guid albumId;
+        await using (WaveMpDbContext after = _database.CreateDbContext())
+        {
+            albumId = (await AlbumOfFolderAsync(after, newFolder))!.Value;
+            Album album = await after.Albums
+                .Include(item => item.Tracks)
+                .Include(item => item.Covers)
+                .SingleAsync();
+            (album.Id, album.Title, album.AlbumArtistId, album.IsCompilation, album.Tracks.Count)
+                .Should().Be((albumId, "Hits", (Guid?)null, true, 2));
+            album.Id.Should().NotBe(oldId);
+            album.Covers.Should().ContainSingle();
+        }
+
+        await ExpectAlbumDataAsync(albumId, data);
+    }
+
     [Test]
     public async Task Rescan_FolderWithoutYear_KeepsTheYearOfTheAlbum()
     {
