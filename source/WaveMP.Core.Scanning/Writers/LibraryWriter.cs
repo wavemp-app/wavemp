@@ -16,7 +16,8 @@ namespace WaveMP.Core.Scanning.Writers;
 /// Writes the result of the scan of a folder into the library: files, tracks with their primary files and covers,
 /// artists and albums. All changes of a folder are saved together. Album covers are written after all folders. The
 /// files the admin selected for a track win over the quality rule as long as they exist; whether they do is stored
-/// with each selection.
+/// with each selection. A song that moves from one album to another one is recorded with the changes of its folder
+/// (see <see cref="ILibraryScanRepository.RecordAlbumMovesAsync"/>).
 /// </summary>
 public sealed class LibraryWriter(ILibraryScanRepository library)
 {
@@ -193,6 +194,7 @@ public sealed class LibraryWriter(ILibraryScanRepository library)
             track => track.NormalizedBaseName,
             StringComparer.Ordinal);
         EntityCache cache = new();
+        Dictionary<(Guid FromAlbumId, Guid ToAlbumId), int> moves = [];
         int added = 0;
         int updated = 0;
 
@@ -221,10 +223,21 @@ public sealed class LibraryWriter(ILibraryScanRepository library)
                 added++;
                 Update(track, processed, artistId, albumId);
             }
-            else if (Update(track, processed, artistId, albumId))
+            else
             {
-                track.UpdatedAt = now;
-                updated++;
+                Guid? previousAlbumId = track.AlbumId;
+                if (Update(track, processed, artistId, albumId))
+                {
+                    track.UpdatedAt = now;
+                    updated++;
+                }
+
+                // A song that leaves one album for another one is recorded, so the data of the old album can follow
+                // its songs once it has none left. Songs that lose or get their first album are no move.
+                if (previousAlbumId is { } fromAlbumId && albumId is { } toAlbumId && fromAlbumId != toAlbumId)
+                {
+                    moves[(fromAlbumId, toAlbumId)] = moves.GetValueOrDefault((fromAlbumId, toAlbumId)) + 1;
+                }
             }
 
             foreach (MediaFile file in processed.Group.Files)
@@ -259,6 +272,8 @@ public sealed class LibraryWriter(ILibraryScanRepository library)
             library.Remove(removed);
         }
 
+        // Saved by the caller together with the tracks, so a move is never lost to an interrupted scan.
+        await library.RecordAlbumMovesAsync(moves, now, cancellationToken);
         return new FolderWriteResult(added, updated, tracks.Count);
     }
 

@@ -1,5 +1,6 @@
 using System.Data.Common;
 using AwesomeAssertions;
+using AwesomeAssertions.Execution;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -18,6 +19,7 @@ using WaveMP.Data.Extensions;
 using WaveMP.Testing.Databases;
 using WaveMP.Testing.Files;
 using WaveMP.Testing.Media;
+using WaveMP.Testing.Seeds;
 
 namespace WaveMP.Core.Scanning.Tests.Scans;
 
@@ -29,6 +31,10 @@ namespace WaveMP.Core.Scanning.Tests.Scans;
 public class LibraryScannerTests
 {
     private const string DatabaseName = "wavemp_tests_scanning";
+
+    private static readonly DateTimeOffset _day = LibrarySeed.DefaultTime;
+
+    private readonly List<Guid> _users = [];
 
     private TestDatabase _database = null!;
     private TemporaryDirectory _media = null!;
@@ -67,6 +73,12 @@ public class LibraryScannerTests
     {
         await _services.DisposeAsync();
         _media.Dispose();
+
+        // The clean-up before each test leaves the profiles alone.
+        Guid[] users = [.. _users];
+        _users.Clear();
+        await using WaveMpDbContext db = _database.CreateDbContext();
+        await db.Users.Where(user => users.Contains(user.Id)).ExecuteDeleteAsync();
     }
 
     [Test]
@@ -695,6 +707,61 @@ public class LibraryScannerTests
     }
 
     [Test]
+    public async Task Scan_CompilationsOfGroupingVersion2_CarryTheDataOfTheOldAlbumsOverToTheNewOne()
+    {
+        (Dictionary<string, Guid> trackIds, Guid unaffectedAlbumId) = await CreateLibraryOfGroupingVersion2Async();
+        Dictionary<string, Guid> oldAlbums = await OldHitsAlbumsAsync();
+        AlbumData data = await GiveAlbumDataAsync(oldAlbums["Sampler"], oldAlbums["Guest"], oldAlbums["Other"]);
+
+        await ScanAsync();
+
+        Guid albumId = await ExpectRegroupedCompilationAsync(trackIds, unaffectedAlbumId);
+        await ExpectAlbumDataAsync(albumId, data);
+    }
+
+    [Test]
+    public async Task Scan_RegroupWithFailedCleanUp_CarriesTheAlbumDataOverWhenTheNextScanFinishesIt()
+    {
+        (Dictionary<string, Guid> trackIds, Guid unaffectedAlbumId) = await CreateLibraryOfGroupingVersion2Async();
+        Dictionary<string, Guid> oldAlbums = await OldHitsAlbumsAsync();
+        AlbumData data = await GiveAlbumDataAsync(oldAlbums["Sampler"], oldAlbums["Guest"], oldAlbums["Other"]);
+        await using (WaveMpDbContext db = _database.CreateDbContext())
+        {
+            // The clean-up fails when it removes the old albums.
+            await db.Database.ExecuteSqlRawAsync(
+                """
+                CREATE FUNCTION fail_album_delete() RETURNS trigger LANGUAGE plpgsql
+                    AS 'BEGIN RAISE EXCEPTION ''albums cannot be deleted''; END';
+                CREATE TRIGGER fail_album_delete BEFORE DELETE ON albums
+                    FOR EACH ROW EXECUTE FUNCTION fail_album_delete();
+                """);
+        }
+
+        try
+        {
+            Func<Task> act = () => ScanAsync();
+
+            await act.Should().ThrowAsync<DbException>();
+
+            // The songs moved together with a record of their moves; the old albums keep their data until they go.
+            await using WaveMpDbContext db = _database.CreateDbContext();
+            (await db.AlbumMoves.CountAsync()).Should().Be(3);
+            (await FavoritesAsync(db, data)).Select(favorite => favorite.AlbumId)
+                .Should().BeEquivalentTo([oldAlbums["Sampler"], oldAlbums["Guest"], oldAlbums["Other"]]);
+        }
+        finally
+        {
+            await using WaveMpDbContext db = _database.CreateDbContext();
+            await db.Database.ExecuteSqlRawAsync("DROP FUNCTION fail_album_delete() CASCADE");
+        }
+
+        await ScanAsync();
+
+        Guid albumId = await ExpectRegroupedCompilationAsync(trackIds, unaffectedAlbumId);
+        await ExpectAlbumDataAsync(albumId, data);
+    }
+
+    [Test]
     public async Task Rescan_FlaggedLibraryReadByAnOlderVersion_IsReadAgainAndFormsOneAlbum()
     {
         TestTags hits = new() { Album = "Hits", Compilation = "1" };
@@ -722,6 +789,151 @@ public class LibraryScannerTests
         Album album = await LoadAlbumAsync(after, "Hits");
         (album.AlbumArtistId, album.Tracks.Count, album.IsCompilation).Should().Be(((Guid?)null, 2, true));
         album.Covers.Should().ContainSingle();
+    }
+
+    [Test]
+    public async Task Rescan_FlaggedCompilationReadByVersion106_CarriesAlbumDataOverToTheNewAlbum()
+    {
+        Dictionary<string, Guid> oldAlbums = await CreateLibraryOfVersion106Async();
+        AlbumData data = await GiveAlbumDataAsync(oldAlbums["Sampler"], oldAlbums["Guest"], oldAlbums["Other"]);
+
+        ScanResult result = await ScanAsync();
+
+        result.Statistics.FilesUpdated.Should().Be(4);
+        Guid albumId;
+        await using (WaveMpDbContext after = _database.CreateDbContext())
+        {
+            Album compilation = await LoadAlbumAsync(after, "Hits");
+            (compilation.AlbumArtistId, compilation.Tracks.Count, compilation.IsCompilation)
+                .Should().Be(((Guid?)null, 3, true));
+            oldAlbums.Values.Should().NotContain(compilation.Id);
+            albumId = compilation.Id;
+        }
+
+        await ExpectAlbumDataAsync(albumId, data);
+    }
+
+    [Test]
+    public async Task Rescan_InterruptedUpgradeWithARefreshInBetween_CarriesTheAlbumDataOverToBothNewAlbums()
+    {
+        TestTags hits = new() { Album = "Hits", Compilation = "1" };
+        await AudioAsync("One/Hits/01.mp3", tags: hits with { Title = "One", Artist = "A" });
+        await AudioAsync("One/Hits/02.mp3", tags: hits with { Title = "Two", Artist = "B" });
+        await AudioAsync("Two/Hits/01.mp3", tags: hits with { Title = "Three", Artist = "A" });
+        await AudioAsync("Two/Hits/02.mp3", tags: hits with { Title = "Four", Artist = "C" });
+        await AudioAsync(
+            "Band/Record/01.mp3",
+            tags: new TestTags { Title = "Five", Artist = "Band", Album = "Record" });
+        await ScanAsync();
+
+        // As version 1.0.106 left it: an album per artist and title, the one of artist A across both folders.
+        await using (WaveMpDbContext db = _database.CreateDbContext())
+        {
+            await db.MediaFiles.ExecuteUpdateAsync(setters =>
+                setters.SetProperty(file => file.Tags.IsCompilation, false));
+            await db.MediaSources.ExecuteUpdateAsync(setters =>
+                setters.SetProperty(source => source.AlbumGroupingVersion, 0));
+        }
+
+        await ScanAsync();
+        Dictionary<string, Guid> oldAlbums = await ReadByVersion106Async();
+        oldAlbums.Keys.Should().BeEquivalentTo("A", "B", "C");
+        LibrarySeed seed = new();
+        User first = seed.User();
+        User second = seed.User();
+        var onlineCoverId = Guid.CreateVersion7();
+        await using (WaveMpDbContext db = _database.CreateDbContext())
+        {
+            await seed.SaveAsync(db);
+            _users.AddRange([first.Id, second.Id]);
+            db.Favorites.AddRange(
+                AlbumFavorite(first, oldAlbums["A"], _day.AddDays(1)),
+                AlbumFavorite(second, oldAlbums["B"], _day.AddDays(2)),
+                AlbumFavorite(second, oldAlbums["C"], _day.AddDays(3)));
+            db.OnlineCovers.Add(OnlineCoverOf(onlineCoverId, oldAlbums["A"]));
+            await db.SaveChangesAsync();
+            await SetAlbumAsync(db, oldAlbums["A"], _day.AddDays(-5), CoverPriority.TrackFirst);
+            await SetAlbumAsync(db, oldAlbums["B"], _day.AddDays(-2));
+            await SetAlbumAsync(db, oldAlbums["C"], _day.AddDays(-1));
+
+            // The scan is interrupted when it writes the second folder.
+            await db.Database.ExecuteSqlRawAsync(
+                """
+                CREATE FUNCTION fail_track_write() RETURNS trigger LANGUAGE plpgsql
+                    AS 'BEGIN RAISE EXCEPTION ''songs cannot be written''; END';
+                CREATE TRIGGER fail_track_write BEFORE UPDATE ON tracks
+                    FOR EACH ROW WHEN (NEW.directory_path = 'Two/Hits') EXECUTE FUNCTION fail_track_write();
+                """);
+        }
+
+        Guid firstAlbumId;
+        try
+        {
+            Func<Task> act = () => ScanAsync();
+
+            await act.Should().ThrowAsync<DbUpdateException>();
+            await using (WaveMpDbContext db = _database.CreateDbContext())
+            {
+                // The first folder is written: its songs left the albums of A and B.
+                firstAlbumId = (await AlbumOfFolderAsync(db, "One/Hits"))!.Value;
+                oldAlbums.Values.Should().NotContain(firstAlbumId);
+                (await db.Tracks
+                        .Where(track => track.DirectoryPath == "Two/Hits")
+                        .Select(track => track.AlbumId)
+                        .ToListAsync())
+                    .Should().BeEquivalentTo([oldAlbums["A"], oldAlbums["C"]]);
+            }
+
+            // Another writer removes the album of B, which has no songs left, before the scan is repeated.
+            (await RefreshAsync("Band/Record", "Band/Record/01.mp3")).Should().BeTrue();
+
+            await using (WaveMpDbContext db = _database.CreateDbContext())
+            {
+                (await db.Albums.AnyAsync(album => album.Id == oldAlbums["B"])).Should().BeFalse();
+                (await db.Albums.AnyAsync(album => album.Id == oldAlbums["A"])).Should().BeTrue();
+                (await FavoritesAsync(db, first, second)).Should().BeEquivalentTo([
+                    (first.Id, oldAlbums["A"], _day.AddDays(1)),
+                    (second.Id, firstAlbumId, _day.AddDays(2)),
+                    (second.Id, oldAlbums["C"], _day.AddDays(3)),
+                ]);
+            }
+        }
+        finally
+        {
+            await using WaveMpDbContext db = _database.CreateDbContext();
+            await db.Database.ExecuteSqlRawAsync("DROP FUNCTION fail_track_write() CASCADE");
+        }
+
+        ScanResult result = await ScanAsync();
+
+        result.Statistics.FilesUpdated.Should().Be(2);
+        await using WaveMpDbContext after = _database.CreateDbContext();
+        Guid secondAlbumId = (await AlbumOfFolderAsync(after, "Two/Hits"))!.Value;
+        (await AlbumOfFolderAsync(after, "One/Hits")).Should().Be(firstAlbumId);
+        List<Album> albums = await after.Albums.Include(album => album.Tracks).ToListAsync();
+
+        // Every loss is reported, not only the first one.
+        using AssertionScope scope = new();
+        albums.Select(album => (album.Id, album.Tracks.Count))
+            .Should().Contain([(firstAlbumId, 2), (secondAlbumId, 2)]).And.HaveCount(3);
+
+        // A split: the favorite and the rule of the album of A go to both new albums, its online cover to the one that
+        // was added first.
+        (await FavoritesAsync(after, first, second)).Should().BeEquivalentTo([
+            (first.Id, firstAlbumId, _day.AddDays(1)),
+            (first.Id, secondAlbumId, _day.AddDays(1)),
+            (second.Id, firstAlbumId, _day.AddDays(2)),
+            (second.Id, secondAlbumId, _day.AddDays(3)),
+        ]);
+        albums.Where(album => album.Id == firstAlbumId || album.Id == secondAlbumId)
+            .Select(album => (album.CoverPriority, album.FirstSeenAt))
+            .Should().BeEquivalentTo([
+                ((CoverPriority?)CoverPriority.TrackFirst, _day.AddDays(-5)),
+                ((CoverPriority?)CoverPriority.TrackFirst, _day.AddDays(-5)),
+            ]);
+        (await after.OnlineCovers.Select(cover => new { cover.Id, cover.AlbumId }).ToListAsync())
+            .Should().BeEquivalentTo([new { Id = onlineCoverId, AlbumId = (Guid?)firstAlbumId }]);
+        (await after.AlbumMoves.CountAsync()).Should().Be(0);
     }
 
     [Test]
@@ -821,6 +1033,37 @@ public class LibraryScannerTests
         album.Id.Should().Be(albumId, "only the spelling changed, so it is the same album");
         album.Year.Should().Be(2002);
         album.Tracks.Should().HaveCount(2);
+    }
+
+    [Test]
+    public async Task Rescan_AlbumNameOfAllSongsChangedOutsideWaveMp_CarriesTheAlbumDataOverToTheNewAlbum()
+    {
+        TestTags tags = new() { Artist = "Band", Album = "Old Name" };
+        await AudioAsync("Band/Record/01.mp3", tags: tags with { Title = "One" });
+        await AudioAsync("Band/Record/02.mp3", tags: tags with { Title = "Two" });
+        await ScanAsync();
+        Guid oldId;
+        await using (WaveMpDbContext before = _database.CreateDbContext())
+        {
+            oldId = (await LoadAlbumAsync(before, "Old Name")).Id;
+        }
+
+        AlbumData data = await GiveAlbumDataAsync(oldId, oldId, oldId);
+
+        await ChangeAudioAsync("Band/Record/01.mp3", tags with { Title = "One", Album = "New Name" });
+        await ChangeAudioAsync("Band/Record/02.mp3", tags with { Title = "Two", Album = "New Name" });
+        await ScanAsync();
+
+        Guid albumId;
+        await using (WaveMpDbContext after = _database.CreateDbContext())
+        {
+            Album album = await after.Albums.Include(item => item.Tracks).SingleAsync();
+            (album.Title, album.Tracks.Count).Should().Be(("New Name", 2));
+            album.Id.Should().NotBe(oldId);
+            albumId = album.Id;
+        }
+
+        await ExpectAlbumDataAsync(albumId, data);
     }
 
     [Test]
@@ -1200,6 +1443,53 @@ public class LibraryScannerTests
     }
 
     [Test]
+    public async Task RefreshFolder_AlbumRenamedSongBySong_CarriesTheDataOverOnceTheOldAlbumIsEmpty()
+    {
+        TestTags tags = new() { Artist = "Band", Album = "Old Name" };
+        await AudioAsync("Band/Record/01.mp3", tags: tags with { Title = "One" });
+        await AudioAsync("Band/Record/02.mp3", tags: tags with { Title = "Two" });
+        await ScanAsync();
+        Guid oldId;
+        await using (WaveMpDbContext before = _database.CreateDbContext())
+        {
+            oldId = (await LoadAlbumAsync(before, "Old Name")).Id;
+        }
+
+        AlbumData data = await GiveAlbumDataAsync(oldId, oldId, oldId);
+
+        // As the metadata editor does: it writes one song and reads its folder again.
+        await ChangeAudioAsync("Band/Record/01.mp3", tags with { Title = "One", Album = "New Name" });
+        (await RefreshAsync("Band/Record", "Band/Record/01.mp3")).Should().BeTrue();
+
+        Guid newId;
+        await using (WaveMpDbContext db = _database.CreateDbContext())
+        {
+            // The old album still has a song: it keeps its data, and the move waits for its last song.
+            Album renamed = await LoadAlbumAsync(db, "New Name");
+            newId = renamed.Id;
+            (renamed.Tracks.Count, renamed.CoverPriority).Should().Be((1, (CoverPriority?)null));
+            Album old = await LoadAlbumAsync(db, "Old Name");
+            (old.Id, old.Tracks.Count, old.CoverPriority).Should().Be((oldId, 1, (CoverPriority?)CoverPriority.TrackFirst));
+            (await FavoritesAsync(db, data)).Select(favorite => favorite.AlbumId).Should().Equal(oldId, oldId);
+            (await db.OnlineCovers.Select(cover => cover.AlbumId).ToListAsync()).Should().Equal(oldId);
+            (await db.AlbumMoves.Select(move => new { move.FromAlbumId, move.ToAlbumId, move.TrackCount })
+                    .ToListAsync())
+                .Should().BeEquivalentTo([new { FromAlbumId = oldId, ToAlbumId = newId, TrackCount = 1 }]);
+        }
+
+        await ChangeAudioAsync("Band/Record/02.mp3", tags with { Title = "Two", Album = "New Name" });
+        (await RefreshAsync("Band/Record", "Band/Record/02.mp3")).Should().BeTrue();
+
+        await using (WaveMpDbContext after = _database.CreateDbContext())
+        {
+            Album album = await after.Albums.Include(item => item.Tracks).SingleAsync();
+            (album.Id, album.Title, album.Tracks.Count).Should().Be((newId, "New Name", 2));
+        }
+
+        await ExpectAlbumDataAsync(newId, data);
+    }
+
+    [Test]
     public async Task RefreshFolderAsync_MissingFolder_ChangesNothing()
     {
         await AudioAsync("Band/Album/01 - One.mp3");
@@ -1348,6 +1638,192 @@ public class LibraryScannerTests
         (await db.MediaSources.Select(source => source.AlbumGroupingVersion).ToListAsync())
             .Should().Equal(ScannerVersions.AlbumGrouping);
         return compilation.Id;
+    }
+
+    /// <summary>
+    /// A library as version 1.0.106 left it: a flagged compilation as an album per artist (one of them the artist of
+    /// the folder, as album artist), with audio files read by metadata version 1 (no stored flag), no album marked as
+    /// compilation and albums formed by grouping version 2. Returns the ids of the albums "Hits" by their album artist.
+    /// </summary>
+    private async Task<Dictionary<string, Guid>> CreateLibraryOfVersion106Async()
+    {
+        await CreateLibraryOfGroupingVersion2Async();
+        return await ReadByVersion106Async();
+    }
+
+    /// <summary>
+    /// Turns the library into one read by version 1.0.106, which did not store the compilation flag: audio files of
+    /// metadata version 1 without flag, no album marked as compilation and grouping version 2. Returns the ids of the
+    /// albums "Hits" by the name of their album artist.
+    /// </summary>
+    private async Task<Dictionary<string, Guid>> ReadByVersion106Async()
+    {
+        await using (WaveMpDbContext db = _database.CreateDbContext())
+        {
+            await db.MediaFiles
+                .Where(file => file.Kind == MediaFileKind.Audio)
+                .ExecuteUpdateAsync(setters => setters
+                    .SetProperty(file => file.MetadataVersion, 1)
+                    .SetProperty(file => file.Tags.IsCompilation, false));
+            await db.Albums.ExecuteUpdateAsync(setters => setters.SetProperty(album => album.IsCompilation, false));
+            await db.MediaSources.ExecuteUpdateAsync(setters =>
+                setters.SetProperty(source => source.AlbumGroupingVersion, 2));
+        }
+
+        return await OldHitsAlbumsAsync();
+    }
+
+    /// <summary>
+    /// The ids of the albums "Hits" by the name of their album artist.
+    /// </summary>
+    private async Task<Dictionary<string, Guid>> OldHitsAlbumsAsync()
+    {
+        await using WaveMpDbContext db = _database.CreateDbContext();
+        return await db.Albums
+            .Where(album => album.Title == "Hits")
+            .Select(album => new { album.AlbumArtist!.Name, album.Id })
+            .ToDictionaryAsync(album => album.Name, album => album.Id);
+    }
+
+    /// <summary>
+    /// Gives albums the data that must follow their songs: the first profile marks two of them (the earlier time
+    /// counts), the second profile marks the third one and plays it, the admin chose a cover rule for one and an
+    /// online cover for the third one, and each was added at another time. The same album may be passed for all three.
+    /// <see cref="ExpectAlbumDataAsync"/> expects the result on the album that got their songs.
+    /// </summary>
+    private async Task<AlbumData> GiveAlbumDataAsync(Guid favoredTwice, Guid ruled, Guid covered)
+    {
+        LibrarySeed seed = new();
+        User first = seed.User();
+        User second = seed.User();
+        var onlineCoverId = Guid.CreateVersion7();
+        await using WaveMpDbContext db = _database.CreateDbContext();
+        await seed.SaveAsync(db);
+        _users.AddRange([first.Id, second.Id]);
+        if (favoredTwice != ruled)
+        {
+            db.Favorites.Add(AlbumFavorite(first, favoredTwice, _day.AddDays(3)));
+        }
+
+        db.Favorites.AddRange(
+            AlbumFavorite(first, ruled, _day.AddDays(1)),
+            AlbumFavorite(second, covered, _day.AddDays(2)));
+        db.OnlineCovers.Add(OnlineCoverOf(onlineCoverId, covered));
+        db.PlaybackStates.Add(new PlaybackState
+        {
+            UserId = second.Id,
+            TrackIds = [Guid.NewGuid()],
+            CurrentIndex = 0,
+            PositionMilliseconds = 0,
+            Shuffle = false,
+            Repeat = RepeatMode.Off,
+            SourceKind = PlaybackSourceKind.Album,
+            SourceId = covered,
+            DeviceId = "device",
+            DeviceName = "Device",
+            ChangedAt = _day,
+        });
+        await db.SaveChangesAsync();
+        await SetAlbumAsync(db, favoredTwice, _day.AddDays(-2));
+        await SetAlbumAsync(db, covered, _day.AddDays(-1));
+        await SetAlbumAsync(db, ruled, _day.AddDays(-5), CoverPriority.TrackFirst);
+        return new AlbumData(first, second, onlineCoverId);
+    }
+
+    /// <summary>
+    /// Expects the data of <see cref="GiveAlbumDataAsync"/> on the album: the favorites of both profiles with the
+    /// earliest time, the cover rule, the online cover, the source of the player and the earliest date added, and no
+    /// move left behind.
+    /// </summary>
+    private async Task ExpectAlbumDataAsync(Guid albumId, AlbumData data)
+    {
+        await using WaveMpDbContext db = _database.CreateDbContext();
+        Album album = await db.Albums.SingleAsync(item => item.Id == albumId);
+
+        // Every loss is reported, not only the first one.
+        using AssertionScope scope = new();
+        (await FavoritesAsync(db, data)).Should().BeEquivalentTo([
+            (data.First.Id, albumId, _day.AddDays(1)),
+            (data.Second.Id, albumId, _day.AddDays(2)),
+        ]);
+        album.CoverPriority.Should().Be(CoverPriority.TrackFirst);
+        (await db.OnlineCovers.Select(cover => new { cover.Id, cover.AlbumId }).ToListAsync())
+            .Should().BeEquivalentTo([new { Id = data.OnlineCoverId, AlbumId = (Guid?)albumId }]);
+        (await db.PlaybackStates
+                .Where(state => state.UserId == data.Second.Id)
+                .Select(state => state.SourceId)
+                .SingleAsync())
+            .Should().Be(albumId);
+        album.FirstSeenAt.Should().Be(_day.AddDays(-5));
+        (await db.AlbumMoves.CountAsync()).Should().Be(0);
+    }
+
+    private static Task<List<(Guid UserId, Guid AlbumId, DateTimeOffset CreatedAt)>> FavoritesAsync(
+        WaveMpDbContext db,
+        AlbumData data)
+    {
+        return FavoritesAsync(db, data.First, data.Second);
+    }
+
+    private static async Task<List<(Guid UserId, Guid AlbumId, DateTimeOffset CreatedAt)>> FavoritesAsync(
+        WaveMpDbContext db,
+        params User[] users)
+    {
+        Guid[] ids = [.. users.Select(user => user.Id)];
+        return [.. (await db.Favorites
+                .Where(favorite => ids.Contains(favorite.UserId))
+                .OrderBy(favorite => favorite.CreatedAt)
+                .ToListAsync())
+            .Select(favorite => (favorite.UserId, favorite.AlbumId!.Value, favorite.CreatedAt))];
+    }
+
+    private static Task SetAlbumAsync(
+        WaveMpDbContext db,
+        Guid albumId,
+        DateTimeOffset firstSeenAt,
+        CoverPriority? coverPriority = null)
+    {
+        return db.Albums.Where(album => album.Id == albumId).ExecuteUpdateAsync(setters => setters
+            .SetProperty(album => album.FirstSeenAt, firstSeenAt)
+            .SetProperty(album => album.CoverPriority, album => coverPriority ?? album.CoverPriority));
+    }
+
+    /// <summary>
+    /// The album of the songs of a folder, or none when they have none; fails when they are on several albums.
+    /// </summary>
+    private static Task<Guid?> AlbumOfFolderAsync(WaveMpDbContext db, string directoryPath)
+    {
+        return db.Tracks
+            .Where(track => track.DirectoryPath == directoryPath)
+            .Select(track => track.AlbumId)
+            .Distinct()
+            .SingleAsync();
+    }
+
+    private static Favorite AlbumFavorite(User user, Guid albumId, DateTimeOffset createdAt)
+    {
+        return new Favorite
+        {
+            Id = Guid.CreateVersion7(),
+            UserId = user.Id,
+            Type = FavoriteType.Album,
+            AlbumId = albumId,
+            CreatedAt = createdAt,
+        };
+    }
+
+    private static OnlineCover OnlineCoverOf(Guid id, Guid albumId)
+    {
+        return new OnlineCover
+        {
+            Id = id,
+            AlbumId = albumId,
+            FileName = id + ".jpg",
+            MimeType = "image/jpeg",
+            Size = 1000,
+            ReleaseId = Guid.NewGuid(),
+            CreatedAt = _day,
+        };
     }
 
     private static Task<Track> LoadTrackAsync(WaveMpDbContext db, string normalizedBaseName)
@@ -1500,4 +1976,9 @@ public class LibraryScannerTests
         services.AddWaveMpScanning();
         return services.BuildServiceProvider();
     }
+
+    /// <summary>
+    /// The profiles and the online cover of <see cref="GiveAlbumDataAsync"/>.
+    /// </summary>
+    private sealed record AlbumData(User First, User Second, Guid OnlineCoverId);
 }
