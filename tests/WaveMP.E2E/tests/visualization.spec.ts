@@ -7,6 +7,7 @@ import {
     type Page,
 } from '@playwright/test'
 import { createUser, deleteUser, findTrackId, uniqueSuffix, type TestUser } from './helpers/api'
+import { drawSmall, limitDrawingRate } from './helpers/drawing'
 import { homeUrl, profileTile } from './helpers/navigation'
 import { emptyStorageState } from './helpers/storage'
 
@@ -17,6 +18,12 @@ import { emptyStorageState } from './helpers/storage'
 // Drawing in software takes much of the CPU, so the tests of this file run one after another in one
 // worker instead of drawing two visualizations at once: the project "visualization" of
 // playwright.config.ts runs this file alone with one worker, first on the desktop, then on a phone.
+// One visualization at full size and rate still takes every core, and the preset it starts with is
+// random: with a slow one the clicks, the server and the database wait for seconds. So
+// - all tests draw at a limited rate, and the tests of the behavior on a small stage as well (see
+//   helpers/drawing.ts); the test of the layout keeps the size,
+// - the profiles start with the cover, because a video and its ambient light cost the same,
+// - a test uses one session for the API, because creating a session writes to the database.
 
 test.describe.configure({ mode: 'default' })
 
@@ -31,7 +38,8 @@ test.use({
     },
 })
 
-// Drawing in software keeps the page busy, so a choice may reach the server a few seconds later.
+// The app saves a choice in the background, and drawing in software still takes a part of the CPU,
+// so a choice may reach the server a moment later.
 const settled = expect.configure({ timeout: 15_000 })
 
 function part(page: Page, name: string): Locator {
@@ -65,19 +73,18 @@ interface StoredVisualization {
 
 async function storedVisualization(
     request: APIRequestContext,
-    profileId: string,
+    headers: Record<string, string>,
 ): Promise<StoredVisualization> {
-    const response = await request.get('/api/v1/me/settings', {
-        headers: await sessionHeaders(request, profileId),
-    })
+    const response = await request.get('/api/v1/me/settings', { headers })
     expect(response.status()).toBe(200)
     return (await response.json()).visualization
 }
 
-async function storedViewMode(request: APIRequestContext, profileId: string): Promise<string> {
-    const response = await request.get('/api/v1/me/settings', {
-        headers: await sessionHeaders(request, profileId),
-    })
+async function storedViewMode(
+    request: APIRequestContext,
+    headers: Record<string, string>,
+): Promise<string> {
+    const response = await request.get('/api/v1/me/settings', { headers })
     expect(response.status()).toBe(200)
     return (await response.json()).playerViewMode
 }
@@ -86,9 +93,12 @@ async function storedViewMode(request: APIRequestContext, profileId: string): Pr
  * Lets the profile draw at the low quality: drawing in software takes much of the CPU, and other
  * tests run at the same time.
  */
-async function drawAtLowQuality(request: APIRequestContext, profileId: string): Promise<void> {
+async function drawAtLowQuality(
+    request: APIRequestContext,
+    headers: Record<string, string>,
+): Promise<void> {
     const response = await request.patch('/api/v1/me/settings', {
-        headers: await sessionHeaders(request, profileId),
+        headers,
         data: { visualization: { quality: 'Low' } },
     })
     expect(response.status()).toBe(200)
@@ -98,10 +108,25 @@ async function drawAtLowQuality(request: APIRequestContext, profileId: string): 
  * Turns the automatic change of the profile off, so the shown preset changes only when the test
  * chooses one.
  */
-async function turnOffAutoChange(request: APIRequestContext, profileId: string): Promise<void> {
+async function turnOffAutoChange(
+    request: APIRequestContext,
+    headers: Record<string, string>,
+): Promise<void> {
     const response = await request.patch('/api/v1/me/settings', {
-        headers: await sessionHeaders(request, profileId),
+        headers,
         data: { visualization: { autoChange: false } },
+    })
+    expect(response.status()).toBe(200)
+}
+
+/** Lets Now Playing open with the cover, so nothing is drawn before a test chooses the visualization. */
+async function startWithCover(
+    request: APIRequestContext,
+    headers: Record<string, string>,
+): Promise<void> {
+    const response = await request.patch('/api/v1/me/settings', {
+        headers,
+        data: { playerViewMode: 'Cover' },
     })
     expect(response.status()).toBe(200)
 }
@@ -171,9 +196,14 @@ function moduleSegment(page: Page, item: string): Locator {
 }
 
 let user: TestUser
+/** The headers of a session of the profile, for the requests of the test to the API. */
+let headers: Record<string, string>
 
 test.beforeEach(async ({ page, request }) => {
     user = await createUser(request, `Visual ${uniqueSuffix()}`)
+    headers = await sessionHeaders(request, user.id)
+    await startWithCover(request, headers)
+    await limitDrawingRate(page)
     await page.goto('/profiles')
     await profileTile(page, user.name).click()
     await expect(page).toHaveURL(homeUrl)
@@ -189,7 +219,8 @@ function visualizationTests(): void {
         page,
         request,
     }) => {
-        expect(await storedVisualization(request, user.id)).toEqual({
+        await drawSmall(page)
+        expect(await storedVisualization(request, headers)).toEqual({
             module: 'Milkdrop',
             preset: null,
             autoChange: true,
@@ -197,7 +228,7 @@ function visualizationTests(): void {
             quality: 'Auto',
         })
 
-        await drawAtLowQuality(request, user.id)
+        await drawAtLowQuality(request, headers)
         const id = await findTrackId(request, 'Loose Song')
         await page.goto(`/library/tracks/${id}`)
         await part(page, 'detail-actions').locator("[data-item='play']").click()
@@ -236,7 +267,7 @@ function visualizationTests(): void {
         await choosePreset(page, entries.nth(index))
         await expect(shownPreset(page)).toHaveAttribute('data-item', chosen!)
         await settled
-            .poll(async () => (await storedVisualization(request, user.id)).preset)
+            .poll(async () => (await storedVisualization(request, headers)).preset)
             .toBe(chosen)
 
         // The next button follows the list.
@@ -244,7 +275,7 @@ function visualizationTests(): void {
         await part(page, 'btn-preset-next').click()
         await expect(shownPreset(page)).toHaveAttribute('data-item', following!)
         await settled
-            .poll(async () => (await storedVisualization(request, user.id)).preset)
+            .poll(async () => (await storedVisualization(request, headers)).preset)
             .toBe(following)
 
         const autoChange = part(page, 'btn-auto-change')
@@ -252,18 +283,20 @@ function visualizationTests(): void {
         await autoChange.click()
         await expect(autoChange).toHaveAttribute('aria-pressed', 'false')
         await settled
-            .poll(async () => (await storedVisualization(request, user.id)).autoChange)
+            .poll(async () => (await storedVisualization(request, headers)).autoChange)
             .toBe(false)
 
-        // Another view pauses the drawing, coming back draws again.
+        // Another view pauses the drawing, coming back draws again. The profile started with the
+        // cover, so the stored view has to change before the switch back says that it was saved.
+        await settled.poll(() => storedViewMode(request, headers)).toBe('Visualization')
         await viewSegment(page, 'cover').click()
         await expect(visualization).toHaveAttribute('data-state', /\bpaused\b/)
-        await settled.poll(() => storedViewMode(request, user.id)).toBe('Cover')
+        await settled.poll(() => storedViewMode(request, headers)).toBe('Cover')
         await viewSegment(page, 'visualization').click()
         await expect(visualization).toHaveAttribute('data-state', /\brunning\b/)
 
         // After loading the app again, the visualization starts with the stored preset.
-        await settled.poll(() => storedViewMode(request, user.id)).toBe('Visualization')
+        await settled.poll(() => storedViewMode(request, headers)).toBe('Visualization')
         await page.reload()
         await page.goto(`/library/tracks/${id}`)
         await part(page, 'detail-actions').locator("[data-item='play']").click()
@@ -285,8 +318,9 @@ function visualizationTests(): void {
     }) => {
         // Both modules load and draw in software, A-Force twice.
         test.slow()
-        await drawAtLowQuality(request, user.id)
-        await turnOffAutoChange(request, user.id)
+        await drawSmall(page)
+        await drawAtLowQuality(request, headers)
+        await turnOffAutoChange(request, headers)
         const visualization = await showVisualization(page, request)
         await expect(visualization).toHaveAttribute('data-state', /\b(running|unsupported)\b/, {
             timeout: 20_000,
@@ -304,7 +338,7 @@ function visualizationTests(): void {
         })
         await expect(visualization).toHaveAttribute('data-quality', 'low')
         await settled
-            .poll(() => storedVisualization(request, user.id))
+            .poll(() => storedVisualization(request, headers))
             .toMatchObject({ module: 'AForce', preset: null })
 
         // The style variants are the presets, with their names in the language of the app.
@@ -333,7 +367,7 @@ function visualizationTests(): void {
         const following = chosen === 'ember' ? 'lagoon' : 'eclipse'
         await choosePreset(page, presetMenu(page).locator(`[data-item='${chosen}']`))
         await settled
-            .poll(async () => (await storedVisualization(request, user.id)).preset)
+            .poll(async () => (await storedVisualization(request, headers)).preset)
             .toBe(chosen)
         await part(page, 'btn-preset-next').click()
         await expect(shownPreset(page)).toHaveAttribute('data-item', following)
@@ -341,7 +375,7 @@ function visualizationTests(): void {
 
         // After loading the app again, A-Force starts with the stored style.
         await settled
-            .poll(async () => (await storedVisualization(request, user.id)).preset)
+            .poll(async () => (await storedVisualization(request, headers)).preset)
             .toBe(following)
         await page.reload()
         await showVisualization(page, request)
@@ -355,7 +389,7 @@ function visualizationTests(): void {
         await moduleSegment(page, 'milkdrop').click()
         await expect(visualization).toHaveAttribute('data-module', 'milkdrop')
         await settled
-            .poll(() => storedVisualization(request, user.id))
+            .poll(() => storedVisualization(request, headers))
             .toMatchObject({ module: 'Milkdrop', preset: null })
     })
 
@@ -365,8 +399,9 @@ function visualizationTests(): void {
     }) => {
         // Both modules load and draw in software, BlackCap twice.
         test.slow()
-        await drawAtLowQuality(request, user.id)
-        await turnOffAutoChange(request, user.id)
+        await drawSmall(page)
+        await drawAtLowQuality(request, headers)
+        await turnOffAutoChange(request, headers)
         const visualization = await showVisualization(page, request)
         await expect(visualization).toHaveAttribute('data-state', /\b(running|unsupported)\b/, {
             timeout: 20_000,
@@ -385,7 +420,7 @@ function visualizationTests(): void {
         await expect(part(page, 'visualization-message')).toHaveCount(0)
         await expect(visualization).toHaveAttribute('data-quality', 'low')
         await settled
-            .poll(() => storedVisualization(request, user.id))
+            .poll(() => storedVisualization(request, headers))
             .toMatchObject({ module: 'BlackCap', preset: null })
 
         // The scenes are the presets, with their names in the language of the app.
@@ -414,7 +449,7 @@ function visualizationTests(): void {
         const following = chosen === 'halo' ? 'dusk' : 'orchid'
         await choosePreset(page, presetMenu(page).locator(`[data-item='${chosen}']`))
         await settled
-            .poll(async () => (await storedVisualization(request, user.id)).preset)
+            .poll(async () => (await storedVisualization(request, headers)).preset)
             .toBe(chosen)
         await part(page, 'btn-preset-next').click()
         await expect(shownPreset(page)).toHaveAttribute('data-item', following)
@@ -426,7 +461,7 @@ function visualizationTests(): void {
 
         // After loading the app again, BlackCap starts with the stored scene.
         await settled
-            .poll(async () => (await storedVisualization(request, user.id)).preset)
+            .poll(async () => (await storedVisualization(request, headers)).preset)
             .toBe(following)
         await page.reload()
         await showVisualization(page, request)
@@ -441,8 +476,8 @@ function visualizationTests(): void {
         page,
         request,
     }) => {
-        await drawAtLowQuality(request, user.id)
-        await turnOffAutoChange(request, user.id)
+        await drawAtLowQuality(request, headers)
+        await turnOffAutoChange(request, headers)
         const visualization = await showVisualization(page, request)
         const controls = part(page, 'visualization-controls')
         await expect(controls).toBeVisible()
@@ -497,6 +532,7 @@ function visualizationTests(): void {
     })
 
     test('sets the quality of the visualization in the settings', async ({ page, request }) => {
+        await drawSmall(page)
         await page.goto('/settings')
         const segment = (item: string) =>
             page.locator(
@@ -506,7 +542,7 @@ function visualizationTests(): void {
 
         await segment('low').click()
         await settled
-            .poll(async () => (await storedVisualization(request, user.id)).quality)
+            .poll(async () => (await storedVisualization(request, headers)).quality)
             .toBe('Low')
         await page.reload()
         await expect(segment('low')).toHaveAttribute('aria-checked', 'true')
@@ -532,12 +568,12 @@ function visualizationTests(): void {
 
         await select.selectOption('120')
         await settled
-            .poll(() => storedVisualization(request, user.id))
+            .poll(() => storedVisualization(request, headers))
             .toMatchObject({ autoChange: true, autoChangeSeconds: 120 })
 
         await select.selectOption('off')
         await settled
-            .poll(() => storedVisualization(request, user.id))
+            .poll(() => storedVisualization(request, headers))
             .toMatchObject({ autoChange: false, autoChangeSeconds: 120 })
 
         await page.reload()
@@ -545,8 +581,6 @@ function visualizationTests(): void {
     })
 
     test('rejects visualization settings out of range', async ({ request }) => {
-        const headers = await sessionHeaders(request, user.id)
-
         const quality = await request.patch('/api/v1/me/settings', {
             data: { visualization: { quality: 'Ultra' } },
             headers,
@@ -561,7 +595,7 @@ function visualizationTests(): void {
 
         expect(response.status()).toBe(400)
         expect(await response.text()).toContain('out_of_range')
-        expect((await storedVisualization(request, user.id)).autoChangeSeconds).toBe(30)
+        expect((await storedVisualization(request, headers)).autoChangeSeconds).toBe(30)
     })
 }
 
