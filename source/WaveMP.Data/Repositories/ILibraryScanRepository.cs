@@ -127,10 +127,13 @@ public interface ILibraryScanRepository
     /// number of deleted files and tracks. In the same transaction, it first records a move (see
     /// <see cref="RecordAlbumMovesAsync"/>) from the album of every deleted song to the album of a song elsewhere in
     /// the library whose primary file has the same kind, file name and size, so the data of an album whose folder was
-    /// renamed or moved follows its songs once <see cref="DeleteOrphansAsync"/> removes it. Folders written before
-    /// (the new folder of a scan) are therefore found; a folder that appears only later is not. Songs the scan kept
-    /// at a new place (see <see cref="DeleteVanishedTracksAsync"/>) have left these folders before, with their id, all
-    /// their data and their album move recorded by the writer, so this only concerns the songs that are deleted.
+    /// renamed or moved follows its songs once <see cref="DeleteOrphansAsync"/> removes it. Likewise it records a move
+    /// (see <see cref="RecordArtistMovesAsync"/>) from each artist of the deleted song to the artist of the song found
+    /// elsewhere, by the track artist and album artist roles and only when the old artist has neither role on that
+    /// song. Folders written before (the new folder of a scan) are therefore found; a folder that appears only later is
+    /// not. Songs the scan kept at a new place (see <see cref="DeleteVanishedTracksAsync"/>) have left these folders
+    /// before, with their id, all their data and their album and artist moves recorded by the writer, so this only
+    /// concerns the songs that are deleted.
     /// </summary>
     Task<(int Files, int Tracks)> DeleteDirectoriesAsync(
         Guid sourceId,

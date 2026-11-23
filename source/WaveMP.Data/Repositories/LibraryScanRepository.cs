@@ -649,10 +649,14 @@ internal sealed class LibraryScanRepository(WaveMpDbContext dbContext) : ILibrar
     /// <summary>
     /// Records a move for every song of the deleted folders whose file lies elsewhere in the library now, so the album
     /// of a renamed or moved folder (an album without artist is kept apart per folder) gives its data to the album of
-    /// the new folder once it is left empty. A song counts as moved when one of its primary files has the same kind,
-    /// file name and size as a primary file of a song outside the deleted folders. There is no time condition, so a
-    /// scan that is repeated after an interruption still finds the folder written by the interrupted run. The count of
-    /// a pair is the number of songs of the deleted folders; it is added to a stored move of the pair.
+    /// the new folder once it is left empty, and likewise an artist (an artist taken from the folder name, say) to the
+    /// artist of the song found elsewhere. A song counts as moved when one of its primary files has the same kind, file
+    /// name and size as a primary file of a song outside the deleted folders. For artists, the track artist and the
+    /// album artist of its album are both roles of a song, as in the writer: a role that changed from one artist to
+    /// another counts only when the old artist has neither role on the song found elsewhere, and a pair counts once per
+    /// song. There is no time condition, so a scan that is repeated after an interruption still finds the folder
+    /// written by the interrupted run. The count of a pair is the number of songs of the deleted folders; it is added
+    /// to a stored move of the pair.
     /// </summary>
     private async Task RecordFolderMovesAsync(
         Guid sourceId,
@@ -680,6 +684,37 @@ internal sealed class LibraryScanRepository(WaveMpDbContext dbContext) : ILibrar
             GROUP BY old_track.album_id, new_track.album_id
             ON CONFLICT (from_album_id, to_album_id)
             DO UPDATE SET track_count = album_moves.track_count + excluded.track_count, moved_at = excluded.moved_at
+            """,
+            cancellationToken);
+
+        // The new artist of a role is one of the two artists of the song found elsewhere, so a pair whose old artist
+        // differs from both never names the same artist twice.
+        await dbContext.Database.ExecuteSqlAsync(
+            $"""
+            INSERT INTO artist_moves (from_artist_id, to_artist_id, track_count, moved_at)
+            SELECT role.from_artist_id, role.to_artist_id, count(DISTINCT old_track.id), {now}
+            FROM tracks AS old_track
+            LEFT JOIN albums AS old_album ON old_album.id = old_track.album_id
+            JOIN media_files AS old_file ON old_file.track_id = old_track.id AND old_file.is_primary
+            JOIN media_files AS new_file ON new_file.is_primary
+                AND new_file.kind = old_file.kind
+                AND new_file.file_name = old_file.file_name
+                AND new_file.size = old_file.size
+            JOIN tracks AS new_track ON new_track.id = new_file.track_id
+            LEFT JOIN albums AS new_album ON new_album.id = new_track.album_id
+            CROSS JOIN LATERAL (VALUES
+                (old_track.artist_id, new_track.artist_id),
+                (old_album.album_artist_id, new_album.album_artist_id)) AS role(from_artist_id, to_artist_id)
+            WHERE old_track.source_id = {sourceId}
+                AND old_track.directory_path = ANY({paths})
+                AND NOT (new_track.source_id = {sourceId} AND new_track.directory_path = ANY({paths}))
+                AND role.from_artist_id IS NOT NULL
+                AND role.to_artist_id IS NOT NULL
+                AND role.from_artist_id IS DISTINCT FROM new_track.artist_id
+                AND role.from_artist_id IS DISTINCT FROM new_album.album_artist_id
+            GROUP BY role.from_artist_id, role.to_artist_id
+            ON CONFLICT (from_artist_id, to_artist_id)
+            DO UPDATE SET track_count = artist_moves.track_count + excluded.track_count, moved_at = excluded.moved_at
             """,
             cancellationToken);
     }

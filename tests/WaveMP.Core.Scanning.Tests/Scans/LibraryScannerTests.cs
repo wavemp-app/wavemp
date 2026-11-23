@@ -765,6 +765,74 @@ public class LibraryScannerTests
     }
 
     [Test]
+    public async Task Scan_RegroupWithFailedCleanUp_CarriesTheArtistDataOverWhenTheNextScanFinishesIt()
+    {
+        TestTags tags = new() { Artist = "Band", Album = "Record" };
+        await AudioAsync("Collection/Record/01.mp3", tags: tags with { Title = "One" });
+        await AudioAsync("Collection/Record/02.mp3", tags: tags with { Title = "Two" });
+        await ScanAsync();
+        Dictionary<string, Guid> trackIds;
+        await using (WaveMpDbContext db = _database.CreateDbContext())
+        {
+            // As an older version of the album rules left it: the songs on an album of another key, whose album artist
+            // was taken from the folder and has no song of its own.
+            LibrarySeed seed = new();
+            Artist collection = seed.Artist("Collection");
+            await seed.SaveAsync(db);
+            await db.Albums.ExecuteUpdateAsync(setters => setters
+                .SetProperty(album => album.AlbumKey, "older rules")
+                .SetProperty(album => album.AlbumArtistId, collection.Id));
+            await db.MediaSources.ExecuteUpdateAsync(setters =>
+                setters.SetProperty(source => source.AlbumGroupingVersion, 2));
+            trackIds = await db.Tracks.ToDictionaryAsync(track => track.Title, track => track.Id);
+        }
+
+        ArtistData data = await GiveArtistDataAsync("Collection");
+        await using (WaveMpDbContext db = _database.CreateDbContext())
+        {
+            // The clean-up fails when it removes the artists left empty.
+            await db.Database.ExecuteSqlRawAsync(
+                """
+                CREATE FUNCTION fail_artist_delete() RETURNS trigger LANGUAGE plpgsql
+                    AS 'BEGIN RAISE EXCEPTION ''artists cannot be deleted''; END';
+                CREATE TRIGGER fail_artist_delete BEFORE DELETE ON artists
+                    FOR EACH ROW EXECUTE FUNCTION fail_artist_delete();
+                """);
+        }
+
+        try
+        {
+            Func<Task> act = () => ScanAsync();
+
+            await act.Should().ThrowAsync<DbException>();
+
+            // The songs moved together with a record of their moves; the old artist keeps its data until it goes.
+            await using WaveMpDbContext db = _database.CreateDbContext();
+            (await db.MediaSources.SingleAsync()).AlbumGroupingVersion.Should().Be(2);
+            (await ArtistMovesAsync(db)).Should().Equal((data.OldArtistId, await ArtistIdAsync(db, "Band"), 2));
+            (await ArtistFavoritesAsync(db, data.First, data.Second)).Select(favorite => favorite.ArtistId)
+                .Should().Equal(data.OldArtistId, data.OldArtistId);
+        }
+        finally
+        {
+            await using WaveMpDbContext db = _database.CreateDbContext();
+            await db.Database.ExecuteSqlRawAsync("DROP FUNCTION fail_artist_delete() CASCADE");
+        }
+
+        ScanResult result = await ScanAsync();
+
+        result.Statistics.FilesUpdated.Should().Be(0);
+        await ExpectArtistDataAsync("Band", data);
+        await using WaveMpDbContext after = _database.CreateDbContext();
+        Album album = await LoadAlbumAsync(after, "Record");
+        (album.AlbumArtist!.Name, album.Tracks.Count).Should().Be(("Band", 2));
+        (await after.Tracks.ToDictionaryAsync(track => track.Title, track => track.Id))
+            .Should().BeEquivalentTo(trackIds);
+        (await after.MediaSources.Select(source => source.AlbumGroupingVersion).ToListAsync())
+            .Should().Equal(ScannerVersions.AlbumGrouping);
+    }
+
+    [Test]
     public async Task Rescan_FlaggedLibraryReadByAnOlderVersion_IsReadAgainAndFormsOneAlbum()
     {
         TestTags hits = new() { Album = "Hits", Compilation = "1" };
@@ -1083,6 +1151,306 @@ public class LibraryScannerTests
         await ScanAsync();
 
         await ExpectArtistDataAsync("The Band", data);
+    }
+
+    [Test]
+    public async Task Rescan_AlbumArtistOfACompilationRenamedOutsideWaveMp_CarriesTheArtistDataOverToTheNewArtist()
+    {
+        // The album artist has no song of its own: it belongs to the songs only as album artist.
+        TestTags hits = new() { Album = "Hits", AlbumArtist = "V.A." };
+        await AudioAsync("Hits/01.mp3", tags: hits with { Title = "One", Artist = "A" });
+        await AudioAsync("Hits/02.mp3", tags: hits with { Title = "Two", Artist = "B" });
+        await ScanAsync();
+        ArtistData data = await GiveArtistDataAsync("V.A.");
+        Dictionary<string, Guid> artistsBefore;
+        await using (WaveMpDbContext before = _database.CreateDbContext())
+        {
+            artistsBefore = await before.Artists.ToDictionaryAsync(artist => artist.Name, artist => artist.Id);
+        }
+
+        TestTags renamed = hits with { AlbumArtist = "Various Artists" };
+        await ChangeAudioAsync("Hits/01.mp3", renamed with { Title = "One", Artist = "A" });
+        await ChangeAudioAsync("Hits/02.mp3", renamed with { Title = "Two", Artist = "B" });
+        await ScanAsync();
+
+        await ExpectArtistDataAsync("Various Artists", data);
+        await using WaveMpDbContext after = _database.CreateDbContext();
+        Album album = await LoadAlbumAsync(after, "Hits");
+        (album.AlbumArtist!.Name, album.Tracks.Count).Should().Be(("Various Artists", 2));
+        (await after.Artists.Where(artist => artist.Name == "A" || artist.Name == "B").Select(artist => artist.Id)
+                .ToListAsync())
+            .Should().BeEquivalentTo([artistsBefore["A"], artistsBefore["B"]]);
+    }
+
+    [Test]
+    public async Task Rescan_TrackArtistRenamedWhileTheAlbumArtistStays_CarriesNothingSinceTheOldArtistKeepsTheSongs()
+    {
+        TestTags tags = new() { Artist = "Band", AlbumArtist = "Band", Album = "Record" };
+        await AudioAsync("Band/Record/01.mp3", tags: tags with { Title = "One" });
+        await AudioAsync("Band/Record/02.mp3", tags: tags with { Title = "Two" });
+        await ScanAsync();
+        ArtistData data = await GiveArtistDataAsync("Band");
+
+        TestTags featuring = tags with { Artist = "Band feat. Guest" };
+        await ChangeAudioAsync("Band/Record/01.mp3", featuring with { Title = "One" });
+        await ChangeAudioAsync("Band/Record/02.mp3", featuring with { Title = "Two" });
+        await ScanAsync();
+
+        await using WaveMpDbContext db = _database.CreateDbContext();
+        using AssertionScope scope = new();
+        Album album = await LoadAlbumAsync(db, "Record");
+        (album.AlbumArtistId, album.Tracks.Count).Should().Be((data.OldArtistId, 2));
+        album.Tracks.Select(track => track.ArtistId).Distinct()
+            .Should().Equal(await ArtistIdAsync(db, "Band feat. Guest"));
+        (await db.Artists.SingleAsync(artist => artist.Id == data.OldArtistId)).FirstSeenAt
+            .Should().Be(_day.AddDays(-5));
+        (await ArtistFavoritesAsync(db, data.First, data.Second)).Should().BeEquivalentTo([
+            (data.First.Id, data.OldArtistId, _day.AddDays(1)),
+            (data.Second.Id, data.OldArtistId, _day.AddDays(2)),
+        ]);
+        (await SourceOfPlaybackAsync(db, data.Second)).Should().Be(data.OldArtistId);
+        (await ArtistMovesAsync(db)).Should().BeEmpty();
+    }
+
+    [Test]
+    public async Task Rescan_TwoArtistsMergedIntoAThird_GivesItTheUnionOfTheirDataWithTheEarliestTimes()
+    {
+        await AudioAsync("Music/Record/01.mp3", tags: new TestTags { Title = "One", Artist = "Duo", Album = "Record" });
+        await AudioAsync("Music/Record/02.mp3", tags: new TestTags { Title = "Two", Artist = "Duo", Album = "Record" });
+        await AudioAsync(
+            "Music/Live/01.mp3",
+            tags: new TestTags { Title = "Three", Artist = "The Duo", Album = "Live" });
+        await AudioAsync(
+            "Music/Best/01.mp3",
+            tags: new TestTags { Title = "Four", Artist = "Duo Project", Album = "Best" });
+        await ScanAsync();
+        LibrarySeed seed = new();
+        User first = seed.User();
+        User second = seed.User();
+        Guid duo;
+        Guid theDuo;
+        Guid project;
+        await using (WaveMpDbContext db = _database.CreateDbContext())
+        {
+            await seed.SaveAsync(db);
+            _users.AddRange([first.Id, second.Id]);
+            duo = await ArtistIdAsync(db, "Duo");
+            theDuo = await ArtistIdAsync(db, "The Duo");
+            project = await ArtistIdAsync(db, "Duo Project");
+            db.Favorites.AddRange(
+                ArtistFavorite(first, duo, _day.AddDays(3)),
+                ArtistFavorite(first, theDuo, _day.AddDays(1)),
+                ArtistFavorite(second, duo, _day.AddDays(2)),
+                ArtistFavorite(second, project, _day.AddDays(4)));
+            db.PlaybackStates.Add(PlaybackStateOf(second, PlaybackSourceKind.Artist, duo));
+            await db.SaveChangesAsync();
+            await SetArtistFirstSeenAsync(db, duo, _day.AddDays(-2));
+            await SetArtistFirstSeenAsync(db, theDuo, _day.AddDays(-5));
+            await SetArtistFirstSeenAsync(db, project, _day.AddDays(-1));
+        }
+
+        await ChangeAudioAsync(
+            "Music/Record/01.mp3",
+            new TestTags { Title = "One", Artist = "Duo Project", Album = "Record" });
+        await ChangeAudioAsync(
+            "Music/Record/02.mp3",
+            new TestTags { Title = "Two", Artist = "Duo Project", Album = "Record" });
+        await ChangeAudioAsync(
+            "Music/Live/01.mp3",
+            new TestTags { Title = "Three", Artist = "Duo Project", Album = "Live" });
+        await ScanAsync();
+
+        await using WaveMpDbContext after = _database.CreateDbContext();
+        using AssertionScope scope = new();
+        (await after.Artists.Select(artist => artist.Id).ToListAsync()).Should().Equal(project);
+        (await after.Artists.SingleAsync()).FirstSeenAt.Should().Be(_day.AddDays(-5));
+        (await ArtistFavoritesAsync(after, first, second)).Should().BeEquivalentTo([
+            (first.Id, project, _day.AddDays(1)),
+            (second.Id, project, _day.AddDays(2)),
+        ]);
+        (await SourceOfPlaybackAsync(after, second)).Should().Be(project);
+        (await ArtistMovesAsync(after)).Should().BeEmpty();
+    }
+
+    [Test]
+    public async Task Rescan_ArtistSplitIntoTwo_GivesBothItsDataAndThePlayerToTheOneWithMostSongs()
+    {
+        TestTags tags = new() { Artist = "Duo", Album = "Record" };
+        await AudioAsync("Music/Record/01.mp3", tags: tags with { Title = "One" });
+        await AudioAsync("Music/Record/02.mp3", tags: tags with { Title = "Two" });
+        await AudioAsync("Music/Record/03.mp3", tags: tags with { Title = "Three" });
+        await AudioAsync("Music/Solo/01.mp3", tags: new TestTags { Title = "Four", Artist = "Bob", Album = "Solo" });
+        await ScanAsync();
+        ArtistData data = await GiveArtistDataAsync("Duo");
+        Guid bob;
+        await using (WaveMpDbContext db = _database.CreateDbContext())
+        {
+            // The second profile marked Bob later than the duo: the earlier time counts.
+            bob = await ArtistIdAsync(db, "Bob");
+            db.Favorites.Add(ArtistFavorite(data.Second, bob, _day.AddDays(3)));
+            await db.SaveChangesAsync();
+        }
+
+        // Bob takes one song, which is written first; Alice takes two.
+        await ChangeAudioAsync("Music/Record/01.mp3", tags with { Title = "One", Artist = "Bob" });
+        await ChangeAudioAsync("Music/Record/02.mp3", tags with { Title = "Two", Artist = "Alice" });
+        await ChangeAudioAsync("Music/Record/03.mp3", tags with { Title = "Three", Artist = "Alice" });
+        await ScanAsync();
+
+        await using WaveMpDbContext after = _database.CreateDbContext();
+        using AssertionScope scope = new();
+        Dictionary<string, Artist> artists = await after.Artists.ToDictionaryAsync(artist => artist.Name);
+        artists.Keys.Should().BeEquivalentTo("Alice", "Bob");
+        Guid alice = artists["Alice"].Id;
+        artists["Bob"].Id.Should().Be(bob);
+        artists.Values.Select(artist => artist.FirstSeenAt).Should().AllBeEquivalentTo(_day.AddDays(-5));
+        (await ArtistFavoritesAsync(after, data.First, data.Second)).Should().BeEquivalentTo([
+            (data.First.Id, alice, _day.AddDays(1)),
+            (data.First.Id, bob, _day.AddDays(1)),
+            (data.Second.Id, alice, _day.AddDays(2)),
+            (data.Second.Id, bob, _day.AddDays(2)),
+        ]);
+        (await SourceOfPlaybackAsync(after, data.Second)).Should().Be(alice);
+        (await ArtistMovesAsync(after)).Should().BeEmpty();
+    }
+
+    [Test]
+    public async Task Rescan_InterruptedWithARefreshInBetween_CarriesTheArtistDataOverOnceTheRepeatedScanFinishes()
+    {
+        TestTags record = new() { Artist = "Band", Album = "Record" };
+        TestTags live = new() { Artist = "Band", Album = "Live" };
+        TestTags other = new() { Artist = "Other", Album = "Album" };
+        await AudioAsync("One/Record/01.mp3", tags: record with { Title = "One" });
+        await AudioAsync("One/Record/02.mp3", tags: record with { Title = "Two" });
+        await AudioAsync("Two/Live/01.mp3", tags: live with { Title = "Three" });
+        await AudioAsync("Other/Album/01.mp3", tags: other with { Title = "Four" });
+        await ScanAsync();
+        ArtistData data = await GiveArtistDataAsync("Band");
+        await ChangeAudioAsync("One/Record/01.mp3", record with { Title = "One", Artist = "The Band" });
+        await ChangeAudioAsync("One/Record/02.mp3", record with { Title = "Two", Artist = "The Band" });
+        await ChangeAudioAsync("Two/Live/01.mp3", live with { Title = "Three", Artist = "The Band" });
+        await using (WaveMpDbContext db = _database.CreateDbContext())
+        {
+            // The scan is interrupted when it writes the second folder.
+            await db.Database.ExecuteSqlRawAsync(
+                """
+                CREATE FUNCTION fail_track_write() RETURNS trigger LANGUAGE plpgsql
+                    AS 'BEGIN RAISE EXCEPTION ''songs cannot be written''; END';
+                CREATE TRIGGER fail_track_write BEFORE UPDATE ON tracks
+                    FOR EACH ROW WHEN (NEW.directory_path = 'Two/Live') EXECUTE FUNCTION fail_track_write();
+                """);
+        }
+
+        try
+        {
+            Func<Task> act = () => ScanAsync();
+
+            await act.Should().ThrowAsync<DbUpdateException>();
+            await using (WaveMpDbContext db = _database.CreateDbContext())
+            {
+                // The first folder is written with the record of its moves; the old artist keeps a song.
+                Guid newId = await ArtistIdAsync(db, "The Band");
+                (await db.Tracks.Where(track => track.DirectoryPath == "One/Record").Select(track => track.ArtistId)
+                        .Distinct().ToListAsync())
+                    .Should().Equal(newId);
+                (await ArtistMovesAsync(db)).Should().Equal((data.OldArtistId, newId, 2));
+            }
+
+            // Another writer cleans up before the scan is repeated: the old artist still has a song and keeps its data.
+            await ChangeAudioAsync("Other/Album/01.mp3", other with { Title = "Five" });
+            (await RefreshAsync("Other/Album", "Other/Album/01.mp3")).Should().BeTrue();
+
+            await using (WaveMpDbContext db = _database.CreateDbContext())
+            {
+                (await ArtistFavoritesAsync(db, data.First, data.Second)).Select(favorite => favorite.ArtistId)
+                    .Should().Equal(data.OldArtistId, data.OldArtistId);
+                (await SourceOfPlaybackAsync(db, data.Second)).Should().Be(data.OldArtistId);
+                (await ArtistMovesAsync(db)).Select(move => move.TrackCount).Should().Equal(2);
+            }
+        }
+        finally
+        {
+            await using WaveMpDbContext db = _database.CreateDbContext();
+            await db.Database.ExecuteSqlRawAsync("DROP FUNCTION fail_track_write() CASCADE");
+        }
+
+        ScanResult result = await ScanAsync();
+
+        result.Statistics.FilesUpdated.Should().Be(1);
+        await ExpectArtistDataAsync("The Band", data);
+    }
+
+    [Test]
+    public async Task Rescan_RepeatedWhileTheOldArtistKeepsASong_RecordsNothingNewAndCarriesOnceItIsEmpty()
+    {
+        TestTags tags = new() { Artist = "Band", Album = "Record" };
+        await AudioAsync("Band/Record/01.mp3", tags: tags with { Title = "One" });
+        await AudioAsync("Band/Record/02.mp3", tags: tags with { Title = "Two" });
+        await ScanAsync();
+        ArtistData data = await GiveArtistDataAsync("Band");
+        await ChangeAudioAsync("Band/Record/01.mp3", tags with { Title = "One", Artist = "The Band" });
+        await ScanAsync();
+
+        // Read again without change and with all files read again: the song is at the new artist already.
+        await ScanAsync();
+        DateTime later = DateTime.UtcNow.AddMinutes(2);
+        File.SetLastWriteTimeUtc(_media.Combine("Band/Record/01.mp3"), later);
+        File.SetLastWriteTimeUtc(_media.Combine("Band/Record/02.mp3"), later);
+        ScanResult again = await ScanAsync();
+
+        again.Statistics.FilesUpdated.Should().Be(2);
+        await using (WaveMpDbContext db = _database.CreateDbContext())
+        {
+            Guid newId = await ArtistIdAsync(db, "The Band");
+            (await ArtistMovesAsync(db)).Should().Equal((data.OldArtistId, newId, 1));
+            (await ArtistFavoritesAsync(db, data.First, data.Second)).Select(favorite => favorite.ArtistId)
+                .Should().Equal(data.OldArtistId, data.OldArtistId);
+        }
+
+        await ChangeAudioAsync("Band/Record/02.mp3", tags with { Title = "Two", Artist = "The Band" });
+        File.SetLastWriteTimeUtc(_media.Combine("Band/Record/02.mp3"), later.AddMinutes(1));
+        await ScanAsync();
+        await ExpectArtistDataAsync("The Band", data);
+
+        await ScanAsync();
+
+        await ExpectArtistDataAsync("The Band", data);
+    }
+
+    [TestCase(false)]
+    [TestCase(true)]
+    public async Task Rescan_RenamedFolderThatNamesTheArtist_CarriesTheArtistDataOverToTheNewArtist(bool partial)
+    {
+        // Files without tags: the artist comes from the name of the folder.
+        await AudioAsync("Artst/Album/01 - One.mp3");
+        await AudioAsync("Artst/Album/02 - Two.mp3");
+        await ScanAsync();
+        ArtistData data = await GiveArtistDataAsync("Artst");
+
+        Directory.Move(_media.Combine("Artst"), _media.Combine("Artist"));
+        ScanScope? scope = partial ? ScanScope.Of(MediaSource.DefaultId, ["Artst", "Artist"]) : null;
+        await ScanAsync(scope);
+
+        await ExpectArtistDataAsync("Artist", data);
+        await using WaveMpDbContext db = _database.CreateDbContext();
+        (await db.Tracks.Select(track => track.DirectoryPath).Distinct().ToListAsync()).Should().Equal("Artist/Album");
+    }
+
+    [Test]
+    public async Task Rescan_DeletedFolderThatNamesTheArtistFoundTwiceElsewhere_CarriesTheArtistDataOverByItsFiles()
+    {
+        // A song found twice is two new songs; its artist is followed through the files of the deleted folder.
+        await AudioAsync("Artst/Album/01 - One.mp3");
+        await ScanAsync();
+        ArtistData data = await GiveArtistDataAsync("Artst");
+
+        CopyMedia("Artst/Album/01 - One.mp3", "Artist/Album/01 - One.mp3");
+        CopyMedia("Artst/Album/01 - One.mp3", "Artist/Album 2/01 - One.mp3");
+        Directory.Delete(_media.Combine("Artst"), true);
+        ScanResult result = await ScanAsync();
+
+        (result.Statistics.TracksAdded, result.Statistics.TracksRemoved).Should().Be((2, 1));
+        await ExpectArtistDataAsync("Artist", data);
     }
 
     [TestCase("Hits 2020", false)]
@@ -1846,6 +2214,35 @@ public class LibraryScannerTests
     }
 
     [Test]
+    public async Task RefreshFolder_ArtistRenamedSongBySong_CarriesTheDataOverOnceTheOldArtistIsEmpty()
+    {
+        TestTags tags = new() { Artist = "Band", Album = "Record" };
+        await AudioAsync("Band/Record/01.mp3", tags: tags with { Title = "One" });
+        await AudioAsync("Band/Record/02.mp3", tags: tags with { Title = "Two" });
+        await ScanAsync();
+        ArtistData data = await GiveArtistDataAsync("Band");
+
+        // As the metadata editor does: it writes one song and reads its folder again.
+        await ChangeAudioAsync("Band/Record/01.mp3", tags with { Title = "One", Artist = "The Band" });
+        (await RefreshAsync("Band/Record", "Band/Record/01.mp3")).Should().BeTrue();
+
+        await using (WaveMpDbContext db = _database.CreateDbContext())
+        {
+            // The old artist still has a song: it keeps its data, and the move waits for its last song.
+            Guid newId = await ArtistIdAsync(db, "The Band");
+            (await ArtistFavoritesAsync(db, data.First, data.Second)).Select(favorite => favorite.ArtistId)
+                .Should().Equal(data.OldArtistId, data.OldArtistId);
+            (await SourceOfPlaybackAsync(db, data.Second)).Should().Be(data.OldArtistId);
+            (await ArtistMovesAsync(db)).Should().Equal((data.OldArtistId, newId, 1));
+        }
+
+        await ChangeAudioAsync("Band/Record/02.mp3", tags with { Title = "Two", Artist = "The Band" });
+        (await RefreshAsync("Band/Record", "Band/Record/02.mp3")).Should().BeTrue();
+
+        await ExpectArtistDataAsync("The Band", data);
+    }
+
+    [Test]
     public async Task RefreshFolderAsync_MissingFolder_ChangesNothing()
     {
         await AudioAsync("Band/Album/01 - One.mp3");
@@ -2126,28 +2523,13 @@ public class LibraryScannerTests
         await using WaveMpDbContext db = _database.CreateDbContext();
         await seed.SaveAsync(db);
         _users.AddRange([first.Id, second.Id]);
-        Guid artistId = await db.Artists.Where(artist => artist.Name == name).Select(artist => artist.Id).SingleAsync();
+        Guid artistId = await ArtistIdAsync(db, name);
         db.Favorites.AddRange(
             ArtistFavorite(first, artistId, _day.AddDays(1)),
             ArtistFavorite(second, artistId, _day.AddDays(2)));
-        db.PlaybackStates.Add(new PlaybackState
-        {
-            UserId = second.Id,
-            TrackIds = [Guid.NewGuid()],
-            CurrentIndex = 0,
-            PositionMilliseconds = 0,
-            Shuffle = false,
-            Repeat = RepeatMode.Off,
-            SourceKind = PlaybackSourceKind.Artist,
-            SourceId = artistId,
-            DeviceId = "device",
-            DeviceName = "Device",
-            ChangedAt = _day,
-        });
+        db.PlaybackStates.Add(PlaybackStateOf(second, PlaybackSourceKind.Artist, artistId));
         await db.SaveChangesAsync();
-        await db.Artists
-            .Where(artist => artist.Id == artistId)
-            .ExecuteUpdateAsync(setters => setters.SetProperty(artist => artist.FirstSeenAt, _day.AddDays(-5)));
+        await SetArtistFirstSeenAsync(db, artistId, _day.AddDays(-5));
         return new ArtistData(first, second, artistId);
     }
 
@@ -2164,21 +2546,11 @@ public class LibraryScannerTests
         using AssertionScope scope = new();
         artist.Id.Should().NotBe(data.OldArtistId);
         (await db.Artists.AnyAsync(item => item.Id == data.OldArtistId)).Should().BeFalse();
-        (await db.Favorites
-                .Where(favorite => favorite.UserId == data.First.Id || favorite.UserId == data.Second.Id)
-                .Where(favorite => favorite.Type == FavoriteType.Artist)
-                .OrderBy(favorite => favorite.CreatedAt)
-                .Select(favorite => new { favorite.UserId, favorite.ArtistId, favorite.CreatedAt })
-                .ToListAsync())
-            .Should().BeEquivalentTo([
-                new { UserId = data.First.Id, ArtistId = (Guid?)artist.Id, CreatedAt = _day.AddDays(1) },
-                new { UserId = data.Second.Id, ArtistId = (Guid?)artist.Id, CreatedAt = _day.AddDays(2) },
-            ]);
-        (await db.PlaybackStates
-                .Where(state => state.UserId == data.Second.Id)
-                .Select(state => state.SourceId)
-                .SingleAsync())
-            .Should().Be(artist.Id);
+        (await ArtistFavoritesAsync(db, data.First, data.Second)).Should().BeEquivalentTo([
+            (data.First.Id, artist.Id, _day.AddDays(1)),
+            (data.Second.Id, artist.Id, _day.AddDays(2)),
+        ]);
+        (await SourceOfPlaybackAsync(db, data.Second)).Should().Be(artist.Id);
         artist.FirstSeenAt.Should().Be(_day.AddDays(-5));
         (await db.ArtistMoves.CountAsync()).Should().Be(0);
     }
@@ -2498,6 +2870,69 @@ public class LibraryScannerTests
             ArtistId = artistId,
             CreatedAt = createdAt,
         };
+    }
+
+    /// <summary>
+    /// A list in the player of the profile, started from the album or artist.
+    /// </summary>
+    private static PlaybackState PlaybackStateOf(User user, PlaybackSourceKind sourceKind, Guid sourceId)
+    {
+        return new PlaybackState
+        {
+            UserId = user.Id,
+            TrackIds = [Guid.NewGuid()],
+            CurrentIndex = 0,
+            PositionMilliseconds = 0,
+            Shuffle = false,
+            Repeat = RepeatMode.Off,
+            SourceKind = sourceKind,
+            SourceId = sourceId,
+            DeviceId = "device",
+            DeviceName = "Device",
+            ChangedAt = _day,
+        };
+    }
+
+    private static Task<Guid> ArtistIdAsync(WaveMpDbContext db, string name)
+    {
+        return db.Artists.Where(artist => artist.Name == name).Select(artist => artist.Id).SingleAsync();
+    }
+
+    private static Task SetArtistFirstSeenAsync(WaveMpDbContext db, Guid artistId, DateTimeOffset firstSeenAt)
+    {
+        return db.Artists
+            .Where(artist => artist.Id == artistId)
+            .ExecuteUpdateAsync(setters => setters.SetProperty(artist => artist.FirstSeenAt, firstSeenAt));
+    }
+
+    /// <summary>
+    /// The artist favorites of the profiles, by their time.
+    /// </summary>
+    private static async Task<List<(Guid UserId, Guid ArtistId, DateTimeOffset CreatedAt)>> ArtistFavoritesAsync(
+        WaveMpDbContext db,
+        params User[] users)
+    {
+        Guid[] ids = [.. users.Select(user => user.Id)];
+        return [.. (await db.Favorites
+                .Where(favorite => ids.Contains(favorite.UserId) && favorite.ArtistId != null)
+                .OrderBy(favorite => favorite.CreatedAt)
+                .ToListAsync())
+            .Select(favorite => (favorite.UserId, favorite.ArtistId!.Value, favorite.CreatedAt))];
+    }
+
+    private static async Task<List<(Guid FromArtistId, Guid ToArtistId, int TrackCount)>> ArtistMovesAsync(
+        WaveMpDbContext db)
+    {
+        return [.. (await db.ArtistMoves.ToListAsync())
+            .Select(move => (move.FromArtistId, move.ToArtistId, move.TrackCount))];
+    }
+
+    private static Task<Guid?> SourceOfPlaybackAsync(WaveMpDbContext db, User user)
+    {
+        return db.PlaybackStates
+            .Where(state => state.UserId == user.Id)
+            .Select(state => state.SourceId)
+            .SingleAsync();
     }
 
     private static OnlineCover OnlineCoverOf(Guid id, Guid albumId)

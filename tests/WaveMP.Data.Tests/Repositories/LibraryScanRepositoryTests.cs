@@ -145,6 +145,86 @@ public class LibraryScanRepositoryTests : LibraryDatabaseTests
     }
 
     [Test]
+    public async Task DeleteDirectoriesAsync_SameFilesElsewhere_RecordsAMoveToTheirArtistsOncePerSong()
+    {
+        LibrarySeed seed = new();
+        Artist band = seed.Artist("Band");
+        Artist theBand = seed.Artist("The Band");
+        Artist various = seed.Artist("VA");
+        Artist variousArtists = seed.Artist("Various Artists");
+        Artist guest = seed.Artist("Guest");
+        Artist solo = seed.Artist("Solo");
+        Artist soloist = seed.Artist("Soloist");
+        Album record = seed.Album("Record", band);
+        Album renamedRecord = seed.Album("Record", theBand);
+        Album sampler = seed.Album("Hits", various);
+        Album renamedSampler = seed.Album("Hits", variousArtists);
+        Album withoutAlbumArtist = seed.Album("Loose");
+
+        // Both roles of a song change to the same artist: one song for the pair.
+        SongIn(seed, record, "Band/Record/01.mp3", 1000, artist: band);
+        SongIn(seed, record, "Band/Record/02.mp3", 2000, artist: band);
+        SongIn(seed, renamedRecord, "The Band/Record/01.mp3", 1000, artist: theBand);
+        SongIn(seed, renamedRecord, "The Band/Record/02.mp3", 2000, artist: theBand);
+
+        // Only the album artist changes; the guest keeps its song.
+        SongIn(seed, sampler, "Hits/01.mp3", 3000, artist: guest);
+        SongIn(seed, renamedSampler, "Hits 2020/01.mp3", 3000, artist: guest);
+
+        // Neither album has an album artist; the song has no album at its new place.
+        SongIn(seed, withoutAlbumArtist, "Loose/01.mp3", 4000, artist: solo);
+        SongIn(seed, null, "Soloist/01.mp3", 4000, artist: soloist);
+        await SaveAsync(seed);
+        await AddArtistMovesAsync((band, theBand, 1));
+        DateTimeOffset now = _day.AddDays(30);
+
+        (int Files, int Tracks) deleted = await CreateRepository()
+            .DeleteDirectoriesAsync(MediaSource.DefaultId, ["Band/Record", "Hits", "Loose"], now);
+
+        deleted.Should().Be((4, 4));
+        (await ArtistMovesAsync()).Should().BeEquivalentTo([
+            (band.Id, theBand.Id, 3, now),
+            (various.Id, variousArtists.Id, 1, now),
+            (solo.Id, soloist.Id, 1, now),
+        ]);
+    }
+
+    [Test]
+    public async Task DeleteDirectoriesAsync_OldArtistKeepsTheSongOrNoArtistOnOneSide_RecordsNoArtistMove()
+    {
+        LibrarySeed seed = new();
+        Artist band = seed.Artist("Band");
+        Artist guest = seed.Artist("Guest");
+        Artist featuring = seed.Artist("Band feat. Guest");
+        Artist newcomer = seed.Artist("Newcomer");
+        Album record = seed.Album("Record", band);
+        Album swapped = seed.Album("Record", guest);
+        Album kept = seed.Album("Record", band);
+        Album other = seed.Album("Other", band);
+
+        // The artists swap their roles: each still has the song.
+        SongIn(seed, record, "Old/01.mp3", 1000, artist: guest);
+        SongIn(seed, swapped, "New/01.mp3", 1000, artist: band);
+
+        // The track artist changes, but the old one stays the album artist of the song.
+        SongIn(seed, other, "Old/02.mp3", 2000, artist: band);
+        SongIn(seed, kept, "New/02.mp3", 2000, artist: featuring);
+
+        // The song loses its artist, or gets its first one.
+        SongIn(seed, null, "Old/03.mp3", 3000, artist: guest);
+        SongIn(seed, null, "New/03.mp3", 3000);
+        SongIn(seed, null, "Old/04.mp3", 4000);
+        SongIn(seed, null, "New/04.mp3", 4000, artist: newcomer);
+        await SaveAsync(seed);
+
+        await CreateRepository().DeleteDirectoriesAsync(MediaSource.DefaultId, ["Old"], _day);
+
+        (await ArtistMovesAsync()).Should().BeEmpty();
+        WaveMpDbContext db = CreateDbContext();
+        (await db.Tracks.CountAsync(track => track.DirectoryPath == "Old")).Should().Be(0);
+    }
+
+    [Test]
     public async Task GetSnapshotsAsync_FilesOfATrack_CarryTheTrackAndWhetherItPlaysThem()
     {
         LibrarySeed seed = new();
@@ -824,17 +904,19 @@ public class LibraryScanRepositoryTests : LibraryDatabaseTests
     }
 
     /// <summary>
-    /// A song of the album in the folder of <paramref name="relativePath"/> with that file as its primary file.
+    /// A song of the album (and of the artist) in the folder of <paramref name="relativePath"/> with that file as its
+    /// primary file.
     /// </summary>
     private static Track SongIn(
         LibrarySeed seed,
-        Album album,
+        Album? album,
         string relativePath,
         long size,
         MediaFileKind kind = MediaFileKind.Audio,
-        MediaSource? source = null)
+        MediaSource? source = null,
+        Artist? artist = null)
     {
-        Track track = seed.Track(relativePath, album: album, source: source);
+        Track track = seed.Track(relativePath, artist, album, source: source);
         track.DirectoryPath = relativePath[..relativePath.LastIndexOf('/')];
         seed.File(relativePath, kind, track, size: size);
         return track;
