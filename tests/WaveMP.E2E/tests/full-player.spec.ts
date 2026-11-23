@@ -169,6 +169,27 @@ test.describe('full-screen player', () => {
         return page.context().newCDPSession(page)
     }
 
+    /**
+     * Sends a touch event at a time of its own: ms milliseconds after base (a Date.now()). The
+     * browser then takes the time of the event from the command instead of the moment it handles
+     * it, so the speed the player measures is the one of the test and not the load of the machine.
+     * The times start at base and not before: a time before the page loaded would count as its
+     * start.
+     */
+    async function touchAt(
+        cdp: CDPSession,
+        type: 'touchStart' | 'touchMove' | 'touchEnd',
+        touchPoints: { x: number; y: number }[],
+        base: number,
+        ms: number,
+    ): Promise<void> {
+        await cdp.send('Input.dispatchTouchEvent', {
+            type,
+            touchPoints,
+            timestamp: (base + ms) / 1000,
+        })
+    }
+
     /** The point in the middle of the cover of the full-screen player. */
     async function coverPoint(page: Page): Promise<{ x: number; y: number }> {
         const box = (await part(page, 'player-media').boundingBox())!
@@ -248,21 +269,18 @@ test.describe('full-screen player', () => {
         const cdp = await touch(page)
         const start = await coverPoint(page)
 
-        // 160 pixels, less than a quarter of the screen, in a few milliseconds.
-        await cdp.send('Input.dispatchTouchEvent', {
-            type: 'touchStart',
-            touchPoints: [start],
-        })
-        for (const offset of [40, 100, 160]) {
-            await cdp.send('Input.dispatchTouchEvent', {
-                type: 'touchMove',
-                touchPoints: [{ x: start.x, y: start.y + offset }],
-            })
+        // 160 pixels, less than a quarter of the screen, in 48 milliseconds: one move per frame,
+        // and the finger lets go 8 milliseconds after the last one.
+        const base = Date.now()
+        await touchAt(cdp, 'touchStart', [start], base, 0)
+        for (const { ms, offset } of [
+            { ms: 16, offset: 40 },
+            { ms: 32, offset: 100 },
+            { ms: 48, offset: 160 },
+        ]) {
+            await touchAt(cdp, 'touchMove', [{ x: start.x, y: start.y + offset }], base, ms)
         }
-        await cdp.send('Input.dispatchTouchEvent', {
-            type: 'touchEnd',
-            touchPoints: [],
-        })
+        await touchAt(cdp, 'touchEnd', [], base, 56)
 
         await expect(transport).toHaveAttribute('data-state', /\bdismissing\b/)
         // It leaves at the speed of the flick: quickly, in at most 300 milliseconds.
