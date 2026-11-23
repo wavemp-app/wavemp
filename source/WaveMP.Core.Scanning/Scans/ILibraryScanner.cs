@@ -8,7 +8,8 @@ namespace WaveMP.Core.Scanning.Scans;
 public interface ILibraryScanner
 {
     /// <summary>
-    /// Scans the folders of the scope; the progress is reported for the run.
+    /// Scans the folders of the scope; the progress is reported for the run. A song whose folder was renamed or moved
+    /// or whose files were renamed within the folders of the scan keeps its id and all its data.
     /// </summary>
     /// <exception cref="WaveMP.Core.Jobs.Runs.JobFailedException">
     /// There is no active source, the folders of all sources of the scope are missing, unreadable or unexpectedly
@@ -19,9 +20,10 @@ public interface ILibraryScanner
     /// <summary>
     /// Reads one folder of a source (without its subfolders) again at once, with the logic of the scan but without a
     /// job run and without progress: new, changed and removed files, and the files of <paramref name="changedFiles"/>
-    /// even if their size and change time are the same. Then removes artists and albums without tracks and updates the
-    /// album covers. Waits while a scan writes the library. Changes nothing if the source, its folder or the folder is
-    /// missing; removing whole folders is left to the scan. Returns whether anything changed.
+    /// even if their size and change time are the same; a song whose files were renamed in the folder keeps its id and
+    /// all its data. Then removes artists and albums without tracks and updates the album covers. Waits while a scan
+    /// writes the library. Changes nothing if the source, its folder or the folder is missing; removing whole folders
+    /// is left to the scan. Returns whether anything changed.
     /// </summary>
     /// <param name="sourceId">Id of the media source of the folder.</param>
     /// <param name="directoryPath">Path of the folder relative to the folder of the source; empty for the folder of

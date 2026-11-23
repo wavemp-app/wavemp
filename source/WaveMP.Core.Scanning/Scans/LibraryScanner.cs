@@ -6,6 +6,7 @@ using WaveMP.Core.Metadata.Probes;
 using WaveMP.Core.Metadata.Readers;
 using WaveMP.Core.Metadata.Sources;
 using WaveMP.Core.Scanning.Discoveries;
+using WaveMP.Core.Scanning.Moves;
 using WaveMP.Core.Scanning.Options;
 using WaveMP.Core.Scanning.Plans;
 using WaveMP.Core.Scanning.Writers;
@@ -19,13 +20,15 @@ namespace WaveMP.Core.Scanning.Scans;
 /// <summary>
 /// Scans the media sources: forms the albums of sources again whose albums follow older rules (see
 /// <see cref="ScannerVersions.AlbumGrouping"/>) and cleans up after that, checks ffprobe and the folder of every source
-/// of the scope, walks the folders of the scope, compares them with the library, reads new and changed files in
-/// parallel, writes every changed folder at once, removes folders that are gone and finally updates album covers,
-/// removes artists and albums without tracks and counts the library. A source whose folder is missing or unreadable,
-/// or whose full scan finds no files at all while the library has files of it, is skipped with an issue and its
-/// library stays unchanged, so an unmounted folder never empties the library; if every source of the scan is skipped,
-/// the scan fails. Reading and writing a folder and the clean-up hold the <see cref="LibraryWriteLock"/>, so other
-/// writers wait at most for one folder.
+/// of the scope, walks the folders of the scope, compares them with the library, finds the songs whose folder was
+/// renamed or moved or whose files were renamed within the scan (see <see cref="TrackMovePlanner"/>), reads new and
+/// changed files in parallel, writes every changed folder at once (keeping those songs with their id and all their
+/// data at their new place), removes the vanished songs no folder kept and the folders that are gone and finally
+/// updates album covers, removes artists and albums without tracks and counts the library. A source whose folder is
+/// missing or unreadable, or whose full scan finds no files at all while the library has files of it, is skipped with
+/// an issue and its library stays unchanged, so an unmounted folder never empties the library; if every source of the
+/// scan is skipped, the scan fails. Reading and writing a folder and the clean-up hold the
+/// <see cref="LibraryWriteLock"/>, so other writers wait at most for one folder.
 /// </summary>
 internal sealed class LibraryScanner(
     ILibraryScanRepository library,
@@ -108,6 +111,8 @@ internal sealed class LibraryScanner(
             return false;
         }
 
+        // Finds the songs of the folder whose files were renamed.
+        TrackMoves moves = TrackMovePlanner.Plan([(sourceId, plan, stored)]);
         IReadOnlyDictionary<string, MediaFileMetadata> read = await ReadAsync(
             source,
             changed.FilesToRead,
@@ -120,6 +125,10 @@ internal sealed class LibraryScanner(
             changed,
             read,
             timeProvider.GetUtcNow(),
+            moves,
+            cancellationToken);
+        int vanished = await library.DeleteVanishedTracksAsync(
+            [.. moves.Deferred.Where(track => !written.AdoptedTrackIds.Contains(track.TrackId))],
             cancellationToken);
         await library.DeleteOrphansAsync(timeProvider.GetUtcNow(), cancellationToken);
         await writer.UpdateAlbumCoversAsync(librarySettings.AlbumCoverNames, cancellationToken);
@@ -132,14 +141,16 @@ internal sealed class LibraryScanner(
 
         logger.LogInformation(
             "Folder {Folder} of the media source {Source} read again: {FilesRead} files read, {FilesRemoved} removed; "
-            + "{TracksAdded} tracks added, {TracksUpdated} updated, {TracksRemoved} removed",
+            + "{TracksAdded} tracks added, {TracksUpdated} updated ({TracksMoved} of them renamed), "
+            + "{TracksRemoved} removed",
             directory,
             source.Name,
             changed.FilesToRead.Count,
             changed.Removed,
             written.TracksAdded,
             written.TracksUpdated,
-            written.TracksRemoved);
+            written.AdoptedTrackIds.Count,
+            written.TracksRemoved + vanished);
         return true;
     }
 
@@ -164,6 +175,7 @@ internal sealed class LibraryScanner(
 
         MediaKindClassifier classifier = new(librarySettings);
         List<(MediaSourceInfo Source, ScanPlan Plan)> plans = [];
+        List<(Guid SourceId, ScanPlan Plan, IReadOnlyList<MediaFileSnapshot> Stored)> compared = [];
         List<JobFailedException> failures = [];
         int directoriesFound = 0;
         int filesFound = 0;
@@ -224,6 +236,7 @@ internal sealed class LibraryScanner(
             directoriesFound += plan.DirectoriesFound;
             filesFound += plan.FilesFound;
             plans.Add((source, plan));
+            compared.Add((source.Id, plan, stored));
         }
 
         // A scan that could scan none of its sources fails with the reason of the first one.
@@ -231,6 +244,12 @@ internal sealed class LibraryScanner(
         {
             throw failures[0];
         }
+
+        // Found before any folder is written, so a song is kept wherever it went within the scan and in whatever order
+        // its old and its new folder are written.
+        TrackMoves moves = TrackMovePlanner.Plan(compared);
+        compared.Clear();
+        HashSet<Guid> adopted = [];
 
         progress.Planned(
             plans.Sum(item => item.Plan.ChangedDirectories.Count),
@@ -267,12 +286,14 @@ internal sealed class LibraryScanner(
                         directory,
                         read,
                         timeProvider.GetUtcNow(),
+                        moves,
                         cancellationToken);
                 }
 
                 tracksAdded += written.TracksAdded;
                 tracksUpdated += written.TracksUpdated;
                 tracksRemoved += written.TracksRemoved;
+                adopted.UnionWith(written.AdoptedTrackIds);
                 progress.DirectoryProcessed();
             }
         }
@@ -282,8 +303,17 @@ internal sealed class LibraryScanner(
             item.Plan.ChangedDirectories.Count > 0 || item.Plan.DeletedDirectories.Count > 0);
         using (await writeLock.AcquireAsync(cancellationToken))
         {
+            // The vanished songs no folder kept go now. Those of deleted folders go with their folder below, which
+            // lets the data of their album follow them as before.
+            HashSet<(Guid SourceId, string DirectoryPath)> deleted = [.. plans.SelectMany(item =>
+                item.Plan.DeletedDirectories.Select(directory => (item.Source.Id, directory)))];
+            tracksRemoved += await library.DeleteVanishedTracksAsync(
+                [.. moves.Deferred.Where(track => !adopted.Contains(track.TrackId)
+                    && !deleted.Contains((track.SourceId, track.DirectoryPath)))],
+                cancellationToken);
+
             // The changed folders are written above, so a renamed or moved folder is found in its new place here and
-            // the data of its album follows the songs.
+            // the data of its album follows the songs; songs kept at their new place have left it already.
             foreach ((MediaSourceInfo source, ScanPlan plan) in plans)
             {
                 (int _, int deletedTracks) = await library.DeleteDirectoriesAsync(
@@ -332,13 +362,14 @@ internal sealed class LibraryScanner(
 
         logger.LogInformation(
             "Scan finished: {FilesFound} files, {FilesAdded} added, {FilesUpdated} updated, {FilesRemoved} removed, "
-            + "{FilesFailed} with problems; {TracksTotal} tracks",
+            + "{FilesFailed} with problems; {TracksTotal} tracks, {TracksMoved} of them kept at a new place",
             statistics.FilesFound,
             statistics.FilesAdded,
             statistics.FilesUpdated,
             statistics.FilesRemoved,
             statistics.FilesFailed,
-            statistics.TracksTotal);
+            statistics.TracksTotal,
+            adopted.Count);
         return new ScanResult(statistics, issues.Listed);
     }
 

@@ -11,6 +11,7 @@ using WaveMP.Core.Metadata.Sources;
 using WaveMP.Core.Scanning.Extensions;
 using WaveMP.Core.Scanning.Plans;
 using WaveMP.Core.Scanning.Scans;
+using WaveMP.Core.Scanning.Selections;
 using WaveMP.Core.Scanning.Writers;
 using WaveMP.Core.Settings.Extensions;
 using WaveMP.Data;
@@ -1081,9 +1082,11 @@ public class LibraryScannerTests
         await ImageAsync("Hits/cover.jpg", 100, 100);
         await ScanAsync();
         Guid oldId;
+        Dictionary<string, Guid> trackIds;
         await using (WaveMpDbContext before = _database.CreateDbContext())
         {
             oldId = (await AlbumOfFolderAsync(before, "Hits"))!.Value;
+            trackIds = await before.Tracks.ToDictionaryAsync(track => track.Title, track => track.Id);
         }
 
         AlbumData data = await GiveAlbumDataAsync(oldId, oldId, oldId);
@@ -1093,10 +1096,13 @@ public class LibraryScannerTests
         ScanScope? scope = partial ? ScanScope.Of(MediaSource.DefaultId, ["Hits", newFolder.Split('/')[0]]) : null;
         ScanResult result = await ScanAsync(scope);
 
-        (result.Statistics.TracksAdded, result.Statistics.TracksRemoved).Should().Be((2, 2));
+        // The songs are kept at their new place and take the data of their album along to the new album.
+        (result.Statistics.TracksAdded, result.Statistics.TracksRemoved).Should().Be((0, 0));
         Guid albumId;
         await using (WaveMpDbContext after = _database.CreateDbContext())
         {
+            (await after.Tracks.ToDictionaryAsync(track => track.Title, track => track.Id))
+                .Should().BeEquivalentTo(trackIds);
             albumId = (await AlbumOfFolderAsync(after, newFolder))!.Value;
             Album album = await after.Albums
                 .Include(item => item.Tracks)
@@ -1109,6 +1115,43 @@ public class LibraryScannerTests
         }
 
         await ExpectAlbumDataAsync(albumId, data);
+    }
+
+    [TestCase("Band/Record (Remaster)", false)]
+    [TestCase("Band/Record (Remaster)", true)]
+    [TestCase("Archive/Band/Record", false)]
+    [TestCase("Archive/Band/Record", true)]
+    public async Task Rescan_RenamedOrMovedFolder_KeepsTheSongsWithAllTheirData(string newFolder, bool partial)
+    {
+        await CreateSongsWithDataAsync("Band/Record");
+        await ScanAsync();
+        SongData data = await GiveSongDataAsync("Band/Record");
+
+        Directory.CreateDirectory(Path.GetDirectoryName(_media.Combine(newFolder))!);
+        Directory.Move(_media.Combine("Band/Record"), _media.Combine(newFolder));
+        ScanScope? scope = partial ? ScanScope.Of(MediaSource.DefaultId, ["Band/Record", newFolder]) : null;
+        ScanResult result = await ScanAsync(scope);
+
+        await ExpectSongDataAsync(result, data, newFolder, "Song");
+    }
+
+    [Test]
+    public async Task Rescan_RenamedFilesOfASong_KeepTheSongWithAllItsDataAndTheFileSelectionFollows()
+    {
+        await CreateSongsWithDataAsync("Band/Record");
+        await ScanAsync();
+        SongData data = await GiveSongDataAsync("Band/Record");
+
+        foreach (string extension in new[] { "mp3", "flac", "jpg" })
+        {
+            File.Move(
+                _media.Combine($"Band/Record/Song.{extension}"),
+                _media.Combine($"Band/Record/Track.{extension}"));
+        }
+
+        ScanResult result = await ScanAsync();
+
+        await ExpectSongDataAsync(result, data, "Band/Record", "Track");
     }
 
     [Test]
@@ -1803,6 +1846,195 @@ public class LibraryScannerTests
         (await db.AlbumMoves.CountAsync()).Should().Be(0);
     }
 
+    /// <summary>
+    /// A folder with the song <c>Song</c> (an MP3 file, a better FLAC file and a picture) and the song <c>Other</c>,
+    /// and the songs <c>First</c> and <c>Last</c> in the folder <c>Mix</c>, which stays.
+    /// </summary>
+    private async Task CreateSongsWithDataAsync(string folder)
+    {
+        TestTags record = new() { Artist = "Band", Album = "Record" };
+        await AudioAsync($"{folder}/Song.mp3", tags: record with { Title = "Song", Track = "1" });
+        await AudioAsync($"{folder}/Song.flac", AudioFormat.Flac, record with { Title = "Song", Track = "1" });
+        await ImageAsync($"{folder}/Song.jpg", 120, 120);
+        await AudioAsync($"{folder}/Other.mp3", tags: record with { Title = "Other", Track = "2" });
+        await AudioAsync("Mix/First.mp3", tags: new TestTags { Title = "First", Artist = "Mixer" });
+        await AudioAsync("Mix/Last.mp3", tags: new TestTags { Title = "Last", Artist = "Mixer" });
+    }
+
+    /// <summary>
+    /// Gives the song <c>Song</c> of <see cref="CreateSongsWithDataAsync"/> everything that belongs to a song:
+    /// favorites and ratings of two profiles, plays, a place in the middle of a playlist and of a saved queue, a file
+    /// selection of the MP3 file (not the better FLAC file) and of the picture, the review state, an earlier date
+    /// added, a cover rule, a video offset, an online cover and downloaded lyrics.
+    /// </summary>
+    private async Task<SongData> GiveSongDataAsync(string folder)
+    {
+        Dictionary<string, Track> tracks;
+        Dictionary<string, Guid> files;
+        await using (WaveMpDbContext db = _database.CreateDbContext())
+        {
+            tracks = await db.Tracks.AsNoTracking().ToDictionaryAsync(track => track.Title);
+            files = await db.MediaFiles.AsNoTracking().ToDictionaryAsync(file => file.RelativePath, file => file.Id);
+        }
+
+        Track song = tracks["Song"];
+        await using (AsyncServiceScope serviceScope = _services.CreateAsyncScope())
+        {
+            FileSelectionResult selected = await serviceScope.ServiceProvider
+                .GetRequiredService<IFileSelectionService>()
+                .SetAsync(song.Id, new FileChoices(files[$"{folder}/Song.mp3"], null, files[$"{folder}/Song.jpg"]));
+            selected.Status.Should().Be(FileSelectionStatus.Done);
+        }
+
+        LibrarySeed seed = new();
+        User first = seed.User();
+        User second = seed.User();
+        seed.Favorite(first, song, _day.AddDays(1));
+        seed.Favorite(second, song, _day.AddDays(2));
+        seed.Rating(first, song, 5);
+        seed.Rating(second, song, 3);
+        seed.Play(first, song, _day.AddDays(3));
+        seed.Play(first, song, _day.AddDays(4));
+        seed.Play(second, song, _day.AddDays(5));
+        Playlist playlist = seed.Playlist(first, "Road", tracks["First"], song, tracks["Last"]);
+        var onlineCoverId = Guid.CreateVersion7();
+        await using (WaveMpDbContext db = _database.CreateDbContext())
+        {
+            await seed.SaveAsync(db);
+            _users.AddRange([first.Id, second.Id]);
+            db.OnlineCovers.Add(new OnlineCover
+            {
+                Id = onlineCoverId,
+                TrackId = song.Id,
+                FileName = onlineCoverId + ".jpg",
+                MimeType = "image/jpeg",
+                Size = 1000,
+                ReleaseId = Guid.NewGuid(),
+                CreatedAt = _day,
+            });
+            db.LyricsDownloads.Add(new LyricsDownload
+            {
+                TrackId = song.Id,
+                Status = LyricsDownloadStatus.SavedToDatabase,
+                Content = "La la la",
+                CheckedAt = _day,
+            });
+            db.PlaybackStates.Add(new PlaybackState
+            {
+                UserId = second.Id,
+                TrackIds = [tracks["First"].Id, song.Id, tracks["Last"].Id],
+                CurrentIndex = 1,
+                PositionMilliseconds = 0,
+                Shuffle = false,
+                Repeat = RepeatMode.Off,
+                SourceKind = PlaybackSourceKind.Playlist,
+                SourceId = playlist.Id,
+                DeviceId = "device",
+                DeviceName = "Device",
+                ChangedAt = _day,
+            });
+            await db.SaveChangesAsync();
+            await db.Tracks.Where(track => track.Id == song.Id).ExecuteUpdateAsync(setters => setters
+                .SetProperty(track => track.FirstSeenAt, _day.AddDays(-10))
+                .SetProperty(track => track.ReviewedAt, _day)
+                .SetProperty(track => track.ReviewedByUserId, first.Id)
+                .SetProperty(track => track.CoverPriority, CoverPriority.TrackFirst)
+                .SetProperty(track => track.VideoOffsetMilliseconds, 250));
+        }
+
+        return new SongData(
+            first,
+            second,
+            song.Id,
+            tracks.ToDictionary(track => track.Key, track => track.Value.Id),
+            files[$"{folder}/Song.mp3"],
+            onlineCoverId,
+            playlist.Id);
+    }
+
+    /// <summary>
+    /// Expects all data of <see cref="GiveSongDataAsync"/> on the song, which lies in <paramref name="folder"/> with the
+    /// base name <paramref name="baseName"/> now, every song with its id, no file left at its old place, and a scan
+    /// that neither added nor removed a song.
+    /// </summary>
+    private async Task ExpectSongDataAsync(ScanResult result, SongData data, string folder, string baseName)
+    {
+        await using WaveMpDbContext db = _database.CreateDbContext();
+
+        // Every loss is reported, not only the first one.
+        using AssertionScope scope = new();
+        (result.Statistics.TracksAdded, result.Statistics.TracksRemoved).Should().Be((0, 0));
+        (await db.Tracks.ToDictionaryAsync(track => track.Title, track => track.Id))
+            .Should().BeEquivalentTo(data.TrackIds);
+        Track? song = await db.Tracks
+            .Include(track => track.Files)
+            .Include(track => track.Covers)
+            .Include(track => track.FileSelections)
+            .SingleOrDefaultAsync(track => track.Id == data.SongId);
+        song.Should().NotBeNull();
+        if (song is not null)
+        {
+            (song.DirectoryPath, song.BaseName).Should().Be((folder, baseName));
+            song.FirstSeenAt.Should().Be(_day.AddDays(-10));
+            (song.ReviewedAt, song.ReviewedByUserId).Should().Be(((DateTimeOffset?)_day, (Guid?)data.First.Id));
+            (song.CoverPriority, song.VideoOffsetMilliseconds).Should().Be(((CoverPriority?)CoverPriority.TrackFirst, 250));
+            song.Files.Select(file => (file.RelativePath, file.IsPrimary)).Should().BeEquivalentTo([
+                ($"{folder}/{baseName}.mp3", true),
+                ($"{folder}/{baseName}.flac", false),
+                ($"{folder}/{baseName}.jpg", false),
+            ]);
+            MediaFile? mp3 = song.Files.SingleOrDefault(file => file.Extension == "mp3");
+            MediaFile? picture = song.Files.SingleOrDefault(file => file.Extension == "jpg");
+            mp3?.Id.Should().Be(data.Mp3FileId);
+            song.FileSelections
+                .Select(selection => (selection.Category, selection.MediaFileId, selection.RelativePath, selection.IsMissing))
+                .Should().BeEquivalentTo([
+                    (FileSelectionCategory.Audio, mp3?.Id ?? Guid.Empty, mp3?.RelativePath, false),
+                    (FileSelectionCategory.Cover, picture?.Id ?? Guid.Empty, picture?.RelativePath, false),
+                ]);
+            song.Covers.Where(cover => cover.IsPrimary).Select(cover => cover.MediaFileId)
+                .Should().Equal(picture?.Id ?? Guid.Empty);
+        }
+
+        (await db.MediaFiles.Select(file => file.RelativePath).ToListAsync()).Should().BeEquivalentTo([
+            $"{folder}/{baseName}.mp3",
+            $"{folder}/{baseName}.flac",
+            $"{folder}/{baseName}.jpg",
+            $"{folder}/Other.mp3",
+            "Mix/First.mp3",
+            "Mix/Last.mp3",
+        ]);
+        (await db.Favorites
+                .Where(favorite => favorite.TrackId == data.SongId)
+                .Select(favorite => favorite.UserId)
+                .ToListAsync())
+            .Should().BeEquivalentTo([data.First.Id, data.Second.Id]);
+        (await db.TrackRatings
+                .Where(rating => rating.TrackId == data.SongId)
+                .Select(rating => new { rating.UserId, rating.Rating })
+                .ToListAsync())
+            .Should().BeEquivalentTo([
+                new { UserId = data.First.Id, Rating = 5 },
+                new { UserId = data.Second.Id, Rating = 3 },
+            ]);
+        (await db.PlayHistory.CountAsync(play => play.TrackId == data.SongId)).Should().Be(3);
+        (await db.PlaylistEntries
+                .Where(entry => entry.PlaylistId == data.PlaylistId)
+                .OrderBy(entry => entry.Position)
+                .Select(entry => entry.TrackId)
+                .ToListAsync())
+            .Should().Equal(data.TrackIds["First"], data.SongId, data.TrackIds["Last"]);
+        (await db.OnlineCovers.Select(cover => new { cover.Id, cover.TrackId }).ToListAsync())
+            .Should().BeEquivalentTo([new { Id = data.OnlineCoverId, TrackId = (Guid?)data.SongId }]);
+        (await db.LyricsDownloads.Select(lyrics => lyrics.TrackId).ToListAsync()).Should().Equal(data.SongId);
+        List<Guid> queue = await db.PlaybackStates
+            .Where(state => state.UserId == data.Second.Id)
+            .Select(state => state.TrackIds)
+            .SingleAsync();
+        queue.Should().Equal(data.TrackIds["First"], data.SongId, data.TrackIds["Last"]);
+        (await db.Tracks.CountAsync(track => queue.Contains(track.Id))).Should().Be(3);
+    }
+
     private static Task<List<(Guid UserId, Guid AlbumId, DateTimeOffset CreatedAt)>> FavoritesAsync(
         WaveMpDbContext db,
         AlbumData data)
@@ -2026,4 +2258,17 @@ public class LibraryScannerTests
     /// The profiles and the online cover of <see cref="GiveAlbumDataAsync"/>.
     /// </summary>
     private sealed record AlbumData(User First, User Second, Guid OnlineCoverId);
+
+    /// <summary>
+    /// The profiles, the ids of all songs by their title, and the ids of the MP3 file, the online cover and the
+    /// playlist of <see cref="GiveSongDataAsync"/>.
+    /// </summary>
+    private sealed record SongData(
+        User First,
+        User Second,
+        Guid SongId,
+        IReadOnlyDictionary<string, Guid> TrackIds,
+        Guid Mp3FileId,
+        Guid OnlineCoverId,
+        Guid PlaylistId);
 }

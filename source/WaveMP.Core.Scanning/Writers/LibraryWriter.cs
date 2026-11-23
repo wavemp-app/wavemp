@@ -4,6 +4,7 @@ using WaveMP.Core.Metadata.Tags;
 using WaveMP.Core.Metadata.Texts;
 using WaveMP.Core.Scanning.Discoveries;
 using WaveMP.Core.Scanning.Groupings;
+using WaveMP.Core.Scanning.Moves;
 using WaveMP.Core.Scanning.Plans;
 using WaveMP.Core.Scanning.Processors;
 using WaveMP.Core.Scanning.Selections;
@@ -17,7 +18,9 @@ namespace WaveMP.Core.Scanning.Writers;
 /// artists and albums. All changes of a folder are saved together. Album covers are written after all folders. The
 /// files the admin selected for a track win over the quality rule as long as they exist; whether they do is stored
 /// with each selection. A song that moves from one album to another one is recorded with the changes of its folder
-/// (see <see cref="ILibraryScanRepository.RecordAlbumMovesAsync"/>).
+/// (see <see cref="ILibraryScanRepository.RecordAlbumMovesAsync"/>). A song whose folder was renamed or moved or whose
+/// files were renamed (see <see cref="TrackMovePlanner"/>) keeps its track, with its id and all its data, at the new
+/// place.
 /// </summary>
 public sealed class LibraryWriter(ILibraryScanRepository library)
 {
@@ -27,17 +30,35 @@ public sealed class LibraryWriter(ILibraryScanRepository library)
     /// Updates the files of a changed folder of a source with the metadata read for its new and changed files, and its
     /// tracks.
     /// </summary>
+    /// <remarks>
+    /// <paramref name="moves"/> are the songs the scan found at a new place. A new file of the folder that is the new
+    /// place of a vanished track and that <see cref="TrackMoveEvidence"/> confirms takes over the stored file the track
+    /// played, and its song keeps the track: its id, its data (date added, review state, cover rule, video offset, and
+    /// everything that refers to it, such as favorites, ratings, plays, playlist entries and saved queues) and its file
+    /// selection, which follows the files to their new names. The other stored files of the track are removed, also
+    /// in other folders. A vanished track of a move that this folder does not keep stays untouched with its stored
+    /// files, so a later folder of the scan can still keep it; the scan deletes it at its end otherwise.
+    /// </remarks>
     public async Task<FolderWriteResult> WriteFolderAsync(
         Guid sourceId,
         DirectoryPlan plan,
         IReadOnlyDictionary<string, MediaFileMetadata> metadata,
         DateTimeOffset now,
+        TrackMoves? moves = null,
         CancellationToken cancellationToken = default)
     {
+        TrackMoves songMoves = moves ?? TrackMoves.None;
         StoredFolder stored = await library.LoadFolderAsync(sourceId, plan.RelativePath, cancellationToken);
         var storedFiles = stored.Files.ToDictionary(
             file => file.RelativePath,
             StringComparer.Ordinal);
+        IReadOnlyDictionary<string, Adoption> adoptions = await AdoptAsync(
+            sourceId,
+            plan,
+            metadata,
+            stored,
+            songMoves,
+            cancellationToken);
 
         List<MediaFile> files = [];
         foreach (DiscoveredFile discovered in plan.Files)
@@ -45,7 +66,12 @@ public sealed class LibraryWriter(ILibraryScanRepository library)
             storedFiles.Remove(discovered.RelativePath, out MediaFile? file);
             if (metadata.TryGetValue(discovered.RelativePath, out MediaFileMetadata? read))
             {
-                if (file is null)
+                if (file is null && adoptions.TryGetValue(discovered.RelativePath, out Adoption? adoption))
+                {
+                    file = adoption.File;
+                    MoveFile(file, sourceId, discovered, plan.RelativePath);
+                }
+                else if (file is null)
                 {
                     file = CreateFile(sourceId, discovered, plan.RelativePath, now);
                     library.Add(file);
@@ -60,20 +86,136 @@ public sealed class LibraryWriter(ILibraryScanRepository library)
             }
         }
 
-        foreach (MediaFile removed in storedFiles.Values)
+        HashSet<Guid> adopted = [.. adoptions.Values.Select(adoption => adoption.Track.Id)];
+        HashSet<MediaFile> kept = [.. files];
+
+        // The stored files an adopted track does not take along are gone, wherever they lie. Those of a vanished track
+        // that a later folder may still keep stay as they are.
+        foreach (MediaFile removed in storedFiles.Values
+            .Concat(adoptions.Values.SelectMany(adoption => adoption.Track.Files))
+            .Distinct())
         {
-            library.Remove(removed);
+            if (!kept.Contains(removed) && !IsDeferred(removed.TrackId))
+            {
+                library.Remove(removed);
+            }
         }
 
+        foreach (Adoption adoption in adoptions.Values)
+        {
+            Move(adoption, sourceId, plan.RelativePath, files);
+        }
+
+        Track[] tracks = [.. stored.Tracks.Where(track => !adopted.Contains(track.Id)),
+            .. adoptions.Values.Select(adoption => adoption.Track)];
         FolderWriteResult result = await WriteTracksAsync(
             sourceId,
             plan.RelativePath,
-            FolderProcessor.Process(plan.RelativePath, files, ChoicesOf(stored.Tracks, files), sourceId),
-            stored.Tracks,
+            FolderProcessor.Process(plan.RelativePath, files, ChoicesOf(tracks, files), sourceId),
+            tracks,
+            adopted,
+            track => IsDeferred(track.Id),
             now,
             cancellationToken);
         await library.SaveChangesAsync(cancellationToken);
         return result;
+
+        bool IsDeferred(Guid? trackId)
+        {
+            return trackId is { } id && songMoves.IsDeferred(id) && !adopted.Contains(id);
+        }
+    }
+
+    /// <summary>
+    /// The vanished tracks the new files of the folder keep, by the path of their new file: the moves of the scan
+    /// whose new file was read and is not stored yet, whose track still lies at its stored place with the file it
+    /// played, whose new file <see cref="TrackMoveEvidence"/> confirms, and whose song has no other stored track of
+    /// the folder by name. Loads the tracks in one query, only for a folder with moves.
+    /// </summary>
+    private async Task<IReadOnlyDictionary<string, Adoption>> AdoptAsync(
+        Guid sourceId,
+        DirectoryPlan plan,
+        IReadOnlyDictionary<string, MediaFileMetadata> metadata,
+        StoredFolder stored,
+        TrackMoves moves,
+        CancellationToken cancellationToken)
+    {
+        Dictionary<string, Adoption> adoptions = new(StringComparer.Ordinal);
+        if (moves.IsEmpty)
+        {
+            return adoptions;
+        }
+
+        HashSet<string> storedPaths = new(stored.Files.Select(file => file.RelativePath), StringComparer.Ordinal);
+        TrackMove[] candidates = [.. plan.Files
+            .Select(file => moves.Find(sourceId, file.RelativePath))
+            .OfType<TrackMove>()
+            .Where(move => metadata.ContainsKey(move.RelativePath) && !storedPaths.Contains(move.RelativePath))];
+        if (candidates.Length == 0)
+        {
+            return adoptions;
+        }
+
+        HashSet<Guid> candidateIds = [.. candidates.Select(move => move.TrackId)];
+        var tracks = (await library.LoadTracksAsync(candidateIds, cancellationToken))
+            .ToDictionary(track => track.Id);
+        HashSet<string> names = new(
+            stored.Tracks.Where(track => !candidateIds.Contains(track.Id)).Select(track => track.NormalizedBaseName),
+            StringComparer.Ordinal);
+        foreach (TrackMove move in candidates)
+        {
+            string fileName = move.RelativePath[(move.RelativePath.LastIndexOf('/') + 1)..];
+            if (tracks.TryGetValue(move.TrackId, out Track? track)
+                && track.SourceId == move.OldSourceId
+                && track.DirectoryPath == move.OldDirectoryPath
+                && track.Files.FirstOrDefault(file => file.Id == move.FileId) is { } file
+                && file.SourceId == move.OldSourceId
+                && file.RelativePath == move.OldRelativePath
+                && TrackMoveEvidence.Matches(file, metadata[move.RelativePath])
+                && !names.Contains(FileGrouper.NormalizeBaseName(MediaKindClassifier.BaseNameOf(fileName))))
+            {
+                adoptions[move.RelativePath] = new Adoption(track, file);
+            }
+        }
+
+        return adoptions;
+    }
+
+    /// <summary>
+    /// Puts an adopted track at the place of its new file (taken over already, see <see cref="MoveFile"/>), and lets
+    /// its file selection follow its files: the selection of the file it took along keeps it, any other one moves to
+    /// the file of the new song with the same file name or with the old base name replaced by the new one, if exactly
+    /// one has it (otherwise the selection is missing and the quality rule chooses).
+    /// </summary>
+    private static void Move(Adoption adoption, Guid sourceId, string directoryPath, IReadOnlyList<MediaFile> files)
+    {
+        Track track = adoption.Track;
+        MediaFile taken = adoption.File;
+        string oldBaseName = track.BaseName;
+        MediaFile[] song = [.. files.Where(file => file.NormalizedBaseName == taken.NormalizedBaseName)];
+        foreach (TrackFileSelection selection in track.FileSelections)
+        {
+            if (selection.MediaFileId == taken.Id)
+            {
+                selection.RelativePath = taken.RelativePath;
+                continue;
+            }
+
+            string oldName = selection.RelativePath[(selection.RelativePath.LastIndexOf('/') + 1)..];
+            string renamed = oldName.StartsWith(oldBaseName, StringComparison.Ordinal)
+                ? taken.BaseName + oldName[oldBaseName.Length..]
+                : oldName;
+            if (song.Where(file => file.FileName == oldName || file.FileName == renamed).ToArray() is [MediaFile match])
+            {
+                selection.MediaFileId = match.Id;
+                selection.RelativePath = match.RelativePath;
+            }
+        }
+
+        track.SourceId = sourceId;
+        track.DirectoryPath = directoryPath;
+        track.BaseName = taken.BaseName;
+        track.NormalizedBaseName = taken.NormalizedBaseName;
     }
 
     /// <summary>
@@ -96,6 +238,8 @@ public sealed class LibraryWriter(ILibraryScanRepository library)
                 ChoicesOf(stored.Tracks, stored.Files),
                 sourceId),
             stored.Tracks,
+            new HashSet<Guid>(),
+            _ => false,
             now,
             cancellationToken);
         await library.SaveChangesAsync(cancellationToken);
@@ -182,11 +326,19 @@ public sealed class LibraryWriter(ILibraryScanRepository library)
         return library.UpdateAlbumCompilationsAsync(AlbumCompilations.VariousArtistsKey, now, cancellationToken);
     }
 
+    /// <summary>
+    /// Writes the processed tracks of a folder onto its stored tracks by their normalized base name. Tracks in
+    /// <paramref name="adopted"/> came from another place (see <see cref="Move"/>) and count as updated. A stored
+    /// track without a song any more is removed unless <paramref name="isDeferred"/> says it is the vanished track of
+    /// a move that a later folder may still keep.
+    /// </summary>
     private async Task<FolderWriteResult> WriteTracksAsync(
         Guid sourceId,
         string directoryPath,
         ProcessedFolder folder,
         IReadOnlyList<Track> storedTracks,
+        IReadOnlySet<Guid> adopted,
+        Func<Track, bool> isDeferred,
         DateTimeOffset now,
         CancellationToken cancellationToken)
     {
@@ -226,7 +378,7 @@ public sealed class LibraryWriter(ILibraryScanRepository library)
             else
             {
                 Guid? previousAlbumId = track.AlbumId;
-                if (Update(track, processed, artistId, albumId))
+                if (Update(track, processed, artistId, albumId) | adopted.Contains(track.Id))
                 {
                     track.UpdatedAt = now;
                     updated++;
@@ -267,14 +419,19 @@ public sealed class LibraryWriter(ILibraryScanRepository library)
             file.IsPrimary = false;
         }
 
-        foreach (Track removed in tracks.Values)
+        int removedTracks = 0;
+        foreach (Track removed in tracks.Values.Where(track => !isDeferred(track)))
         {
             library.Remove(removed);
+            removedTracks++;
         }
 
         // Saved by the caller together with the tracks, so a move is never lost to an interrupted scan.
         await library.RecordAlbumMovesAsync(moves, now, cancellationToken);
-        return new FolderWriteResult(added, updated, tracks.Count);
+        return new FolderWriteResult(added, updated, removedTracks)
+        {
+            AdoptedTrackIds = [.. adopted.Order()],
+        };
     }
 
     /// <summary>
@@ -505,6 +662,21 @@ public sealed class LibraryWriter(ILibraryScanRepository library)
         };
     }
 
+    /// <summary>
+    /// Puts the stored file an adopted track played at the place of its new file; it keeps its id.
+    /// </summary>
+    private static void MoveFile(MediaFile file, Guid sourceId, DiscoveredFile discovered, string directoryPath)
+    {
+        string baseName = MediaKindClassifier.BaseNameOf(discovered.FileName);
+        file.SourceId = sourceId;
+        file.RelativePath = discovered.RelativePath;
+        file.DirectoryPath = directoryPath;
+        file.FileName = discovered.FileName;
+        file.BaseName = baseName;
+        file.NormalizedBaseName = FileGrouper.NormalizeBaseName(baseName);
+        file.Extension = MediaKindClassifier.ExtensionOf(discovered.FileName);
+    }
+
     private static void Apply(MediaFile file, DiscoveredFile discovered, MediaFileMetadata metadata, DateTimeOffset now)
     {
         file.Kind = discovered.Kind;
@@ -568,6 +740,11 @@ public sealed class LibraryWriter(ILibraryScanRepository library)
     {
         return value is not null && value.Length > length ? value[..length] : value;
     }
+
+    /// <summary>
+    /// A vanished track a new file of the folder keeps, and the stored file it played, which the new file takes over.
+    /// </summary>
+    private sealed record Adoption(Track Track, MediaFile File);
 
     /// <summary>
     /// Artists and albums found or created while writing one folder.
