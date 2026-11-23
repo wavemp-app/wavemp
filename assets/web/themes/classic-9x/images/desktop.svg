@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 4 4" shape-rendering="crispEdges">
+    <!--
+        Desktop behind the window (Classic 9x): a slate blue with a scattered pixel dither, tiled
+        at 4 x 4 pixels behind the profile selection.
+    -->
+    <rect width="4" height="4" fill="#2d4f6b"/>
+    <path fill="#365a78" d="M0 0h1v1h-1zM2 1h1v1h-1zM1 2h1v1h-1zM3 3h1v1h-1z"/>
+</svg>
