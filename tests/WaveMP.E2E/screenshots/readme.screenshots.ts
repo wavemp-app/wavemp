@@ -210,7 +210,7 @@ test('visualization A-Force', async ({ page, request }) => {
 })
 
 test('visualization BlackCap', async ({ page, request }) => {
-    await showVisualization(page, request, 'BlackCap', 'orchid')
+    await showVisualization(page, request, 'BlackCap', 'orbit', 'orchid')
     await save(page, 'visualization-blackcap')
 })
 
