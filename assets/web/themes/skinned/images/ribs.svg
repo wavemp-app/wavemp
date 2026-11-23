@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="4" height="4" viewBox="0 0 4 4" shape-rendering="crispEdges">
+    <!--
+        Texture of the player body (Skinned): fine horizontal ribs pressed into the plastic, a light
+        edge above a dark groove, laid over the gunmetal color of the area.
+    -->
+    <rect width="4" height="1" fill="#ffffff" fill-opacity="0.06"/>
+    <rect y="2" width="4" height="1" fill="#000000" fill-opacity="0.22"/>
+</svg>

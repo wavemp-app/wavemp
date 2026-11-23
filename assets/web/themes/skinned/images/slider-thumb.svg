@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 28 14" shape-rendering="crispEdges">
+    <!--
+        Slider thumb (Skinned): a small gunmetal knob with a dark frame, a light upper and left
+        edge, a dark lower and right edge and five ridges to grip, drawn pixel by pixel.
+    -->
+    <rect width="28" height="14" fill="#0d0e11"/>
+    <rect x="1" y="1" width="26" height="12" fill="#1a1c21"/>
+    <rect x="1" y="1" width="25" height="11" fill="#6a6f7a"/>
+    <rect x="2" y="2" width="24" height="10" fill="#3f434c"/>
+    <path fill="#1a1c21" d="M8 4h1v6h-1zM11 4h1v6h-1zM14 4h1v6h-1zM17 4h1v6h-1zM20 4h1v6h-1z"/>
+    <path fill="#7c828e" d="M9 4h1v6h-1zM12 4h1v6h-1zM15 4h1v6h-1zM18 4h1v6h-1zM21 4h1v6h-1z"/>
+</svg>

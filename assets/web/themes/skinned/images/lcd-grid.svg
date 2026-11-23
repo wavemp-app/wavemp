@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="3" height="3" viewBox="0 0 3 3" shape-rendering="crispEdges">
+    <!--
+        Background of the display (Skinned): the dark green glass with a grid of unlit dots, one
+        dot of two by two pixels per cell of three.
+    -->
+    <rect width="3" height="3" fill="#0a1a0f"/>
+    <rect width="2" height="2" fill="#0e2315"/>
+</svg>
