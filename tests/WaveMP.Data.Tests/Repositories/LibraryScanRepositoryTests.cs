@@ -145,6 +145,153 @@ public class LibraryScanRepositoryTests : LibraryDatabaseTests
     }
 
     [Test]
+    public async Task GetSnapshotsAsync_FilesOfATrack_CarryTheTrackAndWhetherItPlaysThem()
+    {
+        LibrarySeed seed = new();
+        Track track = seed.Track("Song", album: seed.Album("Album"));
+        MediaFile primary = seed.File("Album/Song.flac", MediaFileKind.Audio, track);
+        MediaFile duplicate = seed.File("Album/Song.mp3", MediaFileKind.Audio, track, isPrimary: false);
+        MediaFile cover = seed.File("Album/cover.jpg", MediaFileKind.Image, isPrimary: false);
+        await SaveAsync(seed);
+        LibraryScanRepository repository = CreateRepository();
+
+        IReadOnlyList<MediaFileSnapshot> ofSource = await repository.GetFileSnapshotsAsync(MediaSource.DefaultId, null);
+        IReadOnlyList<MediaFileSnapshot> ofFolders =
+            await repository.GetFileSnapshotsAsync(MediaSource.DefaultId, ["Album"]);
+        IReadOnlyList<MediaFileSnapshot> ofFolder =
+            await repository.GetFolderSnapshotsAsync(MediaSource.DefaultId, "Album");
+
+        (Guid, Guid?, bool)[] expected =
+        [
+            (primary.Id, track.Id, true),
+            (duplicate.Id, track.Id, false),
+            (cover.Id, null, false),
+        ];
+        foreach (IReadOnlyList<MediaFileSnapshot> snapshots in new[] { ofSource, ofFolders, ofFolder })
+        {
+            snapshots.Select(snapshot => (snapshot.Id, snapshot.TrackId, snapshot.IsPrimary))
+                .Should().BeEquivalentTo(expected);
+        }
+    }
+
+    [Test]
+    public async Task LoadTracksAsync_Ids_LoadsTheTracksTrackedWithTheirFilesCoversAndSelections()
+    {
+        LibrarySeed seed = new();
+        Album album = seed.Album("Album");
+        Track track = seed.Track("Song", album: album);
+        MediaFile audio = seed.File("Album/Song.mp3", MediaFileKind.Audio, track);
+        MediaFile picture = seed.File("Album/Song.jpg", MediaFileKind.Image, track, isPrimary: false);
+        seed.TrackCover(track, picture);
+        Track other = seed.Track("Other", album: album);
+        seed.File("Album/Other.mp3", MediaFileKind.Audio, other);
+        await SaveAsync(seed);
+        WaveMpDbContext setup = CreateDbContext();
+        await setup.MediaFiles
+            .Where(file => file.Id == audio.Id)
+            .ExecuteUpdateAsync(setters => setters.SetProperty(file => file.Tags.Title, "Tagged"));
+        setup.TrackFileSelections.Add(new TrackFileSelection
+        {
+            TrackId = track.Id,
+            Category = FileSelectionCategory.Audio,
+            MediaFileId = audio.Id,
+            RelativePath = audio.RelativePath,
+            IsMissing = false,
+            SelectedAt = _day,
+        });
+        await setup.SaveChangesAsync();
+        WaveMpDbContext db = CreateDbContext();
+        LibraryScanRepository repository = new(db);
+
+        IReadOnlyList<Track> loaded = await repository.LoadTracksAsync([track.Id, Guid.NewGuid(), track.Id]);
+
+        Track result = loaded.Should().ContainSingle().Subject;
+        result.Id.Should().Be(track.Id);
+        result.Files.Select(file => file.Id).Should().BeEquivalentTo([audio.Id, picture.Id]);
+        result.Files.Single(file => file.Id == audio.Id).Tags.Title.Should().Be("Tagged");
+        result.Covers.Should().ContainSingle().Which.MediaFileId.Should().Be(picture.Id);
+        result.FileSelections.Should().ContainSingle().Which.MediaFileId.Should().Be(audio.Id);
+        db.Entry(result).State.Should().Be(EntityState.Unchanged);
+
+        result.DirectoryPath = "Moved";
+        await repository.SaveChangesAsync();
+        (await CreateDbContext().Tracks.SingleAsync(item => item.Id == track.Id)).DirectoryPath.Should().Be("Moved");
+        (await repository.LoadTracksAsync([])).Should().BeEmpty();
+    }
+
+    [Test]
+    public async Task DeleteVanishedTracksAsync_TracksStillInTheirPlace_AreDeletedWithTheirFilesAndData()
+    {
+        LibrarySeed seed = new();
+        User user = seed.User();
+        Track gone = SongIn(seed, seed.Album("Old"), "Old/Song.mp3", 1000);
+        MediaFile picture = seed.File("Old/Song.jpg", MediaFileKind.Image, gone, isPrimary: false);
+        seed.Favorite(user, gone);
+        Track stays = SongIn(seed, seed.Album("Stays"), "Stays/Song.mp3", 1000);
+        await SaveAsync(seed);
+        WaveMpDbContext db = CreateDbContext();
+        Guid audioId = await db.MediaFiles
+            .Where(file => file.RelativePath == "Old/Song.mp3")
+            .Select(file => file.Id)
+            .SingleAsync();
+
+        VanishedTrack vanished = new(
+            gone.Id,
+            MediaSource.DefaultId,
+            "Old",
+            [(picture.Id, "Old/Song.jpg"), (audioId, "Old/Song.mp3")]);
+
+        int deleted = await CreateRepository().DeleteVanishedTracksAsync([vanished]);
+
+        deleted.Should().Be(1);
+        WaveMpDbContext after = CreateDbContext();
+        (await after.Tracks.Select(track => track.Id).ToListAsync()).Should().Equal(stays.Id);
+        (await after.MediaFiles.Select(file => file.RelativePath).ToListAsync()).Should().Equal("Stays/Song.mp3");
+        (await after.Favorites.CountAsync(favorite => favorite.UserId == user.Id)).Should().Be(0);
+        (await CreateRepository().DeleteVanishedTracksAsync([])).Should().Be(0);
+    }
+
+    [Test]
+    public async Task DeleteVanishedTracksAsync_TracksKeptAtANewPlace_StayWithTheirMovedFilesAndData()
+    {
+        // Seeded as a scan leaves them: the moved file kept its id at its new path, the moved track its id in its new
+        // folder; the picture that was not moved along is still stored at its old path.
+        LibrarySeed seed = new();
+        User user = seed.User();
+        MediaSource other = seed.Source();
+        Track moved = SongIn(seed, seed.Album("New"), "New/Song.mp3", 1000);
+        MediaFile stale = seed.File("Old/Song.jpg", MediaFileKind.Image, moved, isPrimary: false);
+        seed.Favorite(user, moved);
+        Track renamed = SongIn(seed, seed.Album("Album"), "Album/Track.mp3", 2000);
+        Track toOtherSource = SongIn(seed, seed.Album("Inbox"), "Inbox/Clip.mp3", 3000, source: other);
+        await SaveAsync(seed);
+        WaveMpDbContext db = CreateDbContext();
+        Dictionary<string, Guid> ids =
+            await db.MediaFiles.ToDictionaryAsync(file => file.RelativePath, file => file.Id);
+        Guid source = MediaSource.DefaultId;
+
+        int deleted = await CreateRepository().DeleteVanishedTracksAsync(
+        [
+            new VanishedTrack(
+                moved.Id,
+                source,
+                "Old",
+                [(stale.Id, "Old/Song.jpg"), (ids["New/Song.mp3"], "Old/Song.mp3")]),
+            new VanishedTrack(renamed.Id, source, "Album", [(ids["Album/Track.mp3"], "Album/Song.mp3")]),
+            new VanishedTrack(toOtherSource.Id, source, "Inbox", [(ids["Inbox/Clip.mp3"], "Inbox/Clip.mp3")]),
+        ]);
+
+        deleted.Should().Be(0);
+        WaveMpDbContext after = CreateDbContext();
+        (await after.Tracks.Select(track => track.Id).ToListAsync())
+            .Should().BeEquivalentTo([moved.Id, renamed.Id, toOtherSource.Id]);
+        (await after.MediaFiles.Select(file => file.RelativePath).ToListAsync())
+            .Should().BeEquivalentTo("New/Song.mp3", "Album/Track.mp3", "Inbox/Clip.mp3");
+        (await after.Favorites.CountAsync(favorite => favorite.UserId == user.Id && favorite.TrackId == moved.Id))
+            .Should().Be(1);
+    }
+
+    [Test]
     public async Task RecordAlbumMovesAsync_NewAndStoredPairs_AreAddedAndCountedUpWithTheNextSave()
     {
         LibrarySeed seed = new();

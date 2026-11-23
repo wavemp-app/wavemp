@@ -54,6 +54,15 @@ public interface ILibraryScanRepository
         CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Tracks by their ids, tracked, with all their files (and their tags), their own covers and their file
+    /// selections, in one query; ids without a stored track are left out. A scan loads the songs it found at a new
+    /// place with it, so it can keep them (and all their data) there.
+    /// </summary>
+    Task<IReadOnlyList<Track>> LoadTracksAsync(
+        IReadOnlyCollection<Guid> trackIds,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// An artist by its normalized name, tracked.
     /// </summary>
     Task<Artist?> FindArtistAsync(string normalizedName, CancellationToken cancellationToken = default);
@@ -103,6 +112,17 @@ public interface ILibraryScanRepository
         Guid sourceId,
         IReadOnlyCollection<string> directories,
         DateTimeOffset now,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Deletes the tracks whose files a scan saw gone and that it did not keep at a new place, in one transaction:
+    /// first the listed files that still lie at their listed path in the source of their track (a file the scan kept
+    /// at its new place has another path and stays), then the listed tracks that still lie in their listed source and
+    /// folder and that no file belongs to any more (a track the scan kept at a new place has its files and stays).
+    /// Their data goes with them, as with every deleted track. Returns the number of deleted tracks.
+    /// </summary>
+    Task<int> DeleteVanishedTracksAsync(
+        IReadOnlyCollection<VanishedTrack> tracks,
         CancellationToken cancellationToken = default);
 
     /// <summary>

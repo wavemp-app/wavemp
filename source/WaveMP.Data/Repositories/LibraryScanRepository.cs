@@ -99,6 +99,25 @@ internal sealed class LibraryScanRepository(WaveMpDbContext dbContext) : ILibrar
         return new StoredFolder(files, tracks);
     }
 
+    public async Task<IReadOnlyList<Track>> LoadTracksAsync(
+        IReadOnlyCollection<Guid> trackIds,
+        CancellationToken cancellationToken = default)
+    {
+        if (trackIds.Count == 0)
+        {
+            return [];
+        }
+
+        Guid[] ids = [.. trackIds.Distinct()];
+        return await dbContext.Tracks
+            .Include(track => track.Files)
+            .Include(track => track.Covers)
+            .Include(track => track.FileSelections)
+            .Where(track => ids.Contains(track.Id))
+            .OrderBy(track => track.Id)
+            .ToListAsync(cancellationToken);
+    }
+
     public Task<Artist?> FindArtistAsync(string normalizedName, CancellationToken cancellationToken = default)
     {
         return dbContext.Artists.FirstOrDefaultAsync(
@@ -193,6 +212,55 @@ internal sealed class LibraryScanRepository(WaveMpDbContext dbContext) : ILibrar
                     .ExecuteDeleteAsync(token);
                 await transaction.CommitAsync(token);
                 return (files, tracks);
+            },
+            cancellationToken);
+    }
+
+    public Task<int> DeleteVanishedTracksAsync(
+        IReadOnlyCollection<VanishedTrack> tracks,
+        CancellationToken cancellationToken = default)
+    {
+        if (tracks.Count == 0)
+        {
+            return Task.FromResult(0);
+        }
+
+        Guid[] trackIds = [.. tracks.Select(track => track.TrackId)];
+        Guid[] trackSourceIds = [.. tracks.Select(track => track.SourceId)];
+        string[] directories = [.. tracks.Select(track => track.DirectoryPath)];
+        Guid[] fileIds = [.. tracks.SelectMany(track => track.Files.Select(file => file.FileId))];
+        Guid[] fileSourceIds = [.. tracks.SelectMany(track => track.Files.Select(_ => track.SourceId))];
+        string[] paths = [.. tracks.SelectMany(track => track.Files.Select(file => file.RelativePath))];
+        IExecutionStrategy strategy = dbContext.Database.CreateExecutionStrategy();
+        return strategy.ExecuteAsync(
+            async token =>
+            {
+                await using IDbContextTransaction transaction = await dbContext.Database.BeginTransactionAsync(token);
+
+                // A file kept at a new place has another path (or source) now and is not deleted.
+                await dbContext.Database.ExecuteSqlAsync(
+                    $"""
+                    DELETE FROM media_files
+                    USING unnest({fileIds}, {fileSourceIds}, {paths}) AS gone(id, source_id, relative_path)
+                    WHERE media_files.id = gone.id
+                        AND media_files.source_id = gone.source_id
+                        AND media_files.relative_path = gone.relative_path
+                    """,
+                    token);
+
+                // A track kept at a new place has its files there, also when it stayed in its folder.
+                int deleted = await dbContext.Database.ExecuteSqlAsync(
+                    $"""
+                    DELETE FROM tracks
+                    USING unnest({trackIds}, {trackSourceIds}, {directories}) AS gone(id, source_id, directory_path)
+                    WHERE tracks.id = gone.id
+                        AND tracks.source_id = gone.source_id
+                        AND tracks.directory_path = gone.directory_path
+                        AND NOT EXISTS (SELECT 1 FROM media_files WHERE media_files.track_id = tracks.id)
+                    """,
+                    token);
+                await transaction.CommitAsync(token);
+                return deleted;
             },
             cancellationToken);
     }
@@ -460,6 +528,8 @@ internal sealed class LibraryScanRepository(WaveMpDbContext dbContext) : ILibrar
             file.Kind,
             file.Size,
             file.ModifiedAt,
-            file.MetadataVersion));
+            file.MetadataVersion,
+            file.TrackId,
+            file.IsPrimary));
     }
 }
