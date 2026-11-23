@@ -19,9 +19,11 @@ namespace WaveMP.Core.Scanning.Writers;
 /// files the admin selected for a track win over the quality rule as long as they exist; whether they do is stored
 /// with each selection. A song that moves from one album or artist to another one is recorded with the changes of its
 /// folder (see <see cref="ILibraryScanRepository.RecordAlbumMovesAsync"/> and
-/// <see cref="ILibraryScanRepository.RecordArtistMovesAsync"/>). A song whose folder was renamed or moved or whose
-/// files were renamed (see <see cref="TrackMovePlanner"/>) keeps its track, with its id and all its data, at the new
-/// place.
+/// <see cref="ILibraryScanRepository.RecordArtistMovesAsync"/>). A song counts for an artist as its track artist and
+/// as the album artist of its album, and leaves an artist only when that artist has neither role on it any more; a
+/// song that loses its album or artist or gets its first one records nothing. A song whose folder was renamed or moved
+/// or whose files were renamed (see <see cref="TrackMovePlanner"/>) keeps its track, with its id and all its data, at
+/// the new place, and its album and artist moves are recorded like those of any other song.
 /// </summary>
 public sealed class LibraryWriter(ILibraryScanRepository library)
 {

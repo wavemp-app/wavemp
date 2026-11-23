@@ -178,8 +178,10 @@ public interface ILibraryScanRepository
     /// Then, after the albums are deleted (so an artist whose last album went is included), the data of every artist
     /// without tracks and albums goes to the artists its songs moved to (see <see cref="RecordArtistMovesAsync"/>) by
     /// the same rules (<see cref="ArtistSuccessionPlanner"/>): the artist favorites of all profiles and the first seen
-    /// date to every artist that got its songs, a list in the player started from it to the artist that got most of
-    /// them. Returns the number of deleted albums and artists.
+    /// date to every artist that got its songs (the union of the favorites with the earliest time per profile, the
+    /// earliest first seen date), a list in the player started from it to the main successor (the artist that got most
+    /// of them, then the earliest first seen date, then the smallest id). Nothing is passed on while the old artist
+    /// still has songs or albums. Returns the number of deleted albums and artists.
     /// </summary>
     Task<(int Albums, int Artists)> DeleteOrphansAsync(
         DateTimeOffset now,
