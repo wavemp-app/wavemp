@@ -6,8 +6,13 @@ import {
     createMilkdropModule,
     effectiveMilkdropSpeed,
     maxMilkdropStepsPerFrame,
+    milkdropBeatPush,
     milkdropBlendSeconds,
+    milkdropMusicBrightness,
+    milkdropMusicPace,
     milkdropPresets,
+    milkdropQuietDimming,
+    milkdropQuietSlowdown,
     milkdropQuality,
     milkdropStepsPerSecond,
     MilkdropStepper,
@@ -15,7 +20,7 @@ import {
     type MilkdropEnvironment,
 } from '../modules/milkdrop'
 import { visualizationModule, visualizationModules } from '../modules'
-import { fakeWebGl, rendererDefaults } from './webgl'
+import { fakeAudio, fakeWebGl, rendererDefaults } from './webgl'
 
 function fakeVisualizer(): ButterchurnVisualizer {
     return {
@@ -57,9 +62,9 @@ function environment(overrides: Partial<MilkdropEnvironment> = {}) {
     return { env, butterchurn, visualizer, source, clock }
 }
 
+/** The output of the player: a steady sound, so the presets run at their speed. */
 function analyser() {
-    const context = { sampleRate: 48000 }
-    return { context } as unknown as AnalyserNode
+    return fakeAudio()
 }
 
 /** A renderer of a loaded module drawing into a fake stage canvas. */
@@ -67,7 +72,8 @@ async function renderer(options: Partial<VisualizationRendererOptions> = {}) {
     const setup = environment()
     const loaded = await createMilkdropModule(setup.env).load()
     const stage = fakeCanvas()
-    const audio = analyser()
+    const sound = analyser()
+    const audio = sound.audio
     const created = loaded.createRenderer({
         canvas: stage.canvas,
         audio,
@@ -84,7 +90,7 @@ async function renderer(options: Partial<VisualizationRendererOptions> = {}) {
             created.render()
         }
     }
-    return { ...setup, loaded, stage, audio, renderer: created, play }
+    return { ...setup, loaded, stage, audio, sound, renderer: created, play }
 }
 
 describe('milkdropPresets', () => {
@@ -171,7 +177,7 @@ describe('the module Milkdrop', () => {
         expect(() =>
             loaded.createRenderer({
                 canvas,
-                audio: analyser(),
+                audio: analyser().audio,
                 width: 10,
                 height: 10,
                 quality: 'low',
@@ -241,7 +247,7 @@ describe('the module Milkdrop', () => {
     })
 
     it('disconnects from the player and frees both drawing contexts when disposed', async () => {
-        const { renderer: shown, visualizer, audio, stage, source } = await renderer()
+        const { renderer: shown, visualizer, audio, sound, stage, source } = await renderer()
 
         shown.dispose()
         shown.dispose()
@@ -249,6 +255,7 @@ describe('the module Milkdrop', () => {
 
         expect(visualizer.disconnectAudio).toHaveBeenCalledTimes(1)
         expect(visualizer.disconnectAudio).toHaveBeenCalledWith(audio)
+        expect(sound.raw.disconnect).toHaveBeenCalledWith(sound.analyser)
         expect(stage.loseContext).toHaveBeenCalledTimes(1)
         expect(source.loseContext).toHaveBeenCalledTimes(1)
         expect(visualizer.render).not.toHaveBeenCalled()
@@ -318,6 +325,70 @@ describe('the speed of Milkdrop', () => {
         shown.render()
 
         expect(visualizer.render).toHaveBeenCalledTimes(1 + maxMilkdropStepsPerFrame)
+    })
+
+    it('runs slower in a quiet passage of the music and pushes ahead on a beat', async () => {
+        const { renderer: shown, visualizer, play, sound } = await renderer({ speed: 100 })
+        shown.render()
+        // Twenty seconds of music, then a passage 20 dB quieter.
+        play(60, 20)
+        vi.mocked(visualizer.render).mockClear()
+        play(60, 1)
+        const loud = vi.mocked(visualizer.render).mock.calls.length
+        sound.analyser.getFloatFrequencyData.mockImplementation((data: Float32Array) =>
+            data.fill(-70),
+        )
+        play(60, 6)
+        vi.mocked(visualizer.render).mockClear()
+        play(60, 1)
+        const quiet = vi.mocked(visualizer.render).mock.calls.length
+
+        expect(sound.raw.connect).toHaveBeenCalledWith(sound.analyser)
+        expect(loud).toBe(milkdropStepsPerSecond)
+        expect(quiet).toBeLessThan(loud * 0.6)
+        expect(quiet).toBeGreaterThan(0)
+    })
+
+    it('dims the presets in a quiet passage of the music', async () => {
+        const { renderer: shown, play, sound, stage } = await renderer({ speed: 100 })
+        const brightness = () =>
+            stage
+                .named('uniform1f')
+                .filter(([, args]) => (args[0] as { name: string }).name === 'uBrightness')
+                .map(([, args]) => args[1] as number)
+                .at(-1)
+        shown.render()
+        play(60, 20)
+        expect(brightness()).toBe(1)
+
+        sound.analyser.getFloatFrequencyData.mockImplementation((data: Float32Array) =>
+            data.fill(-70),
+        )
+        play(60, 6)
+        expect(brightness()).toBeLessThan(0.75)
+        expect(brightness()).toBeGreaterThanOrEqual(1 - milkdropQuietDimming)
+
+        expect(milkdropMusicBrightness({ quiet: 0 })).toBe(1)
+        expect(milkdropMusicBrightness({ quiet: 1 })).toBeCloseTo(1 - milkdropQuietDimming)
+        expect(milkdropMusicBrightness({ quiet: Number.NaN })).toBe(1)
+    })
+
+    it('sets the pace of the presets by the music', () => {
+        expect(milkdropMusicPace({ quiet: 0, pulse: 0 }, 'normal')).toBe(1)
+        expect(milkdropMusicPace({ quiet: 1, pulse: 0 }, 'normal')).toBeCloseTo(
+            1 - milkdropQuietSlowdown,
+        )
+        expect(milkdropMusicPace({ quiet: 0, pulse: 1 }, 'normal')).toBeCloseTo(
+            1 + milkdropBeatPush,
+        )
+        // A beat pushes nothing at the reduced intensity; quiet passages still slow down.
+        expect(milkdropMusicPace({ quiet: 0, pulse: 1 }, 'reduced')).toBe(1)
+        expect(milkdropMusicPace({ quiet: 1, pulse: 1 }, 'reduced')).toBeCloseTo(
+            1 - milkdropQuietSlowdown,
+        )
+        expect(milkdropMusicPace({ quiet: Number.NaN, pulse: 5 }, 'normal')).toBeCloseTo(
+            1 + milkdropBeatPush,
+        )
     })
 
     it('keeps the speed within the range of the profile', () => {

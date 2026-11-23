@@ -47,19 +47,21 @@ float unpack16(vec2 packed) {
 
 /**
  * The input of the guard: the frame, and optionally an earlier frame that is cross-faded in by a
- * weight (Milkdrop shows the time between two of its steps that way).
+ * weight (Milkdrop shows the time between two of its steps that way), at a brightness (Milkdrop
+ * dims quiet passages that way).
  */
 const input = `
 uniform highp sampler2D uCurrent;
 uniform highp sampler2D uEarlier;
 uniform float uEarlierWeight;
+uniform float uBrightness;
 
 vec3 currentColor(ivec2 texel) {
     vec3 color = texelFetch(uCurrent, texel, 0).rgb;
     if (uEarlierWeight > 0.0) {
         color = mix(color, texelFetch(uEarlier, texel, 0).rgb, uEarlierWeight);
     }
-    return color;
+    return color * uBrightness;
 }
 `
 
@@ -204,6 +206,8 @@ export interface FlashGuardSource {
     /** An earlier frame mixed in by earlierWeight (0: none, 1: only the earlier frame). */
     readonly earlier?: WebGLTexture
     readonly earlierWeight?: number
+    /** A factor of the brightness of the frame, 0 to 1 (1 when left out). */
+    readonly brightness?: number
 }
 
 interface Target {
@@ -290,6 +294,7 @@ export class FlashGuard {
             ? Math.max(0, Math.min(1, source.earlierWeight ?? 0))
             : 0
         const earlier = source?.earlier ?? current
+        const brightness = Math.max(0, Math.min(1, source?.brightness ?? 1))
         const previous = this.previous!
         const [stored, next] = this.centers
         const uniforms = flashGuardUniforms(this.limits, seconds)
@@ -301,7 +306,7 @@ export class FlashGuard {
         gl.bindFramebuffer(gl.FRAMEBUFFER, this.cells.framebuffer)
         gl.viewport(0, 0, flashGridColumns * 2, flashGridRows)
         gl.useProgram(this.reduce.program)
-        this.bindInputs(this.reduce, current, earlier, earlierWeight)
+        this.bindInputs(this.reduce, current, earlier, earlierWeight, brightness)
         gl.activeTexture(gl.TEXTURE2)
         gl.bindTexture(gl.TEXTURE_2D, previous.texture)
         gl.uniform1i(this.reduce.uniform('uPrevious'), 2)
@@ -326,7 +331,7 @@ export class FlashGuard {
         gl.bindFramebuffer(gl.FRAMEBUFFER, null)
         gl.viewport(0, 0, this.width, this.height)
         gl.useProgram(this.output.program)
-        this.bindInputs(this.output, current, earlier, earlierWeight)
+        this.bindInputs(this.output, current, earlier, earlierWeight, brightness)
         gl.activeTexture(gl.TEXTURE2)
         gl.bindTexture(gl.TEXTURE_2D, previous.texture)
         gl.uniform1i(this.output.uniform('uPrevious'), 2)
@@ -376,6 +381,7 @@ export class FlashGuard {
         current: WebGLTexture,
         earlier: WebGLTexture,
         earlierWeight: number,
+        brightness: number,
     ): void {
         const gl = this.gl
         gl.activeTexture(gl.TEXTURE0)
@@ -385,6 +391,7 @@ export class FlashGuard {
         gl.bindTexture(gl.TEXTURE_2D, earlier)
         gl.uniform1i(program.uniform('uEarlier'), 1)
         gl.uniform1f(program.uniform('uEarlierWeight'), earlierWeight)
+        gl.uniform1f(program.uniform('uBrightness'), brightness)
     }
 
     private createTexture(width: number, height: number, filter: number): WebGLTexture {

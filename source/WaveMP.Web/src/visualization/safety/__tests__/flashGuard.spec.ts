@@ -148,6 +148,20 @@ describe('FlashGuard', () => {
         expect(uniform('uEarlierWeight')?.[1]).toBe(1)
     })
 
+    it('shows the source at full brightness unless asked to dim it', () => {
+        const { guard, uniform } = setup()
+        const latest = { id: 'latest' } as unknown as WebGLTexture
+
+        guard.present(1 / 60)
+        expect(uniform('uBrightness')?.[1]).toBe(1)
+
+        guard.present(1 / 60, { texture: latest, brightness: 0.6 })
+        expect(uniform('uBrightness')?.[1]).toBe(0.6)
+
+        guard.present(1 / 60, { texture: latest, brightness: -2 })
+        expect(uniform('uBrightness')?.[1]).toBe(0)
+    })
+
     it('takes new frames at a new size and lets the next frame pass', () => {
         const { guard, uniform, named } = setup()
         guard.present(1 / 60)

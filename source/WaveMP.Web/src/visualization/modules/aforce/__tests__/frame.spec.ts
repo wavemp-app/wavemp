@@ -124,6 +124,16 @@ describe.each(aforceModes.map((mode) => [mode.id, mode] as const))(
             expect(quiet.trail).toBeLessThan(1)
         })
 
+        it('reacts more gently in quiet passages, but still reacts', () => {
+            const loud = { bass: 1, mid: 1, treble: 1, pulse: 1, beat: true }
+            const inLoudPart = inputs(mode, loud)
+            const inQuietPart = inputs(mode, { ...loud, quiet: 1 })
+
+            expect(inQuietPart.mass - 1).toBeLessThan((inLoudPart.mass - 1) * 0.7)
+            expect(inQuietPart.sway).toBeLessThan(inLoudPart.sway * 0.7)
+            expect(inQuietPart.mass).toBeGreaterThan(inputs(mode, { quiet: 1, bass: 0 }).mass)
+        })
+
         it('halves its gains and does not punch at the reduced intensity', () => {
             const loud = { bass: 1, mid: 1, treble: 1, pulse: 1, beat: true }
             const normal = inputs(mode, loud)

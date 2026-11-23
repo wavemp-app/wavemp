@@ -4,7 +4,7 @@
 // - mids: sway and twist,
 // - highs: sparkle and fine detail,
 // - beats: a punch with a short afterglow (the pulse of the beat fading out),
-// - quiet passages: slower, dimmer, longer trails.
+// - quiet passages: slower, dimmer, longer trails and gentler reactions.
 // At the reduced intensity every gain is halved, the camera moves half as much and does not punch.
 // Pure, so the tests measure the reaction on these inputs.
 
@@ -71,6 +71,9 @@ export interface AForceFrameInputs {
     readonly bloom: number
 }
 
+/** Share of the gains that quiet passages take away. */
+const quietGainDrop = 0.4
+
 /** Longest trail at all, so quiet parts never smear the picture into a blur. */
 const longestTrail = 0.96
 
@@ -86,13 +89,15 @@ export function aforceFrameInputs(
 ): AForceFrameInputs {
     const { layers, motion, reaction } = look
     const reduced = intensity === 'reduced'
-    const gain = reduced ? 0.5 : 1
     const bass = clamp01(features.bass)
     const mid = clamp01(features.mid)
     const treble = clamp01(features.treble)
     const level = clamp01(features.level)
     const pulse = clamp01(features.pulse)
     const quiet = clamp01(features.quiet) * clamp01(reaction.calm)
+    // The levels are measured within the range of the recent music, so they swing in quiet
+    // passages as well; the gains drop there, so quiet passages also look quieter.
+    const gain = (reduced ? 0.5 : 1) * (1 - quiet * quietGainDrop)
 
     const beat = pulse * gain
     const mass = 1 + gain * (bass * 0.8 + pulse * 0.4) * reaction.mass

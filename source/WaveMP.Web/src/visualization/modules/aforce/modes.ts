@@ -172,7 +172,7 @@ export const aforceModes: readonly AForceMode[] = [
             twist: 0.6,
             sparkle: 1.1,
             punch: 1,
-            calm: 0.7,
+            calm: 1,
         },
     },
     {
@@ -203,7 +203,7 @@ export const aforceModes: readonly AForceMode[] = [
             twist: 1.2,
             sparkle: 1.2,
             punch: 1,
-            calm: 0.7,
+            calm: 1,
         },
     },
     {
@@ -236,7 +236,7 @@ export const aforceModes: readonly AForceMode[] = [
             twist: 0.4,
             sparkle: 1.3,
             punch: 1.2,
-            calm: 0.8,
+            calm: 1,
         },
     },
     {
@@ -267,7 +267,7 @@ export const aforceModes: readonly AForceMode[] = [
             twist: 0.5,
             sparkle: 1.2,
             punch: 1.1,
-            calm: 0.7,
+            calm: 1,
         },
     },
     {
@@ -299,7 +299,7 @@ export const aforceModes: readonly AForceMode[] = [
             twist: 1.6,
             sparkle: 1.2,
             punch: 1,
-            calm: 0.7,
+            calm: 1,
         },
     },
 ]

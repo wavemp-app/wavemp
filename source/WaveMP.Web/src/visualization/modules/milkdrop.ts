@@ -10,10 +10,17 @@
 // by the time between them (smooth at low speeds) and shows the result through the flash guard.
 // Two contexts keep butterchurn, which changes the state of its context freely, apart from the
 // guard.
+//
+// The presets react to the music on their own, but butterchurn measures it against its own recent
+// past, so a quiet passage moves as much as a loud one. The renderer therefore also listens to the
+// music (the shared analysis of the own visualizations) and lets the presets run slower in quiet
+// passages and push ahead a little on a beat (milkdropMusicPace), and dims quiet passages
+// (milkdropMusicBrightness).
 
 import type { Butterchurn, ButterchurnRendererOptions } from 'butterchurn'
 import type { ButterchurnPresetPack } from 'butterchurn-presets'
 import { VisualizationModuleObject } from '@/api/generated/models'
+import { AudioFeatureTracker, type AudioFeatures } from '../analysis/features'
 import type {
     LoadedVisualizationModule,
     PresetBlendSeconds,
@@ -44,6 +51,42 @@ export const reducedMilkdropSpeed = 35
  * default of the controller, because a sudden change of a preset is a flash of its own.
  */
 export const milkdropBlendSeconds: PresetBlendSeconds = { manual: 2, automatic: 5 }
+
+/** Share of their speed the presets lose in a quiet passage. */
+export const milkdropQuietSlowdown = 0.6
+
+/** Share of their speed a beat adds for a moment (fading with the pulse of the beat). */
+export const milkdropBeatPush = 0.4
+
+/** Share of their brightness the presets lose in a quiet passage. */
+export const milkdropQuietDimming = 0.45
+
+/** Size of the analyser the renderer listens to the music with. */
+const fftSize = 2048
+
+/**
+ * How fast the presets run for the music at the moment, as a factor of their speed: 1 in loud
+ * passages, down to 1 - milkdropQuietSlowdown in quiet ones, a little faster for a moment after a
+ * beat; at the reduced intensity beats push nothing.
+ */
+export function milkdropMusicPace(
+    features: Pick<AudioFeatures, 'quiet' | 'pulse'>,
+    intensity: VisualizationIntensityLevel,
+): number {
+    const clamp = (value: number) => Math.min(1, Math.max(0, Number.isFinite(value) ? value : 0))
+    const push = intensity === 'reduced' ? 0 : milkdropBeatPush * clamp(features.pulse)
+    return (1 - milkdropQuietSlowdown * clamp(features.quiet)) * (1 + push)
+}
+
+/**
+ * How bright the presets are shown for the music at the moment: 1 in loud passages, down to
+ * 1 - milkdropQuietDimming in quiet ones. The quiet value of the analysis changes slowly, so this
+ * never flashes.
+ */
+export function milkdropMusicBrightness(features: Pick<AudioFeatures, 'quiet'>): number {
+    const quiet = Number.isFinite(features.quiet) ? Math.min(1, Math.max(0, features.quiet)) : 0
+    return 1 - milkdropQuietDimming * quiet
+}
 
 /** Part of a step the rounding of the times of the frames may leave missing. */
 const stepTolerance = 1e-6
@@ -163,6 +206,10 @@ export class MilkdropStepper {
 class MilkdropRenderer implements VisualizationRenderer {
     private readonly visualizer
     private readonly audio: AnalyserNode
+    /** An analyser of its own and the features of the music it hears. */
+    private readonly analyser: AnalyserNode
+    private readonly spectrum: Float32Array<ArrayBuffer>
+    private readonly features = new AudioFeatureTracker()
     private readonly canvas: HTMLCanvasElement
     /** The canvas butterchurn draws into; outside the page. */
     private readonly source: HTMLCanvasElement
@@ -221,6 +268,12 @@ class MilkdropRenderer implements VisualizationRenderer {
             ...milkdropQuality[options.quality],
         })
         this.visualizer.connectAudio(options.audio)
+
+        this.analyser = options.audio.context.createAnalyser()
+        this.analyser.fftSize = fftSize
+        this.analyser.smoothingTimeConstant = 0.5
+        options.audio.connect(this.analyser)
+        this.spectrum = new Float32Array(this.analyser.frequencyBinCount)
     }
 
     /** The speed the presets run at, as a fraction of their original speed. */
@@ -274,10 +327,14 @@ class MilkdropRenderer implements VisualizationRenderer {
         const seconds = this.lastTime === null ? 0 : Math.max(0, time - this.lastTime)
         this.lastTime = time
 
+        this.analyser.getFloatFrequencyData(this.spectrum)
+        const music = this.features.update(this.spectrum, this.analyser.context.sampleRate, time)
+        const pace = milkdropMusicPace(music, this.intensity)
+
         // At least one step before the first frame, so there is a picture to show.
         const steps = Math.max(
             this.stepCount === 0 ? 1 : 0,
-            this.stepper.advance(seconds, this.rate * 100),
+            this.stepper.advance(seconds, this.rate * 100 * pace),
         )
         for (let step = 0; step < steps; step++) {
             this.visualizer.render({ elapsedTime: 1 / milkdropStepsPerSecond })
@@ -290,6 +347,7 @@ class MilkdropRenderer implements VisualizationRenderer {
             earlier,
             // From the earlier step towards the latest one as the time moves on to the next step.
             earlierWeight: this.stepCount > 1 ? 1 - this.stepper.phase : 0,
+            brightness: milkdropMusicBrightness(music),
         })
     }
 
@@ -301,6 +359,12 @@ class MilkdropRenderer implements VisualizationRenderer {
         this.disposed = true
         try {
             this.visualizer.disconnectAudio(this.audio)
+        } catch {
+            // Already disconnected.
+        }
+
+        try {
+            this.audio.disconnect(this.analyser)
         } catch {
             // Already disconnected.
         }
