@@ -130,6 +130,21 @@ internal sealed class LibraryScanRepository(WaveMpDbContext dbContext) : ILibrar
         return dbContext.Albums.FirstOrDefaultAsync(album => album.AlbumKey == albumKey, cancellationToken);
     }
 
+    public async Task<IReadOnlyDictionary<Guid, Guid?>> GetAlbumArtistIdsAsync(
+        IReadOnlyCollection<Guid> albumIds,
+        CancellationToken cancellationToken = default)
+    {
+        if (albumIds.Count == 0)
+        {
+            return new Dictionary<Guid, Guid?>();
+        }
+
+        Guid[] ids = [.. albumIds.Distinct()];
+        return await dbContext.Albums.AsNoTracking()
+            .Where(album => ids.Contains(album.Id))
+            .ToDictionaryAsync(album => album.Id, album => album.AlbumArtistId, cancellationToken);
+    }
+
     public void Add<TEntity>(TEntity entity)
         where TEntity : class
     {
@@ -174,6 +189,38 @@ internal sealed class LibraryScanRepository(WaveMpDbContext dbContext) : ILibrar
                 {
                     FromAlbumId = fromAlbumId,
                     ToAlbumId = toAlbumId,
+                    TrackCount = trackCount,
+                    MovedAt = now,
+                });
+            }
+            else
+            {
+                move.TrackCount += trackCount;
+                move.MovedAt = now;
+            }
+        }
+    }
+
+    public async Task RecordArtistMovesAsync(
+        IReadOnlyDictionary<(Guid FromArtistId, Guid ToArtistId), int> moves,
+        DateTimeOffset now,
+        CancellationToken cancellationToken = default)
+    {
+        foreach (((Guid fromArtistId, Guid toArtistId), int trackCount) in moves)
+        {
+            if (fromArtistId == toArtistId || trackCount < 1)
+            {
+                continue;
+            }
+
+            // Finds a move tracked by an earlier call before the save as well as a stored one.
+            ArtistMove? move = await dbContext.ArtistMoves.FindAsync([fromArtistId, toArtistId], cancellationToken);
+            if (move is null)
+            {
+                dbContext.ArtistMoves.Add(new ArtistMove
+                {
+                    FromArtistId = fromArtistId,
+                    ToArtistId = toArtistId,
                     TrackCount = trackCount,
                     MovedAt = now,
                 });
@@ -325,10 +372,24 @@ internal sealed class LibraryScanRepository(WaveMpDbContext dbContext) : ILibrar
                         .ExecuteDeleteAsync(token);
                 }
 
-                int artists = await dbContext.Artists
+                // After the albums, so an artist whose last album was just deleted is left empty as well.
+                List<Guid> emptyArtists = await dbContext.Artists
                     .Where(artist => !dbContext.Tracks.Any(track => track.ArtistId == artist.Id)
                         && !dbContext.Albums.Any(album => album.AlbumArtistId == artist.Id))
-                    .ExecuteDeleteAsync(token);
+                    .OrderBy(artist => artist.Id)
+                    .Select(artist => artist.Id)
+                    .ToListAsync(token);
+                int artists = 0;
+                if (emptyArtists.Count > 0)
+                {
+                    await CarryOverArtistsAsync(emptyArtists, token);
+                    artists = await dbContext.Artists
+                        .Where(artist => emptyArtists.Contains(artist.Id)
+                            && !dbContext.Tracks.Any(track => track.ArtistId == artist.Id)
+                            && !dbContext.Albums.Any(album => album.AlbumArtistId == artist.Id))
+                        .ExecuteDeleteAsync(token);
+                }
+
                 await transaction.CommitAsync(token);
                 return (albums, artists);
             },
@@ -476,6 +537,110 @@ internal sealed class LibraryScanRepository(WaveMpDbContext dbContext) : ILibrar
                 ON CONFLICT (from_album_id, to_album_id)
                 DO UPDATE SET track_count = album_moves.track_count + excluded.track_count,
                     moved_at = GREATEST(album_moves.moved_at, excluded.moved_at)
+                """,
+                cancellationToken);
+        }
+    }
+
+    /// <summary>
+    /// Gives the data of the artists left empty to the artists their songs moved to, by the plan of
+    /// <see cref="ArtistSuccessionPlanner"/>. Runs in the transaction of <see cref="DeleteOrphansAsync"/>, after the
+    /// albums left empty are deleted and before the artists left empty are deleted (their moves and favorites go with
+    /// them). Artists have no change time, so nothing else is touched.
+    /// </summary>
+    private async Task CarryOverArtistsAsync(List<Guid> orphans, CancellationToken cancellationToken)
+    {
+        List<ArtistSuccessionMove> moves = await dbContext.ArtistMoves.AsNoTracking()
+            .Where(move => orphans.Contains(move.FromArtistId) || orphans.Contains(move.ToArtistId))
+            .Select(move =>
+                new ArtistSuccessionMove(move.FromArtistId, move.ToArtistId, move.TrackCount, move.MovedAt))
+            .ToListAsync(cancellationToken);
+        if (moves.Count == 0)
+        {
+            return;
+        }
+
+        Guid[] ids = [.. moves.SelectMany(move => new[] { move.FromArtistId, move.ToArtistId }).Union(orphans)];
+        List<ArtistSuccessionArtist> artists = await dbContext.Artists.AsNoTracking()
+            .Where(artist => ids.Contains(artist.Id))
+            .Select(artist => new ArtistSuccessionArtist(
+                artist.Id,
+                dbContext.Tracks.Any(track => track.ArtistId == artist.Id)
+                    || dbContext.Albums.Any(album => album.AlbumArtistId == artist.Id),
+                artist.FirstSeenAt))
+            .ToListAsync(cancellationToken);
+        List<ArtistSuccessionFavorite> favorites = await dbContext.Favorites.AsNoTracking()
+            .Where(favorite => favorite.ArtistId != null && orphans.Contains(favorite.ArtistId.Value))
+            .Select(favorite =>
+                new ArtistSuccessionFavorite(favorite.UserId, favorite.ArtistId!.Value, favorite.CreatedAt))
+            .ToListAsync(cancellationToken);
+        ArtistSuccessionPlan plan = ArtistSuccessionPlanner.Plan(artists, moves, favorites);
+        if (plan.Successors.Count == 0)
+        {
+            return;
+        }
+
+        if (plan.Favorites.Count > 0)
+        {
+            Guid[] favoriteIds = [.. plan.Favorites.Select(_ => Guid.CreateVersion7())];
+            Guid[] userIds = [.. plan.Favorites.Select(favorite => favorite.UserId)];
+            Guid[] artistIds = [.. plan.Favorites.Select(favorite => favorite.ArtistId)];
+            DateTimeOffset[] createdAt = [.. plan.Favorites.Select(favorite => favorite.CreatedAt)];
+            string type = nameof(FavoriteType.Artist);
+
+            // A profile that already marked the successor keeps its favorite, with the earlier time.
+            await dbContext.Database.ExecuteSqlAsync(
+                $"""
+                INSERT INTO favorites (id, user_id, type, artist_id, created_at)
+                SELECT carried.id, carried.user_id, {type}, carried.artist_id, carried.created_at
+                FROM unnest({favoriteIds}, {userIds}, {artistIds}, {createdAt})
+                    AS carried(id, user_id, artist_id, created_at)
+                ON CONFLICT (user_id, artist_id) WHERE artist_id IS NOT NULL
+                DO UPDATE SET created_at = LEAST(favorites.created_at, excluded.created_at)
+                """,
+                cancellationToken);
+        }
+
+        if (plan.Updates.Count > 0)
+        {
+            Guid[] artistIds = [.. plan.Updates.Select(update => update.ArtistId)];
+            DateTimeOffset[] firstSeenAt = [.. plan.Updates.Select(update => update.FirstSeenAt)];
+            await dbContext.Database.ExecuteSqlAsync(
+                $"""
+                UPDATE artists
+                SET first_seen_at = changed.first_seen_at
+                FROM unnest({artistIds}, {firstSeenAt}) AS changed(artist_id, first_seen_at)
+                WHERE artists.id = changed.artist_id
+                """,
+                cancellationToken);
+        }
+
+        // A list in the player started from an artist left empty continues with its main successor.
+        Guid[] orphanIds = [.. plan.Successors.Keys];
+        Guid[] mainSuccessorIds = [.. orphanIds.Select(orphan => plan.Successors[orphan][0])];
+        string artistKind = nameof(PlaybackSourceKind.Artist);
+        await dbContext.Database.ExecuteSqlAsync(
+            $"""
+            UPDATE playback_states
+            SET source_id = successor.main_successor_id
+            FROM unnest({orphanIds}, {mainSuccessorIds}) AS successor(artist_id, main_successor_id)
+            WHERE playback_states.source_kind = {artistKind} AND playback_states.source_id = successor.artist_id
+            """,
+            cancellationToken);
+
+        if (plan.PassedOnMoves.Count > 0)
+        {
+            Guid[] fromArtistIds = [.. plan.PassedOnMoves.Select(move => move.FromArtistId)];
+            Guid[] toArtistIds = [.. plan.PassedOnMoves.Select(move => move.ToArtistId)];
+            int[] trackCounts = [.. plan.PassedOnMoves.Select(move => move.TrackCount)];
+            DateTimeOffset[] movedAt = [.. plan.PassedOnMoves.Select(move => move.MovedAt)];
+            await dbContext.Database.ExecuteSqlAsync(
+                $"""
+                INSERT INTO artist_moves (from_artist_id, to_artist_id, track_count, moved_at)
+                SELECT * FROM unnest({fromArtistIds}, {toArtistIds}, {trackCounts}, {movedAt})
+                ON CONFLICT (from_artist_id, to_artist_id)
+                DO UPDATE SET track_count = artist_moves.track_count + excluded.track_count,
+                    moved_at = GREATEST(artist_moves.moved_at, excluded.moved_at)
                 """,
                 cancellationToken);
         }

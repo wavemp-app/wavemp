@@ -563,6 +563,256 @@ public class LibraryScanRepositoryTests : LibraryDatabaseTests
         (await db.Albums.Select(item => item.Id).ToListAsync()).Should().Equal(album.Id);
     }
 
+    [Test]
+    public async Task GetAlbumArtistIdsAsync_Albums_ReturnsTheirAlbumArtistsAndLeavesUnknownIdsOut()
+    {
+        LibrarySeed seed = new();
+        Artist band = seed.Artist("Band");
+        Album withArtist = seed.Album("With", band);
+        Album without = seed.Album("Without");
+        await SaveAsync(seed);
+
+        IReadOnlyDictionary<Guid, Guid?> artists = await CreateRepository()
+            .GetAlbumArtistIdsAsync([withArtist.Id, without.Id, Guid.NewGuid()]);
+
+        artists.Should().BeEquivalentTo(new Dictionary<Guid, Guid?>
+        {
+            [withArtist.Id] = band.Id,
+            [without.Id] = null,
+        });
+    }
+
+    [Test]
+    public async Task RecordArtistMovesAsync_NewAndStoredPairs_AreAddedAndCountedUpWithTheNextSave()
+    {
+        LibrarySeed seed = new();
+        Artist from = ArtistWithTrack(seed, "From");
+        Artist stored = ArtistWithTrack(seed, "Stored");
+        Artist added = ArtistWithTrack(seed, "Added");
+        await SaveAsync(seed);
+        await AddArtistMovesAsync((from, stored, 2));
+        DateTimeOffset now = _day.AddDays(30);
+        LibraryScanRepository repository = CreateRepository();
+
+        await repository.RecordArtistMovesAsync(
+            new Dictionary<(Guid FromArtistId, Guid ToArtistId), int>
+            {
+                [(from.Id, stored.Id)] = 1,
+                [(from.Id, added.Id)] = 2,
+                [(from.Id, from.Id)] = 3,
+                [(stored.Id, added.Id)] = 0,
+            },
+            now);
+        await repository.RecordArtistMovesAsync(
+            new Dictionary<(Guid FromArtistId, Guid ToArtistId), int> { [(from.Id, added.Id)] = 1 },
+            now);
+
+        (await ArtistMovesAsync()).Should().BeEquivalentTo([(from.Id, stored.Id, 2, _day)]);
+        await repository.SaveChangesAsync();
+        (await ArtistMovesAsync()).Should().BeEquivalentTo([
+            (from.Id, stored.Id, 3, now),
+            (from.Id, added.Id, 3, now),
+        ]);
+    }
+
+    [Test]
+    public async Task RecordArtistMovesAsync_ToAnArtistAddedInTheSameSave_IsStoredWithIt()
+    {
+        LibrarySeed seed = new();
+        Artist from = ArtistWithTrack(seed, "From");
+        await SaveAsync(seed);
+        LibraryScanRepository repository = CreateRepository();
+        Artist created = new LibrarySeed().Artist("Created");
+
+        repository.Add(created);
+        await repository.RecordArtistMovesAsync(
+            new Dictionary<(Guid FromArtistId, Guid ToArtistId), int> { [(from.Id, created.Id)] = 1 },
+            _day);
+        await repository.SaveChangesAsync();
+
+        (await ArtistMovesAsync()).Should().BeEquivalentTo([(from.Id, created.Id, 1, _day)]);
+    }
+
+    [Test]
+    public async Task DeleteOrphansAsync_ArtistsLeftEmpty_CarryTheFavoritesOfAllProfilesTheDateAndThePlayerOver()
+    {
+        // Two spellings of a band merge into one: "The Band" had most of the songs.
+        LibrarySeed seed = new();
+        User first = seed.User();
+        User second = seed.User();
+        Artist larger = seed.Artist("The Band", _day.AddDays(2));
+        Artist smaller = seed.Artist("Band", _day.AddDays(1));
+        Artist merged = ArtistWithTrack(seed, "Band, The", _day.AddDays(5));
+        seed.Favorite(first, larger, _day.AddDays(3));
+        seed.Favorite(first, smaller, _day.AddDays(4));
+        seed.Favorite(second, smaller, _day.AddDays(6));
+        seed.Favorite(second, merged, _day.AddDays(7));
+        await SaveAsync(seed);
+        await AddPlaybackStateAsync(first, PlaybackSourceKind.Artist, smaller.Id);
+        await AddArtistMovesAsync((larger, merged, 2), (smaller, merged, 1));
+
+        (int Albums, int Artists) deleted = await CreateRepository().DeleteOrphansAsync(_day.AddDays(30));
+
+        deleted.Should().Be((0, 2));
+        WaveMpDbContext db = CreateDbContext();
+        Artist artist = await db.Artists.SingleAsync();
+        (artist.Id, artist.FirstSeenAt).Should().Be((merged.Id, _day.AddDays(1)));
+
+        // The union of the favorites; a profile that marked the new artist already keeps the earlier time.
+        (await ArtistFavoritesAsync(first, second)).Should().BeEquivalentTo([
+            (first.Id, merged.Id, _day.AddDays(3)),
+            (second.Id, merged.Id, _day.AddDays(6)),
+        ]);
+        (await SourceOfPlaybackAsync(first)).Should().Be(merged.Id);
+        (await ArtistMovesAsync()).Should().BeEmpty();
+    }
+
+    [Test]
+    public async Task DeleteOrphansAsync_ArtistSplit_GivesFavoritesAndDateToEveryArtistAndThePlayerToTheLargest()
+    {
+        LibrarySeed seed = new();
+        User user = seed.User();
+        Artist split = seed.Artist("Duo", _day);
+        Artist small = ArtistWithTrack(seed, "Singer", _day.AddDays(2));
+        Artist large = ArtistWithTrack(seed, "Pianist", _day.AddDays(3));
+        Artist unrelated = ArtistWithTrack(seed, "Other", _day.AddDays(4));
+        seed.Favorite(user, split, _day.AddDays(5));
+        await SaveAsync(seed);
+        await AddPlaybackStateAsync(user, PlaybackSourceKind.Artist, split.Id);
+        await AddArtistMovesAsync((split, small, 1), (split, large, 3));
+
+        await CreateRepository().DeleteOrphansAsync(_day.AddDays(30));
+
+        WaveMpDbContext db = CreateDbContext();
+        (await db.Artists.Select(artist => new { artist.Id, artist.FirstSeenAt }).ToListAsync())
+            .Should().BeEquivalentTo([
+                new { small.Id, FirstSeenAt = _day },
+                new { large.Id, FirstSeenAt = _day },
+                new { unrelated.Id, FirstSeenAt = _day.AddDays(4) },
+            ]);
+        (await ArtistFavoritesAsync(user)).Should().BeEquivalentTo([
+            (user.Id, small.Id, _day.AddDays(5)),
+            (user.Id, large.Id, _day.AddDays(5)),
+        ]);
+        (await SourceOfPlaybackAsync(user)).Should().Be(large.Id);
+    }
+
+    [Test]
+    public async Task DeleteOrphansAsync_OldArtistWithASongOrAnAlbumLeft_CarriesNothingAndTheMoveWaits()
+    {
+        // "Band" still has a song of its own, "Various" is still the album artist of an album with songs.
+        LibrarySeed seed = new();
+        User user = seed.User();
+        Artist band = ArtistWithTrack(seed, "Band", _day);
+        Artist various = seed.Artist("Various", _day);
+        seed.Track("Hit", album: seed.Album("Sampler", various));
+        Artist renamed = ArtistWithTrack(seed, "The Band", _day.AddDays(1));
+        seed.Favorite(user, band, _day);
+        seed.Favorite(user, various, _day.AddDays(1));
+        await SaveAsync(seed);
+        await AddPlaybackStateAsync(user, PlaybackSourceKind.Artist, various.Id);
+        await AddArtistMovesAsync((band, renamed, 1), (various, renamed, 1));
+
+        (int Albums, int Artists) deleted = await CreateRepository().DeleteOrphansAsync(_day.AddDays(30));
+
+        deleted.Should().Be((0, 0));
+        WaveMpDbContext db = CreateDbContext();
+        (await db.Artists.SingleAsync(artist => artist.Id == renamed.Id)).FirstSeenAt.Should().Be(_day.AddDays(1));
+        (await ArtistFavoritesAsync(user)).Should().BeEquivalentTo([
+            (user.Id, band.Id, _day),
+            (user.Id, various.Id, _day.AddDays(1)),
+        ]);
+        (await SourceOfPlaybackAsync(user)).Should().Be(various.Id);
+        (await ArtistMovesAsync()).Should().BeEquivalentTo([
+            (band.Id, renamed.Id, 1, _day),
+            (various.Id, renamed.Id, 1, _day),
+        ]);
+    }
+
+    [Test]
+    public async Task DeleteOrphansAsync_ArtistWhoseLastAlbumIsDeletedInTheSameCall_CarriesItsDataOver()
+    {
+        // The songs of the album of "Various" moved to an album of "Various Artists"; the old album is left empty.
+        LibrarySeed seed = new();
+        User user = seed.User();
+        Artist various = seed.Artist("Various", _day);
+        Album old = seed.Album("Sampler", various);
+        Artist renamed = seed.Artist("Various Artists", _day.AddDays(1));
+        Album album = seed.Album("Sampler", renamed);
+        seed.Track("Hit", album: album);
+        seed.Favorite(user, various, _day.AddDays(2));
+        await SaveAsync(seed);
+        await AddMovesAsync((old, album, 1));
+        await AddArtistMovesAsync((various, renamed, 1));
+
+        (int Albums, int Artists) deleted = await CreateRepository().DeleteOrphansAsync(_day.AddDays(30));
+
+        deleted.Should().Be((1, 1));
+        WaveMpDbContext db = CreateDbContext();
+        Artist artist = await db.Artists.SingleAsync();
+        (artist.Id, artist.FirstSeenAt).Should().Be((renamed.Id, _day));
+        (await ArtistFavoritesAsync(user)).Should().Equal((user.Id, renamed.Id, _day.AddDays(2)));
+        (await ArtistMovesAsync()).Should().BeEmpty();
+    }
+
+    [Test]
+    public async Task DeleteOrphansAsync_ArtistLeftEmptyLater_PassesTheMovesIntoItOnAndCarriesItsDataOver()
+    {
+        // "B" got a song of "A" and gave it on to "C"; "A" keeps a song until the end.
+        LibrarySeed seed = new();
+        User user = seed.User();
+        Artist first = seed.Artist("A", _day);
+        Track lastSong = seed.Track("Last song", first);
+        Artist middle = seed.Artist("B", _day.AddDays(1));
+        Artist last = ArtistWithTrack(seed, "C", _day.AddDays(2));
+        seed.Favorite(user, first, _day.AddDays(4));
+        await SaveAsync(seed);
+        await AddArtistMovesAsync((first, middle, 1), (middle, last, 1));
+
+        await CreateRepository().DeleteOrphansAsync(_day.AddDays(30));
+
+        (await ArtistFavoritesAsync(user)).Should().Equal((user.Id, first.Id, _day.AddDays(4)));
+        (await ArtistMovesAsync()).Should().Equal((first.Id, last.Id, 1, _day));
+
+        await CreateDbContext().Tracks.Where(track => track.Id == lastSong.Id).ExecuteDeleteAsync();
+
+        await CreateRepository().DeleteOrphansAsync(_day.AddDays(31));
+
+        WaveMpDbContext after = CreateDbContext();
+        (await after.Artists.Select(artist => new { artist.Id, artist.FirstSeenAt }).ToListAsync())
+            .Should().BeEquivalentTo([new { last.Id, FirstSeenAt = _day }]);
+        (await ArtistFavoritesAsync(user)).Should().Equal((user.Id, last.Id, _day.AddDays(4)));
+        (await ArtistMovesAsync()).Should().BeEmpty();
+    }
+
+    [Test]
+    public async Task DeleteOrphansAsync_ArtistLeftEmptyWithoutMoves_IsDeletedWithItsData()
+    {
+        LibrarySeed seed = new();
+        User user = seed.User();
+        Artist gone = seed.Artist("Gone");
+        ArtistWithTrack(seed, "Stays");
+        seed.Favorite(user, gone, _day);
+        await SaveAsync(seed);
+        await AddPlaybackStateAsync(user, PlaybackSourceKind.Artist, gone.Id);
+
+        (int Albums, int Artists) deleted = await CreateRepository().DeleteOrphansAsync(_day.AddDays(30));
+
+        deleted.Should().Be((0, 1));
+        (await ArtistFavoritesAsync(user)).Should().BeEmpty();
+        (await SourceOfPlaybackAsync(user)).Should().Be(gone.Id);
+    }
+
+    /// <summary>
+    /// An artist with one track, so it is not left empty.
+    /// </summary>
+    private static Artist ArtistWithTrack(LibrarySeed seed, string name, DateTimeOffset? firstSeenAt = null)
+    {
+        Artist artist = seed.Artist(name, firstSeenAt);
+        seed.Track(name + " song", artist);
+        return artist;
+    }
+
     /// <summary>
     /// An album with one track, so it is not left empty.
     /// </summary>
@@ -629,7 +879,25 @@ public class LibraryScanRepositoryTests : LibraryDatabaseTests
         return id;
     }
 
-    private async Task AddPlaybackStateAsync(User user, Album album)
+    private async Task AddArtistMovesAsync(params (Artist From, Artist To, int TrackCount)[] moves)
+    {
+        WaveMpDbContext db = CreateDbContext();
+        db.ArtistMoves.AddRange(moves.Select(move => new ArtistMove
+        {
+            FromArtistId = move.From.Id,
+            ToArtistId = move.To.Id,
+            TrackCount = move.TrackCount,
+            MovedAt = _day,
+        }));
+        await db.SaveChangesAsync();
+    }
+
+    private Task AddPlaybackStateAsync(User user, Album album)
+    {
+        return AddPlaybackStateAsync(user, PlaybackSourceKind.Album, album.Id);
+    }
+
+    private async Task AddPlaybackStateAsync(User user, PlaybackSourceKind sourceKind, Guid sourceId)
     {
         WaveMpDbContext db = CreateDbContext();
         db.PlaybackStates.Add(new PlaybackState
@@ -640,8 +908,8 @@ public class LibraryScanRepositoryTests : LibraryDatabaseTests
             PositionMilliseconds = 0,
             Shuffle = false,
             Repeat = RepeatMode.Off,
-            SourceKind = PlaybackSourceKind.Album,
-            SourceId = album.Id,
+            SourceKind = sourceKind,
+            SourceId = sourceId,
             DeviceId = "device",
             DeviceName = "Device",
             ChangedAt = _day,
@@ -663,6 +931,25 @@ public class LibraryScanRepositoryTests : LibraryDatabaseTests
         WaveMpDbContext db = CreateDbContext();
         return [.. (await db.Favorites.Where(favorite => ids.Contains(favorite.UserId)).ToListAsync())
             .Select(favorite => (favorite.UserId, favorite.AlbumId!.Value, favorite.CreatedAt))];
+    }
+
+    private async Task<List<(Guid FromArtistId, Guid ToArtistId, int TrackCount, DateTimeOffset MovedAt)>>
+        ArtistMovesAsync()
+    {
+        WaveMpDbContext db = CreateDbContext();
+        return [.. (await db.ArtistMoves.ToListAsync())
+            .Select(move => (move.FromArtistId, move.ToArtistId, move.TrackCount, move.MovedAt))];
+    }
+
+    private async Task<List<(Guid UserId, Guid ArtistId, DateTimeOffset CreatedAt)>> ArtistFavoritesAsync(
+        params User[] users)
+    {
+        Guid[] ids = [.. users.Select(user => user.Id)];
+        WaveMpDbContext db = CreateDbContext();
+        return [.. (await db.Favorites
+                .Where(favorite => ids.Contains(favorite.UserId) && favorite.ArtistId != null)
+                .ToListAsync())
+            .Select(favorite => (favorite.UserId, favorite.ArtistId!.Value, favorite.CreatedAt))];
     }
 
     private async Task<List<(Guid Id, Guid AlbumId)>> OnlineCoversAsync()

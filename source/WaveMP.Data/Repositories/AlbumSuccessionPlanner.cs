@@ -4,7 +4,9 @@ namespace WaveMP.Data.Repositories;
 
 /// <summary>
 /// Decides where the data of albums left empty goes (favorites of all profiles, cover rule, online cover, first seen
-/// date), from the stored moves of their songs. Pure, so every rule is deterministic and testable without a database:
+/// date), from the stored moves of their songs. Pure, so every rule is deterministic and testable without a database.
+/// Successors, their order, the favorites, the first seen date and the passed-on moves follow the rules the albums
+/// share with the artists (<see cref="SuccessionPlanner"/>):
 /// <list type="bullet">
 /// <item><b>Successors</b> of an album left empty: the albums with tracks its songs moved to, also through other albums
 /// left empty (chain A -> B -> C, B empty: C is a successor of A). An album left empty without any is deleted with its
@@ -34,59 +36,20 @@ internal static class AlbumSuccessionPlanner
         IReadOnlyCollection<AlbumSuccessionFavorite> favorites)
     {
         var albumsById = albums.ToDictionary(album => album.Id);
-        ILookup<Guid, AlbumSuccessionMove> movesFrom = moves
-            .Where(move => move.FromAlbumId != move.ToAlbumId)
-            .ToLookup(move => move.FromAlbumId);
-
-        // Weight of every successor per album left empty.
-        Dictionary<Guid, Dictionary<Guid, int>> weights = [];
-        foreach (AlbumSuccessionAlbum orphan in albums.Where(album => !album.HasTracks).OrderBy(album => album.Id))
-        {
-            Dictionary<Guid, int> found = [];
-            foreach (AlbumSuccessionMove first in movesFrom[orphan.Id])
-            {
-                foreach (Guid successor in Reach(first.ToAlbumId, orphan.Id, albumsById, movesFrom))
-                {
-                    found[successor] = Math.Max(found.GetValueOrDefault(successor), first.TrackCount);
-                }
-            }
-
-            if (found.Count > 0)
-            {
-                weights[orphan.Id] = found;
-            }
-        }
-
-        var successors = weights.ToDictionary(
-            entry => entry.Key,
-            entry => (IReadOnlyList<Guid>)[.. entry.Value.Keys
-                .Select(id => albumsById[id])
-                .OrderByDescending(successor => entry.Value[successor.Id])
-                .ThenBy(successor => successor.FirstSeenAt)
-                .ThenBy(successor => successor.Id)
-                .Select(successor => successor.Id)]);
-
-        // The predecessors of every successor in their order.
-        var predecessors = weights
-            .SelectMany(entry => entry.Value.Keys.Select(successor => (Successor: successor, Predecessor: entry.Key)))
-            .GroupBy(pair => pair.Successor)
-            .ToDictionary(
-                group => group.Key,
-                group => group
-                    .Select(pair => albumsById[pair.Predecessor])
-                    .OrderByDescending(predecessor => weights[predecessor.Id][group.Key])
-                    .ThenBy(predecessor => predecessor.FirstSeenAt)
-                    .ThenBy(predecessor => predecessor.Id)
-                    .ToList());
+        Succession succession = SuccessionPlanner.Plan(
+            [.. albums.Select(album => new SuccessionNode(album.Id, album.HasTracks, album.FirstSeenAt))],
+            [.. moves.Select(move =>
+                new SuccessionMove(move.FromAlbumId, move.ToAlbumId, move.TrackCount, move.MovedAt))]);
+        IReadOnlyDictionary<Guid, IReadOnlyList<Guid>> successors = succession.Successors;
 
         List<AlbumSuccessionUpdate> updates = [];
         List<AlbumSuccessionOnlineCover> onlineCovers = [];
-        foreach ((Guid successorId, List<AlbumSuccessionAlbum> before) in predecessors.OrderBy(entry => entry.Key))
+        foreach ((Guid successorId, IReadOnlyList<SuccessionNode> nodes) in succession.Predecessors
+            .OrderBy(entry => entry.Key))
         {
             AlbumSuccessionAlbum successor = albumsById[successorId];
-            DateTimeOffset firstSeenAt = before.Select(predecessor => predecessor.FirstSeenAt)
-                .Append(successor.FirstSeenAt)
-                .Min();
+            List<AlbumSuccessionAlbum> before = [.. nodes.Select(node => albumsById[node.Id])];
+            DateTimeOffset firstSeenAt = SuccessionPlanner.EarliestFirstSeenAt(successor.FirstSeenAt, nodes);
             CoverPriority? coverPriority = successor.CoverPriority
                 ?? before.Select(predecessor => predecessor.CoverPriority).FirstOrDefault(rule => rule is not null);
             if (firstSeenAt != successor.FirstSeenAt || coverPriority != successor.CoverPriority)
@@ -104,70 +67,16 @@ internal static class AlbumSuccessionPlanner
             }
         }
 
-        List<AlbumSuccessionFavorite> carriedFavorites = [.. favorites
-            .Where(favorite => successors.ContainsKey(favorite.AlbumId))
-            .SelectMany(favorite => successors[favorite.AlbumId]
-                .Select(successor => favorite with { AlbumId = successor }))
-            .GroupBy(favorite => (favorite.UserId, favorite.AlbumId))
-            .Select(group => group.MinBy(favorite => favorite.CreatedAt)!)
-            .OrderBy(favorite => favorite.AlbumId)
-            .ThenBy(favorite => favorite.UserId)];
+        List<AlbumSuccessionFavorite> carriedFavorites = [.. SuccessionPlanner
+            .CarryFavorites(
+                succession,
+                favorites.Select(favorite =>
+                    new SuccessionFavorite(favorite.UserId, favorite.AlbumId, favorite.CreatedAt)))
+            .Select(favorite => new AlbumSuccessionFavorite(favorite.UserId, favorite.TargetId, favorite.CreatedAt))];
 
-        List<AlbumSuccessionMove> passedOn = [.. moves
-            .Where(move => albumsById.TryGetValue(move.FromAlbumId, out AlbumSuccessionAlbum? from) && from.HasTracks
-                && successors.ContainsKey(move.ToAlbumId))
-            .SelectMany(move => successors[move.ToAlbumId]
-                .Where(successor => successor != move.FromAlbumId)
-                .Select(successor => move with { ToAlbumId = successor }))
-            .GroupBy(move => (move.FromAlbumId, move.ToAlbumId))
-            .Select(group => new AlbumSuccessionMove(
-                group.Key.FromAlbumId,
-                group.Key.ToAlbumId,
-                group.Sum(move => move.TrackCount),
-                group.Max(move => move.MovedAt)))
-            .OrderBy(move => move.FromAlbumId)
-            .ThenBy(move => move.ToAlbumId)];
+        List<AlbumSuccessionMove> passedOn = [.. succession.PassedOnMoves
+            .Select(move => new AlbumSuccessionMove(move.FromId, move.ToId, move.TrackCount, move.MovedAt))];
 
         return new AlbumSuccessionPlan(successors, carriedFavorites, updates, onlineCovers, passedOn);
-    }
-
-    /// <summary>
-    /// The albums with tracks reached from <paramref name="start"/>: the album itself if it has tracks, otherwise the
-    /// albums its songs moved to, through albums left empty only. Albums unknown to the plan are not reached.
-    /// </summary>
-    private static HashSet<Guid> Reach(
-        Guid start,
-        Guid origin,
-        Dictionary<Guid, AlbumSuccessionAlbum> albumsById,
-        ILookup<Guid, AlbumSuccessionMove> movesFrom)
-    {
-        HashSet<Guid> reached = [];
-        HashSet<Guid> visited = [origin];
-        Stack<Guid> pending = new([start]);
-        while (pending.TryPop(out Guid current))
-        {
-            if (!visited.Add(current))
-            {
-                continue;
-            }
-
-            if (!albumsById.TryGetValue(current, out AlbumSuccessionAlbum? album))
-            {
-                continue;
-            }
-
-            if (album.HasTracks)
-            {
-                reached.Add(current);
-                continue;
-            }
-
-            foreach (AlbumSuccessionMove next in movesFrom[current])
-            {
-                pending.Push(next.ToAlbumId);
-            }
-        }
-
-        return reached;
     }
 }

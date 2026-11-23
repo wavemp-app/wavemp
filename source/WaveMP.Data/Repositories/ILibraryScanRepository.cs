@@ -74,6 +74,14 @@ public interface ILibraryScanRepository
     Task<Album?> FindAlbumAsync(string albumKey, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// The album artist of each of the stored albums (<c>null</c> for an album without one), untracked; ids without a
+    /// stored album are left out. A scan asks for the albums its songs left, to see which artists they left.
+    /// </summary>
+    Task<IReadOnlyDictionary<Guid, Guid?>> GetAlbumArtistIdsAsync(
+        IReadOnlyCollection<Guid> albumIds,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Adds a new library entity; saved with <see cref="SaveChangesAsync"/>.
     /// </summary>
     void Add<TEntity>(TEntity entity)
@@ -98,6 +106,19 @@ public interface ILibraryScanRepository
     /// </summary>
     Task RecordAlbumMovesAsync(
         IReadOnlyDictionary<(Guid FromAlbumId, Guid ToAlbumId), int> moves,
+        DateTimeOffset now,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Records that songs left an artist for another one, with the number of songs per pair of artists, like
+    /// <see cref="RecordAlbumMovesAsync"/>: adds the count to the stored move of the pair or adds a new one, as tracked
+    /// entities saved with <see cref="SaveChangesAsync"/> in the same transaction as the tracks that moved. A song
+    /// counts for an artist as its track artist and as the album artist of its album; the caller counts a pair only
+    /// when the old artist has neither role on the song any more. Pairs of the same artist and counts below one are
+    /// ignored.
+    /// </summary>
+    Task RecordArtistMovesAsync(
+        IReadOnlyDictionary<(Guid FromArtistId, Guid ToArtistId), int> moves,
         DateTimeOffset now,
         CancellationToken cancellationToken = default);
 
@@ -151,7 +172,11 @@ public interface ILibraryScanRepository
     /// the album favorites of all profiles, the cover rule, the online cover and the first seen date, by the rules of
     /// <see cref="AlbumSuccessionPlanner"/>; a list in the player that was started from it continues with the album
     /// that got most of its songs. Successors whose values change get <paramref name="now"/> as their change time.
-    /// Returns the number of deleted albums and artists.
+    /// Then, after the albums are deleted (so an artist whose last album went is included), the data of every artist
+    /// without tracks and albums goes to the artists its songs moved to (see <see cref="RecordArtistMovesAsync"/>) by
+    /// the same rules (<see cref="ArtistSuccessionPlanner"/>): the artist favorites of all profiles and the first seen
+    /// date to every artist that got its songs, a list in the player started from it to the artist that got most of
+    /// them. Returns the number of deleted albums and artists.
     /// </summary>
     Task<(int Albums, int Artists)> DeleteOrphansAsync(
         DateTimeOffset now,

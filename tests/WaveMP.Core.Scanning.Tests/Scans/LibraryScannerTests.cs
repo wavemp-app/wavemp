@@ -1069,6 +1069,22 @@ public class LibraryScannerTests
         await ExpectAlbumDataAsync(albumId, data);
     }
 
+    [Test]
+    public async Task Rescan_ArtistNameOfAllSongsChangedOutsideWaveMp_CarriesTheArtistDataOverToTheNewArtist()
+    {
+        TestTags tags = new() { Artist = "Band", Album = "Record" };
+        await AudioAsync("Band/Record/01.mp3", tags: tags with { Title = "One" });
+        await AudioAsync("Band/Record/02.mp3", tags: tags with { Title = "Two" });
+        await ScanAsync();
+        ArtistData data = await GiveArtistDataAsync("Band");
+
+        await ChangeAudioAsync("Band/Record/01.mp3", tags with { Title = "One", Artist = "The Band" });
+        await ChangeAudioAsync("Band/Record/02.mp3", tags with { Title = "Two", Artist = "The Band" });
+        await ScanAsync();
+
+        await ExpectArtistDataAsync("The Band", data);
+    }
+
     [TestCase("Hits 2020", false)]
     [TestCase("Hits 2020", true)]
     [TestCase("Sampler/Hits", false)]
@@ -1813,6 +1829,23 @@ public class LibraryScannerTests
     }
 
     [Test]
+    public async Task RefreshFolder_ArtistNameOfAllSongsChanged_CarriesTheArtistDataOverToTheNewArtist()
+    {
+        TestTags tags = new() { Artist = "Band", Album = "Record" };
+        await AudioAsync("Band/Record/01.mp3", tags: tags with { Title = "One" });
+        await AudioAsync("Band/Record/02.mp3", tags: tags with { Title = "Two" });
+        await ScanAsync();
+        ArtistData data = await GiveArtistDataAsync("Band");
+
+        // As the metadata editor does for the songs of a folder: it writes them and reads their folder again.
+        await ChangeAudioAsync("Band/Record/01.mp3", tags with { Title = "One", Artist = "The Band" });
+        await ChangeAudioAsync("Band/Record/02.mp3", tags with { Title = "Two", Artist = "The Band" });
+        (await RefreshAsync("Band/Record", "Band/Record/01.mp3", "Band/Record/02.mp3")).Should().BeTrue();
+
+        await ExpectArtistDataAsync("The Band", data);
+    }
+
+    [Test]
     public async Task RefreshFolderAsync_MissingFolder_ChangesNothing()
     {
         await AudioAsync("Band/Album/01 - One.mp3");
@@ -2079,6 +2112,75 @@ public class LibraryScannerTests
             .Should().Be(albumId);
         album.FirstSeenAt.Should().Be(_day.AddDays(-5));
         (await db.AlbumMoves.CountAsync()).Should().Be(0);
+    }
+
+    /// <summary>
+    /// Gives the artist two profiles that marked it as favorite (one day and two days after the test day), a list in
+    /// the player of the second profile started from it, and a first seen date five days before the test day.
+    /// </summary>
+    private async Task<ArtistData> GiveArtistDataAsync(string name)
+    {
+        LibrarySeed seed = new();
+        User first = seed.User();
+        User second = seed.User();
+        await using WaveMpDbContext db = _database.CreateDbContext();
+        await seed.SaveAsync(db);
+        _users.AddRange([first.Id, second.Id]);
+        Guid artistId = await db.Artists.Where(artist => artist.Name == name).Select(artist => artist.Id).SingleAsync();
+        db.Favorites.AddRange(
+            ArtistFavorite(first, artistId, _day.AddDays(1)),
+            ArtistFavorite(second, artistId, _day.AddDays(2)));
+        db.PlaybackStates.Add(new PlaybackState
+        {
+            UserId = second.Id,
+            TrackIds = [Guid.NewGuid()],
+            CurrentIndex = 0,
+            PositionMilliseconds = 0,
+            Shuffle = false,
+            Repeat = RepeatMode.Off,
+            SourceKind = PlaybackSourceKind.Artist,
+            SourceId = artistId,
+            DeviceId = "device",
+            DeviceName = "Device",
+            ChangedAt = _day,
+        });
+        await db.SaveChangesAsync();
+        await db.Artists
+            .Where(artist => artist.Id == artistId)
+            .ExecuteUpdateAsync(setters => setters.SetProperty(artist => artist.FirstSeenAt, _day.AddDays(-5)));
+        return new ArtistData(first, second, artistId);
+    }
+
+    /// <summary>
+    /// Expects the data of <see cref="GiveArtistDataAsync"/> on the artist of the name: the favorites of both profiles
+    /// with their times, the source of the player and the earliest date added, and the old artist gone with its moves.
+    /// </summary>
+    private async Task ExpectArtistDataAsync(string name, ArtistData data)
+    {
+        await using WaveMpDbContext db = _database.CreateDbContext();
+        Artist artist = await db.Artists.SingleAsync(item => item.Name == name);
+
+        // Every loss is reported, not only the first one.
+        using AssertionScope scope = new();
+        artist.Id.Should().NotBe(data.OldArtistId);
+        (await db.Artists.AnyAsync(item => item.Id == data.OldArtistId)).Should().BeFalse();
+        (await db.Favorites
+                .Where(favorite => favorite.UserId == data.First.Id || favorite.UserId == data.Second.Id)
+                .Where(favorite => favorite.Type == FavoriteType.Artist)
+                .OrderBy(favorite => favorite.CreatedAt)
+                .Select(favorite => new { favorite.UserId, favorite.ArtistId, favorite.CreatedAt })
+                .ToListAsync())
+            .Should().BeEquivalentTo([
+                new { UserId = data.First.Id, ArtistId = (Guid?)artist.Id, CreatedAt = _day.AddDays(1) },
+                new { UserId = data.Second.Id, ArtistId = (Guid?)artist.Id, CreatedAt = _day.AddDays(2) },
+            ]);
+        (await db.PlaybackStates
+                .Where(state => state.UserId == data.Second.Id)
+                .Select(state => state.SourceId)
+                .SingleAsync())
+            .Should().Be(artist.Id);
+        artist.FirstSeenAt.Should().Be(_day.AddDays(-5));
+        (await db.ArtistMoves.CountAsync()).Should().Be(0);
     }
 
     /// <summary>
@@ -2386,6 +2488,18 @@ public class LibraryScannerTests
         };
     }
 
+    private static Favorite ArtistFavorite(User user, Guid artistId, DateTimeOffset createdAt)
+    {
+        return new Favorite
+        {
+            Id = Guid.CreateVersion7(),
+            UserId = user.Id,
+            Type = FavoriteType.Artist,
+            ArtistId = artistId,
+            CreatedAt = createdAt,
+        };
+    }
+
     private static OnlineCover OnlineCoverOf(Guid id, Guid albumId)
     {
         return new OnlineCover
@@ -2561,6 +2675,11 @@ public class LibraryScannerTests
     /// The profiles and the online cover of <see cref="GiveAlbumDataAsync"/>.
     /// </summary>
     private sealed record AlbumData(User First, User Second, Guid OnlineCoverId);
+
+    /// <summary>
+    /// The profiles and the artist of <see cref="GiveArtistDataAsync"/>.
+    /// </summary>
+    private sealed record ArtistData(User First, User Second, Guid OldArtistId);
 
     /// <summary>
     /// The profiles, the ids of all songs by their title, and the ids of the MP3 file, the online cover and the

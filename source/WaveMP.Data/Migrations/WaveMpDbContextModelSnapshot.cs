@@ -160,6 +160,36 @@ namespace WaveMP.Data.Migrations
                     b.ToTable("artists", (string)null);
                 });
 
+            modelBuilder.Entity("WaveMP.Data.Entities.ArtistMove", b =>
+                {
+                    b.Property<Guid>("FromArtistId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("from_artist_id");
+
+                    b.Property<Guid>("ToArtistId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("to_artist_id");
+
+                    b.Property<DateTimeOffset>("MovedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("moved_at");
+
+                    b.Property<int>("TrackCount")
+                        .HasColumnType("integer")
+                        .HasColumnName("track_count");
+
+                    b.HasKey("FromArtistId", "ToArtistId")
+                        .HasName("pk_artist_moves");
+
+                    b.HasIndex("ToArtistId")
+                        .HasDatabaseName("ix_artist_moves_to_artist_id");
+
+                    b.ToTable("artist_moves", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_artist_moves_distinct_artists", "from_artist_id <> to_artist_id");
+                        });
+                });
+
             modelBuilder.Entity("WaveMP.Data.Entities.Cover", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1903,6 +1933,27 @@ namespace WaveMP.Data.Migrations
                     b.Navigation("FromAlbum");
 
                     b.Navigation("ToAlbum");
+                });
+
+            modelBuilder.Entity("WaveMP.Data.Entities.ArtistMove", b =>
+                {
+                    b.HasOne("WaveMP.Data.Entities.Artist", "FromArtist")
+                        .WithMany()
+                        .HasForeignKey("FromArtistId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_artist_moves_artists_from_artist_id");
+
+                    b.HasOne("WaveMP.Data.Entities.Artist", "ToArtist")
+                        .WithMany()
+                        .HasForeignKey("ToArtistId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_artist_moves_artists_to_artist_id");
+
+                    b.Navigation("FromArtist");
+
+                    b.Navigation("ToArtist");
                 });
 
             modelBuilder.Entity("WaveMP.Data.Entities.Cover", b =>

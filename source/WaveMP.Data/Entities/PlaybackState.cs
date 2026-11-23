@@ -65,7 +65,8 @@ public class PlaybackState
     public PlaybackSourceKind? SourceKind { get; set; }
 
     /// <summary>
-    /// Id of the album, artist, playlist or smart playlist of <see cref="SourceKind"/>.
+    /// Id of the album, artist, playlist or smart playlist of <see cref="SourceKind"/>. When a scan removes an album or
+    /// artist whose songs moved to others, it points to the one that got most of them.
     /// </summary>
     public Guid? SourceId { get; set; }
 

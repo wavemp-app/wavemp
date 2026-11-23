@@ -2,7 +2,9 @@ namespace WaveMP.Data.Entities;
 
 /// <summary>
 /// An artist of tracks or albums, unique by its normalized name. Created by the scan and removed once nothing refers
-/// to it.
+/// to it. When its songs moved to other artists because their artist or album artist was renamed (see
+/// <see cref="ArtistMove"/>), its favorites, its first seen date and a list in the player started from it go to those
+/// artists before it is removed.
 /// </summary>
 public class Artist
 {

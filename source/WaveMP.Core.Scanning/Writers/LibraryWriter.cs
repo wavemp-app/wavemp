@@ -17,8 +17,9 @@ namespace WaveMP.Core.Scanning.Writers;
 /// Writes the result of the scan of a folder into the library: files, tracks with their primary files and covers,
 /// artists and albums. All changes of a folder are saved together. Album covers are written after all folders. The
 /// files the admin selected for a track win over the quality rule as long as they exist; whether they do is stored
-/// with each selection. A song that moves from one album to another one is recorded with the changes of its folder
-/// (see <see cref="ILibraryScanRepository.RecordAlbumMovesAsync"/>). A song whose folder was renamed or moved or whose
+/// with each selection. A song that moves from one album or artist to another one is recorded with the changes of its
+/// folder (see <see cref="ILibraryScanRepository.RecordAlbumMovesAsync"/> and
+/// <see cref="ILibraryScanRepository.RecordArtistMovesAsync"/>). A song whose folder was renamed or moved or whose
 /// files were renamed (see <see cref="TrackMovePlanner"/>) keeps its track, with its id and all its data, at the new
 /// place.
 /// </summary>
@@ -347,6 +348,7 @@ public sealed class LibraryWriter(ILibraryScanRepository library)
             StringComparer.Ordinal);
         EntityCache cache = new();
         Dictionary<(Guid FromAlbumId, Guid ToAlbumId), int> moves = [];
+        List<WrittenSong> written = [];
         int added = 0;
         int updated = 0;
 
@@ -378,6 +380,7 @@ public sealed class LibraryWriter(ILibraryScanRepository library)
             else
             {
                 Guid? previousAlbumId = track.AlbumId;
+                written.Add(new WrittenSong(track.ArtistId, previousAlbumId, artistId, albumId));
                 if (Update(track, processed, artistId, albumId) | adopted.Contains(track.Id))
                 {
                     track.UpdatedAt = now;
@@ -428,10 +431,63 @@ public sealed class LibraryWriter(ILibraryScanRepository library)
 
         // Saved by the caller together with the tracks, so a move is never lost to an interrupted scan.
         await library.RecordAlbumMovesAsync(moves, now, cancellationToken);
+        await library.RecordArtistMovesAsync(
+            await ArtistMovesOfAsync(written, cache, cancellationToken),
+            now,
+            cancellationToken);
         return new FolderWriteResult(added, updated, removedTracks)
         {
             AdoptedTrackIds = [.. adopted.Order()],
         };
+    }
+
+    /// <summary>
+    /// The artists the stored songs of a folder left, per pair of artists, so the data of an old artist can follow its
+    /// songs once it has none left. A song belongs to an artist as its track artist and as the album artist of its
+    /// album. Each role that changed from one artist to another counts, but only when the old artist has neither role
+    /// on the song any more (it still has the song otherwise), and a pair counts once per song. Songs that lose an
+    /// artist or get their first one are no move. The album artists of the albums the songs left are queried once,
+    /// and only when some song changed its album: an album never changes its album artist, which is part of its key.
+    /// </summary>
+    private async Task<Dictionary<(Guid FromArtistId, Guid ToArtistId), int>> ArtistMovesOfAsync(
+        IReadOnlyList<WrittenSong> songs,
+        EntityCache cache,
+        CancellationToken cancellationToken)
+    {
+        Dictionary<(Guid FromArtistId, Guid ToArtistId), int> moves = [];
+        Guid[] leftAlbums = [.. songs
+            .Where(song => song.PreviousAlbumId is { } previous && previous != song.AlbumId
+                && !cache.AlbumArtists.ContainsKey(previous))
+            .Select(song => song.PreviousAlbumId!.Value)
+            .Distinct()];
+        IReadOnlyDictionary<Guid, Guid?> leftAlbumArtists = leftAlbums.Length == 0
+            ? new Dictionary<Guid, Guid?>()
+            : await library.GetAlbumArtistIdsAsync(leftAlbums, cancellationToken);
+
+        foreach (WrittenSong song in songs)
+        {
+            Guid? previousAlbumArtistId = song.PreviousAlbumId is { } previousAlbumId
+                ? cache.AlbumArtists.TryGetValue(previousAlbumId, out Guid? cached)
+                    ? cached
+                    : leftAlbumArtists.GetValueOrDefault(previousAlbumId)
+                : null;
+            Guid? albumArtistId = song.AlbumId is { } albumId ? cache.AlbumArtists.GetValueOrDefault(albumId) : null;
+            HashSet<(Guid, Guid)> pairs = [];
+            foreach ((Guid? from, Guid? to) in new[]
+            {
+                (song.PreviousArtistId, song.ArtistId),
+                (previousAlbumArtistId, albumArtistId),
+            })
+            {
+                if (from is { } fromId && to is { } toId && fromId != toId
+                    && fromId != song.ArtistId && fromId != albumArtistId && pairs.Add((fromId, toId)))
+                {
+                    moves[(fromId, toId)] = moves.GetValueOrDefault((fromId, toId)) + 1;
+                }
+            }
+        }
+
+        return moves;
     }
 
     /// <summary>
@@ -606,6 +662,7 @@ public sealed class LibraryWriter(ILibraryScanRepository library)
         }
 
         cache.Albums[assignment.Key] = album.Id;
+        cache.AlbumArtists[album.Id] = album.AlbumArtistId;
         return album.Id;
     }
 
@@ -747,12 +804,19 @@ public sealed class LibraryWriter(ILibraryScanRepository library)
     private sealed record Adoption(Track Track, MediaFile File);
 
     /// <summary>
-    /// Artists and albums found or created while writing one folder.
+    /// The artists and album of a stored song before and after it was written.
+    /// </summary>
+    private sealed record WrittenSong(Guid? PreviousArtistId, Guid? PreviousAlbumId, Guid? ArtistId, Guid? AlbumId);
+
+    /// <summary>
+    /// Artists and albums found or created while writing one folder, and the album artist of each of these albums.
     /// </summary>
     private sealed class EntityCache
     {
         public Dictionary<string, Guid> Artists { get; } = new(StringComparer.Ordinal);
 
         public Dictionary<string, Guid> Albums { get; } = new(StringComparer.Ordinal);
+
+        public Dictionary<Guid, Guid?> AlbumArtists { get; } = [];
     }
 }
