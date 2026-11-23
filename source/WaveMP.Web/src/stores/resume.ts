@@ -45,6 +45,7 @@ export interface ResumeNotice {
  * On start (and after a change of profile) the saved state loads into the player, which waits
  * paused at the saved position: browsers block playback without an action of the user, so play
  * goes on there. A state of another device shows the notice "Continue listening from <device>".
+ * A restored song that cannot be loaded waits paused and saves nothing; play requests it again.
  *
  * The state is saved when the song changes, on pause and stop, every 10 seconds while playing and
  * shortly after a change of the queue, shuffle or repeat; never on every progress update, and only

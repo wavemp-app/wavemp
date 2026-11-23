@@ -324,6 +324,12 @@ export const usePlayerStore = defineStore('player', () => {
     /** Tracks skipped in a row; stops when the whole queue failed. */
     let skipped = 0
     let retried: string | null = null
+    /**
+     * The entry of a restored state that waits paused and was not played yet. When it cannot be
+     * loaded (a request canceled by a reload, a server error), the player waits at it instead of
+     * moving on: nothing played, so the saved state must not change. Play requests it again.
+     */
+    let restoredKey: string | null = null
     let artworkHeld: { id: string; version: string | undefined } | null = null
     /** Increases with every new list of autoplay, so late answers for an older list are ignored. */
     let autoplayGeneration = 0
@@ -548,6 +554,11 @@ export const usePlayerStore = defineStore('player', () => {
     async function startCurrent(autoplay = true, startPosition = 0): Promise<void> {
         const item = current.value
         const token = ++generation
+        // Any other load ends the wait of the restored entry.
+        if (autoplay || item?.key !== restoredKey) {
+            restoredKey = null
+        }
+
         forgetPrepared()
         loaded = null
         seekWhileLoading = null
@@ -594,6 +605,11 @@ export const usePlayerStore = defineStore('player', () => {
 
     /** Shows the notice and moves on to the next entry, unless every entry failed. */
     function skip(notice: PlayerMessage, autoplay: boolean): void {
+        if (!autoplay && restoredKey !== null && current.value?.key === restoredKey) {
+            waitAtRestored()
+            return
+        }
+
         message.value = notice
         loading.value = false
         skipped++
@@ -610,6 +626,19 @@ export const usePlayerStore = defineStore('player', () => {
 
         queue.value = withIndex(queue.value, next)
         void startCurrent(autoplay)
+    }
+
+    /**
+     * The restored entry could not be loaded: it waits paused at its position without a notice
+     * (nothing was skipped, and a canceled request needs none); play requests it again.
+     */
+    function waitAtRestored(): void {
+        forgetPrepared()
+        loaded = null
+        history.stop()
+        runningEngine()?.stop()
+        loading.value = false
+        playback.value = 'paused'
     }
 
     function onTimeUpdate(time: number, length: number): void {
@@ -813,6 +842,7 @@ export const usePlayerStore = defineStore('player', () => {
         message.value = null
         skipped = 0
         retried = null
+        restoredKey = null
         void startCurrent(true)
     }
 
@@ -842,6 +872,7 @@ export const usePlayerStore = defineStore('player', () => {
     function playItem(key: string): void {
         queue.value = jumpTo(queue.value, key)
         retried = null
+        restoredKey = null
         void startCurrent(true)
     }
 
@@ -867,6 +898,7 @@ export const usePlayerStore = defineStore('player', () => {
     }
 
     function play(): void {
+        restoredKey = null
         if (!loaded) {
             void startCurrent(true, position.value)
             return
@@ -915,6 +947,7 @@ export const usePlayerStore = defineStore('player', () => {
         const autoplay = playback.value !== 'paused'
         queue.value = withIndex(queue.value, index)
         retried = null
+        restoredKey = null
         message.value = null
         void startCurrent(autoplay)
     }
@@ -1428,6 +1461,7 @@ export const usePlayerStore = defineStore('player', () => {
 
     /** Stops and empties the queue, e.g. when the profile changes. */
     function clear(): void {
+        restoredKey = null
         sleep.cancel()
         stopPlayback()
         queue.value = emptyQueue
@@ -1455,6 +1489,7 @@ export const usePlayerStore = defineStore('player', () => {
         skipped = 0
         retried = null
         autoplayPlaybacks.clear()
+        restoredKey = current.value?.key ?? null
         if (current.value) {
             void startCurrent(false, state.position)
         }

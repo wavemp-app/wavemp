@@ -456,6 +456,154 @@ describe('resume store', () => {
         })
     })
 
+    describe('a restored song that cannot be loaded', () => {
+        const videoOnly: Track = {
+            id: 'v',
+            title: 'V',
+            hasAudio: false,
+            hasVideo: true,
+            durationMilliseconds: 200_000,
+        }
+
+        /** The state of another device with a song that has only a video. */
+        function otherDevice(): PlaybackState {
+            return saved({
+                items: [track('a'), videoOnly, track('b'), track('c')].map((value) => ({
+                    track: value,
+                    autoplay: false,
+                })),
+                currentIndex: 0,
+                positionMilliseconds: 42_000,
+                device: { id: 'phone', name: 'Safari · iPhone' },
+            })
+        }
+
+        function failure(status?: number): Error {
+            return status === undefined
+                ? new TypeError('Failed to fetch')
+                : Object.assign(new Error('failed'), { responseStatusCode: status })
+        }
+
+        /** Answers the request of the first song with the given answer, all others as usual. */
+        function answerFirst(answer: () => Promise<TrackPlayback>): void {
+            vi.mocked(getPlayback).mockImplementation((id) =>
+                id === 'a' ? answer() : Promise.resolve(direct(id)),
+            )
+        }
+
+        it.each([
+            ['is canceled without a status', () => Promise.reject(failure())],
+            ['fails with a server error', () => Promise.reject(failure(500))],
+            ['fails while the server is unavailable', () => Promise.reject(failure(503))],
+            ['finds no song', () => Promise.reject(failure(404))],
+            [
+                'has no stream the browser plays',
+                () =>
+                    Promise.resolve<TrackPlayback>({
+                        trackId: 'a',
+                        method: 'Transcode',
+                        transcodeReason: 'format_unsupported',
+                    }),
+            ],
+        ])(
+            'keeps the saved state when the request %s',
+            async (_, answer: () => Promise<TrackPlayback>) => {
+                answerFirst(answer)
+                const { player, resume } = await start(otherDevice())
+
+                // The delayed save and the saves when the page is left or hidden.
+                timers.runTimeouts()
+                resume.saveNow()
+                await flushPromises()
+
+                expect(savePlaybackState).not.toHaveBeenCalled()
+                expect(player.state).toMatchObject({
+                    trackId: 'a',
+                    playback: 'paused',
+                    loading: false,
+                    position: 42,
+                    message: null,
+                })
+                expect(player.queue.index).toBe(0)
+                expect(resume.notice).toEqual({ device: 'Safari · iPhone' })
+            },
+        )
+
+        it('keeps the saved state when the restored song fails to play again', async () => {
+            const { player, resume } = await start(otherDevice())
+
+            engine.events.error?.(new Error('expired'))
+            await flushPromises()
+            engine.events.error?.(new Error('broken'))
+            await flushPromises()
+            timers.runTimeouts()
+            resume.saveNow()
+            await flushPromises()
+
+            expect(savePlaybackState).not.toHaveBeenCalled()
+            expect(engine.stop).toHaveBeenCalled()
+            expect(player.state).toMatchObject({
+                trackId: 'a',
+                playback: 'paused',
+                loading: false,
+                position: 42,
+                message: null,
+            })
+            expect(resume.notice).toEqual({ device: 'Safari · iPhone' })
+        })
+
+        it('skips the song with a notice when it still fails on continue', async () => {
+            answerFirst(() => Promise.reject(failure()))
+            const { player, resume } = await start(otherDevice())
+
+            resume.resume()
+            await flushPromises()
+
+            expect(player.state).toMatchObject({
+                trackId: 'b',
+                playback: 'playing',
+                message: 'failed',
+            })
+            // Playing makes this device the one the profile listens on; the next song saves again.
+            expect(
+                savedBodies().map((body) => [
+                    body.currentIndex,
+                    body.positionMilliseconds,
+                    body.device?.id,
+                ]),
+            ).toEqual([
+                [0, 42000, 'this-device'],
+                [1, 0, 'this-device'],
+            ])
+            expect(savedBodies()[1]?.items).toEqual([
+                { trackId: 'a' },
+                { trackId: 'b' },
+                { trackId: 'c' },
+            ])
+        })
+
+        it('requests the song again on play', async () => {
+            vi.mocked(getPlayback).mockRejectedValueOnce(failure(503))
+            const { player } = await start(otherDevice())
+
+            player.play()
+            await flushPromises()
+
+            expect(engine.loaded).toEqual([{ url: '/stream/a', position: 42 }])
+            expect(player.state).toMatchObject({
+                trackId: 'a',
+                playback: 'playing',
+                message: null,
+            })
+            expect(savedBodies()).toHaveLength(1)
+            expect(savedBodies()[0]).toMatchObject({
+                currentIndex: 0,
+                positionMilliseconds: 42000,
+                device: { id: 'this-device', name: 'Chrome · Linux' },
+            })
+        })
+    })
+
     describe('clearing', () => {
         it('empties the player and clears the saved state without saving it again', async () => {
             const { player, resume } = await start(

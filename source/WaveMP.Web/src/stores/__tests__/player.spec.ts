@@ -406,6 +406,39 @@ describe('player store', () => {
         expect(player.state).toMatchObject({ playback: 'paused', position: 12 })
     })
 
+    it('waits at a restored track that cannot be loaded instead of skipping it', async () => {
+        const engines: FakeEngine[] = []
+        playerDependencies.createEngine = (events) => {
+            engine = new FakeEngine(events)
+            engines.push(engine)
+            return engine
+        }
+        vi.mocked(getPlayback).mockRejectedValueOnce(new TypeError('Failed to fetch'))
+        const player = usePlayerStore()
+
+        player.restore({
+            queue: playTracks(abc, 0, false),
+            repeat: 'off',
+            position: 40,
+            source: null,
+        })
+        await flushPromises()
+
+        expect(player.state).toMatchObject({
+            trackId: 'a',
+            playback: 'paused',
+            loading: false,
+            message: null,
+            position: 40,
+        })
+        expect(engines.flatMap((created) => created.play.mock.calls)).toEqual([])
+
+        player.play()
+        await flushPromises()
+        expect(engine.loaded).toEqual([{ url: '/stream/a', gain: 1, position: 40 }])
+        expect(player.state).toMatchObject({ trackId: 'a', playback: 'playing' })
+    })
+
     it('ignores the time of the previous track while the next one loads', async () => {
         const player = usePlayerStore()
         player.playTracks(abc, 0)
