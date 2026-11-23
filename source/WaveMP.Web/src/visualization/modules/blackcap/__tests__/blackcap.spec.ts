@@ -177,7 +177,7 @@ describe('BlackCapRenderer', () => {
 
         renderer.render()
 
-        expect(analyser.getByteFrequencyData).toHaveBeenCalledTimes(1)
+        expect(analyser.getFloatFrequencyData).toHaveBeenCalledTimes(1)
         expect(named('drawArrays').map(([, args]) => args)).toEqual([
             ['TRIANGLES', 0, 3],
             ['TRIANGLES', 0, 3],
@@ -206,15 +206,36 @@ describe('BlackCapRenderer', () => {
     it('lets the surfaces follow the spectrum', () => {
         const { renderer, uniform, analyser, advance } = setup()
 
-        renderer.render()
-        const quiet = [...(uniform('uSpectrum')![1][1] as Float32Array)]
-        analyser.getByteFrequencyData.mockImplementation((data: Uint8Array) => data.fill(255))
-        advance(500)
-        renderer.render()
-        const loud = [...(uniform('uSpectrum')![1][1] as Float32Array)]
+        // Two seconds of a steady sound with the balance of most music (3 dB less per octave), then
+        // the lows up to about 1 kHz get 20 dB louder.
+        const pink = (bin: number) => -40 - 3 * Math.log2(Math.max(1, bin))
+        analyser.getFloatFrequencyData.mockImplementation((data: Float32Array) => {
+            data.forEach((_, bin) => (data[bin] = pink(bin)))
+            return data
+        })
+        for (let frame = 0; frame < 120; frame++) {
+            advance(1000 / 60)
+            renderer.render()
+        }
 
-        expect(quiet).toHaveLength(spectrumBands)
-        expect(loud.every((level, index) => level > quiet[index]!)).toBe(true)
+        const steady = [...(uniform('uSpectrum')![1][1] as Float32Array)]
+        analyser.getFloatFrequencyData.mockImplementation((data: Float32Array) => {
+            data.forEach((_, bin) => (data[bin] = pink(bin) + (bin < 40 ? 20 : 0)))
+            return data
+        })
+        for (let frame = 0; frame < 30; frame++) {
+            advance(1000 / 60)
+            renderer.render()
+        }
+
+        const louder = [...(uniform('uSpectrum')![1][1] as Float32Array)]
+        const low = louder.slice(0, spectrumBands / 4)
+        const high = louder.slice((spectrumBands * 3) / 4)
+
+        expect(steady).toHaveLength(spectrumBands)
+        expect(Math.min(...low)).toBeGreaterThan(Math.max(...high))
+        // The highs did not change, but they are now far below the loudest bands.
+        expect(Math.max(...high)).toBeLessThan(Math.min(...steady.slice((spectrumBands * 3) / 4)))
     })
 
     it('shows more shapes in a scene with more of them, limited by the quality level', () => {

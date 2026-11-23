@@ -51,7 +51,8 @@ export function fakeAudio() {
             return this.fftSize / 2
         },
         context: { sampleRate: 48000 },
-        getByteFrequencyData: vi.fn((data: Uint8Array) => data.fill(120)),
+        /** A steady spectrum in decibels, as getFloatFrequencyData writes it. */
+        getFloatFrequencyData: vi.fn((data: Float32Array) => data.fill(-50)),
         getFloatTimeDomainData: vi.fn((data: Float32Array) =>
             data.forEach((_, index) => (data[index] = Math.sin(index / 10))),
         ),

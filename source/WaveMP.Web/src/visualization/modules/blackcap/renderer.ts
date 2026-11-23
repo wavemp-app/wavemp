@@ -10,8 +10,9 @@
 // sets how finely the surfaces are curved, the number of shapes and lights, the resolution of the
 // scene and the glow.
 
-import { bandSpectrum, followLevels } from '../../analysis/bands'
+import { followLevels } from '../../analysis/bands'
 import { AudioFeatureTracker } from '../../analysis/features'
+import { SpectrumLevels } from '../../analysis/spectrum'
 import { lookAt, modelMatrix, multiply, perspective } from '../../matrices'
 import type { VisualizationRenderer, VisualizationRendererOptions } from '../../module'
 import type { QualityLevel } from '../../quality'
@@ -66,7 +67,9 @@ export class BlackCapRenderer implements VisualizationRenderer {
     private readonly canvas: HTMLCanvasElement
     private readonly source: AnalyserNode
     private readonly analyser: AnalyserNode
-    private readonly spectrum: Uint8Array<ArrayBuffer>
+    /** The spectrum in decibels (getFloatFrequencyData): unlike bytes it never saturates. */
+    private readonly spectrum: Float32Array<ArrayBuffer>
+    private readonly spectrumLevels = new SpectrumLevels(spectrumBands)
     private readonly rawBands = new Float32Array(spectrumBands)
     private readonly bands = new Float32Array(spectrumBands)
     /** The calm spectrum spread over neighbouring bands, as the surfaces follow it. */
@@ -153,7 +156,7 @@ export class BlackCapRenderer implements VisualizationRenderer {
         this.analyser.fftSize = fftSize
         this.analyser.smoothingTimeConstant = 0.6
         this.source.connect(this.analyser)
-        this.spectrum = new Uint8Array(this.analyser.frequencyBinCount)
+        this.spectrum = new Float32Array(this.analyser.frequencyBinCount)
     }
 
     showPreset(id: string, blendSeconds: number): void {
@@ -205,10 +208,10 @@ export class BlackCapRenderer implements VisualizationRenderer {
                 : Math.min(maxFrameSeconds, Math.max(0, time - this.lastTime))
         this.lastTime = time
 
-        this.analyser.getByteFrequencyData(this.spectrum)
+        this.analyser.getFloatFrequencyData(this.spectrum)
         const sampleRate = this.analyser.context.sampleRate
         const audio = this.features.update(this.spectrum, sampleRate, time)
-        bandSpectrum(this.spectrum, sampleRate, this.rawBands)
+        this.spectrumLevels.update(this.spectrum, sampleRate, seconds, this.rawBands)
         followLevels(
             this.bands,
             this.rawBands,

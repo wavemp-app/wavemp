@@ -169,7 +169,7 @@ describe('AForceRenderer', () => {
 
         renderer.render()
 
-        expect(analyser.getByteFrequencyData).toHaveBeenCalledTimes(1)
+        expect(analyser.getFloatFrequencyData).toHaveBeenCalledTimes(1)
         expect(analyser.getFloatTimeDomainData).toHaveBeenCalledTimes(1)
         const profile = aforceProfiles.high
         expect(named('drawArraysInstanced')).toEqual([

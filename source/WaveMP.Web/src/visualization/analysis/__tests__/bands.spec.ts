@@ -1,13 +1,20 @@
 import { describe, expect, it } from 'vitest'
 import {
+    aWeighting,
+    bandEnergies,
+    bandEnergy,
     bandLevel,
     bandLevels,
     bandSpectrum,
     bassBand,
     followLevels,
+    loudness,
     midBand,
+    silentDecibels,
+    spectrumEnergies,
     spectrumHigh,
     spectrumLow,
+    totalEnergy,
     trebleBand,
 } from '../bands'
 
@@ -95,6 +102,106 @@ describe('bandSpectrum', () => {
         expect(levels[4]).toBeGreaterThan(0.9)
         expect(levels[2]).toBe(0)
         expect(levels[6]).toBe(0)
+    })
+})
+
+/** A spectrum in decibels of 1024 bins at 48 kHz: decibels in a range of Hz, silence elsewhere. */
+function decibels(from: number, to: number, value: number): Float32Array {
+    const bins = new Float32Array(1024).fill(-Infinity)
+    const width = 48000 / 2 / bins.length
+    for (let index = 0; index < bins.length; index++) {
+        const frequency = index * width
+        if (frequency >= from && frequency < to) {
+            bins[index] = value
+        }
+    }
+
+    return bins
+}
+
+describe('bandEnergy', () => {
+    it('sums the power of the bins of the band', () => {
+        // Ten bins at -30 dB: ten times the power of one, 10 dB more.
+        const width = 48000 / 2 / 1024
+        const bins = decibels(1000, 1000 + 10 * width - 1, -30)
+
+        expect(bandEnergy(bins, 48000, midBand)).toBeCloseTo(-20, 1)
+    })
+
+    it('does not saturate however loud the band is', () => {
+        const loud = bandEnergy(decibels(30, 200, 0), 48000, bassBand)
+        const louder = bandEnergy(decibels(30, 200, 20), 48000, bassBand)
+
+        expect(louder - loud).toBeCloseTo(20, 5)
+    })
+
+    it('gives silentDecibels for silence, an empty spectrum or an invalid rate', () => {
+        expect(bandEnergy(decibels(0, 0, 0), 48000, bassBand)).toBe(silentDecibels)
+        expect(bandEnergy(new Float32Array(0), 48000, bassBand)).toBe(silentDecibels)
+        expect(bandEnergy(decibels(0, 24000, -20), 0, bassBand)).toBe(silentDecibels)
+        expect(bandEnergy(new Float32Array(1024).fill(Number.NaN), 48000, bassBand)).toBe(
+            silentDecibels,
+        )
+    })
+
+    it('separates bass, mids and highs and sums the whole spectrum', () => {
+        const energies = bandEnergies(decibels(5000, 12000, -40), 44100)
+        const total = totalEnergy(decibels(5000, 12000, -40), 44100)
+
+        expect(energies.bass).toBe(silentDecibels)
+        expect(energies.mid).toBe(silentDecibels)
+        expect(energies.treble).toBeGreaterThan(-40)
+        expect(total).toBeCloseTo(energies.treble, 5)
+    })
+})
+
+describe('loudness', () => {
+    it('weighs the frequencies like the ear (A-weighting)', () => {
+        const decibels = (frequency: number) => 10 * Math.log10(aWeighting(frequency))
+
+        expect(decibels(1000)).toBeCloseTo(0, 1)
+        expect(decibels(100)).toBeCloseTo(-19.1, 1)
+        expect(decibels(50)).toBeCloseTo(-30.3, 1)
+        expect(decibels(4000)).toBeCloseTo(1, 1)
+    })
+
+    it('hears a deep bass as quieter than mids of the same power', () => {
+        const bass = loudness(decibels(40, 80, -20), 48000)
+        const mids = loudness(decibels(1000, 1040, -20), 48000)
+
+        expect(mids - bass).toBeGreaterThan(20)
+    })
+
+    it('rises with the power and gives silentDecibels for silence', () => {
+        const quiet = loudness(decibels(500, 3000, -50), 48000)
+        const loud = loudness(decibels(500, 3000, -30), 48000)
+
+        expect(loud - quiet).toBeCloseTo(20, 5)
+        expect(loudness(decibels(0, 0, 0), 48000)).toBe(silentDecibels)
+        expect(loudness(new Float32Array(0), 48000)).toBe(silentDecibels)
+    })
+})
+
+describe('spectrumEnergies', () => {
+    it('gives pink noise the same energy in every band', () => {
+        // Pink noise: the power of a bin falls with its frequency (3 dB per octave).
+        const width = 48000 / 2 / 1024
+        const pink = new Float32Array(1024).map(
+            (_, bin) => -30 - 10 * Math.log10(Math.max(1, bin) * width),
+        )
+        const energies = spectrumEnergies(pink, 48000, new Float32Array(8))
+
+        // The lowest band holds a single bin, so it is only close.
+        const upper = [...energies].slice(2)
+        expect(Math.max(...upper) - Math.min(...upper)).toBeLessThan(1.5)
+    })
+
+    it('finds the bands of a sound and keeps silent bands silent', () => {
+        const bass = spectrumEnergies(decibels(0, 120, -20), 48000, new Float32Array(16))
+
+        // -20 dB, tilted down by 3 dB per octave below 1 kHz (about 13 dB at 50 Hz).
+        expect(bass[0]).toBeCloseTo(-33, 0)
+        expect(bass[15]).toBe(silentDecibels)
     })
 })
 

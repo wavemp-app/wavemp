@@ -88,7 +88,8 @@ export class AForceRenderer implements VisualizationRenderer {
     private readonly canvas: HTMLCanvasElement
     private readonly source: AnalyserNode
     private readonly analyser: AnalyserNode
-    private readonly spectrum: Uint8Array<ArrayBuffer>
+    /** The spectrum in decibels (getFloatFrequencyData): unlike bytes it never saturates. */
+    private readonly spectrum: Float32Array<ArrayBuffer>
     private readonly samples: Float32Array<ArrayBuffer>
     private readonly features = new AudioFeatureTracker()
     private readonly transition: StyleTransition
@@ -185,7 +186,7 @@ export class AForceRenderer implements VisualizationRenderer {
         this.analyser.fftSize = fftSize
         this.analyser.smoothingTimeConstant = 0.5
         this.source.connect(this.analyser)
-        this.spectrum = new Uint8Array(this.analyser.frequencyBinCount)
+        this.spectrum = new Float32Array(this.analyser.frequencyBinCount)
         this.samples = new Float32Array(this.analyser.fftSize)
     }
 
@@ -237,7 +238,7 @@ export class AForceRenderer implements VisualizationRenderer {
                 : Math.min(maxFrameSeconds, Math.max(0, time - this.lastTime))
         this.lastTime = time
 
-        this.analyser.getByteFrequencyData(this.spectrum)
+        this.analyser.getFloatFrequencyData(this.spectrum)
         this.analyser.getFloatTimeDomainData(this.samples)
         const audio = this.features.update(this.spectrum, this.analyser.context.sampleRate, time)
         const { colors, motion } = this.transition.look(time)
