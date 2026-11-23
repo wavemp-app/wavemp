@@ -450,7 +450,8 @@ public class MeSettingsApiTests
             UserSettingsDto settings = await client.GetJsonAsync<UserSettingsDto>("/api/v1/me/settings");
 
             (await response.Content.ReadAsStringAsync()).Should().Contain(
-                "\"visualization\":{\"module\":\"Milkdrop\",\"preset\":null,\"autoChange\":true,\"autoChangeSeconds\":30,\"quality\":\"Auto\"}");
+                "\"visualization\":{\"module\":\"Milkdrop\",\"preset\":null,\"autoChange\":true,\"autoChangeSeconds\":30," +
+                "\"quality\":\"Auto\",\"colorScheme\":null,\"intensity\":\"Normal\",\"milkdropSpeed\":50}");
             settings.Visualization.Should().BeEquivalentTo(new
             {
                 Module = VisualizationModuleDto.Milkdrop,
@@ -458,7 +459,73 @@ public class MeSettingsApiTests
                 AutoChange = true,
                 AutoChangeSeconds = 30,
                 Quality = VisualizationQualityDto.Auto,
+                ColorScheme = (string?)null,
+                Intensity = VisualizationIntensityDto.Normal,
+                MilkdropSpeed = 50,
             });
+        }
+    }
+
+    [Test]
+    public async Task UpdateMySettings_WithColorSchemeIntensityAndSpeed_KeepsThemForTheProfile()
+    {
+        (Guid profileId, HttpClient client) = await CreateProfileAsync();
+        using (client)
+        {
+            HttpResponseMessage response = await PatchAsync(
+                client,
+                new
+                {
+                    visualization = new
+                    {
+                        module = "AForce",
+                        preset = "rings",
+                        colorScheme = "ember",
+                        intensity = "Reduced",
+                        milkdropSpeed = 25,
+                    },
+                });
+            await PatchAsync(client, new { visualization = new { preset = "warp" } });
+            using HttpClient otherSession = _factory.CreateAuthorizedClient(
+                (await _anonymous.CreateSessionAsync(profileId)).Token);
+            UserSettingsDto read = await otherSession.GetJsonAsync<UserSettingsDto>("/api/v1/me/settings");
+            await PatchAsync(client, new { visualization = new { colorScheme = "" } });
+            UserSettingsDto forgotten = await client.GetJsonAsync<UserSettingsDto>("/api/v1/me/settings");
+
+            response.StatusCode.Should().Be(HttpStatusCode.OK);
+            (await response.Content.ReadAsStringAsync()).Should()
+                .Contain("\"colorScheme\":\"ember\",\"intensity\":\"Reduced\",\"milkdropSpeed\":25");
+            read.Visualization.Should().BeEquivalentTo(new
+            {
+                Module = VisualizationModuleDto.AForce,
+                Preset = "warp",
+                ColorScheme = "ember",
+                Intensity = VisualizationIntensityDto.Reduced,
+                MilkdropSpeed = 25,
+            });
+            forgotten.Visualization.ColorScheme.Should().BeNull();
+            forgotten.Visualization.Preset.Should().Be("warp");
+            forgotten.Visualization.Intensity.Should().Be(VisualizationIntensityDto.Reduced);
+            forgotten.Visualization.MilkdropSpeed.Should().Be(25);
+        }
+    }
+
+    [Test]
+    public async Task UpdateMySettings_WithAnotherModule_ForgetsTheColorSchemeUnlessNamed()
+    {
+        (Guid _, HttpClient client) = await CreateProfileAsync();
+        using (client)
+        {
+            await PatchAsync(client, new { visualization = new { module = "AForce", colorScheme = "ember" } });
+            await PatchAsync(client, new { visualization = new { module = "BlackCap" } });
+            UserSettingsDto switched = await client.GetJsonAsync<UserSettingsDto>("/api/v1/me/settings");
+            await PatchAsync(client, new { visualization = new { module = "AForce", colorScheme = "prism" } });
+            UserSettingsDto named = await client.GetJsonAsync<UserSettingsDto>("/api/v1/me/settings");
+
+            switched.Visualization.Module.Should().Be(VisualizationModuleDto.BlackCap);
+            switched.Visualization.ColorScheme.Should().BeNull();
+            named.Visualization.Module.Should().Be(VisualizationModuleDto.AForce);
+            named.Visualization.ColorScheme.Should().Be("prism");
         }
     }
 
@@ -562,6 +629,41 @@ public class MeSettingsApiTests
                 null,
                 null)
             .SetArgDisplayNames("UnknownQuality");
+        yield return new TestCaseData(
+                $"{{\"visualization\":{{\"colorScheme\":\"{new string('a', 65)}\"}}}}",
+                "visualization.colorScheme",
+                ValidationErrorCodeDto.MaxLength,
+                null,
+                64)
+            .SetArgDisplayNames("ColorSchemeTooLong");
+        yield return new TestCaseData(
+                "{\"visualization\":{\"intensity\":\"Extreme\"}}",
+                "visualization.intensity",
+                ValidationErrorCodeDto.InvalidFormat,
+                null,
+                null)
+            .SetArgDisplayNames("UnknownIntensity");
+        yield return new TestCaseData(
+                "{\"visualization\":{\"intensity\":1}}",
+                "visualization.intensity",
+                ValidationErrorCodeDto.InvalidFormat,
+                null,
+                null)
+            .SetArgDisplayNames("IntensityAsNumber");
+        yield return new TestCaseData(
+                "{\"visualization\":{\"milkdropSpeed\":9}}",
+                "visualization.milkdropSpeed",
+                ValidationErrorCodeDto.OutOfRange,
+                10,
+                100)
+            .SetArgDisplayNames("MilkdropSpeedTooSlow");
+        yield return new TestCaseData(
+                "{\"visualization\":{\"milkdropSpeed\":101}}",
+                "visualization.milkdropSpeed",
+                ValidationErrorCodeDto.OutOfRange,
+                10,
+                100)
+            .SetArgDisplayNames("MilkdropSpeedTooFast");
     }
 
     [TestCaseSource(nameof(InvalidVisualizationSettings))]
@@ -585,6 +687,9 @@ public class MeSettingsApiTests
             UserSettingsDto read = await client.GetJsonAsync<UserSettingsDto>("/api/v1/me/settings");
             read.Visualization.Preset.Should().BeNull();
             read.Visualization.AutoChangeSeconds.Should().Be(30);
+            read.Visualization.ColorScheme.Should().BeNull();
+            read.Visualization.Intensity.Should().Be(VisualizationIntensityDto.Normal);
+            read.Visualization.MilkdropSpeed.Should().Be(50);
         }
     }
 

@@ -69,6 +69,9 @@ interface StoredVisualization {
     autoChange: boolean
     autoChangeSeconds: number
     quality: string
+    colorScheme: string | null
+    intensity: string
+    milkdropSpeed: number
 }
 
 async function storedVisualization(
@@ -580,6 +583,32 @@ function visualizationTests(): void {
         await expect(select).toHaveValue('off')
     })
 
+    test('sets the intensity and the Milkdrop speed in the settings', async ({ page, request }) => {
+        await page.goto('/settings')
+        const segment = (item: string) =>
+            page.locator(
+                `[data-part='app'] [data-field='visualization-intensity'] [data-part='segment'][data-item='${item}']`,
+            )
+        const speed = page.locator(
+            "[data-part='app'] [data-field='visualization-milkdrop-speed'] select",
+        )
+        await expect(segment('normal')).toHaveAttribute('aria-checked', 'true')
+        await expect(speed).toHaveValue('50')
+
+        await segment('reduced').click()
+        await settled
+            .poll(async () => (await storedVisualization(request, headers)).intensity)
+            .toBe('Reduced')
+        await speed.selectOption('25')
+        await settled
+            .poll(async () => (await storedVisualization(request, headers)).milkdropSpeed)
+            .toBe(25)
+
+        await page.reload()
+        await expect(segment('reduced')).toHaveAttribute('aria-checked', 'true')
+        await expect(speed).toHaveValue('25')
+    })
+
     test('rejects visualization settings out of range', async ({ request }) => {
         const quality = await request.patch('/api/v1/me/settings', {
             data: { visualization: { quality: 'Ultra' } },
@@ -596,6 +625,23 @@ function visualizationTests(): void {
         expect(response.status()).toBe(400)
         expect(await response.text()).toContain('out_of_range')
         expect((await storedVisualization(request, headers)).autoChangeSeconds).toBe(30)
+
+        const speed = await request.patch('/api/v1/me/settings', {
+            data: { visualization: { milkdropSpeed: 101 } },
+            headers,
+        })
+        expect(speed.status()).toBe(400)
+        expect(await speed.text()).toContain('out_of_range')
+        const intensity = await request.patch('/api/v1/me/settings', {
+            data: { visualization: { intensity: 'Extreme' } },
+            headers,
+        })
+        expect(intensity.status()).toBe(400)
+        expect(await intensity.text()).toContain('invalid_format')
+        expect(await storedVisualization(request, headers)).toMatchObject({
+            intensity: 'Normal',
+            milkdropSpeed: 50,
+        })
     })
 }
 

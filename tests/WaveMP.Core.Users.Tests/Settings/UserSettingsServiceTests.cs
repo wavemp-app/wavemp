@@ -381,6 +381,15 @@ public class UserSettingsServiceTests
             .SetName("Automatic change 4");
         yield return new TestCaseData(new UpdateUserSettingsCommand(VisualizationAutoChangeSeconds: 601))
             .SetName("Automatic change 601");
+        yield return new TestCaseData(new UpdateUserSettingsCommand(VisualizationColorScheme: new string('a', 65)))
+            .SetName("Color scheme of 65 characters");
+        yield return new TestCaseData(
+                new UpdateUserSettingsCommand(VisualizationIntensity: (VisualizationIntensity)99))
+            .SetName("Unknown visualization intensity");
+        yield return new TestCaseData(new UpdateUserSettingsCommand(VisualizationMilkdropSpeed: 9))
+            .SetName("Milkdrop speed 9");
+        yield return new TestCaseData(new UpdateUserSettingsCommand(VisualizationMilkdropSpeed: 101))
+            .SetName("Milkdrop speed 101");
         yield return new TestCaseData(new UpdateUserSettingsCommand(ThemeId: "Clear Glass")).SetName("Theme id");
         yield return new TestCaseData(new UpdateUserSettingsCommand(ThemeId: "")).SetName("Empty theme id");
         yield return new TestCaseData(new UpdateUserSettingsCommand(ThemeAppearance: (ThemeAppearance)99))
@@ -462,6 +471,111 @@ public class UserSettingsServiceTests
         result.VisualizationAutoChange.Should().BeTrue();
         result.VisualizationAutoChangeSeconds.Should().Be(30);
         result.VisualizationQuality.Should().Be(VisualizationQuality.Auto);
+        result.VisualizationColorScheme.Should().BeNull();
+        result.VisualizationIntensity.Should().Be(VisualizationIntensity.Normal);
+        result.VisualizationMilkdropSpeed.Should().Be(50);
+    }
+
+    [TestCase(VisualizationModule.AForce, VisualizationModule.BlackCap)]
+    [TestCase(VisualizationModule.BlackCap, VisualizationModule.Milkdrop)]
+    public async Task UpdateAsync_WithAnotherModule_ForgetsTheColorSchemeOfThePreviousOne(
+        VisualizationModule from,
+        VisualizationModule to)
+    {
+        User user = Given("en");
+        user.Settings!.VisualizationModule = from;
+        user.Settings.VisualizationColorScheme = "ember";
+
+        UserSettings? result = await _service.UpdateAsync(
+            user.Id,
+            new UpdateUserSettingsCommand(VisualizationModule: to));
+
+        result!.VisualizationModule.Should().Be(to);
+        result.VisualizationColorScheme.Should().BeNull();
+    }
+
+    [Test]
+    public async Task UpdateAsync_WithAnotherModuleAndItsColorScheme_KeepsTheNamedColorScheme()
+    {
+        User user = Given("en");
+        user.Settings!.VisualizationModule = VisualizationModule.AForce;
+        user.Settings.VisualizationColorScheme = "ember";
+
+        UserSettings? result = await _service.UpdateAsync(
+            user.Id,
+            new UpdateUserSettingsCommand(
+                VisualizationModule: VisualizationModule.BlackCap,
+                VisualizationColorScheme: "tide"));
+
+        result!.VisualizationModule.Should().Be(VisualizationModule.BlackCap);
+        result.VisualizationColorScheme.Should().Be("tide");
+        result.VisualizationPreset.Should().BeNull();
+    }
+
+    [Test]
+    public async Task UpdateAsync_WithAnotherPresetOfTheSameModule_KeepsTheColorScheme()
+    {
+        User user = Given("en");
+        user.Settings!.VisualizationModule = VisualizationModule.AForce;
+        user.Settings.VisualizationPreset = "flow";
+        user.Settings.VisualizationColorScheme = "ember";
+
+        UserSettings? result = await _service.UpdateAsync(
+            user.Id,
+            new UpdateUserSettingsCommand(
+                VisualizationModule: VisualizationModule.AForce,
+                VisualizationPreset: "rings"));
+
+        result!.VisualizationPreset.Should().Be("rings");
+        result.VisualizationColorScheme.Should().Be("ember");
+    }
+
+    [Test]
+    public async Task UpdateAsync_WithColorScheme_SavesItAndKeepsThePreset()
+    {
+        User user = Given("en");
+        user.Settings!.VisualizationModule = VisualizationModule.BlackCap;
+        user.Settings.VisualizationPreset = "orbit";
+
+        UserSettings? result = await _service.UpdateAsync(
+            user.Id,
+            new UpdateUserSettingsCommand(VisualizationColorScheme: new string('a', 64)));
+
+        result!.VisualizationColorScheme.Should().Be(new string('a', 64));
+        result.VisualizationPreset.Should().Be("orbit");
+    }
+
+    [TestCase("")]
+    [TestCase("  ")]
+    public async Task UpdateAsync_WithBlankColorScheme_ForgetsTheColorScheme(string colorScheme)
+    {
+        User user = Given("en");
+        user.Settings!.VisualizationColorScheme = "ember";
+
+        UserSettings? result = await _service.UpdateAsync(
+            user.Id,
+            new UpdateUserSettingsCommand(VisualizationColorScheme: colorScheme));
+
+        result!.VisualizationColorScheme.Should().BeNull();
+    }
+
+    [TestCase(VisualizationIntensity.Reduced, 10)]
+    [TestCase(VisualizationIntensity.Normal, 100)]
+    public async Task UpdateAsync_WithIntensityAndMilkdropSpeed_SavesThem(
+        VisualizationIntensity intensity,
+        int speed)
+    {
+        User user = Given("en");
+        user.Settings!.VisualizationIntensity = intensity == VisualizationIntensity.Normal
+            ? VisualizationIntensity.Reduced
+            : VisualizationIntensity.Normal;
+
+        UserSettings? result = await _service.UpdateAsync(
+            user.Id,
+            new UpdateUserSettingsCommand(VisualizationIntensity: intensity, VisualizationMilkdropSpeed: speed));
+
+        result!.VisualizationIntensity.Should().Be(intensity);
+        result.VisualizationMilkdropSpeed.Should().Be(speed);
     }
 
     [TestCase(VisualizationModule.AForce)]
@@ -557,10 +671,16 @@ public class UserSettingsServiceTests
         user.Settings.VisualizationAutoChange = false;
         user.Settings.VisualizationAutoChangeSeconds = 45;
         user.Settings.VisualizationQuality = VisualizationQuality.Low;
+        user.Settings.VisualizationColorScheme = "ember";
+        user.Settings.VisualizationIntensity = VisualizationIntensity.Reduced;
+        user.Settings.VisualizationMilkdropSpeed = 75;
 
         UserSettings? result = await _service.UpdateAsync(user.Id, new UpdateUserSettingsCommand("de"));
 
-        result!.VisualizationPreset.Should().Be("Waves");
+        result!.VisualizationColorScheme.Should().Be("ember");
+        result.VisualizationIntensity.Should().Be(VisualizationIntensity.Reduced);
+        result.VisualizationMilkdropSpeed.Should().Be(75);
+        result.VisualizationPreset.Should().Be("Waves");
         result.VisualizationAutoChange.Should().BeFalse();
         result.VisualizationAutoChangeSeconds.Should().Be(45);
         result.VisualizationQuality.Should().Be(VisualizationQuality.Low);

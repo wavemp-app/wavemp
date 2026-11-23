@@ -68,9 +68,11 @@ internal sealed class UserSettingsService(IUserRepository users) : IUserSettings
     {
         if (command.VisualizationModule is { } module && module != settings.VisualizationModule)
         {
-            // The preset belongs to the module; another module starts without one, unless the command names one.
+            // The preset and the color scheme belong to the module; another module starts without them, unless the
+            // command names them.
             settings.VisualizationModule = module;
             settings.VisualizationPreset = null;
+            settings.VisualizationColorScheme = null;
         }
 
         if (command.VisualizationPreset is { } preset)
@@ -91,6 +93,21 @@ internal sealed class UserSettingsService(IUserRepository users) : IUserSettings
         if (command.VisualizationQuality is { } quality)
         {
             settings.VisualizationQuality = quality;
+        }
+
+        if (command.VisualizationColorScheme is { } colorScheme)
+        {
+            settings.VisualizationColorScheme = string.IsNullOrWhiteSpace(colorScheme) ? null : colorScheme;
+        }
+
+        if (command.VisualizationIntensity is { } intensity)
+        {
+            settings.VisualizationIntensity = intensity;
+        }
+
+        if (command.VisualizationMilkdropSpeed is { } speed)
+        {
+            settings.VisualizationMilkdropSpeed = speed;
         }
     }
 
@@ -220,6 +237,22 @@ internal sealed class UserSettingsService(IUserRepository users) : IUserSettings
         if (command.VisualizationQuality is { } quality && !Enum.IsDefined(quality))
         {
             throw new ArgumentOutOfRangeException(nameof(command), quality, "Unknown visualization quality.");
+        }
+
+        if (command.VisualizationColorScheme is { } colorScheme &&
+            !VisualizationSettingsLimits.IsValidColorScheme(colorScheme))
+        {
+            throw new ArgumentOutOfRangeException(nameof(command), colorScheme, "The color scheme id is too long.");
+        }
+
+        if (command.VisualizationIntensity is { } intensity && !Enum.IsDefined(intensity))
+        {
+            throw new ArgumentOutOfRangeException(nameof(command), intensity, "Unknown visualization intensity.");
+        }
+
+        if (command.VisualizationMilkdropSpeed is { } speed && !VisualizationSettingsLimits.IsValidMilkdropSpeed(speed))
+        {
+            throw new ArgumentOutOfRangeException(nameof(command), speed, "The Milkdrop speed is out of range.");
         }
     }
 }

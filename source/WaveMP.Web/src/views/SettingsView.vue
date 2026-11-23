@@ -16,8 +16,10 @@ import SubsonicAccess from '@/components/profiles/SubsonicAccess.vue'
 import ThemePicker from '@/components/themes/ThemePicker.vue'
 import {
     ReplayGainModeObject,
+    VisualizationIntensityObject,
     VisualizationQualityObject,
     type ReplayGainMode,
+    type VisualizationIntensity,
     type VisualizationQuality,
 } from '@/api/generated/models'
 import { useFormat } from '@/composables/useFormat'
@@ -38,7 +40,13 @@ import {
     themeById,
 } from '@/themes/themes'
 import { appVersion } from '@/version'
-import { autoChangeChoices, type VisualizationSettings } from '@/visualization/settings'
+import {
+    autoChangeChoices,
+    defaultMilkdropSpeed,
+    isValidMilkdropSpeed,
+    milkdropSpeedChoices,
+    type VisualizationSettings,
+} from '@/visualization/settings'
 
 /** Settings of the current profile; changes are saved at once. */
 const { t, locale } = useI18n({ useScope: 'global' })
@@ -274,6 +282,39 @@ const qualityOptions = computed<SegmentOption[]>(() => [
 ])
 const qualities = new Set<string>(Object.values(VisualizationQualityObject))
 
+const intensityOptions = computed<SegmentOption[]>(() => [
+    {
+        value: VisualizationIntensityObject.Normal,
+        item: 'normal',
+        label: t('settings.visualizationIntensities.normal'),
+    },
+    {
+        value: VisualizationIntensityObject.Reduced,
+        item: 'reduced',
+        label: t('settings.visualizationIntensities.reduced'),
+    },
+])
+const intensities = new Set<string>(Object.values(VisualizationIntensityObject))
+
+/** Speeds the menu offers; another value of the profile is added. */
+const milkdropSpeedOptions = computed<SelectOption[]>(() =>
+    [...new Set([...milkdropSpeedChoices, session.visualization.milkdropSpeed])]
+        .sort((a, b) => a - b)
+        .map((percent) => ({
+            value: String(percent),
+            label:
+                percent === defaultMilkdropSpeed
+                    ? t('settings.visualizationMilkdropSpeedDefault', {
+                          percent: format.number(percent),
+                      })
+                    : t('settings.visualizationMilkdropSpeedPercent', {
+                          percent: format.number(percent),
+                      }),
+        })),
+)
+
+const milkdropSpeed = computed(() => String(session.visualization.milkdropSpeed))
+
 const equalizerEnabled = computed(() => equalizer.settings.enabled)
 
 async function changeEqualizer(enabled: boolean): Promise<void> {
@@ -349,6 +390,21 @@ async function changeAutoChange(value: string): Promise<void> {
 async function changeQuality(value: string): Promise<void> {
     if (qualities.has(value) && value !== session.visualization.quality) {
         await save(() => session.updateVisualization({ quality: value as VisualizationQuality }))
+    }
+}
+
+async function changeIntensity(value: string): Promise<void> {
+    if (intensities.has(value) && value !== session.visualization.intensity) {
+        await save(() =>
+            session.updateVisualization({ intensity: value as VisualizationIntensity }),
+        )
+    }
+}
+
+async function changeMilkdropSpeed(value: string): Promise<void> {
+    const percent = Number(value)
+    if (isValidMilkdropSpeed(percent) && percent !== session.visualization.milkdropSpeed) {
+        await save(() => session.updateVisualization({ milkdropSpeed: percent }))
     }
 }
 
@@ -496,6 +552,23 @@ async function changeSleepTimerFade(value: string): Promise<void> {
                 :options="qualityOptions"
                 :hint="t('settings.visualizationQualityHint')"
                 @update:model-value="changeQuality"
+            />
+            <BaseSegmentedField
+                :model-value="session.visualization.intensity"
+                data-field="visualization-intensity"
+                item="visualization-intensity"
+                :label="t('settings.visualizationIntensity')"
+                :options="intensityOptions"
+                :hint="t('settings.visualizationIntensityHint')"
+                @update:model-value="changeIntensity"
+            />
+            <BaseSelect
+                :model-value="milkdropSpeed"
+                data-field="visualization-milkdrop-speed"
+                :label="t('settings.visualizationMilkdropSpeed')"
+                :options="milkdropSpeedOptions"
+                :hint="t('settings.visualizationMilkdropSpeedHint')"
+                @update:model-value="changeMilkdropSpeed"
             />
         </form>
         <section data-part="section" data-item="resume" :aria-labelledby="resumeTitleId">

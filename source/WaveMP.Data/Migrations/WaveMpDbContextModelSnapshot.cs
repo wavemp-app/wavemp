@@ -1831,6 +1831,23 @@ namespace WaveMP.Data.Migrations
                         .HasDefaultValue(30)
                         .HasColumnName("visualization_auto_change_seconds");
 
+                    b.Property<string>("VisualizationColorScheme")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("visualization_color_scheme");
+
+                    b.Property<string>("VisualizationIntensity")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasDefaultValue("Normal")
+                        .HasColumnName("visualization_intensity");
+
+                    b.Property<int>("VisualizationMilkdropSpeed")
+                        .HasColumnType("integer")
+                        .HasDefaultValue(50)
+                        .HasColumnName("visualization_milkdrop_speed");
+
                     b.Property<string>("VisualizationModule")
                         .IsRequired()
                         .HasMaxLength(32)

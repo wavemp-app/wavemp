@@ -33,6 +33,14 @@ namespace WaveMP.Core.Users.Settings;
 /// <param name="AutoplayEnabled">Whether the players go on with matching songs when a list ends.</param>
 /// <param name="AutoplayIncludeVideoOnly">Whether autoplay also chooses songs that only have a music video.</param>
 /// <param name="VideoAmbientMode">Whether videos show the ambient light in the free area around their picture.</param>
+/// <param name="VisualizationColorScheme">
+/// Id of the chosen color scheme of the visualization; an empty or blank id forgets it, so the player shows the first
+/// color scheme of the module.
+/// </param>
+/// <param name="VisualizationIntensity">How strongly the visualization moves and reacts.</param>
+/// <param name="VisualizationMilkdropSpeed">
+/// Speed of the Milkdrop presets in percent, see <see cref="VisualizationSettingsLimits"/>.
+/// </param>
 public sealed record UpdateUserSettingsCommand(
     string? Language = null,
     ReplayGainMode? ReplayGain = null,
@@ -55,4 +63,7 @@ public sealed record UpdateUserSettingsCommand(
     ThemeAppearance? ThemeAppearance = null,
     bool? AutoplayEnabled = null,
     bool? AutoplayIncludeVideoOnly = null,
-    bool? VideoAmbientMode = null);
+    bool? VideoAmbientMode = null,
+    string? VisualizationColorScheme = null,
+    VisualizationIntensity? VisualizationIntensity = null,
+    int? VisualizationMilkdropSpeed = null);

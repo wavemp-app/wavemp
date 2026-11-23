@@ -11,6 +11,7 @@ internal sealed class UserSettingsConfiguration : IEntityTypeConfiguration<UserS
     public const int EqualizerPresetMaxLength = 16;
     public const int VisualizationModuleMaxLength = 32;
     public const int VisualizationQualityMaxLength = 16;
+    public const int VisualizationIntensityMaxLength = 16;
     public const int ThemeAppearanceMaxLength = 16;
 
     public void Configure(EntityTypeBuilder<UserSettings> builder)
@@ -134,6 +135,20 @@ internal sealed class UserSettingsConfiguration : IEntityTypeConfiguration<UserS
             .HasConversion<string>()
             .HasMaxLength(VisualizationQualityMaxLength)
             .HasDefaultValue(VisualizationQuality.Auto)
+            .ValueGeneratedNever();
+
+        builder.Property(settings => settings.VisualizationColorScheme)
+            .HasMaxLength(UserSettings.VisualizationColorSchemeMaxLength);
+
+        builder.Property(settings => settings.VisualizationIntensity)
+            .HasConversion<string>()
+            .HasMaxLength(VisualizationIntensityMaxLength)
+            .HasDefaultValue(VisualizationIntensity.Normal)
+            .ValueGeneratedNever();
+
+        // The default (50) differs from the default of the CLR type, so the entity always writes its value.
+        builder.Property(settings => settings.VisualizationMilkdropSpeed)
+            .HasDefaultValue(UserSettings.DefaultVisualizationMilkdropSpeed)
             .ValueGeneratedNever();
     }
 }

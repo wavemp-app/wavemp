@@ -178,6 +178,21 @@ public class SettingsMappingExtensionsTests
     }
 
     [Test]
+    public void VisualizationIntensities_MapBothWays()
+    {
+        foreach (VisualizationIntensity intensity in Enum.GetValues<VisualizationIntensity>())
+        {
+            VisualizationIntensityDto dto = intensity.ToDto();
+
+            dto.ToString().Should().Be(intensity.ToString());
+            dto.ToEntity().Should().Be(intensity);
+        }
+
+        Enum.GetValues<VisualizationIntensityDto>().Should()
+            .HaveSameCount(Enum.GetValues<VisualizationIntensity>());
+    }
+
+    [Test]
     public void ToDto_Settings_CarriesTheVisualization()
     {
         UserSettings settings = new()
@@ -187,6 +202,9 @@ public class SettingsMappingExtensionsTests
             VisualizationAutoChange = false,
             VisualizationAutoChangeSeconds = 120,
             VisualizationQuality = VisualizationQuality.Medium,
+            VisualizationColorScheme = "ember",
+            VisualizationIntensity = VisualizationIntensity.Reduced,
+            VisualizationMilkdropSpeed = 75,
         };
 
         UserSettingsDto dto = settings.ToDto();
@@ -198,6 +216,9 @@ public class SettingsMappingExtensionsTests
             AutoChange = false,
             AutoChangeSeconds = 120,
             Quality = VisualizationQualityDto.Medium,
+            ColorScheme = "ember",
+            Intensity = VisualizationIntensityDto.Reduced,
+            MilkdropSpeed = 75,
         });
     }
 
@@ -213,6 +234,9 @@ public class SettingsMappingExtensionsTests
                 AutoChange = true,
                 AutoChangeSeconds = 15,
                 Quality = VisualizationQualityDto.Low,
+                ColorScheme = "prism",
+                Intensity = VisualizationIntensityDto.Reduced,
+                MilkdropSpeed = 25,
             },
         };
 
@@ -223,7 +247,10 @@ public class SettingsMappingExtensionsTests
             VisualizationPreset: "Waves",
             VisualizationAutoChange: true,
             VisualizationAutoChangeSeconds: 15,
-            VisualizationQuality: VisualizationQuality.Low));
+            VisualizationQuality: VisualizationQuality.Low,
+            VisualizationColorScheme: "prism",
+            VisualizationIntensity: VisualizationIntensity.Reduced,
+            VisualizationMilkdropSpeed: 25));
     }
 
     [Test]

@@ -9,7 +9,8 @@ namespace WaveMP.Service.Dtos;
 public sealed class UpdateVisualizationSettingsDto
 {
     /// <summary>
-    /// The visualization. Another module than the current one forgets the preset, unless the request names one.
+    /// The visualization. Another module than the current one forgets the preset and the color scheme, unless the
+    /// request names them.
     /// </summary>
     public VisualizationModuleDto? Module { get; init; }
 
@@ -35,4 +36,22 @@ public sealed class UpdateVisualizationSettingsDto
     /// How much detail the visualization draws.
     /// </summary>
     public VisualizationQualityDto? Quality { get; init; }
+
+    /// <summary>
+    /// Id of the chosen color scheme of the module, up to 64 characters; an empty string forgets it, so the player
+    /// shows the first color scheme of the module.
+    /// </summary>
+    [StringLength(VisualizationSettingsLimits.ColorSchemeMaxLength)]
+    public string? ColorScheme { get; init; }
+
+    /// <summary>
+    /// How strongly the visualization moves and reacts.
+    /// </summary>
+    public VisualizationIntensityDto? Intensity { get; init; }
+
+    /// <summary>
+    /// Speed of the Milkdrop presets in percent, from 10 to 100.
+    /// </summary>
+    [Range(VisualizationSettingsLimits.MilkdropSpeedMin, VisualizationSettingsLimits.MilkdropSpeedMax)]
+    public int? MilkdropSpeed { get; init; }
 }

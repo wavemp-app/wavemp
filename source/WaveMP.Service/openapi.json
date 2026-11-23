@@ -21007,7 +21007,7 @@
                 "type": "null"
               },
               {
-                "description": "The visualization. Another module than the current one forgets the preset, unless the request names one.",
+                "description": "The visualization. Another module than the current one forgets the preset and the color scheme, unless the request names them.",
                 "$ref": "#/components/schemas/VisualizationModule"
               }
             ]
@@ -21048,6 +21048,36 @@
                 "$ref": "#/components/schemas/VisualizationQuality"
               }
             ]
+          },
+          "colorScheme": {
+            "maxLength": 64,
+            "minLength": 0,
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Id of the chosen color scheme of the module, up to 64 characters; an empty string forgets it, so the player shows the first color scheme of the module."
+          },
+          "intensity": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "How strongly the visualization moves and reacts.",
+                "$ref": "#/components/schemas/VisualizationIntensity"
+              }
+            ]
+          },
+          "milkdropSpeed": {
+            "maximum": 100,
+            "minimum": 10,
+            "type": [
+              "null",
+              "integer"
+            ],
+            "description": "Speed of the Milkdrop presets in percent, from 10 to 100.",
+            "format": "int32"
           }
         },
         "description": "Changes the visualization of the current profile. Missing or null values stay unchanged."
@@ -21347,6 +21377,14 @@
         },
         "description": "Videos of the Now Playing view of the current profile."
       },
+      "VisualizationIntensity": {
+        "enum": [
+          "Normal",
+          "Reduced"
+        ],
+        "type": "string",
+        "description": "How strongly the visualizations move, react and change their brightness. Players also use Reduced while the device asks for reduced motion."
+      },
       "VisualizationModule": {
         "enum": [
           "Milkdrop",
@@ -21372,7 +21410,10 @@
           "preset",
           "autoChange",
           "autoChangeSeconds",
-          "quality"
+          "quality",
+          "colorScheme",
+          "intensity",
+          "milkdropSpeed"
         ],
         "type": "object",
         "properties": {
@@ -21399,6 +21440,22 @@
           "quality": {
             "description": "How much detail the visualization draws; Auto by default, which lets the player choose the level by the frame rate of the device.",
             "$ref": "#/components/schemas/VisualizationQuality"
+          },
+          "colorScheme": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Id of the color scheme of the module the profile chose, separately from the preset, or null for the first color scheme of the module. The players know the color schemes of their modules; an id a player does not know is treated like null. Milkdrop has no color schemes."
+          },
+          "intensity": {
+            "description": "How strongly the visualization moves and reacts; Normal by default. Players use Reduced while the device asks for reduced motion, whatever the profile chose.",
+            "$ref": "#/components/schemas/VisualizationIntensity"
+          },
+          "milkdropSpeed": {
+            "type": "integer",
+            "description": "Speed of the Milkdrop presets in percent of their original speed at 60 frames a second, from 10 to 100; 50 by default.",
+            "format": "int32"
           }
         },
         "description": "Visualization of the Now Playing view of the current profile."

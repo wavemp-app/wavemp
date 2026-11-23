@@ -533,6 +533,106 @@ describe('SettingsView playback', () => {
         expect(select.findAll('option')[1]?.text()).toBe('Every 7 seconds')
     })
 
+    it('saves the intensity of the visualization and restores it when saving fails', async () => {
+        const { wrapper, session } = mountView()
+        const update = vi
+            .spyOn(session, 'updateVisualization')
+            .mockImplementationOnce(async (change) => {
+                session.visualization = {
+                    ...session.visualization,
+                    intensity: change.intensity ?? session.visualization.intensity,
+                }
+            })
+            .mockRejectedValueOnce(new TypeError('Failed to fetch'))
+        const group = wrapper.get(
+            '[data-field="visualization-intensity"] [data-part="segmented-control"]',
+        )
+        const label = wrapper.get('[data-field="visualization-intensity"] > [data-part="label"]')
+        const segment = (item: string) =>
+            wrapper.get(
+                `[data-field="visualization-intensity"] [data-part="segment"][data-item="${item}"]`,
+            )
+
+        expect(group.attributes('role')).toBe('radiogroup')
+        expect(group.attributes('aria-labelledby')).toBe(label.attributes('id'))
+        expect(label.text()).toBe('Visualization intensity')
+        expect(
+            group
+                .findAll('[data-part="segment"]')
+                .map((item) => [item.text(), item.attributes('aria-checked')]),
+        ).toEqual([
+            ['Normal', 'true'],
+            ['Reduced', 'false'],
+        ])
+        expect(
+            wrapper.get('[data-field="visualization-intensity"] [data-part="field-hint"]').text(),
+        ).toContain('reduced motion')
+
+        await segment('reduced').trigger('click')
+        await flushPromises()
+        expect(update).toHaveBeenCalledWith({ intensity: 'Reduced' })
+        expect(segment('reduced').attributes('aria-checked')).toBe('true')
+
+        await segment('normal').trigger('click')
+        await flushPromises()
+        expect(update).toHaveBeenLastCalledWith({ intensity: 'Normal' })
+        expect(wrapper.get('[data-part="alert"]').text()).toBe('The setting could not be saved.')
+        expect(segment('reduced').attributes('aria-checked')).toBe('true')
+    })
+
+    it('offers the speeds of Milkdrop with the default marked', () => {
+        const { wrapper } = mountView()
+
+        const select = field<HTMLSelectElement>(wrapper, 'visualization-milkdrop-speed', 'select')
+        expect(select.element.value).toBe('50')
+        expect(
+            select.findAll('option').map((option) => [option.element.value, option.text()]),
+        ).toEqual([
+            ['25', '25 %'],
+            ['50', '50 % (default)'],
+            ['75', '75 %'],
+            ['100', '100 %'],
+        ])
+    })
+
+    it('saves the speed of Milkdrop', async () => {
+        const { wrapper, session } = mountView()
+        const update = vi
+            .spyOn(session, 'updateVisualization')
+            .mockImplementation(async (change) => {
+                session.visualization = {
+                    ...session.visualization,
+                    milkdropSpeed: change.milkdropSpeed ?? session.visualization.milkdropSpeed,
+                }
+            })
+
+        await field(wrapper, 'visualization-milkdrop-speed', 'select').setValue('25')
+        await flushPromises()
+
+        expect(update).toHaveBeenCalledWith({ milkdropSpeed: 25 })
+        expect(
+            field<HTMLSelectElement>(wrapper, 'visualization-milkdrop-speed', 'select').element
+                .value,
+        ).toBe('25')
+        expect(wrapper.find('[data-part="alert"]').exists()).toBe(false)
+    })
+
+    it('shows a speed of the profile that the menu does not offer', async () => {
+        const { wrapper, session } = mountView()
+        session.visualization = { ...session.visualization, milkdropSpeed: 40 }
+        await flushPromises()
+
+        const select = field<HTMLSelectElement>(wrapper, 'visualization-milkdrop-speed', 'select')
+        expect(select.element.value).toBe('40')
+        expect(select.findAll('option').map((option) => option.text())).toEqual([
+            '25 %',
+            '40 %',
+            '50 % (default)',
+            '75 %',
+            '100 %',
+        ])
+    })
+
     it('turns the equalizer on for the profile', async () => {
         const { wrapper, session } = mountView()
         const update = vi.spyOn(session, 'updateEqualizer').mockImplementation(async (change) => {

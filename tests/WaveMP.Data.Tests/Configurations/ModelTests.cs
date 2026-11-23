@@ -166,6 +166,29 @@ public class ModelTests
     }
 
     [Test]
+    public void UserSettings_VisualizationIntensity_IsStoredAsNameWithNormalAsDefault()
+    {
+        IProperty intensity = GetEntity(typeof(UserSettings))
+            .FindProperty(nameof(UserSettings.VisualizationIntensity))!;
+
+        intensity.GetProviderClrType().Should().Be<string>();
+        intensity.GetMaxLength().Should().Be(16);
+        intensity.GetDefaultValue().Should().Be(VisualizationIntensity.Normal);
+        intensity.ValueGenerated.Should().Be(ValueGenerated.Never);
+    }
+
+    [Test]
+    public void UserSettings_VisualizationColorScheme_IsAnOptionalIdOfLimitedLength()
+    {
+        IProperty colorScheme = GetEntity(typeof(UserSettings))
+            .FindProperty(nameof(UserSettings.VisualizationColorScheme))!;
+
+        colorScheme.IsNullable.Should().BeTrue();
+        colorScheme.GetMaxLength().Should().Be(UserSettings.VisualizationColorSchemeMaxLength);
+        colorScheme.GetColumnName().Should().Be("visualization_color_scheme");
+    }
+
+    [Test]
     public void UserSettings_EqualizerCustomGainsDb_IsStoredAsArrayWithZerosAsDefault()
     {
         IProperty gains = GetEntity(typeof(UserSettings)).FindProperty(nameof(UserSettings.EqualizerCustomGainsDb))!;
@@ -188,6 +211,7 @@ public class ModelTests
     [TestCase(nameof(UserSettings.VideoAmbientMode), true)]
     [TestCase(nameof(UserSettings.VisualizationAutoChange), true)]
     [TestCase(nameof(UserSettings.VisualizationAutoChangeSeconds), 30)]
+    [TestCase(nameof(UserSettings.VisualizationMilkdropSpeed), 50)]
     public void UserSettings_PlaybackSettings_HaveTheDefaultsOfANewProfile(string property, object expected)
     {
         IProperty column = GetEntity(typeof(UserSettings)).FindProperty(property)!;
@@ -217,6 +241,9 @@ public class ModelTests
         settings.VisualizationAutoChange.Should().BeTrue();
         settings.VisualizationAutoChangeSeconds.Should().Be(30);
         settings.VisualizationQuality.Should().Be(VisualizationQuality.Auto);
+        settings.VisualizationColorScheme.Should().BeNull();
+        settings.VisualizationIntensity.Should().Be(VisualizationIntensity.Normal);
+        settings.VisualizationMilkdropSpeed.Should().Be(50);
     }
 
     [Test]

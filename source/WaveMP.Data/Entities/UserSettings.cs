@@ -16,6 +16,16 @@ public class UserSettings
     public const int VisualizationPresetMaxLength = 200;
 
     /// <summary>
+    /// Longest id of a color scheme in <see cref="VisualizationColorScheme"/>.
+    /// </summary>
+    public const int VisualizationColorSchemeMaxLength = 64;
+
+    /// <summary>
+    /// Speed of the Milkdrop presets of new users in percent, see <see cref="VisualizationMilkdropSpeed"/>.
+    /// </summary>
+    public const int DefaultVisualizationMilkdropSpeed = 50;
+
+    /// <summary>
     /// Language of new users.
     /// </summary>
     public const string DefaultLanguage = "en";
@@ -158,4 +168,22 @@ public class UserSettings
     /// player choose the level by the frame rate of the device.
     /// </summary>
     public VisualizationQuality VisualizationQuality { get; set; } = VisualizationQuality.Auto;
+
+    /// <summary>
+    /// Id of the color scheme of <see cref="VisualizationModule"/> the user chose, separately from the preset;
+    /// <c>null</c> shows the first color scheme of the module. The players know the color schemes of their modules,
+    /// the server only keeps the id.
+    /// </summary>
+    public string? VisualizationColorScheme { get; set; }
+
+    /// <summary>
+    /// How strongly the visualization moves and reacts; <see cref="VisualizationIntensity.Normal"/> by default.
+    /// </summary>
+    public VisualizationIntensity VisualizationIntensity { get; set; } = VisualizationIntensity.Normal;
+
+    /// <summary>
+    /// Speed of the Milkdrop presets in percent of their original speed at 60 frames a second;
+    /// <see cref="DefaultVisualizationMilkdropSpeed"/> by default.
+    /// </summary>
+    public int VisualizationMilkdropSpeed { get; set; } = DefaultVisualizationMilkdropSpeed;
 }

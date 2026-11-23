@@ -44,6 +44,9 @@ public static class SettingsMappingExtensions
                 AutoChange = settings.VisualizationAutoChange,
                 AutoChangeSeconds = settings.VisualizationAutoChangeSeconds,
                 Quality = settings.VisualizationQuality.ToDto(),
+                ColorScheme = settings.VisualizationColorScheme,
+                Intensity = settings.VisualizationIntensity.ToDto(),
+                MilkdropSpeed = settings.VisualizationMilkdropSpeed,
             },
         };
     }
@@ -75,7 +78,10 @@ public static class SettingsMappingExtensions
             request.Theme?.Appearance?.ToEntity(),
             request.Autoplay?.Enabled,
             request.Autoplay?.IncludeVideoOnly,
-            request.Video?.AmbientMode);
+            request.Video?.AmbientMode,
+            request.Visualization?.ColorScheme,
+            request.Visualization?.Intensity?.ToEntity(),
+            request.Visualization?.MilkdropSpeed);
     }
 
     public static ThemeAppearanceDto ToDto(this ThemeAppearance appearance)
@@ -143,6 +149,32 @@ public static class SettingsMappingExtensions
             VisualizationQualityDto.Medium => VisualizationQuality.Medium,
             VisualizationQualityDto.High => VisualizationQuality.High,
             _ => throw new ArgumentOutOfRangeException(nameof(quality), quality, "Unknown visualization quality."),
+        };
+    }
+
+    public static VisualizationIntensityDto ToDto(this VisualizationIntensity intensity)
+    {
+        return intensity switch
+        {
+            VisualizationIntensity.Normal => VisualizationIntensityDto.Normal,
+            VisualizationIntensity.Reduced => VisualizationIntensityDto.Reduced,
+            _ => throw new ArgumentOutOfRangeException(
+                nameof(intensity),
+                intensity,
+                "Unknown visualization intensity."),
+        };
+    }
+
+    public static VisualizationIntensity ToEntity(this VisualizationIntensityDto intensity)
+    {
+        return intensity switch
+        {
+            VisualizationIntensityDto.Normal => VisualizationIntensity.Normal,
+            VisualizationIntensityDto.Reduced => VisualizationIntensity.Reduced,
+            _ => throw new ArgumentOutOfRangeException(
+                nameof(intensity),
+                intensity,
+                "Unknown visualization intensity."),
         };
     }
 

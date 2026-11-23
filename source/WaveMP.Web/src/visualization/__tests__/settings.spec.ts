@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
     applyVisualizationChange,
+    defaultMilkdropSpeed,
     defaultVisualizationSettings,
     explicitVisualizationChange,
     toVisualizationSettings,
@@ -14,6 +15,16 @@ const settings: VisualizationSettings = {
     autoChange: true,
     autoChangeSeconds: 45,
     quality: 'High',
+    colorScheme: null,
+    intensity: 'Reduced',
+    milkdropSpeed: 75,
+}
+
+const aforce: VisualizationSettings = {
+    ...settings,
+    module: 'AForce',
+    preset: 'rings',
+    colorScheme: 'ember',
 }
 
 describe('toVisualizationSettings', () => {
@@ -26,10 +37,48 @@ describe('toVisualizationSettings', () => {
         expect(toVisualizationSettings({ ...settings, preset: null })?.preset).toBeNull()
     })
 
-    it('takes over A-Force with its style', () => {
-        const aforce = { ...settings, module: 'AForce', preset: 'aurora' } as const
-
+    it('takes over A-Force with its mode and color scheme', () => {
         expect(toVisualizationSettings(aforce)).toEqual(aforce)
+    })
+
+    it('treats an empty color scheme as none', () => {
+        expect(toVisualizationSettings({ ...aforce, colorScheme: ' ' })?.colorScheme).toBeNull()
+        expect(toVisualizationSettings({ ...aforce, colorScheme: null })?.colorScheme).toBeNull()
+        expect(toVisualizationSettings({ ...aforce, colorScheme: 4 })?.colorScheme).toBeNull()
+    })
+
+    it.each([
+        ['missing', undefined],
+        ['unknown', 'Extreme'],
+        ['not a name', 1],
+    ])('takes Normal for an intensity that is %s', (_, intensity) => {
+        expect(toVisualizationSettings({ ...settings, intensity })?.intensity).toBe('Normal')
+    })
+
+    it.each([
+        ['missing', undefined],
+        ['too slow', 9],
+        ['too fast', 101],
+        ['fractional', 50.5],
+        ['not a number', '50'],
+    ])('takes the default speed for a Milkdrop speed that is %s', (_, milkdropSpeed) => {
+        expect(toVisualizationSettings({ ...settings, milkdropSpeed })?.milkdropSpeed).toBe(
+            defaultMilkdropSpeed,
+        )
+    })
+
+    it.each([10, 25, 100])('takes over the Milkdrop speed %i', (milkdropSpeed) => {
+        expect(toVisualizationSettings({ ...settings, milkdropSpeed })?.milkdropSpeed).toBe(
+            milkdropSpeed,
+        )
+    })
+
+    it('has calm defaults', () => {
+        expect(defaultVisualizationSettings).toMatchObject({
+            colorScheme: null,
+            intensity: 'Normal',
+            milkdropSpeed: 50,
+        })
     })
 
     it.each([
@@ -40,11 +89,12 @@ describe('toVisualizationSettings', () => {
         expect(toVisualizationSettings({ ...settings, quality })?.quality).toBe('Auto')
     })
 
-    it('falls back to the default module without a preset for an unknown module', () => {
-        expect(toVisualizationSettings({ ...settings, module: 'Spectrum' })).toEqual({
-            ...settings,
+    it('falls back to the default module without preset and color scheme for an unknown module', () => {
+        expect(toVisualizationSettings({ ...aforce, module: 'Spectrum' })).toEqual({
+            ...aforce,
             module: defaultVisualizationSettings.module,
             preset: null,
+            colorScheme: null,
         })
     })
 
@@ -98,6 +148,41 @@ describe('applyVisualizationChange', () => {
     it('keeps the preset when the same module is named', () => {
         expect(applyVisualizationChange(settings, { module: 'Milkdrop' }).preset).toBe('Waves')
     })
+
+    it('forgets the color scheme for another module unless the change names one', () => {
+        expect(applyVisualizationChange(aforce, { module: 'BlackCap' })).toEqual({
+            ...aforce,
+            module: 'BlackCap',
+            preset: null,
+            colorScheme: null,
+        })
+        expect(
+            applyVisualizationChange(aforce, { module: 'BlackCap', colorScheme: 'tide' })
+                .colorScheme,
+        ).toBe('tide')
+    })
+
+    it('keeps the color scheme for the same module and another mode', () => {
+        expect(applyVisualizationChange(aforce, { module: 'AForce', preset: 'warp' })).toEqual({
+            ...aforce,
+            preset: 'warp',
+        })
+    })
+
+    it('takes over and forgets a color scheme', () => {
+        expect(applyVisualizationChange(aforce, { colorScheme: 'prism' }).colorScheme).toBe('prism')
+        expect(applyVisualizationChange(aforce, { colorScheme: '' }).colorScheme).toBeNull()
+        expect(applyVisualizationChange(aforce, { colorScheme: null }).colorScheme).toBe('ember')
+    })
+
+    it('changes the intensity and the Milkdrop speed and keeps the rest', () => {
+        expect(
+            applyVisualizationChange(settings, { intensity: 'Normal', milkdropSpeed: 25 }),
+        ).toEqual({ ...settings, intensity: 'Normal', milkdropSpeed: 25 })
+        expect(
+            applyVisualizationChange(settings, { intensity: null, milkdropSpeed: null }),
+        ).toEqual(settings)
+    })
 })
 
 describe('explicitVisualizationChange', () => {
@@ -105,10 +190,15 @@ describe('explicitVisualizationChange', () => {
         expect(explicitVisualizationChange(settings, { module: 'AForce' })).toEqual({
             module: 'AForce',
             preset: '',
+            colorScheme: '',
         })
         expect(
-            explicitVisualizationChange(settings, { module: 'AForce', preset: 'ember' }),
-        ).toEqual({ module: 'AForce', preset: 'ember' })
+            explicitVisualizationChange(settings, {
+                module: 'AForce',
+                preset: 'rings',
+                colorScheme: 'ember',
+            }),
+        ).toEqual({ module: 'AForce', preset: 'rings', colorScheme: 'ember' })
     })
 
     it('leaves other changes as they are', () => {
@@ -117,6 +207,9 @@ describe('explicitVisualizationChange', () => {
         })
         expect(explicitVisualizationChange(settings, { quality: 'Low' })).toEqual({
             quality: 'Low',
+        })
+        expect(explicitVisualizationChange(aforce, { colorScheme: 'prism' })).toEqual({
+            colorScheme: 'prism',
         })
     })
 
@@ -128,5 +221,15 @@ describe('explicitVisualizationChange', () => {
         expect(applyVisualizationChange(settings, mergeChanges(first, second))).toEqual(
             applyVisualizationChange(between, second),
         )
+    })
+
+    it('forgets a color scheme chosen before a change of the module when merged', () => {
+        const first = explicitVisualizationChange(aforce, { colorScheme: 'prism' })
+        const between = applyVisualizationChange(aforce, first)
+        const second = explicitVisualizationChange(between, { module: 'BlackCap' })
+        const merged = applyVisualizationChange(aforce, mergeChanges(first, second))
+
+        expect(merged).toEqual(applyVisualizationChange(between, second))
+        expect(merged.colorScheme).toBeNull()
     })
 })

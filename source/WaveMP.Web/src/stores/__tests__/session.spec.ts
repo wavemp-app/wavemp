@@ -685,6 +685,9 @@ describe('session store', () => {
             autoChange: false,
             autoChangeSeconds: 120,
             quality: 'Medium',
+            colorScheme: null,
+            intensity: 'Reduced',
+            milkdropSpeed: 25,
         }
 
         it('loads the visualization with the profile and resets it for another profile', async () => {
@@ -702,6 +705,9 @@ describe('session store', () => {
                 autoChange: true,
                 autoChangeSeconds: 30,
                 quality: 'Auto',
+                colorScheme: null,
+                intensity: 'Normal',
+                milkdropSpeed: 50,
             })
         })
 
@@ -730,6 +736,38 @@ describe('session store', () => {
 
             expect(api.updateSettings).toHaveBeenCalledWith({ visualization: { quality: 'Low' } })
             expect(session.visualization.quality).toBe('Low')
+        })
+
+        it('saves the intensity, the Milkdrop speed and the color scheme of the visualization', async () => {
+            saveStoredSession(stored('a'))
+            api.updateSettings.mockResolvedValueOnce({
+                visualization: {
+                    ...visualization,
+                    module: 'AForce',
+                    preset: null,
+                    colorScheme: 'ember',
+                    intensity: 'Normal',
+                    milkdropSpeed: 75,
+                },
+            })
+            const session = useSessionStore()
+            session.restore()
+            session.visualization = { ...session.visualization, module: 'AForce' }
+
+            await session.updateVisualization({
+                colorScheme: 'ember',
+                intensity: 'Normal',
+                milkdropSpeed: 75,
+            })
+
+            expect(api.updateSettings).toHaveBeenCalledWith({
+                visualization: { colorScheme: 'ember', intensity: 'Normal', milkdropSpeed: 75 },
+            })
+            expect(session.visualization).toMatchObject({
+                colorScheme: 'ember',
+                intensity: 'Normal',
+                milkdropSpeed: 75,
+            })
         })
 
         it('keeps the defaults for incomplete visualization settings', async () => {
@@ -852,7 +890,7 @@ describe('session store', () => {
             await quality
             await settle()
             expect(api.updateSettings).toHaveBeenLastCalledWith({
-                visualization: { preset: '', module: 'AForce' },
+                visualization: { preset: '', module: 'AForce', colorScheme: '' },
             })
             answers[1]!({})
             await module

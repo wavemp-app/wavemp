@@ -4885,6 +4885,9 @@ export function deserializeIntoUpdateVisualizationSettings(updateVisualizationSe
     return {
         "autoChange": n => { updateVisualizationSettings.autoChange = n.getBooleanValue(); },
         "autoChangeSeconds": n => { updateVisualizationSettings.autoChangeSeconds = n.getNumberValue(); },
+        "colorScheme": n => { updateVisualizationSettings.colorScheme = n.getStringValue(); },
+        "intensity": n => { updateVisualizationSettings.intensity = n.getEnumValue<VisualizationIntensity>(VisualizationIntensityObject); },
+        "milkdropSpeed": n => { updateVisualizationSettings.milkdropSpeed = n.getNumberValue(); },
         "module": n => { updateVisualizationSettings.module = n.getEnumValue<VisualizationModule>(VisualizationModuleObject); },
         "preset": n => { updateVisualizationSettings.preset = n.getStringValue(); },
         "quality": n => { updateVisualizationSettings.quality = n.getEnumValue<VisualizationQuality>(VisualizationQualityObject); },
@@ -4996,6 +4999,9 @@ export function deserializeIntoVisualizationSettings(visualizationSettings: Part
     return {
         "autoChange": n => { visualizationSettings.autoChange = n.getBooleanValue(); },
         "autoChangeSeconds": n => { visualizationSettings.autoChangeSeconds = n.getNumberValue(); },
+        "colorScheme": n => { visualizationSettings.colorScheme = n.getStringValue(); },
+        "intensity": n => { visualizationSettings.intensity = n.getEnumValue<VisualizationIntensity>(VisualizationIntensityObject); },
+        "milkdropSpeed": n => { visualizationSettings.milkdropSpeed = n.getNumberValue(); },
         "module": n => { visualizationSettings.module = n.getEnumValue<VisualizationModule>(VisualizationModuleObject); },
         "preset": n => { visualizationSettings.preset = n.getStringValue(); },
         "quality": n => { visualizationSettings.quality = n.getEnumValue<VisualizationQuality>(VisualizationQualityObject); },
@@ -9805,6 +9811,9 @@ export function serializeUpdateVisualizationSettings(writer: SerializationWriter
     if (!updateVisualizationSettings || isSerializingDerivedType) { return; }
     writer.writeBooleanValue("autoChange", updateVisualizationSettings.autoChange);
     writer.writeNumberValue("autoChangeSeconds", updateVisualizationSettings.autoChangeSeconds);
+    writer.writeStringValue("colorScheme", updateVisualizationSettings.colorScheme);
+    writer.writeEnumValue<VisualizationIntensity>("intensity", updateVisualizationSettings.intensity);
+    writer.writeNumberValue("milkdropSpeed", updateVisualizationSettings.milkdropSpeed);
     writer.writeEnumValue<VisualizationModule>("module", updateVisualizationSettings.module);
     writer.writeStringValue("preset", updateVisualizationSettings.preset);
     writer.writeEnumValue<VisualizationQuality>("quality", updateVisualizationSettings.quality);
@@ -9923,6 +9932,9 @@ export function serializeVisualizationSettings(writer: SerializationWriter, visu
     if (!visualizationSettings || isSerializingDerivedType) { return; }
     writer.writeBooleanValue("autoChange", visualizationSettings.autoChange);
     writer.writeNumberValue("autoChangeSeconds", visualizationSettings.autoChangeSeconds);
+    writer.writeStringValue("colorScheme", visualizationSettings.colorScheme);
+    writer.writeEnumValue<VisualizationIntensity>("intensity", visualizationSettings.intensity);
+    writer.writeNumberValue("milkdropSpeed", visualizationSettings.milkdropSpeed);
     writer.writeEnumValue<VisualizationModule>("module", visualizationSettings.module);
     writer.writeStringValue("preset", visualizationSettings.preset);
     writer.writeEnumValue<VisualizationQuality>("quality", visualizationSettings.quality);
@@ -11637,6 +11649,18 @@ export interface UpdateVisualizationSettings extends AdditionalDataHolder, Parsa
      */
     autoChangeSeconds?: number | null;
     /**
+     * Id of the chosen color scheme of the module, up to 64 characters; an empty string forgets it, so the player shows the first color scheme of the module.
+     */
+    colorScheme?: string | null;
+    /**
+     * The intensity property
+     */
+    intensity?: VisualizationIntensity | null;
+    /**
+     * Speed of the Milkdrop presets in percent, from 10 to 100.
+     */
+    milkdropSpeed?: number | null;
+    /**
      * The module property
      */
     module?: VisualizationModule | null;
@@ -11827,6 +11851,7 @@ export interface VideoSettings extends AdditionalDataHolder, Parsable {
      */
     ambientMode?: boolean | null;
 }
+export type VisualizationIntensity = (typeof VisualizationIntensityObject)[keyof typeof VisualizationIntensityObject];
 export type VisualizationModule = (typeof VisualizationModuleObject)[keyof typeof VisualizationModuleObject];
 export type VisualizationQuality = (typeof VisualizationQualityObject)[keyof typeof VisualizationQualityObject];
 /**
@@ -11841,6 +11866,18 @@ export interface VisualizationSettings extends AdditionalDataHolder, Parsable {
      * Seconds after which the visualization changes its preset while the automatic change is on, from 5 to 600; 30 by default.
      */
     autoChangeSeconds?: number | null;
+    /**
+     * Id of the color scheme of the module the profile chose, separately from the preset, or null for the first color scheme of the module. The players know the color schemes of their modules; an id a player does not know is treated like null. Milkdrop has no color schemes.
+     */
+    colorScheme?: string | null;
+    /**
+     * How strongly the visualization moves and reacts; Normal by default. Players use Reduced while the device asks for reduced motion, whatever the profile chose.
+     */
+    intensity?: VisualizationIntensity | null;
+    /**
+     * Speed of the Milkdrop presets in percent of their original speed at 60 frames a second, from 10 to 100; 50 by default.
+     */
+    milkdropSpeed?: number | null;
     /**
      * The visualization; Milkdrop by default. The presets of A-Force are its style variants, the presets of BlackCap its scenes.
      */
@@ -12641,6 +12678,13 @@ export const VideoContainerObject = {
     Mov: "Mov",
     Webm: "Webm",
     Matroska: "Matroska",
+} as const;
+/**
+ * How strongly the visualization moves and reacts; Normal by default. Players use Reduced while the device asks for reduced motion, whatever the profile chose.
+ */
+export const VisualizationIntensityObject = {
+    Normal: "Normal",
+    Reduced: "Reduced",
 } as const;
 /**
  * The visualization; Milkdrop by default. The presets of A-Force are its style variants, the presets of BlackCap its scenes.

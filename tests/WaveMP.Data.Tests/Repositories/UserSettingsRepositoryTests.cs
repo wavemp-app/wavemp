@@ -34,6 +34,9 @@ public class UserSettingsRepositoryTests : LibraryDatabaseTests
             VisualizationAutoChange = false,
             VisualizationAutoChangeSeconds = 90,
             VisualizationQuality = VisualizationQuality.High,
+            VisualizationColorScheme = "ember",
+            VisualizationIntensity = VisualizationIntensity.Reduced,
+            VisualizationMilkdropSpeed = 25,
         };
 
         await repository.UpdateAsync(loaded);
@@ -54,6 +57,9 @@ public class UserSettingsRepositoryTests : LibraryDatabaseTests
             VisualizationAutoChange = false,
             VisualizationAutoChangeSeconds = 90,
             VisualizationQuality = VisualizationQuality.High,
+            VisualizationColorScheme = "ember",
+            VisualizationIntensity = VisualizationIntensity.Reduced,
+            VisualizationMilkdropSpeed = 25,
         });
     }
 
@@ -103,6 +109,9 @@ public class UserSettingsRepositoryTests : LibraryDatabaseTests
             VisualizationAutoChange = true,
             VisualizationAutoChangeSeconds = 30,
             VisualizationQuality = VisualizationQuality.Auto,
+            VisualizationColorScheme = (string?)null,
+            VisualizationIntensity = VisualizationIntensity.Normal,
+            VisualizationMilkdropSpeed = 50,
         });
     }
 

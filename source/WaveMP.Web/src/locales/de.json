@@ -738,6 +738,16 @@
       "medium": "Mittel",
       "high": "Hoch"
     },
+    "visualizationIntensity": "Intensität der Visualisierung",
+    "visualizationIntensityHint": "Reduziert beruhigt die Bewegung der Visualisierung und ändert ihre Helligkeit langsamer. Es gilt immer, solange dein Gerät reduzierte Bewegung verlangt.",
+    "visualizationIntensities": {
+      "normal": "Normal",
+      "reduced": "Reduziert"
+    },
+    "visualizationMilkdropSpeed": "Geschwindigkeit von Milkdrop",
+    "visualizationMilkdropSpeedHint": "Wie schnell sich die Milkdrop-Presets bewegen. 100 % ist ihre ursprüngliche Geschwindigkeit.",
+    "visualizationMilkdropSpeedPercent": "{percent} %",
+    "visualizationMilkdropSpeedDefault": "{percent} % (Standard)",
     "about": "Über WaveMP",
     "appVersion": "App-Version",
     "serverVersion": "Server-Version",
