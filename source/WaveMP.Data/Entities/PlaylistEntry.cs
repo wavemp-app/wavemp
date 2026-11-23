@@ -2,7 +2,7 @@ namespace WaveMP.Data.Entities;
 
 /// <summary>
 /// A track in a playlist. The entry disappears with its playlist and with its track (for example when a rescan no
-/// longer finds the track).
+/// longer finds the track); a track a rescan finds at a new place keeps its id, so the entry stays at its position.
 /// </summary>
 public class PlaylistEntry
 {

@@ -4,7 +4,11 @@ namespace WaveMP.Data.Entities;
 /// The file the admin selected for a track in one category, instead of the automatic choice by quality. A track has at
 /// most one selection per category; without one, the quality rule applies. The selection refers to the file by id and
 /// remembers its path, so it survives rescans: a file that is deleted leaves the selection missing (the track falls
-/// back to the automatic choice), and a file that appears again under the same path is selected again.
+/// back to the automatic choice), and a file that appears again under the same path is selected again. When a rescan
+/// finds the track at a new place (folder renamed or moved, files renamed), the selection goes with it: the file the
+/// track played keeps its id and gets its new path, and another selected file is mapped to the file of the track with
+/// the same name, or with the old base name replaced by the new one; without exactly one such file the selection is
+/// missing.
 /// </summary>
 public class TrackFileSelection
 {

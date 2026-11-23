@@ -3,8 +3,9 @@ namespace WaveMP.Data.Entities;
 /// <summary>
 /// A track, album or artist a user marked as favorite. Exactly the id of the <see cref="Type"/> is set. The favorite
 /// disappears with its user and with its target (for example when a rescan no longer finds the track, album or
-/// artist). An album favorite is first passed on to every album that got tracks of the removed album, keeping the
-/// earliest <see cref="CreatedAt"/> (see <see cref="Repositories.ILibraryScanRepository.DeleteOrphansAsync"/>).
+/// artist). A track a rescan finds at a new place keeps its id and so its favorites. An album favorite is first passed
+/// on to every album that got tracks of the removed album, keeping the earliest <see cref="CreatedAt"/> (see
+/// <see cref="Repositories.ILibraryScanRepository.DeleteOrphansAsync"/>).
 /// </summary>
 public class Favorite
 {

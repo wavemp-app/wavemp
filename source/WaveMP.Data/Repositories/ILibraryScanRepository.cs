@@ -9,7 +9,8 @@ namespace WaveMP.Data.Repositories;
 public interface ILibraryScanRepository
 {
     /// <summary>
-    /// The stored files of a source in the folders and all their subfolders; <c>null</c> for the whole source.
+    /// The stored files of a source in the folders and all their subfolders; <c>null</c> for the whole source. Each
+    /// with its track and whether the track plays it, so a scan can recognize songs that were renamed or moved.
     /// </summary>
     Task<IReadOnlyList<MediaFileSnapshot>> GetFileSnapshotsAsync(
         Guid sourceId,
@@ -18,7 +19,7 @@ public interface ILibraryScanRepository
 
     /// <summary>
     /// The stored files of one folder of a source, without its subfolders; an empty path for the folder of the
-    /// source itself.
+    /// source itself; like <see cref="GetFileSnapshotsAsync"/> with the track of each file.
     /// </summary>
     Task<IReadOnlyList<MediaFileSnapshot>> GetFolderSnapshotsAsync(
         Guid sourceId,
@@ -106,7 +107,9 @@ public interface ILibraryScanRepository
     /// <see cref="RecordAlbumMovesAsync"/>) from the album of every deleted song to the album of a song elsewhere in
     /// the library whose primary file has the same kind, file name and size, so the data of an album whose folder was
     /// renamed or moved follows its songs once <see cref="DeleteOrphansAsync"/> removes it. Folders written before
-    /// (the new folder of a scan) are therefore found; a folder that appears only later is not.
+    /// (the new folder of a scan) are therefore found; a folder that appears only later is not. Songs the scan kept
+    /// at a new place (see <see cref="DeleteVanishedTracksAsync"/>) have left these folders before, with their id, all
+    /// their data and their album move recorded by the writer, so this only concerns the songs that are deleted.
     /// </summary>
     Task<(int Files, int Tracks)> DeleteDirectoriesAsync(
         Guid sourceId,

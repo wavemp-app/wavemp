@@ -4,7 +4,8 @@ namespace WaveMP.Data.Entities;
 /// Where a user stopped listening, one row per user: the queue, its current entry and position, shuffle and repeat,
 /// where the list came from and the device that changed it last. The players save it while they play, so the user
 /// continues on another device or after a reload. The tracks are kept by their ids only; tracks that left the library
-/// are skipped when the state is read. The state disappears with its user.
+/// are skipped when the state is read, while a track a rescan finds at a new place keeps its id and stays in the
+/// queue. The state disappears with its user.
 /// </summary>
 public class PlaybackState
 {

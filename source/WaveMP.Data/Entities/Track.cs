@@ -2,10 +2,16 @@ namespace WaveMP.Data.Entities;
 
 /// <summary>
 /// A track: all media files with the same base name in the same folder (e.g. <c>Song.flac</c>, <c>Song.mkv</c> and
-/// <c>Song.jpg</c>), with its metadata from tags, folder and file names.
+/// <c>Song.jpg</c>), with its metadata from tags, folder and file names. When its folder is renamed or moved or its
+/// files are renamed, a scan that sees the old and the new place keeps the track at the new place (see
+/// <c>TrackMovePlanner</c> in the scanning project): its <see cref="Id"/> and everything that refers to it stay.
 /// </summary>
 public class Track
 {
+    /// <summary>
+    /// Id of the track. It stays when a scan finds the track at a new place, so favorites, ratings, plays, playlist
+    /// entries, saved queues and the ids clients keep remain valid.
+    /// </summary>
     public Guid Id { get; set; }
 
     /// <summary>
@@ -64,7 +70,8 @@ public class Track
     public required TrackMetadataSource MetadataSource { get; set; }
 
     /// <summary>
-    /// When the track was found for the first time; never changed (basis of "recently added").
+    /// When the track was found for the first time; never changed, also not when a scan finds the track at a new place
+    /// (basis of "recently added").
     /// </summary>
     public required DateTimeOffset FirstSeenAt { get; set; }
 

@@ -2,8 +2,9 @@ namespace WaveMP.Data.Entities;
 
 /// <summary>
 /// One play of a track by a user: the client reports it once the track has played long enough. The entry disappears
-/// with its user and with its track (for example when a rescan no longer finds the track). Source of "recently played"
-/// and, later, of scrobbling.
+/// with its user and with its track (for example when a rescan no longer finds the track); a track a rescan finds at a
+/// new place keeps its id and so its plays. Source of "recently played", the statistics and the recaps, and of
+/// scrobbling.
 /// </summary>
 public class PlayHistoryEntry
 {

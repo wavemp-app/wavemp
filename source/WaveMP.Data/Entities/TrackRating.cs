@@ -2,7 +2,7 @@ namespace WaveMP.Data.Entities;
 
 /// <summary>
 /// The rating of a track by a user, 1 to 5 stars; a track without rating has no row. The rating disappears with its
-/// user and with its track.
+/// user and with its track; a track a rescan finds at a new place keeps its id and so its ratings.
 /// </summary>
 public class TrackRating
 {
