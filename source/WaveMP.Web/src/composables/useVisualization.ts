@@ -1,11 +1,13 @@
 import { computed, onBeforeUnmount, onMounted, ref, shallowRef, toRaw, watch, type Ref } from 'vue'
+import { VisualizationIntensityObject } from '@/api/generated/models'
 import { useInView } from '@/composables/useInView'
+import { useMediaQuery } from '@/composables/useMediaQuery'
 import {
     drawingSize,
     VisualizationController,
     type VisualizationState,
 } from '@/visualization/controller'
-import type { VisualizationPreset } from '@/visualization/module'
+import type { VisualizationIntensityLevel, VisualizationPreset } from '@/visualization/module'
 import { visualizationDependencies } from '@/visualization/modules'
 import type { QualityLevel } from '@/visualization/quality'
 import type { VisualizationSettings } from '@/visualization/settings'
@@ -23,8 +25,9 @@ export interface VisualizationInput {
 
 /**
  * The drawing of a visualization into a canvas inside a container: the module of the profile draws
- * the output of the player in sync with the music, at the quality of the profile, in the size of
- * the container. The module loads when the container is mounted; nothing is drawn while the view
+ * the output of the player in sync with the music, at the quality, in the color scheme, at the
+ * intensity and at the speed of the profile, in the size of the container. The intensity is reduced
+ * while the device asks for reduced motion, whatever the profile says. The module loads when the container is mounted; nothing is drawn while the view
  * is hidden, the page is in the background or the container is out of the viewport. Used by the
  * stage of Now Playing (with its controls) and by the full-screen player (the picture only).
  */
@@ -38,7 +41,16 @@ export function useVisualization(
     const state = ref<VisualizationState>('idle')
     const presets = shallowRef<readonly VisualizationPreset[]>([])
     const preset = ref('')
+    const colorSchemes = shallowRef<readonly VisualizationPreset[]>([])
+    const colorScheme = ref('')
     const quality = ref<QualityLevel>('high')
+    const reducedMotion = useMediaQuery('(prefers-reduced-motion: reduce)')
+    /** The intensity the visualization draws with: reduced by the profile or by the device. */
+    const intensity = computed<VisualizationIntensityLevel>(() =>
+        reducedMotion.value || input.settings().intensity === VisualizationIntensityObject.Reduced
+            ? 'reduced'
+            : 'normal',
+    )
     const pageVisible = ref(
         typeof document === 'undefined' || document.visibilityState !== 'hidden',
     )
@@ -70,15 +82,22 @@ export function useVisualization(
                 state: (value) => (state.value = value),
                 presets: (value) => (presets.value = value),
                 preset: (value) => (preset.value = value ?? ''),
+                colorSchemes: (value) => (colorSchemes.value = value),
+                colorScheme: (value) => (colorScheme.value = value ?? ''),
                 canvasReleased: () => canvasKey.value++,
                 quality: (value) => (quality.value = value),
             },
             visualizationDependencies.clock,
         )
         created.setQuality(settings.quality)
+        created.setStoredColorScheme(settings.colorScheme)
+        created.setIntensity(intensity.value)
+        created.setSpeed(settings.milkdropSpeed)
         state.value = created.currentState
         presets.value = created.presets
         preset.value = created.preset ?? ''
+        colorSchemes.value = created.colorSchemes
+        colorScheme.value = created.colorScheme ?? ''
         quality.value = created.quality
         return created
     }
@@ -123,6 +142,18 @@ export function useVisualization(
         }
     }
 
+    /** Whether the color scheme can be shown now. */
+    function hasColorScheme(id: string): boolean {
+        return controller !== null && colorSchemes.value.some((item) => item.id === id)
+    }
+
+    /** Shows a color scheme of the module. */
+    function selectColorScheme(id: string): void {
+        if (hasColorScheme(id)) {
+            controller?.selectColorScheme(id)
+        }
+    }
+
     function onVisibilityChange(): void {
         pageVisible.value = document.visibilityState !== 'hidden'
     }
@@ -144,6 +175,15 @@ export function useVisualization(
     watch(
         () => input.settings().quality,
         (value) => controller?.setQuality(value),
+    )
+    watch(
+        () => input.settings().colorScheme,
+        (value) => controller?.setStoredColorScheme(value),
+    )
+    watch(intensity, (value) => controller?.setIntensity(value))
+    watch(
+        () => input.settings().milkdropSpeed,
+        (value) => controller?.setSpeed(value),
     )
     // Another module: the visualization starts again with it.
     watch(
@@ -178,5 +218,19 @@ export function useVisualization(
         stop()
     })
 
-    return { canvasKey, state, presets, preset, quality, visible, hasPreset, selectPreset }
+    return {
+        canvasKey,
+        state,
+        presets,
+        preset,
+        colorSchemes,
+        colorScheme,
+        quality,
+        intensity,
+        visible,
+        hasPreset,
+        selectPreset,
+        hasColorScheme,
+        selectColorScheme,
+    }
 }

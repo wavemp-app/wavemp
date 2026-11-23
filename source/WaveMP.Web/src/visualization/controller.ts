@@ -4,11 +4,15 @@
 // visualization is visible and changes the preset automatically. While the visualization is hidden
 // (another view of the stage, another page, a hidden browser tab or out of the viewport), nothing
 // is drawn and the automatic change waits. It hands the quality level to the renderer: the one of
-// the profile, or with Auto the one the measured frame rate allows. The browser (animation frames,
-// timers, time, randomness) comes in through a clock, so tests drive it by hand.
+// the profile, or with Auto the one the measured frame rate allows; likewise the color scheme
+// (chosen apart from the presets and never changed automatically), the intensity and the speed of
+// the presets. The browser (animation frames, timers, time, randomness) comes in through a clock,
+// so tests drive it by hand.
 
 import type {
     LoadedVisualizationModule,
+    PresetBlendSeconds,
+    VisualizationIntensityLevel,
     VisualizationModule,
     VisualizationPreset,
     VisualizationRenderer,
@@ -16,6 +20,7 @@ import type {
 import type { VisualizationQuality } from '@/api/generated/models'
 import { adjacentPreset, randomPreset, startPreset } from './presets'
 import { AdaptiveQuality, fixedQualityLevel, type QualityLevel } from './quality'
+import { defaultMilkdropSpeed } from './settings'
 
 /**
  * State of the visualization (data-state of the visualization part):
@@ -30,11 +35,33 @@ import { AdaptiveQuality, fixedQualityLevel, type QualityLevel } from './quality
 export type VisualizationState =
     'idle' | 'loading' | 'waiting' | 'running' | 'paused' | 'unsupported' | 'failed'
 
-/** Seconds a preset chosen by the user blends into the previous one. */
+/** Seconds a preset chosen by the user blends into the previous one, unless the module says. */
 export const manualBlendSeconds = 1
 
-/** Seconds a preset of the automatic change blends into the previous one. */
+/** Seconds a preset of the automatic change blends into the previous one, unless the module says. */
 export const autoBlendSeconds = 2.7
+
+/** Seconds a color scheme chosen by the user blends into the previous one. */
+export const colorSchemeBlendSeconds = 1.5
+
+/** How much longer every blend takes at the reduced intensity. */
+export const reducedBlendFactor = 2
+
+/**
+ * Seconds a change blends over: the seconds of the normal intensity, longer at the reduced one, so
+ * nothing changes abruptly.
+ */
+export function blendSecondsFor(seconds: number, intensity: VisualizationIntensityLevel): number {
+    return intensity === 'reduced' ? seconds * reducedBlendFactor : seconds
+}
+
+/** The color scheme to start with: the stored one if the module has it, otherwise its first one. */
+export function startColorScheme(
+    colorSchemes: readonly VisualizationPreset[],
+    stored: string | null,
+): string | null {
+    return (colorSchemes.find((scheme) => scheme.id === stored) ?? colorSchemes[0])?.id ?? null
+}
 
 /** Highest ratio of device pixels to CSS pixels the visualization draws with. */
 export const maxPixelRatio = 2
@@ -65,6 +92,10 @@ export interface VisualizationControllerEvents {
     presets?(presets: readonly VisualizationPreset[]): void
     /** The preset shown, or null before the module is loaded. */
     preset?(id: string | null): void
+    /** The color schemes of the module once it is loaded; empty for modules without. */
+    colorSchemes?(colorSchemes: readonly VisualizationPreset[]): void
+    /** The color scheme shown, or null for modules without color schemes. */
+    colorScheme?(id: string | null): void
     /**
      * The renderer released its canvas (its drawing context is gone); the next renderer needs a new
      * canvas element.
@@ -109,6 +140,12 @@ export class VisualizationController {
     private width = 0
     private height = 0
     private current: string | null = null
+    /** The color scheme of the profile; it applies when the module loads. */
+    private storedColorScheme: string | null = null
+    private currentColorScheme: string | null = null
+    private intensity: VisualizationIntensityLevel = 'normal'
+    /** Speed of the presets in percent. */
+    private speed = defaultMilkdropSpeed
     private frame: number | null = null
     private timer: number | null = null
     /** The quality of the profile; null for Auto. */
@@ -137,6 +174,24 @@ export class VisualizationController {
 
     get preset(): string | null {
         return this.current
+    }
+
+    get colorSchemes(): readonly VisualizationPreset[] {
+        return this.loaded?.colorSchemes ?? []
+    }
+
+    get colorScheme(): string | null {
+        return this.currentColorScheme
+    }
+
+    /** How strongly the visualization moves and reacts. */
+    get currentIntensity(): VisualizationIntensityLevel {
+        return this.intensity
+    }
+
+    /** Speed of the presets in percent. */
+    get currentSpeed(): number {
+        return this.speed
     }
 
     /** The quality level the visualization draws with. */
@@ -198,14 +253,69 @@ export class VisualizationController {
         this.storedPreset = id
     }
 
+    /**
+     * The color scheme of the profile changed. Like the stored preset it applies only while the
+     * module is not loaded yet; a running visualization keeps its color scheme.
+     */
+    setStoredColorScheme(id: string | null): void {
+        this.storedColorScheme = id
+    }
+
     /** Shows a preset chosen by the user; the automatic change starts its interval again. */
     selectPreset(id: string): void {
         if (!this.presets.some((preset) => preset.id === id)) {
             return
         }
 
-        this.show(id, manualBlendSeconds)
+        this.show(id, this.blendSeconds('manual'))
         this.restartTimer()
+    }
+
+    /**
+     * Shows a color scheme chosen by the user. The preset and the automatic change stay as they
+     * are: the automatic change only changes presets.
+     */
+    selectColorScheme(id: string): void {
+        if (
+            id === this.currentColorScheme ||
+            !this.colorSchemes.some((scheme) => scheme.id === id)
+        ) {
+            return
+        }
+
+        this.currentColorScheme = id
+        this.events.colorScheme?.(id)
+        if (this.renderer) {
+            const seconds = blendSecondsFor(colorSchemeBlendSeconds, this.intensity)
+            this.guard(() => this.renderer?.showColorScheme?.(id, seconds))
+        }
+    }
+
+    /**
+     * How strongly the visualization moves and reacts: the setting of the profile, or reduced
+     * while the device asks for reduced motion. It also makes every blend longer.
+     */
+    setIntensity(level: VisualizationIntensityLevel): void {
+        if (level === this.intensity) {
+            return
+        }
+
+        this.intensity = level
+        if (this.renderer) {
+            this.guard(() => this.renderer?.setIntensity?.(level))
+        }
+    }
+
+    /** Speed of the presets in percent (Milkdrop). */
+    setSpeed(percent: number): void {
+        if (percent === this.speed) {
+            return
+        }
+
+        this.speed = percent
+        if (this.renderer) {
+            this.guard(() => this.renderer?.setSpeed?.(percent))
+        }
     }
 
     /** Shows the preset before (-1) or after (1) the current one; returns its id. */
@@ -312,6 +422,10 @@ export class VisualizationController {
                         startPreset(loaded.presets, this.storedPreset, () => this.clock.random())
                             ?.id ?? null
                     this.events.preset?.(this.current)
+                    const colorSchemes = loaded.colorSchemes ?? []
+                    this.currentColorScheme = startColorScheme(colorSchemes, this.storedColorScheme)
+                    this.events.colorSchemes?.(colorSchemes)
+                    this.events.colorScheme?.(this.currentColorScheme)
                 }
 
                 this.update()
@@ -337,6 +451,9 @@ export class VisualizationController {
                 width: Math.max(1, this.width || canvas.width),
                 height: Math.max(1, this.height || canvas.height),
                 quality: this.qualityLevel,
+                colorScheme: this.currentColorScheme,
+                intensity: this.intensity,
+                speed: this.speed,
             })
             this.renderer = renderer
             this.rendererAudio = audio
@@ -395,6 +512,15 @@ export class VisualizationController {
         if (last !== null && this.fixedQuality === null) {
             this.applyQuality(this.adaptive.frame((now - last) / 1000))
         }
+    }
+
+    /** Seconds a new preset blends over: as the module wants it, longer at the reduced intensity. */
+    private blendSeconds(kind: keyof PresetBlendSeconds): number {
+        const seconds = this.loaded?.blendSeconds ?? {
+            manual: manualBlendSeconds,
+            automatic: autoBlendSeconds,
+        }
+        return blendSecondsFor(seconds[kind], this.intensity)
     }
 
     private show(id: string, blendSeconds: number): void {
@@ -460,7 +586,7 @@ export class VisualizationController {
             this.timer = null
             const next = randomPreset(this.presets, this.current, () => this.clock.random())
             if (next && this.state === 'running') {
-                this.show(next.id, autoBlendSeconds)
+                this.show(next.id, this.blendSeconds('automatic'))
             }
 
             this.startTimer()

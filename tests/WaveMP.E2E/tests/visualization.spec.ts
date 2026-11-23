@@ -8,6 +8,7 @@ import {
 } from '@playwright/test'
 import { createUser, deleteUser, findTrackId, uniqueSuffix, type TestUser } from './helpers/api'
 import { drawSmall, limitDrawingRate } from './helpers/drawing'
+import { countFlashes, largestChange, recordFlashFrames, takeFlashFrames } from './helpers/flashes'
 import { homeUrl, profileTile } from './helpers/navigation'
 import { emptyStorageState } from './helpers/storage'
 
@@ -198,6 +199,17 @@ function moduleSegment(page: Page, item: string): Locator {
     )
 }
 
+/**
+ * The Milkdrop presets that flashed most at their full speed in a scan of all presets with real
+ * music, counted on the picture of butterchurn before the flash guard: 10, 5 and 5 general flashes
+ * in one second (5 to 10 red ones); the guard left at most 2.
+ */
+const flashingPresets = [
+    'flexi - what is the matrix',
+    'Unchained & Rovastar - Wormhole Pillars (Hall of Shadows mix)',
+    'Aderrasi - Storm of the Eye (Thunder) - mash0000 - quasi pseudo meta concentrics',
+]
+
 let user: TestUser
 /** The headers of a session of the profile, for the requests of the test to the API. */
 let headers: Record<string, string>
@@ -229,6 +241,9 @@ function visualizationTests(): void {
             autoChange: true,
             autoChangeSeconds: 30,
             quality: 'Auto',
+            colorScheme: null,
+            intensity: 'Normal',
+            milkdropSpeed: 50,
         })
 
         await drawAtLowQuality(request, headers)
@@ -532,6 +547,99 @@ function visualizationTests(): void {
             await page.keyboard.press('Escape')
             await expect(menu).toHaveAttribute('data-state', 'closed')
         }
+    })
+
+    test('keeps Milkdrop below three flashes a second, also while its presets change fast', async ({
+        page,
+        request,
+    }) => {
+        // Every preset loads and draws in software, and the test watches the picture for half a
+        // minute.
+        test.slow()
+        await drawSmall(page)
+        await recordFlashFrames(page)
+        await drawAtLowQuality(request, headers)
+        const settings = await request.patch('/api/v1/me/settings', {
+            headers,
+            data: {
+                visualization: {
+                    preset: flashingPresets[0],
+                    autoChange: false,
+                    autoChangeSeconds: 5,
+                    milkdropSpeed: 100,
+                },
+            },
+        })
+        expect(settings.status()).toBe(200)
+        const visualization = await showVisualization(page, request)
+        await expect(visualization).toHaveAttribute('data-state', /\b(running|unsupported)\b/, {
+            timeout: 20_000,
+        })
+        if ((await visualization.getAttribute('data-state'))?.includes('unsupported')) {
+            test.skip(true, 'This browser has no WebGL 2')
+        }
+
+        await expect(shownPreset(page)).toHaveAttribute('data-item', flashingPresets[0]!)
+        await takeFlashFrames(page)
+
+        // The presets that flashed most in a scan with real music, at their full speed.
+        for (const preset of flashingPresets) {
+            if ((await shownPreset(page).getAttribute('data-item')) !== preset) {
+                await choosePreset(page, presetMenu(page).locator(`[data-item="${preset}"]`))
+            }
+
+            await page.waitForTimeout(4000)
+        }
+
+        // The automatic change at its shortest interval.
+        await part(page, 'btn-auto-change').click()
+        await expect(part(page, 'btn-auto-change')).toHaveAttribute('aria-pressed', 'true')
+        const automatic = await shownPreset(page).getAttribute('data-item')
+        await settled
+            .poll(() => shownPreset(page).getAttribute('data-item'), {
+                timeout: 20_000,
+            })
+            .not.toBe(automatic)
+
+        // Quick steps through the presets by hand, one every 300 milliseconds.
+        for (let click = 0; click < 10; click++) {
+            await part(page, 'btn-preset-next').click()
+            await page.waitForTimeout(300)
+        }
+
+        await page.waitForTimeout(2000)
+        const frames = await takeFlashFrames(page)
+        // The recording holds frames of all of it, and the picture moved.
+        expect(frames.length).toBeGreaterThan(100)
+        expect(largestChange(frames)).toBeGreaterThan(0)
+        const flashes = countFlashes(frames)
+        expect(flashes.general).toBeLessThanOrEqual(3)
+        expect(flashes.red).toBeLessThanOrEqual(3)
+    })
+
+    test('draws at the reduced intensity while the device asks for reduced motion', async ({
+        page,
+        request,
+    }) => {
+        await drawSmall(page)
+        await drawAtLowQuality(request, headers)
+        await turnOffAutoChange(request, headers)
+        await page.emulateMedia({ reducedMotion: 'reduce' })
+        const visualization = await showVisualization(page, request)
+
+        await expect(visualization).toHaveAttribute('data-intensity', 'reduced')
+        await page.emulateMedia({ reducedMotion: 'no-preference' })
+        await expect(visualization).toHaveAttribute('data-intensity', 'normal')
+
+        // The reduced intensity of the profile holds without the wish of the device as well.
+        const response = await request.patch('/api/v1/me/settings', {
+            headers,
+            data: { visualization: { intensity: 'Reduced' } },
+        })
+        expect(response.status()).toBe(200)
+        await page.reload()
+        await showVisualization(page, request)
+        await expect(visualization).toHaveAttribute('data-intensity', 'reduced')
     })
 
     test('sets the quality of the visualization in the settings', async ({ page, request }) => {

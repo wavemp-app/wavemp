@@ -10,7 +10,7 @@ import {
 import { aforceProfiles } from '../profiles'
 import { AForceRenderer } from '../renderer'
 import { aforceStyles } from '../styles'
-import { fakeAudio, fakeWebGl } from '../../../__tests__/webgl'
+import { fakeAudio, fakeWebGl, rendererDefaults } from '../../../__tests__/webgl'
 
 function setup(quality: VisualizationRendererOptions['quality'] = 'high') {
     const webgl = fakeWebGl()
@@ -19,7 +19,7 @@ function setup(quality: VisualizationRendererOptions['quality'] = 'high') {
     const sound = fakeAudio()
     let now = 1000
     const renderer = new AForceRenderer(
-        { canvas, audio: sound.audio, width: 800, height: 450, quality },
+        { canvas, audio: sound.audio, width: 800, height: 450, quality, ...rendererDefaults },
         () => now,
     )
     return {
@@ -120,6 +120,7 @@ describe('AForceRenderer', () => {
                         width: 10,
                         height: 10,
                         quality: 'low',
+                        ...rendererDefaults,
                     },
                     () => 0,
                 ),
@@ -149,6 +150,7 @@ describe('AForceRenderer', () => {
                         width: 10,
                         height: 10,
                         quality: 'low',
+                        ...rendererDefaults,
                     },
                     () => 0,
                 ),

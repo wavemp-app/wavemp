@@ -1311,18 +1311,18 @@ a[data-part='breadcrumb-link']:hover {
 }
 
 /* The preset list opens from a quiet field in the strip. */
-[data-part='btn-preset-picker'] {
+:is([data-part='btn-preset-picker'], [data-part='btn-color-scheme-picker']) {
     border-color: rgb(255 255 255 / 14%);
     border-radius: var(--wmp-radius-m);
     background: rgb(255 255 255 / 6%);
     color: #f1f3f5;
 }
 
-[data-part='btn-preset-picker']:is(:hover, [aria-expanded='true']):not(:disabled) {
+:is([data-part='btn-preset-picker'], [data-part='btn-color-scheme-picker']):is(:hover, [aria-expanded='true']):not(:disabled) {
     background: rgb(255 255 255 / 12%);
 }
 
-[data-part='btn-preset-picker']:disabled {
+:is([data-part='btn-preset-picker'], [data-part='btn-color-scheme-picker']):disabled {
     background: transparent;
     color: #6c757e;
 }

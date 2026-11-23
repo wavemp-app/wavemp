@@ -4,6 +4,7 @@ import { vi } from 'vitest'
 import type { VisualizationClock } from '../controller'
 import type {
     LoadedVisualizationModule,
+    PresetBlendSeconds,
     VisualizationModule,
     VisualizationPreset,
     VisualizationRenderer,
@@ -14,6 +15,9 @@ export class FakeRenderer implements VisualizationRenderer {
     readonly showPreset = vi.fn()
     readonly resize = vi.fn()
     readonly setQuality = vi.fn()
+    readonly showColorScheme = vi.fn()
+    readonly setIntensity = vi.fn()
+    readonly setSpeed = vi.fn()
     readonly render = vi.fn()
     readonly dispose = vi.fn()
 
@@ -24,6 +28,10 @@ export class FakeModule implements VisualizationModule {
     readonly id = 'Milkdrop' as const
     supported = true
     presets: VisualizationPreset[] = ['A', 'B', 'C'].map((name) => ({ id: name, name }))
+    /** The color schemes of the module; none unless a test gives some. */
+    colorSchemes: VisualizationPreset[] | undefined = undefined
+    /** The blend seconds of the module; the default of the controller unless a test gives some. */
+    blendSeconds: PresetBlendSeconds | undefined = undefined
     readonly renderers: FakeRenderer[] = []
     failCreate = false
     private pending: { resolve: () => void; reject: (error: Error) => void } | null = null
@@ -40,6 +48,8 @@ export class FakeModule implements VisualizationModule {
                 resolve: () =>
                     resolve({
                         presets: this.presets,
+                        colorSchemes: this.colorSchemes,
+                        blendSeconds: this.blendSeconds,
                         createRenderer: (options) => {
                             if (this.failCreate) {
                                 throw new Error('No WebGL context.')

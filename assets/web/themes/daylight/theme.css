@@ -1056,7 +1056,7 @@ a[data-part='breadcrumb-link']:hover {
     filter: drop-shadow(0 0 3px rgb(111 211 255 / 90%));
 }
 
-[data-part='btn-preset-picker'] {
+:is([data-part='btn-preset-picker'], [data-part='btn-color-scheme-picker']) {
     --wmp-icon-fill: #0b4f94;
 
     border-radius: 999px;

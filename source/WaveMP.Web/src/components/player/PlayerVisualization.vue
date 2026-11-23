@@ -5,9 +5,10 @@ import { defaultVisualizationSettings, type VisualizationSettings } from '@/visu
 
 /**
  * The visualization in the full-screen player (mobile): the same drawing as on the stage of Now
- * Playing (module, preset and quality of the profile), as a picture only, without controls, in the
- * place of the cover. It lies inside the button now-playing-mini, so it holds nothing interactive;
- * the stage of Now Playing chooses the preset and the module.
+ * Playing (module, preset, color scheme, quality, intensity and speed of the profile), as a picture
+ * only, without controls, in the place of the cover. It lies inside the button now-playing-mini, so
+ * it holds nothing interactive; the stage of Now Playing chooses the preset, the color scheme and
+ * the module.
  */
 const props = withDefaults(
     defineProps<{
@@ -24,7 +25,7 @@ const props = withDefaults(
 const container = ref<HTMLElement | null>(null)
 const canvas = ref<HTMLCanvasElement | null>(null)
 
-const { canvasKey, state } = useVisualization(container, canvas, {
+const { canvasKey, state, intensity } = useVisualization(container, canvas, {
     active: () => props.active,
     audio: () => props.audio,
     settings: () => props.settings,
@@ -37,6 +38,7 @@ const { canvasKey, state } = useVisualization(container, canvas, {
         data-part="player-visualization"
         :data-state="state"
         :data-module="settings.module.toLowerCase()"
+        :data-intensity="intensity"
         aria-hidden="true"
     >
         <canvas :key="canvasKey" ref="canvas" data-part="visualization-canvas"></canvas>

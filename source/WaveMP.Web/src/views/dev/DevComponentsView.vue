@@ -262,6 +262,10 @@ const sampleVisualizationPresets = computed(() =>
     aforceStyles.map((style) => ({ id: style.id, label: t(style.labelKey) })),
 )
 const sampleVisualizationPreset = ref('nebula')
+const sampleVisualizationColorSchemes = computed(() =>
+    aforceStyles.map((style) => ({ id: style.id, label: t(style.labelKey) })),
+)
+const sampleVisualizationColorScheme = ref('aurora')
 const sampleTrackLyrics = computed(() =>
     sampleLyricsTrack.value ? sampleLyrics(t, sampleLyricsTrack.value.id ?? '') : null,
 )
@@ -2058,9 +2062,12 @@ const sampleTranscodeJobs = computed<TranscodeJob[]>(() => {
                             <VisualizationControls
                                 :presets="sampleVisualizationPresets"
                                 :preset="sampleVisualizationPreset"
+                                :color-schemes="sampleVisualizationColorSchemes"
+                                :color-scheme="sampleVisualizationColorScheme"
                                 :settings="sampleVisualization"
                                 fullscreen-available
                                 @select-preset="sampleVisualizationPreset = $event"
+                                @select-color-scheme="sampleVisualizationColorScheme = $event"
                                 @select-module="
                                     sampleVisualization = { ...sampleVisualization, module: $event }
                                 "

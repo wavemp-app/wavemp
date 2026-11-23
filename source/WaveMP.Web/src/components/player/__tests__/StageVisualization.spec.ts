@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 import { createWaveMpI18n } from '@/i18n'
 import { visualizationDependencies } from '@/visualization/modules'
@@ -301,6 +301,89 @@ describe('StageVisualization', () => {
         })
         expect(module.renderer?.setQuality).toHaveBeenCalledWith('high')
         expect(wrapper.get('[data-part="visualization"]').attributes('data-quality')).toBe('high')
+        wrapper.unmount()
+    })
+
+    it('draws at the intensity and the Milkdrop speed of the profile', async () => {
+        const wrapper = await loaded({
+            settings: { ...defaultVisualizationSettings, intensity: 'Reduced', milkdropSpeed: 25 },
+        })
+        const part = () => wrapper.get('[data-part="visualization"]')
+
+        expect(module.renderer?.options).toMatchObject({ intensity: 'reduced', speed: 25 })
+        expect(part().attributes('data-intensity')).toBe('reduced')
+
+        await wrapper.setProps({
+            settings: { ...defaultVisualizationSettings, intensity: 'Normal', milkdropSpeed: 75 },
+        })
+        expect(module.renderer?.setIntensity).toHaveBeenCalledWith('normal')
+        expect(module.renderer?.setSpeed).toHaveBeenCalledWith(75)
+        expect(part().attributes('data-intensity')).toBe('normal')
+        wrapper.unmount()
+    })
+
+    it('draws at the reduced intensity while the device asks for reduced motion', async () => {
+        const listeners: (() => void)[] = []
+        let reduce = true
+        vi.stubGlobal(
+            'matchMedia',
+            (query: string) =>
+                ({
+                    get matches() {
+                        return query.includes('prefers-reduced-motion') && reduce
+                    },
+                    addEventListener: (_: string, listener: () => void) => listeners.push(listener),
+                    removeEventListener: () => undefined,
+                }) as unknown as MediaQueryList,
+        )
+        try {
+            const wrapper = await loaded()
+            const part = () => wrapper.get('[data-part="visualization"]')
+
+            expect(part().attributes('data-intensity')).toBe('reduced')
+            expect(module.renderer?.options.intensity).toBe('reduced')
+
+            reduce = false
+            listeners.forEach((listener) => listener())
+            await flushPromises()
+            expect(part().attributes('data-intensity')).toBe('normal')
+            expect(module.renderer?.setIntensity).toHaveBeenLastCalledWith('normal')
+            wrapper.unmount()
+        } finally {
+            vi.unstubAllGlobals()
+        }
+    })
+
+    it('starts with the color scheme of the profile and hands a chosen one to it', async () => {
+        module.colorSchemes = ['Red', 'Green'].map((name) => ({
+            id: name.toLowerCase(),
+            name,
+            labelKey: name === 'Red' ? 'nowPlaying.colorScheme' : undefined,
+        }))
+        const wrapper = await loaded({
+            settings: { ...defaultVisualizationSettings, colorScheme: 'green' },
+        })
+        const vm = wrapper.vm as unknown as {
+            colorSchemeChoices: { id: string; label: string }[]
+            colorScheme: string
+            selectColorScheme: (id: string) => void
+        }
+
+        expect(module.renderer?.options.colorScheme).toBe('green')
+        expect(vm.colorScheme).toBe('green')
+        // Own color schemes carry a message key, others their name.
+        expect(vm.colorSchemeChoices).toEqual([
+            { id: 'red', label: 'Color scheme' },
+            { id: 'green', label: 'Green' },
+        ])
+
+        vm.selectColorScheme('violet')
+        vm.selectColorScheme('red')
+        await flushPromises()
+
+        expect(wrapper.emitted('update')).toEqual([[{ colorScheme: 'red' }]])
+        expect(module.renderer?.showColorScheme).toHaveBeenCalledWith('red', 1.5)
+        expect(vm.colorScheme).toBe('red')
         wrapper.unmount()
     })
 

@@ -64,3 +64,10 @@ export function fakeAudio() {
     }
     return { audio: audio as unknown as AnalyserNode, analyser, raw: audio }
 }
+
+/** The options of a renderer besides canvas, audio, size and quality, as the controller starts it. */
+export const rendererDefaults = {
+    colorScheme: null,
+    intensity: 'normal',
+    speed: 50,
+} as const

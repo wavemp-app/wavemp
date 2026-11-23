@@ -789,7 +789,7 @@ a[data-part='breadcrumb-link']:hover {
     --wmp-icon-fill: linear-gradient(#0a6570, #053f46);
 }
 
-[data-part='btn-preset-picker'] {
+:is([data-part='btn-preset-picker'], [data-part='btn-color-scheme-picker']) {
     --wmp-icon-fill: #2b3036;
 
     border-radius: var(--wmp-radius-round);

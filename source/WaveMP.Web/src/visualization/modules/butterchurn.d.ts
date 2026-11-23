@@ -15,7 +15,11 @@ declare module 'butterchurn' {
         disconnectAudio(node: AudioNode): void
         loadPreset(preset: object, blendTime?: number): void
         setRendererSize(width: number, height: number, options?: ButterchurnRendererOptions): void
-        render(): void
+        /**
+         * Runs one step of the preset and draws it; elapsedTime gives the seconds of the step
+         * (otherwise butterchurn measures the time since the previous call).
+         */
+        render(options?: { elapsedTime?: number }): void
     }
 
     export interface Butterchurn {

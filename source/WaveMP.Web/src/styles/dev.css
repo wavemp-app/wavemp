@@ -117,6 +117,14 @@
         flex: 1 1 100%;
     }
 
+    /*
+     * The stage of the visualization controls takes the whole row as on Now Playing, so its
+     * container query shows the layout of a wide stage on the desktop and of a narrow one on a phone.
+     */
+    [data-part='dev-sample']:has(> [data-view='now-playing'] [data-part='visualization-controls']) {
+        flex: 1 1 100%;
+    }
+
     /* Samples of full pages keep their content height. */
     [data-part='dev-sample'] > [data-part='profile-select'] {
         min-block-size: 0;

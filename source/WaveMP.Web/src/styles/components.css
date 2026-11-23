@@ -3596,6 +3596,48 @@
     }
 
     /*
+     * Modules with color schemes add their picker with the name of the scheme: on a narrow stage
+     * centered in a third row, below the module choice, which needs the whole second row; on a wide
+     * stage before the module choice.
+     */
+    [data-part='visualization-controls'][data-state~='has-color-schemes'] {
+        grid-template-areas:
+            'previous picker next auto-change fullscreen'
+            'module module module module module'
+            'scheme scheme scheme scheme scheme';
+    }
+
+    @container wavemp-stage (width >= 44rem) {
+        [data-part='visualization-controls'][data-state~='has-color-schemes'] {
+            grid-template-columns: auto minmax(0, 18rem) auto minmax(0, 1fr) auto auto auto auto;
+            grid-template-areas: 'previous picker next . scheme module auto-change fullscreen';
+        }
+    }
+
+    [data-part='visualization-controls'] > [data-part='btn-color-scheme-picker'] {
+        grid-area: scheme;
+        justify-self: center;
+        min-inline-size: 0;
+        max-inline-size: 12rem;
+    }
+
+    @container wavemp-stage (width >= 44rem) {
+        [data-part='visualization-controls'] > [data-part='btn-color-scheme-picker'] {
+            justify-self: end;
+        }
+    }
+
+    [data-part='btn-color-scheme-picker'] > [data-part='label'] {
+        min-inline-size: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    [data-part='btn-color-scheme-picker'] > [data-part='icon'] {
+        flex: none;
+    }
+
+    /*
      * The video: always whole and undistorted in the middle of the stage, also in full screen and
      * for portrait videos, whose size would otherwise stretch the box. The free areas beside or
      * above and below it show the stage background and the video-backdrop, which the theme designs

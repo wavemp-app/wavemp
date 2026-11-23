@@ -76,6 +76,7 @@ export const parts = [
     'btn-preset-picker',
     'btn-preset-next',
     'btn-auto-change',
+    'btn-color-scheme-picker',
     'video-stage',
     'video-backdrop',
     'video-ambient',

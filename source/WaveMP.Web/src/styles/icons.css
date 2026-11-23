@@ -371,6 +371,10 @@
         --_icon: var(--wmp-icon-auto-change);
     }
 
+    [data-icon='color-scheme'] {
+        --_icon: var(--wmp-icon-color-scheme);
+    }
+
     [data-icon='item-menu'] {
         --_icon: var(--wmp-icon-item-menu);
     }

@@ -1,13 +1,20 @@
 // The interface of the visualization modules. A module draws the music of the player into a canvas
 // with presets of its own: Milkdrop presets, the style variants of A-Force or the scenes of
-// BlackCap. The stage knows modules only through this interface, so further modules plug in
-// without changes to the stage, the controller or the settings (besides a value of the API enum
+// BlackCap. A module may offer color schemes besides, a second list chosen apart from the presets.
+// The stage knows modules only through this interface, so further modules plug in without changes
+// to the stage, the controller or the settings (besides a value of the API enum
 // VisualizationModule).
 
 import type { VisualizationModule as VisualizationModuleId } from '@/api/generated/models'
 import type { QualityLevel } from './quality'
 
 export type { VisualizationModuleId }
+
+/**
+ * How strongly the visualization moves and reacts: normal, or reduced (the setting of the profile
+ * or the wish of the device for reduced motion).
+ */
+export type VisualizationIntensityLevel = 'normal' | 'reduced'
 
 /** A preset of a module: a look of the visualization the user can choose. */
 export interface VisualizationPreset {
@@ -35,6 +42,12 @@ export interface VisualizationRendererOptions {
     readonly height: number
     /** The level of detail to start with. */
     readonly quality: QualityLevel
+    /** The color scheme to start with, for modules with color schemes; null for the first one. */
+    readonly colorScheme: string | null
+    /** How strongly the visualization moves and reacts. */
+    readonly intensity: VisualizationIntensityLevel
+    /** Speed of the presets in percent, for modules whose presets have a speed (Milkdrop). */
+    readonly speed: number
 }
 
 /** A running visualization of a module in one canvas. */
@@ -45,16 +58,37 @@ export interface VisualizationRenderer {
     resize(width: number, height: number): void
     /** Changes the level of detail. */
     setQuality(level: QualityLevel): void
+    /** Shows a color scheme of the module, blending from the current one over the given seconds. */
+    showColorScheme?(id: string, blendSeconds: number): void
+    /** Changes how strongly the visualization moves and reacts, and how far it limits flashes. */
+    setIntensity?(level: VisualizationIntensityLevel): void
+    /** Changes the speed of the presets in percent (modules whose presets have a speed). */
+    setSpeed?(percent: number): void
     /** Draws one frame; called once per animation frame while the visualization is visible. */
     render(): void
     /** Releases the drawing context and disconnects from the audio; the canvas is not used again. */
     dispose(): void
 }
 
+/** Seconds a new preset blends into the previous one, at the normal intensity. */
+export interface PresetBlendSeconds {
+    /** A preset the user chose. */
+    readonly manual: number
+    /** A preset of the automatic change. */
+    readonly automatic: number
+}
+
 /** A module whose code and presets are loaded. */
 export interface LoadedVisualizationModule {
     /** The presets of the module in the order to offer them; never empty. */
     readonly presets: readonly VisualizationPreset[]
+    /**
+     * The color schemes of the module in the order to offer them, chosen apart from the presets;
+     * missing or empty for modules without color schemes.
+     */
+    readonly colorSchemes?: readonly VisualizationPreset[]
+    /** How long its presets blend into each other; missing for the default of the controller. */
+    readonly blendSeconds?: PresetBlendSeconds
     createRenderer(options: VisualizationRendererOptions): VisualizationRenderer
 }
 

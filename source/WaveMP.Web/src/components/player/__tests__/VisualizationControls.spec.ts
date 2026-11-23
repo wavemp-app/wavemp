@@ -322,6 +322,107 @@ describe('VisualizationControls', () => {
         wrapper.unmount()
     })
 
+    describe('with color schemes', () => {
+        function schemeMenu(): HTMLElement | null {
+            return document.querySelector(
+                '[data-part="context-menu"][data-kind="visualization-color-schemes"]',
+            )
+        }
+
+        beforeEach(() => {
+            module.colorSchemes = ['Red', 'Green', 'Blue'].map((name) => ({
+                id: name.toLowerCase(),
+                name,
+            }))
+        })
+
+        it('offers them in a second list beside the module choice', async () => {
+            const wrapper = await loaded({ colorScheme: 'green' })
+            const toolbar = controls(wrapper)
+
+            expect(toolbar.attributes('data-state')).toBe('ready has-color-schemes')
+            expect(
+                toolbar
+                    .findAll(':scope > [data-part]')
+                    .map((element) => element.attributes('data-part')),
+            ).toEqual([
+                'btn-preset-previous',
+                'btn-preset-picker',
+                'btn-preset-next',
+                'btn-auto-change',
+                'btn-fullscreen',
+                'btn-color-scheme-picker',
+                'segmented-control',
+            ])
+            const picker = wrapper.get('[data-part="btn-color-scheme-picker"]')
+            expect(picker.get('[data-part="icon"]').attributes('data-icon')).toBe('color-scheme')
+            expect(picker.get('[data-part="label"]').text()).toBe('Green')
+            expect(picker.attributes('aria-label')).toBe('Color scheme: Green')
+            expect(picker.attributes('title')).toBe('Color scheme')
+            expect(picker.attributes('aria-haspopup')).toBe('menu')
+            expect(picker.attributes('data-state')).toBe('closed')
+            expect(schemeMenu()?.getAttribute('aria-label')).toBe('Color schemes')
+            wrapper.unmount()
+        })
+
+        it('opens the color schemes above their button and hands a choice to the profile', async () => {
+            const wrapper = await loaded({ colorScheme: 'green' })
+            const picker = wrapper.get('[data-part="btn-color-scheme-picker"]')
+            const element = picker.element as HTMLElement
+            element.getBoundingClientRect = () =>
+                ({
+                    left: 400,
+                    top: 600,
+                    right: 520,
+                    bottom: 632,
+                    width: 120,
+                    height: 32,
+                }) as DOMRect
+
+            await picker.trigger('click')
+            await flushPromises()
+
+            const menu = schemeMenu()!
+            expect(menu.getAttribute('data-state')).toBe('open')
+            expect(menu.getAttribute('data-placement')).toBe('above')
+            expect(picker.attributes('aria-expanded')).toBe('true')
+            expect(
+                [...menu.querySelectorAll('[data-part="menu-item"]')].map((item) => [
+                    item.textContent,
+                    item.getAttribute('aria-checked'),
+                ]),
+            ).toEqual([
+                ['Red', 'false'],
+                ['Green', 'true'],
+                ['Blue', 'false'],
+            ])
+
+            ;(menu.querySelector('[data-item="green"]') as HTMLButtonElement).click()
+            await flushPromises()
+            expect(wrapper.emitted('updateVisualization')).toBeUndefined()
+
+            await picker.trigger('click')
+            await flushPromises()
+            ;(menu.querySelector('[data-item="blue"]') as HTMLButtonElement).click()
+            await flushPromises()
+
+            expect(wrapper.emitted('updateVisualization')).toEqual([[{ colorScheme: 'blue' }]])
+            expect(module.renderer?.showColorScheme).toHaveBeenCalledWith('blue', 1.5)
+            expect(module.renderer?.showPreset).toHaveBeenCalledTimes(1)
+            expect(wrapper.get('[data-part="btn-color-scheme-picker"]').text()).toContain('Blue')
+            wrapper.unmount()
+        })
+    })
+
+    it('offers no color schemes for modules without them', async () => {
+        const wrapper = await loaded()
+
+        expect(controls(wrapper).attributes('data-state')).toBe('ready')
+        expect(wrapper.find('[data-part="btn-color-scheme-picker"]').exists()).toBe(false)
+        expect(document.querySelector('[data-kind="visualization-color-schemes"]')).toBeNull()
+        wrapper.unmount()
+    })
+
     it('offers no full screen where the browser has none', async () => {
         const wrapper = await loaded()
 

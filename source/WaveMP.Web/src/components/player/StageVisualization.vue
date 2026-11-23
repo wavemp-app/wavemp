@@ -19,7 +19,9 @@ import {
  * presets, the preset choice and the full screen this component exposes. A double click shows the
  * visualization in full screen and leaves it again. The module loads when the view is shown the
  * first time; nothing is drawn while the view is hidden, the page is in the background or the stage
- * is out of the viewport. A chosen preset is handed to the profile with update.
+ * is out of the viewport. A chosen preset or color scheme is handed to the profile with update. The
+ * intensity it draws with (data-intensity) is reduced by the profile or by the wish of the device
+ * for reduced motion.
  */
 const props = withDefaults(
     defineProps<{
@@ -50,7 +52,8 @@ const visualization = useVisualization(container, canvas, {
     settings: () => props.settings,
     fullscreen: () => fullscreen.value,
 })
-const { canvasKey, state, presets, preset, quality } = visualization
+const { canvasKey, state, presets, preset, colorSchemes, colorScheme, quality, intensity } =
+    visualization
 
 const stateTokens = computed(() =>
     [state.value, fullscreen.value ? 'fullscreen' : undefined].filter(Boolean).join(' '),
@@ -79,6 +82,24 @@ const presetChoices = computed<PresetChoice[]>(() =>
         label: item.labelKey ? t(item.labelKey) : item.name,
     })),
 )
+
+/** The color schemes of the module with their labels; empty for modules without color schemes. */
+const colorSchemeChoices = computed<PresetChoice[]>(() =>
+    colorSchemes.value.map((item) => ({
+        id: item.id,
+        label: item.labelKey ? t(item.labelKey) : item.name,
+    })),
+)
+
+/** Shows a color scheme of the module and hands the choice to the profile. */
+function selectColorScheme(value: string): void {
+    if (!visualization.hasColorScheme(value)) {
+        return
+    }
+
+    emit('update', { colorScheme: value })
+    visualization.selectColorScheme(value)
+}
 
 /** Shows a preset of the module and hands the choice to the profile. */
 function selectPreset(value: string): void {
@@ -125,11 +146,17 @@ onBeforeUnmount(() => {
     }
 })
 
-/** The presets and the full screen for the controls and the context menu of the stage. */
+/**
+ * The presets, the color schemes and the full screen for the controls and the context menu of the
+ * stage.
+ */
 defineExpose({
     presetChoices,
     preset,
     selectPreset,
+    colorSchemeChoices,
+    colorScheme,
+    selectColorScheme,
     fullscreen,
     fullscreenAvailable,
     toggleFullscreen,
@@ -143,6 +170,7 @@ defineExpose({
         :data-state="stateTokens"
         :data-module="settings.module.toLowerCase()"
         :data-quality="state === 'running' || state === 'paused' ? quality : undefined"
+        :data-intensity="intensity"
         @dblclick="toggleFullscreen"
     >
         <canvas

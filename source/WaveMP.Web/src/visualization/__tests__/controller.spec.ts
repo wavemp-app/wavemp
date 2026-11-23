@@ -1,8 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
     autoBlendSeconds,
+    blendSecondsFor,
+    colorSchemeBlendSeconds,
     drawingSize,
     manualBlendSeconds,
+    reducedBlendFactor,
+    startColorScheme,
     VisualizationController,
     type AutoChange,
     type VisualizationControllerEvents,
@@ -47,6 +51,8 @@ describe('VisualizationController', () => {
             preset: vi.fn(),
             canvasReleased: vi.fn(),
             quality: vi.fn(),
+            colorSchemes: vi.fn(),
+            colorScheme: vi.fn(),
         }
     })
 
@@ -113,6 +119,9 @@ describe('VisualizationController', () => {
             width: 640,
             height: 360,
             quality: 'high',
+            colorScheme: null,
+            intensity: 'normal',
+            speed: 50,
         })
         expect(module.renderer?.showPreset).toHaveBeenCalledWith('A', 0)
 
@@ -369,6 +378,160 @@ describe('VisualizationController', () => {
 
         expect(module.renderers).toHaveLength(0)
         expect(events.presets).not.toHaveBeenCalled()
+    })
+
+    describe('with color schemes', () => {
+        const schemes = ['red', 'green', 'blue'].map((name) => ({ id: name, name }))
+
+        beforeEach(() => {
+            module.colorSchemes = schemes
+        })
+
+        it('starts with the stored color scheme and hands it to the renderer', async () => {
+            const controller = create('A')
+            controller.setStoredColorScheme('green')
+            controller.setCanvas(canvas())
+            controller.setAudio(fakeAnalyser())
+            controller.setVisible(true)
+            await module.finishLoad()
+
+            expect(controller.colorSchemes).toEqual(schemes)
+            expect(controller.colorScheme).toBe('green')
+            expect(events.colorSchemes).toHaveBeenCalledWith(schemes)
+            expect(events.colorScheme).toHaveBeenLastCalledWith('green')
+            expect(module.renderer?.options.colorScheme).toBe('green')
+        })
+
+        it('starts with the first color scheme when the stored one is unknown or missing', async () => {
+            const controller = create('A')
+            controller.setStoredColorScheme('violet')
+            controller.setVisible(true)
+            await module.finishLoad()
+
+            expect(controller.colorScheme).toBe('red')
+            expect(startColorScheme(schemes, null)).toBe('red')
+            expect(startColorScheme([], 'red')).toBeNull()
+        })
+
+        it('keeps the color scheme of a running visualization when the stored one changes', async () => {
+            const controller = await running('A')
+
+            controller.setStoredColorScheme('blue')
+
+            expect(controller.colorScheme).toBe('red')
+        })
+
+        it('shows a chosen color scheme apart from the preset and the automatic change', async () => {
+            const controller = await running('A')
+            const timers = [...clock.timers.keys()]
+
+            controller.selectColorScheme('blue')
+
+            expect(controller.colorScheme).toBe('blue')
+            expect(controller.preset).toBe('A')
+            expect(events.colorScheme).toHaveBeenLastCalledWith('blue')
+            expect(module.renderer?.showColorScheme).toHaveBeenCalledWith(
+                'blue',
+                colorSchemeBlendSeconds,
+            )
+            expect(module.renderer?.showPreset).toHaveBeenCalledTimes(1)
+            expect([...clock.timers.keys()]).toEqual(timers)
+        })
+
+        it('ignores an unknown color scheme and the shown one', async () => {
+            const controller = await running('A')
+
+            controller.selectColorScheme('violet')
+            controller.selectColorScheme('red')
+
+            expect(controller.colorScheme).toBe('red')
+            expect(module.renderer?.showColorScheme).not.toHaveBeenCalled()
+        })
+
+        it('changes only the preset automatically and keeps the color scheme', async () => {
+            clock.randomValue = 0.99
+            const controller = await running('A', { enabled: true, seconds: 5 })
+            controller.selectColorScheme('green')
+
+            clock.elapse()
+            clock.elapse()
+
+            expect(module.renderer?.showPreset).toHaveBeenCalledTimes(3)
+            expect(controller.colorScheme).toBe('green')
+            expect(module.renderer?.showColorScheme).toHaveBeenCalledTimes(1)
+        })
+    })
+
+    it('has no color scheme for modules without color schemes', async () => {
+        const controller = await running('A')
+
+        expect(controller.colorSchemes).toEqual([])
+        expect(controller.colorScheme).toBeNull()
+        expect(events.colorSchemes).toHaveBeenCalledWith([])
+        expect(events.colorScheme).toHaveBeenLastCalledWith(null)
+
+        controller.selectColorScheme('red')
+        expect(module.renderer?.showColorScheme).not.toHaveBeenCalled()
+    })
+
+    it('draws at the intensity and the speed it is given', async () => {
+        const controller = create('A')
+        controller.setIntensity('reduced')
+        controller.setSpeed(25)
+        controller.setCanvas(canvas())
+        controller.setAudio(fakeAnalyser())
+        controller.setVisible(true)
+        await module.finishLoad()
+
+        expect(controller.currentIntensity).toBe('reduced')
+        expect(controller.currentSpeed).toBe(25)
+        expect(module.renderer?.options).toMatchObject({ intensity: 'reduced', speed: 25 })
+
+        controller.setIntensity('normal')
+        controller.setIntensity('normal')
+        controller.setSpeed(75)
+        expect(module.renderer?.setIntensity).toHaveBeenCalledTimes(1)
+        expect(module.renderer?.setIntensity).toHaveBeenCalledWith('normal')
+        expect(module.renderer?.setSpeed).toHaveBeenCalledWith(75)
+    })
+
+    it('blends every change longer at the reduced intensity', async () => {
+        module.colorSchemes = ['red', 'green'].map((name) => ({ id: name, name }))
+        clock.randomValue = 0
+        const controller = await running('A', { enabled: true, seconds: 10 })
+        controller.setIntensity('reduced')
+
+        controller.selectPreset('B')
+        expect(module.renderer?.showPreset).toHaveBeenLastCalledWith(
+            'B',
+            manualBlendSeconds * reducedBlendFactor,
+        )
+
+        clock.elapse()
+        expect(module.renderer?.showPreset).toHaveBeenLastCalledWith(
+            'A',
+            autoBlendSeconds * reducedBlendFactor,
+        )
+
+        controller.selectColorScheme('green')
+        expect(module.renderer?.showColorScheme).toHaveBeenLastCalledWith(
+            'green',
+            colorSchemeBlendSeconds * reducedBlendFactor,
+        )
+        expect(blendSecondsFor(3, 'normal')).toBe(3)
+        expect(blendSecondsFor(3, 'reduced')).toBe(6)
+    })
+
+    it('blends the presets as long as the module wants', async () => {
+        module.blendSeconds = { manual: 2, automatic: 5 }
+        clock.randomValue = 0
+        const controller = await running('A', { enabled: true, seconds: 10 })
+
+        controller.selectPreset('C')
+        expect(module.renderer?.showPreset).toHaveBeenLastCalledWith('C', 2)
+
+        clock.elapse()
+        expect(module.renderer?.showPreset).toHaveBeenLastCalledWith('A', 5)
     })
 })
 

@@ -43,6 +43,7 @@ const icons: Record<IconStyle, string[]> = {
         'moon',
         'music-note',
         'music-notes',
+        'palette',
         'pause',
         'play',
         'playlist',

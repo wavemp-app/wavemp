@@ -616,7 +616,7 @@ a[data-part="breadcrumb-link"]:hover {
 }
 
 /* The preset list opens from a small display in the bar: light blue glowing text on black glass. */
-[data-part="btn-preset-picker"] {
+:is([data-part="btn-preset-picker"], [data-part="btn-color-scheme-picker"]) {
     --wmp-icon-fill: #8fd2ff;
 
     border-color: rgb(143 210 255 / 35%);
@@ -627,12 +627,12 @@ a[data-part="breadcrumb-link"]:hover {
     text-shadow: 0 0 6px rgb(74 168 255 / 70%);
 }
 
-[data-part="btn-preset-picker"]:is(:hover, [aria-expanded="true"]):not(:disabled) {
+:is([data-part="btn-preset-picker"], [data-part="btn-color-scheme-picker"]):is(:hover, [aria-expanded="true"]):not(:disabled) {
     border-color: rgb(143 210 255 / 70%);
     background: linear-gradient(#04101d, #12304f);
 }
 
-[data-part="btn-preset-picker"]:disabled {
+:is([data-part="btn-preset-picker"], [data-part="btn-color-scheme-picker"]):disabled {
     --wmp-icon-fill: #5c636c;
 
     background: rgb(0 0 0 / 45%);

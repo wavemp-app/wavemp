@@ -12,7 +12,7 @@ import { BlackCapRenderer } from '../renderer'
 import { blackcapScenes, minSceneBlendSeconds } from '../scenes'
 import { spectrumBands } from '../shaders'
 import { sphereGrid } from '../surface'
-import { fakeAudio, fakeWebGl, type Call } from '../../../__tests__/webgl'
+import { fakeAudio, fakeWebGl, rendererDefaults, type Call } from '../../../__tests__/webgl'
 
 function setup(quality: VisualizationRendererOptions['quality'] = 'high') {
     const webgl = fakeWebGl()
@@ -21,7 +21,7 @@ function setup(quality: VisualizationRendererOptions['quality'] = 'high') {
     const sound = fakeAudio()
     let now = 1000
     const renderer = new BlackCapRenderer(
-        { canvas, audio: sound.audio, width: 800, height: 450, quality },
+        { canvas, audio: sound.audio, width: 800, height: 450, quality, ...rendererDefaults },
         () => now,
     )
     /** The last call that set the uniform. */
@@ -135,7 +135,14 @@ describe('BlackCapRenderer', () => {
         expect(
             () =>
                 new BlackCapRenderer(
-                    { canvas, audio: fakeAudio().audio, width: 10, height: 10, quality: 'low' },
+                    {
+                        canvas,
+                        audio: fakeAudio().audio,
+                        width: 10,
+                        height: 10,
+                        quality: 'low',
+                        ...rendererDefaults,
+                    },
                     () => 0,
                 ),
         ).toThrow()
@@ -158,7 +165,14 @@ describe('BlackCapRenderer', () => {
         expect(
             () =>
                 new BlackCapRenderer(
-                    { canvas, audio: fakeAudio().audio, width: 10, height: 10, quality: 'low' },
+                    {
+                        canvas,
+                        audio: fakeAudio().audio,
+                        width: 10,
+                        height: 10,
+                        quality: 'low',
+                        ...rendererDefaults,
+                    },
                     () => 0,
                 ),
         ).toThrow(/BlackCap does not compile/)

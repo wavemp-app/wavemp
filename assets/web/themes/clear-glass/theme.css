@@ -1674,7 +1674,7 @@ a[data-part='breadcrumb-link']:hover {
     color: #8af0e6;
 }
 
-[data-part='btn-preset-picker'] {
+:is([data-part='btn-preset-picker'], [data-part='btn-color-scheme-picker']) {
     --wmp-icon-fill: #8af0e6;
 
     border: 0;
@@ -1684,11 +1684,11 @@ a[data-part='breadcrumb-link']:hover {
     color: #ffffff;
 }
 
-[data-part='btn-preset-picker']:is(:hover, [aria-expanded='true']):not(:disabled) {
+:is([data-part='btn-preset-picker'], [data-part='btn-color-scheme-picker']):is(:hover, [aria-expanded='true']):not(:disabled) {
     background: rgb(255 255 255 / 12%);
 }
 
-[data-part='btn-preset-picker']:disabled {
+:is([data-part='btn-preset-picker'], [data-part='btn-color-scheme-picker']):disabled {
     --wmp-icon-fill: #7d8a96;
 
     background: rgb(0 0 0 / 20%);

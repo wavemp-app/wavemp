@@ -189,6 +189,7 @@
         --wmp-icon-preset-previous: url('/icons/phosphor/fill/caret-left-fill.svg');
         --wmp-icon-preset-next: url('/icons/phosphor/fill/caret-right-fill.svg');
         --wmp-icon-auto-change: url('/icons/phosphor/fill/timer-fill.svg');
+        --wmp-icon-color-scheme: url('/icons/phosphor/fill/palette-fill.svg');
         --wmp-icon-item-menu: url('/icons/phosphor/fill/dots-three-outline-fill.svg');
         --wmp-icon-recap: url('/icons/phosphor/regular/sparkle.svg');
         --wmp-icon-statistics: url('/icons/phosphor/regular/chart-bar.svg');

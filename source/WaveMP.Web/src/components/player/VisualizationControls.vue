@@ -16,12 +16,13 @@ import { presetMenuPlacement, type PresetChoice } from './visualizationControls'
 /**
  * The controls of the visualization on the stage of Now Playing, as a toolbar below the picture,
  * so they never cover it: the previous preset, the preset list, the next preset, the automatic
- * change and full screen, and the choice of the module. The buttons keep their places whatever the
- * preset is called; on a narrow stage the module choice takes a row of its own below them. The
- * preset list opens above its button on the desktop (towards the picture, the bottom of the page
- * is near) and as a sheet at the bottom edge of the screen on phones; the menu lies beside the
- * toolbar, so it inherits nothing from the look of the toolbar. Controlled through props and events
- * only; StageVisualization draws and owns the presets.
+ * change and full screen, the color schemes of modules that have them and the choice of the module.
+ * The buttons keep their places whatever the preset is called; on a narrow stage the module choice
+ * and the color schemes take a row of their own below them. The preset list and the color schemes
+ * open above their button on the desktop (towards the picture, the bottom of the page is near) and
+ * as a sheet at the bottom edge of the screen on phones; the menus lie beside the toolbar, so they
+ * inherit nothing from the look of the toolbar. Controlled through props and events only;
+ * StageVisualization draws and owns the presets and the color schemes.
  */
 const props = withDefaults(
     defineProps<{
@@ -29,6 +30,10 @@ const props = withDefaults(
         presets?: readonly PresetChoice[]
         /** Id of the shown preset; empty before one is shown. */
         preset?: string
+        /** The color schemes of the module, in their order; empty for modules without them. */
+        colorSchemes?: readonly PresetChoice[]
+        /** Id of the shown color scheme; empty for modules without color schemes. */
+        colorScheme?: string
         /** The visualization settings of the profile. */
         settings: VisualizationSettings
         /** Whether the visualization is shown in full screen. */
@@ -38,12 +43,22 @@ const props = withDefaults(
         /** Whether the visualization is shown, so it may go to full screen. */
         active?: boolean
     }>(),
-    { presets: () => [], preset: '', fullscreen: false, fullscreenAvailable: false, active: true },
+    {
+        presets: () => [],
+        preset: '',
+        colorSchemes: () => [],
+        colorScheme: '',
+        fullscreen: false,
+        fullscreenAvailable: false,
+        active: true,
+    },
 )
 
 const emit = defineEmits<{
     /** A preset was chosen: from the list or with the previous and next buttons. */
     selectPreset: [id: string]
+    /** A color scheme was chosen from its list. */
+    selectColorScheme: [id: string]
     /** Another module was chosen; the change for the profile. */
     selectModule: [module: VisualizationSettings['module']]
     toggleAutoChange: []
@@ -57,17 +72,43 @@ const picker = ref<InstanceType<typeof BaseButton> | null>(null)
 const menu = ref<InstanceType<typeof BaseContextMenu> | null>(null)
 const open = computed(() => menu.value?.isOpen ?? false)
 
+const schemePicker = ref<InstanceType<typeof BaseButton> | null>(null)
+const schemeMenu = ref<InstanceType<typeof BaseContextMenu> | null>(null)
+const schemesOpen = computed(() => schemeMenu.value?.isOpen ?? false)
+
 const ready = computed(() => props.presets.length > 0)
+
+const hasColorSchemes = computed(() => props.colorSchemes.length > 0)
+
+const stateTokens = computed(() =>
+    [ready.value ? 'ready' : 'loading', hasColorSchemes.value ? 'has-color-schemes' : undefined]
+        .filter(Boolean)
+        .join(' '),
+)
 
 const current = computed(() => props.presets.find((choice) => choice.id === props.preset))
 
 const presetLabel = computed(() => current.value?.label ?? t('nowPlaying.visualizationPreset'))
+
+const colorSchemeLabel = computed(
+    () =>
+        props.colorSchemes.find((choice) => choice.id === props.colorScheme)?.label ??
+        t('nowPlaying.colorScheme'),
+)
 
 const menuItems = computed<MenuItem[]>(() =>
     props.presets.map((choice) => ({
         id: choice.id,
         label: choice.label,
         checked: choice.id === props.preset,
+    })),
+)
+
+const schemeItems = computed<MenuItem[]>(() =>
+    props.colorSchemes.map((choice) => ({
+        id: choice.id,
+        label: choice.label,
+        checked: choice.id === props.colorScheme,
     })),
 )
 
@@ -79,19 +120,24 @@ const moduleOptions = computed<SegmentOption[]>(() =>
     })),
 )
 
-function pickerElement(): HTMLElement | null {
-    const element = (picker.value as { $el?: unknown } | null)?.$el
+function buttonElement(button: InstanceType<typeof BaseButton> | null): HTMLElement | null {
+    const element = (button as { $el?: unknown } | null)?.$el
     return element instanceof HTMLElement ? element : null
 }
 
-async function togglePresets(): Promise<void> {
-    if (open.value) {
-        menu.value?.close()
+/** Opens a list above its button (or as a sheet on phones), or closes it when it is open. */
+async function toggleList(
+    list: InstanceType<typeof BaseContextMenu> | null,
+    button: InstanceType<typeof BaseButton> | null,
+    available: boolean,
+): Promise<void> {
+    if (list?.isOpen) {
+        list.close()
         return
     }
 
-    const element = pickerElement()
-    if (!element || !ready.value) {
+    const element = buttonElement(button)
+    if (!element || !available) {
         return
     }
 
@@ -103,12 +149,26 @@ async function togglePresets(): Promise<void> {
         await nextTick()
     }
 
-    await menu.value?.openAnchored(element.getBoundingClientRect(), placement.placement)
+    await list?.openAnchored(element.getBoundingClientRect(), placement.placement)
+}
+
+function togglePresets(): Promise<void> {
+    return toggleList(menu.value, picker.value, ready.value)
+}
+
+function toggleColorSchemes(): Promise<void> {
+    return toggleList(schemeMenu.value, schemePicker.value, hasColorSchemes.value)
 }
 
 function selectPreset(id: string): void {
     if (props.presets.some((choice) => choice.id === id) && id !== props.preset) {
         emit('selectPreset', id)
+    }
+}
+
+function selectColorScheme(id: string): void {
+    if (props.colorSchemes.some((choice) => choice.id === id) && id !== props.colorScheme) {
+        emit('selectColorScheme', id)
     }
 }
 
@@ -132,7 +192,7 @@ function selectModule(value: string): void {
         data-part="visualization-controls"
         role="group"
         :aria-label="t('nowPlaying.visualizationControls')"
-        :data-state="ready ? 'ready' : 'loading'"
+        :data-state="stateTokens"
     >
         <BaseButton
             part="btn-preset-previous"
@@ -180,6 +240,20 @@ function selectModule(value: string): void {
             :disabled="!fullscreenAvailable || (!active && !fullscreen)"
             @click="emit('toggleFullscreen')"
         />
+        <BaseButton
+            v-if="hasColorSchemes"
+            ref="schemePicker"
+            part="btn-color-scheme-picker"
+            icon="color-scheme"
+            :label="colorSchemeLabel"
+            :title="t('nowPlaying.colorScheme')"
+            :aria-label="t('nowPlaying.colorSchemeChoice', { name: colorSchemeLabel })"
+            dropdown
+            aria-haspopup="menu"
+            :aria-expanded="schemesOpen ? 'true' : 'false'"
+            :state="schemesOpen ? 'open' : 'closed'"
+            @click="toggleColorSchemes"
+        />
         <BaseSegmentedControl
             item="visualization-module"
             :label="t('nowPlaying.visualizationModule')"
@@ -188,12 +262,20 @@ function selectModule(value: string): void {
             @update:model-value="selectModule"
         />
     </div>
-    <!-- Beside the toolbar, not in it: the menu takes nothing over from the look of the toolbar. -->
+    <!-- Beside the toolbar, not in it: the menus take nothing over from the look of the toolbar. -->
     <BaseContextMenu
         ref="menu"
         data-kind="visualization-presets"
         :items="menuItems"
         :label="t('nowPlaying.visualizationPresets')"
         @select="selectPreset"
+    />
+    <BaseContextMenu
+        v-if="hasColorSchemes"
+        ref="schemeMenu"
+        data-kind="visualization-color-schemes"
+        :items="schemeItems"
+        :label="t('nowPlaying.visualizationColorSchemes')"
+        @select="selectColorScheme"
     />
 </template>

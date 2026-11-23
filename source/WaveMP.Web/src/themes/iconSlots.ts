@@ -92,6 +92,7 @@ export const iconSlots = {
     'preset-previous': { file: fill('caret-left'), area: 'content' },
     'preset-next': { file: fill('caret-right'), area: 'content' },
     'auto-change': { file: fill('timer'), area: 'content' },
+    'color-scheme': { file: fill('palette'), area: 'content' },
     'item-menu': { file: fill('dots-three-outline'), area: 'content' },
     recap: { file: regular('sparkle'), area: 'content' },
     statistics: { file: regular('chart-bar'), area: 'content' },

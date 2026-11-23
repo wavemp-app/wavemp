@@ -619,7 +619,8 @@
             [data-part='now-playing-mini'],
             [data-part='field'][data-variant='checkbox'],
             [data-part='segment'],
-            [data-part='btn-preset-picker']
+            [data-part='btn-preset-picker'],
+            [data-part='btn-color-scheme-picker']
         ) {
             min-block-size: var(--_touch-target) !important;
         }
