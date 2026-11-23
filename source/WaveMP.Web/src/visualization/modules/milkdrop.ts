@@ -14,8 +14,10 @@
 // The presets react to the music on their own, but butterchurn measures it against its own recent
 // past, so a quiet passage moves as much as a loud one. The renderer therefore also listens to the
 // music (the shared analysis of the own visualizations) and lets the presets run slower in quiet
-// passages and push ahead a little on a beat (milkdropMusicPace), and dims quiet passages
-// (milkdropMusicBrightness).
+// passages and push ahead on a beat (milkdropMusicPace), dims quiet passages and lights the picture
+// up softly on a beat (milkdropMusicBrightness), and lets the picture swell on a beat
+// (milkdropMusicZoom): it is enlarged around its center for a moment. Every preset shows both the
+// same way, so each one visibly follows the beats; the flash guard keeps them from flashing.
 
 import type { Butterchurn, ButterchurnRendererOptions } from 'butterchurn'
 import type { ButterchurnPresetPack } from 'butterchurn-presets'
@@ -55,11 +57,33 @@ export const milkdropBlendSeconds: PresetBlendSeconds = { manual: 2, automatic: 
 /** Share of their speed the presets lose in a quiet passage. */
 export const milkdropQuietSlowdown = 0.6
 
-/** Share of their speed a beat adds for a moment (fading with the pulse of the beat). */
+/** Share of their speed a strong beat adds for a moment (fading with the pulse of the beat). */
 export const milkdropBeatPush = 0.4
+
+/** How much the picture is enlarged on a strong beat in a loud passage (0.08: by 8 %). */
+export const milkdropBeatSwell = 0.08
+
+/** Share of the swell of a beat that is left at the reduced intensity. */
+export const reducedMilkdropSwell = 0.4
 
 /** Share of their brightness the presets lose in a quiet passage. */
 export const milkdropQuietDimming = 0.45
+
+/**
+ * Share of their brightness the presets lose between the beats of music with a steady beat and win
+ * back on a strong beat, so a beat lights the picture up softly; the flash guard keeps it from ever
+ * flashing. Music without beats is shown at full brightness (see MilkdropGroove).
+ */
+export const milkdropBeatGlow = 0.3
+
+/** Seconds after which the groove of the music has faded to about a third without a beat. */
+export const milkdropGrooveSeconds = 2
+
+/** How much a beat adds to the groove of the music (up to 1). */
+export const milkdropGrooveStep = 0.35
+
+/** Share of the glow of a beat that is left at the reduced intensity. */
+export const reducedMilkdropGlow = 0.4
 
 /** Size of the analyser the renderer listens to the music with. */
 const fftSize = 2048
@@ -79,13 +103,61 @@ export function milkdropMusicPace(
 }
 
 /**
- * How bright the presets are shown for the music at the moment: 1 in loud passages, down to
- * 1 - milkdropQuietDimming in quiet ones. The quiet value of the analysis changes slowly, so this
- * never flashes.
+ * How much the music has a steady beat at the moment, 0 to 1: every beat adds milkdropGrooveStep,
+ * and without beats it fades out over a few seconds. With a beat about every second or more often
+ * it stays near 1.
  */
-export function milkdropMusicBrightness(features: Pick<AudioFeatures, 'quiet'>): number {
-    const quiet = Number.isFinite(features.quiet) ? Math.min(1, Math.max(0, features.quiet)) : 0
-    return 1 - milkdropQuietDimming * quiet
+export class MilkdropGroove {
+    private current = 0
+
+    /** The groove after a frame shown seconds after the previous one, with or without a beat. */
+    update(beat: boolean, seconds: number): number {
+        this.current *= Math.exp(-Math.max(0, seconds) / milkdropGrooveSeconds)
+        if (beat) {
+            this.current = Math.min(1, this.current + milkdropGrooveStep)
+        }
+
+        return this.current
+    }
+
+    get value(): number {
+        return this.current
+    }
+}
+
+/**
+ * How bright the presets are shown for the music at the moment: in music with a steady beat (the
+ * groove, see MilkdropGroove) full brightness on a strong beat and 1 - milkdropBeatGlow between the
+ * beats (less of a difference at the reduced intensity), in music without beats full brightness,
+ * and in quiet passages dimmed by up to milkdropQuietDimming. The quiet value of the analysis and
+ * the groove change slowly and the pulse of a beat fades out; the flash guard limits what is left.
+ */
+export function milkdropMusicBrightness(
+    features: Pick<AudioFeatures, 'quiet' | 'pulse'>,
+    groove: number,
+    intensity: VisualizationIntensityLevel,
+): number {
+    const clamp = (value: number) => Math.min(1, Math.max(0, Number.isFinite(value) ? value : 0))
+    const glow =
+        milkdropBeatGlow * clamp(groove) * (intensity === 'reduced' ? reducedMilkdropGlow : 1)
+    return (
+        (1 - milkdropQuietDimming * clamp(features.quiet)) *
+        (1 - glow * (1 - clamp(features.pulse)))
+    )
+}
+
+/**
+ * How much the picture is enlarged around its center for the music at the moment: up to
+ * milkdropBeatSwell on a strong beat, fading out with its pulse; nothing in quiet passages, less at
+ * the reduced intensity.
+ */
+export function milkdropMusicZoom(
+    features: Pick<AudioFeatures, 'quiet' | 'pulse'>,
+    intensity: VisualizationIntensityLevel,
+): number {
+    const clamp = (value: number) => Math.min(1, Math.max(0, Number.isFinite(value) ? value : 0))
+    const share = intensity === 'reduced' ? reducedMilkdropSwell : 1
+    return milkdropBeatSwell * share * clamp(features.pulse) * (1 - clamp(features.quiet))
 }
 
 /** Part of a step the rounding of the times of the frames may leave missing. */
@@ -210,6 +282,7 @@ class MilkdropRenderer implements VisualizationRenderer {
     private readonly analyser: AnalyserNode
     private readonly spectrum: Float32Array<ArrayBuffer>
     private readonly features = new AudioFeatureTracker()
+    private readonly groove = new MilkdropGroove()
     private readonly canvas: HTMLCanvasElement
     /** The canvas butterchurn draws into; outside the page. */
     private readonly source: HTMLCanvasElement
@@ -330,6 +403,7 @@ class MilkdropRenderer implements VisualizationRenderer {
         this.analyser.getFloatFrequencyData(this.spectrum)
         const music = this.features.update(this.spectrum, this.analyser.context.sampleRate, time)
         const pace = milkdropMusicPace(music, this.intensity)
+        const groove = this.groove.update(music.beat, seconds)
 
         // At least one step before the first frame, so there is a picture to show.
         const steps = Math.max(
@@ -347,7 +421,8 @@ class MilkdropRenderer implements VisualizationRenderer {
             earlier,
             // From the earlier step towards the latest one as the time moves on to the next step.
             earlierWeight: this.stepCount > 1 ? 1 - this.stepper.phase : 0,
-            brightness: milkdropMusicBrightness(music),
+            brightness: milkdropMusicBrightness(music, groove, this.intensity),
+            zoom: milkdropMusicZoom(music, this.intensity),
         })
     }
 

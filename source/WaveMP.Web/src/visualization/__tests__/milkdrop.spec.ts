@@ -6,17 +6,25 @@ import {
     createMilkdropModule,
     effectiveMilkdropSpeed,
     maxMilkdropStepsPerFrame,
+    milkdropBeatGlow,
     milkdropBeatPush,
+    milkdropBeatSwell,
     milkdropBlendSeconds,
+    MilkdropGroove,
+    milkdropGrooveSeconds,
+    milkdropGrooveStep,
     milkdropMusicBrightness,
     milkdropMusicPace,
+    milkdropMusicZoom,
     milkdropPresets,
     milkdropQuietDimming,
     milkdropQuietSlowdown,
     milkdropQuality,
     milkdropStepsPerSecond,
     MilkdropStepper,
+    reducedMilkdropGlow,
     reducedMilkdropSpeed,
+    reducedMilkdropSwell,
     type MilkdropEnvironment,
 } from '../modules/milkdrop'
 import { visualizationModule, visualizationModules } from '../modules'
@@ -358,6 +366,7 @@ describe('the speed of Milkdrop', () => {
                 .map(([, args]) => args[1] as number)
                 .at(-1)
         shown.render()
+        // A steady sound without beats: full brightness.
         play(60, 20)
         expect(brightness()).toBe(1)
 
@@ -367,10 +376,88 @@ describe('the speed of Milkdrop', () => {
         play(60, 6)
         expect(brightness()).toBeLessThan(0.75)
         expect(brightness()).toBeGreaterThanOrEqual(1 - milkdropQuietDimming)
+    })
 
-        expect(milkdropMusicBrightness({ quiet: 0 })).toBe(1)
-        expect(milkdropMusicBrightness({ quiet: 1 })).toBeCloseTo(1 - milkdropQuietDimming)
-        expect(milkdropMusicBrightness({ quiet: Number.NaN })).toBe(1)
+    it('lights the picture up on every kick of the music', async () => {
+        const { renderer: shown, sound, stage, play } = await renderer({ speed: 50 })
+        const brightness = () =>
+            stage
+                .named('uniform1f')
+                .filter(([, args]) => (args[0] as { name: string }).name === 'uBrightness')
+                .map(([, args]) => args[1] as number)
+                // The reduction and the output pass both read it.
+                .filter((_, index) => index % 2 === 0)
+
+        // Eight seconds of music with a kick (the bass 25 dB louder for four frames) every half
+        // second.
+        const base = (bin: number) => -50 - 3 * Math.log2(Math.max(1, bin))
+        let frame = 0
+        sound.analyser.getFloatFrequencyData.mockImplementation((data: Float32Array) => {
+            const kick = frame++ % 30 < 4
+            data.forEach((_, bin) => (data[bin] = base(bin) + (kick && bin < 12 ? 25 : 0)))
+            return data
+        })
+        shown.render()
+        play(60, 8)
+        const loud = brightness().slice(-120)
+
+        // Brighter right after a kick than just before the next one, never above full brightness.
+        expect(Math.max(...loud) / Math.min(...loud)).toBeGreaterThan(1 + milkdropBeatGlow * 0.5)
+        expect(Math.max(...loud)).toBeLessThanOrEqual(1)
+
+        // The kicks stop and a steady, loud sound goes on: after a few seconds the picture is at
+        // full brightness again.
+        sound.analyser.getFloatFrequencyData.mockImplementation((data: Float32Array) => {
+            data.forEach((_, bin) => (data[bin] = base(bin) + 10))
+            return data
+        })
+        play(60, 10)
+        expect(brightness().at(-1)).toBeGreaterThan(0.99)
+    })
+
+    it('measures the groove of the music by its beats', () => {
+        const groove = new MilkdropGroove()
+        expect(groove.update(false, 1)).toBe(0)
+
+        // A beat every half second: the groove rises to 1.
+        for (let beat = 0; beat < 8; beat++) {
+            groove.update(true, 0.5)
+        }
+        expect(groove.value).toBe(1)
+        expect(groove.update(true, 0)).toBe(1)
+
+        // No beats: the groove fades out.
+        expect(groove.update(false, milkdropGrooveSeconds)).toBeCloseTo(Math.exp(-1))
+        expect(groove.update(false, 10)).toBeLessThan(0.01)
+        expect(groove.update(false, -5)).toBeLessThan(0.01)
+
+        // A single beat after a long pause is not yet a groove.
+        expect(new MilkdropGroove().update(true, 0)).toBe(milkdropGrooveStep)
+    })
+
+    it('sets the brightness of the presets by the beat, the groove and the quiet of the music', () => {
+        expect(milkdropMusicBrightness({ quiet: 0, pulse: 1 }, 1, 'normal')).toBe(1)
+        expect(milkdropMusicBrightness({ quiet: 0, pulse: 0 }, 1, 'normal')).toBeCloseTo(
+            1 - milkdropBeatGlow,
+        )
+        expect(milkdropMusicBrightness({ quiet: 0, pulse: 0 }, 0.5, 'normal')).toBeCloseTo(
+            1 - milkdropBeatGlow / 2,
+        )
+        // Music without beats is not dimmed between them.
+        expect(milkdropMusicBrightness({ quiet: 0, pulse: 0 }, 0, 'normal')).toBe(1)
+        expect(milkdropMusicBrightness({ quiet: 1, pulse: 1 }, 1, 'normal')).toBeCloseTo(
+            1 - milkdropQuietDimming,
+        )
+        expect(milkdropMusicBrightness({ quiet: 1, pulse: 0 }, 1, 'normal')).toBeCloseTo(
+            (1 - milkdropQuietDimming) * (1 - milkdropBeatGlow),
+        )
+        // Less of a difference at the reduced intensity.
+        expect(milkdropMusicBrightness({ quiet: 0, pulse: 0 }, 1, 'reduced')).toBeCloseTo(
+            1 - milkdropBeatGlow * reducedMilkdropGlow,
+        )
+        expect(milkdropMusicBrightness({ quiet: Number.NaN, pulse: 9 }, Number.NaN, 'normal')).toBe(
+            1,
+        )
     })
 
     it('sets the pace of the presets by the music', () => {
@@ -388,6 +475,59 @@ describe('the speed of Milkdrop', () => {
         )
         expect(milkdropMusicPace({ quiet: Number.NaN, pulse: 5 }, 'normal')).toBeCloseTo(
             1 + milkdropBeatPush,
+        )
+    })
+
+    it('lets the picture swell with every kick of the music and not in a quiet passage', async () => {
+        const { renderer: shown, sound, stage, play } = await renderer({ speed: 50 })
+        const zooms = () =>
+            stage
+                .named('uniform1f')
+                .filter(([, args]) => (args[0] as { name: string }).name === 'uZoom')
+                .map(([, args]) => args[1] as number)
+                // The reduction and the output pass both read it.
+                .filter((_, index) => index % 2 === 0)
+
+        // Eight seconds of music with a kick (the bass 25 dB louder for four frames) every half
+        // second.
+        const base = (bin: number) => -50 - 3 * Math.log2(Math.max(1, bin))
+        let frame = 0
+        sound.analyser.getFloatFrequencyData.mockImplementation((data: Float32Array) => {
+            const kick = frame++ % 30 < 4
+            data.forEach((_, bin) => (data[bin] = base(bin) + (kick && bin < 12 ? 25 : 0)))
+            return data
+        })
+        shown.render()
+        play(60, 8)
+        const loud = zooms().slice(-120)
+
+        // The swell follows the kicks: large right after one, gone before the next.
+        expect(Math.max(...loud)).toBeGreaterThan(milkdropBeatSwell * 0.5)
+        expect(Math.max(...loud)).toBeLessThanOrEqual(milkdropBeatSwell)
+        expect(Math.min(...loud)).toBeLessThan(milkdropBeatSwell * 0.1)
+
+        // A quiet passage: the same kicks 30 dB lower after the loud part.
+        sound.analyser.getFloatFrequencyData.mockImplementation((data: Float32Array) => {
+            const kick = frame++ % 30 < 4
+            data.forEach((_, bin) => (data[bin] = base(bin) - 30 + (kick && bin < 12 ? 25 : 0)))
+            return data
+        })
+        play(60, 6)
+        expect(Math.max(...zooms().slice(-60))).toBeLessThan(milkdropBeatSwell * 0.15)
+    })
+
+    it('sets the swell of the picture by the beat and the quiet of the music', () => {
+        expect(milkdropMusicZoom({ quiet: 0, pulse: 0 }, 'normal')).toBe(0)
+        expect(milkdropMusicZoom({ quiet: 0, pulse: 1 }, 'normal')).toBeCloseTo(milkdropBeatSwell)
+        expect(milkdropMusicZoom({ quiet: 0, pulse: 0.5 }, 'normal')).toBeCloseTo(
+            milkdropBeatSwell / 2,
+        )
+        expect(milkdropMusicZoom({ quiet: 1, pulse: 1 }, 'normal')).toBe(0)
+        expect(milkdropMusicZoom({ quiet: 0, pulse: 1 }, 'reduced')).toBeCloseTo(
+            milkdropBeatSwell * reducedMilkdropSwell,
+        )
+        expect(milkdropMusicZoom({ quiet: Number.NaN, pulse: 7 }, 'normal')).toBeCloseTo(
+            milkdropBeatSwell,
         )
     })
 

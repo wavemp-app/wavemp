@@ -5,6 +5,7 @@ import {
     flashGuardUniforms,
     flashSamplesPerCell,
     limitFragment,
+    maxFlashGuardZoom,
     outputFragment,
     reduceFragment,
 } from '../flashGuard'
@@ -162,6 +163,23 @@ describe('FlashGuard', () => {
         expect(uniform('uBrightness')?.[1]).toBe(0)
     })
 
+    it('shows the source as it is unless asked to enlarge it', () => {
+        const { guard, uniform } = setup()
+        const latest = { id: 'latest' } as unknown as WebGLTexture
+
+        guard.present(1 / 60)
+        expect(uniform('uZoom')?.[1]).toBe(0)
+
+        guard.present(1 / 60, { texture: latest, zoom: 0.05 })
+        expect(uniform('uZoom')?.[1]).toBe(0.05)
+
+        guard.present(1 / 60, { texture: latest, zoom: 4 })
+        expect(uniform('uZoom')?.[1]).toBe(maxFlashGuardZoom)
+
+        guard.present(1 / 60, { texture: latest, zoom: Number.NaN })
+        expect(uniform('uZoom')?.[1]).toBe(0)
+    })
+
     it('takes new frames at a new size and lets the next frame pass', () => {
         const { guard, uniform, named } = setup()
         guard.present(1 / 60)
@@ -221,6 +239,13 @@ describe('the shaders of the flash guard', () => {
     it('spread the mix factor to the neighbours and round it up', () => {
         expect(limitFragment).toContain('limitCell(neighbour)')
         expect(limitFragment).toContain('ceil(largest * 255.0) / 255.0')
+    })
+
+    it('enlarge the source around its center in the reduction and the output alike', () => {
+        for (const source of [reduceFragment, outputFragment]) {
+            expect(source).toContain('uniform float uZoom;')
+            expect(source).toContain('/ (1.0 + uZoom) + size * 0.5')
+        }
     })
 
     it('mix in linear light', () => {
