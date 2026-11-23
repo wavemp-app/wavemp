@@ -2,8 +2,10 @@ using System.Data.Common;
 using AwesomeAssertions;
 using AwesomeAssertions.Execution;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using WaveMP.Core.Jobs.Extensions;
 using WaveMP.Core.Jobs.Runs;
 using WaveMP.Core.Metadata.Extensions;
@@ -1154,6 +1156,239 @@ public class LibraryScannerTests
         await ExpectSongDataAsync(result, data, "Band/Record", "Track");
     }
 
+    [TestCase(true)]
+    [TestCase(false)]
+    public async Task Rescan_SongMovedOutOfAFolderThatStays_KeepsTheSongWhicheverFolderIsWrittenFirst(
+        bool oldFolderFirst)
+    {
+        string newFolder = oldFolderFirst ? "Zoo/Record" : "Archive/Record";
+        await CreateSongsWithDataAsync("Band/Record");
+        await ScanAsync();
+        SongData data = await GiveSongDataAsync("Band/Record");
+
+        // The old folder keeps the song Other, so it is written like the new one, before or after it.
+        MoveSong("Band/Record", newFolder);
+        ScanResult result = await ScanAsync();
+
+        await ExpectSongDataAsync(result, data, newFolder, "Song", otherFolder: "Band/Record");
+    }
+
+    [TestCase(true)]
+    [TestCase(false)]
+    public async Task Rescan_MoveInterruptedAfterTheFirstFolder_KeepsTheSongWhenTheScanIsRepeated(bool oldFolderFirst)
+    {
+        string newFolder = oldFolderFirst ? "Zoo/Record" : "Archive/Record";
+        await CreateSongsWithDataAsync("Band/Record");
+        await ScanAsync();
+        SongData data = await GiveSongDataAsync("Band/Record");
+        MoveSong("Band/Record", newFolder);
+
+        using CancellationTokenSource cancellation = new();
+        CancelAfterFirstFolder tracker = new(cancellation);
+        await using (ServiceProvider services = CreateServices(
+            _media.Path,
+            collection => collection.AddSingleton<IScanProgressTracker>(tracker)))
+        {
+            Func<Task> act = () => ScanAsync(services: services, cancellationToken: cancellation.Token);
+
+            await act.Should().ThrowAsync<OperationCanceledException>();
+        }
+
+        tracker.DirectoriesProcessed.Should().Be(1);
+        await using (WaveMpDbContext db = _database.CreateDbContext())
+        {
+            Track song = await db.Tracks.Include(track => track.Files).SingleAsync(track => track.Id == data.SongId);
+            if (oldFolderFirst)
+            {
+                // The old folder is written, but the song waits there with its files for the new folder.
+                song.DirectoryPath.Should().Be("Band/Record");
+                song.Files.Select(file => file.RelativePath).Should().BeEquivalentTo(
+                    "Band/Record/Song.mp3",
+                    "Band/Record/Song.flac",
+                    "Band/Record/Song.jpg");
+            }
+            else
+            {
+                // The new folder is written and has the song with all its files already.
+                song.DirectoryPath.Should().Be(newFolder);
+                (await db.MediaFiles.CountAsync(file => file.DirectoryPath == "Band/Record")).Should().Be(1);
+            }
+        }
+
+        ScanResult result = await ScanAsync();
+
+        await ExpectSongDataAsync(result, data, newFolder, "Song", otherFolder: "Band/Record");
+    }
+
+    [TestCase(true)]
+    [TestCase(false)]
+    public async Task Rescan_RenamedFolderWhileTheAlbumsAreFormedAgain_KeepsTheSongsAndTheDataOfTheirAlbums(
+        bool readByVersion106)
+    {
+        Dictionary<string, Guid> oldAlbums;
+        if (readByVersion106)
+        {
+            oldAlbums = await CreateLibraryOfVersion106Async();
+        }
+        else
+        {
+            await CreateLibraryOfGroupingVersion2Async();
+            oldAlbums = await OldHitsAlbumsAsync();
+        }
+
+        AlbumData albumData = await GiveAlbumDataAsync(oldAlbums["Sampler"], oldAlbums["Guest"], oldAlbums["Other"]);
+        Dictionary<string, Guid> trackIds;
+        await using (WaveMpDbContext db = _database.CreateDbContext())
+        {
+            trackIds = await db.Tracks.ToDictionaryAsync(track => track.Title, track => track.Id);
+            Track two = await db.Tracks.AsNoTracking().SingleAsync(track => track.Title == "Two");
+            LibrarySeed seed = new();
+            User listener = seed.User();
+            seed.Favorite(listener, two, _day.AddDays(1));
+            seed.Rating(listener, two, 4);
+            seed.Play(listener, two, _day.AddDays(2));
+            await seed.SaveAsync(db);
+            _users.Add(listener.Id);
+        }
+
+        Directory.Move(_media.Combine("Sampler/Hits"), _media.Combine("Sampler/Hits 2020"));
+        ScanResult result = await ScanAsync();
+
+        (result.Statistics.TracksAdded, result.Statistics.TracksRemoved).Should().Be((0, 0));
+        Guid albumId;
+        await using (WaveMpDbContext after = _database.CreateDbContext())
+        {
+            (await after.Tracks.ToDictionaryAsync(track => track.Title, track => track.Id))
+                .Should().BeEquivalentTo(trackIds);
+            Album compilation = await LoadAlbumAsync(after, "Hits");
+            (compilation.AlbumArtistId, compilation.Tracks.Count, compilation.IsCompilation)
+                .Should().Be(((Guid?)null, 3, true));
+            compilation.Tracks.Select(track => track.DirectoryPath).Distinct().Should().Equal("Sampler/Hits 2020");
+            compilation.Covers.Should().ContainSingle()
+                .Which.MediaFile!.RelativePath.Should().Be("Sampler/Hits 2020/cover.jpg");
+            oldAlbums.Values.Should().NotContain(compilation.Id);
+            (await after.MediaSources.Select(source => source.AlbumGroupingVersion).ToListAsync())
+                .Should().Equal(ScannerVersions.AlbumGrouping);
+            (await after.Favorites.CountAsync(favorite => favorite.TrackId == trackIds["Two"])).Should().Be(1);
+            (await after.TrackRatings.CountAsync(rating => rating.TrackId == trackIds["Two"])).Should().Be(1);
+            (await after.PlayHistory.CountAsync(play => play.TrackId == trackIds["Two"])).Should().Be(1);
+            albumId = compilation.Id;
+        }
+
+        await ExpectAlbumDataAsync(albumId, albumData);
+    }
+
+    [Test]
+    public async Task Rescan_MovedSongFoundTwice_IsTwoNewSongsAndTheDataOfTheOldSongGoesAsBefore()
+    {
+        await AudioAsync("Band/Record/Song.mp3", tags: new TestTags { Title = "Song", Artist = "Band" });
+        await ScanAsync();
+        (User user, Guid oldId) = await GiveSimpleSongDataAsync();
+
+        CopyMedia("Band/Record/Song.mp3", "One/Song.mp3");
+        CopyMedia("Band/Record/Song.mp3", "Two/Song.mp3");
+        Directory.Delete(_media.Combine("Band"), true);
+        ScanResult result = await ScanAsync();
+
+        (result.Statistics.TracksAdded, result.Statistics.TracksRemoved).Should().Be((2, 1));
+        await ExpectNewSongsWithoutDataAsync(user, oldId, "One", "Two");
+    }
+
+    [Test]
+    public async Task Rescan_TwoVanishedCopiesOfASongFoundOnce_IsANewSongAndTheDataOfTheOldSongsGoesAsBefore()
+    {
+        await AudioAsync("One/Song.mp3", tags: new TestTags { Title = "Song", Artist = "Band" });
+        CopyMedia("One/Song.mp3", "Two/Song.mp3");
+        await ScanAsync();
+        (User user, Guid oldId) = await GiveSimpleSongDataAsync("One");
+
+        CopyMedia("One/Song.mp3", "Three/Song.mp3");
+        Directory.Delete(_media.Combine("One"), true);
+        Directory.Delete(_media.Combine("Two"), true);
+        ScanResult result = await ScanAsync();
+
+        (result.Statistics.TracksAdded, result.Statistics.TracksRemoved).Should().Be((1, 2));
+        await ExpectNewSongsWithoutDataAsync(user, oldId, "Three");
+    }
+
+    [Test]
+    public async Task Rescan_MovedSongWithOtherTags_IsANewSongAndTheDataOfTheOldSongGoesAsBefore()
+    {
+        await AudioAsync("Band/Record/Song.mp3", tags: new TestTags { Title = "Song A", Artist = "Band" });
+        await ScanAsync();
+        (User user, Guid oldId) = await GiveSimpleSongDataAsync();
+
+        await AudioAsync("Archive/Record/Song.mp3", tags: new TestTags { Title = "Song B", Artist = "Band" });
+        long oldSize = new FileInfo(_media.Combine("Band/Record/Song.mp3")).Length;
+        Directory.Delete(_media.Combine("Band"), true);
+        ScanResult result = await ScanAsync();
+
+        // Same size, kind and name: the move is planned, and only the tags read from the new file tell it apart.
+        new FileInfo(_media.Combine("Archive/Record/Song.mp3")).Length.Should().Be(oldSize);
+        (result.Statistics.TracksAdded, result.Statistics.TracksRemoved).Should().Be((1, 1));
+        await ExpectNewSongsWithoutDataAsync(user, oldId, "Archive/Record");
+    }
+
+    [Test]
+    public async Task Rescan_RenamedFolderOfALargeLibrary_KeepsAllSongsWithoutAQueryPerSong()
+    {
+        const int Folders = 4;
+        const int SongsPerFolder = 8;
+        using (TemporaryDirectory template = new())
+        {
+            string song = template.Combine("song.mp3");
+            await TestMediaGenerator.CreateAudioAsync(
+                song,
+                AudioFormat.Mp3,
+                new TestTags { Title = "Song", Artist = "Band", Album = "Record" });
+            for (int folder = 1; folder <= Folders; folder++)
+            {
+                Directory.CreateDirectory(_media.Combine($"Library/Folder {folder}"));
+                for (int number = 1; number <= SongsPerFolder; number++)
+                {
+                    File.Copy(song, _media.Combine($"Library/Folder {folder}/Song {folder}-{number}.mp3"));
+                }
+            }
+        }
+
+        CommandCounter commands = new();
+        await using ServiceProvider services = CreateServices(
+            _media.Path,
+            collection => collection.AddLogging(logging => logging.AddProvider(commands)));
+        ScanResult fresh = await ScanAsync(services: services);
+        int freshCommands = commands.Count;
+        fresh.Statistics.TracksAdded.Should().Be(Folders * SongsPerFolder);
+        Dictionary<string, Guid> trackIds;
+        await using (WaveMpDbContext db = _database.CreateDbContext())
+        {
+            trackIds = await db.Tracks.ToDictionaryAsync(
+                track => track.DirectoryPath[track.DirectoryPath.IndexOf('/')..] + "/" + track.BaseName,
+                track => track.Id);
+        }
+
+        Directory.Move(_media.Combine("Library"), _media.Combine("Collection"));
+        commands.Reset();
+        ScanResult moved = await ScanAsync(services: services);
+        int movedCommands = commands.Count;
+
+        (moved.Statistics.TracksAdded, moved.Statistics.TracksRemoved, moved.Statistics.TracksUpdated)
+            .Should().Be((0, 0, Folders * SongsPerFolder));
+        await using (WaveMpDbContext db = _database.CreateDbContext())
+        {
+            (await db.Tracks.ToDictionaryAsync(
+                    track => track.DirectoryPath[track.DirectoryPath.IndexOf('/')..] + "/" + track.BaseName,
+                    track => track.Id))
+                .Should().BeEquivalentTo(trackIds);
+            (await db.Tracks.CountAsync(track => track.DirectoryPath.StartsWith("Collection/")))
+                .Should().Be(Folders * SongsPerFolder);
+        }
+
+        // A few queries per folder more than a first scan of the same folders, never one per song.
+        (movedCommands - freshCommands).Should().BeLessThanOrEqualTo(
+            (3 * Folders) + 5,
+            $"the first scan took {freshCommands} commands and the scan after the move {movedCommands}");
+    }
+
     [Test]
     public async Task Rescan_FolderWithoutYear_KeepsTheYearOfTheAlbum()
     {
@@ -1955,9 +2190,14 @@ public class LibraryScannerTests
     /// <summary>
     /// Expects all data of <see cref="GiveSongDataAsync"/> on the song, which lies in <paramref name="folder"/> with the
     /// base name <paramref name="baseName"/> now, every song with its id, no file left at its old place, and a scan
-    /// that neither added nor removed a song.
+    /// that neither added nor removed a song. The song <c>Other</c> lies in <paramref name="otherFolder"/>, if given.
     /// </summary>
-    private async Task ExpectSongDataAsync(ScanResult result, SongData data, string folder, string baseName)
+    private async Task ExpectSongDataAsync(
+        ScanResult result,
+        SongData data,
+        string folder,
+        string baseName,
+        string? otherFolder = null)
     {
         await using WaveMpDbContext db = _database.CreateDbContext();
 
@@ -2000,7 +2240,7 @@ public class LibraryScannerTests
             $"{folder}/{baseName}.mp3",
             $"{folder}/{baseName}.flac",
             $"{folder}/{baseName}.jpg",
-            $"{folder}/Other.mp3",
+            $"{otherFolder ?? folder}/Other.mp3",
             "Mix/First.mp3",
             "Mix/Last.mp3",
         ]);
@@ -2033,6 +2273,63 @@ public class LibraryScannerTests
             .SingleAsync();
         queue.Should().Equal(data.TrackIds["First"], data.SongId, data.TrackIds["Last"]);
         (await db.Tracks.CountAsync(track => queue.Contains(track.Id))).Should().Be(3);
+    }
+
+    /// <summary>
+    /// Moves the files of the song <c>Song</c> of <see cref="CreateSongsWithDataAsync"/> into another folder.
+    /// </summary>
+    private void MoveSong(string folder, string newFolder)
+    {
+        Directory.CreateDirectory(_media.Combine(newFolder));
+        foreach (string extension in new[] { "mp3", "flac", "jpg" })
+        {
+            File.Move(_media.Combine($"{folder}/Song.{extension}"), _media.Combine($"{newFolder}/Song.{extension}"));
+        }
+    }
+
+    private void CopyMedia(string relativePath, string newRelativePath)
+    {
+        Directory.CreateDirectory(Path.GetDirectoryName(_media.Combine(newRelativePath))!);
+        File.Copy(_media.Combine(relativePath), _media.Combine(newRelativePath));
+    }
+
+    /// <summary>
+    /// Gives the song (the one in <paramref name="folder"/>, if given) a favorite, a rating, a play and a place in a
+    /// playlist of a new profile. Returns the profile and the id of the song.
+    /// </summary>
+    private async Task<(User User, Guid TrackId)> GiveSimpleSongDataAsync(string? folder = null)
+    {
+        await using WaveMpDbContext db = _database.CreateDbContext();
+        Track song = await db.Tracks.AsNoTracking()
+            .SingleAsync(track => folder == null || track.DirectoryPath == folder);
+        LibrarySeed seed = new();
+        User user = seed.User();
+        seed.Favorite(user, song, _day);
+        seed.Rating(user, song, 5);
+        seed.Play(user, song, _day);
+        seed.Playlist(user, "Road", song);
+        await seed.SaveAsync(db);
+        _users.Add(user.Id);
+        return (user, song.Id);
+    }
+
+    /// <summary>
+    /// Expects a new song in each of the folders and none of the data of <see cref="GiveSimpleSongDataAsync"/> left:
+    /// it went with the old song, as for every song that is removed.
+    /// </summary>
+    private async Task ExpectNewSongsWithoutDataAsync(User user, Guid oldId, params string[] folders)
+    {
+        await using WaveMpDbContext db = _database.CreateDbContext();
+        List<Track> tracks = await db.Tracks.ToListAsync();
+
+        // Every leftover is reported, not only the first one.
+        using AssertionScope scope = new();
+        tracks.Select(track => track.DirectoryPath).Should().BeEquivalentTo(folders);
+        tracks.Select(track => track.Id).Should().NotContain(oldId);
+        (await db.Favorites.CountAsync(favorite => favorite.UserId == user.Id)).Should().Be(0);
+        (await db.TrackRatings.CountAsync(rating => rating.UserId == user.Id)).Should().Be(0);
+        (await db.PlayHistory.CountAsync(play => play.UserId == user.Id)).Should().Be(0);
+        (await db.PlaylistEntries.CountAsync(entry => entry.Playlist!.UserId == user.Id)).Should().Be(0);
     }
 
     private static Task<List<(Guid UserId, Guid AlbumId, DateTimeOffset CreatedAt)>> FavoritesAsync(
@@ -2137,11 +2434,14 @@ public class LibraryScannerTests
             .SingleAsync();
     }
 
-    private async Task<ScanResult> ScanAsync(ScanScope? scope = null, ServiceProvider? services = null)
+    private async Task<ScanResult> ScanAsync(
+        ScanScope? scope = null,
+        ServiceProvider? services = null,
+        CancellationToken cancellationToken = default)
     {
         await using AsyncServiceScope serviceScope = (services ?? _services).CreateAsyncScope();
         ILibraryScanner scanner = serviceScope.ServiceProvider.GetRequiredService<ILibraryScanner>();
-        return await scanner.ScanAsync(scope ?? ScanScope.Full, Guid.NewGuid());
+        return await scanner.ScanAsync(scope ?? ScanScope.Full, Guid.NewGuid(), cancellationToken);
     }
 
     private async Task<bool> RefreshAsync(string folder, params string[] changedFiles)
@@ -2236,7 +2536,9 @@ public class LibraryScannerTests
         await _services.GetRequiredService<IMediaSourceCatalog>().RefreshAsync();
     }
 
-    private static ServiceProvider CreateServices(string mediaPath)
+    /// <param name="mediaPath">The folder of the built-in media source.</param>
+    /// <param name="configure">Changes the services after they are registered, e.g. to replace one.</param>
+    private static ServiceProvider CreateServices(string mediaPath, Action<IServiceCollection>? configure = null)
     {
         Dictionary<string, string?> settings = TestDatabaseSettings.ToConfiguration(DatabaseName);
         settings["MEDIA_PATH"] = mediaPath;
@@ -2251,6 +2553,7 @@ public class LibraryScannerTests
         services.AddWaveMpMetadata();
         services.AddWaveMpJobs();
         services.AddWaveMpScanning();
+        configure?.Invoke(services);
         return services.BuildServiceProvider();
     }
 
@@ -2271,4 +2574,98 @@ public class LibraryScannerTests
         Guid Mp3FileId,
         Guid OnlineCoverId,
         Guid PlaylistId);
+
+    /// <summary>
+    /// The progress of a scan that cancels the scan once it has written its first folder.
+    /// </summary>
+    private sealed class CancelAfterFirstFolder(CancellationTokenSource cancellation) : IScanProgressTracker
+    {
+        public int DirectoriesProcessed { get; private set; }
+
+        public ScanProgress? Get(Guid runId)
+        {
+            return null;
+        }
+
+        public void Start(Guid runId)
+        {
+        }
+
+        public void Discovered(int directories, int files)
+        {
+        }
+
+        public void Planned(int directoriesToProcess, int filesToRead)
+        {
+        }
+
+        public void FileRead()
+        {
+        }
+
+        public void DirectoryProcessed()
+        {
+            DirectoriesProcessed++;
+            cancellation.Cancel();
+        }
+
+        public void CleaningUp()
+        {
+        }
+
+        public void Complete(Guid runId)
+        {
+        }
+    }
+
+    /// <summary>
+    /// Counts the database commands Entity Framework Core runs.
+    /// </summary>
+    private sealed class CommandCounter : ILoggerProvider
+    {
+        private int _count;
+
+        public int Count => Volatile.Read(ref _count);
+
+        public void Reset()
+        {
+            Interlocked.Exchange(ref _count, 0);
+        }
+
+        public ILogger CreateLogger(string categoryName)
+        {
+            return new Logger(this);
+        }
+
+        public void Dispose()
+        {
+        }
+
+        private sealed class Logger(CommandCounter counter) : ILogger
+        {
+            public IDisposable? BeginScope<TState>(TState state)
+                where TState : notnull
+            {
+                return null;
+            }
+
+            public bool IsEnabled(LogLevel logLevel)
+            {
+                return true;
+            }
+
+            public void Log<TState>(
+                LogLevel logLevel,
+                EventId eventId,
+                TState state,
+                Exception? exception,
+                Func<TState, Exception?, string> formatter)
+            {
+                if (eventId.Id == RelationalEventId.CommandExecuted.Id)
+                {
+                    Interlocked.Increment(ref counter._count);
+                }
+            }
+        }
+    }
 }
