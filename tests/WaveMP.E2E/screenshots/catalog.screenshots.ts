@@ -59,7 +59,7 @@ test('home', async ({ page }) => {
 })
 
 test('now playing with a visualization', async ({ page, request }) => {
-    await showVisualization(page, request, alexHeaders, alex.name, 'AForce', 'aurora')
+    await showVisualization(page, request, alexHeaders, alex.name, 'AForce', 'flow', 'aurora')
     await save(page, 'now-playing')
 })
 

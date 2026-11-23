@@ -365,6 +365,20 @@ describe('VisualizationControls', () => {
             wrapper.unmount()
         })
 
+        it('calls the presets modes, since the colors are chosen apart from them', async () => {
+            const wrapper = await loaded({ preset: 'B' })
+            const picker = wrapper.get('[data-part="btn-preset-picker"]')
+            const label = (part: string) =>
+                wrapper.get(`[data-part="${part}"] [data-part="label"]`).text()
+
+            expect(picker.attributes('title')).toBe('Mode')
+            expect(picker.attributes('aria-label')).toBe('Mode: B')
+            expect(label('btn-preset-previous')).toBe('Previous mode')
+            expect(label('btn-preset-next')).toBe('Next mode')
+            expect(presetMenu().getAttribute('aria-label')).toBe('Modes')
+            wrapper.unmount()
+        })
+
         it('opens the color schemes above their button and hands a choice to the profile', async () => {
             const wrapper = await loaded({ colorScheme: 'green' })
             const picker = wrapper.get('[data-part="btn-color-scheme-picker"]')

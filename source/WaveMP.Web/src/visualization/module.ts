@@ -1,5 +1,5 @@
 // The interface of the visualization modules. A module draws the music of the player into a canvas
-// with presets of its own: Milkdrop presets, the style variants of A-Force or the scenes of
+// with presets of its own: Milkdrop presets, the modes of A-Force or the scenes of
 // BlackCap. A module may offer color schemes besides, a second list chosen apart from the presets.
 // The stage knows modules only through this interface, so further modules plug in without changes
 // to the stage, the controller or the settings (besides a value of the API enum

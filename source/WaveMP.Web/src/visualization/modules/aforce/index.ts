@@ -1,6 +1,7 @@
-// The module A-Force: the own visualization of WaveMP with flowing waveforms, particles, color
-// gradients and camera movements that react to bass, mids, highs and beats. Its presets are its
-// style variants. The renderer (WebGL 2) loads on demand in a chunk of its own.
+// The module A-Force: the own visualization of WaveMP, light in motion that reacts to bass, mids,
+// highs, beats and quiet passages. Its presets are its modes (shapes and motion: flowing waveforms,
+// rings, warp streaks, ridges, a helix); its color schemes are chosen apart from them. The renderer
+// (WebGL 2) loads on demand in a chunk of its own.
 
 import { VisualizationModuleObject } from '@/api/generated/models'
 import type {
@@ -11,7 +12,8 @@ import type {
     VisualizationRendererOptions,
 } from '../../module'
 import { supportsWebGl2Visualization } from '../../support'
-import { aforceStyles } from './styles'
+import { aforceModes } from './modes'
+import { aforceColorSchemes } from './schemes'
 
 export type AForceRendererFactory = (
     options: VisualizationRendererOptions,
@@ -33,12 +35,17 @@ export const browserAForceEnvironment: AForceEnvironment = {
     now: () => performance.now(),
 }
 
-/** The style variants as presets, in their own order. */
-export const aforcePresets: readonly VisualizationPreset[] = aforceStyles.map((style) => ({
-    id: style.id,
-    name: style.name,
-    labelKey: style.labelKey,
+/** The modes as presets, in their own order. */
+export const aforcePresets: readonly VisualizationPreset[] = aforceModes.map((mode) => ({
+    id: mode.id,
+    name: mode.name,
+    labelKey: mode.labelKey,
 }))
+
+/** The color schemes, in their own order. */
+export const aforceColorSchemePresets: readonly VisualizationPreset[] = aforceColorSchemes.map(
+    (scheme) => ({ id: scheme.id, name: scheme.name, labelKey: scheme.labelKey }),
+)
 
 /** Creates the module A-Force; the app uses aforceModule, tests pass their own environment. */
 export function createAForceModule(
@@ -51,6 +58,7 @@ export function createAForceModule(
         const createRenderer = await environment.loadRenderer()
         return {
             presets: aforcePresets,
+            colorSchemes: aforceColorSchemePresets,
             createRenderer: (options) => createRenderer(options, () => environment.now()),
         }
     }

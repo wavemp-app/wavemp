@@ -1,30 +1,54 @@
 // The WebGL 2 renderer of A-Force. Each frame it reads the sound of the player (spectrum and
-// waveform of an analyser of its own), derives bass, mids, highs and beats from it and draws:
-// - the scene into a texture: the previous frame as fading, slowly growing and turning trails, the
-//   waveforms of the last moments flowing into the depth and particles flying through a swirling
-//   tunnel, all with additive light;
-// - the scene onto the canvas over a background gradient with a glow that breathes with the bass,
-//   a soft bloom of bright parts and a vignette.
-// The camera orbits slowly, sways with the mids and jumps towards the scene on a beat. A style
-// change blends all colors and motions over the blend seconds. The quality level sets the number
-// of particles and waveforms, the resolution of the scene and the bloom.
+// waveform of an analyser of its own), derives bass, mids, highs, beats and quiet passages from it,
+// turns them into the numbers of the frame for the shown mode (frame.ts) and draws:
+// - the scene into a texture: the previous frame as fading, growing and turning trails, then the
+//   layers of the mode with additive light (rings of the spectrum, ridges of its recent past,
+//   waveforms flowing into the depth, a helix of two waveforms, streaks and particles); a layer the
+//   mode does not show is not drawn at all;
+// - the scene over a background gradient with a glow that breathes with the bass, a soft bloom of
+//   bright parts and a vignette into the input of the flash guard,
+// - the guarded frame onto the canvas (the last pass), so no change of mode, scheme or music
+//   flashes.
+// A change of mode blends layers, geometry and reaction, a change of color scheme every color. The
+// quality level sets the number of particles, streaks, waveforms, rings and ridges, the resolution
+// of the scene and the bloom.
 
 import { AudioFeatureTracker } from '../../analysis/features'
-import type { VisualizationRenderer, VisualizationRendererOptions } from '../../module'
+import { SpectrumLevels } from '../../analysis/spectrum'
+import type {
+    VisualizationIntensityLevel,
+    VisualizationRenderer,
+    VisualizationRendererOptions,
+} from '../../module'
 import type { QualityLevel } from '../../quality'
+import { FlashGuard } from '../../safety/flashGuard'
 import { createProgram, requireResource, type Program } from '../../webgl'
 import { cameraPose, lookAt, multiply, perspective } from './camera'
-import { aforceProfiles, maxParticles, maxWaves, sceneSize, type AForceProfile } from './profiles'
+import { aforceFrameInputs } from './frame'
+import { aforceModes, aforceMode, modeLook, ModeTransition, type ModeLayers } from './modes'
+import {
+    aforceProfiles,
+    maxParticles,
+    maxTerrainRows,
+    maxWaves,
+    sceneSize,
+    type AForceProfile,
+} from './profiles'
+import { aforceColorScheme, aforceColorSchemes, ColorTransition } from './schemes'
 import {
     compositeFragment,
     fullscreenVertex,
+    helixVertex,
+    lineFragment,
     particleFragment,
     particleVertex,
+    ringFragment,
+    streakFragment,
+    streakVertex,
+    terrainVertex,
     trailFragment,
-    waveFragment,
     waveVertex,
 } from './shaders'
-import { aforceStyle, aforceStyles, StyleTransition } from './styles'
 import { smoothPoints, waveformPoints } from './waveform'
 
 /** Rows of the waveform texture between two waveforms: farther waveforms show older sound. */
@@ -42,8 +66,23 @@ const fftSize = 2048
 /** Samples a waveform shows (about 21 ms at 48 kHz). */
 const sampleSpan = 1024
 
+/** Bands of the spectrum the rings and the ridges show. */
+export const spectrumBands = 48
+
+/** Points across a ridge. */
+const terrainPoints = 96
+
 /** Longest frame the motion accounts for, so a hiccup does not make the scene jump. */
 const maxFrameSeconds = 0.1
+
+/** Longest time between two frames the flash guard accounts for. */
+const maxGuardSeconds = 1
+
+/** A layer with less weight than this is not drawn. */
+export const minLayerWeight = 0.01
+
+/** Half the width of a streak in the units of the picture (a share of its height). */
+const streakWidth = 0.0035
 
 interface SceneTarget {
     readonly texture: WebGLTexture
@@ -72,7 +111,7 @@ export function particleSeeds(count: number, random: () => number): Float32Array
     return seeds
 }
 
-/** The vertices of a waveform strip: per point its position (0 to 1) and both edges (-1, 1). */
+/** The vertices of a strip of lines: per point its position (0 to 1) and both edges (-1, 1). */
 export function waveStrip(points: number): Float32Array {
     const vertices = new Float32Array(points * 4)
     for (let point = 0; point < points; point++) {
@@ -81,6 +120,22 @@ export function waveStrip(points: number): Float32Array {
     }
 
     return vertices
+}
+
+/** The layers of a frame that are drawn: those with a weight of at least minLayerWeight. */
+export function drawnLayers(layers: ModeLayers): (keyof ModeLayers)[] {
+    return (Object.keys(layers) as (keyof ModeLayers)[]).filter(
+        (layer) => layers[layer] >= minLayerWeight,
+    )
+}
+
+/**
+ * Rows of the spectrum history that start in a frame and the phase towards the next row: the
+ * clock counts rows (a fraction is the way to the next one); at most three rows start per frame.
+ */
+export function terrainRows(clock: number): { rows: number; phase: number } {
+    const whole = Math.floor(Math.max(0, clock))
+    return { rows: Math.min(3, whole), phase: Math.max(0, clock) - whole }
 }
 
 export class AForceRenderer implements VisualizationRenderer {
@@ -92,24 +147,37 @@ export class AForceRenderer implements VisualizationRenderer {
     private readonly spectrum: Float32Array<ArrayBuffer>
     private readonly samples: Float32Array<ArrayBuffer>
     private readonly features = new AudioFeatureTracker()
-    private readonly transition: StyleTransition
+    private readonly spectrumLevels = new SpectrumLevels(spectrumBands)
+    private readonly bandLevels = new Float32Array(spectrumBands)
+    private readonly modes: ModeTransition
+    private readonly colors: ColorTransition
+    private readonly guard: FlashGuard
 
     private readonly trail: Program
     private readonly particles: Program
     private readonly waves: Program
+    private readonly rings: Program
+    private readonly streaks: Program
+    private readonly terrain: Program
+    private readonly helix: Program
     private readonly composite: Program
     private readonly emptyVertices: WebGLVertexArrayObject
     private readonly particleVertices: WebGLVertexArrayObject
+    private readonly streakVertices: WebGLVertexArrayObject
     private readonly particleBuffer: WebGLBuffer
     private readonly waveVertices: WebGLVertexArrayObject
     private readonly waveBuffer: WebGLBuffer
+    private readonly terrainVertices: WebGLVertexArrayObject
+    private readonly terrainBuffer: WebGLBuffer
     private readonly waveTexture: WebGLTexture
+    private readonly spectrumTexture: WebGLTexture
 
     private readonly projection = new Float32Array(16)
     private readonly view = new Float32Array(16)
     private readonly viewProjection = new Float32Array(16)
 
     private profile: AForceProfile
+    private intensity: VisualizationIntensityLevel
     private targets: [SceneTarget, SceneTarget] | null = null
     private width: number
     private height: number
@@ -118,7 +186,10 @@ export class AForceRenderer implements VisualizationRenderer {
     private wavePoints: Float32Array<ArrayBuffer> = new Float32Array(0)
     private waveTarget: Float32Array<ArrayBuffer> = new Float32Array(0)
     private head = 0
+    private spectrumHead = 0
+    private terrainClock = 0
     private flow = 0
+    private spin = 0
     private lastTime: number | null = null
     private disposed = false
 
@@ -132,6 +203,7 @@ export class AForceRenderer implements VisualizationRenderer {
         this.canvas.width = this.width
         this.canvas.height = this.height
         this.profile = aforceProfiles[options.quality]
+        this.intensity = options.intensity
 
         const gl = this.canvas.getContext('webgl2', {
             alpha: false,
@@ -148,22 +220,32 @@ export class AForceRenderer implements VisualizationRenderer {
         this.gl = gl
         this.trail = createProgram(gl, fullscreenVertex, trailFragment, 'A-Force')
         this.particles = createProgram(gl, particleVertex, particleFragment, 'A-Force')
-        this.waves = createProgram(gl, waveVertex, waveFragment, 'A-Force')
+        this.waves = createProgram(gl, waveVertex, lineFragment, 'A-Force')
+        this.rings = createProgram(gl, fullscreenVertex, ringFragment, 'A-Force')
+        this.streaks = createProgram(gl, streakVertex, streakFragment, 'A-Force')
+        this.terrain = createProgram(gl, terrainVertex, lineFragment, 'A-Force')
+        this.helix = createProgram(gl, helixVertex, lineFragment, 'A-Force')
         this.composite = createProgram(gl, fullscreenVertex, compositeFragment, 'A-Force')
 
         this.emptyVertices = requireResource(gl.createVertexArray())
 
-        this.particleVertices = requireResource(gl.createVertexArray())
+        // The seeds of the particles; the streaks use them per instance.
         this.particleBuffer = requireResource(gl.createBuffer())
-        gl.bindVertexArray(this.particleVertices)
         gl.bindBuffer(gl.ARRAY_BUFFER, this.particleBuffer)
         gl.bufferData(
             gl.ARRAY_BUFFER,
             particleSeeds(maxParticles, seededRandom(0x5eed)),
             gl.STATIC_DRAW,
         )
+        this.particleVertices = requireResource(gl.createVertexArray())
+        gl.bindVertexArray(this.particleVertices)
         gl.enableVertexAttribArray(0)
         gl.vertexAttribPointer(0, 4, gl.FLOAT, false, 0, 0)
+        this.streakVertices = requireResource(gl.createVertexArray())
+        gl.bindVertexArray(this.streakVertices)
+        gl.enableVertexAttribArray(0)
+        gl.vertexAttribPointer(0, 4, gl.FLOAT, false, 0, 0)
+        gl.vertexAttribDivisor(0, 1)
 
         this.waveVertices = requireResource(gl.createVertexArray())
         this.waveBuffer = requireResource(gl.createBuffer())
@@ -171,14 +253,28 @@ export class AForceRenderer implements VisualizationRenderer {
         gl.bindBuffer(gl.ARRAY_BUFFER, this.waveBuffer)
         gl.enableVertexAttribArray(0)
         gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0)
+
+        this.terrainVertices = requireResource(gl.createVertexArray())
+        this.terrainBuffer = requireResource(gl.createBuffer())
+        gl.bindVertexArray(this.terrainVertices)
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.terrainBuffer)
+        gl.bufferData(gl.ARRAY_BUFFER, waveStrip(terrainPoints), gl.STATIC_DRAW)
+        gl.enableVertexAttribArray(0)
+        gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0)
         gl.bindVertexArray(null)
+        gl.bindBuffer(gl.ARRAY_BUFFER, null)
 
         this.waveTexture = requireResource(gl.createTexture())
+        this.spectrumTexture = this.createFloatTexture(spectrumBands, maxTerrainRows)
         this.prepareWaves()
         this.prepareScene()
+        this.guard = new FlashGuard(gl, this.width, this.height, options.intensity)
 
-        const first = aforceStyles[0]!
-        this.transition = new StyleTransition(first)
+        this.modes = new ModeTransition(modeLook(aforceModes[0]!))
+        const scheme =
+            (options.colorScheme === null ? undefined : aforceColorScheme(options.colorScheme)) ??
+            aforceColorSchemes[0]!
+        this.colors = new ColorTransition(scheme.colors)
 
         // An analyser of its own: less smoothing than the one of the player, so beats stay sharp.
         this.source = options.audio
@@ -191,10 +287,22 @@ export class AForceRenderer implements VisualizationRenderer {
     }
 
     showPreset(id: string, blendSeconds: number): void {
-        const style = aforceStyle(id)
-        if (style) {
-            this.transition.show(style, blendSeconds, this.now() / 1000)
+        const mode = aforceMode(id)
+        if (mode) {
+            this.modes.show(modeLook(mode), blendSeconds, this.now() / 1000)
         }
+    }
+
+    showColorScheme(id: string, blendSeconds: number): void {
+        const scheme = aforceColorScheme(id)
+        if (scheme) {
+            this.colors.show(scheme.colors, blendSeconds, this.now() / 1000)
+        }
+    }
+
+    setIntensity(level: VisualizationIntensityLevel): void {
+        this.intensity = level
+        this.guard.setIntensity(level)
     }
 
     resize(width: number, height: number): void {
@@ -203,6 +311,7 @@ export class AForceRenderer implements VisualizationRenderer {
         this.canvas.width = this.width
         this.canvas.height = this.height
         this.prepareScene()
+        this.guard.resize(this.width, this.height)
     }
 
     setQuality(level: QualityLevel): void {
@@ -232,17 +341,21 @@ export class AForceRenderer implements VisualizationRenderer {
 
         const gl = this.gl
         const time = this.now() / 1000
-        const seconds =
-            this.lastTime === null
-                ? 1 / 60
-                : Math.min(maxFrameSeconds, Math.max(0, time - this.lastTime))
+        const elapsed = this.lastTime === null ? 1 / 60 : Math.max(0, time - this.lastTime)
+        const seconds = Math.min(maxFrameSeconds, elapsed)
         this.lastTime = time
 
         this.analyser.getFloatFrequencyData(this.spectrum)
         this.analyser.getFloatTimeDomainData(this.samples)
-        const audio = this.features.update(this.spectrum, this.analyser.context.sampleRate, time)
-        const { colors, motion } = this.transition.look(time)
-        this.flow += seconds * motion.speed * (0.6 + audio.bass * 1.2 + audio.pulse * 0.8)
+        const sampleRate = this.analyser.context.sampleRate
+        const audio = this.features.update(this.spectrum, sampleRate, time)
+        const colors = this.colors.look(time)
+        const look = this.modes.look(time)
+        const motion = look.motion
+        const frame = aforceFrameInputs(look, audio, this.intensity)
+        const layers = frame.layers
+        this.flow += seconds * frame.flowSpeed
+        this.spin += seconds * frame.spin
 
         // The newest row of the waveform texture.
         waveformPoints(this.samples, this.waveTarget, sampleSpan)
@@ -261,7 +374,41 @@ export class AForceRenderer implements VisualizationRenderer {
             this.wavePoints,
         )
 
-        const pose = cameraPose(time, motion, audio)
+        // The spectrum: the newest row follows the music every frame; new rows start at a pace
+        // that follows the speed of the scene, so the ridges glide towards the viewer.
+        this.spectrumLevels.update(this.spectrum, sampleRate, seconds, this.bandLevels)
+        this.terrainClock += seconds * (10 + 12 * Math.min(2, frame.flowSpeed))
+        const pace = terrainRows(this.terrainClock)
+        this.terrainClock = pace.phase
+        gl.bindTexture(gl.TEXTURE_2D, this.spectrumTexture)
+        for (let row = 0; row < Math.max(1, pace.rows); row++) {
+            if (row < pace.rows) {
+                this.spectrumHead = (this.spectrumHead + 1) % maxTerrainRows
+            }
+
+            gl.texSubImage2D(
+                gl.TEXTURE_2D,
+                0,
+                0,
+                this.spectrumHead,
+                spectrumBands,
+                1,
+                gl.RED,
+                gl.FLOAT,
+                this.bandLevels,
+            )
+        }
+
+        const pose = cameraPose(
+            time,
+            {
+                orbit: frame.cameraOrbit,
+                sway: frame.cameraSway,
+                punch: frame.punch,
+                pitch: frame.cameraPitch,
+            },
+            { mid: frame.cameraMid, pulse: 1 },
+        )
         perspective(this.projection, pose.fov, this.width / this.height, 0.1, 60)
         lookAt(this.view, pose.eye, pose.target, pose.up)
         multiply(this.viewProjection, this.projection, this.view)
@@ -270,7 +417,7 @@ export class AForceRenderer implements VisualizationRenderer {
         const frames = seconds * 60
         const aspect = this.sceneWidth / this.sceneHeight
 
-        // The scene: trails of the previous frame, then waveforms and particles as light.
+        // The scene: trails of the previous frame, then the layers as light.
         gl.bindFramebuffer(gl.FRAMEBUFFER, next.framebuffer)
         gl.viewport(0, 0, this.sceneWidth, this.sceneHeight)
         gl.disable(gl.BLEND)
@@ -278,74 +425,153 @@ export class AForceRenderer implements VisualizationRenderer {
         gl.activeTexture(gl.TEXTURE0)
         gl.bindTexture(gl.TEXTURE_2D, previous.texture)
         gl.uniform1i(this.trail.uniform('uPrevious'), 0)
-        gl.uniform1f(this.trail.uniform('uKeep'), Math.pow(motion.trail, frames))
-        gl.uniform1f(
-            this.trail.uniform('uZoom'),
-            1 + (motion.trailZoom + audio.bass * 0.004 + audio.pulse * 0.006) * frames,
-        )
-        gl.uniform1f(this.trail.uniform('uTurn'), motion.trailTurn * frames)
+        gl.uniform1f(this.trail.uniform('uKeep'), Math.pow(frame.trail, frames))
+        gl.uniform1f(this.trail.uniform('uZoom'), 1 + frame.trailZoom * frames)
+        gl.uniform1f(this.trail.uniform('uTurn'), frame.trailTurn * frames)
         gl.uniform1f(this.trail.uniform('uAspect'), aspect)
         gl.bindVertexArray(this.emptyVertices)
         gl.drawArrays(gl.TRIANGLES, 0, 3)
 
         gl.enable(gl.BLEND)
         gl.blendFunc(gl.ONE, gl.ONE)
-
-        const waves = this.waves
-        gl.useProgram(waves.program)
         gl.activeTexture(gl.TEXTURE1)
         gl.bindTexture(gl.TEXTURE_2D, this.waveTexture)
-        gl.uniform1i(waves.uniform('uWaves'), 1)
-        gl.uniform1i(waves.uniform('uPoints'), this.profile.wavePoints)
-        gl.uniform1i(waves.uniform('uRows'), waveRows)
-        gl.uniform1i(waves.uniform('uHead'), this.head)
-        gl.uniform1i(waves.uniform('uLag'), waveLag)
-        gl.uniform1i(waves.uniform('uCount'), this.profile.waves)
-        gl.uniformMatrix4fv(waves.uniform('uViewProjection'), false, this.viewProjection)
-        gl.uniform1f(waves.uniform('uTime'), time)
-        gl.uniform1f(waves.uniform('uFlow'), this.flow)
-        gl.uniform1f(waves.uniform('uBass'), audio.bass)
-        gl.uniform1f(waves.uniform('uMid'), audio.mid)
-        gl.uniform1f(waves.uniform('uTreble'), audio.treble)
-        gl.uniform1f(waves.uniform('uPulse'), audio.pulse)
-        gl.uniform1f(waves.uniform('uAmplitude'), motion.waveAmplitude)
-        gl.uniform1f(waves.uniform('uSpread'), motion.waveSpread)
-        // A scene of lower resolution draws the waveforms a little thicker, so thin lines do not break up.
-        gl.uniform1f(
-            waves.uniform('uThickness'),
-            motion.waveThickness / Math.sqrt(this.profile.resolution),
-        )
-        gl.uniform1f(waves.uniform('uWaveFlow'), motion.waveFlow)
-        gl.uniform1f(waves.uniform('uWidth'), waveWidth)
-        gl.uniform3fv(waves.uniform('uColorStart'), colors.waveStart)
-        gl.uniform3fv(waves.uniform('uColorEnd'), colors.waveEnd)
-        gl.uniform3fv(waves.uniform('uColorFar'), colors.waveFar)
-        gl.bindVertexArray(this.waveVertices)
-        gl.drawArraysInstanced(
-            gl.TRIANGLE_STRIP,
-            0,
-            this.profile.wavePoints * 2,
-            this.profile.waves,
-        )
+        gl.activeTexture(gl.TEXTURE2)
+        gl.bindTexture(gl.TEXTURE_2D, this.spectrumTexture)
+        const drawn = drawnLayers(layers)
+        const shows = (layer: keyof ModeLayers) => drawn.includes(layer)
 
-        const particles = this.particles
-        gl.useProgram(particles.program)
-        gl.uniformMatrix4fv(particles.uniform('uViewProjection'), false, this.viewProjection)
-        gl.uniform1f(particles.uniform('uTime'), time)
-        gl.uniform1f(particles.uniform('uFlow'), this.flow)
-        gl.uniform1f(particles.uniform('uBass'), audio.bass)
-        gl.uniform1f(particles.uniform('uMid'), audio.mid)
-        gl.uniform1f(particles.uniform('uTreble'), audio.treble)
-        gl.uniform1f(particles.uniform('uPulse'), audio.pulse)
-        gl.uniform1f(particles.uniform('uSpread'), motion.particleSpread)
-        gl.uniform1f(particles.uniform('uSwirl'), motion.particleSwirl)
-        gl.uniform1f(particles.uniform('uSize'), motion.particleSize)
-        gl.uniform1f(particles.uniform('uPixelScale'), this.sceneHeight / 60)
-        gl.uniform3fv(particles.uniform('uColorA'), colors.particleA)
-        gl.uniform3fv(particles.uniform('uColorB'), colors.particleB)
-        gl.uniform3fv(particles.uniform('uSpark'), colors.spark)
-        gl.bindVertexArray(this.particleVertices)
-        gl.drawArrays(gl.POINTS, 0, this.profile.particles)
+        if (shows('rings')) {
+            const rings = this.use(this.rings, time, layers.rings, frame.brightness)
+            gl.uniform1i(rings.uniform('uSpectrum'), 2)
+            gl.uniform1i(rings.uniform('uBands'), spectrumBands)
+            gl.uniform1i(rings.uniform('uHead'), this.spectrumHead)
+            gl.uniform1f(rings.uniform('uCount'), this.profile.rings)
+            gl.uniform1f(rings.uniform('uRadius'), motion.ringRadius)
+            gl.uniform1f(rings.uniform('uAspect'), aspect)
+            gl.uniform1f(rings.uniform('uSpin'), this.spin)
+            gl.uniform1f(rings.uniform('uSwell'), frame.ringSwell)
+            gl.uniform1f(rings.uniform('uSparkle'), frame.sparkle)
+            gl.uniform1f(rings.uniform('uBeat'), frame.beat)
+            gl.uniform3fv(rings.uniform('uInner'), colors.waveStart)
+            gl.uniform3fv(rings.uniform('uOuter'), colors.waveFar)
+            gl.uniform3fv(rings.uniform('uSpark'), colors.spark)
+            gl.bindVertexArray(this.emptyVertices)
+            gl.drawArrays(gl.TRIANGLES, 0, 3)
+        }
+
+        if (shows('terrain')) {
+            const terrain = this.use(this.terrain, time, layers.terrain, frame.brightness)
+            gl.uniform1i(terrain.uniform('uSpectrum'), 2)
+            gl.uniform1i(terrain.uniform('uBands'), spectrumBands)
+            gl.uniform1i(terrain.uniform('uRows'), maxTerrainRows)
+            gl.uniform1i(terrain.uniform('uHead'), this.spectrumHead)
+            gl.uniform1i(terrain.uniform('uCount'), this.profile.terrainRows)
+            gl.uniformMatrix4fv(terrain.uniform('uViewProjection'), false, this.viewProjection)
+            gl.uniform1f(terrain.uniform('uPhase'), pace.phase)
+            gl.uniform1f(terrain.uniform('uLift'), frame.terrainLift)
+            gl.uniform1f(terrain.uniform('uFront'), frame.terrainFront)
+            gl.uniform1f(terrain.uniform('uSparkle'), frame.sparkle)
+            gl.uniform1f(terrain.uniform('uSway'), frame.sway)
+            gl.uniform1f(terrain.uniform('uThickness'), 0.035 / Math.sqrt(this.profile.resolution))
+            gl.uniform3fv(terrain.uniform('uNear'), colors.waveStart)
+            gl.uniform3fv(terrain.uniform('uFar'), colors.waveFar)
+            gl.uniform3fv(terrain.uniform('uSpark'), colors.spark)
+            gl.bindVertexArray(this.terrainVertices)
+            gl.drawArraysInstanced(
+                gl.TRIANGLE_STRIP,
+                0,
+                terrainPoints * 2,
+                this.profile.terrainRows,
+            )
+        }
+
+        if (shows('waves')) {
+            const waves = this.use(this.waves, time, layers.waves, frame.brightness)
+            this.bindWaves(waves)
+            gl.uniform1i(waves.uniform('uCount'), this.profile.waves)
+            gl.uniformMatrix4fv(waves.uniform('uViewProjection'), false, this.viewProjection)
+            gl.uniform1f(waves.uniform('uFlow'), this.flow)
+            gl.uniform1f(waves.uniform('uAmplitude'), frame.waveAmplitude)
+            gl.uniform1f(waves.uniform('uSwing'), frame.waveSwing)
+            gl.uniform1f(waves.uniform('uSpread'), motion.waveSpread)
+            // A scene of lower resolution draws the waveforms a little thicker, so thin lines do
+            // not break up.
+            gl.uniform1f(
+                waves.uniform('uThickness'),
+                frame.waveThickness / Math.sqrt(this.profile.resolution),
+            )
+            gl.uniform1f(waves.uniform('uWaveFlow'), motion.waveFlow)
+            gl.uniform1f(waves.uniform('uWidth'), waveWidth)
+            gl.uniform3fv(waves.uniform('uColorStart'), colors.waveStart)
+            gl.uniform3fv(waves.uniform('uColorEnd'), colors.waveEnd)
+            gl.uniform3fv(waves.uniform('uColorFar'), colors.waveFar)
+            gl.bindVertexArray(this.waveVertices)
+            gl.drawArraysInstanced(
+                gl.TRIANGLE_STRIP,
+                0,
+                this.profile.wavePoints * 2,
+                this.profile.waves,
+            )
+        }
+
+        if (shows('helix')) {
+            const helix = this.use(this.helix, time, layers.helix, frame.brightness)
+            this.bindWaves(helix)
+            gl.uniformMatrix4fv(helix.uniform('uViewProjection'), false, this.viewProjection)
+            gl.uniform1f(helix.uniform('uSpin'), this.spin)
+            gl.uniform1f(helix.uniform('uTurns'), frame.helixTurns)
+            gl.uniform1f(helix.uniform('uRadius'), motion.helixRadius * frame.helixScale)
+            gl.uniform1f(helix.uniform('uAmplitude'), frame.waveAmplitude)
+            gl.uniform1f(
+                helix.uniform('uThickness'),
+                (frame.waveThickness * 1.2) / Math.sqrt(this.profile.resolution),
+            )
+            gl.uniform1f(helix.uniform('uSparkle'), frame.sparkle)
+            gl.uniform1f(helix.uniform('uFlow'), this.flow)
+            gl.uniform3fv(helix.uniform('uColorStart'), colors.waveStart)
+            gl.uniform3fv(helix.uniform('uColorEnd'), colors.waveEnd)
+            gl.uniform3fv(helix.uniform('uSpark'), colors.spark)
+            gl.bindVertexArray(this.waveVertices)
+            gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, this.profile.wavePoints * 2, 2)
+        }
+
+        if (shows('streaks')) {
+            const streaks = this.use(this.streaks, time, layers.streaks, frame.brightness)
+            gl.uniformMatrix4fv(streaks.uniform('uViewProjection'), false, this.viewProjection)
+            gl.uniform1f(streaks.uniform('uFlow'), this.flow)
+            gl.uniform1f(streaks.uniform('uLength'), frame.streakLength)
+            gl.uniform1f(streaks.uniform('uSpread'), motion.streakSpread * frame.particleScale)
+            gl.uniform1f(streaks.uniform('uSparkle'), frame.sparkle)
+            gl.uniform1f(streaks.uniform('uBeat'), frame.beat)
+            gl.uniform1f(streaks.uniform('uPixelWidth'), streakWidth)
+            gl.uniform1f(streaks.uniform('uAspect'), aspect)
+            gl.uniform3fv(streaks.uniform('uColorA'), colors.particleA)
+            gl.uniform3fv(streaks.uniform('uColorB'), colors.particleB)
+            gl.uniform3fv(streaks.uniform('uSpark'), colors.spark)
+            gl.bindVertexArray(this.streakVertices)
+            gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, this.profile.streaks)
+        }
+
+        if (shows('particles')) {
+            const particles = this.use(this.particles, time, layers.particles, frame.brightness)
+            gl.uniformMatrix4fv(particles.uniform('uViewProjection'), false, this.viewProjection)
+            gl.uniform1f(particles.uniform('uFlow'), this.flow)
+            gl.uniform1f(particles.uniform('uScale'), frame.particleScale)
+            gl.uniform1f(particles.uniform('uSway'), frame.sway)
+            gl.uniform1f(particles.uniform('uSparkle'), frame.sparkle)
+            gl.uniform1f(particles.uniform('uBeat'), frame.beat)
+            gl.uniform1f(particles.uniform('uSpread'), motion.particleSpread)
+            gl.uniform1f(particles.uniform('uSwirl'), motion.particleSwirl)
+            gl.uniform1f(particles.uniform('uSize'), motion.particleSize)
+            gl.uniform1f(particles.uniform('uPixelScale'), this.sceneHeight / 60)
+            gl.uniform3fv(particles.uniform('uColorA'), colors.particleA)
+            gl.uniform3fv(particles.uniform('uColorB'), colors.particleB)
+            gl.uniform3fv(particles.uniform('uSpark'), colors.spark)
+            gl.bindVertexArray(this.particleVertices)
+            gl.drawArrays(gl.POINTS, 0, this.profile.particles)
+        }
+
         gl.disable(gl.BLEND)
 
         if (this.profile.bloom) {
@@ -354,10 +580,9 @@ export class AForceRenderer implements VisualizationRenderer {
             gl.generateMipmap(gl.TEXTURE_2D)
         }
 
-        // Onto the canvas.
+        // The finished frame into the guard.
         const composite = this.composite
-        gl.bindFramebuffer(gl.FRAMEBUFFER, null)
-        gl.viewport(0, 0, this.width, this.height)
+        this.guard.bindInput()
         gl.useProgram(composite.program)
         gl.activeTexture(gl.TEXTURE0)
         gl.bindTexture(gl.TEXTURE_2D, next.texture)
@@ -366,13 +591,18 @@ export class AForceRenderer implements VisualizationRenderer {
         gl.uniform3fv(composite.uniform('uBottom'), colors.backgroundBottom)
         gl.uniform3fv(composite.uniform('uGlow'), colors.glow)
         gl.uniform1f(composite.uniform('uTime'), time)
-        gl.uniform1f(composite.uniform('uBass'), audio.bass)
-        gl.uniform1f(composite.uniform('uPulse'), audio.pulse)
-        gl.uniform1f(composite.uniform('uBloom'), this.profile.bloom ? motion.bloom : 0)
+        gl.uniform1f(composite.uniform('uMass'), frame.mass)
+        gl.uniform1f(composite.uniform('uBeat'), frame.beat)
+        gl.uniform1f(composite.uniform('uGlowStrength'), frame.glow)
+        gl.uniform1f(composite.uniform('uBrightness'), frame.brightness)
+        gl.uniform1f(composite.uniform('uBloom'), this.profile.bloom ? frame.bloom : 0)
         gl.uniform1f(composite.uniform('uAspect'), this.width / this.height)
         gl.bindVertexArray(this.emptyVertices)
         gl.drawArrays(gl.TRIANGLES, 0, 3)
         gl.bindVertexArray(null)
+
+        // The last pass: the guarded frame onto the canvas.
+        this.guard.present(Math.min(maxGuardSeconds, elapsed))
 
         this.targets = [next, previous]
     }
@@ -390,20 +620,88 @@ export class AForceRenderer implements VisualizationRenderer {
         }
 
         const gl = this.gl
-        this.releaseScene()
-        gl.deleteTexture(this.waveTexture)
-        gl.deleteBuffer(this.particleBuffer)
-        gl.deleteBuffer(this.waveBuffer)
-        gl.deleteVertexArray(this.particleVertices)
-        gl.deleteVertexArray(this.waveVertices)
-        gl.deleteVertexArray(this.emptyVertices)
-        for (const program of [this.trail, this.particles, this.waves, this.composite]) {
-            gl.deleteProgram(program.program)
+        try {
+            this.releaseScene()
+            this.guard.dispose()
+            gl.deleteTexture(this.waveTexture)
+            gl.deleteTexture(this.spectrumTexture)
+            for (const buffer of [this.particleBuffer, this.waveBuffer, this.terrainBuffer]) {
+                gl.deleteBuffer(buffer)
+            }
+
+            for (const vertices of [
+                this.particleVertices,
+                this.streakVertices,
+                this.waveVertices,
+                this.terrainVertices,
+                this.emptyVertices,
+            ]) {
+                gl.deleteVertexArray(vertices)
+            }
+
+            for (const program of [
+                this.trail,
+                this.particles,
+                this.waves,
+                this.rings,
+                this.streaks,
+                this.terrain,
+                this.helix,
+                this.composite,
+            ]) {
+                gl.deleteProgram(program.program)
+            }
+        } catch {
+            // The context is lost anyway.
         }
 
         // Frees the context at once instead of waiting for the garbage collector; browsers only
         // keep a few contexts.
         gl.getExtension('WEBGL_lose_context')?.loseContext()
+    }
+
+    /** Uses a program of a layer and sets what all layers share: time, weight and brightness. */
+    private use(program: Program, time: number, weight: number, brightness: number): Program {
+        const gl = this.gl
+        gl.useProgram(program.program)
+        gl.uniform1f(program.uniform('uTime'), time)
+        gl.uniform1f(program.uniform('uWeight'), Math.min(1, weight))
+        gl.uniform1f(program.uniform('uBrightness'), brightness)
+        return program
+    }
+
+    /** The waveform texture for a layer that reads it (waveforms, helix). */
+    private bindWaves(program: Program): void {
+        const gl = this.gl
+        gl.uniform1i(program.uniform('uWaves'), 1)
+        gl.uniform1i(program.uniform('uPoints'), this.profile.wavePoints)
+        gl.uniform1i(program.uniform('uRows'), waveRows)
+        gl.uniform1i(program.uniform('uHead'), this.head)
+        gl.uniform1i(program.uniform('uLag'), waveLag)
+    }
+
+    /** A texture of one float per texel, read with texelFetch. */
+    private createFloatTexture(width: number, height: number): WebGLTexture {
+        const gl = this.gl
+        const texture = requireResource(gl.createTexture())
+        gl.bindTexture(gl.TEXTURE_2D, texture)
+        gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1)
+        gl.texImage2D(
+            gl.TEXTURE_2D,
+            0,
+            gl.R32F,
+            width,
+            height,
+            0,
+            gl.RED,
+            gl.FLOAT,
+            new Float32Array(width * height),
+        )
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST)
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST)
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
+        return texture
     }
 
     /** The strip and the texture of the waveforms for the points of the current profile. */

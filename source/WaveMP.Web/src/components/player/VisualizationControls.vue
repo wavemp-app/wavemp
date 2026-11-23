@@ -88,7 +88,29 @@ const stateTokens = computed(() =>
 
 const current = computed(() => props.presets.find((choice) => choice.id === props.preset))
 
-const presetLabel = computed(() => current.value?.label ?? t('nowPlaying.visualizationPreset'))
+/**
+ * The words for the presets: modules with color schemes (A-Force, BlackCap) call their presets
+ * modes, since the colors are chosen apart from them.
+ */
+const presetWords = computed(() =>
+    hasColorSchemes.value
+        ? {
+              one: t('nowPlaying.visualizationMode'),
+              all: t('nowPlaying.visualizationModes'),
+              choice: 'nowPlaying.visualizationModeChoice',
+              previous: t('nowPlaying.previousMode'),
+              next: t('nowPlaying.nextMode'),
+          }
+        : {
+              one: t('nowPlaying.visualizationPreset'),
+              all: t('nowPlaying.visualizationPresets'),
+              choice: 'nowPlaying.visualizationPresetChoice',
+              previous: t('nowPlaying.previousPreset'),
+              next: t('nowPlaying.nextPreset'),
+          },
+)
+
+const presetLabel = computed(() => current.value?.label ?? presetWords.value.one)
 
 const colorSchemeLabel = computed(
     () =>
@@ -198,7 +220,7 @@ function selectModule(value: string): void {
             part="btn-preset-previous"
             variant="icon"
             icon="preset-previous"
-            :label="t('nowPlaying.previousPreset')"
+            :label="presetWords.previous"
             :disabled="!ready"
             @click="step(-1)"
         />
@@ -206,8 +228,8 @@ function selectModule(value: string): void {
             ref="picker"
             part="btn-preset-picker"
             :label="presetLabel"
-            :title="t('nowPlaying.visualizationPreset')"
-            :aria-label="t('nowPlaying.visualizationPresetChoice', { name: presetLabel })"
+            :title="presetWords.one"
+            :aria-label="t(presetWords.choice, { name: presetLabel })"
             dropdown
             aria-haspopup="menu"
             :aria-expanded="open ? 'true' : 'false'"
@@ -219,7 +241,7 @@ function selectModule(value: string): void {
             part="btn-preset-next"
             variant="icon"
             icon="preset-next"
-            :label="t('nowPlaying.nextPreset')"
+            :label="presetWords.next"
             :disabled="!ready"
             @click="step(1)"
         />
@@ -267,7 +289,7 @@ function selectModule(value: string): void {
         ref="menu"
         data-kind="visualization-presets"
         :items="menuItems"
-        :label="t('nowPlaying.visualizationPresets')"
+        :label="presetWords.all"
         @select="selectPreset"
     />
     <BaseContextMenu

@@ -11,7 +11,7 @@
     "logo": "WaveMP, zur Startseite",
     "home": "Startseite",
     "nowPlaying": "Aktuelle Wiedergabe",
-    "nowPlayingShort": "Wieder\u00adgabe",
+    "nowPlayingShort": "Wieder­gabe",
     "library": "Bibliothek",
     "playlists": "Playlists",
     "equalizer": "Equalizer"
@@ -151,7 +151,7 @@
     "sleepTimerEndOfQueue": "Am Ende der Warteschlange",
     "sleepTimerRemaining": "Stoppt in {time}",
     "sleepTimerEndOfTrackShort": "Titelende",
-    "sleepTimerEndOfQueueShort": "Warteschlangen\u00adende",
+    "sleepTimerEndOfQueueShort": "Warteschlangen­ende",
     "resume": {
       "label": "Weiterhören",
       "from": "Weiterhören von {device}",
@@ -196,7 +196,14 @@
       "aforce": "A-Force",
       "blackcap": "BlackCap"
     },
-    "aforceStyles": {
+    "aforceModes": {
+      "flow": "Strömung",
+      "rings": "Ringe",
+      "warp": "Sog",
+      "ridges": "Höhenzüge",
+      "helix": "Helix"
+    },
+    "aforceColorSchemes": {
       "aurora": "Polarlicht",
       "nebula": "Sternennebel",
       "ember": "Glut",
@@ -215,11 +222,16 @@
     "visualizationPreset": "Preset",
     "visualizationPresetChoice": "Preset: {name}",
     "visualizationPresets": "Presets",
+    "visualizationMode": "Modus",
+    "visualizationModeChoice": "Modus: {name}",
+    "visualizationModes": "Modi",
     "colorScheme": "Farbschema",
     "colorSchemeChoice": "Farbschema: {name}",
     "visualizationColorSchemes": "Farbschemata",
     "previousPreset": "Vorheriges Preset",
     "nextPreset": "Nächstes Preset",
+    "previousMode": "Vorheriger Modus",
+    "nextMode": "Nächster Modus",
     "autoChange": "Presets automatisch wechseln",
     "videoFailed": "Das Video kann nicht abgespielt werden. Der Titel läuft weiter.",
     "video": "Video des aktuellen Titels",
@@ -1419,7 +1431,7 @@
     "jobCount": "{running} von {max}",
     "stats": {
       "label": "Status der Transcodierung",
-      "hardware": "Hardware\u00adbeschleunigung",
+      "hardware": "Hardware­beschleunigung",
       "ffmpeg": "ffmpeg verfügbar",
       "cache": "Cache beschreibbar",
       "jobs": "Laufende Transcodierungen",

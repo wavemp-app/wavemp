@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
     cameraDistance,
+    defaultPitch,
     cameraFov,
     cameraPose,
     cameraTarget,
@@ -10,8 +11,16 @@ import {
     transformPoint,
     type Vec3,
 } from '../camera'
-import { aforceProfiles, maxParticles, maxWaves, sceneSize } from '../profiles'
-import { particleSeeds, seededRandom, waveStrip } from '../renderer'
+import { aforceModes } from '../modes'
+import { aforceProfiles, maxParticles, maxTerrainRows, maxWaves, sceneSize } from '../profiles'
+import {
+    drawnLayers,
+    minLayerWeight,
+    particleSeeds,
+    seededRandom,
+    terrainRows,
+    waveStrip,
+} from '../renderer'
 import { risingZeroCrossing, smoothPoints, waveformPoints } from '../waveform'
 
 const motion = { orbit: 0.4, sway: 1, punch: 1 }
@@ -43,6 +52,15 @@ describe('cameraPose', () => {
         const b = cameraPose(10, motion, { mid: 0.5, pulse: 0 })
 
         expect(distance(a.eye, b.eye)).toBeGreaterThan(0.1)
+    })
+
+    it('looks down as far as the mode says', () => {
+        const level = cameraPose(3, { ...motion, orbit: 0 }, { mid: 0.5, pulse: 0 })
+        const down = cameraPose(3, { ...motion, orbit: 0, pitch: 0.3 }, { mid: 0.5, pulse: 0 })
+
+        expect(level.eye[1] - cameraTarget[1]).toBeCloseTo(Math.sin(defaultPitch) * cameraDistance)
+        expect(down.eye[1] - cameraTarget[1]).toBeCloseTo(Math.sin(0.3) * cameraDistance)
+        expect(distance(down.eye, down.target)).toBeCloseTo(cameraDistance)
     })
 
     it('stays still without orbit and sway', () => {
@@ -96,9 +114,16 @@ describe('aforceProfiles', () => {
         expect(medium.particles).toBeLessThan(high.particles)
         expect(low.waves).toBeLessThan(high.waves)
         expect(low.resolution).toBeLessThan(high.resolution)
+        expect(low.rings).toBeLessThan(medium.rings)
+        expect(medium.rings).toBeLessThan(high.rings)
+        expect(low.streaks).toBeLessThan(medium.streaks)
+        expect(medium.streaks).toBeLessThan(high.streaks)
+        expect(low.terrainRows).toBeLessThan(medium.terrainRows)
+        expect(medium.terrainRows).toBeLessThan(high.terrainRows)
         expect(low.bloom).toBe(false)
         expect(high.bloom).toBe(true)
-        expect(maxParticles).toBe(high.particles)
+        expect(maxParticles).toBe(Math.max(high.particles, high.streaks))
+        expect(maxTerrainRows).toBe(high.terrainRows)
         expect(maxWaves).toBe(high.waves)
     })
 
@@ -167,5 +192,26 @@ describe('buffers of the renderer', () => {
 
     it('builds a strip with both edges per point', () => {
         expect([...waveStrip(3)]).toEqual([0, -1, 0, 1, 0.5, -1, 0.5, 1, 1, -1, 1, 1])
+    })
+
+    it('draws only the layers with weight', () => {
+        expect(drawnLayers(aforceModes[0]!.layers)).toEqual(['waves', 'particles'])
+        expect(
+            drawnLayers({
+                waves: minLayerWeight / 2,
+                particles: 0,
+                rings: minLayerWeight,
+                streaks: 1,
+                terrain: 0,
+                helix: 0.5,
+            }),
+        ).toEqual(['rings', 'streaks', 'helix'])
+    })
+
+    it('starts the rows of the ridges by their clock, at most three in a frame', () => {
+        expect(terrainRows(0.4)).toEqual({ rows: 0, phase: 0.4 })
+        expect(terrainRows(1.25)).toEqual({ rows: 1, phase: 0.25 })
+        expect(terrainRows(7.5)).toEqual({ rows: 3, phase: 0.5 })
+        expect(terrainRows(-1)).toEqual({ rows: 0, phase: 0 })
     })
 })

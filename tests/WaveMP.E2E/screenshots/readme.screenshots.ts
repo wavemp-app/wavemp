@@ -64,8 +64,9 @@ async function showVisualization(
     request: Parameters<typeof showVisualizationOf>[1],
     module: string,
     preset: string | null,
+    colorScheme: string | null = null,
 ): Promise<void> {
-    await showVisualizationOf(page, request, alexHeaders, alex.name, module, preset)
+    await showVisualizationOf(page, request, alexHeaders, alex.name, module, preset, colorScheme)
 }
 
 test.beforeAll(async ({ request }) => {
@@ -204,7 +205,7 @@ test('media folders', async ({ browser }) => {
 })
 
 test('visualization A-Force', async ({ page, request }) => {
-    await showVisualization(page, request, 'AForce', 'aurora')
+    await showVisualization(page, request, 'AForce', 'flow', 'aurora')
     await save(page, 'visualization-a-force')
 })
 
@@ -279,7 +280,7 @@ test.describe('phone', () => {
 
     test('now playing on the phone', async ({ page, request }) => {
         await send(request, alexHeaders, 'patch', '/api/v1/me/settings', {
-            visualization: { module: 'AForce', preset: 'nebula' },
+            visualization: { module: 'AForce', preset: 'rings', colorScheme: 'nebula' },
         })
         await selectProfile(page, alex.name)
         await play(page, request, 'Loose Song')

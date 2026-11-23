@@ -1,6 +1,6 @@
-// Smooth blends between the looks of the own visualizations (the styles of A-Force, the scenes of
-// BlackCap): a look is a record of numbers and colors, and a change of preset moves every value
-// from the look shown at that moment into the new one. Pure.
+// Smooth blends between the looks of the own visualizations (the modes and color schemes of
+// A-Force, the scenes of BlackCap): a look is a record of numbers and colors, and a change of preset
+// moves every value from the look shown at that moment into the new one. Pure.
 
 /** A color with red, green and blue from 0 to 1. */
 export type Rgb = readonly [number, number, number]

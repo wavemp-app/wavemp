@@ -8,7 +8,13 @@ import {
 } from '@playwright/test'
 import { createUser, deleteUser, findTrackId, uniqueSuffix, type TestUser } from './helpers/api'
 import { drawSmall, limitDrawingRate } from './helpers/drawing'
-import { countFlashes, largestChange, recordFlashFrames, takeFlashFrames } from './helpers/flashes'
+import {
+    countFlashes,
+    largestChange,
+    meanChange,
+    recordFlashFrames,
+    takeFlashFrames,
+} from './helpers/flashes'
 import { homeUrl, profileTile } from './helpers/navigation'
 import { emptyStorageState } from './helpers/storage'
 
@@ -193,6 +199,31 @@ async function choosePreset(page: Page, entry: Locator): Promise<void> {
     await expect(presetMenu(page)).toHaveAttribute('data-state', 'closed')
 }
 
+/** The list of color schemes (a menu beside the controls, for modules with color schemes). */
+function colorSchemeMenu(page: Page): Locator {
+    return page.locator(
+        "[data-part='app'] [data-part='context-menu'][data-kind='visualization-color-schemes']",
+    )
+}
+
+function colorSchemeEntries(page: Page): Locator {
+    return colorSchemeMenu(page).locator("[data-part='menu-item']")
+}
+
+/** The entry of the shown color scheme. */
+function shownColorScheme(page: Page): Locator {
+    return colorSchemeMenu(page).locator("[data-part='menu-item'][aria-checked='true']")
+}
+
+/** Opens the list of color schemes with its button and chooses the one with the id. */
+async function chooseColorScheme(page: Page, id: string): Promise<void> {
+    await part(page, 'btn-color-scheme-picker').click()
+    await expect(colorSchemeMenu(page)).toHaveAttribute('data-state', 'open')
+    await colorSchemeMenu(page).locator(`[data-item='${id}']`).click()
+    await expect(colorSchemeMenu(page)).toHaveAttribute('data-state', 'closed')
+    await expect(shownColorScheme(page)).toHaveAttribute('data-item', id)
+}
+
 function moduleSegment(page: Page, item: string): Locator {
     return page.locator(
         `[data-part='app'] [data-part='visualization-controls'] [data-item='visualization-module'] [data-part='segment'][data-item='${item}']`,
@@ -330,15 +361,21 @@ function visualizationTests(): void {
         await expect(autoChange).toHaveAttribute('aria-pressed', 'false')
     })
 
-    test('draws A-Force, which moves with the music and blends its styles', async ({
+    test('draws A-Force, which moves with the music, changes its modes and keeps its color scheme', async ({
         page,
         request,
     }) => {
-        // Both modules load and draw in software, A-Force twice.
+        // Both modules load and draw in software, A-Force twice, and the test watches the picture
+        // for a while.
         test.slow()
         await drawSmall(page)
+        await recordFlashFrames(page)
         await drawAtLowQuality(request, headers)
-        await turnOffAutoChange(request, headers)
+        const settings = await request.patch('/api/v1/me/settings', {
+            headers,
+            data: { visualization: { autoChange: false, autoChangeSeconds: 5 } },
+        })
+        expect(settings.status()).toBe(200)
         const visualization = await showVisualization(page, request)
         await expect(visualization).toHaveAttribute('data-state', /\b(running|unsupported)\b/, {
             timeout: 20_000,
@@ -348,6 +385,7 @@ function visualizationTests(): void {
         }
 
         await expect(moduleSegment(page, 'milkdrop')).toHaveAttribute('aria-checked', 'true')
+        await expect(part(page, 'btn-color-scheme-picker')).toHaveCount(0)
         await moduleSegment(page, 'aforce').click()
         await expect(moduleSegment(page, 'aforce')).toHaveAttribute('aria-checked', 'true')
         await expect(visualization).toHaveAttribute('data-module', 'aforce')
@@ -357,11 +395,17 @@ function visualizationTests(): void {
         await expect(visualization).toHaveAttribute('data-quality', 'low')
         await settled
             .poll(() => storedVisualization(request, headers))
-            .toMatchObject({ module: 'AForce', preset: null })
+            .toMatchObject({ module: 'AForce', preset: null, colorScheme: null })
 
-        // The style variants are the presets, with their names in the language of the app.
+        // The modes are the presets, with their names in the language of the app; the color
+        // schemes are a list of their own, starting with the first one.
         await expect(part(page, 'btn-preset-picker')).toBeEnabled()
-        await expect(presetEntries(page)).toHaveText([
+        await expect(part(page, 'btn-preset-picker')).toHaveAttribute('title', 'Mode')
+        await expect(presetEntries(page)).toHaveText(['Flow', 'Rings', 'Warp', 'Ridges', 'Helix'])
+        const schemePicker = part(page, 'btn-color-scheme-picker')
+        await expect(schemePicker).toBeVisible()
+        await expect(schemePicker.locator("[data-part='label']")).toHaveText('Aurora')
+        await expect(colorSchemeEntries(page)).toHaveText([
             'Aurora',
             'Nebula',
             'Ember',
@@ -377,12 +421,33 @@ function visualizationTests(): void {
         const second = await canvas.screenshot()
         expect(first.equals(second)).toBe(false)
 
-        // A chosen style is kept with the profile; the next button follows the list. A-Force starts
-        // with a random style, and choosing the shown one changes nothing, so the test chooses Ember,
-        // or Prism if it already shows Ember.
+        // It moves more with the music than in silence: the change from frame to frame of the
+        // rendered picture is larger while the song plays than while it is paused.
+        await page.waitForTimeout(1000)
+        await takeFlashFrames(page)
+        await page.waitForTimeout(3000)
+        const playing = meanChange(await takeFlashFrames(page))
+        const play = part(page, 'btn-play').filter({ visible: true }).first()
+        await play.click()
+        await expect(play).toHaveAttribute('data-state', 'paused')
+        await page.waitForTimeout(2500)
+        await takeFlashFrames(page)
+        await page.waitForTimeout(3000)
+        const silent = meanChange(await takeFlashFrames(page))
+        test.info().annotations.push({
+            type: 'frame change',
+            description: `playing ${playing.toFixed(5)}, paused ${silent.toFixed(5)}`,
+        })
+        expect(playing).toBeGreaterThan(silent * 1.2)
+        await play.click()
+        await expect(play).toHaveAttribute('data-state', 'playing')
+
+        // A chosen mode is kept with the profile; the next button follows the list. A-Force starts
+        // with a random mode, and choosing the shown one changes nothing, so the test chooses Warp,
+        // or Ridges if it already shows Warp.
         const chosen =
-            (await shownPreset(page).getAttribute('data-item')) === 'ember' ? 'prism' : 'ember'
-        const following = chosen === 'ember' ? 'lagoon' : 'eclipse'
+            (await shownPreset(page).getAttribute('data-item')) === 'warp' ? 'ridges' : 'warp'
+        const following = chosen === 'warp' ? 'ridges' : 'helix'
         await choosePreset(page, presetMenu(page).locator(`[data-item='${chosen}']`))
         await settled
             .poll(async () => (await storedVisualization(request, headers)).preset)
@@ -391,24 +456,66 @@ function visualizationTests(): void {
         await expect(shownPreset(page)).toHaveAttribute('data-item', following)
         await expect(visualization).toHaveAttribute('data-state', /\brunning\b/)
 
-        // After loading the app again, A-Force starts with the stored style.
+        // A chosen color scheme is kept with the profile, apart from the mode.
+        await chooseColorScheme(page, 'ember')
+        await expect(schemePicker.locator("[data-part='label']")).toHaveText('Ember')
         await settled
-            .poll(async () => (await storedVisualization(request, headers)).preset)
-            .toBe(following)
+            .poll(() => storedVisualization(request, headers))
+            .toMatchObject({ preset: following, colorScheme: 'ember' })
+
+        // Quick steps through the modes and the color schemes stay below three flashes a second.
+        await takeFlashFrames(page)
+        for (let click = 0; click < 10; click++) {
+            await part(page, 'btn-preset-next').click()
+            await page.waitForTimeout(300)
+        }
+
+        for (const scheme of ['prism', 'eclipse', 'ember']) {
+            await chooseColorScheme(page, scheme)
+        }
+
+        await page.waitForTimeout(1500)
+        const frames = await takeFlashFrames(page)
+        expect(frames.length).toBeGreaterThan(40)
+        expect(largestChange(frames)).toBeGreaterThan(0)
+        const flashes = countFlashes(frames)
+        expect(flashes.general).toBeLessThanOrEqual(3)
+        expect(flashes.red).toBeLessThanOrEqual(3)
+
+        // The automatic change changes the mode and keeps the color scheme.
+        const autoChange = part(page, 'btn-auto-change')
+        await autoChange.click()
+        await expect(autoChange).toHaveAttribute('aria-pressed', 'true')
+        const before = await shownPreset(page).getAttribute('data-item')
+        await settled
+            .poll(() => shownPreset(page).getAttribute('data-item'), { timeout: 20_000 })
+            .not.toBe(before)
+        await expect(schemePicker.locator("[data-part='label']")).toHaveText('Ember')
+        await autoChange.click()
+        await expect(autoChange).toHaveAttribute('aria-pressed', 'false')
+        await settled
+            .poll(() => storedVisualization(request, headers))
+            .toMatchObject({ autoChange: false, colorScheme: 'ember' })
+
+        // After loading the app again, A-Force starts with the stored mode and color scheme.
+        const stored = (await storedVisualization(request, headers)).preset
         await page.reload()
         await showVisualization(page, request)
         await expect(visualization).toHaveAttribute('data-module', 'aforce')
         await expect(visualization).toHaveAttribute('data-state', /\brunning\b/, {
             timeout: 20_000,
         })
-        await expect(shownPreset(page)).toHaveAttribute('data-item', following)
+        await expect(shownPreset(page)).toHaveAttribute('data-item', stored!)
+        await expect(schemePicker.locator("[data-part='label']")).toHaveText('Ember')
+        await expect(shownColorScheme(page)).toHaveAttribute('data-item', 'ember')
 
-        // Back to Milkdrop.
+        // Back to Milkdrop, which forgets mode and color scheme and has no color schemes.
         await moduleSegment(page, 'milkdrop').click()
         await expect(visualization).toHaveAttribute('data-module', 'milkdrop')
+        await expect(part(page, 'btn-color-scheme-picker')).toHaveCount(0)
         await settled
             .poll(() => storedVisualization(request, headers))
-            .toMatchObject({ module: 'Milkdrop', preset: null })
+            .toMatchObject({ module: 'Milkdrop', preset: null, colorScheme: null })
     })
 
     test('draws BlackCap, which moves with the music and changes its scenes', async ({

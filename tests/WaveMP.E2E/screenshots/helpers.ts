@@ -146,9 +146,10 @@ export async function showVisualization(
     profile: string,
     module: string,
     preset: string | null,
+    colorScheme: string | null = null,
 ): Promise<void> {
     await send(request, headers, 'patch', '/api/v1/me/settings', {
-        visualization: { module, preset: preset ?? '' },
+        visualization: { module, preset: preset ?? '', colorScheme: colorScheme ?? '' },
     })
     await selectProfile(page, profile)
     await play(page, request, 'Loose Song')

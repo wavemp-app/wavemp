@@ -238,13 +238,13 @@ describe('StageVisualization', () => {
         const first = module.renderer
         const other = new FakeModule()
         other.presets = [
-            { id: 'aurora', name: 'Aurora', labelKey: 'nowPlaying.aforceStyles.aurora' },
-            { id: 'ember', name: 'Ember', labelKey: 'nowPlaying.aforceStyles.ember' },
+            { id: 'flow', name: 'Flow', labelKey: 'nowPlaying.aforceModes.flow' },
+            { id: 'warp', name: 'Warp', labelKey: 'nowPlaying.aforceModes.warp' },
         ]
         visualizationDependencies.module = () => other
 
         await wrapper.setProps({
-            settings: { ...defaultVisualizationSettings, module: 'AForce', preset: 'ember' },
+            settings: { ...defaultVisualizationSettings, module: 'AForce', preset: 'warp' },
         })
         await other.finishLoad()
         await flushPromises()
@@ -252,11 +252,11 @@ describe('StageVisualization', () => {
         expect(first?.dispose).toHaveBeenCalled()
         expect(wrapper.get('[data-part="visualization"]').attributes('data-module')).toBe('aforce')
         expect(state(wrapper)).toBe('running')
-        expect(other.renderer?.showPreset).toHaveBeenCalledWith('ember', 0)
-        // The styles of A-Force carry message keys and show in the language of the app.
+        expect(other.renderer?.showPreset).toHaveBeenCalledWith('warp', 0)
+        // The modes of A-Force carry message keys and show in the language of the app.
         expect(exposed(wrapper).presetChoices).toEqual([
-            { id: 'aurora', label: 'Aurora' },
-            { id: 'ember', label: 'Ember' },
+            { id: 'flow', label: 'Flow' },
+            { id: 'warp', label: 'Warp' },
         ])
         wrapper.unmount()
     })

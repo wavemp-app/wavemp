@@ -301,6 +301,28 @@ export function countFlashes(frames: readonly FlashFrame[]): FlashCount {
     return { general, red }
 }
 
+/**
+ * The mean change of the relative luminance of a cell from one frame to the next, over all cells
+ * and frames: how much the picture moves.
+ */
+export function meanChange(frames: readonly FlashFrame[]): number {
+    let sum = 0
+    let count = 0
+    for (let index = 1; index < frames.length; index++) {
+        const before = frames[index - 1]!.cells
+        const after = frames[index]!.cells
+        for (let cell = 0; cell < before.length; cell += 3) {
+            sum += Math.abs(
+                relativeLuminance(after[cell]!, after[cell + 1]!, after[cell + 2]!) -
+                    relativeLuminance(before[cell]!, before[cell + 1]!, before[cell + 2]!),
+            )
+            count++
+        }
+    }
+
+    return count > 0 ? sum / count : 0
+}
+
 /** Largest change of the luminance of a cell between two frames: whether the picture moves. */
 export function largestChange(frames: readonly FlashFrame[]): number {
     let largest = 0

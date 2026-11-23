@@ -94,7 +94,8 @@ import TrackGroupList from '@/components/library/TrackGroupList.vue'
 import EqualizerPanel from '@/components/player/EqualizerPanel.vue'
 import NowPlayingStage from '@/components/player/NowPlayingStage.vue'
 import VisualizationControls from '@/components/player/VisualizationControls.vue'
-import { aforceStyles } from '@/visualization/modules/aforce/styles'
+import { aforceModes } from '@/visualization/modules/aforce/modes'
+import { aforceColorSchemes } from '@/visualization/modules/aforce/schemes'
 import { defaultVisualizationSettings, type VisualizationSettings } from '@/visualization/settings'
 import AutoplayList from '@/components/player/AutoplayList.vue'
 import CompactPlayer from '@/components/player/CompactPlayer.vue'
@@ -259,11 +260,11 @@ const sampleVisualization = ref<VisualizationSettings>({
     module: 'AForce',
 })
 const sampleVisualizationPresets = computed(() =>
-    aforceStyles.map((style) => ({ id: style.id, label: t(style.labelKey) })),
+    aforceModes.map((mode) => ({ id: mode.id, label: t(mode.labelKey) })),
 )
-const sampleVisualizationPreset = ref('nebula')
+const sampleVisualizationPreset = ref('rings')
 const sampleVisualizationColorSchemes = computed(() =>
-    aforceStyles.map((style) => ({ id: style.id, label: t(style.labelKey) })),
+    aforceColorSchemes.map((scheme) => ({ id: scheme.id, label: t(scheme.labelKey) })),
 )
 const sampleVisualizationColorScheme = ref('aurora')
 const sampleTrackLyrics = computed(() =>
