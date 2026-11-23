@@ -1,5 +1,5 @@
 import { expect, test, type APIRequestContext, type Locator, type Page } from '@playwright/test'
-import { createUser, deleteUser, uniqueSuffix, type TestUser } from './helpers/api'
+import { createUser, deleteUser, findTrackId, uniqueSuffix, type TestUser } from './helpers/api'
 import { homeUrl, profileTile } from './helpers/navigation'
 import { emptyStorageState } from './helpers/storage'
 
@@ -42,19 +42,27 @@ interface SavedState {
     currentIndex: number
     positionMilliseconds: number
     items: { track: { title: string } }[]
-    device: { name: string }
+    device: { id: string; name: string }
+}
+
+/** Authorization header of a new session of the profile. */
+async function profileAuthorization(
+    request: APIRequestContext,
+    user: TestUser,
+): Promise<Record<string, string>> {
+    const session = await request.post('/api/v1/sessions', {
+        data: { profileId: user.id },
+    })
+    expect(session.status()).toBe(201)
+    return { Authorization: `Bearer ${(await session.json()).token}` }
 }
 
 async function savedState(
     request: APIRequestContext,
     user: TestUser,
 ): Promise<SavedState | undefined> {
-    const session = await request.post('/api/v1/sessions', {
-        data: { profileId: user.id },
-    })
-    expect(session.status()).toBe(201)
     const response = await request.get('/api/v1/me/playback-state', {
-        headers: { Authorization: `Bearer ${(await session.json()).token}` },
+        headers: await profileAuthorization(request, user),
     })
     return response.status() === 200 ? ((await response.json()) as SavedState) : undefined
 }
@@ -199,5 +207,68 @@ test.describe('resume playback', () => {
         } finally {
             await phone.close()
         }
+    })
+
+    test('keeps the state of another device when the restored song cannot be loaded', async ({
+        page,
+        request,
+    }) => {
+        const first = await findTrackId(request, 'First Song')
+        // The player leaves songs with only a video out of its queue; the saved state keeps them.
+        const videoOnly = await findTrackId(request, 'Video Only')
+        const second = await findTrackId(request, 'Second Song')
+        const saved = await request.put('/api/v1/me/playback-state', {
+            headers: await profileAuthorization(request, user),
+            data: {
+                items: [{ trackId: first }, { trackId: videoOnly }, { trackId: second }],
+                currentIndex: 0,
+                positionMilliseconds: 1000,
+                device: { id: 'e2e-other-device', name: 'E2E Device' },
+            },
+        })
+        expect(saved.status()).toBe(204)
+
+        // The request for the restored song fails, like one that a reload or navigation cancels.
+        const playback = `**/api/v1/tracks/${first}/playback**`
+        await page.route(playback, (route) => route.abort())
+        let saves = 0
+        page.on('request', (sent) => {
+            if (sent.method() === 'PUT' && sent.url().includes('/api/v1/me/playback-state')) {
+                saves++
+            }
+        })
+
+        await page.reload()
+
+        // The song waits paused at its position; nothing moves on by itself.
+        await expect(part(page, 'now-playing-title')).toHaveText('First Song')
+        await expect(part(page, 'btn-play')).toHaveAttribute('data-state', 'paused')
+        await expect(part(page, 'transport')).not.toHaveAttribute('data-state', /\bloading\b/)
+        await expect(part(page, 'resume-notice')).toBeVisible()
+        // Longer than the delay of a save; leaving the page saves what changed, too.
+        await page.waitForTimeout(3000)
+        await page.goto('/settings')
+        await expect(part(page, 'now-playing-title')).toHaveText('First Song')
+        await expect(part(page, 'btn-play')).toHaveAttribute('data-state', 'paused')
+        await page.waitForTimeout(3000)
+
+        expect(saves).toBe(0)
+        const state = await savedState(request, user)
+        expect(state?.device.id).toBe('e2e-other-device')
+        expect(state?.currentIndex).toBe(0)
+        expect(state?.positionMilliseconds).toBe(1000)
+        expect(state?.items.map((item) => item.track.title)).toEqual([
+            'First Song',
+            'Video Only',
+            'Second Song',
+        ])
+
+        // Play requests the song again and plays; this device now has the latest state.
+        await page.unroute(playback)
+        await part(page, 'btn-play').click()
+        await expect(part(page, 'transport')).toHaveAttribute('data-state', /\bplaying\b/)
+        await expect
+            .poll(async () => (await savedState(request, user))?.device.id, { timeout: 15_000 })
+            .not.toBe('e2e-other-device')
     })
 })
