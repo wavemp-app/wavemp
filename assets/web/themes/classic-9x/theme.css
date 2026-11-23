@@ -1,0 +1,208 @@
+/*
+ * Theme "Classic 9x" for WaveMP, theme API version 7 (see THEMING.md).
+ *
+ * The look of a late-1990s desktop application window: gray surfaces with sharp 3D bevels,
+ * raised buttons that press in, a dark blue title bar with a gradient, sunken white fields for
+ * lists and inputs, and a crisp pixel font. Corners are square everywhere. All graphics in
+ * images/ were drawn for this theme.
+ *
+ * Rules of the theme API: no @import, no @layer, no external URLs, root-absolute url() only.
+ * Layout rules live in @media (width >= 64rem); below that, the fixed mobile base applies and
+ * this file only provides colors, graphics and fonts.
+ *
+ * The font is Pixelify Sans (fonts/, SIL Open Font License 1.1, license text in fonts/OFL.txt),
+ * shipped unchanged as its Latin and Latin Extended subsets; system-ui is only the fallback for
+ * characters it does not have.
+ */
+
+/* --- Font ----------------------------------------------------------------------------------- */
+
+@font-face {
+    font-family: "Pixelify Sans";
+    src: url('/themes/classic-9x/fonts/pixelify-sans-latin-400-normal.woff2') format('woff2');
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    unicode-range:
+        U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308,
+        U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+    font-family: "Pixelify Sans";
+    src: url('/themes/classic-9x/fonts/pixelify-sans-latin-ext-400-normal.woff2') format('woff2');
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    unicode-range:
+        U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329,
+        U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113,
+        U+2C60-2C7F, U+A720-A7FF;
+}
+
+@font-face {
+    font-family: "Pixelify Sans";
+    src: url('/themes/classic-9x/fonts/pixelify-sans-latin-700-normal.woff2') format('woff2');
+    font-style: normal;
+    font-weight: 700;
+    font-display: swap;
+    unicode-range:
+        U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308,
+        U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+    font-family: "Pixelify Sans";
+    src: url('/themes/classic-9x/fonts/pixelify-sans-latin-ext-700-normal.woff2') format('woff2');
+    font-style: normal;
+    font-weight: 700;
+    font-display: swap;
+    unicode-range:
+        U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329,
+        U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113,
+        U+2C60-2C7F, U+A720-A7FF;
+}
+
+/* --- Variables ------------------------------------------------------------------------------ */
+
+:root {
+    /* One pixel face for the whole window; bold is the 700 cut of the font. */
+    --wmp-font-family: "Pixelify Sans", system-ui, sans-serif;
+    --wmp-font-size-xs: 0.75rem;
+    --wmp-font-size-s: 0.875rem;
+    --wmp-font-size-m: 1rem;
+    --wmp-font-weight-bold: 700;
+
+    /*
+     * The palette: a gray face, white fields, black text, a dark navy for the title bar, the
+     * selection and the accent. The muted text keeps 6.4:1 on the face.
+     */
+    --wmp-color-accent: #0b2a7a;
+    --wmp-color-accent-contrast: #ffffff;
+    --wmp-color-focus: #000000;
+    --wmp-color-text: #000000;
+    --wmp-color-text-muted: #3b3b3b;
+    --wmp-color-text-disabled: #808080;
+    --wmp-color-surface: #ffffff;
+    --wmp-color-surface-raised: #c3c3c3;
+    --wmp-color-border: #808080;
+    --wmp-color-hover: #dfdfdf;
+    --wmp-color-selection: #0b2a7a;
+    --wmp-color-selection-text: #ffffff;
+    --wmp-color-success: #005a14;
+    --wmp-color-warning: #5c4300;
+    --wmp-color-danger: #8b0000;
+    --wmp-favorite-color: #a3004f;
+    --wmp-rating-color: #0b2a7a;
+    --wmp-backdrop-color: rgb(0 0 0 / 35%);
+
+    /* The header is the title bar of the window; everything else is the gray face. */
+    --wmp-header-color: #ffffff;
+    --wmp-header-background: linear-gradient(90deg, #0b2a7a, #3a6ea8);
+    --wmp-toolbar-color: #000000;
+    --wmp-toolbar-background: #c3c3c3;
+    --wmp-sidebar-color: #000000;
+    --wmp-sidebar-background: #ffffff;
+    --wmp-content-color: #000000;
+    --wmp-content-background: #c3c3c3;
+    --wmp-transport-color: #000000;
+    --wmp-transport-background: #c3c3c3;
+    --wmp-bottom-nav-color: #000000;
+    --wmp-bottom-nav-background: #c3c3c3;
+    --wmp-dialog-color: #000000;
+    --wmp-dialog-background: #c3c3c3;
+    --wmp-menu-color: #000000;
+    --wmp-menu-background: #c3c3c3;
+    /* The profile selection is the desktop behind the window: a slate blue. */
+    --wmp-profile-select-color: #ffffff;
+    --wmp-profile-select-background: #2d4f6b;
+    --wmp-profile-secondary-opacity: 0.85;
+    /* The status bar continues the dark end of the title bar. */
+    --wmp-theme-color: #0b2a7a;
+
+    --wmp-image-cover-placeholder: url('/themes/classic-9x/images/cover-placeholder.svg')
+        center / 100% 100% no-repeat;
+    --wmp-image-default-button: #c3c3c3;
+    --wmp-image-default-button-hover: #c3c3c3;
+    --wmp-image-default-button-active: #b5b5b5;
+    --wmp-image-default-button-disabled: #c3c3c3;
+    --wmp-image-primary-button: #0b2a7a;
+    --wmp-image-primary-button-hover: #16378f;
+    --wmp-image-primary-button-active: #081f5c;
+    --wmp-image-primary-button-disabled: #808080;
+    --wmp-image-icon-button: transparent;
+    --wmp-image-icon-button-hover: rgb(255 255 255 / 25%);
+    --wmp-image-icon-button-active: rgb(0 0 0 / 12%);
+    --wmp-image-icon-button-disabled: transparent;
+    --wmp-image-round-button: #c3c3c3;
+    --wmp-image-round-button-hover: #cdcdcd;
+    --wmp-image-round-button-active: #b5b5b5;
+    --wmp-image-round-button-disabled: #c3c3c3;
+    --wmp-image-play-button: #0b2a7a;
+    --wmp-image-play-button-hover: #16378f;
+    --wmp-image-play-button-active: #081f5c;
+    --wmp-image-play-button-disabled: #808080;
+    --wmp-image-tab-active: rgb(0 0 0 / 30%);
+    --wmp-image-tab-hover: rgb(255 255 255 / 15%);
+    --wmp-image-slider-thumb: #0b2a7a;
+    --wmp-slider-track-background: #ffffff;
+    --wmp-slider-fill-background: #0b2a7a;
+    --wmp-progress-track-background: #ffffff;
+    --wmp-progress-fill-background: #0b2a7a;
+    --wmp-chart-bar-color: #0b2a7a;
+
+    --wmp-icon-fill: currentColor;
+    --wmp-radius-s: 0;
+    --wmp-radius-m: 0;
+    --wmp-radius-l: 0;
+}
+
+/* --- Covers --------------------------------------------------------------------------------- */
+
+/*
+ * Covers sit sunken in the face like a field. The placeholder draws its own disc and note; covers
+ * of artists, genres and years show their navy symbol on the plain white field.
+ */
+[data-part='cover'] {
+    color: #0b2a7a;
+}
+
+[data-part='cover']:not([data-state~='placeholder']) {
+    background: #ffffff;
+}
+
+[data-part='cover']:is([data-state~='placeholder'], :has(> [data-part='icon'])) {
+    box-shadow:
+        inset 1px 1px #808080,
+        inset -1px -1px #ffffff,
+        inset 2px 2px #0a0a0a,
+        inset -2px -2px #dfdfdf;
+}
+
+[data-part='cover'][data-state~='placeholder'] > [data-part='icon'] {
+    display: none;
+}
+
+/* --- Selection ------------------------------------------------------------------------------ */
+
+/* Secondary text, stars and hearts of a selected entry turn light on the navy selection. */
+[data-part='tree-item'][aria-current='page'],
+[data-part='list-row'][aria-selected='true'],
+[data-part='queue-item'][data-state~='current'] {
+    --wmp-color-text-muted: #dfe6f5;
+    --wmp-rating-color: #ffffff;
+    --wmp-favorite-color: #ffb3d1;
+}
+
+/* --- Title bar ------------------------------------------------------------------------------ */
+
+/* The history buttons are small gray buttons on the title bar, with black arrows. */
+[data-part='btn-back'],
+[data-part='btn-forward'] {
+    color: #000000;
+}
+
+/* The current tab is drawn on the tab itself, so the caret below it is not needed. */
+[data-part='tab'] > [data-part='indicator'] {
+    display: none;
+}

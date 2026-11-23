@@ -142,6 +142,10 @@ COPY assets/licenses/intel-gmmlib/ /licenses/intel-gmmlib/
 COPY assets/web/icons/phosphor/LICENSE /licenses/phosphor-icons/LICENSE
 # The font Selawik of the theme Midnight (SIL Open Font License 1.1).
 COPY assets/web/themes/midnight/fonts/OFL.txt /licenses/selawik/OFL.txt
+# The fonts Pixelify Sans of the theme Classic 9x and Silkscreen of the theme Skinned (SIL Open Font
+# License 1.1).
+COPY assets/web/themes/classic-9x/fonts/OFL.txt /licenses/pixelify-sans/OFL.txt
+COPY assets/web/themes/skinned/fonts/OFL.txt /licenses/silkscreen/OFL.txt
 # The visualization bundles butterchurn and its preset pack (both MIT) into the web app; their
 # license texts come from the installed npm packages, so they always match the bundled version.
 COPY --from=web /src/source/WaveMP.Web/node_modules/butterchurn/LICENSE /licenses/butterchurn/LICENSE

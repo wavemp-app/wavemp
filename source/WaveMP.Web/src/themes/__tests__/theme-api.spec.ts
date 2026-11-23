@@ -358,3 +358,35 @@ describe('font of Midnight', () => {
         expect(css).not.toMatch(/Segoe UI/)
     })
 })
+
+/** Weights of the @font-face rules of a family, sorted, one entry per rule. */
+function fontFaceWeights(css: string, family: string): string[] {
+    return [...css.matchAll(/@font-face\s*\{([^}]*)\}/g)]
+        .filter((match) => new RegExp(`font-family:\\s*"${family}"`).test(match[1] ?? ''))
+        .map((match) => /font-weight:\s*(\d+)/.exec(match[1] ?? '')?.[1] ?? '')
+        .sort()
+}
+
+describe('font of Classic 9x', () => {
+    it('is the shipped Pixelify Sans for the whole app, with system fonts as fallbacks only', () => {
+        const css = readCss(path.join(webAssets, 'themes', 'classic-9x', 'theme.css'))
+        const family = /--wmp-font-family:\s*([^;]+);/.exec(css)?.[1]?.replace(/\s+/g, ' ')
+        expect(family).toBe('"Pixelify Sans", system-ui, sans-serif')
+        // Regular and Bold, each as its Latin and Latin Extended subset.
+        expect(fontFaceWeights(css, 'Pixelify Sans')).toEqual(['400', '400', '700', '700'])
+        expect(/--wmp-font-weight-bold:\s*(\d+);/.exec(css)?.[1]).toBe('700')
+    })
+})
+
+describe('font of Skinned', () => {
+    it('is the shipped Silkscreen for the display only, the system font everywhere else', () => {
+        const css = readCss(path.join(webAssets, 'themes', 'skinned', 'theme.css'))
+        expect(fontFaceWeights(css, 'Silkscreen')).toEqual(['400', '400', '700', '700'])
+        const family = /--wmp-font-family:\s*([^;]+);/.exec(css)?.[1]?.replace(/\s+/g, ' ')
+        expect(family).toBe('system-ui, sans-serif')
+        expect(css).toMatch(/--skinned-lcd-font:\s*"Silkscreen", system-ui, sans-serif;/)
+        expect(css).toMatch(
+            /\[data-part='now-playing-title'\][^{]*\{[^}]*var\(--skinned-lcd-font\)/,
+        )
+    })
+})

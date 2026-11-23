@@ -35,6 +35,8 @@ describe('resolveThemeId', () => {
             'accent',
             'pinstripe',
             'clear-glass',
+            'classic-9x',
+            'skinned',
         ])
         expect(resolveThemeId('clear-glass')).toBe('clear-glass')
         expect(new Set(themes.map((theme) => theme.name)).size).toBe(themes.length)

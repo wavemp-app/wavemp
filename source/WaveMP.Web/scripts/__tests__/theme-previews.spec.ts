@@ -28,6 +28,8 @@ describe('theme previews', () => {
             accent: 5203,
             pinstripe: 5204,
             'clear-glass': 5205,
+            'classic-9x': 5206,
+            skinned: 5207,
         })
         expect(new Set(Object.values(previewPorts)).size).toBe(themeIds.length)
     })

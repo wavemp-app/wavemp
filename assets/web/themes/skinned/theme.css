@@ -1,0 +1,190 @@
+/*
+ * Theme "Skinned" for WaveMP, theme API version 7 (see THEMING.md).
+ *
+ * The look of a classic skinnable desktop music player: a compact body of dark gunmetal plastic
+ * with small bevelled buttons and one lit, green dot-matrix display for the title, the artist and
+ * the time. Lists are dark and compact; the selection and the focus are amber. All graphics in
+ * images/ were drawn for this theme.
+ *
+ * Rules of the theme API: no @import, no @layer, no external URLs, root-absolute url() only.
+ * Layout rules live in @media (width >= 64rem); below that, the fixed mobile base applies and
+ * this file only provides colors, graphics and fonts.
+ *
+ * The display uses the bitmap face Silkscreen (fonts/, SIL Open Font License 1.1, license text
+ * in fonts/OFL.txt), shipped unchanged as its Latin and Latin Extended subsets; everything dense
+ * (lists, forms, settings) uses the font of the system, so it stays easy to read.
+ */
+
+/* --- Font ----------------------------------------------------------------------------------- */
+
+@font-face {
+    font-family: "Silkscreen";
+    src: url('/themes/skinned/fonts/silkscreen-latin-400-normal.woff2') format('woff2');
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    unicode-range:
+        U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308,
+        U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+    font-family: "Silkscreen";
+    src: url('/themes/skinned/fonts/silkscreen-latin-ext-400-normal.woff2') format('woff2');
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    unicode-range:
+        U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329,
+        U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113,
+        U+2C60-2C7F, U+A720-A7FF;
+}
+
+@font-face {
+    font-family: "Silkscreen";
+    src: url('/themes/skinned/fonts/silkscreen-latin-700-normal.woff2') format('woff2');
+    font-style: normal;
+    font-weight: 700;
+    font-display: swap;
+    unicode-range:
+        U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308,
+        U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+    font-family: "Silkscreen";
+    src: url('/themes/skinned/fonts/silkscreen-latin-ext-700-normal.woff2') format('woff2');
+    font-style: normal;
+    font-weight: 700;
+    font-display: swap;
+    unicode-range:
+        U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329,
+        U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113,
+        U+2C60-2C7F, U+A720-A7FF;
+}
+
+/* --- Variables ------------------------------------------------------------------------------ */
+
+:root {
+    color-scheme: dark;
+
+    /* Compact type of the system; the bitmap face only in the display (--skinned-lcd-font). */
+    --wmp-font-family: system-ui, sans-serif;
+    --wmp-font-size-s: 0.8125rem;
+    --wmp-font-size-m: 0.875rem;
+    --wmp-font-weight-bold: 700;
+    --skinned-lcd-font: "Silkscreen", system-ui, sans-serif;
+
+    /*
+     * The palette: gunmetal body, darker wells, near-black lists, a green display and amber for
+     * the selection, the focus and the accent.
+     */
+    --wmp-color-accent: #ffcf5c;
+    --wmp-color-accent-contrast: #1a1405;
+    --wmp-color-focus: #ffcf5c;
+    --wmp-color-text: #d8dde3;
+    --wmp-color-text-muted: #9aa3ad;
+    --wmp-color-text-disabled: #6b727b;
+    --wmp-color-surface: #121317;
+    --wmp-color-surface-raised: #23252b;
+    --wmp-color-border: #4a4e58;
+    --wmp-color-hover: #1a1c21;
+    --wmp-color-selection: #3a2a08;
+    --wmp-color-selection-text: #ffcf5c;
+    --wmp-color-success: #4cf07a;
+    --wmp-color-warning: #ffcf5c;
+    --wmp-color-danger: #ff6b5e;
+    --wmp-favorite-color: #ff6b8a;
+    --wmp-rating-color: #ffcf5c;
+    --wmp-backdrop-color: rgb(0 0 0 / 65%);
+
+    /* The body of the player in gunmetal, the lists as a dark playlist window. */
+    --wmp-header-color: #d8dde3;
+    --wmp-header-background: linear-gradient(#2b2e35, #23252b);
+    --wmp-toolbar-color: #d8dde3;
+    --wmp-toolbar-background: linear-gradient(#23252b, #1e2025);
+    --wmp-sidebar-color: #a8f0bc;
+    --wmp-sidebar-background: #121317;
+    --wmp-content-color: #d8dde3;
+    --wmp-content-background: #0c0d10;
+    --wmp-transport-color: #d8dde3;
+    --wmp-transport-background: linear-gradient(#2b2e35, #23252b);
+    --wmp-bottom-nav-color: #d8dde3;
+    --wmp-bottom-nav-background: linear-gradient(#2b2e35, #23252b);
+    --wmp-dialog-color: #d8dde3;
+    --wmp-dialog-background: #23252b;
+    --wmp-menu-color: #d8dde3;
+    --wmp-menu-background: #23252b;
+    --wmp-profile-select-color: #d8dde3;
+    --wmp-profile-select-background: linear-gradient(#23252b, #121317);
+    --wmp-profile-secondary-opacity: 0.8;
+    /* The status bar continues the body of the player. */
+    --wmp-theme-color: #23252b;
+
+    --wmp-image-cover-placeholder: url('/themes/skinned/images/cover-placeholder.svg') center /
+        100% 100% no-repeat;
+    --wmp-image-default-button: linear-gradient(#3a3d45, #2b2e35);
+    --wmp-image-default-button-hover: linear-gradient(#444852, #33363e);
+    --wmp-image-default-button-active: linear-gradient(#1a1c21, #23252b);
+    --wmp-image-default-button-disabled: #23252b;
+    --wmp-image-primary-button: linear-gradient(#ffd877, #f2c14a);
+    --wmp-image-primary-button-hover: linear-gradient(#ffe08f, #f7ca5c);
+    --wmp-image-primary-button-active: linear-gradient(#e0b03c, #f2c14a);
+    --wmp-image-primary-button-disabled: #4a4e58;
+    --wmp-image-icon-button: transparent;
+    --wmp-image-icon-button-hover: rgb(255 255 255 / 8%);
+    --wmp-image-icon-button-active: rgb(0 0 0 / 35%);
+    --wmp-image-icon-button-disabled: transparent;
+    --wmp-image-round-button: linear-gradient(#3a3d45, #2b2e35);
+    --wmp-image-round-button-hover: linear-gradient(#444852, #33363e);
+    --wmp-image-round-button-active: linear-gradient(#1a1c21, #23252b);
+    --wmp-image-round-button-disabled: #23252b;
+    --wmp-image-play-button: linear-gradient(#3a3d45, #2b2e35);
+    --wmp-image-play-button-hover: linear-gradient(#444852, #33363e);
+    --wmp-image-play-button-active: linear-gradient(#1a1c21, #23252b);
+    --wmp-image-play-button-disabled: #23252b;
+    --wmp-image-tab-active: #121317;
+    --wmp-image-tab-hover: rgb(255 255 255 / 6%);
+    --wmp-image-slider-thumb: linear-gradient(#5a5f6a, #2b2e35);
+    --wmp-slider-track-background: #0d0e11;
+    --wmp-slider-fill-background: #4cf07a;
+    --wmp-progress-track-background: #0d0e11;
+    --wmp-progress-fill-background: #4cf07a;
+    --wmp-chart-bar-color: #4cf07a;
+
+    --wmp-icon-fill: currentColor;
+    --wmp-radius-s: 0.125rem;
+    --wmp-radius-m: 0.1875rem;
+    --wmp-radius-l: 0.25rem;
+}
+
+/* --- Display -------------------------------------------------------------------------------- */
+
+/* Title, artist and time of the song are written in the bitmap face of the display. */
+[data-part='now-playing-title'],
+[data-part='now-playing-artist'],
+[data-part='transport-time'] {
+    font-family: var(--skinned-lcd-font);
+}
+
+/* --- Covers --------------------------------------------------------------------------------- */
+
+/*
+ * The placeholder is a lit display with its own notes; covers of artists, genres and years show
+ * their symbol in lit green on the dark display.
+ */
+[data-part='cover']:not([data-state~='placeholder']) {
+    background: #0a1a0f;
+    color: #4cf07a;
+}
+
+[data-part='cover'][data-state~='placeholder'] > [data-part='icon'] {
+    display: none;
+}
+
+/* --- Transport ------------------------------------------------------------------------------ */
+
+/* The play button is a gunmetal key like the others, with a light symbol. */
+[data-part='btn-play'] {
+    color: #d8dde3;
+}

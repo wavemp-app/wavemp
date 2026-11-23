@@ -14,5 +14,7 @@ public static class BuiltInThemes
         "accent",
         "pinstripe",
         "clear-glass",
+        "classic-9x",
+        "skinned",
     };
 }

@@ -131,6 +131,8 @@ public class ThemeManifestReaderTests
 
     [TestCase("midnight")]
     [TestCase("clear-glass")]
+    [TestCase("classic-9x")]
+    [TestCase("skinned")]
     public void Read_IdOfAShippedTheme_IsRejected(string id)
     {
         Read(ThemePackageBuilder.Manifest(id)).Errors.Should().ContainSingle().Which.Code

@@ -47,6 +47,8 @@ export const themes = [
     builtIn('accent', 'Accent', ['light', 'dark']),
     builtIn('pinstripe', 'Pinstripe', ['light']),
     builtIn('clear-glass', 'Clear Glass', ['light', 'dark']),
+    builtIn('classic-9x', 'Classic 9x', ['light']),
+    builtIn('skinned', 'Skinned', ['dark']),
 ] as const satisfies readonly ThemeDefinition[]
 
 export type ThemeId = (typeof themes)[number]['id']

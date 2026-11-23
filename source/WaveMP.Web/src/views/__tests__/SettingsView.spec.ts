@@ -120,6 +120,8 @@ describe('SettingsView', () => {
             ['accent', 'Accent', 'false', '-1'],
             ['pinstripe', 'Pinstripe', 'false', '-1'],
             ['clear-glass', 'Clear Glass', 'false', '-1'],
+            ['classic-9x', 'Classic 9x', 'false', '-1'],
+            ['skinned', 'Skinned', 'false', '-1'],
         ])
         const accent = options[3]!
         expect(accent.attributes('role')).toBe('radio')

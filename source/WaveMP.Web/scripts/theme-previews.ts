@@ -12,6 +12,8 @@ export const previewPorts: Readonly<Record<string, number>> = {
     accent: 5203,
     pinstripe: 5204,
     'clear-glass': 5205,
+    'classic-9x': 5206,
+    skinned: 5207,
 }
 
 /** WaveMP instance the previews pass /api to: the development container of docker compose. */

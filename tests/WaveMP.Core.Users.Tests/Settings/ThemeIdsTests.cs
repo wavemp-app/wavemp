@@ -8,6 +8,7 @@ public class ThemeIdsTests
 {
     [TestCase("midnight")]
     [TestCase("clear-glass")]
+    [TestCase("classic-9x")]
     [TestCase("a")]
     [TestCase("theme2")]
     [TestCase("my-theme-2026")]
