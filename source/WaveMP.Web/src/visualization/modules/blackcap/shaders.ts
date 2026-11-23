@@ -1,6 +1,6 @@
 // The shaders of BlackCap (GLSL ES 3.00 for WebGL 2). The scene (background with floating lights,
-// then the shapes with depth) is drawn into a texture; the composite pass lays it onto the canvas
-// with a soft glow and a vignette.
+// then the shapes with depth) is drawn into a texture; the composite pass draws it with a soft glow
+// and a vignette into the flash guard, which lays the guarded frame onto the canvas.
 
 /** Number of bands of the spectrum the surfaces follow. */
 export const spectrumBands = 16
@@ -45,7 +45,10 @@ float noise(vec3 p) {
 }
 `
 
-/** The background of the scene: a gradient, a glow that breathes with the bass and floating lights. */
+/**
+ * The background of the scene: a gradient, a glow that breathes with the bass and the beats and
+ * floating lights that shine brighter with the mids.
+ */
 export const backgroundFragment = `#version 300 es
 precision highp float;
 in vec2 vUv;
@@ -57,14 +60,13 @@ uniform float uTime;
 uniform float uAspect;
 uniform float uLights;
 uniform int uLightCount;
-uniform float uBass;
-uniform float uMid;
-uniform float uPulse;
+uniform float uGlowStrength;
+uniform float uLightLevel;
 out vec4 outColor;
 void main() {
     vec2 c = (vUv - 0.5) * vec2(uAspect, 1.0);
     vec3 color = mix(uBottom, uTop, smoothstep(0.0, 1.0, vUv.y + 0.06 * sin(uTime * 0.11 + vUv.x * 2.0)));
-    color += uGlow * exp(-dot(c, c) * 2.5) * (0.05 + 0.1 * uBass + 0.05 * uPulse);
+    color += uGlow * exp(-dot(c, c) * 2.5) * uGlowStrength;
     for (int i = 0; i < ${shaderLights}; i++) {
         if (i >= uLightCount) {
             break;
@@ -74,7 +76,7 @@ void main() {
             sin(uTime * (0.023 + 0.005 * k) + k * 1.7) * 0.42);
         float size = 0.05 + 0.07 * fract(k * 0.618);
         float d = length(c - at) / size;
-        color += uLight * exp(-d * d) * uLights * (0.05 + 0.05 * fract(k * 0.37)) * (0.7 + 0.6 * uMid);
+        color += uLight * exp(-d * d) * uLights * (0.05 + 0.05 * fract(k * 0.37)) * uLightLevel;
     }
     float ray = pow(max(0.0, sin(c.x * 5.0 + c.y * 1.5 + uTime * 0.05)), 12.0) * smoothstep(-0.2, 0.5, c.y);
     color += uLight * ray * 0.03 * uLights;
@@ -84,8 +86,9 @@ void main() {
 
 /**
  * A shape: the directions of a sphere pushed out into an organic surface by turning lobes, flowing
- * waves of noise and the spectrum (the bass at the bottom, the highs at the top). The normal comes
- * from two neighbouring points of the surface, so the light follows every curve.
+ * waves of noise and the spectrum (the bass at the bottom, the highs at the top), swollen from the
+ * bottom by the bass and finely rippled at the top by the highs. The normal comes from two
+ * neighbouring points of the surface, so the light follows every curve.
  */
 export const shapeVertex = `#version 300 es
 precision highp float;
@@ -99,6 +102,8 @@ uniform float uWaves;
 uniform float uWaveScale;
 uniform float uSpectrumAmount;
 uniform float uSpectrum[${spectrumBands}];
+uniform float uBassLift;
+uniform float uRipple;
 uniform vec3 uStretch;
 uniform float uFlow;
 uniform float uSeed;
@@ -134,7 +139,11 @@ float radius(vec3 d) {
         waves += 0.25 * noise(p * 1.9 + vec3(5.2, 1.3, uFlow * 0.4));
     }
     float lift = spectrumAt(d.y) * (0.55 + 0.6 * noise(d * 2.0 + vec3(uSeed, 0.0, uFlow * 0.5)));
-    return max(0.3, 1.0 + lobes + uWaves * waves + uSpectrumAmount * lift);
+    float bottom = smoothstep(0.35, -1.0, d.y);
+    float top = smoothstep(-0.2, 1.0, d.y);
+    float ripple = uRipple > 0.0 ? noise(d * 7.0 + vec3(uSeed * 3.7, uFlow * 2.3, 0.0)) * top : 0.0;
+    return max(0.3, 1.0 + lobes + uWaves * waves + uSpectrumAmount * lift + uBassLift * bottom
+        + uRipple * ripple);
 }
 vec3 surface(vec3 d) {
     return d * radius(d) * uStretch;
@@ -161,7 +170,8 @@ void main() {
 
 /**
  * The light of a shape: a color gradient across the surface, a key and a fill light with their
- * reflections, the mirrored surroundings (stronger at grazing angles) and light at the edges.
+ * reflections (glinting with the highs), the mirrored surroundings (stronger at grazing angles) and
+ * light at the edges (brighter with the mids and pulsing with the beats).
  */
 export const shapeFragment = `#version 300 es
 precision highp float;
@@ -182,8 +192,8 @@ uniform float uRimStrength;
 uniform float uShade;
 uniform float uTime;
 uniform float uSeed;
-uniform float uMid;
-uniform float uTreble;
+uniform float uRimLight;
+uniform float uGlint;
 uniform float uPulse;
 out vec4 outColor;
 vec3 surroundings(vec3 r) {
@@ -208,14 +218,17 @@ void main() {
     vec3 color = base * diffuse;
     vec3 mirrored = surroundings(reflect(-v, n)) * mix(vec3(1.0), base * 1.5, 0.35);
     color = mix(color, mirrored, uMirror * (0.3 + 0.7 * fresnel));
-    color += uHighlight * shine * (0.7 + 0.6 * uTreble);
-    color += uRim * fresnel * uRimStrength * (0.55 + 0.6 * uMid);
+    color += uHighlight * shine * uGlint;
+    color += uRim * fresnel * uRimStrength * uRimLight;
     color += uGlow * uPulse * 0.12;
     outColor = vec4(color, 1.0);
 }
 `
 
-/** The scene onto the canvas: a soft glow of bright parts, a vignette and a gentle tone curve. */
+/**
+ * The scene into the flash guard: a soft glow of bright parts, a vignette, the brightness of the
+ * passage (dimmer when it is quiet) and a gentle tone curve.
+ */
 export const compositeFragment = `#version 300 es
 precision highp float;
 in vec2 vUv;
@@ -224,6 +237,7 @@ uniform vec3 uGlow;
 uniform float uBloom;
 uniform float uAspect;
 uniform float uPulse;
+uniform float uBrightness;
 out vec4 outColor;
 void main() {
     vec2 c = (vUv - 0.5) * vec2(uAspect, 1.0);
@@ -234,7 +248,7 @@ void main() {
         color += max(glow - 0.08, 0.0) * uBloom;
     }
     color += uGlow * uPulse * 0.03;
-    color *= mix(1.0, 0.6, smoothstep(0.35, 1.2, length(c)));
+    color *= mix(1.0, 0.6, smoothstep(0.35, 1.2, length(c))) * uBrightness;
     outColor = vec4(1.0 - exp(-color * 1.3), 1.0);
 }
 `

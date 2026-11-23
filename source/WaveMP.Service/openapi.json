@@ -21418,7 +21418,7 @@
         "type": "object",
         "properties": {
           "module": {
-            "description": "The visualization; Milkdrop by default. The presets of A-Force are its style variants, the presets of BlackCap its scenes.",
+            "description": "The visualization; Milkdrop by default. The presets of A-Force and BlackCap are their modes, their colors are the color schemes (ColorScheme).",
             "$ref": "#/components/schemas/VisualizationModule"
           },
           "preset": {

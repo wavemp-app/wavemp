@@ -7,7 +7,7 @@ export interface BlackCapProfile {
     /** Segments of the surface of a shape around (longitude) and from top to bottom (latitude). */
     readonly columns: number
     readonly rows: number
-    /** Most shapes drawn; a scene with more shows only these. */
+    /** Most shapes drawn; a mode with more shows only these. */
     readonly shapes: number
     /** Layers of organic waves on the surfaces (1 or 2). */
     readonly detail: number

@@ -261,17 +261,17 @@ describe('StageVisualization', () => {
         wrapper.unmount()
     })
 
-    it('starts BlackCap with the stored scene and shows the scenes in the language of the app', async () => {
+    it('starts BlackCap with the stored mode and shows the modes in the language of the app', async () => {
         const wrapper = await loaded()
         const other = new FakeModule()
         other.presets = [
-            { id: 'lumen', name: 'Lumen', labelKey: 'nowPlaying.blackcapScenes.lumen' },
-            { id: 'tide', name: 'Tide', labelKey: 'nowPlaying.blackcapScenes.tide' },
+            { id: 'drift', name: 'Drift', labelKey: 'nowPlaying.blackcapModes.drift' },
+            { id: 'bloom', name: 'Bloom', labelKey: 'nowPlaying.blackcapModes.bloom' },
         ]
         visualizationDependencies.module = () => other
 
         await wrapper.setProps({
-            settings: { ...defaultVisualizationSettings, module: 'BlackCap', preset: 'tide' },
+            settings: { ...defaultVisualizationSettings, module: 'BlackCap', preset: 'bloom' },
         })
         await other.finishLoad()
         await flushPromises()
@@ -280,10 +280,10 @@ describe('StageVisualization', () => {
             'blackcap',
         )
         expect(state(wrapper)).toBe('running')
-        expect(other.renderer?.showPreset).toHaveBeenCalledWith('tide', 0)
+        expect(other.renderer?.showPreset).toHaveBeenCalledWith('bloom', 0)
         expect(exposed(wrapper).presetChoices.map((choice) => choice.label)).toEqual([
-            'Lumen',
-            'Tide',
+            'Drift',
+            'Bloom',
         ])
         wrapper.unmount()
     })

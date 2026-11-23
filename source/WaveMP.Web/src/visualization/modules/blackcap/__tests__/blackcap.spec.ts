@@ -2,26 +2,39 @@ import { describe, expect, it, vi } from 'vitest'
 import type { VisualizationRendererOptions } from '../../../module'
 import { visualizationModule, visualizationModuleChoices, visualizationModules } from '../..'
 import {
+    blackcapColorSchemePresets,
     blackcapPresets,
     browserBlackCapEnvironment,
     createBlackCapModule,
     type BlackCapEnvironment,
 } from '..'
+import { blackcapModes, minModeBlendSeconds } from '../modes'
 import { blackcapProfiles } from '../profiles'
 import { BlackCapRenderer } from '../renderer'
-import { blackcapScenes, minSceneBlendSeconds } from '../scenes'
+import { blackcapColorSchemes } from '../schemes'
 import { spectrumBands } from '../shaders'
 import { sphereGrid } from '../surface'
 import { fakeAudio, fakeWebGl, rendererDefaults, type Call } from '../../../__tests__/webgl'
 
-function setup(quality: VisualizationRendererOptions['quality'] = 'high') {
+function setup(
+    quality: VisualizationRendererOptions['quality'] = 'high',
+    options: Partial<VisualizationRendererOptions> = {},
+) {
     const webgl = fakeWebGl()
     const canvas = document.createElement('canvas')
     canvas.getContext = vi.fn(() => webgl.gl) as unknown as HTMLCanvasElement['getContext']
     const sound = fakeAudio()
     let now = 1000
     const renderer = new BlackCapRenderer(
-        { canvas, audio: sound.audio, width: 800, height: 450, quality, ...rendererDefaults },
+        {
+            canvas,
+            audio: sound.audio,
+            width: 800,
+            height: 450,
+            quality,
+            ...rendererDefaults,
+            ...options,
+        },
         () => now,
     )
     /** The last call that set the uniform. */
@@ -42,6 +55,22 @@ function setup(quality: VisualizationRendererOptions['quality'] = 'high') {
     }
 }
 
+type Named = ReturnType<typeof fakeWebGl>['named']
+
+/** The values given to a uniform of the name with the method, in order. */
+function uniformValues(named: Named, method: string, name: string): unknown[] {
+    return named(method)
+        .filter(([, args]) => (args[0] as { name: string } | null)?.name === name)
+        .map(([, args]) => (args.length === 2 ? args[1] : args.slice(1)))
+}
+
+/** The draws of the guard at the end of every frame: reduction, limit and output. */
+const guardDraws = [
+    ['TRIANGLES', 0, 3],
+    ['TRIANGLES', 0, 3],
+    ['TRIANGLES', 0, 3],
+]
+
 /** Index count of the mesh of a quality level. */
 function indexCount(quality: VisualizationRendererOptions['quality']): number {
     const profile = blackcapProfiles[quality]
@@ -58,19 +87,28 @@ describe('the module BlackCap', () => {
         }
     }
 
-    it('is a module of the visualization with its scenes as presets', async () => {
+    it('is a module of the visualization with its modes as presets and its color schemes', async () => {
         const module = createBlackCapModule(environment())
 
         expect(module.id).toBe('BlackCap')
         const loaded = await module.load()
         expect(loaded.presets).toBe(blackcapPresets)
         expect(loaded.presets.map((preset) => preset.id)).toEqual(
-            blackcapScenes.map((scene) => scene.id),
+            blackcapModes.map((mode) => mode.id),
         )
         expect(loaded.presets[0]).toEqual({
+            id: 'drift',
+            name: 'Drift',
+            labelKey: 'nowPlaying.blackcapModes.drift',
+        })
+        expect(loaded.colorSchemes).toBe(blackcapColorSchemePresets)
+        expect(loaded.colorSchemes!.map((scheme) => scheme.id)).toEqual(
+            blackcapColorSchemes.map((scheme) => scheme.id),
+        )
+        expect(loaded.colorSchemes![0]).toEqual({
             id: 'lumen',
             name: 'Lumen',
-            labelKey: 'nowPlaying.blackcapScenes.lumen',
+            labelKey: 'nowPlaying.blackcapColorSchemes.lumen',
         })
     })
 
@@ -183,10 +221,11 @@ describe('BlackCapRenderer', () => {
 
         expect(raw.connect).toHaveBeenCalledWith(analyser)
         expect(analyser.fftSize).toBe(2048)
+        expect(analyser.smoothingTimeConstant).toBeLessThan(0.6)
         expect([canvas.width, canvas.height]).toEqual([800, 450])
     })
 
-    it('draws the background, the shapes with depth and the composite of a frame', () => {
+    it('draws the background, the shapes with depth and the composite of a frame, then the guard', () => {
         const { renderer, named, analyser } = setup('high')
 
         renderer.render()
@@ -195,15 +234,17 @@ describe('BlackCapRenderer', () => {
         expect(named('drawArrays').map(([, args]) => args)).toEqual([
             ['TRIANGLES', 0, 3],
             ['TRIANGLES', 0, 3],
+            ...guardDraws,
         ])
-        // The first scene shows one shape in the middle.
+        // The first mode shows one shape in the middle.
         expect(named('drawElements').map(([, args]) => args)).toEqual([
             ['TRIANGLES', indexCount('high'), 'UNSIGNED_SHORT', 0],
         ])
         expect(named('enable').map(([, args]) => args[0])).toEqual(
             expect.arrayContaining(['DEPTH_TEST', 'CULL_FACE']),
         )
-        // A depth buffer of the scene, then the scene at full resolution and the canvas.
+        // A depth buffer of the scene, then the scene at full resolution, the composite into the
+        // guard at the size of the canvas, the cells of the guard and its output onto the canvas.
         expect(named('renderbufferStorage')[0]![1]).toEqual([
             'RENDERBUFFER',
             'DEPTH_COMPONENT24',
@@ -213,8 +254,41 @@ describe('BlackCapRenderer', () => {
         expect(named('viewport').map(([, args]) => args)).toEqual([
             [0, 0, 800, 450],
             [0, 0, 800, 450],
+            [0, 0, 12, 4],
+            [0, 0, 6, 4],
+            [0, 0, 800, 450],
         ])
         expect(named('generateMipmap').length).toBeGreaterThan(0)
+        expect(named('readPixels')).toHaveLength(0)
+    })
+
+    it('ends every frame with the flash guard onto the canvas', () => {
+        const { renderer, calls, advance } = setup('medium')
+
+        for (let frame = 0; frame < 3; frame++) {
+            renderer.render()
+            advance(16)
+        }
+
+        const names = calls.map(([name]) => name)
+        const composite = calls
+            .map(
+                ([name, args]) =>
+                    name === 'uniform1f' && (args[0] as { name: string }).name === 'uBloom',
+            )
+            .lastIndexOf(true)
+        const lastDraw = names.lastIndexOf('drawArrays')
+        // After the composite come its draw and the three passes of the guard, the last one onto
+        // the canvas, then only the copy of the output for the next frame.
+        expect(names.slice(composite).filter((name) => name === 'drawArrays')).toHaveLength(4)
+        const output = calls
+            .slice(0, lastDraw)
+            .filter(([name]) => name === 'bindFramebuffer')
+            .at(-1)
+        expect(output![1]).toEqual(['FRAMEBUFFER', null])
+        expect(names.slice(lastDraw + 1)).toContain('blitFramebuffer')
+        expect(names.slice(lastDraw + 1).filter((name) => name.startsWith('draw'))).toHaveLength(0)
+        expect(names.filter((name) => name === 'blitFramebuffer')).toHaveLength(3)
     })
 
     it('lets the surfaces follow the spectrum', () => {
@@ -252,12 +326,37 @@ describe('BlackCapRenderer', () => {
         expect(Math.max(...high)).toBeLessThan(Math.min(...steady.slice((spectrumBands * 3) / 4)))
     })
 
-    it('shows more shapes in a scene with more of them, limited by the quality level', () => {
+    it('swells the surfaces and lights the edges with every kick of the music', () => {
+        const { renderer, analyser, advance, named } = setup()
+        const values = (name: string) =>
+            (uniformValues(named, 'uniform1f', name) as number[]).slice(-120)
+
+        // Four seconds of a quiet sound with a kick (the bass 25 dB louder for four frames) every
+        // half second.
+        const quiet = (bin: number) => -60 - 3 * Math.log2(Math.max(1, bin))
+        let frame = 0
+        analyser.getFloatFrequencyData.mockImplementation((data: Float32Array) => {
+            const kick = frame % 30 < 4
+            data.forEach((_, bin) => (data[bin] = quiet(bin) + (kick && bin < 12 ? 25 : 0)))
+            return data
+        })
+        for (; frame < 240; frame++) {
+            advance(1000 / 60)
+            renderer.render()
+        }
+
+        const lift = values('uBassLift')
+        const rim = values('uRimLight')
+        expect(Math.max(...lift) - Math.min(...lift)).toBeGreaterThan(0.15)
+        expect(Math.max(...rim)).toBeGreaterThan(Math.min(...rim) * 1.25)
+    })
+
+    it('shows more shapes in a mode with more of them, limited by the quality level', () => {
         const high = setup('high')
-        high.renderer.showPreset('dusk', 0)
+        high.renderer.showPreset('cluster', 0)
         high.renderer.render()
         const low = setup('low')
-        low.renderer.showPreset('dusk', 0)
+        low.renderer.showPreset('cluster', 0)
         low.renderer.render()
 
         expect(high.named('drawElements')).toHaveLength(blackcapProfiles.high.shapes)
@@ -290,7 +389,7 @@ describe('BlackCapRenderer', () => {
         expect(uniform('uBloom')![1][1]).toBe(0)
     })
 
-    it('resizes the canvas and the scene', () => {
+    it('resizes the canvas, the scene and the guard', () => {
         const { renderer, canvas, named, calls } = setup('medium')
 
         renderer.resize(1000, 500)
@@ -301,25 +400,101 @@ describe('BlackCapRenderer', () => {
         expect(named('viewport').map(([, args]) => args)).toEqual([
             [0, 0, 750, 375],
             [0, 0, 1000, 500],
+            [0, 0, 12, 4],
+            [0, 0, 6, 4],
+            [0, 0, 1000, 500],
         ])
     })
 
-    it('blends into a chosen scene over several seconds and ignores unknown ones', () => {
-        const { renderer, uniform, advance } = setup()
-        const halo = blackcapScenes.find((scene) => scene.id === 'halo')!
-        const glow = () => uniform('uGlow')![1][1] as number[]
+    it('morphs into a chosen mode over several seconds and ignores unknown ones', () => {
+        const { renderer, named, advance } = setup()
+        const ribbon = blackcapModes.find((mode) => mode.id === 'ribbon')!
+        const stretch = () => uniformValues(named, 'uniform3fv', 'uStretch').at(-1) as number[]
 
         renderer.showPreset('gone', 1)
-        renderer.showPreset('halo', 1)
+        // An id of a color scheme is no mode.
+        renderer.showPreset('tide', 1)
+        renderer.showPreset('ribbon', 1)
         advance(1000)
         renderer.render()
-        const during = glow()
-        advance(minSceneBlendSeconds * 1000)
+        const during = stretch()
+        advance(minModeBlendSeconds * 1000)
+        renderer.render()
+
+        expect(during).not.toEqual(ribbon.form.stretch)
+        expect(during).not.toEqual(blackcapModes[0]!.form.stretch)
+        expect(stretch()).toEqual(ribbon.form.stretch)
+    })
+
+    it('starts with the stored color scheme, or with the first one', () => {
+        const glow = (scheme: string | null) => {
+            const { renderer, named } = setup('low', { colorScheme: scheme })
+            renderer.render()
+            return uniformValues(named, 'uniform3fv', 'uGlow').at(-1)
+        }
+
+        expect(glow('mercury')).toEqual(blackcapColorSchemes[3]!.colors.glow)
+        expect(glow(null)).toEqual(blackcapColorSchemes[0]!.colors.glow)
+        expect(glow('gone')).toEqual(blackcapColorSchemes[0]!.colors.glow)
+    })
+
+    it('blends into a chosen color scheme and keeps it while the mode changes', () => {
+        const { renderer, named, calls, advance } = setup()
+        const glow = () => uniformValues(named, 'uniform3fv', 'uGlow').at(-1) as number[]
+        const mirror = () => uniformValues(named, 'uniform1f', 'uMirror').at(-1) as number
+        const halo = blackcapColorSchemes.find((scheme) => scheme.id === 'halo')!
+
+        renderer.showColorScheme('gone', 1.5)
+        renderer.showColorScheme('drift', 1.5)
+        renderer.showColorScheme('halo', 1.5)
+        advance(750)
+        renderer.render()
+        const halfway = glow()
+        advance(800)
         renderer.render()
         const done = glow()
+        renderer.showPreset('bloom', 1)
+        advance(minModeBlendSeconds * 1000 + 100)
+        calls.length = 0
+        renderer.render()
 
-        expect(during).not.toEqual(halo.colors.glow)
+        expect(halfway).not.toEqual(halo.colors.glow)
+        expect(halfway).not.toEqual(blackcapColorSchemes[0]!.colors.glow)
         expect(done).toEqual(halo.colors.glow)
+        expect(glow()).toEqual(halo.colors.glow)
+        expect(mirror()).toBe(halo.material.mirror)
+    })
+
+    it('limits flashes further and reacts more gently at the reduced intensity', () => {
+        const { renderer, named, calls, advance } = setup('low')
+        const step = () => (uniformValues(named, 'uniform2f', 'uSteps').at(-1) as number[])[0]!
+
+        renderer.render()
+        advance(20)
+        calls.length = 0
+        renderer.render()
+        const normal = step()
+        renderer.setIntensity('reduced')
+        advance(20)
+        calls.length = 0
+        renderer.render()
+
+        expect(step()).toBeLessThan(normal)
+        expect(step()).toBeGreaterThan(0)
+    })
+
+    it('starts at the reduced intensity when asked to', () => {
+        const normal = setup('low')
+        const reduced = setup('low', { intensity: 'reduced' })
+        for (const { renderer, advance } of [normal, reduced]) {
+            renderer.render()
+            advance(20)
+            renderer.render()
+        }
+
+        const step = (named: Named) =>
+            (uniformValues(named, 'uniform2f', 'uSteps').at(-1) as number[])[0]!
+        expect(step(reduced.named)).toBeLessThan(step(normal.named))
     })
 
     it('disconnects from the player and frees its context when disposed', () => {

@@ -16,12 +16,13 @@ public enum VisualizationModuleDto
     Milkdrop,
 
     /// <summary>
-    /// A-Force: flowing waveforms and particles; its presets are style variants.
+    /// A-Force: light in motion; its presets are its modes, its colors are color schemes.
     /// </summary>
     AForce,
 
     /// <summary>
-    /// BlackCap: organic, floating 3D shapes and light effects; its presets are scenes.
+    /// BlackCap: organic, floating 3D shapes and light effects; its presets are its modes, its colors are color
+    /// schemes.
     /// </summary>
     BlackCap,
 }

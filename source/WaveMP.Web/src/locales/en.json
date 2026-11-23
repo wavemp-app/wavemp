@@ -211,7 +211,14 @@
       "prism": "Prism",
       "eclipse": "Eclipse"
     },
-    "blackcapScenes": {
+    "blackcapModes": {
+      "drift": "Drift",
+      "orbit": "Orbit",
+      "cluster": "Cluster",
+      "ribbon": "Ribbon",
+      "bloom": "Bloom"
+    },
+    "blackcapColorSchemes": {
       "lumen": "Lumen",
       "tide": "Tide",
       "orchid": "Orchid",

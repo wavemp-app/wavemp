@@ -13,7 +13,7 @@ import {
 
 /**
  * The visualization of the Now Playing stage: the module of the profile (Milkdrop presets, the
- * modes of A-Force or the scenes of BlackCap) draws the output of the player into a canvas,
+ * modes of A-Force or of BlackCap) draws the output of the player into a canvas,
  * in sync with the music, at the quality of the profile (useVisualization). It holds no controls,
  * so nothing covers the picture: the stage shows VisualizationControls below it, which use the
  * presets, the preset choice and the full screen this component exposes. A double click shows the

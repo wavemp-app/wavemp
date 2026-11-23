@@ -9,13 +9,17 @@ import {
     cameraPose,
     restingBreathRate,
     shapePlacements,
+    type ShapeReaction,
 } from '../motion'
 import { blackcapProfiles, maxLights, sceneSize } from '../profiles'
-import { blackcapScenes, maxSceneShapes, type SceneMotion } from '../scenes'
+import { blackcapModes, maxModeShapes, type ModeMotion } from '../modes'
 import { shaderLights } from '../shaders'
 import { sphereGrid, spreadLevels } from '../surface'
 
-const motion: SceneMotion = { ...blackcapScenes[0]!.motion, shapes: 4 }
+const motion: ModeMotion = { ...blackcapModes[0]!.motion, shapes: 4 }
+
+/** The shapes at rest: their own size, no swell, the breath of the mode, their own distance. */
+const rest: ShapeReaction = { size: 1, swell: 0, breath: motion.breath, orbitScale: 1 }
 
 function point(directions: Float32Array, index: number): Vec3 {
     return [directions[index * 3]!, directions[index * 3 + 1]!, directions[index * 3 + 2]!]
@@ -86,7 +90,7 @@ describe('blackcapProfiles', () => {
         expect(low.resolution).toBeLessThan(high.resolution)
         expect(low.bloom).toBe(false)
         expect(high.bloom).toBe(true)
-        expect(high.shapes).toBeLessThanOrEqual(maxSceneShapes)
+        expect(high.shapes).toBeLessThanOrEqual(maxModeShapes)
         expect(maxLights).toBeLessThanOrEqual(shaderLights)
     })
 
@@ -142,7 +146,7 @@ describe('Breath', () => {
 
 describe('shapePlacements', () => {
     it('places the first shape in the middle and the others around it', () => {
-        const shapes = shapePlacements(motion, 6, 12, 0, 0)
+        const shapes = shapePlacements(motion, rest, 6, 12, 0)
 
         expect(shapes).toHaveLength(4)
         expect(shapes[0]!.position[0]).toBe(0)
@@ -159,12 +163,12 @@ describe('shapePlacements', () => {
     })
 
     it('draws no more shapes than the quality level allows', () => {
-        expect(shapePlacements({ ...motion, shapes: 6 }, 3, 0, 0, 0)).toHaveLength(3)
-        expect(shapePlacements({ ...motion, shapes: 1 }, 6, 0, 0, 0)).toHaveLength(1)
+        expect(shapePlacements({ ...motion, shapes: 6 }, rest, 3, 0, 0)).toHaveLength(3)
+        expect(shapePlacements({ ...motion, shapes: 1 }, rest, 6, 0, 0)).toHaveLength(1)
     })
 
     it('fades a shape in while the number of shapes blends', () => {
-        const shapes = shapePlacements({ ...motion, shapes: 2.25 }, 6, 0, 0, 0)
+        const shapes = shapePlacements({ ...motion, shapes: 2.25 }, rest, 6, 0, 0)
 
         expect(shapes).toHaveLength(3)
         expect(shapes[1]!.presence).toBe(1)
@@ -172,19 +176,25 @@ describe('shapePlacements', () => {
         expect(shapes[2]!.scale).toBeLessThan(shapes[1]!.scale)
     })
 
-    it('breathes and swells gently on a beat', () => {
-        const calm = shapePlacements(motion, 6, 3, 0, 0)[0]!.scale
-        const inhaled = shapePlacements(motion, 6, 3, 1, 0)[0]!.scale
-        const beat = shapePlacements(motion, 6, 3, 0, 1)[0]!.scale
+    it('breathes, grows, swells on a beat and moves the others away as the music says', () => {
+        const calm = shapePlacements(motion, rest, 6, 3, 0)
+        const inhaled = shapePlacements(motion, rest, 6, 3, 1)
+        const beat = shapePlacements(motion, { ...rest, swell: 0.15 }, 6, 3, 0)
+        const larger = shapePlacements(motion, { ...rest, size: 1.2 }, 6, 3, 0)
+        const apart = shapePlacements(motion, { ...rest, orbitScale: 1.2 }, 6, 3, 0)
+        const radius = (shape: { position: Vec3 }) =>
+            Math.hypot(shape.position[0], shape.position[2] + 0.6)
 
-        expect(inhaled).toBeGreaterThan(calm)
-        expect(beat).toBeGreaterThan(calm)
-        expect(beat / calm).toBeLessThan(1.15)
+        expect(inhaled[0]!.scale).toBeGreaterThan(calm[0]!.scale)
+        expect(beat[0]!.scale / calm[0]!.scale).toBeCloseTo(1.15)
+        expect(larger[1]!.scale / calm[1]!.scale).toBeCloseTo(1.2)
+        expect(radius(apart[1]!)).toBeGreaterThan(radius(calm[1]!) * 1.1)
+        expect(apart[0]!.position).toEqual(calm[0]!.position)
     })
 
     it('floats slowly', () => {
-        const now = shapePlacements(motion, 6, 10, 0, 0)
-        const soon = shapePlacements(motion, 6, 10 + 1 / 60, 0, 0)
+        const now = shapePlacements(motion, rest, 6, 10, 0)
+        const soon = shapePlacements(motion, rest, 6, 10 + 1 / 60, 0)
 
         for (let index = 0; index < now.length; index++) {
             expect(distance(now[index]!.position, soon[index]!.position)).toBeLessThan(0.02)
@@ -201,7 +211,7 @@ describe('cameraPose', () => {
         expect(Math.hypot(...pose.up)).toBeCloseTo(1)
     })
 
-    it('drifts over time only as far as the scene says', () => {
+    it('drifts over time only as far as it is asked to', () => {
         expect(distance(cameraPose(0, 1).eye, cameraPose(30, 1).eye)).toBeGreaterThan(0.5)
         expect(distance(cameraPose(0, 0).eye, cameraPose(30, 0).eye)).toBeCloseTo(0)
     })

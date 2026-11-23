@@ -11879,7 +11879,7 @@ export interface VisualizationSettings extends AdditionalDataHolder, Parsable {
      */
     milkdropSpeed?: number | null;
     /**
-     * The visualization; Milkdrop by default. The presets of A-Force are its style variants, the presets of BlackCap its scenes.
+     * The visualization; Milkdrop by default. The presets of A-Force and BlackCap are their modes, their colors are the color schemes (ColorScheme).
      */
     module?: VisualizationModule | null;
     /**
@@ -12687,7 +12687,7 @@ export const VisualizationIntensityObject = {
     Reduced: "Reduced",
 } as const;
 /**
- * The visualization; Milkdrop by default. The presets of A-Force are its style variants, the presets of BlackCap its scenes.
+ * The visualization; Milkdrop by default. The presets of A-Force and BlackCap are their modes, their colors are the color schemes (ColorScheme).
  */
 export const VisualizationModuleObject = {
     Milkdrop: "Milkdrop",

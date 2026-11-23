@@ -1,5 +1,5 @@
 // The mesh of the shapes of BlackCap: a sphere of directions, which the vertex shader pushes out
-// into the organic surface of a scene. Pure.
+// into the organic surface of a mode. Pure.
 
 export interface SphereGrid {
     /** Three values per vertex: the unit direction from the middle of the shape. */

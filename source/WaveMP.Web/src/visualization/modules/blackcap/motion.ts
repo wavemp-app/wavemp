@@ -1,10 +1,10 @@
 // The motion of BlackCap: the breathing of the shapes with the tempo of the music, where the shapes
-// float and the drifting camera. Everything moves slowly and smoothly, so the picture stays calm;
-// beats only let the shapes swell a little. Pure.
+// float and the drifting camera. Everything moves smoothly, so the picture stays calm; the music
+// lets the shapes grow, swell on a beat and move apart (see frame.ts). Pure.
 
 import { ease } from '../../blend'
 import type { Vec3 } from '../../matrices'
-import { maxSceneShapes, type SceneMotion } from './scenes'
+import { maxModeShapes, type ModeMotion } from './modes'
 
 /** Breaths per second without a tempo (one every five seconds). */
 export const restingBreathRate = 0.2
@@ -70,8 +70,20 @@ export interface ShapePlacement {
     readonly scale: number
     /** A number of its own, so every shape has its own surface. */
     readonly seed: number
-    /** How far the shape is shown, 0 to 1; shapes fade in and out with a change of scene. */
+    /** How far the shape is shown, 0 to 1; shapes fade in and out with a change of mode. */
     readonly presence: number
+}
+
+/** How the music moves the shapes in a frame (see blackcapFrameInputs). */
+export interface ShapeReaction {
+    /** Size of all shapes as a factor. */
+    readonly size: number
+    /** Swell of a beat (share of the size). */
+    readonly swell: number
+    /** How far the shapes breathe (share of the size). */
+    readonly breath: number
+    /** Distance of the other shapes from the middle as a factor. */
+    readonly orbitScale: number
 }
 
 /** Angle between two neighbouring companions (the golden angle), so they never line up. */
@@ -79,21 +91,21 @@ const goldenAngle = Math.PI * (3 - Math.sqrt(5))
 
 /**
  * The shapes of a frame: the first floats in the middle, the others float around it on slow,
- * wavering paths. time is the time of the flowing motion in seconds, breath the breath (-1 to 1)
- * and pulse the last beat fading out (0 to 1). At most limit shapes are placed (the quality level);
- * a fractional number of shapes of the scene fades the last one in or out.
+ * wavering paths. time is the time of the flowing motion in seconds and breath the breath (-1 to
+ * 1); reaction says how the music moves them. At most limit shapes are placed (the quality level);
+ * a fractional number of shapes of the mode fades the last one in or out.
  */
 export function shapePlacements(
-    motion: SceneMotion,
+    motion: ModeMotion,
+    reaction: ShapeReaction,
     limit: number,
     time: number,
     breath: number,
-    pulse: number,
 ): ShapePlacement[] {
-    const count = Math.min(motion.shapes, limit, maxSceneShapes)
-    const swell = 1 + motion.breath * breath + motion.swell * pulse
+    const count = Math.min(motion.shapes, limit, maxModeShapes)
+    const swell = reaction.size * (1 + reaction.breath * breath + reaction.swell)
     const placements: ShapePlacement[] = []
-    for (let index = 0; index < Math.min(limit, maxSceneShapes); index++) {
+    for (let index = 0; index < Math.min(limit, maxModeShapes); index++) {
         const presence = index === 0 ? 1 : Math.min(1, Math.max(0, count - index))
         if (presence <= 0) {
             break
@@ -115,7 +127,8 @@ export function shapePlacements(
         }
 
         const angle = index * goldenAngle + time * motion.orbitSpeed * (1 + index * 0.11)
-        const radius = motion.orbit * (0.85 + 0.15 * Math.sin(time * 0.13 + index * 1.3))
+        const radius =
+            motion.orbit * reaction.orbitScale * (0.85 + 0.15 * Math.sin(time * 0.13 + index * 1.3))
         placements.push({
             position: [
                 Math.cos(angle) * radius,

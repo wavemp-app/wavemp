@@ -1,7 +1,9 @@
 // The module BlackCap: the own visualization of WaveMP with organic, floating 3D shapes and light
-// effects that react calmly to the music: they breathe with its tempo, swell gently on a beat and
-// their surfaces sway with the spectrum. Its presets are its scenes. The renderer (WebGL 2) loads
-// on demand in a chunk of its own.
+// effects, calm but clearly alive: the shapes breathe with the tempo, swell from below with the
+// bass and on a beat, twist with the mids, ripple and glint with the highs and contract and dim in
+// quiet passages. Its presets are its modes (forms and motion: drift, orbit, cluster, ribbon,
+// bloom); its color schemes are chosen apart from them. The renderer (WebGL 2) loads on demand in
+// a chunk of its own.
 
 import { VisualizationModuleObject } from '@/api/generated/models'
 import type {
@@ -12,7 +14,8 @@ import type {
     VisualizationRendererOptions,
 } from '../../module'
 import { supportsWebGl2Visualization } from '../../support'
-import { blackcapScenes } from './scenes'
+import { blackcapModes } from './modes'
+import { blackcapColorSchemes } from './schemes'
 
 export type BlackCapRendererFactory = (
     options: VisualizationRendererOptions,
@@ -34,12 +37,17 @@ export const browserBlackCapEnvironment: BlackCapEnvironment = {
     now: () => performance.now(),
 }
 
-/** The scenes as presets, in their own order. */
-export const blackcapPresets: readonly VisualizationPreset[] = blackcapScenes.map((scene) => ({
-    id: scene.id,
-    name: scene.name,
-    labelKey: scene.labelKey,
+/** The modes as presets, in their own order. */
+export const blackcapPresets: readonly VisualizationPreset[] = blackcapModes.map((mode) => ({
+    id: mode.id,
+    name: mode.name,
+    labelKey: mode.labelKey,
 }))
+
+/** The color schemes, in their own order. */
+export const blackcapColorSchemePresets: readonly VisualizationPreset[] = blackcapColorSchemes.map(
+    (scheme) => ({ id: scheme.id, name: scheme.name, labelKey: scheme.labelKey }),
+)
 
 /** Creates the module BlackCap; the app uses blackcapModule, tests pass their own environment. */
 export function createBlackCapModule(
@@ -52,6 +60,7 @@ export function createBlackCapModule(
         const createRenderer = await environment.loadRenderer()
         return {
             presets: blackcapPresets,
+            colorSchemes: blackcapColorSchemePresets,
             createRenderer: (options) => createRenderer(options, () => environment.now()),
         }
     }
