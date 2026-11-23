@@ -15,6 +15,7 @@ import {
     recordFlashFrames,
     takeFlashFrames,
 } from './helpers/flashes'
+import { settledBox } from './helpers/motion'
 import { homeUrl, profileTile } from './helpers/navigation'
 import { emptyStorageState } from './helpers/storage'
 
@@ -29,6 +30,7 @@ import { emptyStorageState } from './helpers/storage'
 // random: with a slow one the clicks, the server and the database wait for seconds. So
 // - all tests draw at a limited rate, and the tests of the behavior on a small stage as well (see
 //   helpers/drawing.ts); the test of the layout keeps the size,
+// - a measurement of a menu that opens waits for it to settle (helpers/motion.ts), not for a pause,
 // - the profiles start with the cover, because a video and its ambient light cost the same,
 // - a test uses one session for the API, because creating a session writes to the database.
 
@@ -719,9 +721,9 @@ function visualizationTests(): void {
             await expect(menu).toHaveAttribute('data-state', 'open')
             await expect(menu).toHaveAttribute('data-placement', phone ? 'sheet' : 'above')
             await expect(shownPreset(page)).toBeFocused()
-            // Let it grow to its size (motion system).
-            await page.waitForTimeout(400)
-            const box = (await menu.boundingBox())!
+            // The sheet slides up and the menu grows (motion system): measure it once it has
+            // settled.
+            const box = await settledBox(menu)
             const viewport = page.viewportSize()!
             expect(box.y).toBeGreaterThanOrEqual(0)
             expect(box.y + box.height).toBeLessThanOrEqual(viewport.height + 1)
