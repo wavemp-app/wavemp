@@ -55,6 +55,18 @@ import ScanPanel from '@/components/admin/ScanPanel.vue'
 import ScanSummary from '@/components/admin/ScanSummary.vue'
 import TranscodeJobList from '@/components/admin/TranscodeJobList.vue'
 import TranscodingStatusPanel from '@/components/admin/TranscodingStatus.vue'
+import OrganizeLog from '@/components/organize/OrganizeLog.vue'
+import OrganizePreviewPanel from '@/components/organize/OrganizePreviewPanel.vue'
+import OrganizeProgress from '@/components/organize/OrganizeProgress.vue'
+import OwnAlbumChoiceList from '@/components/organize/OwnAlbumChoiceList.vue'
+import OwnAlbumCoverField from '@/components/organize/OwnAlbumCoverField.vue'
+import OwnAlbumList from '@/components/organize/OwnAlbumList.vue'
+import OwnAlbumTrackList from '@/components/organize/OwnAlbumTrackList.vue'
+import TemplateField from '@/components/organize/TemplateField.vue'
+import TemplatePreviewList from '@/components/organize/TemplatePreviewList.vue'
+import TrackPickerList from '@/components/organize/TrackPickerList.vue'
+import { templatePresets } from '@/admin/organize'
+import type { OrganizeItemFilter } from '@/api/generated/models'
 import BaseAlert from '@/components/base/BaseAlert.vue'
 import BaseButton from '@/components/base/BaseButton.vue'
 import BaseCheckbox from '@/components/base/BaseCheckbox.vue'
@@ -181,6 +193,11 @@ import {
     sampleLyricsPosition,
     sampleOnlineCurrent,
     sampleOnlineMatches,
+    sampleOrganizeItems,
+    sampleOrganizeOperations,
+    sampleOwnAlbums,
+    sampleRunningOperation,
+    sampleTemplatePaths,
     sampleOverviewGroups,
     sampleLetterGroups,
     sampleTileGroups,
@@ -302,6 +319,17 @@ const files = sampleFiles()
 const fileSummaries = computed(() => sampleFileSummaries(t))
 const libraryIssues = computed(() => sampleLibraryIssues(t))
 const libraryIssueSummary = sampleLibraryIssueSummary()
+const ownAlbums = computed(() => sampleOwnAlbums(t))
+const organizeOperations = computed(() => sampleOrganizeOperations(t))
+const organizeItems = computed(() => sampleOrganizeItems(t))
+const organizePreview = computed(() => organizeOperations.value[3] ?? sampleRunningOperation())
+const runningOperation = sampleRunningOperation()
+const templatePaths = computed(() => sampleTemplatePaths(t))
+const layoutTemplate = ref(templatePresets.folders)
+const organizeFilter = ref<OrganizeItemFilter>('All')
+const skipOrganizeConflicts = ref(false)
+const ownAlbumTracks = computed(() => sampleTracks(t).slice(0, 4))
+const pickerTracks = computed(() => sampleTracks(t))
 const issueSearch = ref('')
 const issueFilter = ref<LibraryIssueFilter>('all')
 const issueSort = ref<LibraryIssueSort>('Path')
@@ -1782,6 +1810,52 @@ const sampleTranscodeJobs = computed<TranscodeJob[]>(() => {
                         :summary="libraryIssueSummary"
                     />
                     <LibraryIssueList :items="libraryIssues" :label="t('adminChecks.listLabel')" />
+                </section>
+            </div>
+            <div data-part="view" data-view="admin-organize">
+                <div data-part="organize-availability" data-state="read-only">
+                    <BaseAlert tone="info" :message="t('organize.blocked.readOnly')" />
+                </div>
+                <OrganizeProgress :operation="runningOperation" />
+                <section data-part="section" data-item="own-albums">
+                    <h2 data-part="section-title">{{ t('ownAlbums.title') }}</h2>
+                    <OwnAlbumList :albums="ownAlbums" />
+                    <OwnAlbumChoiceList :albums="ownAlbums" />
+                </section>
+                <section data-part="section" data-item="organize-log">
+                    <h2 data-part="section-title">{{ t('organize.log.title') }}</h2>
+                    <OrganizeLog
+                        :operations="organizeOperations"
+                        :has-more="false"
+                        :loading="false"
+                        can-undo
+                    />
+                </section>
+                <section data-part="section" data-item="organize-preview">
+                    <OrganizePreviewPanel
+                        v-model:filter="organizeFilter"
+                        v-model:skip-conflicts="skipOrganizeConflicts"
+                        :operation="organizePreview"
+                        :items="organizeItems"
+                        :total="organizeItems.length"
+                    />
+                </section>
+                <section data-part="section" data-item="file-layout">
+                    <h2 data-part="section-title">{{ t('organize.settings.title') }}</h2>
+                    <TemplateField v-model="layoutTemplate" />
+                    <TemplatePreviewList :paths="templatePaths" samples />
+                </section>
+            </div>
+            <div data-part="view" data-view="admin-own-album" data-state="edit">
+                <OwnAlbumCoverField />
+                <section data-part="section" data-item="own-album-tracks">
+                    <h2 data-part="section-title">{{ t('ownAlbums.tracks.title') }}</h2>
+                    <OwnAlbumTrackList :tracks="ownAlbumTracks" />
+                    <TrackPickerList
+                        :tracks="pickerTracks"
+                        :chosen-ids="[pickerTracks[0]?.id ?? '']"
+                        :exclude-ids="[pickerTracks[1]?.id ?? '']"
+                    />
                 </section>
             </div>
             <div data-part="view" data-view="admin-review">

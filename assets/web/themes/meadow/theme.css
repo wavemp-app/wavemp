@@ -1634,6 +1634,11 @@ a[data-part='breadcrumb-link']:hover {
     font-weight: 700;
 }
 
+/* Eleven pages fit in one line next to the open sidebar, also in German. */
+[data-part='admin-nav-item'] {
+    padding-inline: 0.375rem;
+}
+
 [data-part='admin-nav-item']:hover,
 [data-part='recap-nav-item']:hover {
     background: linear-gradient(#ffffff, #dde8fc);

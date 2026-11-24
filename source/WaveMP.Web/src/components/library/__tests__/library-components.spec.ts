@@ -327,6 +327,7 @@ describe('TrackGroupList', () => {
             '-watch-video',
             'edit-metadata',
             'show-files',
+            '-add-to-own-album',
         ])
         ;(document.querySelector('[data-item="edit-metadata"]') as HTMLElement).click()
         await flushPromises()

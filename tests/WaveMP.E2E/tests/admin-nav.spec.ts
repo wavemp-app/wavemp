@@ -60,7 +60,7 @@ for (const target of shippedThemeTargets()) {
                 await expect(navigation.locator("[aria-current='page']")).toBeVisible()
                 await page.evaluate(() => document.fonts.ready)
                 const { tops, labels } = await linesOf(navigation)
-                expect(labels, language).toHaveLength(10)
+                expect(labels, language).toHaveLength(11)
                 expect(
                     tops,
                     `${target.theme} ${target.variant} ${language}: ${labels.join(', ')}`,

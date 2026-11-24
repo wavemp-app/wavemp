@@ -235,6 +235,30 @@
         --_icon: var(--wmp-icon-admin-checks);
     }
 
+    [data-icon='admin-organize'] {
+        --_icon: var(--wmp-icon-admin-organize);
+    }
+
+    [data-icon='own-album'] {
+        --_icon: var(--wmp-icon-own-album);
+    }
+
+    [data-icon='path-arrow'] {
+        --_icon: var(--wmp-icon-path-arrow);
+    }
+
+    [data-icon='path-separator'] {
+        --_icon: var(--wmp-icon-path-separator);
+    }
+
+    [data-icon='organize-conflict'] {
+        --_icon: var(--wmp-icon-organize-conflict);
+    }
+
+    [data-icon='organize-warning'] {
+        --_icon: var(--wmp-icon-organize-warning);
+    }
+
     [data-icon='tags-missing'] {
         --_icon: var(--wmp-icon-tags-missing);
     }
@@ -629,6 +653,26 @@
 
     [data-icon='save-video'] {
         --_icon: var(--wmp-icon-save-video);
+    }
+
+    [data-icon='add-to-own-album'] {
+        --_icon: var(--wmp-icon-add-to-own-album);
+    }
+
+    [data-icon='organize-preview'] {
+        --_icon: var(--wmp-icon-organize-preview);
+    }
+
+    [data-icon='organize-apply'] {
+        --_icon: var(--wmp-icon-organize-apply);
+    }
+
+    [data-icon='organize-undo'] {
+        --_icon: var(--wmp-icon-organize-undo);
+    }
+
+    [data-icon='organize-stop'] {
+        --_icon: var(--wmp-icon-organize-stop);
     }
 
     [data-icon='profile-lock'] {

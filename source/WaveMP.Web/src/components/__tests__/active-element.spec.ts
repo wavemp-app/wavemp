@@ -113,17 +113,21 @@ describe('groups with an active element', () => {
         const navigation = group(wrapper, 'admin-nav')
 
         expectIndicator(navigation)
-        expect(variables(navigation)).toEqual({ count: '10', index: '5', box: emptyBox })
+        expect(variables(navigation)).toEqual({ count: '11', index: '6', box: emptyBox })
 
         await router.push('/admin/users')
         await flushPromises()
-        expect(variables(navigation).index).toBe('9')
+        expect(variables(navigation).index).toBe('10')
 
         await router.push('/admin/files/track-1')
         await flushPromises()
         expect(variables(navigation).index).toBe('1')
 
         await router.push('/admin/review/track-1')
+        await flushPromises()
+        expect(variables(navigation).index).toBe('3')
+
+        await router.push('/admin/organize/albums/album-1')
         await flushPromises()
         expect(variables(navigation).index).toBe('2')
         wrapper.unmount()

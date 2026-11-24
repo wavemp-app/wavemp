@@ -1035,6 +1035,7 @@
       "label": "Administration",
       "library": "Library",
       "files": "Files",
+      "organize": "Organize",
       "jobs": "Jobs",
       "cache": "Cache",
       "transcoding": "Transcoding",
@@ -1262,6 +1263,319 @@
     "errors": {
       "invalid": "This file can no longer be selected. The files were loaded again.",
       "saveFailed": "The selection could not be saved."
+    }
+  },
+  "organize": {
+    "title": "Organize",
+    "route": {
+      "from": "Now",
+      "to": "Moves to",
+      "root": "Media folder"
+    },
+    "template": {
+      "presetsLabel": "Layout",
+      "presets": {
+        "folders": "Folders",
+        "flat": "Flat",
+        "custom": "Custom"
+      },
+      "label": "Layout template",
+      "hint": "Use / for folders and [ ] for parts that are left out when a value is empty. The file name needs {title}. The extension of each file stays.",
+      "tokens": "Placeholders",
+      "insert": "Insert {placeholder}",
+      "previewTracks": "Where songs of your library would go:",
+      "previewSamples": "Your library has no songs yet, so example songs are shown:",
+      "previewLabel": "Preview of the layout"
+    },
+    "placeholders": {
+      "albumArtist": "Album artist",
+      "artist": "Artist",
+      "album": "Album",
+      "year": "Year",
+      "discNumber": "Disc",
+      "trackNumber": "Track number",
+      "title": "Title",
+      "genre": "Genre"
+    },
+    "templateErrors": {
+      "required": "Enter a layout template.",
+      "maxLength": "The template is too long (maximum length: {max}).",
+      "unknownPlaceholder": "Unknown placeholder {placeholder} at character {position}.",
+      "unbalancedBrace": "A brace is not closed at character {position}.",
+      "unbalancedSection": "A bracket is not closed at character {position}.",
+      "nestedSection": "Brackets cannot be inside brackets (character {position}).",
+      "invalidNumberFormat": "Use 1 to 4 zeros as format of {placeholder}, for example :00 (character {position}).",
+      "missingTitle": "The file name needs the placeholder {title}.",
+      "rooted": "The template cannot start with /.",
+      "emptyFolder": "Remove the empty folder name at character {position}.",
+      "parentFolder": "Folder names . and .. are not allowed (character {position}).",
+      "folderInSection": "A / cannot be inside brackets (character {position}).",
+      "invalid": "The template is not valid."
+    },
+    "samples": {
+      "first": {
+        "artist": "The Harbor Lights",
+        "album": "Coastal Roads",
+        "title": "Morning Light",
+        "genre": "Indie Pop"
+      },
+      "second": {
+        "artist": "Ada Stone",
+        "album": "City Signals",
+        "title": "Night Drive",
+        "genre": "Electronic"
+      }
+    },
+    "conflicts": {
+      "targetExists": "Another file already has this name. Nothing is overwritten.",
+      "duplicateTarget": "Another song of this run would get the same name.",
+      "pathTooLong": "The new path is too long.",
+      "unsafePath": "The path leads through a link or out of the media folder.",
+      "sourceMissing": "The file is missing or changed on disk. Scan the library and try again.",
+      "notWritable": "The file or its folder cannot be written.",
+      "noAudio": "The song has no audio file, so its tags cannot be written.",
+      "sourceInactive": "The media folder of the song is switched off.",
+      "coverExists": "A cover with this name already exists.",
+      "changedSince": "The file changed since it was moved, so it stays where it is.",
+      "unknown": "This song cannot be moved."
+    },
+    "warnings": {
+      "metadataChanges": "The new path changes the title, artist or album shown for this song.",
+      "albumMerges": "The songs join an album of the library with the same name.",
+      "coverNotWritten": "With a flat layout the cover is not saved in the media folder.",
+      "otherCoverExists": "The album folder already has another cover.",
+      "tagsChangedSince": "The tags changed since then and are kept.",
+      "unknown": "Check this song."
+    },
+    "statuses": {
+      "planning": "Computing preview",
+      "previewed": "Preview ready",
+      "queued": "Waiting to start",
+      "running": "Moving files",
+      "completed": "Completed",
+      "stopped": "Stopped after a problem",
+      "canceled": "Stopped",
+      "failed": "Failed",
+      "interrupted": "Interrupted",
+      "expired": "Preview expired",
+      "unknown": "Unknown"
+    },
+    "itemStatuses": {
+      "pending": "Waiting",
+      "conflict": "Conflict",
+      "running": "Moving",
+      "done": "Moved",
+      "skipped": "Skipped",
+      "failed": "Failed",
+      "rolledBack": "Put back"
+    },
+    "blocked": {
+      "readOnly": "The media folder is read-only, so files cannot be organized. Mount it writable to organize files.",
+      "missing": "The media folder does not exist. Check the volume of the container.",
+      "inactive": "The media folder is switched off.",
+      "busy": "Files are being moved. Wait until the run has finished.",
+      "unavailable": "There is no media folder to organize."
+    },
+    "availability": {
+      "loadError": "Whether the media folders can be written could not be checked.",
+      "someSources": "These media folders cannot be organized: {names}"
+    },
+    "problems": {
+      "ownAlbumNotFound": "The own album no longer exists.",
+      "ownAlbumEmpty": "Add songs to the album first.",
+      "trackInOtherOwnAlbum": "A song already belongs to another own album.",
+      "ownAlbumTooManyTracks": "An own album can hold at most 1000 songs.",
+      "operationNotFound": "This entry no longer exists.",
+      "mediaReadOnly": "The media folder is read-only.",
+      "templateInvalid": "The layout template is not valid. Fix it in the library settings.",
+      "busy": "Files are being moved. Wait until the run has finished.",
+      "notUndoable": "This entry cannot be undone.",
+      "alreadyUndone": "This entry was already undone.",
+      "notPreview": "Only a preview can be thrown away.",
+      "notPreviewed": "This preview was already used.",
+      "previewExpired": "The preview expired. Compute a new preview.",
+      "conflicts": "Check \"Skip songs with conflicts\" to move the other songs.",
+      "previewOutdated": "Something changed since the preview. Compute a new preview.",
+      "notCancelable": "This run has already finished.",
+      "trackNotFound": "A song no longer exists.",
+      "trackNoAudio": "Only songs with an audio file can join an own album.",
+      "coverType": "Use a JPEG, PNG or WebP picture.",
+      "coverSize": "The picture is too large (at most 10 MB).",
+      "coverUnreadable": "The picture cannot be read.",
+      "coverNotFound": "The album has no cover.",
+      "applyFailed": "The files could not be moved.",
+      "previewFailed": "The preview could not be computed.",
+      "stopFailed": "The run could not be stopped.",
+      "undoFailed": "The undo could not be prepared."
+    },
+    "errors": {
+      "unexpected": "An unexpected error stopped the run.",
+      "itemFailed": "A file could not be moved, so the run stopped. The songs before it were moved.",
+      "interrupted": "The server stopped during the run. Files that had already moved were put back.",
+      "mediaReadOnly": "The media folder became read-only during the run."
+    },
+    "settings": {
+      "title": "File layout",
+      "loadError": "The file layout could not be loaded.",
+      "titleCleaningFolders": "With folders, the scan removes \"Artist - \" from a title tag only when it matches the artist tag exactly.",
+      "titleCleaningFlat": "With a flat layout, the scan removes the artist from titles such as \"Artist - Title\". Files are not changed.",
+      "previewError": "The preview could not be loaded.",
+      "moveHint": "Saving moves no file.",
+      "toOrganize": "Organize files",
+      "saved": "The file layout was saved.",
+      "saveError": "The file layout could not be saved.",
+      "save": "Save"
+    },
+    "tags": {
+      "label": "Tags that are written",
+      "album": "Album",
+      "albumArtist": "Album artist",
+      "trackNumber": "Track",
+      "trackCount": "Tracks",
+      "discNumber": "Disc",
+      "year": "Year",
+      "genre": "Genre",
+      "removed": "removed"
+    },
+    "items": {
+      "albumCover": "Album cover",
+      "folderFiles": "Other files of the folder",
+      "untitled": "Untitled"
+    },
+    "preview": {
+      "title": "Check the changes",
+      "changesTitle": "Changes",
+      "songs": "Songs: {count}",
+      "conflicts": "Conflicts: {count}",
+      "warnings": "Warnings: {count}",
+      "explain": "Nothing has moved yet. Every move can be undone from the log.",
+      "filterLabel": "Show",
+      "filters": {
+        "all": "All",
+        "conflicts": "Conflicts",
+        "warnings": "Warnings"
+      },
+      "loadError": "The changes could not be loaded.",
+      "listLabel": "Changes",
+      "empty": "Every file is already in place.",
+      "emptyFiltered": "No song matches this filter.",
+      "more": "Show more",
+      "skipConflicts": "Skip songs with conflicts",
+      "skipConflictsHint": "They stay where they are; the other songs move.",
+      "conflictsBlock": "Some songs have conflicts. Skip them to move the others.",
+      "apply": "Move files"
+    },
+    "progress": {
+      "label": "Progress",
+      "planned": "{done} of {total} songs checked",
+      "moved": "{done} of {total} songs done",
+      "stopping": "Stopping after the current song",
+      "stop": "Stop"
+    },
+    "log": {
+      "title": "Log",
+      "label": "Log of the organization",
+      "empty": "Nothing has been organized yet.",
+      "loadError": "The log could not be loaded.",
+      "undoOf": "Undo: {title}",
+      "kinds": {
+        "ownAlbum": "Own album",
+        "library": "Library",
+        "undo": "Undo"
+      },
+      "undone": "Undone",
+      "songs": "Songs: {count}",
+      "done": "Moved: {count}",
+      "conflicts": "Conflicts: {count}",
+      "actions": "Actions for {title}",
+      "openPreview": "Open preview",
+      "showChanges": "Show changes",
+      "undo": "Undo",
+      "more": "Show more"
+    },
+    "library": {
+      "title": "Reorganize the library",
+      "hint": "Moves all songs to the paths of the layout template. You see every change first; nothing moves on its own.",
+      "template": "Layout template:",
+      "changeTemplate": "Change the layout",
+      "source": "Media folder",
+      "allSources": "All media folders",
+      "preview": "Preview changes"
+    }
+  },
+  "ownAlbums": {
+    "title": "Own albums",
+    "hint": "Put songs together as an album. Their tags and files follow the album once you move the files.",
+    "empty": "No own albums yet.",
+    "new": "New album",
+    "newTitle": "New own album",
+    "listLabel": "Own albums",
+    "status": "State",
+    "statuses": {
+      "draft": "Not applied",
+      "applied": "Applied",
+      "changed": "Changed since applied"
+    },
+    "removedLabel": "Taken out",
+    "removed": "Songs whose tags are restored next time: {count}",
+    "saved": "The album was saved. No file has moved.",
+    "toOverview": "Back to Organize",
+    "create": "Create album",
+    "save": "Save",
+    "preview": "Preview changes",
+    "delete": "Delete album",
+    "deleteTitle": "Delete album",
+    "deleteText": "Delete \"{title}\"? Files and tags stay as they are.",
+    "fields": {
+      "title": "Album name",
+      "albumArtist": "Album artist",
+      "year": "Year",
+      "genre": "Genre",
+      "keepHint": "Leave empty to keep the value of each song."
+    },
+    "cover": {
+      "dropHint": "Drop a picture here",
+      "choose": "Choose picture",
+      "remove": "Remove cover"
+    },
+    "tracks": {
+      "title": "Songs",
+      "hint": "The order sets the track numbers. Drag a song, or press Alt and an arrow key.",
+      "label": "Songs of the album",
+      "empty": "No songs yet.",
+      "add": "Add songs",
+      "context": "{artist}, {album}",
+      "dragHandle": "Drag to move",
+      "actions": "Actions for {title}",
+      "moveUp": "Move up",
+      "moveDown": "Move down",
+      "remove": "Remove from album"
+    },
+    "picker": {
+      "title": "Add songs",
+      "search": "Search songs",
+      "searchPlaceholder": "Title, artist or album",
+      "clear": "Clear search",
+      "hint": "Search for the songs to add.",
+      "error": "The search failed.",
+      "noResults": "No songs found.",
+      "results": "Songs found",
+      "inAlbum": "Already in the album",
+      "noAudio": "No audio file",
+      "add": "Add selected songs ({count})"
+    },
+    "addDialog": {
+      "title": "Add to own album",
+      "loading": "Loading own albums",
+      "empty": "No own albums yet.",
+      "newAlbum": "New own album"
+    },
+    "errors": {
+      "addFailed": "The songs could not be added.",
+      "loadFailed": "The own albums could not be loaded.",
+      "saveFailed": "The album could not be saved.",
+      "deleteFailed": "The album could not be deleted.",
+      "year": "Enter a year from 1 to 9999."
     }
   },
   "adminChecks": {
@@ -2051,6 +2365,7 @@
     "watchVideo": "Watch video",
     "editMetadata": "Edit metadata",
     "showFiles": "Show files",
+    "addToOwnAlbum": "Add to own album",
     "moveUp": "Move up",
     "moveDown": "Move down",
     "removeFromPlaylist": "Remove from playlist",

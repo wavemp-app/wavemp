@@ -15,6 +15,8 @@ import AdminChecksView from '@/views/admin/AdminChecksView.vue'
 import AdminJobsView from '@/views/admin/AdminJobsView.vue'
 import AdminFilesView from '@/views/admin/AdminFilesView.vue'
 import AdminLibraryView from '@/views/admin/AdminLibraryView.vue'
+import AdminOrganizeView from '@/views/admin/AdminOrganizeView.vue'
+import AdminOwnAlbumView from '@/views/admin/AdminOwnAlbumView.vue'
 import AdminReviewTrackView from '@/views/admin/AdminReviewTrackView.vue'
 import AdminReviewView from '@/views/admin/AdminReviewView.vue'
 import AdminTrackFilesView from '@/views/admin/AdminTrackFilesView.vue'
@@ -240,6 +242,25 @@ export function createRoutes(extra: readonly RouteRecordRaw[] = []): RouteRecord
             path: '/admin/files/:id',
             name: 'admin-track-files',
             component: AdminTrackFilesView,
+            props: true,
+            meta: { admin: true },
+        },
+        {
+            path: '/admin/organize',
+            name: 'admin-organize',
+            component: AdminOrganizeView,
+            meta: { admin: true },
+        },
+        {
+            path: '/admin/organize/albums/new',
+            name: 'admin-own-album-new',
+            component: AdminOwnAlbumView,
+            meta: { admin: true },
+        },
+        {
+            path: '/admin/organize/albums/:id',
+            name: 'admin-own-album',
+            component: AdminOwnAlbumView,
             props: true,
             meta: { admin: true },
         },

@@ -7,6 +7,7 @@ import LibrarySettingsForm from '@/components/admin/LibrarySettingsForm.vue'
 import LyricsLookupPanel from '@/components/admin/LyricsLookupPanel.vue'
 import MediaSourcesPanel from '@/components/admin/MediaSourcesPanel.vue'
 import OnlineMetadataSettingsForm from '@/components/admin/OnlineMetadataSettingsForm.vue'
+import OrganizingSettingsForm from '@/components/organize/OrganizingSettingsForm.vue'
 import ScanHistory from '@/components/admin/ScanHistory.vue'
 import ScanPanel from '@/components/admin/ScanPanel.vue'
 import ScanSummary from '@/components/admin/ScanSummary.vue'
@@ -17,7 +18,7 @@ import { useScansStore } from '@/stores/scans'
 
 /**
  * Admin page of the library: the media folders, start a scan, follow it, see its result, the
- * history, settings, the results of the lyrics lookup, the online search for album info and the
+ * history, settings, the layout template of the files, the results of the lyrics lookup, the online search for album info and the
  * online lookup of artist pictures.
  */
 const { t } = useI18n()
@@ -29,6 +30,7 @@ const sourcesTitleId = useId()
 const scanTitleId = useId()
 const historyTitleId = useId()
 const settingsTitleId = useId()
+const layoutTitleId = useId()
 const onlineTitleId = useId()
 const artistPicturesTitleId = useId()
 const lyricsLookupsTitleId = useId()
@@ -139,6 +141,17 @@ onMounted(async () => {
                 {{ t('adminLibrary.settingsTitle') }}
             </h2>
             <LibrarySettingsForm />
+        </section>
+        <section
+            id="file-layout"
+            data-part="section"
+            data-item="file-layout"
+            :aria-labelledby="layoutTitleId"
+        >
+            <h2 :id="layoutTitleId" data-part="section-title">
+                {{ t('organize.settings.title') }}
+            </h2>
+            <OrganizingSettingsForm />
         </section>
         <section
             data-part="section"

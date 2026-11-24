@@ -44,6 +44,7 @@ function fakeServices(overrides: Partial<MenuServices> = {}): MenuServices {
         rate: vi.fn((id, rating) => ratings.set(id, rating)),
         navigate: vi.fn(),
         addToPlaylist: vi.fn(),
+        addToOwnAlbum: vi.fn(),
         watchVideo: vi.fn(),
         tracksOf: vi.fn(() => Promise.resolve([plain, clip, song])),
         renamePlaylist: vi.fn(),
@@ -154,6 +155,7 @@ describe('menu of songs', () => {
             '|',
             'edit-metadata',
             'show-files',
+            '-add-to-own-album',
         ])
     })
 
@@ -177,6 +179,7 @@ describe('menu of songs', () => {
             '|',
             '-edit-metadata',
             '-show-files',
+            'add-to-own-album',
         ])
 
         await runMenuAction(target, 'play', services)
@@ -185,6 +188,8 @@ describe('menu of songs', () => {
         expect(services.playNext).toHaveBeenCalledWith([song, plain])
         await runMenuAction(target, 'add-to-playlist', services)
         expect(services.addToPlaylist).toHaveBeenCalledWith(['song', 'clip', 'plain'])
+        await runMenuAction(target, 'add-to-own-album', services)
+        expect(services.addToOwnAlbum).toHaveBeenCalledWith(['song', 'plain'])
         await runMenuAction(target, 'rate-5', services)
         expect(vi.mocked(services.rate).mock.calls).toEqual([
             ['song', 5],

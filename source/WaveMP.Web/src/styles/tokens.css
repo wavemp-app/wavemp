@@ -155,6 +155,12 @@
         --wmp-icon-admin-files: url('/icons/phosphor/regular/files.svg');
         --wmp-icon-admin-review: url('/icons/phosphor/regular/tray.svg');
         --wmp-icon-admin-checks: url('/icons/phosphor/regular/stethoscope.svg');
+        --wmp-icon-admin-organize: url('/icons/phosphor/regular/tree-structure.svg');
+        --wmp-icon-own-album: url('/icons/phosphor/regular/vinyl-record.svg');
+        --wmp-icon-path-arrow: url('/icons/phosphor/regular/arrow-right.svg');
+        --wmp-icon-path-separator: url('/icons/phosphor/regular/caret-right.svg');
+        --wmp-icon-organize-conflict: url('/icons/phosphor/regular/warning.svg');
+        --wmp-icon-organize-warning: url('/icons/phosphor/regular/warning-circle.svg');
         --wmp-icon-tags-missing: url('/icons/phosphor/regular/warning.svg');
         --wmp-icon-album: url('/icons/phosphor/fill/vinyl-record-fill.svg');
         --wmp-icon-artist: url('/icons/phosphor/fill/microphone-stage-fill.svg');
@@ -254,6 +260,11 @@
         --wmp-icon-change-avatar: url('/icons/phosphor/regular/user-circle.svg');
         --wmp-icon-save-picture: url('/icons/phosphor/regular/export.svg');
         --wmp-icon-save-video: url('/icons/phosphor/regular/video.svg');
+        --wmp-icon-add-to-own-album: url('/icons/phosphor/regular/folder-simple-plus.svg');
+        --wmp-icon-organize-preview: url('/icons/phosphor/regular/eye.svg');
+        --wmp-icon-organize-apply: url('/icons/phosphor/regular/folders.svg');
+        --wmp-icon-organize-undo: url('/icons/phosphor/regular/arrow-u-up-left.svg');
+        --wmp-icon-organize-stop: url('/icons/phosphor/regular/stop-circle.svg');
         --wmp-icon-profile-lock: url('/icons/phosphor/fill/lock-fill.svg');
         --wmp-icon-pin-delete: url('/icons/phosphor/fill/backspace-fill.svg');
         --wmp-icon-pin-submit: url('/icons/phosphor/fill/arrow-right-fill.svg');

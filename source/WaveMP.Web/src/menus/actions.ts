@@ -218,6 +218,16 @@ export const songActions: readonly MenuAction<SongTarget>[] = [
             }),
     },
     {
+        id: 'add-to-own-album',
+        group: 'admin',
+        label: 'contextMenu.addToOwnAlbum',
+        icon: 'add-to-own-album',
+        visible: (_, services) => services.isAdmin,
+        // Own albums write tags, so only songs with an audio file can join one.
+        enabled: (target) => idsOf(withAudio(target.tracks)).length > 0,
+        run: (target, services) => services.addToOwnAlbum(idsOf(withAudio(target.tracks))),
+    },
+    {
         id: 'move-up',
         group: 'playlist',
         label: 'contextMenu.moveUp',
@@ -302,6 +312,16 @@ export const albumActions: readonly MenuAction<AlbumTarget>[] = [
             services.addToPlaylist(idsOf(await services.tracksOf(albumSource(target)!))),
     },
     favoriteAction<AlbumTarget>(FavoriteTypeObject.Album, 'collection', (target) => [target.album]),
+    {
+        id: 'add-to-own-album',
+        group: 'admin',
+        label: 'contextMenu.addToOwnAlbum',
+        icon: 'add-to-own-album',
+        visible: (_, services) => services.isAdmin,
+        enabled: (target) => !!albumSource(target) && (target.album.trackCount ?? 0) > 0,
+        run: async (target, services) =>
+            services.addToOwnAlbum(idsOf(withAudio(await services.tracksOf(albumSource(target)!)))),
+    },
     {
         id: 'artist',
         group: 'navigation',

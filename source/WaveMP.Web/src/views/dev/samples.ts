@@ -3,9 +3,13 @@
 // Covers are marked as missing, so the overview never calls the API.
 
 import type {
+    LayoutTemplatePath,
     LibraryIssue,
     LibraryIssueSummary,
     MediaFile,
+    OrganizeItem,
+    OrganizeOperation,
+    OwnAlbum,
     Track,
     TrackFileSelection,
     TrackFileSummary,
@@ -555,4 +559,169 @@ export function sampleOnlineCurrent(t: Translate): OnlineValues {
         discNumber: null,
         genre: t('placeholders.genre', { number: 1 }),
     }
+}
+
+/** Own albums in every state; without covers, so nothing is loaded. */
+export function sampleOwnAlbums(t: Translate): OwnAlbum[] {
+    const album = (number: number, status: OwnAlbum['status'], trackCount: number): OwnAlbum => ({
+        id: `sample-own-album-${number}`,
+        title: t('placeholders.album', { number }),
+        albumArtist: t('placeholders.artist', { number }),
+        year: 2020 + number,
+        status,
+        trackCount,
+        removedTrackCount: status === 'Changed' ? 1 : 0,
+        hasCover: false,
+    })
+    return [album(7, 'Draft', 4), album(8, 'Applied', 12), album(9, 'Changed', 9)]
+}
+
+/** Operations of the organize log: a run that can be undone, an undone one and a stopped one. */
+export function sampleOrganizeOperations(t: Translate): OrganizeOperation[] {
+    const createdAt = new Date(Date.UTC(2026, 10, 19, 8, 30))
+    return [
+        {
+            id: 'sample-organize-1',
+            kind: 'OwnAlbum',
+            status: 'Completed',
+            displayTitle: t('placeholders.album', { number: 8 }),
+            totalItems: 12,
+            doneItems: 12,
+            conflictItems: 0,
+            warningItems: 2,
+            canUndo: true,
+            createdAt,
+        },
+        {
+            id: 'sample-organize-2',
+            kind: 'Library',
+            status: 'Completed',
+            totalItems: 240,
+            doneItems: 236,
+            conflictItems: 4,
+            warningItems: 0,
+            skipConflicts: true,
+            undoneById: 'sample-organize-3',
+            createdAt,
+        },
+        {
+            id: 'sample-organize-3',
+            kind: 'Undo',
+            status: 'Stopped',
+            errorCode: 'item_failed',
+            totalItems: 236,
+            doneItems: 120,
+            failedItems: 1,
+            createdAt,
+        },
+        {
+            id: 'sample-organize-4',
+            kind: 'Library',
+            status: 'Previewed',
+            totalItems: 18,
+            conflictItems: 1,
+            warningItems: 1,
+            createdAt,
+        },
+    ]
+}
+
+/** A running operation for organize-progress. */
+export function sampleRunningOperation(): OrganizeOperation {
+    return {
+        id: 'sample-organize-5',
+        kind: 'Library',
+        status: 'Running',
+        totalItems: 240,
+        doneItems: 96,
+    }
+}
+
+/** Items of a preview: a move with tags, a conflict, a warning and the cover of an own album. */
+export function sampleOrganizeItems(t: Translate): OrganizeItem[] {
+    const artist = t('placeholders.artist', { number: 1 })
+    const album = t('placeholders.album', { number: 8 })
+    const title = (number: number) => t('placeholders.track', { number })
+    return [
+        {
+            id: 'sample-item-1',
+            kind: 'Track',
+            status: 'Pending',
+            displayTitle: title(1),
+            displayArtist: artist,
+            fromDirectoryPath: 'Downloads/Mixed',
+            fromBaseName: title(1),
+            toDirectoryPath: `${artist}/${album}`,
+            toBaseName: `01 ${title(1)}`,
+            moves: [
+                { id: 'sample-move-1', fileKind: 'Audio', fromPath: 'a.flac', toPath: 'b.flac' },
+                { id: 'sample-move-2', fileKind: 'Video', fromPath: 'a.mkv', toPath: 'b.mkv' },
+            ],
+            tagChanges: {
+                fields: ['Album', 'TrackNumber', 'Year'],
+                album,
+                trackNumber: 1,
+                year: 2028,
+            },
+        },
+        {
+            id: 'sample-item-2',
+            kind: 'Track',
+            status: 'Conflict',
+            conflict: 'target_exists',
+            displayTitle: title(2),
+            displayArtist: artist,
+            fromDirectoryPath: `${artist}/Singles`,
+            fromBaseName: title(2),
+            toDirectoryPath: `${artist}/${album}`,
+            toBaseName: `02 ${title(2)}`,
+            moves: [{ id: 'sample-move-3', fileKind: 'Audio', fromPath: 'c.mp3', toPath: 'd.mp3' }],
+        },
+        {
+            id: 'sample-item-3',
+            kind: 'Track',
+            status: 'Pending',
+            warnings: ['album_merges'],
+            displayTitle: title(3),
+            displayArtist: artist,
+            fromDirectoryPath: `${artist}/${album}`,
+            fromBaseName: title(3),
+            toDirectoryPath: `${artist}/${album}`,
+            toBaseName: `03 ${title(3)}`,
+            moves: [{ id: 'sample-move-4', fileKind: 'Audio', fromPath: 'e.ogg', toPath: 'f.ogg' }],
+        },
+        {
+            id: 'sample-item-4',
+            kind: 'AlbumCover',
+            status: 'Pending',
+            displayTitle: album,
+            toDirectoryPath: `${artist}/${album}`,
+            moves: [
+                {
+                    id: 'sample-move-5',
+                    fileKind: 'AlbumCover',
+                    toPath: `${artist}/${album}/cover.jpg`,
+                },
+            ],
+        },
+    ]
+}
+
+/** Paths of the template preview, one of them too long. */
+export function sampleTemplatePaths(t: Translate): LayoutTemplatePath[] {
+    const artist = t('placeholders.artist', { number: 1 })
+    const album = t('placeholders.album', { number: 1 })
+    return [
+        {
+            folders: [artist, album],
+            baseName: `01 ${t('placeholders.track', { number: 1 })}`,
+            extension: 'flac',
+        },
+        {
+            folders: [artist, album],
+            baseName: `02 ${t('placeholders.track', { number: 2 })}`,
+            extension: 'mp3',
+            isTooLong: true,
+        },
+    ]
 }

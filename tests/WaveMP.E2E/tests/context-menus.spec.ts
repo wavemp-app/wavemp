@@ -46,7 +46,15 @@ test.describe('on the desktop', () => {
             .poll(() =>
                 items.evaluateAll((elements) => elements.map((element) => element.dataset.item)),
             )
-            .toEqual(['play', 'shuffle', 'add-to-queue', 'add-to-playlist', 'favorite', 'artist'])
+            .toEqual([
+                'play',
+                'shuffle',
+                'add-to-queue',
+                'add-to-playlist',
+                'favorite',
+                'add-to-own-album',
+                'artist',
+            ])
         // The base shows "More options" only where no pointer can hover.
         await expect(tile.locator("[data-part='btn-item-menu']")).toBeHidden()
 

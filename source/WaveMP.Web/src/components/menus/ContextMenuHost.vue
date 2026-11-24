@@ -11,6 +11,7 @@ import {
 import { fetchAllPages } from '@/api/paging'
 import { problemCodeOf, statusOf } from '@/api/problems'
 import BaseContextMenu, { type MenuItem } from '@/components/base/BaseContextMenu.vue'
+import AddToOwnAlbumDialog from '@/components/organize/AddToOwnAlbumDialog.vue'
 import AddToPlaylistDialog from '@/components/playlists/AddToPlaylistDialog.vue'
 import PlaylistDeleteDialog from '@/components/playlists/PlaylistDeleteDialog.vue'
 import PlaylistEditDialog from '@/components/playlists/PlaylistEditDialog.vue'
@@ -58,6 +59,7 @@ const menu = ref<InstanceType<typeof BaseContextMenu> | null>(null)
 const target = shallowRef<MenuTarget | null>(null)
 const addingTrackIds = ref<readonly string[]>([])
 const adding = ref(false)
+const addingToOwnAlbum = ref(false)
 const playlist = ref<Playlist | null>(null)
 const renaming = ref(false)
 const deleting = ref(false)
@@ -128,6 +130,10 @@ const services: MenuServices = {
     addToPlaylist(trackIds) {
         addingTrackIds.value = trackIds
         adding.value = true
+    },
+    addToOwnAlbum(trackIds) {
+        addingTrackIds.value = trackIds
+        addingToOwnAlbum.value = true
     },
     watchVideo(track) {
         player.playTracks([track], 0)
@@ -333,6 +339,11 @@ async function confirmSmartAction(): Promise<void> {
     <BaseContextMenu ref="menu" :items="items" :label="label" @select="choose" />
     <!-- The dialogs exist only while they are open, so the pages do not hold them all the time. -->
     <AddToPlaylistDialog v-if="adding" v-model:open="adding" :track-ids="addingTrackIds" />
+    <AddToOwnAlbumDialog
+        v-if="addingToOwnAlbum"
+        v-model:open="addingToOwnAlbum"
+        :track-ids="addingTrackIds"
+    />
     <PlaylistEditDialog v-if="renaming" v-model:open="renaming" :playlist="playlist" />
     <PlaylistDeleteDialog
         v-if="deleting"

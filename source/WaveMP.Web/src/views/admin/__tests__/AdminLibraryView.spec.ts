@@ -39,6 +39,14 @@ vi.mock('@/library/artistPictureApi', () => ({
     updateArtistPictureSettings: vi.fn(),
 }))
 
+vi.mock('@/admin/organizeApi', () => ({
+    getOrganizingSettings: vi.fn().mockResolvedValue({
+        layoutTemplate: '{AlbumArtist}/{Album}/{TrackNumber:00} {Title}',
+    }),
+    previewLayoutTemplate: vi.fn().mockResolvedValue({ isValid: true, errors: [], paths: [] }),
+    updateOrganizingSettings: vi.fn(),
+}))
+
 const finished: Scan = {
     id: 'done',
     status: 'Succeeded',
@@ -113,6 +121,7 @@ describe('AdminLibraryView', () => {
                 'Scan',
                 'History',
                 'Settings',
+                'File layout',
                 'Lyrics lookup',
                 'Online search for album info',
                 'Artist pictures online',

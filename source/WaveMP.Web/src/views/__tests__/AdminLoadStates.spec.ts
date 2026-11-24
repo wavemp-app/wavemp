@@ -46,6 +46,7 @@ async function mountPage(component: Component) {
             ...[
                 'admin-library',
                 'admin-files',
+                'admin-organize',
                 'admin-review',
                 'admin-checks',
                 'admin-cache',

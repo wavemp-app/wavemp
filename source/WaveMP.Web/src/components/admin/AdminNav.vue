@@ -23,6 +23,7 @@ const route = useRoute()
 const items: readonly AdminNavItem[] = [
     { id: 'admin-library', labelKey: 'admin.nav.library', icon: 'admin-library' },
     { id: 'admin-files', labelKey: 'admin.nav.files', icon: 'admin-files' },
+    { id: 'admin-organize', labelKey: 'admin.nav.organize', icon: 'admin-organize' },
     { id: 'admin-review', labelKey: 'admin.nav.review', icon: 'admin-review' },
     { id: 'admin-checks', labelKey: 'admin.nav.checks', icon: 'admin-checks' },
     { id: 'admin-jobs', labelKey: 'admin.nav.jobs', icon: 'admin-jobs' },
@@ -33,10 +34,13 @@ const items: readonly AdminNavItem[] = [
     { id: 'admin-users', labelKey: 'admin.nav.profiles', icon: 'manage-profiles' },
 ]
 
-// The page of a song belongs to the file selection or to the review inbox.
+// The page of a song belongs to the file selection or to the review inbox, the editor of an own
+// album to the organization.
 const parentPages: Readonly<Record<string, string>> = {
     'admin-track-files': 'admin-files',
     'admin-review-track': 'admin-review',
+    'admin-own-album': 'admin-organize',
+    'admin-own-album-new': 'admin-organize',
 }
 const active = computed(() =>
     typeof route.name === 'string' ? (parentPages[route.name] ?? route.name) : route.name,

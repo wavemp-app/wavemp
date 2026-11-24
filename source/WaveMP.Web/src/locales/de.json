@@ -1035,10 +1035,11 @@
       "label": "Administration",
       "library": "Bibliothek",
       "files": "Dateien",
+      "organize": "Ordnen",
       "jobs": "Jobs",
       "cache": "Cache",
       "transcoding": "Transcodierung",
-      "backups": "Sicherungen",
+      "backups": "Backups",
       "profiles": "Profile",
       "review": "Prüfen",
       "themes": "Designs",
@@ -1262,6 +1263,319 @@
     "errors": {
       "invalid": "Diese Datei kann nicht mehr ausgewählt werden. Die Dateien wurden neu geladen.",
       "saveFailed": "Die Auswahl konnte nicht gespeichert werden."
+    }
+  },
+  "organize": {
+    "title": "Organisieren",
+    "route": {
+      "from": "Jetzt",
+      "to": "Wird zu",
+      "root": "Medienordner"
+    },
+    "template": {
+      "presetsLabel": "Aufbau",
+      "presets": {
+        "folders": "Ordner",
+        "flat": "Flach",
+        "custom": "Eigene"
+      },
+      "label": "Vorlage für den Aufbau",
+      "hint": "Mit / entstehen Ordner, Teile in [ ] entfallen bei leeren Werten. Der Dateiname braucht {title}. Die Endung jeder Datei bleibt.",
+      "tokens": "Platzhalter",
+      "insert": "{placeholder} einfügen",
+      "previewTracks": "Hierhin kämen Titel deiner Bibliothek:",
+      "previewSamples": "Deine Bibliothek hat noch keine Titel, daher siehst du Beispiele:",
+      "previewLabel": "Vorschau des Aufbaus"
+    },
+    "placeholders": {
+      "albumArtist": "Albuminterpret",
+      "artist": "Interpret",
+      "album": "Album",
+      "year": "Jahr",
+      "discNumber": "CD",
+      "trackNumber": "Titelnummer",
+      "title": "Titel",
+      "genre": "Genre"
+    },
+    "templateErrors": {
+      "required": "Gib eine Vorlage ein.",
+      "maxLength": "Die Vorlage ist zu lang (höchstens {max} Zeichen).",
+      "unknownPlaceholder": "Unbekannter Platzhalter {placeholder} bei Zeichen {position}.",
+      "unbalancedBrace": "Eine geschweifte Klammer ist bei Zeichen {position} nicht geschlossen.",
+      "unbalancedSection": "Eine eckige Klammer ist bei Zeichen {position} nicht geschlossen.",
+      "nestedSection": "Eckige Klammern dürfen nicht in eckigen Klammern stehen (Zeichen {position}).",
+      "invalidNumberFormat": "Nutze 1 bis 4 Nullen als Format von {placeholder}, zum Beispiel :00 (Zeichen {position}).",
+      "missingTitle": "Der Dateiname braucht den Platzhalter {title}.",
+      "rooted": "Die Vorlage darf nicht mit / beginnen.",
+      "emptyFolder": "Entferne den leeren Ordnernamen bei Zeichen {position}.",
+      "parentFolder": "Die Ordnernamen . und .. sind nicht erlaubt (Zeichen {position}).",
+      "folderInSection": "Ein / darf nicht in eckigen Klammern stehen (Zeichen {position}).",
+      "invalid": "Die Vorlage ist ungültig."
+    },
+    "samples": {
+      "first": {
+        "artist": "Die Hafenlichter",
+        "album": "Küstenstraßen",
+        "title": "Morgenlicht",
+        "genre": "Indie-Pop"
+      },
+      "second": {
+        "artist": "Ada Stein",
+        "album": "Stadtsignale",
+        "title": "Nachtfahrt",
+        "genre": "Elektronik"
+      }
+    },
+    "conflicts": {
+      "targetExists": "Eine andere Datei hat schon diesen Namen. Nichts wird überschrieben.",
+      "duplicateTarget": "Ein anderer Titel dieses Laufs bekäme denselben Namen.",
+      "pathTooLong": "Der neue Pfad ist zu lang.",
+      "unsafePath": "Der Pfad führt über eine Verknüpfung oder aus dem Medienordner heraus.",
+      "sourceMissing": "Die Datei fehlt oder wurde auf dem Datenträger geändert. Durchsuche die Bibliothek und versuche es erneut.",
+      "notWritable": "Die Datei oder ihr Ordner ist nicht beschreibbar.",
+      "noAudio": "Der Titel hat keine Audiodatei, daher können seine Tags nicht geschrieben werden.",
+      "sourceInactive": "Der Medienordner des Titels ist ausgeschaltet.",
+      "coverExists": "Ein Cover mit diesem Namen gibt es schon.",
+      "changedSince": "Die Datei hat sich seit dem Verschieben geändert und bleibt, wo sie ist.",
+      "unknown": "Dieser Titel kann nicht verschoben werden."
+    },
+    "warnings": {
+      "metadataChanges": "Der neue Pfad ändert den angezeigten Titel, Interpreten oder das Album.",
+      "albumMerges": "Die Titel kommen zu einem Album der Bibliothek mit gleichem Namen.",
+      "coverNotWritten": "Bei flachem Aufbau wird das Cover nicht im Medienordner gespeichert.",
+      "otherCoverExists": "Der Albumordner hat schon ein anderes Cover.",
+      "tagsChangedSince": "Die Tags haben sich seitdem geändert und bleiben erhalten.",
+      "unknown": "Prüfe diesen Titel."
+    },
+    "statuses": {
+      "planning": "Vorschau wird berechnet",
+      "previewed": "Vorschau bereit",
+      "queued": "Wartet auf den Start",
+      "running": "Dateien werden verschoben",
+      "completed": "Abgeschlossen",
+      "stopped": "Nach einem Problem angehalten",
+      "canceled": "Angehalten",
+      "failed": "Fehlgeschlagen",
+      "interrupted": "Unterbrochen",
+      "expired": "Vorschau abgelaufen",
+      "unknown": "Unbekannt"
+    },
+    "itemStatuses": {
+      "pending": "Wartet",
+      "conflict": "Konflikt",
+      "running": "Wird verschoben",
+      "done": "Verschoben",
+      "skipped": "Übersprungen",
+      "failed": "Fehlgeschlagen",
+      "rolledBack": "Zurückgelegt"
+    },
+    "blocked": {
+      "readOnly": "Der Medienordner ist schreibgeschützt, daher lassen sich keine Dateien organisieren. Binde ihn beschreibbar ein, um Dateien zu organisieren.",
+      "missing": "Der Medienordner existiert nicht. Prüfe das Volume des Containers.",
+      "inactive": "Der Medienordner ist ausgeschaltet.",
+      "busy": "Gerade werden Dateien verschoben. Warte, bis der Lauf fertig ist.",
+      "unavailable": "Es gibt keinen Medienordner zum Organisieren."
+    },
+    "availability": {
+      "loadError": "Ob die Medienordner beschreibbar sind, konnte nicht geprüft werden.",
+      "someSources": "Diese Medienordner lassen sich nicht organisieren: {names}"
+    },
+    "problems": {
+      "ownAlbumNotFound": "Das eigene Album gibt es nicht mehr.",
+      "ownAlbumEmpty": "Füge dem Album zuerst Titel hinzu.",
+      "trackInOtherOwnAlbum": "Ein Titel gehört schon zu einem anderen eigenen Album.",
+      "ownAlbumTooManyTracks": "Ein eigenes Album fasst höchstens 1000 Titel.",
+      "operationNotFound": "Diesen Eintrag gibt es nicht mehr.",
+      "mediaReadOnly": "Der Medienordner ist schreibgeschützt.",
+      "templateInvalid": "Die Vorlage für den Aufbau ist ungültig. Korrigiere sie in den Einstellungen der Bibliothek.",
+      "busy": "Gerade werden Dateien verschoben. Warte, bis der Lauf fertig ist.",
+      "notUndoable": "Dieser Eintrag lässt sich nicht rückgängig machen.",
+      "alreadyUndone": "Dieser Eintrag wurde schon rückgängig gemacht.",
+      "notPreview": "Nur eine Vorschau kann verworfen werden.",
+      "notPreviewed": "Diese Vorschau wurde schon verwendet.",
+      "previewExpired": "Die Vorschau ist abgelaufen. Berechne eine neue Vorschau.",
+      "conflicts": "Wähle „Titel mit Konflikten überspringen“, um die übrigen Titel zu verschieben.",
+      "previewOutdated": "Seit der Vorschau hat sich etwas geändert. Berechne eine neue Vorschau.",
+      "notCancelable": "Dieser Lauf ist schon beendet.",
+      "trackNotFound": "Ein Titel existiert nicht mehr.",
+      "trackNoAudio": "Nur Titel mit Audiodatei können zu einem eigenen Album gehören.",
+      "coverType": "Nutze ein JPEG-, PNG- oder WebP-Bild.",
+      "coverSize": "Das Bild ist zu groß (höchstens 10 MB).",
+      "coverUnreadable": "Das Bild lässt sich nicht lesen.",
+      "coverNotFound": "Das Album hat kein Cover.",
+      "applyFailed": "Die Dateien konnten nicht verschoben werden.",
+      "previewFailed": "Die Vorschau konnte nicht berechnet werden.",
+      "stopFailed": "Der Lauf konnte nicht angehalten werden.",
+      "undoFailed": "Das Rückgängigmachen konnte nicht vorbereitet werden."
+    },
+    "errors": {
+      "unexpected": "Ein unerwarteter Fehler hat den Lauf beendet.",
+      "itemFailed": "Eine Datei konnte nicht verschoben werden, deshalb wurde der Lauf angehalten. Die Titel davor wurden verschoben.",
+      "interrupted": "Der Server wurde während des Laufs beendet. Bereits verschobene Dateien wurden zurückgelegt.",
+      "mediaReadOnly": "Der Medienordner wurde während des Laufs schreibgeschützt."
+    },
+    "settings": {
+      "title": "Aufbau der Dateien",
+      "loadError": "Der Aufbau der Dateien konnte nicht geladen werden.",
+      "titleCleaningFolders": "Mit Ordnern entfernt der Scan „Interpret - “ aus einem Titel-Tag nur, wenn es genau dem Interpreten-Tag entspricht.",
+      "titleCleaningFlat": "Bei flachem Aufbau entfernt der Scan den Interpreten aus Titeln wie „Interpret - Titel“. Dateien werden nicht geändert.",
+      "previewError": "Die Vorschau konnte nicht geladen werden.",
+      "moveHint": "Beim Speichern wird keine Datei verschoben.",
+      "toOrganize": "Dateien organisieren",
+      "saved": "Der Aufbau der Dateien wurde gespeichert.",
+      "saveError": "Der Aufbau der Dateien konnte nicht gespeichert werden.",
+      "save": "Speichern"
+    },
+    "tags": {
+      "label": "Tags, die geschrieben werden",
+      "album": "Album",
+      "albumArtist": "Albuminterpret",
+      "trackNumber": "Titelnummer",
+      "trackCount": "Titelanzahl",
+      "discNumber": "CD",
+      "year": "Jahr",
+      "genre": "Genre",
+      "removed": "entfernt"
+    },
+    "items": {
+      "albumCover": "Albumcover",
+      "folderFiles": "Weitere Dateien des Ordners",
+      "untitled": "Ohne Titel"
+    },
+    "preview": {
+      "title": "Änderungen prüfen",
+      "changesTitle": "Änderungen",
+      "songs": "Titel: {count}",
+      "conflicts": "Konflikte: {count}",
+      "warnings": "Hinweise: {count}",
+      "explain": "Noch wurde nichts verschoben. Jede Verschiebung lässt sich im Protokoll rückgängig machen.",
+      "filterLabel": "Anzeigen",
+      "filters": {
+        "all": "Alle",
+        "conflicts": "Konflikte",
+        "warnings": "Hinweise"
+      },
+      "loadError": "Die Änderungen konnten nicht geladen werden.",
+      "listLabel": "Änderungen",
+      "empty": "Alle Dateien liegen schon richtig.",
+      "emptyFiltered": "Kein Titel passt zu diesem Filter.",
+      "more": "Mehr anzeigen",
+      "skipConflicts": "Titel mit Konflikten überspringen",
+      "skipConflictsHint": "Sie bleiben, wo sie sind; die übrigen Titel werden verschoben.",
+      "conflictsBlock": "Einige Titel haben Konflikte. Überspringe sie, um die übrigen zu verschieben.",
+      "apply": "Dateien verschieben"
+    },
+    "progress": {
+      "label": "Fortschritt",
+      "planned": "{done} von {total} Titeln geprüft",
+      "moved": "{done} von {total} Titeln erledigt",
+      "stopping": "Hält nach dem aktuellen Titel an",
+      "stop": "Anhalten"
+    },
+    "log": {
+      "title": "Protokoll",
+      "label": "Protokoll der Organisation",
+      "empty": "Bisher wurde nichts organisiert.",
+      "loadError": "Das Protokoll konnte nicht geladen werden.",
+      "undoOf": "Rückgängig: {title}",
+      "kinds": {
+        "ownAlbum": "Eigenes Album",
+        "library": "Bibliothek",
+        "undo": "Rückgängig"
+      },
+      "undone": "Rückgängig gemacht",
+      "songs": "Titel: {count}",
+      "done": "Verschoben: {count}",
+      "conflicts": "Konflikte: {count}",
+      "actions": "Aktionen für {title}",
+      "openPreview": "Vorschau öffnen",
+      "showChanges": "Änderungen anzeigen",
+      "undo": "Rückgängig machen",
+      "more": "Mehr anzeigen"
+    },
+    "library": {
+      "title": "Bibliothek neu ordnen",
+      "hint": "Verschiebt alle Titel an die Pfade der Vorlage. Du siehst jede Änderung vorher; von selbst wird nichts verschoben.",
+      "template": "Vorlage für den Aufbau:",
+      "changeTemplate": "Aufbau ändern",
+      "source": "Medienordner",
+      "allSources": "Alle Medienordner",
+      "preview": "Vorschau der Änderungen"
+    }
+  },
+  "ownAlbums": {
+    "title": "Eigene Alben",
+    "hint": "Stelle Titel zu einem Album zusammen. Ihre Tags und Dateien folgen dem Album, sobald du die Dateien verschiebst.",
+    "empty": "Noch keine eigenen Alben.",
+    "new": "Neues Album",
+    "newTitle": "Neues eigenes Album",
+    "listLabel": "Eigene Alben",
+    "status": "Zustand",
+    "statuses": {
+      "draft": "Nicht angewendet",
+      "applied": "Angewendet",
+      "changed": "Seit dem Anwenden geändert"
+    },
+    "removedLabel": "Herausgenommen",
+    "removed": "Titel, deren Tags beim nächsten Mal wiederhergestellt werden: {count}",
+    "saved": "Das Album wurde gespeichert. Keine Datei wurde verschoben.",
+    "toOverview": "Zurück zu Organisieren",
+    "create": "Album anlegen",
+    "save": "Speichern",
+    "preview": "Vorschau der Änderungen",
+    "delete": "Album löschen",
+    "deleteTitle": "Album löschen",
+    "deleteText": "„{title}“ löschen? Dateien und Tags bleiben, wie sie sind.",
+    "fields": {
+      "title": "Albumname",
+      "albumArtist": "Albuminterpret",
+      "year": "Jahr",
+      "genre": "Genre",
+      "keepHint": "Leer lassen, um den Wert jedes Titels zu behalten."
+    },
+    "cover": {
+      "dropHint": "Bild hierher ziehen",
+      "choose": "Bild auswählen",
+      "remove": "Cover entfernen"
+    },
+    "tracks": {
+      "title": "Titel",
+      "hint": "Die Reihenfolge bestimmt die Titelnummern. Ziehe einen Titel oder drücke Alt und eine Pfeiltaste.",
+      "label": "Titel des Albums",
+      "empty": "Noch keine Titel.",
+      "add": "Titel hinzufügen",
+      "context": "{artist}, {album}",
+      "dragHandle": "Zum Verschieben ziehen",
+      "actions": "Aktionen für {title}",
+      "moveUp": "Nach oben",
+      "moveDown": "Nach unten",
+      "remove": "Aus dem Album entfernen"
+    },
+    "picker": {
+      "title": "Titel hinzufügen",
+      "search": "Titel suchen",
+      "searchPlaceholder": "Titel, Interpret oder Album",
+      "clear": "Suche leeren",
+      "hint": "Suche nach den Titeln, die du hinzufügen möchtest.",
+      "error": "Die Suche ist fehlgeschlagen.",
+      "noResults": "Keine Titel gefunden.",
+      "results": "Gefundene Titel",
+      "inAlbum": "Schon im Album",
+      "noAudio": "Keine Audiodatei",
+      "add": "Ausgewählte Titel hinzufügen ({count})"
+    },
+    "addDialog": {
+      "title": "Zu eigenem Album hinzufügen",
+      "loading": "Eigene Alben werden geladen",
+      "empty": "Noch keine eigenen Alben.",
+      "newAlbum": "Neues eigenes Album"
+    },
+    "errors": {
+      "addFailed": "Die Titel konnten nicht hinzugefügt werden.",
+      "loadFailed": "Die eigenen Alben konnten nicht geladen werden.",
+      "saveFailed": "Das Album konnte nicht gespeichert werden.",
+      "deleteFailed": "Das Album konnte nicht gelöscht werden.",
+      "year": "Gib ein Jahr von 1 bis 9999 ein."
     }
   },
   "adminChecks": {
@@ -1531,7 +1845,7 @@
     "settingsLoadError": "Die Einstellungen konnten nicht geladen werden."
   },
   "adminBackups": {
-    "title": "Sicherungen",
+    "title": "Backups",
     "statusTitle": "Status",
     "backupsTitle": "Exporte",
     "settingsTitle": "Einstellungen",
@@ -2051,6 +2365,7 @@
     "watchVideo": "Video ansehen",
     "editMetadata": "Metadaten bearbeiten",
     "showFiles": "Dateien anzeigen",
+    "addToOwnAlbum": "Zu eigenem Album hinzufügen",
     "moveUp": "Nach oben",
     "moveDown": "Nach unten",
     "removeFromPlaylist": "Aus der Playlist entfernen",

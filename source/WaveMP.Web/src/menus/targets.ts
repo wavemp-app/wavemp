@@ -128,6 +128,8 @@ export interface MenuServices {
     navigate(to: RouteLocationRaw): void
     /** Opens the dialog that adds the songs to a playlist. */
     addToPlaylist(trackIds: readonly string[]): void
+    /** Opens the dialog that adds the songs to an own album (admins). */
+    addToOwnAlbum(trackIds: readonly string[]): void
     /** Plays the song and shows its video on Now Playing. */
     watchVideo(track: Track): void
     /** All songs of an album, an artist, a playlist or a smart playlist, in the order they play. */

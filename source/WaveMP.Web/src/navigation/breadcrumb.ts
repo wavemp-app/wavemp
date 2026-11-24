@@ -26,6 +26,7 @@ export interface RouteInfo {
 const adminPageTitles = {
     'admin-library': 'adminLibrary.title',
     'admin-files': 'adminFiles.title',
+    'admin-organize': 'organize.title',
     'admin-review': 'reviewInbox.title',
     'admin-jobs': 'adminJobs.title',
     'admin-cache': 'adminCache.title',
@@ -182,8 +183,23 @@ export function buildBreadcrumb(route: RouteInfo, detailTitle?: string | null): 
                 })
             }
             break
+        case 'admin-own-album':
+        case 'admin-own-album-new':
+            crumbs.push({ id: 'admin', labelKey: 'admin.title', to: { name: 'admin' } })
+            crumbs.push({
+                id: 'admin-organize',
+                labelKey: adminPageTitles['admin-organize'],
+                to: { name: 'admin-organize' },
+            })
+            if (route.name === 'admin-own-album-new') {
+                crumbs.push({ id: route.name, labelKey: 'ownAlbums.newTitle' })
+            } else if (detailTitle) {
+                crumbs.push({ id: route.name, labelKey: 'ownAlbums.title', label: detailTitle })
+            }
+            break
         case 'admin-library':
         case 'admin-files':
+        case 'admin-organize':
         case 'admin-review':
         case 'admin-jobs':
         case 'admin-cache':
