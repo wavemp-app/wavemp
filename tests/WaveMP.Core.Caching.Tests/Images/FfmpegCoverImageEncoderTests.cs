@@ -75,6 +75,23 @@ public class FfmpegCoverImageEncoderTests
     }
 
     [Test]
+    public async Task EncodeAsync_CropSection_WritesTheSquareOfTheChosenSide()
+    {
+        string source = _folder.Combine("portrait.png");
+        await TestMediaGenerator.CreateImageAsync(source, 400, 200);
+        CoverEncodeTarget half = new(1000, _folder.Combine("half.webp"), Crop: new CoverCrop(0.5, 0, 0.5));
+        CoverEncodeTarget outside = new(1000, _folder.Combine("outside.webp"), Crop: new CoverCrop(1, 1, 1));
+
+        CoverEncodeStatus status = await EncodeAsync(source, "image/png", half, outside);
+
+        status.Should().Be(CoverEncodeStatus.Encoded);
+        await ShouldBeWebPAsync(half.OutputPath, 100, 100);
+
+        // A section that would leave the picture is moved back into it.
+        await ShouldBeWebPAsync(outside.OutputPath, 200, 200);
+    }
+
+    [Test]
     public async Task EncodeAsync_Gif_WritesItsFirstFrame()
     {
         string source = _folder.Combine("cover.gif");

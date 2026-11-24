@@ -63,6 +63,21 @@ public class ArtistPictureStoreTests
     }
 
     [Test]
+    public async Task SaveAsync_WithCrop_StoresTheChosenSectionAndMeasuresIt()
+    {
+        var pictureId = Guid.NewGuid();
+        await using Stream picture = await CreatePictureAsync("online.jpg", 600, 400);
+
+        ArtistPictureSaveResult result = await _store.SaveAsync(
+            pictureId,
+            picture,
+            new Caching.Images.CoverCrop(0.5, 0.25, 0.5));
+
+        result.Should().Be(new ArtistPictureSaveResult(ArtistPictureSaveStatus.Saved, 200, 200));
+        (await SizeOfAsync(pictureId, 1000)).Should().Be((200, 200));
+    }
+
+    [Test]
     public async Task SaveAsync_LargeJpeg_ReportsTheLargestStoredSize()
     {
         await using Stream picture = await CreatePictureAsync("photo.jpg", 1600, 1200);

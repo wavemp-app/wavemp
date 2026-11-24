@@ -9,10 +9,12 @@ namespace WaveMP.Core.Caching.Stores;
 /// <param name="MaxSizeBytes">Size limit of the settings in bytes.</param>
 /// <param name="Covers">Scaled covers.</param>
 /// <param name="Transcodes">Transcoded media.</param>
+/// <param name="ArtistLookups">Answers, candidates and previews of the online lookup of artist pictures.</param>
 public sealed record CacheUsage(
     bool IsAvailable,
     long SizeBytes,
     int EntryCount,
     long MaxSizeBytes,
     CacheAreaUsage Covers,
-    CacheAreaUsage Transcodes);
+    CacheAreaUsage Transcodes,
+    CacheAreaUsage ArtistLookups);

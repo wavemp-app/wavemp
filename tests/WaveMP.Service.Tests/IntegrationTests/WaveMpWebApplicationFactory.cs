@@ -15,7 +15,9 @@ using WaveMP.Data;
 using WaveMP.Service.Tests.IntegrationTests.Fakes;
 using WaveMP.Testing.Databases;
 using WaveMP.Testing.Files;
+using WaveMP.Testing.Http;
 using WaveMP.Testing.Logs;
+using OnlineMetadataExtensions = WaveMP.Core.OnlineMetadata.Extensions.ServiceCollectionExtensions;
 
 namespace WaveMP.Service.Tests.IntegrationTests;
 
@@ -120,6 +122,18 @@ public sealed class WaveMpWebApplicationFactory(
     public ICoverArtArchiveClient CoverArtArchive { get; } = coverArtArchive ?? CreateCoverArtArchive();
 
     /// <summary>
+    /// The simulated web services of the online lookup of artist pictures (MusicBrainz, Wikidata, Wikimedia Commons,
+    /// fanart.tv): it replaces the HTTP handler of the lookup, so no test sends a request to them. Answers 404 to every
+    /// request until a test registers answers, and records every request.
+    /// </summary>
+    public SimulatedWebHandler ArtistLookups { get; } = new();
+
+    /// <summary>
+    /// Every entry the service logged: of WaveMP itself of every level, of the frameworks from the configured level.
+    /// </summary>
+    public LogMessageCollector Log { get; } = new();
+
+    /// <summary>
     /// The errors the service logged.
     /// </summary>
     public ErrorLogCollector ErrorLog { get; } = new();
@@ -167,7 +181,10 @@ public sealed class WaveMpWebApplicationFactory(
         }
 
         builder.ConfigureAppConfiguration(configuration => configuration.AddInMemoryCollection(values));
-        builder.ConfigureLogging(logging => logging.AddProvider(ErrorLog));
+        builder.ConfigureLogging(logging => logging
+            .AddProvider(ErrorLog)
+            .AddProvider(Log)
+            .AddFilter<LogMessageCollector>("WaveMP", LogLevel.Trace));
         builder.ConfigureTestServices(services =>
         {
             services.RemoveAll<IDatabaseExporter>();
@@ -182,6 +199,10 @@ public sealed class WaveMpWebApplicationFactory(
             services.AddSingleton(MusicBrainz);
             services.RemoveAll<ICoverArtArchiveClient>();
             services.AddSingleton(CoverArtArchive);
+            services.RemoveAllKeyed<HttpMessageHandler>(OnlineMetadataExtensions.ArtistLookupHandlerKey);
+            services.AddKeyedSingleton<HttpMessageHandler>(
+                OnlineMetadataExtensions.ArtistLookupHandlerKey,
+                ArtistLookups);
         });
     }
 

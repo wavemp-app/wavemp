@@ -1412,11 +1412,12 @@
     "usageTitle": "Belegung",
     "usageLabel": "Belegter Platz des Caches",
     "usage": "{size} von {limit} belegt",
-    "hint": "Enthält verkleinerte Cover und transcodierte Medien. Alles darin wird bei Bedarf neu erstellt.",
+    "hint": "Enthält verkleinerte Cover, transcodierte Medien und die Antworten der Suche nach Interpretenbildern. Alles darin wird bei Bedarf neu erstellt.",
     "stats": {
       "label": "Inhalt des Caches",
       "covers": "Cover",
       "transcodes": "Transcodierte Medien",
+      "artistLookups": "Suche nach Interpretenbildern",
       "entries": "Dateien"
     },
     "unavailable": "In den Cache-Ordner kann nicht geschrieben werden, daher werden Cover unverkleinert angezeigt. Prüfe das Volume /data.",

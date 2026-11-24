@@ -15,6 +15,21 @@ public interface IArtistPictureRepository
     Task<ArtistPictureSources?> FindSourcesAsync(Guid artistId, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Name and remembered MusicBrainz artist of an artist for the online lookup; <c>null</c> if the artist does not
+    /// exist.
+    /// </summary>
+    Task<ArtistLookupRow?> FindLookupAsync(Guid artistId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Remembers the MusicBrainz artist an admin chose for the artist, so the next lookup skips the choice. Returns
+    /// <c>false</c> if the artist does not exist (any more).
+    /// </summary>
+    Task<bool> RememberMusicBrainzArtistAsync(
+        Guid artistId,
+        Guid musicBrainzArtistId,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Stores the picture as the picture of its kind of its artist and removes the earlier one of that kind. If another
     /// picture of the kind was stored at the same moment, the later one wins. <see cref="ArtistPictureReplacement.Saved"/>
     /// is <c>false</c> if the artist does not exist (any more); the ids of the replaced pictures are returned either

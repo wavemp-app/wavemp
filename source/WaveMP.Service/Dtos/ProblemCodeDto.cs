@@ -359,6 +359,26 @@ public enum ProblemCodeDto
     ArtistPictureUnreadable,
 
     /// <summary>
+    /// The online lookup of artist pictures is switched off in its settings; no request was sent (409).
+    /// </summary>
+    [JsonStringEnumMemberName("artist.picture_lookup_disabled")]
+    ArtistPictureLookupDisabled,
+
+    /// <summary>
+    /// MusicBrainz, Wikidata, Wikimedia Commons or fanart.tv cannot be reached, failed, kept refusing requests or
+    /// answered something that cannot be used (502).
+    /// </summary>
+    [JsonStringEnumMemberName("artist.picture_lookup_unavailable")]
+    ArtistPictureLookupUnavailable,
+
+    /// <summary>
+    /// The candidate of the online lookup does not exist, expired or belongs to another artist (404); the client
+    /// looks the pictures up again.
+    /// </summary>
+    [JsonStringEnumMemberName("artist.picture_candidate_not_found")]
+    ArtistPictureCandidateNotFound,
+
+    /// <summary>
     /// The track has no lyrics: no lyrics file, no downloaded lyrics and none in its tags (404).
     /// </summary>
     [JsonStringEnumMemberName("lyrics.not_found")]

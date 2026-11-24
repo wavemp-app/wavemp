@@ -46,6 +46,7 @@ public class CacheStoreTests
         _store.IsAvailable.Should().BeTrue();
         Directory.Exists(_data.Combine("cache/covers")).Should().BeTrue();
         Directory.Exists(_data.Combine("cache/transcodes")).Should().BeTrue();
+        Directory.Exists(_data.Combine("cache/artist-lookups")).Should().BeTrue();
         Directory.Exists(_data.Combine("cache/tmp")).Should().BeTrue();
         _store.GetAreaPath(CacheArea.Covers).Should().Be(_data.Combine("cache/covers"));
         _store.GetUsage().Should().BeEquivalentTo(new CacheUsage(
@@ -53,6 +54,7 @@ public class CacheStoreTests
             0,
             0,
             Megabyte,
+            CacheAreaUsage.Empty,
             CacheAreaUsage.Empty,
             CacheAreaUsage.Empty));
     }

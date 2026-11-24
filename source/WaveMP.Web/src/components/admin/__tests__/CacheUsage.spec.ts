@@ -12,6 +12,7 @@ const usage: CacheUsageData = {
     maxSizeBytes: 2_000_000_000,
     covers: { sizeBytes: 500_000_000, entryCount: 1234 },
     transcodes: { sizeBytes: 0, entryCount: 0 },
+    artistLookups: { sizeBytes: 2_000_000, entryCount: 12 },
 }
 
 function mountUsage(value: CacheUsageData, clearing = false) {
@@ -35,14 +36,18 @@ describe('CacheUsage', () => {
         expect(items.map((item) => item.attributes('data-item'))).toEqual([
             'covers',
             'transcodes',
+            'artist-lookups',
             'entries',
         ])
         expect(items.map((item) => item.get('[data-part="stat-value"]').text())).toEqual([
             '500 MB',
             '0 byte',
+            '2 MB',
             '1,234',
         ])
-        expect(wrapper.text()).toContain('Holds scaled covers and transcoded media.')
+        expect(wrapper.text()).toContain(
+            'Holds scaled covers, transcoded media and the answers of the artist picture lookup.',
+        )
     })
 
     it('asks to clear the cache unless it is empty or being cleared', async () => {

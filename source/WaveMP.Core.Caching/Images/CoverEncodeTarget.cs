@@ -8,4 +8,6 @@ namespace WaveMP.Core.Caching.Images;
 /// <param name="OutputPath">File to write.</param>
 /// <param name="Square">Crops the picture to a square around its center before it is scaled, e.g. for uploaded
 /// covers of playlists.</param>
-public sealed record CoverEncodeTarget(int MaxSize, string OutputPath, bool Square = false);
+/// <param name="Crop">Crops the picture to this square section before it is scaled instead of the center square,
+/// e.g. the section an admin chose; implies a square picture.</param>
+public sealed record CoverEncodeTarget(int MaxSize, string OutputPath, bool Square = false, CoverCrop? Crop = null);

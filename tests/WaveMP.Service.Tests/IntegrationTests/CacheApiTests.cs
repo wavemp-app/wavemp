@@ -95,8 +95,11 @@ public class CacheApiTests
         usage.Covers.EntryCount.Should().BeGreaterThanOrEqualTo(2);
         usage.Covers.SizeBytes.Should().BePositive();
         usage.Transcodes.Should().BeEquivalentTo(new CacheAreaUsageDto { SizeBytes = 0, EntryCount = 0 });
-        usage.SizeBytes.Should().Be(usage.Covers.SizeBytes + usage.Transcodes.SizeBytes);
-        usage.EntryCount.Should().Be(usage.Covers.EntryCount + usage.Transcodes.EntryCount);
+        usage.ArtistLookups.Should().BeEquivalentTo(new CacheAreaUsageDto { SizeBytes = 0, EntryCount = 0 });
+        usage.SizeBytes.Should().Be(
+            usage.Covers.SizeBytes + usage.Transcodes.SizeBytes + usage.ArtistLookups.SizeBytes);
+        usage.EntryCount.Should().Be(
+            usage.Covers.EntryCount + usage.Transcodes.EntryCount + usage.ArtistLookups.EntryCount);
     }
 
     [Test]

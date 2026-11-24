@@ -8,13 +8,15 @@ internal static class CacheFolders
 {
     public const string Covers = "covers";
     public const string Transcodes = "transcodes";
+    public const string ArtistLookups = "artist-lookups";
 
     /// <summary>
     /// Unfinished files; emptied on start.
     /// </summary>
     public const string Temporary = "tmp";
 
-    public static IReadOnlyList<CacheArea> Areas { get; } = [CacheArea.Covers, CacheArea.Transcodes];
+    public static IReadOnlyList<CacheArea> Areas { get; } =
+        [CacheArea.Covers, CacheArea.Transcodes, CacheArea.ArtistLookups];
 
     public static string FolderOf(CacheArea area)
     {
@@ -22,6 +24,7 @@ internal static class CacheFolders
         {
             CacheArea.Covers => Covers,
             CacheArea.Transcodes => Transcodes,
+            CacheArea.ArtistLookups => ArtistLookups,
             _ => throw new ArgumentOutOfRangeException(nameof(area), area, "Unknown cache area."),
         };
     }

@@ -240,6 +240,68 @@ export interface ArtistPicture extends AdditionalDataHolder, Parsable {
     version?: string | null;
 }
 /**
+ * A picture the online lookup found for an artist. Its preview comes from GetArtistPictureCandidatePreview, and TakeOverArtistOnlinePicture stores it as the online picture of the artist. All texts are plain text (never markup) and clients show them as text; the addresses are absolute https addresses.
+ */
+export interface ArtistPictureCandidate extends AdditionalDataHolder, Parsable {
+    /**
+     * Author of the picture as the service names it.
+     */
+    author?: string | null;
+    /**
+     * Height of the original in pixels, if the service names it.
+     */
+    height?: number | null;
+    /**
+     * Id of the candidate (32 hexadecimal digits); only valid for this artist and only while the lookup results are kept (7 days by default).
+     */
+    id?: string | null;
+    /**
+     * Short name of the license, e.g. CC BY-SA 4.0.
+     */
+    license?: string | null;
+    /**
+     * Address of the license text.
+     */
+    licenseUrl?: string | null;
+    /**
+     * The MusicBrainz artist the picture was found for.
+     */
+    musicBrainzArtistId?: Guid | null;
+    /**
+     * The service an online artist picture comes from.
+     */
+    provider?: ArtistPictureProvider | null;
+    /**
+     * Address of the page of the picture at the service.
+     */
+    sourceUrl?: string | null;
+    /**
+     * Width of the original in pixels, if the service names it.
+     */
+    width?: number | null;
+}
+/**
+ * One page of a collection.
+ */
+export interface ArtistPictureCandidatePage extends AdditionalDataHolder, Parsable {
+    /**
+     * Items of the page, at most limit.
+     */
+    items?: ArtistPictureCandidate[] | null;
+    /**
+     * Maximum number of items of the page, as requested.
+     */
+    limit?: number | null;
+    /**
+     * Number of items skipped before this page.
+     */
+    offset?: number | null;
+    /**
+     * Number of items of the whole collection.
+     */
+    total?: number | null;
+}
+/**
  * The credit of an online artist picture. All texts are plain text (never markup); clients show them as text. The addresses are absolute https addresses.
  */
 export interface ArtistPictureCredit extends AdditionalDataHolder, Parsable {
@@ -263,6 +325,23 @@ export interface ArtistPictureCredit extends AdditionalDataHolder, Parsable {
      * Address of the page of the picture at the service.
      */
     sourceUrl?: string | null;
+}
+/**
+ * A square section of a picture as fractions of its size, e.g. from a cropper over the preview: the left edge at x times the width, the top edge at y times the height, the side size times the shorter side. A section that would leave the picture is moved back into it.
+ */
+export interface ArtistPictureCrop extends AdditionalDataHolder, Parsable {
+    /**
+     * Side, more than 0 and at most 1 of the shorter side.
+     */
+    size?: number | null;
+    /**
+     * Left edge, 0 to 1 of the width.
+     */
+    x?: number | null;
+    /**
+     * Top edge, 0 to 1 of the height.
+     */
+    y?: number | null;
 }
 export type ArtistPictureKind = (typeof ArtistPictureKindObject)[keyof typeof ArtistPictureKindObject];
 export type ArtistPictureProvider = (typeof ArtistPictureProviderObject)[keyof typeof ArtistPictureProviderObject];
@@ -481,6 +560,10 @@ export interface CacheSettings extends AdditionalDataHolder, Parsable {
  */
 export interface CacheUsage extends AdditionalDataHolder, Parsable {
     /**
+     * Answers, candidates and previews of the online lookup of artist pictures.
+     */
+    artistLookups?: CacheAreaUsage | null;
+    /**
      * Scaled covers.
      */
     covers?: CacheAreaUsage | null;
@@ -617,11 +700,38 @@ export function createArtistPageFromDiscriminatorValue(parseNode: ParseNode | un
 /**
  * Creates a new instance of the appropriate class based on discriminator value
  * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {ArtistPictureCandidate}
+ */
+// @ts-ignore
+export function createArtistPictureCandidateFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoArtistPictureCandidate;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {ArtistPictureCandidatePage}
+ */
+// @ts-ignore
+export function createArtistPictureCandidatePageFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoArtistPictureCandidatePage;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
  * @returns {ArtistPictureCredit}
  */
 // @ts-ignore
 export function createArtistPictureCreditFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
     return deserializeIntoArtistPictureCredit;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {ArtistPictureCrop}
+ */
+// @ts-ignore
+export function createArtistPictureCropFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoArtistPictureCrop;
 }
 /**
  * Creates a new instance of the appropriate class based on discriminator value
@@ -1196,6 +1306,24 @@ export function createMediaSourcePageFromDiscriminatorValue(parseNode: ParseNode
 /**
  * Creates a new instance of the appropriate class based on discriminator value
  * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {MusicBrainzArtistMatch}
+ */
+// @ts-ignore
+export function createMusicBrainzArtistMatchFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoMusicBrainzArtistMatch;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {MusicBrainzArtistMatchPage}
+ */
+// @ts-ignore
+export function createMusicBrainzArtistMatchPageFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoMusicBrainzArtistMatchPage;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
  * @returns {NewArtist}
  */
 // @ts-ignore
@@ -1733,6 +1861,15 @@ export function createSubsonicAccessFromDiscriminatorValue(parseNode: ParseNode 
 // @ts-ignore
 export function createSubsonicPasswordFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
     return deserializeIntoSubsonicPassword;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {TakeOverArtistPicture}
+ */
+// @ts-ignore
+export function createTakeOverArtistPictureFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoTakeOverArtistPicture;
 }
 /**
  * Creates a new instance of the appropriate class based on discriminator value
@@ -2541,6 +2678,39 @@ export function deserializeIntoArtistPicture(artistPicture: Partial<ArtistPictur
 }
 /**
  * The deserialization information for the current model
+ * @param ArtistPictureCandidate The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoArtistPictureCandidate(artistPictureCandidate: Partial<ArtistPictureCandidate> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "author": n => { artistPictureCandidate.author = n.getStringValue(); },
+        "height": n => { artistPictureCandidate.height = n.getNumberValue(); },
+        "id": n => { artistPictureCandidate.id = n.getStringValue(); },
+        "license": n => { artistPictureCandidate.license = n.getStringValue(); },
+        "licenseUrl": n => { artistPictureCandidate.licenseUrl = n.getStringValue(); },
+        "musicBrainzArtistId": n => { artistPictureCandidate.musicBrainzArtistId = n.getGuidValue(); },
+        "provider": n => { artistPictureCandidate.provider = n.getEnumValue<ArtistPictureProvider>(ArtistPictureProviderObject); },
+        "sourceUrl": n => { artistPictureCandidate.sourceUrl = n.getStringValue(); },
+        "width": n => { artistPictureCandidate.width = n.getNumberValue(); },
+    }
+}
+/**
+ * The deserialization information for the current model
+ * @param ArtistPictureCandidatePage The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoArtistPictureCandidatePage(artistPictureCandidatePage: Partial<ArtistPictureCandidatePage> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "items": n => { artistPictureCandidatePage.items = n.getCollectionOfObjectValues<ArtistPictureCandidate>(createArtistPictureCandidateFromDiscriminatorValue); },
+        "limit": n => { artistPictureCandidatePage.limit = n.getNumberValue(); },
+        "offset": n => { artistPictureCandidatePage.offset = n.getNumberValue(); },
+        "total": n => { artistPictureCandidatePage.total = n.getNumberValue(); },
+    }
+}
+/**
+ * The deserialization information for the current model
  * @param ArtistPictureCredit The instance to deserialize into.
  * @returns {Record<string, (node: ParseNode) => void>}
  */
@@ -2552,6 +2722,19 @@ export function deserializeIntoArtistPictureCredit(artistPictureCredit: Partial<
         "licenseUrl": n => { artistPictureCredit.licenseUrl = n.getStringValue(); },
         "provider": n => { artistPictureCredit.provider = n.getEnumValue<ArtistPictureProvider>(ArtistPictureProviderObject); },
         "sourceUrl": n => { artistPictureCredit.sourceUrl = n.getStringValue(); },
+    }
+}
+/**
+ * The deserialization information for the current model
+ * @param ArtistPictureCrop The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoArtistPictureCrop(artistPictureCrop: Partial<ArtistPictureCrop> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "size": n => { artistPictureCrop.size = n.getNumberValue(); },
+        "x": n => { artistPictureCrop.x = n.getNumberValue(); },
+        "y": n => { artistPictureCrop.y = n.getNumberValue(); },
     }
 }
 /**
@@ -2736,6 +2919,7 @@ export function deserializeIntoCacheSettings(cacheSettings: Partial<CacheSetting
 // @ts-ignore
 export function deserializeIntoCacheUsage(cacheUsage: Partial<CacheUsage> | undefined = {}) : Record<string, (node: ParseNode) => void> {
     return {
+        "artistLookups": n => { cacheUsage.artistLookups = n.getObjectValue<CacheAreaUsage>(createCacheAreaUsageFromDiscriminatorValue); },
         "covers": n => { cacheUsage.covers = n.getObjectValue<CacheAreaUsage>(createCacheAreaUsageFromDiscriminatorValue); },
         "entryCount": n => { cacheUsage.entryCount = n.getNumberValue(); },
         "isAvailable": n => { cacheUsage.isAvailable = n.getBooleanValue(); },
@@ -3403,6 +3587,40 @@ export function deserializeIntoMediaSourcePage(mediaSourcePage: Partial<MediaSou
         "limit": n => { mediaSourcePage.limit = n.getNumberValue(); },
         "offset": n => { mediaSourcePage.offset = n.getNumberValue(); },
         "total": n => { mediaSourcePage.total = n.getNumberValue(); },
+    }
+}
+/**
+ * The deserialization information for the current model
+ * @param MusicBrainzArtistMatch The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoMusicBrainzArtistMatch(musicBrainzArtistMatch: Partial<MusicBrainzArtistMatch> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "country": n => { musicBrainzArtistMatch.country = n.getStringValue(); },
+        "disambiguation": n => { musicBrainzArtistMatch.disambiguation = n.getStringValue(); },
+        "isRemembered": n => { musicBrainzArtistMatch.isRemembered = n.getBooleanValue(); },
+        "lifeSpanBegin": n => { musicBrainzArtistMatch.lifeSpanBegin = n.getStringValue(); },
+        "lifeSpanEnd": n => { musicBrainzArtistMatch.lifeSpanEnd = n.getStringValue(); },
+        "musicBrainzArtistId": n => { musicBrainzArtistMatch.musicBrainzArtistId = n.getGuidValue(); },
+        "name": n => { musicBrainzArtistMatch.name = n.getStringValue(); },
+        "score": n => { musicBrainzArtistMatch.score = n.getNumberValue(); },
+        "sortName": n => { musicBrainzArtistMatch.sortName = n.getStringValue(); },
+        "type": n => { musicBrainzArtistMatch.type = n.getStringValue(); },
+    }
+}
+/**
+ * The deserialization information for the current model
+ * @param MusicBrainzArtistMatchPage The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoMusicBrainzArtistMatchPage(musicBrainzArtistMatchPage: Partial<MusicBrainzArtistMatchPage> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "items": n => { musicBrainzArtistMatchPage.items = n.getCollectionOfObjectValues<MusicBrainzArtistMatch>(createMusicBrainzArtistMatchFromDiscriminatorValue); },
+        "limit": n => { musicBrainzArtistMatchPage.limit = n.getNumberValue(); },
+        "offset": n => { musicBrainzArtistMatchPage.offset = n.getNumberValue(); },
+        "total": n => { musicBrainzArtistMatchPage.total = n.getNumberValue(); },
     }
 }
 /**
@@ -4184,6 +4402,18 @@ export function deserializeIntoSubsonicPassword(subsonicPassword: Partial<Subson
     return {
         "access": n => { subsonicPassword.access = n.getObjectValue<SubsonicAccess>(createSubsonicAccessFromDiscriminatorValue); },
         "password": n => { subsonicPassword.password = n.getStringValue(); },
+    }
+}
+/**
+ * The deserialization information for the current model
+ * @param TakeOverArtistPicture The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoTakeOverArtistPicture(takeOverArtistPicture: Partial<TakeOverArtistPicture> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "candidateId": n => { takeOverArtistPicture.candidateId = n.getStringValue(); },
+        "crop": n => { takeOverArtistPicture.crop = n.getObjectValue<ArtistPictureCrop>(createArtistPictureCropFromDiscriminatorValue); },
     }
 }
 /**
@@ -6185,6 +6415,72 @@ export interface MediaSourcePage extends AdditionalDataHolder, Parsable {
 }
 export type MetadataTag = (typeof MetadataTagObject)[keyof typeof MetadataTagObject];
 /**
+ * An artist of MusicBrainz that may be the artist of the library, for the online lookup of artist pictures. All texts are plain text as MusicBrainz names them.
+ */
+export interface MusicBrainzArtistMatch extends AdditionalDataHolder, Parsable {
+    /**
+     * Country code of the artist, e.g. GB.
+     */
+    country?: string | null;
+    /**
+     * Comment that tells artists of the same name apart.
+     */
+    disambiguation?: string | null;
+    /**
+     * Whether an admin chose this MusicBrainz artist for the artist before.
+     */
+    isRemembered?: boolean | null;
+    /**
+     * Begin of the life span or career: a year, year and month or a date (e.g. 1960 or 1960-08).
+     */
+    lifeSpanBegin?: string | null;
+    /**
+     * End of the life span or career, in the same form.
+     */
+    lifeSpanEnd?: string | null;
+    /**
+     * The MusicBrainz id of the artist.
+     */
+    musicBrainzArtistId?: Guid | null;
+    /**
+     * The name property
+     */
+    name?: string | null;
+    /**
+     * Relevance of the search, 0 to 100.
+     */
+    score?: number | null;
+    /**
+     * Name for sorting, e.g. "Beatles, The".
+     */
+    sortName?: string | null;
+    /**
+     * Kind of artist as MusicBrainz names it, e.g. Person or Group (not translated).
+     */
+    type?: string | null;
+}
+/**
+ * One page of a collection.
+ */
+export interface MusicBrainzArtistMatchPage extends AdditionalDataHolder, Parsable {
+    /**
+     * Items of the page, at most limit.
+     */
+    items?: MusicBrainzArtistMatch[] | null;
+    /**
+     * Maximum number of items of the page, as requested.
+     */
+    limit?: number | null;
+    /**
+     * Number of items skipped before this page.
+     */
+    offset?: number | null;
+    /**
+     * Number of items of the whole collection.
+     */
+    total?: number | null;
+}
+/**
  * An artist the profile played for the first time in a period.
  */
 export interface NewArtist extends AdditionalDataHolder, Parsable {
@@ -7358,6 +7654,41 @@ export function serializeArtistPicture(writer: SerializationWriter, artistPictur
 }
 /**
  * Serializes information the current object
+ * @param ArtistPictureCandidate The instance to serialize from.
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeArtistPictureCandidate(writer: SerializationWriter, artistPictureCandidate: Partial<ArtistPictureCandidate> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!artistPictureCandidate || isSerializingDerivedType) { return; }
+    writer.writeStringValue("author", artistPictureCandidate.author);
+    writer.writeNumberValue("height", artistPictureCandidate.height);
+    writer.writeStringValue("id", artistPictureCandidate.id);
+    writer.writeStringValue("license", artistPictureCandidate.license);
+    writer.writeStringValue("licenseUrl", artistPictureCandidate.licenseUrl);
+    writer.writeGuidValue("musicBrainzArtistId", artistPictureCandidate.musicBrainzArtistId);
+    writer.writeEnumValue<ArtistPictureProvider>("provider", artistPictureCandidate.provider);
+    writer.writeStringValue("sourceUrl", artistPictureCandidate.sourceUrl);
+    writer.writeNumberValue("width", artistPictureCandidate.width);
+    writer.writeAdditionalData(artistPictureCandidate.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param ArtistPictureCandidatePage The instance to serialize from.
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeArtistPictureCandidatePage(writer: SerializationWriter, artistPictureCandidatePage: Partial<ArtistPictureCandidatePage> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!artistPictureCandidatePage || isSerializingDerivedType) { return; }
+    writer.writeCollectionOfObjectValues<ArtistPictureCandidate>("items", artistPictureCandidatePage.items, serializeArtistPictureCandidate);
+    writer.writeNumberValue("limit", artistPictureCandidatePage.limit);
+    writer.writeNumberValue("offset", artistPictureCandidatePage.offset);
+    writer.writeNumberValue("total", artistPictureCandidatePage.total);
+    writer.writeAdditionalData(artistPictureCandidatePage.additionalData);
+}
+/**
+ * Serializes information the current object
  * @param ArtistPictureCredit The instance to serialize from.
  * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
  * @param writer Serialization writer to use to serialize this model
@@ -7371,6 +7702,20 @@ export function serializeArtistPictureCredit(writer: SerializationWriter, artist
     writer.writeEnumValue<ArtistPictureProvider>("provider", artistPictureCredit.provider);
     writer.writeStringValue("sourceUrl", artistPictureCredit.sourceUrl);
     writer.writeAdditionalData(artistPictureCredit.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param ArtistPictureCrop The instance to serialize from.
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeArtistPictureCrop(writer: SerializationWriter, artistPictureCrop: Partial<ArtistPictureCrop> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!artistPictureCrop || isSerializingDerivedType) { return; }
+    writer.writeNumberValue("size", artistPictureCrop.size);
+    writer.writeNumberValue("x", artistPictureCrop.x);
+    writer.writeNumberValue("y", artistPictureCrop.y);
+    writer.writeAdditionalData(artistPictureCrop.additionalData);
 }
 /**
  * Serializes information the current object
@@ -7570,6 +7915,7 @@ export function serializeCacheSettings(writer: SerializationWriter, cacheSetting
 // @ts-ignore
 export function serializeCacheUsage(writer: SerializationWriter, cacheUsage: Partial<CacheUsage> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
     if (!cacheUsage || isSerializingDerivedType) { return; }
+    writer.writeObjectValue<CacheAreaUsage>("artistLookups", cacheUsage.artistLookups, serializeCacheAreaUsage);
     writer.writeObjectValue<CacheAreaUsage>("covers", cacheUsage.covers, serializeCacheAreaUsage);
     writer.writeNumberValue("entryCount", cacheUsage.entryCount);
     writer.writeBooleanValue("isAvailable", cacheUsage.isAvailable);
@@ -8283,6 +8629,42 @@ export function serializeMediaSourcePage(writer: SerializationWriter, mediaSourc
     writer.writeNumberValue("offset", mediaSourcePage.offset);
     writer.writeNumberValue("total", mediaSourcePage.total);
     writer.writeAdditionalData(mediaSourcePage.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param MusicBrainzArtistMatch The instance to serialize from.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeMusicBrainzArtistMatch(writer: SerializationWriter, musicBrainzArtistMatch: Partial<MusicBrainzArtistMatch> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!musicBrainzArtistMatch || isSerializingDerivedType) { return; }
+    writer.writeStringValue("country", musicBrainzArtistMatch.country);
+    writer.writeStringValue("disambiguation", musicBrainzArtistMatch.disambiguation);
+    writer.writeBooleanValue("isRemembered", musicBrainzArtistMatch.isRemembered);
+    writer.writeStringValue("lifeSpanBegin", musicBrainzArtistMatch.lifeSpanBegin);
+    writer.writeStringValue("lifeSpanEnd", musicBrainzArtistMatch.lifeSpanEnd);
+    writer.writeGuidValue("musicBrainzArtistId", musicBrainzArtistMatch.musicBrainzArtistId);
+    writer.writeStringValue("name", musicBrainzArtistMatch.name);
+    writer.writeNumberValue("score", musicBrainzArtistMatch.score);
+    writer.writeStringValue("sortName", musicBrainzArtistMatch.sortName);
+    writer.writeStringValue("type", musicBrainzArtistMatch.type);
+    writer.writeAdditionalData(musicBrainzArtistMatch.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param MusicBrainzArtistMatchPage The instance to serialize from.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeMusicBrainzArtistMatchPage(writer: SerializationWriter, musicBrainzArtistMatchPage: Partial<MusicBrainzArtistMatchPage> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!musicBrainzArtistMatchPage || isSerializingDerivedType) { return; }
+    writer.writeCollectionOfObjectValues<MusicBrainzArtistMatch>("items", musicBrainzArtistMatchPage.items, serializeMusicBrainzArtistMatch);
+    writer.writeNumberValue("limit", musicBrainzArtistMatchPage.limit);
+    writer.writeNumberValue("offset", musicBrainzArtistMatchPage.offset);
+    writer.writeNumberValue("total", musicBrainzArtistMatchPage.total);
+    writer.writeAdditionalData(musicBrainzArtistMatchPage.additionalData);
 }
 /**
  * Serializes information the current object
@@ -9117,6 +9499,19 @@ export function serializeSubsonicPassword(writer: SerializationWriter, subsonicP
     writer.writeObjectValue<SubsonicAccess>("access", subsonicPassword.access, serializeSubsonicAccess);
     writer.writeStringValue("password", subsonicPassword.password);
     writer.writeAdditionalData(subsonicPassword.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param TakeOverArtistPicture The instance to serialize from.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeTakeOverArtistPicture(writer: SerializationWriter, takeOverArtistPicture: Partial<TakeOverArtistPicture> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!takeOverArtistPicture || isSerializingDerivedType) { return; }
+    writer.writeStringValue("candidateId", takeOverArtistPicture.candidateId);
+    writer.writeObjectValue<ArtistPictureCrop>("crop", takeOverArtistPicture.crop, serializeArtistPictureCrop);
+    writer.writeAdditionalData(takeOverArtistPicture.additionalData);
 }
 /**
  * Serializes information the current object
@@ -10488,6 +10883,19 @@ export interface SubsonicPassword extends AdditionalDataHolder, Parsable {
      * The app password; also the OpenSubsonic API key.
      */
     password?: string | null;
+}
+/**
+ * Takes a picture of the online lookup over as the online picture of an artist.
+ */
+export interface TakeOverArtistPicture extends AdditionalDataHolder, Parsable {
+    /**
+     * Id of a candidate of ListArtistPictureCandidates for this artist.
+     */
+    candidateId?: string | null;
+    /**
+     * The crop property
+     */
+    crop?: ArtistPictureCrop | null;
 }
 /**
  * A theme an admin uploaded. The themes shipped with WaveMP are part of the clients and not listed here.
@@ -12632,6 +13040,9 @@ export const ProblemCodeObject = {
     ArtistPicture_too_large: "artist.picture_too_large",
     ArtistPicture_unsupported_format: "artist.picture_unsupported_format",
     ArtistPicture_unreadable: "artist.picture_unreadable",
+    ArtistPicture_lookup_disabled: "artist.picture_lookup_disabled",
+    ArtistPicture_lookup_unavailable: "artist.picture_lookup_unavailable",
+    ArtistPicture_candidate_not_found: "artist.picture_candidate_not_found",
     LyricsNot_found: "lyrics.not_found",
     LyricsDownload_disabled: "lyrics.download_disabled",
     LyricsFile_exists: "lyrics.file_exists",

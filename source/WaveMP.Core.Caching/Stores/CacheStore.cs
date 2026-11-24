@@ -210,7 +210,14 @@ internal sealed class CacheStore(
         long maxSize = settings.Current.GetMaxSizeBytes();
         if (!_available)
         {
-            return new CacheUsage(false, 0, 0, maxSize, CacheAreaUsage.Empty, CacheAreaUsage.Empty);
+            return new CacheUsage(
+                false,
+                0,
+                0,
+                maxSize,
+                CacheAreaUsage.Empty,
+                CacheAreaUsage.Empty,
+                CacheAreaUsage.Empty);
         }
 
         lock (_lock)
@@ -221,7 +228,8 @@ internal sealed class CacheStore(
                 _counts.Sum(),
                 maxSize,
                 new CacheAreaUsage(_sizes[(int)CacheArea.Covers], _counts[(int)CacheArea.Covers]),
-                new CacheAreaUsage(_sizes[(int)CacheArea.Transcodes], _counts[(int)CacheArea.Transcodes]));
+                new CacheAreaUsage(_sizes[(int)CacheArea.Transcodes], _counts[(int)CacheArea.Transcodes]),
+                new CacheAreaUsage(_sizes[(int)CacheArea.ArtistLookups], _counts[(int)CacheArea.ArtistLookups]));
         }
     }
 

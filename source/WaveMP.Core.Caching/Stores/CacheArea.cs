@@ -14,4 +14,10 @@ public enum CacheArea
     /// Transcoded media (folder <c>transcodes</c>): the HLS segments, one folder per file version and profile.
     /// </summary>
     Transcodes,
+
+    /// <summary>
+    /// Answers of the online lookup of artist pictures, its candidates and their previews (folder
+    /// <c>artist-lookups</c>).
+    /// </summary>
+    ArtistLookups,
 }

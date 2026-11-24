@@ -43,6 +43,11 @@ const statistics = computed(() => [
         labelKey: 'adminCache.stats.transcodes',
         text: format.fileSize(props.usage.transcodes?.sizeBytes ?? 0),
     },
+    {
+        id: 'artist-lookups',
+        labelKey: 'adminCache.stats.artistLookups',
+        text: format.fileSize(props.usage.artistLookups?.sizeBytes ?? 0),
+    },
     { id: 'entries', labelKey: 'adminCache.stats.entries', text: format.number(entries.value) },
 ])
 </script>

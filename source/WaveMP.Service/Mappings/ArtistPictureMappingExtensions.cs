@@ -1,4 +1,7 @@
+using WaveMP.Core.ArtistPictures.Lookups;
 using WaveMP.Core.ArtistPictures.Pictures;
+using WaveMP.Core.Caching.Images;
+using WaveMP.Core.OnlineMetadata.Clients;
 using WaveMP.Data.Entities;
 using WaveMP.Data.Projections;
 using WaveMP.Service.Dtos;
@@ -33,6 +36,47 @@ public static class ArtistPictureMappingExtensions
                 : null,
             MusicBrainzArtistId = picture?.MusicBrainzArtistId,
         };
+    }
+
+    public static MusicBrainzArtistMatchDto ToDto(this MusicBrainzArtistMatch match, Guid? rememberedId)
+    {
+        return new MusicBrainzArtistMatchDto
+        {
+            MusicBrainzArtistId = match.Id,
+            Name = match.Name,
+            SortName = match.SortName,
+            Disambiguation = match.Disambiguation,
+            Type = match.Type,
+            Country = match.Country,
+            LifeSpanBegin = match.LifeSpanBegin,
+            LifeSpanEnd = match.LifeSpanEnd,
+            Score = match.Score,
+            IsRemembered = match.Id == rememberedId,
+        };
+    }
+
+    public static ArtistPictureCandidateDto ToDto(this ArtistPictureCandidate candidate)
+    {
+        return new ArtistPictureCandidateDto
+        {
+            Id = candidate.Id,
+            Provider = candidate.Provider.ToDto(),
+            MusicBrainzArtistId = candidate.MusicBrainzArtistId,
+            Width = candidate.Width,
+            Height = candidate.Height,
+            Author = candidate.Author,
+            License = candidate.License,
+            LicenseUrl = candidate.LicenseUrl,
+            SourceUrl = candidate.SourceUrl,
+        };
+    }
+
+    /// <summary>
+    /// The section to crop; <c>null</c> without one.
+    /// </summary>
+    public static CoverCrop? ToCrop(this ArtistPictureCropDto? crop)
+    {
+        return crop is { X: { } x, Y: { } y, Size: { } size } ? new CoverCrop(x, y, size) : null;
     }
 
     public static ArtistPictureKindDto ToDto(this ArtistPictureShownKind kind)

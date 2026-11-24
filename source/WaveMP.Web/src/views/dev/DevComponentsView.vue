@@ -984,6 +984,7 @@ const sampleCacheUsage: CacheUsage = {
     maxSizeBytes: 2_000_000_000,
     covers: { sizeBytes: 1_240_000_000, entryCount: 5_321 },
     transcodes: { sizeBytes: 0, entryCount: 0 },
+    artistLookups: { sizeBytes: 0, entryCount: 0 },
 }
 const sampleLyricsLookups: LyricsLookupSummary = {
     notFoundCount: 128,

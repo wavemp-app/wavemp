@@ -12,7 +12,7 @@ namespace WaveMP.Service.Tests.IntegrationTests;
 
 /// <summary>
 /// The pictures of the artists with synthetic media made by ffmpeg: the picture in the artist folder, an uploaded
-/// picture, an online picture (stored through the data layer, since the lookup comes later) and the collage of the
+/// picture, an online picture (stored through the data layer; the lookup has tests of its own) and the collage of the
 /// album covers, in this order. Each test works on artists of its own; the file watcher is off.
 /// </summary>
 [TestFixture]

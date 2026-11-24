@@ -6,7 +6,11 @@ import { createArtistFromDiscriminatorValue, createProblemDetailsFromDiscriminat
 // @ts-ignore
 import { AlbumsRequestBuilderRequestsMetadata, type AlbumsRequestBuilder } from './albums/index.js';
 // @ts-ignore
+import { MusicbrainzMatchesRequestBuilderRequestsMetadata, type MusicbrainzMatchesRequestBuilder } from './musicbrainzMatches/index.js';
+// @ts-ignore
 import { OnlinePictureRequestBuilderRequestsMetadata, type OnlinePictureRequestBuilder } from './onlinePicture/index.js';
+// @ts-ignore
+import { OnlinePictureCandidatesRequestBuilderNavigationMetadata, OnlinePictureCandidatesRequestBuilderRequestsMetadata, type OnlinePictureCandidatesRequestBuilder } from './onlinePictureCandidates/index.js';
 // @ts-ignore
 import { PictureRequestBuilderRequestsMetadata, type PictureRequestBuilder } from './picture/index.js';
 // @ts-ignore
@@ -23,9 +27,17 @@ export interface ArtistsItemRequestBuilder extends BaseRequestBuilder<ArtistsIte
      */
     get albums(): AlbumsRequestBuilder;
     /**
+     * The musicbrainzMatches property
+     */
+    get musicbrainzMatches(): MusicbrainzMatchesRequestBuilder;
+    /**
      * The onlinePicture property
      */
     get onlinePicture(): OnlinePictureRequestBuilder;
+    /**
+     * The onlinePictureCandidates property
+     */
+    get onlinePictureCandidates(): OnlinePictureCandidatesRequestBuilder;
     /**
      * The picture property
      */
@@ -60,8 +72,15 @@ export const ArtistsItemRequestBuilderNavigationMetadata: Record<Exclude<keyof A
     albums: {
         requestsMetadata: AlbumsRequestBuilderRequestsMetadata,
     },
+    musicbrainzMatches: {
+        requestsMetadata: MusicbrainzMatchesRequestBuilderRequestsMetadata,
+    },
     onlinePicture: {
         requestsMetadata: OnlinePictureRequestBuilderRequestsMetadata,
+    },
+    onlinePictureCandidates: {
+        requestsMetadata: OnlinePictureCandidatesRequestBuilderRequestsMetadata,
+        navigationMetadata: OnlinePictureCandidatesRequestBuilderNavigationMetadata,
     },
     picture: {
         requestsMetadata: PictureRequestBuilderRequestsMetadata,

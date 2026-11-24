@@ -13,7 +13,14 @@ public class CacheServiceTests
     public void GetUsage_Always_ReturnsTheUsageOfTheStore()
     {
         ICacheStore store = Substitute.For<ICacheStore>();
-        CacheUsage usage = new(true, 10, 1, 100, new CacheAreaUsage(10, 1), CacheAreaUsage.Empty);
+        CacheUsage usage = new(
+            true,
+            10,
+            1,
+            100,
+            new CacheAreaUsage(10, 1),
+            CacheAreaUsage.Empty,
+            CacheAreaUsage.Empty);
         store.GetUsage().Returns(usage);
 
         new CacheService(store, Substitute.For<ICoverImageCache>()).GetUsage().Should().Be(usage);

@@ -40,6 +40,27 @@ internal sealed class ArtistPictureRepository(WaveMpDbContext dbContext) : IArti
             .FirstOrDefaultAsync(cancellationToken);
     }
 
+    public Task<ArtistLookupRow?> FindLookupAsync(Guid artistId, CancellationToken cancellationToken = default)
+    {
+        return dbContext.Artists.AsNoTracking()
+            .Where(artist => artist.Id == artistId)
+            .Select(artist => new ArtistLookupRow(artist.Id, artist.Name, artist.MusicBrainzArtistId))
+            .FirstOrDefaultAsync(cancellationToken);
+    }
+
+    public async Task<bool> RememberMusicBrainzArtistAsync(
+        Guid artistId,
+        Guid musicBrainzArtistId,
+        CancellationToken cancellationToken = default)
+    {
+        int updated = await dbContext.Artists
+            .Where(artist => artist.Id == artistId)
+            .ExecuteUpdateAsync(
+                setters => setters.SetProperty(artist => artist.MusicBrainzArtistId, musicBrainzArtistId),
+                cancellationToken);
+        return updated > 0;
+    }
+
     public async Task<ArtistPictureReplacement> ReplaceAsync(
         ArtistPicture picture,
         CancellationToken cancellationToken = default)

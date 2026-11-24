@@ -1412,11 +1412,12 @@
     "usageTitle": "Usage",
     "usageLabel": "Used space of the cache",
     "usage": "{size} of {limit} used",
-    "hint": "Holds scaled covers and transcoded media. Everything in it is created again when it is needed.",
+    "hint": "Holds scaled covers, transcoded media and the answers of the artist picture lookup. Everything in it is created again when it is needed.",
     "stats": {
       "label": "Contents of the cache",
       "covers": "Covers",
       "transcodes": "Transcoded media",
+      "artistLookups": "Artist picture lookups",
       "entries": "Files"
     },
     "unavailable": "The cache folder cannot be written, so covers are shown unscaled. Check the volume /data.",

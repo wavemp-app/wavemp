@@ -17,6 +17,7 @@ public static class CacheMappingExtensions
             MaxSizeBytes = usage.MaxSizeBytes,
             Covers = usage.Covers.ToDto(),
             Transcodes = usage.Transcodes.ToDto(),
+            ArtistLookups = usage.ArtistLookups.ToDto(),
         };
     }
 

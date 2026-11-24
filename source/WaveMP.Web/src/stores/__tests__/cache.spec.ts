@@ -28,6 +28,7 @@ const usage = {
     maxSizeBytes: 2_000_000_000,
     covers: { sizeBytes: 1000, entryCount: 2 },
     transcodes: { sizeBytes: 0, entryCount: 0 },
+    artistLookups: { sizeBytes: 0, entryCount: 0 },
 }
 
 describe('cache store', () => {

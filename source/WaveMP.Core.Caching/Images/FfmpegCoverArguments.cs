@@ -6,7 +6,7 @@ namespace WaveMP.Core.Caching.Images;
 
 /// <summary>
 /// The arguments of ffmpeg that scale a picture read from standard input to WebP pictures: the input is split once
-/// per target, optionally cropped to a square around its center, and scaled to fit into a square of the target size,
+/// per target, optionally cropped to a square around its center or to a chosen square section, and scaled to fit into a square of the target size,
 /// keeping the aspect ratio and never enlarging it. Metadata (e.g. EXIF) is not copied.
 /// </summary>
 internal static class FfmpegCoverArguments
@@ -45,7 +45,11 @@ internal static class FfmpegCoverArguments
         {
             int size = targets[index].MaxSize;
             filter.Append(CultureInfo.InvariantCulture, $";[s{index}]");
-            if (targets[index].Square)
+            if (targets[index].Crop is { } crop)
+            {
+                filter.Append(SectionCrop(crop));
+            }
+            else if (targets[index].Square)
             {
                 // Without a position, crop keeps the center.
                 filter.Append(SquareCrop);
@@ -78,5 +82,24 @@ internal static class FfmpegCoverArguments
         }
 
         return arguments;
+    }
+
+    /// <summary>
+    /// The crop filter of a square section: its side is the share of the shorter side (at least one pixel), its
+    /// position the share of width and height, moved back into the picture where it would leave it.
+    /// </summary>
+    internal static string SectionCrop(CoverCrop crop)
+    {
+        string x = Fraction(crop.X, 0);
+        string y = Fraction(crop.Y, 0);
+        string size = Fraction(crop.Size, 0.0001);
+        string side = $"max(1,trunc(min(iw,ih)*{size}))";
+        return $"crop='{side}':'{side}':'min(max(0,trunc(iw*{x})),iw-ow)':'min(max(0,trunc(ih*{y})),ih-oh)',";
+    }
+
+    private static string Fraction(double value, double minimum)
+    {
+        double clamped = double.IsFinite(value) ? Math.Clamp(value, minimum, 1) : minimum;
+        return clamped.ToString("0.######", CultureInfo.InvariantCulture);
     }
 }

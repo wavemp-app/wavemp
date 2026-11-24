@@ -45,7 +45,10 @@ internal sealed class StubHandler(TimeProvider clock) : HttpMessageHandler
             Requests.Add(new RecordedRequest(
                 request.RequestUri!.AbsoluteUri,
                 request.Headers.UserAgent.ToString(),
-                clock.GetUtcNow()));
+                clock.GetUtcNow(),
+                request.Headers
+                    .Where(header => header.Key != "User-Agent")
+                    .ToDictionary(header => header.Key, header => string.Join(",", header.Value))));
             if (_responses.TryDequeue(out Func<HttpResponseMessage>? next))
             {
                 _last = next;
@@ -55,5 +58,9 @@ internal sealed class StubHandler(TimeProvider clock) : HttpMessageHandler
         return Task.FromResult(_last());
     }
 
-    public sealed record RecordedRequest(string Url, string UserAgent, DateTimeOffset SentAt);
+    public sealed record RecordedRequest(
+        string Url,
+        string UserAgent,
+        DateTimeOffset SentAt,
+        IReadOnlyDictionary<string, string> Headers);
 }

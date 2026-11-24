@@ -35,6 +35,7 @@ public class CoverCachePreparerTests
             3,
             2_000_000_000,
             new CacheAreaUsage(1234, 3),
+            CacheAreaUsage.Empty,
             CacheAreaUsage.Empty));
         _repository = Substitute.For<ICoverRepository>();
         _repository.ListCoverSourcesAsync(Arg.Any<CancellationToken>()).Returns([]);

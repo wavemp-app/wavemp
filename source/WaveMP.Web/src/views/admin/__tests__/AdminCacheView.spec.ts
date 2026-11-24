@@ -16,6 +16,7 @@ const usage: CacheUsage = {
     maxSizeBytes: 2_000_000_000,
     covers: { sizeBytes: 1_000_000_000, entryCount: 40 },
     transcodes: { sizeBytes: 0, entryCount: 0 },
+    artistLookups: { sizeBytes: 0, entryCount: 0 },
 }
 
 async function mountView(current: CacheUsage | null = usage) {

@@ -34,4 +34,9 @@ public sealed class CacheUsageDto
     /// Transcoded media.
     /// </summary>
     public required CacheAreaUsageDto Transcodes { get; init; }
+
+    /// <summary>
+    /// Answers, candidates and previews of the online lookup of artist pictures.
+    /// </summary>
+    public required CacheAreaUsageDto ArtistLookups { get; init; }
 }

@@ -55,9 +55,18 @@ internal sealed class ArtistPictureStore(
         return Task.CompletedTask;
     }
 
+    public Task<ArtistPictureSaveResult> SaveAsync(
+        Guid pictureId,
+        Stream content,
+        CancellationToken cancellationToken = default)
+    {
+        return SaveAsync(pictureId, content, null, cancellationToken);
+    }
+
     public async Task<ArtistPictureSaveResult> SaveAsync(
         Guid pictureId,
         Stream content,
+        CoverCrop? crop,
         CancellationToken cancellationToken = default)
     {
         MemoryStream? copy = null;
@@ -71,13 +80,14 @@ internal sealed class ArtistPictureStore(
 
         await using (copy)
         {
-            return await SaveSeekableAsync(pictureId, picture, cancellationToken);
+            return await SaveSeekableAsync(pictureId, picture, crop, cancellationToken);
         }
     }
 
     private async Task<ArtistPictureSaveResult> SaveSeekableAsync(
         Guid pictureId,
         Stream picture,
+        CoverCrop? crop,
         CancellationToken cancellationToken)
     {
         picture.Position = 0;
@@ -99,7 +109,8 @@ internal sealed class ArtistPictureStore(
         CoverEncodeTarget[] targets = [.. CoverSizes.Stored.Select(size => new CoverEncodeTarget(
             size,
             Path.Combine(TemporaryPath, $"{prefix}-{size.ToString(CultureInfo.InvariantCulture)}{FileExtension}"),
-            Square: true))];
+            Square: true,
+            Crop: crop))];
         try
         {
             CoverEncodeStatus status = await encoder.EncodeAsync(picture, contentType, targets, cancellationToken);

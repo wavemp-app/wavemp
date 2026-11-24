@@ -12,6 +12,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\WaveMP.Core.Caching\WaveMP.Core.Caching.csproj" />
+    <ProjectReference Include="..\WaveMP.Core.OnlineMetadata\WaveMP.Core.OnlineMetadata.csproj" />
     <ProjectReference Include="..\WaveMP.Core.Settings\WaveMP.Core.Settings.csproj" />
     <ProjectReference Include="..\WaveMP.Data\WaveMP.Data.csproj" />
   </ItemGroup>

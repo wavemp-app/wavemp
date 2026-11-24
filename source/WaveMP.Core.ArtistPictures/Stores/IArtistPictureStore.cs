@@ -1,3 +1,5 @@
+using WaveMP.Core.Caching.Images;
+
 namespace WaveMP.Core.ArtistPictures.Stores;
 
 /// <summary>
@@ -26,6 +28,16 @@ public interface IArtistPictureStore
     Task<ArtistPictureSaveResult> SaveAsync(
         Guid pictureId,
         Stream content,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Like <see cref="SaveAsync(Guid, Stream, CancellationToken)"/>, but crops the picture to the square section
+    /// <paramref name="crop"/> instead of its center (clamped into the picture).
+    /// </summary>
+    Task<ArtistPictureSaveResult> SaveAsync(
+        Guid pictureId,
+        Stream content,
+        CoverCrop? crop,
         CancellationToken cancellationToken = default);
 
     /// <summary>
