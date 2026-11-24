@@ -100,6 +100,7 @@ import { defaultVisualizationSettings, type VisualizationSettings } from '@/visu
 import AutoplayList from '@/components/player/AutoplayList.vue'
 import CompactPlayer from '@/components/player/CompactPlayer.vue'
 import PlayQueue from '@/components/player/PlayQueue.vue'
+import QueuePane from '@/components/player/QueuePane.vue'
 import PlaylistTrackList, {
     type PlaylistTrackRow,
 } from '@/components/playlists/PlaylistTrackList.vue'
@@ -2099,6 +2100,18 @@ const sampleTranscodeJobs = computed<TranscodeJob[]>(() => {
                     <PlayQueue :items="sampleQueue.slice(0, 2)" :current-index="1">
                         <AutoplayList :entries="[]" :loading="true" />
                     </PlayQueue>
+                </div>
+                <div data-part="dev-sample">
+                    <QueuePane
+                        :items="sampleQueue"
+                        :current-index="sampleQueueIndex"
+                        @play="
+                            (key) =>
+                                (sampleQueueIndex = sampleQueue.findIndex(
+                                    (item) => item.key === key,
+                                ))
+                        "
+                    />
                 </div>
                 <div data-part="dev-sample">
                     <PlaylistsView />

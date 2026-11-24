@@ -11,11 +11,13 @@ import type { SleepTimerChoice, TransportStage } from './transport'
 import { contentAreaId } from '@/router/scroll'
 import BaseAlert from '@/components/base/BaseAlert.vue'
 import CompactPlayer from '@/components/player/CompactPlayer.vue'
+import QueuePane from '@/components/player/QueuePane.vue'
 import ContextMenuHost from '@/components/menus/ContextMenuHost.vue'
 import ShortcutOverview from './ShortcutOverview.vue'
 import { pageTitleKey } from '@/navigation/breadcrumb'
 import { useCoverColor } from '@/composables/useCoverColor'
 import { useKeyboardShortcuts } from '@/composables/useKeyboardShortcuts'
+import { useLayoutOptions } from '@/composables/useLayoutOptions'
 import { useMediaQuery } from '@/composables/useMediaQuery'
 import { miniPlayerShowsVideo } from '@/player/miniPlayer'
 import { useCollectionStore } from '@/stores/collection'
@@ -30,6 +32,7 @@ import { useSessionStore } from '@/stores/session'
 import { useShortcutsStore } from '@/stores/shortcuts'
 import { shortcutRegistry } from '@/shortcuts/defaults'
 import { desktopMediaQuery } from '@/themes/breakpoints'
+import { showsQueuePane } from '@/themes/layoutOptions'
 
 /**
  * App shell: the fixed areas of the theme API around the content of the current page. The DOM is
@@ -41,6 +44,9 @@ import { desktopMediaQuery } from '@/themes/breakpoints'
  *
  * The keyboard shortcuts control the player in the app and in the mini player; their overview is a
  * dialog of the shell.
+ *
+ * Where the theme docks the play queue (layout option, desktop only), the queue pane follows the
+ * content, except on Now Playing, which shows the queue itself.
  */
 const { t } = useI18n()
 const route = useRoute()
@@ -56,6 +62,8 @@ const session = useSessionStore()
 const miniPlayer = useMiniPlayerStore()
 const isDesktop = useMediaQuery(desktopMediaQuery)
 const shortcuts = useShortcutsStore()
+const layout = useLayoutOptions()
+const queuePaneShown = computed(() => showsQueuePane(layout.value, route.name))
 
 useCoverColor()
 
@@ -236,6 +244,21 @@ onUnmounted(() => {
             <BaseAlert v-if="contextMenu.error" tone="error" :message="t(contextMenu.error)" />
             <slot />
         </main>
+        <QueuePane
+            v-if="queuePaneShown"
+            :items="player.queue.items"
+            :current-index="player.queue.index"
+            :lyrics="player.lyrics"
+            :playing="player.playback === 'playing'"
+            :position="player.position"
+            :duration="player.duration"
+            :clock="player.livePosition"
+            @play="player.playItem"
+            @move="player.moveItem"
+            @remove="player.removeItem"
+            @clear="player.clearQueue"
+            @seek="player.seek"
+        />
         <AppTransport
             :state="player.state"
             :expanded="playerExpanded"

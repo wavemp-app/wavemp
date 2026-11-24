@@ -248,6 +248,19 @@
     "lyricsLabel": "Songtext des Titels",
     "lyricsBreak": "Instrumentaler Teil"
   },
+  "queuePane": {
+    "label": "Warteschlange",
+    "viewLabel": "Im Bereich anzeigen",
+    "queue": "Warteschlange",
+    "lyrics": "Songtext",
+    "emptyTitle": "Die Warteschlange ist leer",
+    "emptyText": "Spiele ein Album, eine Playlist oder einen Titel ab, um sie zu füllen.",
+    "noLyrics": "Für diesen Titel gibt es keinen Songtext.",
+    "songCountOne": "{count} Titel",
+    "songCountOther": "{count} Titel",
+    "duration": "{duration} insgesamt",
+    "durationAtLeast": "Mindestens {duration} insgesamt"
+  },
   "cast": {
     "button": "Streamen",
     "buttonConnected": "Streamt auf {device}",

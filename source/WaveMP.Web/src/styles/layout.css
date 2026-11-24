@@ -60,6 +60,16 @@
         overscroll-behavior: contain;
     }
 
+    /* The docked play queue (layout option), a scrolling area like the sidebar. */
+    [data-part='app'] > [data-part='queue-pane'] {
+        grid-area: queue-pane;
+        position: relative;
+        min-inline-size: 0;
+        min-block-size: 0;
+        overflow: auto;
+        overscroll-behavior: contain;
+    }
+
     [data-part='app'] > [data-part='transport'] {
         grid-area: transport;
         position: relative;
@@ -187,6 +197,36 @@
          */
         [data-part='app']:has(> [data-part='sidebar'][data-state~='collapsed']) {
             --wmp-sidebar-width: var(--wmp-sidebar-collapsed-width);
+        }
+
+        /*
+         * With the docked play queue (layout option), the pane takes a third column beside the
+         * content, from below the toolbar to the transport bar.
+         */
+        [data-part='app']:has(> [data-part='queue-pane']) {
+            grid-template-areas:
+                'header header header'
+                'toolbar toolbar toolbar'
+                'sidebar content queue-pane'
+                'transport transport transport';
+            grid-template-columns:
+                var(--wmp-sidebar-width) minmax(0, 1fr)
+                var(--wmp-queue-pane-width);
+        }
+
+        /*
+         * The pane: the view switch, the current song, the queue or the lyrics, which scroll
+         * themselves (the queue keeps its current entry in view), and the summary at its foot.
+         */
+        [data-part='app'] > [data-part='queue-pane'] {
+            display: grid;
+            grid-template-rows: auto auto minmax(0, 1fr) auto;
+        }
+
+        [data-part='queue-pane'] > [data-part='queue'] {
+            min-block-size: 0;
+            overflow: auto;
+            overscroll-behavior: contain;
         }
 
         /*

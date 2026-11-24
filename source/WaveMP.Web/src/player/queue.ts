@@ -286,3 +286,32 @@ export function visibleQueueEntries(
         }
     })
 }
+
+export interface QueueSummary {
+    /** Number of entries in the whole queue, played ones and autoplay entries included. */
+    readonly count: number
+    /** Sum of the known durations of the entries, in seconds. */
+    readonly seconds: number
+    /** Whether the duration of at least one entry is unknown, so the sum is a lower bound. */
+    readonly incomplete: boolean
+}
+
+/** Number and total duration of the entries of the queue, e.g. for the foot of the queue pane. */
+export function queueSummary(items: readonly QueueItem[]): QueueSummary {
+    let seconds = 0
+    let incomplete = false
+    for (const item of items) {
+        const milliseconds = item.track.durationMilliseconds
+        if (
+            typeof milliseconds === 'number' &&
+            Number.isFinite(milliseconds) &&
+            milliseconds >= 0
+        ) {
+            seconds += milliseconds / 1000
+        } else {
+            incomplete = true
+        }
+    }
+
+    return { count: items.length, seconds, incomplete }
+}

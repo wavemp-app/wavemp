@@ -132,6 +132,14 @@
             overflow: auto !important;
         }
 
+        /*
+         * The docked play queue is a desktop layout option; the app does not render it below
+         * 64rem, and should it be there, it stays hidden.
+         */
+        [data-part='app'] > [data-part='queue-pane'] {
+            display: none !important;
+        }
+
         /* --- Sidebar as drawer ----------------------------------------------------------- */
 
         [data-part='app'] > [data-part='sidebar'] {

@@ -101,3 +101,14 @@ export function syncLayoutOptions(doc: Document = document): void {
 export function effectiveLayoutOptions(options: LayoutOptions, desktop: boolean): LayoutOptions {
     return desktop ? options : defaultLayoutOptions
 }
+
+/**
+ * Whether the shell shows the docked play queue pane: where the options dock it, on every page but
+ * Now Playing, which shows the queue itself.
+ */
+export function showsQueuePane(
+    options: LayoutOptions,
+    routeName: string | symbol | null | undefined,
+): boolean {
+    return options.queuePane === 'docked' && routeName !== 'now-playing'
+}

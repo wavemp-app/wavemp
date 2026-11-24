@@ -6,6 +6,7 @@ import {
     layoutOptionVariables,
     parseLayoutOptions,
     readLayoutOptions,
+    showsQueuePane,
     syncLayoutOptions,
 } from '../layoutOptions'
 
@@ -121,5 +122,22 @@ describe('effectiveLayoutOptions', () => {
 
     it('keeps the fixed mobile base on smaller screens', () => {
         expect(effectiveLayoutOptions(themed, false)).toEqual(defaultLayoutOptions)
+    })
+})
+
+describe('showsQueuePane', () => {
+    const docked = { ...defaultLayoutOptions, queuePane: 'docked' } as const
+
+    it('shows the pane where the options dock it', () => {
+        expect(showsQueuePane(docked, 'library-songs')).toBe(true)
+        expect(showsQueuePane(docked, undefined)).toBe(true)
+    })
+
+    it('leaves Now Playing to its own queue', () => {
+        expect(showsQueuePane(docked, 'now-playing')).toBe(false)
+    })
+
+    it('shows no pane by default', () => {
+        expect(showsQueuePane(defaultLayoutOptions, 'library-songs')).toBe(false)
     })
 })

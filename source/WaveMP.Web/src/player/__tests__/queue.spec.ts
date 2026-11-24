@@ -12,6 +12,7 @@ import {
     nextIndex,
     playTracks,
     previousIndex,
+    queueSummary,
     remove,
     setShuffle,
     withIndex,
@@ -252,5 +253,50 @@ describe('visibleQueueEntries', () => {
     it('shows all entries without a current one', () => {
         expect(shown(-1)).toHaveLength(6)
         expect(visibleQueueEntries([], -1)).toEqual([])
+    })
+})
+
+describe('queueSummary', () => {
+    function timed(id: string, durationMilliseconds: number | null | undefined): Track {
+        return { id, title: id, hasAudio: true, durationMilliseconds }
+    }
+
+    it('is zero for an empty queue', () => {
+        expect(queueSummary([])).toEqual({ count: 0, seconds: 0, incomplete: false })
+    })
+
+    it('counts every entry and adds up the durations', () => {
+        const items = playTracks([timed('a', 125_000), timed('b', 61_500)], 1, false).items
+
+        expect(queueSummary(items)).toEqual({ count: 2, seconds: 186.5, incomplete: false })
+    })
+
+    it('counts the entries autoplay added', () => {
+        const items = [
+            ...playTracks([timed('a', 60_000)], 0, false).items,
+            { ...playTracks([timed('b', 30_000)], 0, false).items[0]!, autoplay: true },
+        ]
+
+        expect(queueSummary(items)).toEqual({ count: 2, seconds: 90, incomplete: false })
+    })
+
+    it('adds the known durations and marks the sum as incomplete', () => {
+        const items = playTracks(
+            [timed('a', 60_000), timed('b', null), timed('c', undefined), timed('d', Number.NaN)],
+            0,
+            false,
+        ).items
+
+        expect(queueSummary(items)).toEqual({ count: 4, seconds: 60, incomplete: true })
+    })
+
+    it('goes beyond an hour', () => {
+        const items = playTracks(
+            Array.from({ length: 30 }, (_, index) => timed(`t${index}`, 180_000)),
+            0,
+            false,
+        ).items
+
+        expect(queueSummary(items)).toEqual({ count: 30, seconds: 5400, incomplete: false })
     })
 })

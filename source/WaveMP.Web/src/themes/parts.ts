@@ -182,6 +182,13 @@ export const parts = [
     'autoplay-item-actions',
     'autoplay-status',
 
+    // Docked queue pane (layout option)
+    'queue-pane',
+    'queue-pane-header',
+    'queue-pane-title',
+    'queue-pane-subtitle',
+    'queue-pane-summary',
+
     // Transport
     'transport',
     'seek',

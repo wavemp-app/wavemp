@@ -3897,6 +3897,84 @@
         padding-block: var(--wmp-space-s);
     }
 
+    /* --- Queue pane (layout option, desktop) --------------------------------------------- */
+
+    [data-part='queue-pane'] {
+        color: var(--wmp-sidebar-color);
+        background: var(--wmp-sidebar-background);
+        border-inline-start: 1px solid var(--wmp-color-border);
+    }
+
+    [data-part='queue-pane'] > [data-part='segmented-control'] {
+        justify-self: start;
+        margin: var(--wmp-space-s) var(--wmp-space-m) 0;
+    }
+
+    /* The cover of the current song beside its title and artist. */
+    [data-part='queue-pane-header'] {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        align-items: center;
+        column-gap: var(--wmp-space-s);
+        padding: var(--wmp-space-m) var(--wmp-space-m) 0;
+    }
+
+    [data-part='queue-pane-header'] > [data-part='cover'] {
+        grid-row: 1 / span 2;
+        inline-size: var(--wmp-cover-size-queue-pane);
+    }
+
+    [data-part='queue-pane-title'],
+    [data-part='queue-pane-subtitle'] {
+        grid-column: 2;
+        margin: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    [data-part='queue-pane-header'][data-state~='empty'] > [data-part='queue-pane-title'] {
+        grid-column: 1 / -1;
+    }
+
+    [data-part='queue-pane-title'] {
+        font-weight: var(--wmp-font-weight-bold);
+    }
+
+    [data-part='queue-pane-subtitle'] {
+        color: var(--wmp-color-text-muted);
+        font-size: var(--wmp-font-size-s);
+    }
+
+    [data-part='queue-pane'] > [data-part='queue'] {
+        padding: var(--wmp-space-m);
+    }
+
+    [data-part='queue-pane'] > [data-part='lyrics'] {
+        margin: var(--wmp-space-m);
+        inline-size: auto;
+        block-size: auto;
+        border-radius: var(--wmp-radius-m);
+    }
+
+    [data-part='queue-pane'] > [data-part='empty-state'] {
+        align-content: start;
+        padding: var(--wmp-space-l) var(--wmp-space-m);
+    }
+
+    /* Number of songs and total duration of the queue at the foot of the pane. */
+    [data-part='queue-pane-summary'] {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        gap: var(--wmp-space-xs) var(--wmp-space-m);
+        padding: var(--wmp-space-s) var(--wmp-space-m);
+        border-block-start: 1px solid var(--wmp-color-border);
+        color: var(--wmp-color-text-muted);
+        font-size: var(--wmp-font-size-s);
+        font-variant-numeric: tabular-nums;
+    }
+
     /* --- Dialog -------------------------------------------------------------------------- */
 
     [data-part='dialog'] {
