@@ -1448,7 +1448,10 @@ Exempt like in WCAG are disabled controls and the logo, and also the initials of
 cd tests/WaveMP.E2E
 npm run test:themes             # compare in the Playwright image of the CI
 npm run test:themes:update      # take the baselines again
+npm run test:themes:update -- --grep daylight   # only for the changed theme
 ```
+
+Take the baselines again only for the theme you changed and compare all of them afterwards: a change in the baselines of another theme means the change reaches further than intended.
 
 ## Uploaded themes
 
