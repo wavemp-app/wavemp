@@ -8,6 +8,7 @@
 // string the API accepts, and an unknown id (e.g. of a deleted theme) shows the default theme.
 
 import { shallowRef } from 'vue'
+import { syncLayoutOptions } from './layoutOptions'
 import { themeApiVersion } from './parts'
 
 /** Variant of a theme: themes with both variants follow the appearance of the profile. */
@@ -142,15 +143,19 @@ export function applyTheme(id: string, variant?: ThemeVariant, doc: Document = d
         doc.head.append(link)
     }
 
+    // The theme color and the layout options of the theme are known once its stylesheet is loaded.
+    const syncFromTheme = () => {
+        syncThemeColor(doc)
+        syncLayoutOptions(doc)
+    }
     if (link.getAttribute('href') !== theme.stylesheet) {
         link.setAttribute('href', theme.stylesheet)
-        // The theme color is known once the new stylesheet is loaded.
-        link.addEventListener('load', () => syncThemeColor(doc), { once: true })
+        link.addEventListener('load', syncFromTheme, { once: true })
     } else if (link.sheet) {
-        // Same stylesheet (also another variant of it): the color may have changed at once.
-        syncThemeColor(doc)
+        // Same stylesheet (also another variant of it): its values may have changed at once.
+        syncFromTheme()
     } else {
-        link.addEventListener('load', () => syncThemeColor(doc), { once: true })
+        link.addEventListener('load', syncFromTheme, { once: true })
     }
 }
 

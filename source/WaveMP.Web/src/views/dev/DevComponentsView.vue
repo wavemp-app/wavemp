@@ -1870,7 +1870,7 @@ const sampleTranscodeJobs = computed<TranscodeJob[]>(() => {
 
         <section data-part="dev-section">
             <h2 data-part="dev-section-title">{{ t('dev.sections.header') }}</h2>
-            <AppHeader active-tab="library" :profile="firstProfile" />
+            <AppHeader active-tab="library" :profile="firstProfile" :location="libraryLocation" />
             <ReviewInboxButton :poll="false" />
         </section>
 

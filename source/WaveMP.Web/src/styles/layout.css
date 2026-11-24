@@ -106,6 +106,12 @@
         grid-area: breadcrumb;
     }
 
+    /* The breadcrumb in the header, where the theme moves it there (layout option). */
+    [data-part='header'] > [data-part='breadcrumb'] {
+        grid-area: breadcrumb;
+        min-inline-size: 0;
+    }
+
     [data-part='toolbar'] > [data-part='view-switch'] {
         grid-area: view-switch;
     }
@@ -214,6 +220,20 @@
         [data-part='header']:has(> [data-part='btn-review-inbox']) {
             grid-template-areas: 'logo nav-history tabs . server-status btn-profile';
             grid-template-columns: auto auto minmax(0, 1fr) auto auto auto;
+        }
+
+        /*
+         * With the breadcrumb in the header (layout option), it takes the free width after the
+         * history buttons and the tabs keep the width of their entries.
+         */
+        [data-part='header']:has(> [data-part='breadcrumb']) {
+            grid-template-areas: 'logo nav-history breadcrumb tabs server-status btn-profile';
+            grid-template-columns: auto auto minmax(0, 1fr) auto auto auto;
+        }
+
+        [data-part='header']:has(> [data-part='breadcrumb']):has(> [data-part='btn-review-inbox']) {
+            grid-template-areas: 'logo nav-history breadcrumb tabs . server-status btn-profile';
+            grid-template-columns: auto auto minmax(0, 1fr) auto auto auto auto;
         }
 
         [data-part='header'] > * {

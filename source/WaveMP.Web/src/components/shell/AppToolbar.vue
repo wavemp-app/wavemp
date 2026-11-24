@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { RouterLink, useRoute, useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import BaseButton from '@/components/base/BaseButton.vue'
 import BaseContextMenu, { type MenuItem } from '@/components/base/BaseContextMenu.vue'
-import BaseIcon from '@/components/base/BaseIcon.vue'
 import BaseSearchField from '@/components/base/BaseSearchField.vue'
+import AppBreadcrumb from './AppBreadcrumb.vue'
+import { useLayoutOptions } from '@/composables/useLayoutOptions'
 import { useSearchField } from '@/composables/useSearchField'
 import { queryText } from '@/library/search'
 import {
@@ -16,8 +17,7 @@ import {
     sortLabelKey,
     sortOptions,
 } from '@/library/sorting'
-import { buildBreadcrumb, type RouteInfo } from '@/navigation/breadcrumb'
-import { usePageTitleStore } from '@/stores/pageTitle'
+import type { RouteInfo } from '@/navigation/breadcrumb'
 
 const props = defineProps<{
     /** Location of the breadcrumb and the sort options; by default the current route. */
@@ -27,9 +27,9 @@ const props = defineProps<{
 const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
-const pageTitle = usePageTitleStore()
 
-const crumbs = computed(() => buildBreadcrumb(props.location ?? route, pageTitle.title))
+// The breadcrumb stands here unless the theme moves it into the header (layout option).
+const layout = useLayoutOptions()
 
 // Search: typing opens the search page of the library.
 const { text: searchText, submit: submitSearch } = useSearchField()
@@ -110,34 +110,7 @@ function chooseSort(id: string): void {
 
 <template>
     <div data-part="toolbar">
-        <nav data-part="breadcrumb" :aria-label="t('breadcrumb.label')">
-            <ol data-part="breadcrumb-list">
-                <li
-                    v-for="(crumb, index) in crumbs"
-                    :key="crumb.id"
-                    data-part="breadcrumb-item"
-                    :data-state="crumb.to ? undefined : 'active'"
-                >
-                    <RouterLink v-if="crumb.to" v-slot="{ href, navigate }" :to="crumb.to" custom>
-                        <a data-part="breadcrumb-link" :href="href" @click="navigate">
-                            <BaseIcon v-if="index === 0" name="breadcrumb-root" />
-                            <span data-part="label">{{ crumb.label ?? t(crumb.labelKey) }}</span>
-                        </a>
-                    </RouterLink>
-                    <span v-else data-part="breadcrumb-link" aria-current="page">
-                        <BaseIcon v-if="index === 0" name="breadcrumb-root" />
-                        <span data-part="label">{{ crumb.label ?? t(crumb.labelKey) }}</span>
-                    </span>
-                    <span
-                        v-if="index < crumbs.length - 1"
-                        data-part="breadcrumb-separator"
-                        aria-hidden="true"
-                    >
-                        <BaseIcon name="breadcrumb-separator" />
-                    </span>
-                </li>
-            </ol>
-        </nav>
+        <AppBreadcrumb v-if="layout.breadcrumb === 'toolbar'" :location="location" />
         <!-- One view per list for now; tiles and details as options follow later. -->
         <BaseButton
             part="view-switch"

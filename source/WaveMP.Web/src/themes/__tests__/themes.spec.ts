@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { defaultLayoutOptions, layoutOptions } from '../layoutOptions'
 import { themeApiVersion } from '../parts'
 import {
     applyTheme,
@@ -190,5 +191,37 @@ describe('syncThemeColor', () => {
         syncThemeColor(document)
 
         expect(themeColorMeta()?.content).toBe('#43484f')
+    })
+})
+
+describe('applyTheme and the layout options', () => {
+    afterEach(() => {
+        document.documentElement.style.removeProperty('--wmp-layout-breadcrumb')
+        document.head.querySelectorAll(`link#${themeLinkId}`).forEach((link) => link.remove())
+        layoutOptions.value = defaultLayoutOptions
+    })
+
+    it('reads the layout options of a theme once its stylesheet is loaded', () => {
+        applyTheme('pinstripe', undefined, document)
+        document.documentElement.style.setProperty('--wmp-layout-breadcrumb', 'header')
+        expect(layoutOptions.value.breadcrumb).toBe('toolbar')
+
+        document.head.querySelector(`link#${themeLinkId}`)?.dispatchEvent(new Event('load'))
+
+        expect(layoutOptions.value.breadcrumb).toBe('header')
+    })
+
+    it('falls back to the defaults when the next theme sets no options', () => {
+        document.documentElement.style.setProperty('--wmp-layout-breadcrumb', 'header')
+        applyTheme('pinstripe', undefined, document)
+        const link = () => document.head.querySelector(`link#${themeLinkId}`)
+        link()?.dispatchEvent(new Event('load'))
+        expect(layoutOptions.value.breadcrumb).toBe('header')
+
+        document.documentElement.style.removeProperty('--wmp-layout-breadcrumb')
+        applyTheme('meadow', undefined, document)
+        link()?.dispatchEvent(new Event('load'))
+
+        expect(layoutOptions.value).toEqual(defaultLayoutOptions)
     })
 })

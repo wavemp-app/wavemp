@@ -6,9 +6,12 @@ import BaseButton from '@/components/base/BaseButton.vue'
 import BaseLink from '@/components/base/BaseLink.vue'
 import BaseRoundButton from '@/components/base/BaseRoundButton.vue'
 import BaseTabs from '@/components/base/BaseTabs.vue'
+import AppBreadcrumb from './AppBreadcrumb.vue'
 import ProfileMenu, { type ProfileMenuProfile } from './ProfileMenu.vue'
 import ServerStatus from './ServerStatus.vue'
 import ReviewInboxButton from '@/components/review/ReviewInboxButton.vue'
+import { useLayoutOptions } from '@/composables/useLayoutOptions'
+import type { RouteInfo } from '@/navigation/breadcrumb'
 import { historyAvailability } from '@/navigation/history'
 import { mainNavigation, type MainTab } from '@/navigation/libraryTree'
 import { useSessionStore } from '@/stores/session'
@@ -21,8 +24,10 @@ const props = withDefaults(
         activeTab?: MainTab
         /** Profile of the profile menu; by default the selected profile. */
         profile?: ProfileMenuProfile
+        /** Location of the breadcrumb, where the theme shows it here; by default the current route. */
+        location?: RouteInfo
     }>(),
-    { sidebarOpen: false, activeTab: undefined, profile: undefined },
+    { sidebarOpen: false, activeTab: undefined, profile: undefined, location: undefined },
 )
 
 const emit = defineEmits<{
@@ -33,6 +38,9 @@ const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
 const session = useSessionStore()
+
+// The breadcrumb stands in the toolbar unless the theme moves it here (layout option).
+const layout = useLayoutOptions()
 
 const menuProfile = computed(
     () => props.profile ?? (session.isAuthenticated ? session.profile : null) ?? undefined,
@@ -97,6 +105,7 @@ onUnmounted(() => {
                 @click="router.forward()"
             />
         </div>
+        <AppBreadcrumb v-if="layout.breadcrumb === 'header'" :location="location" />
         <BaseTabs :items="tabs" :label="t('nav.main')" :active="activeTab ?? route.meta.tab" />
         <ReviewInboxButton v-if="session.isAdmin" />
         <ServerStatus />

@@ -277,11 +277,20 @@
         --wmp-font-weight-bold: 600;
         --wmp-line-height: 1.4;
 
+        /*
+         * Layout options (desktop only): the app reads them from :root and changes the DOM; the
+         * defaults keep the layout every theme had before the options existed.
+         */
+        --wmp-layout-breadcrumb: toolbar;
+        --wmp-layout-queue-pane: none;
+        --wmp-layout-view-options: off;
+
         /* Sizes */
         --wmp-header-height: 3rem;
         --wmp-toolbar-height: 2.75rem;
         --wmp-sidebar-width: 15rem;
         --wmp-sidebar-collapsed-width: 3.25rem;
+        --wmp-queue-pane-width: 18rem;
         --wmp-transport-height: 4.5rem;
         --wmp-seek-height: 0.25rem;
         --wmp-bottom-nav-height: 3.5rem;
