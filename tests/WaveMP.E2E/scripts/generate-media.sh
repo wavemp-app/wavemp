@@ -14,8 +14,9 @@
 #                                                      LRC) and a part without singing
 # All songs last 2 seconds, except Loose Song: it lasts 20 seconds, so the tests can switch the
 # view of Now Playing while it plays.
-# The files are made writable for everyone: the metadata editor test writes tags, and the container
-# runs as another user (1654) than the one who creates the media.
+# The files and folders are made writable for everyone: the metadata editor test writes tags, the
+# organize test moves files into new folders of the media folder and back, and the container runs
+# as another user (1654) than the one who creates the media.
 #
 # Usage: generate-media.sh <target folder>
 # With the ffmpeg of the WaveMP image (see README):
@@ -71,6 +72,7 @@ printf '%s\n' \
     '[00:13.00]<00:13.00>Loose <00:14.00>last <00:15.00>line' \
     >"$target/Loose Artist - Loose Song.lrc"
 
+chmod a+rwX "$target"
 chmod -R a+rwX "$artist" "$target/Loose Artist - Loose Song.mp3" "$target/Loose Artist - Loose Song.webm" \
     "$target/Loose Artist - Loose Song.lrc"
 echo "Test media created in $target"

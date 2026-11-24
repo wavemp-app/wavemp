@@ -1734,6 +1734,140 @@ a[data-part='breadcrumb-link']:hover {
     color: #ffffff;
 }
 
+/* --- Organization of the media files ---------------------------------------------------------- */
+
+/*
+ * Own albums, runs of the log and the items of a preview are white panels like the other groups of
+ * the administration; the songs of an own album and the paths of a template preview are white,
+ * striped tables. In a route, what changes is a small bead of teal gel with white letters, the way
+ * selected entries look; a conflict or a warning gets a bar of its color at the start edge.
+ */
+:is(
+    [data-part='own-album-item'],
+    [data-part='organize-entry'],
+    [data-part='organize-progress'],
+    [data-part='organize-item']
+) {
+    border: 1px solid #b4bac1;
+    border-radius: var(--wmp-radius-s);
+    background: #ffffff;
+    box-shadow: 0 1px 2px rgb(0 0 0 / 8%);
+}
+
+:is([data-part='own-album-item'], [data-part='organize-entry']):hover {
+    background: #f4fafa;
+}
+
+[data-part='organize-item'] {
+    border-inline-start: 4px solid #c9ced4;
+}
+
+[data-part='organize-item'][data-state~='warning'] {
+    border-inline-start-color: #d0901a;
+}
+
+[data-part='organize-item']:is([data-state~='conflict'], [data-state~='failed']) {
+    border-inline-start-color: #b3261e;
+}
+
+:is([data-part='organize-entry-meta'], [data-part='own-album-meta'], [data-part='organize-item-header'])
+    > [data-part='badge'] {
+    background: linear-gradient(#ffffff, #eef0f3);
+}
+
+[data-part='organize-entry'] > [data-part='icon'] {
+    --wmp-icon-fill: #0b6b75;
+}
+
+[data-part='path-to'] > [data-part='path-segment']:is([data-state~='changed'], [data-state~='new']) {
+    padding: 0 0.3125rem;
+    border-radius: 999px;
+    background: linear-gradient(#147b87, #0b6672);
+    box-shadow:
+        inset 0 1px rgb(255 255 255 / 30%),
+        inset 0 -1px rgb(0 0 0 / 25%);
+    color: #ffffff;
+    text-decoration: none;
+}
+
+[data-part='path-route'][data-state~='create'] > [data-part='path-to'] > [data-part='path-segment'] {
+    padding: 0;
+    background: none;
+    box-shadow: none;
+    color: inherit;
+}
+
+:is([data-part='path-separator'], [data-part='path-to']) > [data-part='icon'] {
+    --wmp-icon-fill: #6a7178;
+}
+
+[data-part='path-segment'][data-kind='template'] {
+    padding: 0.0625rem 0.375rem;
+    border: 1px solid #b4bac1;
+    border-radius: var(--wmp-radius-s);
+    background: #ffffff;
+}
+
+[data-part='template-preview-list'],
+[data-part='own-album-tracks'] {
+    padding: 0;
+    border: 1px solid #b4bac1;
+    border-radius: var(--wmp-radius-s);
+    background: #ffffff;
+    overflow: hidden;
+}
+
+[data-part='template-preview-item'] {
+    padding: 0.25rem var(--wmp-space-m);
+}
+
+:is([data-part='template-preview-item'], [data-part='own-album-track']):nth-child(even) {
+    background: #eef3f7;
+}
+
+[data-part='own-album-track'] + [data-part='own-album-track'] {
+    border-block-start: 0;
+}
+
+[data-part='own-album-track']:hover {
+    background: #dfeff0;
+}
+
+/* Placeholders are silver gel capsules. */
+[data-part='template-token'] {
+    border-color: #a3a9b0;
+    border-radius: var(--wmp-radius-m);
+    background: var(--wmp-image-default-button);
+    box-shadow: 0 1px 1px rgb(0 0 0 / 10%);
+}
+
+[data-part='template-token']:hover:not(:disabled) {
+    border-color: #0b6b75;
+    background: var(--wmp-image-default-button-hover);
+}
+
+[data-part='template-token']:active:not(:disabled) {
+    background: var(--wmp-image-default-button-active);
+}
+
+[data-part='template-token'] > [data-field='token'] {
+    color: #4d535b;
+}
+
+[data-part='cover-drop'][data-state~='empty'] {
+    border-color: #a3a9b0;
+}
+
+[data-part='cover-drop'][data-state~='dragging'] {
+    border-color: #0b6b75;
+    background: #dfeff0;
+}
+
+[data-part='track-picker-item'][data-state~='selected'] {
+    background: linear-gradient(#147b87, #0b6672);
+    color: #ffffff;
+}
+
 /* --- Playlists ------------------------------------------------------------------------------- */
 
 [data-part='drag-handle'] {

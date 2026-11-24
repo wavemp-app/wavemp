@@ -20,6 +20,13 @@ const themeSpecs = /[\\/]themes[\\/].*\.spec\.ts$/
 const visualizationSpec = /[\\/]visualization\.spec\.ts$/
 
 /**
+ * The organize spec moves files of the shared test media into an own album and back. It runs in a
+ * project of its own with one worker after all projects that read the media and before the theme
+ * regression, so no other test sees the files while they are moved.
+ */
+const organizeSpecs = /[\\/]organize[\\/].*\.spec\.ts$/
+
+/**
  * A phone or tablet of the test matrix: its viewport, touch and mobile emulation, in Chromium (the
  * only browser the E2E setup installs), with the session of the built-in admin.
  */
@@ -43,7 +50,8 @@ function device(name: string, descriptor: string) {
  * session (see tests/helpers/storage.ts). "chromium" (desktop) and "mobile" (phone) run all specs
  * except tests/devices and the visualization spec; "visualization" runs the visualization spec on
  * the desktop and on a phone in one worker; "iphone", "ipad" and "ipad-landscape" run
- * tests/devices; "themes" checks the shipped themes after all of them (tests/themes).
+ * tests/devices; "organize" moves files of the media after all of them (tests/organize), and
+ * "themes" checks the shipped themes after that (tests/themes).
  */
 export default defineConfig({
     testDir: './tests',
@@ -63,7 +71,7 @@ export default defineConfig({
         },
         {
             name: 'chromium',
-            testIgnore: [deviceSpecs, visualizationSpec, themeSpecs],
+            testIgnore: [deviceSpecs, visualizationSpec, themeSpecs, organizeSpecs],
             use: {
                 ...devices['Desktop Chrome'],
                 storageState: adminStorageState,
@@ -72,7 +80,7 @@ export default defineConfig({
         },
         {
             name: 'mobile',
-            testIgnore: [deviceSpecs, visualizationSpec, themeSpecs],
+            testIgnore: [deviceSpecs, visualizationSpec, themeSpecs, organizeSpecs],
             use: { ...devices['Pixel 7'], storageState: adminStorageState },
             dependencies: ['setup'],
         },
@@ -91,10 +99,14 @@ export default defineConfig({
         device('ipad', 'iPad Pro 11'),
         device('ipad-landscape', 'iPad Pro 11 landscape'),
         {
-            name: 'themes',
-            testMatch: themeSpecs,
-            snapshotPathTemplate: '{testDir}/themes/baselines/{arg}{ext}',
-            use: { ...devices['Desktop Chrome'] },
+            name: 'organize',
+            testMatch: organizeSpecs,
+            fullyParallel: false,
+            workers: 1,
+            use: {
+                ...devices['Desktop Chrome'],
+                storageState: adminStorageState,
+            },
             dependencies: [
                 'chromium',
                 'mobile',
@@ -103,6 +115,13 @@ export default defineConfig({
                 'ipad',
                 'ipad-landscape',
             ],
+        },
+        {
+            name: 'themes',
+            testMatch: themeSpecs,
+            snapshotPathTemplate: '{testDir}/themes/baselines/{arg}{ext}',
+            use: { ...devices['Desktop Chrome'] },
+            dependencies: ['organize'],
         },
     ],
 })

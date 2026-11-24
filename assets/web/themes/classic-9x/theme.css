@@ -2066,6 +2066,193 @@ a[data-part='breadcrumb-link']:hover {
     color: var(--wmp-color-text-muted);
 }
 
+/* --- Organization of the media files -------------------------------------------------------- */
+
+/*
+ * Own albums, runs of the log and the items of a preview are etched frames on the face like the
+ * other groups; lists of songs and paths lie in sunken white wells. What changes in a path is
+ * highlighted like selected text, navy with white letters, so a route reads like a file name that
+ * is being renamed. A conflict or a warning gets a solid bar at its start edge.
+ */
+:is(
+    [data-part='own-album-item'],
+    [data-part='organize-entry'],
+    [data-part='organize-progress'],
+    [data-part='organize-item']
+) {
+    border: 1px solid #808080;
+    border-radius: 0;
+    background: #c3c3c3;
+    box-shadow:
+        inset 1px 1px #ffffff,
+        1px 1px #ffffff;
+}
+
+[data-part='organize-item'] {
+    border-inline-start: 4px solid #808080;
+}
+
+[data-part='organize-item'][data-state~='warning'] {
+    border-inline-start-color: #5c4300;
+}
+
+[data-part='organize-item']:is([data-state~='conflict'], [data-state~='failed']) {
+    border-inline-start-color: #8b0000;
+}
+
+[data-part='template-preview-list'],
+[data-part='own-album-tracks'] {
+    border: 0;
+    border-radius: 0;
+    background: #ffffff;
+    box-shadow: var(--c9-sunken);
+}
+
+[data-part='own-album-track'] + [data-part='own-album-track'] {
+    border-block-start: 1px dotted #808080;
+}
+
+[data-part='own-album-track']:focus-within {
+    background: #ffffff;
+    outline: 1px dotted #000000;
+    outline-offset: -2px;
+}
+
+[data-part='own-album-item'] > [data-part='cover'],
+[data-part='own-album-choice'] > [data-part='cover'] {
+    border-radius: 0;
+    box-shadow: var(--c9-thin-sunken);
+}
+
+[data-part='own-album-title'] {
+    color: #000000;
+}
+
+[data-part='own-album-title']:hover {
+    color: #0b2a7a;
+}
+
+[data-part='badge']:is(
+        [data-part='organize-entry-meta'] > *,
+        [data-part='own-album-meta'] > *,
+        [data-part='organize-item-header'] > *
+    ) {
+    border: 1px solid #000000;
+    border-radius: 0;
+    background: #ffffff;
+    color: #000000;
+}
+
+:is([data-part='organize-entry-meta'], [data-part='organize-item-header'])
+    > [data-part='badge']:is([data-state~='completed'], [data-state~='done']) {
+    color: #005a14;
+}
+
+:is([data-part='organize-entry-meta'], [data-part='organize-item-header'])
+    > [data-part='badge']:is([data-state~='failed'], [data-state~='stopped'], [data-state~='interrupted']) {
+    color: #8b0000;
+}
+
+[data-part='organize-entry'] > [data-part='icon'] {
+    --wmp-icon-fill: #000000;
+}
+
+[data-part='path-to'] > [data-part='path-segment']:is([data-state~='changed'], [data-state~='new']) {
+    padding: 0 0.125rem;
+    background: #0b2a7a;
+    color: #ffffff;
+    text-decoration: none;
+}
+
+[data-part='path-route'][data-state~='create'] > [data-part='path-to'] > [data-part='path-segment'] {
+    background: none;
+    color: #000000;
+}
+
+:is([data-part='path-separator'], [data-part='path-to']) > [data-part='icon'] {
+    --wmp-icon-fill: #000000;
+}
+
+[data-part='path-from'] {
+    color: #3b3b3b;
+}
+
+[data-part='path-segment'][data-kind='template'] {
+    padding: 0.0625rem 0.25rem;
+    background: #ffffff;
+    box-shadow: var(--c9-thin-sunken);
+    color: #000000;
+}
+
+/* Placeholders are raised gray buttons that press in. */
+[data-part='template-token'] {
+    border: 0;
+    border-radius: 0;
+    background: #c3c3c3;
+    box-shadow: var(--c9-raised);
+    color: #000000;
+}
+
+[data-part='template-token']:hover:not(:disabled) {
+    border: 0;
+    background: #c3c3c3;
+}
+
+[data-part='template-token']:active:not(:disabled) {
+    box-shadow: var(--c9-pressed);
+}
+
+[data-part='template-token']:focus-visible {
+    outline: 1px dotted #000000;
+    outline-offset: -4px;
+}
+
+[data-part='template-token'] > [data-field='token'] {
+    color: #3b3b3b;
+}
+
+[data-part='template-token']:disabled {
+    color: #808080;
+    text-shadow: 1px 1px #ffffff;
+}
+
+[data-part='template-token']:disabled > [data-field='token'] {
+    color: #808080;
+}
+
+[data-part='cover-drop'] {
+    border-radius: 0;
+}
+
+[data-part='cover-drop'][data-state~='empty'] {
+    border: 1px dotted #000000;
+}
+
+[data-part='cover-drop'][data-state~='dragging'] {
+    border: 1px dotted #000000;
+    background: var(--c9-dither);
+}
+
+[data-part='cover-drop'] > [data-part='cover'] {
+    border-radius: 0;
+    box-shadow: var(--c9-thin-sunken);
+}
+
+[data-part='own-album-choice'],
+[data-part='track-picker-item'] {
+    border-radius: 0;
+}
+
+[data-part='own-album-choice']:hover:not(:disabled),
+[data-part='track-picker-item']:hover:not([data-state~='disabled']) {
+    background: #e3e3e3;
+}
+
+[data-part='track-picker-item'][data-state~='selected'] {
+    background: #0b2a7a;
+    color: #ffffff;
+}
+
 /* --- Playlists ------------------------------------------------------------------------------ */
 
 [data-part='playlist-choice'] {

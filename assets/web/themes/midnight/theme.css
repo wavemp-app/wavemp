@@ -1622,6 +1622,146 @@ a[data-part="breadcrumb-link"]:hover {
     color: #4f5862;
 }
 
+/* --- Organization of the media files ------------------------------------------------------------ */
+
+/*
+ * The organize pages lie on the white content and in white dialogs, so the light warning and danger
+ * colors of the dark chrome get darker shades here. Own albums, runs of the log and the items of a
+ * preview are white cards with the soft gloss of the profile cards; a conflict or a warning paints
+ * the start edge of its item.
+ */
+:is(
+        [data-view="admin-organize"],
+        [data-view="admin-own-album"],
+        [data-part="dialog"]:is([data-item="organize-preview"], [data-item="track-picker"]),
+        [data-part="section"][data-item="file-layout"]
+    ) {
+    --wmp-color-warning: #8a5300;
+    --wmp-color-danger: #c0262d;
+    --wmp-color-success: #1e7a34;
+}
+
+:is(
+        [data-part="own-album-item"],
+        [data-part="organize-entry"],
+        [data-part="organize-progress"],
+        [data-part="organize-item"]
+    ) {
+    border-color: #d9e0e8;
+    border-radius: 0.25rem;
+    background: linear-gradient(#ffffff, #f6f8fa);
+    box-shadow: 0 1px 2px rgb(0 0 0 / 6%);
+}
+
+[data-part="own-album-item"]:hover,
+[data-part="organize-entry"]:hover {
+    border-color: #c5e1fb;
+    background: linear-gradient(#f4faff, #e9f4fe);
+}
+
+[data-part="organize-item"] {
+    border-inline-start-color: #c9d1da;
+}
+
+[data-part="organize-item"][data-state~="warning"] {
+    border-inline-start-color: #e0a12a;
+}
+
+[data-part="organize-item"]:is([data-state~="conflict"], [data-state~="failed"]) {
+    border-inline-start-color: #d64541;
+    background: linear-gradient(#fffafa, #fbeeee);
+}
+
+:is([data-part="organize-entry-meta"], [data-part="own-album-meta"], [data-part="organize-item-header"])
+    > [data-part="badge"] {
+    background: linear-gradient(#ffffff, #eef1f4);
+}
+
+[data-part="organize-entry"] > [data-part="icon"] {
+    --wmp-icon-fill: #6f7782;
+}
+
+[data-part="organize-entry"]:hover > [data-part="icon"] {
+    --wmp-icon-fill: #1f6fd6;
+}
+
+/* What changes on the way lies on a small light blue plate, like a selected entry. */
+[data-part="path-to"] > [data-part="path-segment"]:is([data-state~="changed"], [data-state~="new"]) {
+    padding: 0 0.25rem;
+    border: 1px solid #9cc8f0;
+    border-radius: 0.1875rem;
+    background: linear-gradient(#f4faff, #ddeefc 50%, #cbe3fa 51%, #d9ebfc);
+    color: #10253f;
+    text-decoration: none;
+}
+
+[data-part="path-route"][data-state~="create"] > [data-part="path-to"] > [data-part="path-segment"] {
+    border-color: transparent;
+    background: none;
+}
+
+:is([data-part="path-separator"], [data-part="path-to"]) > [data-part="icon"] {
+    --wmp-icon-fill: #8a939e;
+}
+
+[data-part="path-segment"][data-kind="template"] {
+    padding: 0.0625rem 0.375rem;
+    border: 1px solid #d9e0e8;
+    border-radius: 0.1875rem;
+    background: #f6f8fa;
+}
+
+/* Placeholders are small glossy keys; the inserted text is shown below the name. */
+[data-part="template-token"] {
+    border-color: #c3cbd4;
+    background: var(--wmp-image-default-button);
+    box-shadow: inset 0 1px rgb(255 255 255 / 90%);
+}
+
+[data-part="template-token"]:hover:not(:disabled) {
+    border-color: #9cc8f0;
+    background: var(--wmp-image-default-button-hover);
+}
+
+[data-part="template-token"]:active:not(:disabled) {
+    background: var(--wmp-image-default-button-active);
+}
+
+[data-part="template-token"] > [data-field="token"] {
+    color: #4f5862;
+}
+
+[data-part="template-preview-list"],
+[data-part="own-album-tracks"] {
+    border-color: #d9e0e8;
+    border-radius: 0.25rem;
+    background: #ffffff;
+    box-shadow: inset 0 1px 2px rgb(0 0 0 / 6%);
+}
+
+[data-part="own-album-track"]:hover {
+    background: #f4faff;
+}
+
+[data-part="own-album-track"] > [data-part="drag-handle"] {
+    --wmp-icon-fill: #8a939e;
+}
+
+[data-part="cover-drop"][data-state~="empty"] {
+    border-color: #a9b2bd;
+}
+
+[data-part="cover-drop"][data-state~="dragging"] {
+    border-color: #3b9bff;
+    background: #e9f4fe;
+    box-shadow: 0 0 0.75rem rgb(59 155 255 / 45%);
+}
+
+[data-part="track-picker-item"][data-state~="selected"] {
+    background: linear-gradient(#e2f0fd, #c6e0fa);
+    box-shadow: inset 0 0 0 1px #9cc8f0;
+}
+
 /* --- Playlists ------------------------------------------------------------------------------- */
 
 [data-part="drag-handle"] {

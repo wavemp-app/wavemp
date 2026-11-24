@@ -2095,6 +2095,196 @@ a[data-part='breadcrumb-link']:hover {
     color: #f0d590;
 }
 
+/* --- Organization of the media files -------------------------------------------------------- */
+
+/*
+ * Own albums, runs of the log and the items of a preview are plates of the body with a thin bevel;
+ * the songs of an own album lie in a sunken well. The live preview of the layout template is a
+ * small lit display: green dots on dark glass. In a route, what changes lights up in the green of
+ * the display; a conflict or a warning lights a bar at the start edge of its plate.
+ */
+:is(
+    [data-part='own-album-item'],
+    [data-part='organize-entry'],
+    [data-part='organize-progress'],
+    [data-part='organize-item']
+) {
+    border: 1px solid #0d0e11;
+    border-radius: var(--wmp-radius-s);
+    background: #1a1c21;
+    box-shadow: inset 1px 1px #33363e;
+}
+
+:is([data-part='own-album-item'], [data-part='organize-entry']):hover {
+    background: #202227;
+}
+
+[data-part='organize-item'] {
+    border-inline-start: 3px solid #33363e;
+}
+
+[data-part='organize-item'][data-state~='warning'] {
+    border-inline-start-color: #ffcf5c;
+}
+
+[data-part='organize-item']:is([data-state~='conflict'], [data-state~='failed']) {
+    border-inline-start-color: #ff7b6e;
+    box-shadow:
+        inset 1px 1px #33363e,
+        inset 0.5rem 0 0.75rem -0.5rem rgb(255 123 110 / 35%);
+}
+
+[data-part='badge']:is(
+        [data-part='organize-entry-meta'] > *,
+        [data-part='own-album-meta'] > *,
+        [data-part='organize-item-header'] > *
+    ) {
+    --wmp-icon-fill: #d8dde3;
+
+    border: 1px solid #0d0e11;
+    border-radius: 1px;
+    background: #121317;
+    color: #d8dde3;
+}
+
+:is([data-part='organize-entry-meta'], [data-part='organize-item-header'])
+    > [data-part='badge']:is([data-state~='completed'], [data-state~='done']) {
+    background: #0a1a0f;
+    color: #4cf07a;
+}
+
+:is([data-part='organize-entry-meta'], [data-part='organize-item-header'])
+    > [data-part='badge']:is([data-state~='failed'], [data-state~='stopped'], [data-state~='interrupted']) {
+    color: #ff7b6e;
+}
+
+[data-part='own-album-meta'] > [data-part='badge']:is([data-state~='changed'], [data-state~='applied']) {
+    color: #ffcf5c;
+}
+
+:is([data-part='organize-entry-title'], [data-part='organize-item-title'], [data-part='own-album-title']) {
+    color: #e6ebf0;
+}
+
+[data-part='own-album-title']:hover {
+    color: #ffcf5c;
+}
+
+[data-part='organize-entry'] > [data-part='icon'] {
+    --wmp-icon-fill: #4cf07a;
+}
+
+[data-part='own-album-item'] > [data-part='cover'],
+[data-part='own-album-choice'] > [data-part='cover'] {
+    border-radius: 1px;
+    box-shadow: var(--skinned-sunken);
+}
+
+[data-part='path-to'] > [data-part='path-segment']:is([data-state~='changed'], [data-state~='new']) {
+    color: #4cf07a;
+    text-decoration: none;
+    text-shadow: 0 0 0.375rem rgb(76 240 122 / 55%);
+}
+
+[data-part='path-route'][data-state~='create'] > [data-part='path-to'] > [data-part='path-segment'] {
+    color: inherit;
+    text-shadow: none;
+}
+
+:is([data-part='path-separator'], [data-part='path-to']) > [data-part='icon'] {
+    --wmp-icon-fill: #9aa3ad;
+}
+
+[data-part='path-segment'][data-kind='template'] {
+    padding: 0.0625rem 0.375rem;
+    border-radius: 1px;
+    background: var(--skinned-lcd);
+    box-shadow: var(--skinned-sunken);
+    color: #4cf07a;
+}
+
+/* The live preview of the template is a display: lit green paths on dark glass. */
+[data-part='template-preview-list'] {
+    border: 0;
+    border-radius: var(--wmp-radius-s);
+    background: var(--skinned-lcd);
+    box-shadow: var(--skinned-sunken);
+    color: #a8f0bc;
+}
+
+[data-part='template-preview-list'] [data-part='path-to'] > [data-part='path-segment'] {
+    color: #a8f0bc;
+}
+
+[data-part='template-preview-list'] [data-part='path-to'] > [data-part='path-segment'][data-kind='file'] {
+    color: #4cf07a;
+}
+
+[data-part='template-preview-list'] :is([data-part='path-separator'], [data-part='path-to']) > [data-part='icon'] {
+    --wmp-icon-fill: #4cf07a;
+}
+
+[data-part='own-album-tracks'] {
+    border: 0;
+    border-radius: var(--wmp-radius-s);
+    background: #121317;
+    box-shadow: var(--skinned-sunken);
+}
+
+[data-part='own-album-track'] + [data-part='own-album-track'] {
+    border-block-start-color: #23252b;
+}
+
+[data-part='own-album-track']:hover {
+    background: #1a1c21;
+}
+
+/* Placeholders are small bevelled keys. */
+[data-part='template-token'] {
+    border: 0;
+    border-radius: var(--wmp-radius-s);
+    background: var(--skinned-key);
+    box-shadow: var(--skinned-raised);
+    color: #d8dde3;
+}
+
+[data-part='template-token']:hover:not(:disabled) {
+    border: 0;
+    background: var(--skinned-key-hover);
+}
+
+[data-part='template-token']:active:not(:disabled) {
+    background: var(--skinned-key-pressed);
+    box-shadow: var(--skinned-pressed);
+}
+
+[data-part='template-token'] > [data-field='token'] {
+    color: #4cf07a;
+}
+
+[data-part='cover-drop'] {
+    border-radius: var(--wmp-radius-s);
+}
+
+[data-part='cover-drop'][data-state~='empty'] {
+    border-color: #4a4e58;
+}
+
+[data-part='cover-drop'][data-state~='dragging'] {
+    border-color: #ffcf5c;
+    background: #1a1c21;
+}
+
+[data-part='cover-drop'] > [data-part='cover'] {
+    border-radius: 1px;
+    box-shadow: var(--skinned-sunken);
+}
+
+[data-part='track-picker-item'][data-state~='selected'] {
+    background: #3a2a08;
+    color: #ffcf5c;
+}
+
 /* --- Playlists ------------------------------------------------------------------------------ */
 
 [data-part='playlist-choice'] {

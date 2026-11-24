@@ -88,7 +88,7 @@ for (const target of shippedThemeTargets()) {
                             await expect.soft(subject).toHaveScreenshot(name, {
                                 animations: 'disabled',
                                 caret: 'hide',
-                                mask: dynamicParts(page),
+                                mask: dynamicParts(page, view),
                                 maxDiffPixelRatio: 0.005,
                             })
                         }

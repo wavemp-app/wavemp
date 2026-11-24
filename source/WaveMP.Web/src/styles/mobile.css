@@ -629,7 +629,8 @@
             [data-part='field'][data-variant='checkbox'],
             [data-part='segment'],
             [data-part='btn-preset-picker'],
-            [data-part='btn-color-scheme-picker']
+            [data-part='btn-color-scheme-picker'],
+            [data-part='template-token']
         ) {
             min-block-size: var(--_touch-target) !important;
         }

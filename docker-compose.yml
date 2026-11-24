@@ -19,7 +19,7 @@ services:
       # Data of WaveMP that is not in the database: the daily exports of the database (backups),
       # the covers of playlists and the cache of scaled covers.
       - wavemp-data:/data
-      # Append :ro to keep WaveMP from changing your files; the metadata editor is then off.
+      # Append :ro to keep WaveMP from changing your files; the metadata editor and organizing are then off.
       - /path/to/your/media:/media
     depends_on:
       wavemp-db:

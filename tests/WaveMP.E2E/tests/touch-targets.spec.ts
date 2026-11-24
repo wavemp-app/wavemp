@@ -116,6 +116,8 @@ for (const target of shippedThemeTargets()) {
                 { url: '/library/albums', ready: "[data-part='tile']" },
                 { url: '/settings', ready: "[data-part='theme-option']" },
                 { url: '/admin/library', ready: "[data-part='section']" },
+                { url: '/admin/organize', ready: "[data-part='section'][data-item='own-albums']" },
+                { url: '/admin/organize/albums/new', ready: "[data-part='cover-drop']" },
             ]
             for (const { url, ready } of pages) {
                 await page.goto(url)

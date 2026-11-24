@@ -5414,7 +5414,7 @@
         color: var(--wmp-color-text-muted);
     }
 
-    [data-part='organize-entry'][data-state~='undone'] {
+    [data-part='organize-entry'][data-state~='undone'] > [data-part='organize-entry-info'] {
         color: var(--wmp-color-text-muted);
     }
 

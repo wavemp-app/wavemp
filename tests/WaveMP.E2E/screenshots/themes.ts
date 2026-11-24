@@ -18,6 +18,7 @@ import {
 } from '../tests/helpers/api'
 import { expectOverviewReady, groupHeading, mockLongTrackList } from '../tests/helpers/groupJump'
 import { homeUrl, profileTile } from '../tests/helpers/navigation'
+import { mockLibraryPage, mockOrganize, mockOwnAlbumId } from '../tests/helpers/organizeMock'
 import { part, prepareProfile, send, sessionHeaders, stillCovers } from './helpers'
 
 // The views every theme is checked and photographed with (THEMING.md, "Checking a theme"): the
@@ -265,6 +266,11 @@ export interface ThemeView {
      * through the API before the view opens, and the view waits until its player shows it.
      */
     readonly player?: ThemePlayer
+    /**
+     * Areas of the view whose content depends on what other tests did with the instance, masked in
+     * the regression like `dynamicParts`.
+     */
+    mask?(page: Page): Locator[]
     /** Opens the view; the page has the session of the theme profile. */
     open(page: Page, request: APIRequestContext): Promise<void>
 }
@@ -273,10 +279,11 @@ export interface ThemeView {
  * Parts whose content changes between runs (play position) or depends on what other tests did
  * with the instance (the number of songs to review); masked in the regression.
  */
-export function dynamicParts(page: Page): Locator[] {
+export function dynamicParts(page: Page, view?: ThemeView): Locator[] {
     return [
         page.locator("[data-part='seek'], [data-part='time-elapsed']"),
         page.locator("[data-part='btn-review-inbox'] > [data-part='badge']"),
+        ...(view?.mask?.(page) ?? []),
     ]
 }
 
@@ -307,6 +314,65 @@ async function openNowPlaying(page: Page, request: APIRequestContext): Promise<v
     await expect(page).toHaveURL(/\/now-playing$/)
     // Autoplay below the queue has chosen its songs (Video Only of the same artist).
     await expect(part(page, 'autoplay-item').filter({ visible: true }).first()).toBeVisible()
+}
+
+/**
+ * Opens the organize page with the own albums and the log of the fixture (organizeMock.ts): the
+ * availability, the own albums in their three states and the log with a run, a stopped run of the
+ * library, an undo and an undone run.
+ */
+async function openOrganize(page: Page): Promise<void> {
+    await mockOrganize(page)
+    await page.goto('/admin/organize')
+    await expect(page.locator("[data-part='own-album-item']")).toHaveCount(3)
+    await expect(page.locator("[data-part='organize-entry']")).toHaveCount(4)
+    await expect(page.locator("[data-part='organize-availability']")).toHaveAttribute(
+        'data-state',
+        'available',
+    )
+}
+
+/**
+ * Opens the preview of the own album "Summer Roadtrip" of the fixture from its editor: routes of
+ * songs with several files, tags, a warning, a conflict and the cover written into the new folder.
+ */
+async function openOrganizePreview(page: Page): Promise<void> {
+    await mockOrganize(page)
+    await page.goto(`/admin/organize/albums/${mockOwnAlbumId}`)
+    await expect(page.locator("[data-part='own-album-track']")).toHaveCount(4)
+    // A click without scrolling: the editor behind the dialog stays at the top in every run.
+    const previewButton = page.locator("button[data-item='preview-changes']")
+    await expect(previewButton).toBeEnabled()
+    await previewButton.dispatchEvent('click')
+    const dialog = page.locator("dialog[data-item='organize-preview']")
+    await expect(dialog.locator("[data-part='organize-item']")).toHaveCount(5)
+    await expect(dialog.locator("[data-field='skip-conflicts']")).toBeVisible()
+}
+
+/**
+ * Opens the editor of the layout template on the library page of the administration, scrolled to
+ * it, with the live preview of the fixture. The media folders and the scans above it come from the
+ * fixture as well, so the editor lies at the same place in every run.
+ */
+async function openOrganizeTemplate(page: Page): Promise<void> {
+    await mockOrganize(page)
+    await mockLibraryPage(page)
+    await page.goto('/admin/library')
+    const section = page.locator("[data-part='section'][data-item='file-layout']")
+    await expect(section.locator("[data-part='template-preview-item']")).toHaveCount(3)
+    await expect(section.locator("[data-part='template-field']")).toHaveAttribute(
+        'data-state',
+        'folders',
+    )
+    await expect(page.locator("[data-part='run-list'] > [data-part='run-item']")).toHaveCount(3)
+    await section.evaluate((element) => element.scrollIntoView({ block: 'start' }))
+}
+
+/** The other sections of the library page show numbers of the instance. */
+function maskLibrarySections(page: Page): Locator[] {
+    return [
+        page.locator("[data-part='view'] > [data-part='section']:not([data-item='file-layout'])"),
+    ]
 }
 
 /** Opens the recap of the last month, paused on its second section once it has entered. */
@@ -446,6 +512,28 @@ export const themeViews: readonly ThemeView[] = [
         },
     },
     {
+        name: 'organize',
+        device: 'desktop',
+        stable: true,
+        player: 'none',
+        open: openOrganize,
+    },
+    {
+        name: 'organize-preview',
+        device: 'desktop',
+        stable: true,
+        player: 'none',
+        open: openOrganizePreview,
+    },
+    {
+        name: 'organize-template',
+        device: 'desktop',
+        stable: true,
+        player: 'none',
+        mask: maskLibrarySections,
+        open: openOrganizeTemplate,
+    },
+    {
         name: 'phone-library',
         device: 'phone',
         stable: true,
@@ -477,6 +565,28 @@ export const themeViews: readonly ThemeView[] = [
         device: 'phone',
         stable: true,
         open: openShortcuts,
+    },
+    {
+        name: 'phone-organize',
+        device: 'phone',
+        stable: true,
+        player: 'none',
+        open: openOrganize,
+    },
+    {
+        name: 'phone-organize-preview',
+        device: 'phone',
+        stable: true,
+        player: 'none',
+        open: openOrganizePreview,
+    },
+    {
+        name: 'phone-organize-template',
+        device: 'phone',
+        stable: true,
+        player: 'none',
+        mask: maskLibrarySections,
+        open: openOrganizeTemplate,
     },
     {
         // The recap of the last month, paused on the minutes of music. The numbers and the days
