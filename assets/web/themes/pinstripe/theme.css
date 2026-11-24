@@ -523,12 +523,23 @@ a[data-part='breadcrumb-link']:hover {
 /* --- Library: tiles, detail pages, files ------------------------------------------------------- */
 
 /* Covers are prints on the paper: a white mat and a soft shadow. */
-[data-part='tile'] > :is([data-part='cover'], [data-part='playlist-cover']),
-[data-part='detail-header'] > :is([data-part='cover'], [data-part='playlist-cover']) {
+[data-part='tile']
+    > :is([data-part='cover'], [data-part='playlist-cover'], [data-part='artist-collage']),
+[data-part='detail-header']
+    > :is([data-part='cover'], [data-part='playlist-cover'], [data-part='artist-collage']) {
     border-radius: 0.125rem;
     box-shadow:
         0 0 0 1px rgb(0 0 0 / 18%),
         0 3px 8px rgb(0 0 0 / 22%);
+}
+
+/*
+ * Artists are portraits: their picture and the collage of their albums keep the shape of artist
+ * pictures inside the frame of the covers.
+ */
+:is([data-part='tile'], [data-part='detail-header'])
+    > :is([data-part='cover'][data-kind='artist'], [data-part='artist-collage']) {
+    border-radius: var(--wmp-artist-picture-radius);
 }
 
 [data-part='tile'] {
@@ -2089,7 +2100,8 @@ a[data-part='breadcrumb-link']:hover {
         padding: 0.75rem 1rem 1rem;
     }
 
-    [data-part='detail-header'] > :is([data-part='cover'], [data-part='playlist-cover']) {
+    [data-part='detail-header']
+        > :is([data-part='cover'], [data-part='playlist-cover'], [data-part='artist-collage']) {
         inline-size: 11rem;
     }
 

@@ -1079,7 +1079,7 @@ The graphic of each icon slot is a variable as well, see [Icons](#icons).
 | `--wmp-cover-size-queue` | `2.5rem` | Size of the covers in `queue-item-info` and `autoplay-item-info` |
 | `--wmp-cover-size-queue-pane` | `3.5rem` | Size of the cover of the current song in `queue-pane-header` |
 | `--wmp-cover-size-l` | `12rem` | Size of the cover in `detail-header` |
-| `--wmp-artist-picture-radius` | `50%` | Corner radius of the pictures of artists (`cover` with `data-kind="artist"`) and of `artist-collage`, round by default; `0` gives square portraits |
+| `--wmp-artist-picture-radius` | `50%` | Corner radius of the pictures of artists (`cover` with `data-kind="artist"`) and of `artist-collage`, round by default; `0` gives square portraits. Rules of a theme for covers (theme rules win over the base) reach these pictures as well, so a theme that shapes the covers of `tile` or `detail-header` sets the radius again for `[data-part='cover'][data-kind='artist']` and `artist-collage` and lets the covers in `artist-collage-tile` sit flush (see the template) |
 | `--wmp-artist-collage-gap` | `1px` | Space between the `artist-collage-tile`s, filled with `--wmp-color-surface` |
 | `--wmp-tile-width` | `9rem` | Smallest width of a column of tiles |
 | `--wmp-list-row-height` | `2rem` | Minimum height of `list-row` |

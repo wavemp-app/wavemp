@@ -957,8 +957,10 @@ a[data-part='breadcrumb-link']:hover {
 }
 
 /* Covers are pictures under a thin layer of glass: a rounded edge with a light rim on top. */
-[data-part='tile'] > :is([data-part='cover'], [data-part='playlist-cover']),
-[data-part='detail-header'] > :is([data-part='cover'], [data-part='playlist-cover']) {
+[data-part='tile']
+    > :is([data-part='cover'], [data-part='playlist-cover'], [data-part='artist-collage']),
+[data-part='detail-header']
+    > :is([data-part='cover'], [data-part='playlist-cover'], [data-part='artist-collage']) {
     position: relative;
     border-radius: var(--cg-cover-radius);
     box-shadow:
@@ -966,8 +968,19 @@ a[data-part='breadcrumb-link']:hover {
         0 10px 24px -14px rgb(12 22 36 / 55%);
 }
 
-[data-part='tile'] > :is([data-part='cover'], [data-part='playlist-cover'])::after,
-[data-part='detail-header'] > :is([data-part='cover'], [data-part='playlist-cover'])::after,
+/*
+ * Artists are portraits: their picture and the collage of their albums keep the shape of artist
+ * pictures inside the frame of the covers.
+ */
+:is([data-part='tile'], [data-part='detail-header'])
+    > :is([data-part='cover'][data-kind='artist'], [data-part='artist-collage']) {
+    border-radius: var(--wmp-artist-picture-radius);
+}
+
+[data-part='tile']
+    > :is([data-part='cover'], [data-part='playlist-cover'], [data-part='artist-collage'])::after,
+[data-part='detail-header']
+    > :is([data-part='cover'], [data-part='playlist-cover'], [data-part='artist-collage'])::after,
 [data-part='stage-view'] > [data-part='cover']::after {
     position: absolute;
     inset: 0;
@@ -1006,7 +1019,8 @@ a[data-part='breadcrumb-link']:hover {
     color: var(--cg-muted);
 }
 
-[data-part='detail-header'] > :is([data-part='cover'], [data-part='playlist-cover']) {
+[data-part='detail-header']
+    > :is([data-part='cover'], [data-part='playlist-cover'], [data-part='artist-collage']) {
     border-radius: 1.5rem;
     box-shadow:
         0 0 0 1px rgb(12 22 36 / 8%),
@@ -2465,7 +2479,8 @@ a[data-part='breadcrumb-link']:hover {
         white-space: nowrap;
     }
 
-    [data-part='detail-header'] > :is([data-part='cover'], [data-part='playlist-cover']) {
+    [data-part='detail-header']
+        > :is([data-part='cover'], [data-part='playlist-cover'], [data-part='artist-collage']) {
         inline-size: 13rem;
     }
 

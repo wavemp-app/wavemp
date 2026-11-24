@@ -170,6 +170,20 @@
     border-radius: var(--wmp-radius-m);
 }
 
+/*
+ * Artists are portraits: their picture and the collage of their album covers keep the shape of
+ * --wmp-artist-picture-radius (round unless the theme sets it), and the covers of the collage sit
+ * flush inside it.
+ */
+[data-part='cover'][data-kind='artist'],
+[data-part='artist-collage'] {
+    border-radius: var(--wmp-artist-picture-radius);
+}
+
+[data-part='artist-collage-tile'] > [data-part='cover'] {
+    border-radius: 0;
+}
+
 /* --- Desktop layout -------------------------------------------------------------------------- */
 
 /*

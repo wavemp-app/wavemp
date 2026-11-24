@@ -747,6 +747,24 @@ a[data-part='breadcrumb-link']:hover {
     box-shadow: 0 0 0 1px #0d0e11;
 }
 
+/*
+ * Artists are portraits with the shape of artist pictures; the album covers of their collage sit
+ * flush in one dark frame.
+ */
+[data-part='cover'][data-kind='artist'],
+[data-part='artist-collage'] {
+    border-radius: var(--wmp-artist-picture-radius);
+}
+
+[data-part='artist-collage'] {
+    box-shadow: 0 0 0 1px #0d0e11;
+}
+
+[data-part='artist-collage-tile'] > [data-part='cover'] {
+    border-radius: 0;
+    box-shadow: none;
+}
+
 [data-part='playlist-cover'] {
     background: #0d0e11;
 }

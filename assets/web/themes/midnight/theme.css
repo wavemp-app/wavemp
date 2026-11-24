@@ -795,9 +795,10 @@ a[data-part="breadcrumb-link"]:hover {
 /* --- Library: tiles, detail pages, files ------------------------------------------------------- */
 
 /* Covers are glossy pictures with a soft shadow; a light reflection lies on their upper half. */
-[data-part="tile"] > :is([data-part="cover"], [data-part="playlist-cover"]),
+[data-part="tile"]
+    > :is([data-part="cover"], [data-part="playlist-cover"], [data-part="artist-collage"]),
 [data-part="detail-header"]
-    > :is([data-part="cover"], [data-part="playlist-cover"]) {
+    > :is([data-part="cover"], [data-part="playlist-cover"], [data-part="artist-collage"]) {
     position: relative;
     border-radius: 0.1875rem;
     box-shadow:
@@ -805,10 +806,19 @@ a[data-part="breadcrumb-link"]:hover {
         0 0 0 1px rgb(0 0 0 / 12%);
 }
 
+/*
+ * Artists are portraits: their picture and the collage of their albums keep the shape of artist
+ * pictures inside the frame of the covers.
+ */
+:is([data-part="tile"], [data-part="detail-header"])
+    > :is([data-part="cover"][data-kind="artist"], [data-part="artist-collage"]) {
+    border-radius: var(--wmp-artist-picture-radius);
+}
+
 [data-part="tile"]
-    > :is([data-part="cover"], [data-part="playlist-cover"])::after,
+    > :is([data-part="cover"], [data-part="playlist-cover"], [data-part="artist-collage"])::after,
 [data-part="detail-header"]
-    > :is([data-part="cover"], [data-part="playlist-cover"])::after {
+    > :is([data-part="cover"], [data-part="playlist-cover"], [data-part="artist-collage"])::after {
     position: absolute;
     inset: 0 0 50%;
     border-radius: inherit;
@@ -834,7 +844,7 @@ a[data-part="breadcrumb-link"]:hover {
 
 /* Hovered tiles glow light blue around their cover. */
 [data-part="tile"]:is(:hover, :focus-visible)
-    > :is([data-part="cover"], [data-part="playlist-cover"]) {
+    > :is([data-part="cover"], [data-part="playlist-cover"], [data-part="artist-collage"]) {
     box-shadow:
         0 2px 6px rgb(0 0 0 / 28%),
         0 0 0 1px rgb(31 111 214 / 45%),
@@ -860,7 +870,7 @@ a[data-part="breadcrumb-link"]:hover {
 }
 
 [data-part="detail-header"]
-    > :is([data-part="cover"], [data-part="playlist-cover"]) {
+    > :is([data-part="cover"], [data-part="playlist-cover"], [data-part="artist-collage"]) {
     box-shadow:
         0 0.5rem 1.5rem rgb(0 0 0 / 30%),
         0 0 0 1px rgb(0 0 0 / 12%);
@@ -1753,7 +1763,7 @@ a[data-part="breadcrumb-link"]:hover {
     }
 
     [data-part="detail-header"]
-        > :is([data-part="cover"], [data-part="playlist-cover"]) {
+        > :is([data-part="cover"], [data-part="playlist-cover"], [data-part="artist-collage"]) {
         inline-size: 11rem;
     }
 

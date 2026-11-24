@@ -614,14 +614,25 @@ a[data-part='breadcrumb-link']:hover {
 /* --- Covers, tiles and detail pages ---------------------------------------------------------- */
 
 /* Covers are pictures in a white frame with a soft shadow. */
-[data-part='tile'] > :is([data-part='cover'], [data-part='playlist-cover']),
-[data-part='detail-header'] > :is([data-part='cover'], [data-part='playlist-cover']),
+[data-part='tile']
+    > :is([data-part='cover'], [data-part='playlist-cover'], [data-part='artist-collage']),
+[data-part='detail-header']
+    > :is([data-part='cover'], [data-part='playlist-cover'], [data-part='artist-collage']),
 [data-part='list-group-info'] [data-part='cover'] {
     border: 3px solid #ffffff;
     border-radius: var(--wmp-radius-s);
     box-shadow:
         0 0 0 1px #b9cbed,
         0 3px 8px rgb(16 40 110 / 25%);
+}
+
+/*
+ * Artists are portraits: their picture and the collage of their albums keep the shape of artist
+ * pictures inside the frame of the covers.
+ */
+:is([data-part='tile'], [data-part='detail-header'])
+    > :is([data-part='cover'][data-kind='artist'], [data-part='artist-collage']) {
+    border-radius: var(--wmp-artist-picture-radius);
 }
 
 [data-part='cover'][data-state~='placeholder'],
@@ -646,7 +657,8 @@ a[data-part='breadcrumb-link']:hover {
     background: linear-gradient(#f5f9ff, #e4eefe);
 }
 
-[data-part='tile']:is(:hover, :focus-visible) > :is([data-part='cover'], [data-part='playlist-cover']) {
+[data-part='tile']:is(:hover, :focus-visible)
+    > :is([data-part='cover'], [data-part='playlist-cover'], [data-part='artist-collage']) {
     box-shadow:
         0 0 0 1px #6f98e6,
         0 4px 10px rgb(16 40 110 / 30%);
@@ -2082,7 +2094,8 @@ a[data-part='breadcrumb-link']:hover {
         border-inline-start: 1px solid #c6d7f7;
     }
 
-    [data-part='detail-header'] > :is([data-part='cover'], [data-part='playlist-cover']) {
+    [data-part='detail-header']
+        > :is([data-part='cover'], [data-part='playlist-cover'], [data-part='artist-collage']) {
         inline-size: 11rem;
     }
 }

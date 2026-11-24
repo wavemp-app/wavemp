@@ -567,13 +567,24 @@ a[data-part='breadcrumb-link']:hover {
 /* --- Library: tiles, detail pages, files ------------------------------------------------------ */
 
 /* Covers are framed like the album covers of the list. */
-[data-part='tile'] > :is([data-part='cover'], [data-part='playlist-cover']),
-[data-part='detail-header'] > :is([data-part='cover'], [data-part='playlist-cover']) {
+[data-part='tile']
+    > :is([data-part='cover'], [data-part='playlist-cover'], [data-part='artist-collage']),
+[data-part='detail-header']
+    > :is([data-part='cover'], [data-part='playlist-cover'], [data-part='artist-collage']) {
     border: 1px solid #b4c9de;
     border-radius: var(--wmp-radius-s);
     box-shadow:
         inset 0 0 0 2px #ffffff,
         0 3px 8px -2px rgb(17 39 62 / 25%);
+}
+
+/*
+ * Artists are portraits: their picture and the collage of their albums keep the shape of artist
+ * pictures inside the frame of the covers.
+ */
+:is([data-part='tile'], [data-part='detail-header'])
+    > :is([data-part='cover'][data-kind='artist'], [data-part='artist-collage']) {
+    border-radius: var(--wmp-artist-picture-radius);
 }
 
 [data-part='tile'] {
@@ -1971,7 +1982,8 @@ a[data-part='breadcrumb-link']:hover {
         gap: 0.75rem;
     }
 
-    [data-part='detail-header'] > :is([data-part='cover'], [data-part='playlist-cover']) {
+    [data-part='detail-header']
+        > :is([data-part='cover'], [data-part='playlist-cover'], [data-part='artist-collage']) {
         inline-size: 10rem;
     }
 
