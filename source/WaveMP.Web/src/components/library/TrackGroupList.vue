@@ -87,6 +87,7 @@ const listGroups = computed<ListGroup<TrackRow>[]>(() =>
     props.groups.map((group) => ({
         id: group.id,
         title: groupTitle(group),
+        position: group.position,
         rows: group.tracks.map((track) => ({
             id: track.id ?? '',
             state: [

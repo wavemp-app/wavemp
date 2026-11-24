@@ -5,11 +5,13 @@ import type { SortDirection, Track, TrackSort } from '@/api/generated/models'
 import BaseButton from '@/components/base/BaseButton.vue'
 import LibraryEmpty from './LibraryEmpty.vue'
 import LoadMore from './LoadMore.vue'
+import LoadPrevious from './LoadPrevious.vue'
 import TrackGroupList from './TrackGroupList.vue'
 import { useLayoutOptions } from '@/composables/useLayoutOptions'
+import { useListGroups } from '@/composables/useListGroups'
 import { usePagedList, type PagedListStatus } from '@/composables/usePagedList'
 import { useViewRoute } from '@/composables/useViewRoute'
-import { listTracks } from '@/library/api'
+import { listTrackGroups, listTracks, type TrackQuery } from '@/library/api'
 import { groupTracksAsList, groupTracksByAlbum } from '@/library/grouping'
 import { parseListView } from '@/library/listView'
 
@@ -29,6 +31,8 @@ export interface TrackFilter {
  * search text, in the requested order (the defaults of the server otherwise). Where the theme offers
  * the view options (layout option --wmp-layout-view-options), the view of the route (?view=list)
  * shows them as a plain list instead; otherwise the query is ignored and the list stays grouped.
+ * The list can start at any position (a jump to a group); the groups of the whole list come from
+ * the group endpoint when they are needed.
  */
 const props = withDefaults(
     defineProps<{
@@ -48,8 +52,8 @@ const emit = defineEmits<{
 
 const { t } = useI18n()
 
-const list = usePagedList<Track>((offset, limit) =>
-    listTracks({
+function query(offset: number, limit: number): TrackQuery {
+    return {
         offset,
         limit,
         q: props.search || undefined,
@@ -61,8 +65,11 @@ const list = usePagedList<Track>((offset, limit) =>
         year: props.filter.year,
         myMusic: props.filter.myMusic,
         sourceId: props.filter.sourceId,
-    }),
-)
+    }
+}
+
+const list = usePagedList<Track>((offset, limit) => listTracks(query(offset, limit)))
+const trackGroups = useListGroups((offset, limit) => listTrackGroups(query(offset, limit)))
 
 const route = useViewRoute()
 const layout = useLayoutOptions()
@@ -73,18 +80,23 @@ const view = computed(() =>
 // The groups come from all loaded pages, so a group that spans two pages joins up.
 const groups = computed(() =>
     view.value === 'list'
-        ? groupTracksAsList(list.items.value)
-        : groupTracksByAlbum(list.items.value),
+        ? groupTracksAsList(list.items.value, list.start.value)
+        : groupTracksByAlbum(list.items.value, list.start.value),
 )
 const filtered = computed(() => Object.values(props.filter).some((value) => value !== undefined))
 
 watch(
     () => JSON.stringify([props.filter, props.search, props.sort, props.direction]),
-    () => void list.reload(),
+    () => {
+        trackGroups.invalidate()
+        void list.reload()
+    },
     { immediate: true },
 )
 
 watch(list.status, (status) => emit('status', status), { immediate: true })
+
+defineExpose({ list, groups: trackGroups })
 </script>
 
 <template>
@@ -98,6 +110,12 @@ watch(list.status, (status) => emit('status', status), { immediate: true })
         :filtered="filtered"
     />
     <template v-else-if="list.items.value.length > 0">
+        <LoadPrevious
+            v-if="list.hasPrevious.value"
+            :load="list.loadPrevious"
+            :loading="list.loadingPrevious.value"
+            anchor="[data-part='list-row']"
+        />
         <TrackGroupList :groups="groups" :label="label" />
         <LoadMore
             v-if="list.hasMore.value"

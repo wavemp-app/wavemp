@@ -3,11 +3,14 @@
 
 import { apiClient } from '@/api/client'
 import type { AlbumsRequestBuilderGetQueryParameters } from '@/api/generated/api/v1/albums'
+import type { GroupsRequestBuilderGetQueryParameters as AlbumGroupQuery } from '@/api/generated/api/v1/albums/groups'
 import type { TracksRequestBuilderGetQueryParameters as AlbumTrackQuery } from '@/api/generated/api/v1/albums/item/tracks'
 import type { ArtistsRequestBuilderGetQueryParameters } from '@/api/generated/api/v1/artists'
+import type { GroupsRequestBuilderGetQueryParameters as ArtistGroupQuery } from '@/api/generated/api/v1/artists/groups'
 import type { AlbumsRequestBuilderGetQueryParameters as ArtistAlbumQuery } from '@/api/generated/api/v1/artists/item/albums'
 import type { GenresRequestBuilderGetQueryParameters } from '@/api/generated/api/v1/genres'
 import type { TracksRequestBuilderGetQueryParameters } from '@/api/generated/api/v1/tracks'
+import type { GroupsRequestBuilderGetQueryParameters as TrackGroupQuery } from '@/api/generated/api/v1/tracks/groups'
 import type { FilesRequestBuilderGetQueryParameters } from '@/api/generated/api/v1/tracks/item/files'
 import type { YearsRequestBuilderGetQueryParameters } from '@/api/generated/api/v1/years'
 import type {
@@ -18,6 +21,7 @@ import type {
     CoverRule,
     CoverRuleOption,
     GenrePage,
+    ListGroupPage,
     MediaFilePage,
     SearchResult,
     Track,
@@ -35,9 +39,18 @@ export type ArtistQuery = ArtistsRequestBuilderGetQueryParameters
 export type GenreQuery = GenresRequestBuilderGetQueryParameters
 export type YearQuery = YearsRequestBuilderGetQueryParameters
 export type TrackFileQuery = FilesRequestBuilderGetQueryParameters
+export type { AlbumGroupQuery, ArtistGroupQuery, TrackGroupQuery }
 
 export function listTracks(query: TrackQuery): Promise<TrackPage | undefined> {
     return apiClient.api.v1.tracks.get({ queryParameters: query })
+}
+
+/**
+ * The groups of the track list with the same query (without its offset and limit): runs of the
+ * same album with their position in the list.
+ */
+export function listTrackGroups(query: TrackGroupQuery): Promise<ListGroupPage | undefined> {
+    return apiClient.api.v1.tracks.groups.get({ queryParameters: query })
 }
 
 export function getTrack(id: string): Promise<Track | undefined> {
@@ -84,6 +97,11 @@ export function listAlbums(query: AlbumQuery): Promise<AlbumPage | undefined> {
     return apiClient.api.v1.albums.get({ queryParameters: query })
 }
 
+/** The groups of the album list with the same query: by album artist, letter or year. */
+export function listAlbumGroups(query: AlbumGroupQuery): Promise<ListGroupPage | undefined> {
+    return apiClient.api.v1.albums.groups.get({ queryParameters: query })
+}
+
 export function getAlbum(id: string): Promise<Album | undefined> {
     return apiClient.api.v1.albums.byId(id).get()
 }
@@ -102,6 +120,11 @@ export function fetchAlbumCover(id: string, size: CoverSize): Promise<ArrayBuffe
 
 export function listArtists(query: ArtistQuery): Promise<ArtistPage | undefined> {
     return apiClient.api.v1.artists.get({ queryParameters: query })
+}
+
+/** The groups of the artist list with the same query: by the letter of the name. */
+export function listArtistGroups(query: ArtistGroupQuery): Promise<ListGroupPage | undefined> {
+    return apiClient.api.v1.artists.groups.get({ queryParameters: query })
 }
 
 export function getArtist(id: string): Promise<Artist | undefined> {

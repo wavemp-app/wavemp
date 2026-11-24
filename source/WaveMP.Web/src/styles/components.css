@@ -1681,6 +1681,45 @@
 
     /* --- Library: tiles, detail pages and links ------------------------------------------ */
 
+    /*
+     * Grouped tiles (albums by artist, letter or year, artists by letter): each group a heading
+     * over a rule and its own grid of tiles. Initial letters are set large, the letter is the
+     * heading.
+     */
+    [data-part='tile-groups'] {
+        display: grid;
+        gap: var(--wmp-space-xl);
+        min-inline-size: 0;
+    }
+
+    [data-part='tile-group'] {
+        display: grid;
+        gap: var(--wmp-space-m);
+        min-inline-size: 0;
+    }
+
+    [data-part='tile-group-header'] {
+        display: flex;
+        align-items: baseline;
+        gap: var(--wmp-space-s);
+        min-inline-size: 0;
+        padding-block-end: var(--wmp-space-xs);
+        border-block-end: 1px solid var(--wmp-color-border);
+    }
+
+    [data-part='tile-group-title'] {
+        min-inline-size: 0;
+        margin: 0;
+        font-size: var(--wmp-font-size-l);
+        font-weight: var(--wmp-font-weight-bold);
+        overflow-wrap: anywhere;
+    }
+
+    [data-part='tile-group'][data-kind='letter'] [data-part='tile-group-title'] {
+        font-size: var(--wmp-font-size-xl);
+        line-height: 1;
+    }
+
     [data-part='tile-list'] {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(min(var(--wmp-tile-width), 100%), 1fr));
@@ -2228,7 +2267,8 @@
         text-decoration: underline;
     }
 
-    [data-part='load-more'] {
+    [data-part='load-more'],
+    [data-part='load-previous'] {
         justify-self: center;
     }
 

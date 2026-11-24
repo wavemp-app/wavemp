@@ -42,6 +42,7 @@ const songs = computed<TrackGroup[]>(() => {
         : [
               {
                   id: 'songs',
+                  position: 0,
                   title: t('library.songCount', {
                       count: format.number(result.value?.tracks?.total ?? tracks.length),
                   }),

@@ -84,12 +84,14 @@ import LibraryScopeSwitch from '@/components/collection/LibraryScopeSwitch.vue'
 import DetailHeader from '@/components/library/DetailHeader.vue'
 import LibraryEmpty from '@/components/library/LibraryEmpty.vue'
 import LoadMore from '@/components/library/LoadMore.vue'
+import LoadPrevious from '@/components/library/LoadPrevious.vue'
 import MetaItem from '@/components/library/MetaItem.vue'
 import ArtistCredit from '@/components/library/ArtistCredit.vue'
 import ArtistMatchList from '@/components/library/ArtistMatchList.vue'
 import OnlineCompareTable from '@/components/library/OnlineCompareTable.vue'
 import OnlineMatchList from '@/components/library/OnlineMatchList.vue'
 import { compareRows, defaultSelection, onlineTrackFields } from '@/library/onlineMetadata'
+import TileGroupList from '@/components/library/TileGroupList.vue'
 import TileList from '@/components/library/TileList.vue'
 import TrackFileList from '@/components/library/TrackFileList.vue'
 import TrackGroupList from '@/components/library/TrackGroupList.vue'
@@ -178,6 +180,7 @@ import {
     sampleLyricsPosition,
     sampleOnlineCurrent,
     sampleOnlineMatches,
+    sampleTileGroups,
     sampleTiles,
     sampleTrackReviews,
     sampleTracks,
@@ -274,6 +277,11 @@ const sampleTrackLyrics = computed(() =>
     sampleLyricsTrack.value ? sampleLyrics(t, sampleLyricsTrack.value.id ?? '') : null,
 )
 const tiles = computed(() => sampleTiles(t))
+const tileGroups = computed(() => sampleTileGroups(t))
+/** The overview loads no pages. */
+function loadNothing(): Promise<void> {
+    return Promise.resolve()
+}
 const playlistRows = computed<PlaylistTrackRow[]>(() =>
     sampleTracks(t).map((track, index) => ({ id: `sample-entry-${index}`, track })),
 )
@@ -1181,6 +1189,11 @@ const sampleTranscodeJobs = computed<TranscodeJob[]>(() => {
                 <TileList :tiles="tiles" :label="t('library.albums')" />
                 <LoadMore />
                 <LoadMore loading />
+            </div>
+            <div data-part="view" data-view="library" data-section="artists">
+                <LoadPrevious :load="loadNothing" anchor="[data-part='tile-item']" />
+                <LoadPrevious :load="loadNothing" loading anchor="[data-part='tile-item']" />
+                <TileGroupList :groups="tileGroups" :label="t('library.artists')" />
             </div>
             <div data-part="view" data-view="library-album">
                 <DetailHeader

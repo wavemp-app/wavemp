@@ -13,6 +13,7 @@ import type {
 } from '@/api/generated/models'
 import type { Tile } from '@/components/library/TileList.vue'
 import type { OnlineMatch, OnlineValues } from '@/library/onlineMetadata'
+import type { TileGroup } from '@/library/tileGrouping'
 import type { LyricsLineTiming, TrackLyrics } from '@/lyrics/timing'
 
 type Translate = (key: string, values?: Record<string, unknown>) => string
@@ -142,6 +143,31 @@ export function sampleTiles(t: Translate): Tile[] {
             subtitle: t('playlists.automatic'),
             to: { name: 'playlists-recently-played' },
         },
+    ]
+}
+
+/**
+ * Artist tiles grouped by initial letter, as in the artists sorted by name: two letters and the
+ * group of digits and special characters, the first group starting further down a long list.
+ */
+export function sampleTileGroups(t: Translate): TileGroup<Tile>[] {
+    const artist = (number: number): Tile => ({
+        id: `artist-${number}`,
+        kind: 'artist',
+        title: t('placeholders.artist', { number }),
+        subtitle: t('library.songCount', { count: number + 2 }),
+        to: { name: 'library-artist', params: { id: `sample-artist-${number}` } },
+    })
+    return [
+        {
+            id: 'letter:P',
+            kind: 'letter',
+            letter: 'P',
+            position: 120,
+            items: [artist(1), artist(2)],
+        },
+        { id: 'letter:Q', kind: 'letter', letter: 'Q', position: 122, items: [artist(3)] },
+        { id: 'letter:#', kind: 'letter', letter: '#', position: 123, items: [artist(4)] },
     ]
 }
 

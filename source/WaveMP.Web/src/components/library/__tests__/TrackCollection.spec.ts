@@ -8,6 +8,7 @@ import { createRoutes } from '@/router/routes'
 
 const api = vi.hoisted(() => ({
     listTracks: vi.fn(),
+    listTrackGroups: vi.fn(),
     fetchAlbumCover: vi.fn(),
     fetchTrackCover: vi.fn(),
 }))
@@ -84,6 +85,7 @@ describe('TrackCollection', () => {
     beforeEach(() => {
         setActivePinia(createPinia())
         api.listTracks.mockReset()
+        api.listTrackGroups.mockReset()
         serveLongList()
     })
 
@@ -153,6 +155,92 @@ describe('TrackCollection', () => {
         expect(listState(wrapper)).not.toContain('ungrouped')
         expect(wrapper.findAll('[data-part="list-row"]')).toHaveLength(150)
         expect(api.listTracks).toHaveBeenCalledTimes(2)
+        wrapper.unmount()
+    })
+
+    it('marks every group with the position of its first song', async () => {
+        stubDesktop(true)
+        const { wrapper } = await mountCollection('/library/songs')
+
+        const positions = wrapper
+            .findAll('[data-part="list-group"]')
+            .map((group) => group.attributes('data-position'))
+        expect(positions).toEqual(['0', '10', '20', '30', '40', '50', '60', '70', '80', '90'])
+        wrapper.unmount()
+    })
+
+    it('shows the list from a jump on and loads the songs before it on demand', async () => {
+        stubDesktop(true)
+        const { wrapper } = await mountCollection('/library/songs')
+
+        await wrapper.vm.list.jumpTo(125)
+        await flushPromises()
+
+        expect(api.listTracks).toHaveBeenLastCalledWith(
+            expect.objectContaining({ offset: 125, limit: 100 }),
+        )
+        const groups = wrapper.findAll('[data-part="list-group"]')
+        expect(groups[0]!.attributes('data-position')).toBe('125')
+        expect(groups[1]!.attributes('data-position')).toBe('130')
+        expect(wrapper.findAll('[data-part="list-row"]')).toHaveLength(25)
+        expect(wrapper.find('[data-part="load-more"]').exists()).toBe(false)
+
+        await wrapper.get('[data-part="load-previous"]').trigger('click')
+        await flushPromises()
+
+        expect(api.listTracks).toHaveBeenLastCalledWith(
+            expect.objectContaining({ offset: 25, limit: 100 }),
+        )
+        expect(wrapper.findAll('[data-part="list-row"]')).toHaveLength(125)
+        expect(wrapper.findAll('[data-part="list-group"]')[0]!.attributes('data-position')).toBe(
+            '25',
+        )
+        expect(wrapper.get('[data-part="load-previous"]').attributes('data-state')).toBeUndefined()
+
+        await wrapper.get('[data-part="load-previous"]').trigger('click')
+        await flushPromises()
+
+        expect(api.listTracks).toHaveBeenLastCalledWith(
+            expect.objectContaining({ offset: 0, limit: 25 }),
+        )
+        expect(wrapper.find('[data-part="load-previous"]').exists()).toBe(false)
+        expect(wrapper.findAll('[data-part="list-row"]')).toHaveLength(150)
+        wrapper.unmount()
+    })
+
+    it('loads the groups of the whole list with the same query and forgets them on a reload', async () => {
+        stubDesktop(true)
+        api.listTrackGroups.mockResolvedValue({
+            items: [{ kind: 'Album', position: 0, count: 10 }],
+            total: 1,
+        })
+        const router = createRouter({ history: createMemoryHistory(), routes: createRoutes() })
+        await router.push('/library/songs')
+        const wrapper = mount(TrackCollection, {
+            props: { label: 'Songs', sort: 'Album', direction: 'Desc', filter: { myMusic: true } },
+            global: { plugins: [router, createWaveMpI18n('en')] },
+        })
+        await flushPromises()
+
+        expect(api.listTrackGroups).not.toHaveBeenCalled()
+        await wrapper.vm.groups.load()
+
+        expect(api.listTrackGroups).toHaveBeenCalledWith(
+            expect.objectContaining({
+                offset: 0,
+                limit: 1000,
+                sort: 'Album',
+                direction: 'Desc',
+                myMusic: true,
+            }),
+        )
+        expect(wrapper.vm.groups.status.value).toBe('ready')
+
+        await wrapper.setProps({ search: 'love' })
+        await flushPromises()
+
+        expect(wrapper.vm.groups.status.value).toBe('idle')
+        expect(wrapper.vm.groups.groups.value).toEqual([])
         wrapper.unmount()
     })
 })

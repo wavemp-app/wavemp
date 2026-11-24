@@ -213,7 +213,7 @@ test('expands and collapses the tree and navigates to a section', async ({ page 
     await expect(page).toHaveURL(/\/library\/albums$/)
     await expect(album).toHaveAttribute('aria-current', 'page')
     await expect(part(page, 'view')).toHaveAttribute('data-section', 'albums')
-    await expect(part(page, 'tile-list')).toBeVisible()
+    await expect(part(page, 'tile-list').first()).toBeVisible()
 })
 
 test('shows the songs of the library grouped by album', async ({ page }) => {

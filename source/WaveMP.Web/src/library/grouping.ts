@@ -13,6 +13,12 @@ export interface GroupCover {
 export interface TrackGroup {
     /** Stable key: the album id, otherwise the artist of tracks without album. */
     readonly id: string
+    /**
+     * Position of the first track of the group in the whole list (0-based), also when only a
+     * window of the list is loaded; a group cut at the start of the window starts at its first
+     * loaded track.
+     */
+    readonly position: number
     readonly albumId?: string
     /** Album title; null for tracks without album (the view shows "Unknown album"). */
     readonly title: string | null
@@ -37,11 +43,12 @@ function groupKey(track: Track): string {
     return track.artist?.id ? `artist:${track.artist.id}` : 'unknown'
 }
 
-function createGroup(key: string, track: Track): TrackGroup {
+function createGroup(key: string, track: Track, position: number): TrackGroup {
     // A missing album may arrive as an object without id.
     const album = track.album?.id ? track.album : null
     return {
         id: key,
+        position,
         albumId: album?.id ?? undefined,
         title: album?.title ?? null,
         artist: album ? (album.artist ?? null) : (track.artist ?? null),
@@ -65,19 +72,20 @@ function coverOf(group: TrackGroup, tracks: readonly Track[]): GroupCover | null
 /**
  * Groups consecutive tracks of the same album; tracks without album are grouped by their artist.
  * The order of the tracks stays, so a list sorted by album gets one group per album. Year and genre
- * of a group come from its first track that has one.
+ * of a group come from its first track that has one. start is the position of the first track in
+ * the whole list, when the tracks are a window of it.
  */
-export function groupTracksByAlbum(tracks: readonly Track[]): TrackGroup[] {
+export function groupTracksByAlbum(tracks: readonly Track[], start = 0): TrackGroup[] {
     const groups: { group: TrackGroup; tracks: Track[] }[] = []
-    for (const track of tracks) {
+    tracks.forEach((track, index) => {
         const key = groupKey(track)
         const last = groups[groups.length - 1]
         if (last && last.group.id === key) {
             last.tracks.push(track)
         } else {
-            groups.push({ group: createGroup(key, track), tracks: [track] })
+            groups.push({ group: createGroup(key, track, start + index), tracks: [track] })
         }
-    }
+    })
 
     // Keys repeat when an album appears twice in a list sorted otherwise; the ids must stay unique.
     const seen = new Map<string, number>()
@@ -97,11 +105,11 @@ export function groupTracksByAlbum(tracks: readonly Track[]): TrackGroup[] {
 
 /**
  * The tracks of an album page: one group with the album title, or one group per disc as soon as
- * the album has more than one disc.
+ * the album has more than one disc, in the order of the discs.
  */
 export function groupTracksByDisc(tracks: readonly Track[], albumTitle: string): TrackGroup[] {
     const discs = [...new Set(tracks.map((track) => track.discNumber ?? 1))]
-    const base: Omit<TrackGroup, 'id' | 'tracks'> = {
+    const base: Omit<TrackGroup, 'id' | 'position' | 'tracks'> = {
         title: albumTitle,
         artist: null,
         isCompilation: false,
@@ -111,24 +119,27 @@ export function groupTracksByDisc(tracks: readonly Track[], albumTitle: string):
     }
 
     if (discs.length < 2) {
-        return [{ ...base, id: 'album', tracks }]
+        return [{ ...base, id: 'album', position: 0, tracks }]
     }
 
+    // The position counts the tracks of the discs shown before, in the order of the discs.
+    let position = 0
     return discs
         .sort((a, b) => a - b)
-        .map((disc) => ({
-            ...base,
-            id: `disc:${disc}`,
-            disc,
-            tracks: tracks.filter((track) => (track.discNumber ?? 1) === disc),
-        }))
+        .map((disc) => {
+            const discTracks = tracks.filter((track) => (track.discNumber ?? 1) === disc)
+            const group = { ...base, id: `disc:${disc}`, position, disc, tracks: discTracks }
+            position += discTracks.length
+            return group
+        })
 }
 
 /**
  * The tracks as a plain list: one group without heading, cover and details that holds all tracks
- * in their order (the view "List" of the view options). No group for an empty list.
+ * in their order (the view "List" of the view options). No group for an empty list. start is the
+ * position of the first track in the whole list, when the tracks are a window of it.
  */
-export function groupTracksAsList(tracks: readonly Track[]): TrackGroup[] {
+export function groupTracksAsList(tracks: readonly Track[], start = 0): TrackGroup[] {
     if (tracks.length === 0) {
         return []
     }
@@ -136,6 +147,7 @@ export function groupTracksAsList(tracks: readonly Track[]): TrackGroup[] {
     return [
         {
             id: 'list',
+            position: start,
             title: null,
             untitled: true,
             artist: null,

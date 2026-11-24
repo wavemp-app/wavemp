@@ -235,7 +235,11 @@ The color changes with the song; a theme can let it fade with `transition` on th
 | `list-row` | `div` (`role="row"`, `aria-selected`) | `list-group-rows` | Row of a track |
 | `list-cell` | `span` (`role="gridcell"`) | `list-row` | Cell of a row; in the column `title` the video `badge` of a song with a video (first) and the title as `label` |
 | `badge` | `span` | `list-cell`, `user-meta`, `scan-status`, `run-item`, `run-meta`, `job-meta`, `file-meta`, `transcode-meta`, `backup-meta`, `scrobble-meta`, `theme-meta`, `stat-value`, `btn-review-inbox`, `review-meta`, `review-tags`, `library-issue-meta`, `segment`, `artist-match` | Small hint with `icon` and `label`, for example that a video exists; in `user-meta` the role, in `scan-status`, `run-item`, `run-meta` and `job-meta` a state, in `file-meta` the kind and use of a file, in `transcode-meta` the media of a transcode, in `stat-value` the state of the hardware acceleration, in `review-meta` and `review-tags` the review and the missing tags, in `theme-meta` that an uploaded theme is outdated or blocked, in `btn-review-inbox` the number of unreviewed songs, in `library-issue-meta` the kind of a problem of the library check, in a `segment` of `issue-type` the number of its problems, each with a visible `label` |
-| `tile-list` | `ul` | `view`, `section` | Albums, artists, genres or years as tiles |
+| `tile-groups` | `div` (`role="group"`, `aria-label`) | `view` | Albums or artists as tiles in groups, in the library sections of albums (sorted by artist: one group per album artist; by title: per initial letter; by year: per year) and artists (sorted by name: per initial letter); other sort orders show a plain `tile-list` |
+| `tile-group` | `section` (`aria-labelledby`, `data-kind`, `data-position`) | `tile-groups` | One group: `tile-group-header` and the `tile-list` of its tiles; see `data-kind` and `data-position` in [Other attributes](#other-attributes) |
+| `tile-group-header` | `div` | `tile-group` | Heading of the group with `tile-group-title` |
+| `tile-group-title` | `h2` | `tile-group-header` | Name of the group: the album artist ("Unknown artist" for albums without one), the initial letter A to Z or `#` for digits, special characters and other scripts (read out as "Numbers and symbols"), or the year ("Unknown year"). The base sets initial letters larger than the other names |
+| `tile-list` | `ul` | `view`, `section`, `tile-group` | Albums, artists, genres or years as tiles |
 | `tile-item` | `li` | `tile-list` | One tile |
 | `tile` | `a` | `tile-item` | Link to the page of the entry with `cover`, `tile-title` and optionally `tile-subtitle`, see `data-kind` in [States](#states) |
 | `tile-title` | `span` | `tile` | Name of the entry |
@@ -247,6 +251,7 @@ The color changes with the song; a theme can let it fade with `transition` on th
 | `detail-actions` | `div` | `detail-info` | Actions of a detail page as `button`s, for example "Edit metadata" of a song for admins, see `data-item` in [States](#states) |
 | `btn-detail-back` | `button` (`data-variant`) | `view` (directly before `detail-header`), `dialog-header` (before `dialog-title`, metadata editor) | Back to the previous page at its position, with the icon `detail-back` and a `label`; on a page that was opened directly it leads to the overview the page belongs to (for example the songs from the page of a song), in the metadata editor it closes the editor. On detail pages a `button` of `data-variant="default"`, in the metadata editor `data-variant="icon"` |
 | `load-more` | `button` | `view`, `section` | Loads the next page of a list; also loads by itself when it scrolls into view |
+| `load-previous` | `button` | `view` | Only while a long list of songs or tiles is shown from the middle (after a jump to a group): loads the page before the shown part, above the list; also loads by itself when it scrolls into view. The entry at the top of the content area stays in place while the page is inserted |
 | `file-list` | `ul` | `section` | Files of a song on its page, for admins |
 | `file-item` | `li` | `file-list` | One file with `file-path` and `file-meta` |
 | `file-path` | `span` | `file-item`, `file-selection-info`, `file-choice`, `review-info` | Path of the file relative to the media folder; in `file-selection-info` the folder and base name of the files of the song, in a `file-choice` the path of the file (or of a selected file that is gone) or, for the automatic choice, its name; in `review-info` the folder and base name of the files of the song |
@@ -732,6 +737,7 @@ The internal component overview (`/dev/components`) uses its own parts starting 
 | `run-item` | `queued`, `running`, `succeeded`, `failed`, `canceled` or `interrupted` |
 | `progress` | `indeterminate` while the share done is unknown |
 | `load-more` | `loading` while the next page loads |
+| `load-previous` | `loading` while the previous page loads |
 | `file-item` | `audio`, `video`, `image` or `lyrics`; additionally `primary` for the file the song plays |
 | `file-selection-item` | `selected` if a category uses a file the admin selected, `missing` if a selected file is gone, `choices` if a category has more than one file |
 | `file-choice` | `checked` for the selected option, `active` for the file the song uses, `best` for the file of the highest quality, `missing` for a selected file that is gone |
@@ -802,7 +808,7 @@ Example of a line that slides below the active tab:
 |---|---|
 | `aria-current="page"` | `tab`, `bottom-nav-item`, `breadcrumb-link`, `tree-item`, `admin-nav-item` |
 | `aria-current="true"` | `profile-tile` of the current profile, `queue-item` of the current song, `picture-source` viewers see |
-| `aria-busy="true"` | `profile-select` while a profile is being selected; `autoplay` while its songs are chosen; `view` while its content loads; `load-more` while the next page loads |
+| `aria-busy="true"` | `profile-select` while a profile is being selected; `autoplay` while its songs are chosen; `view` while its content loads; `load-more` while the next page loads; `load-previous` while the previous page loads |
 | `aria-expanded` | `tree-item`, `btn-menu`, `btn-sidebar-toggle`, `btn-profile`, `btn-sleep-timer`, `btn-preset-picker`, `btn-color-scheme-picker`, `now-playing-mini` (mobile: the full-screen player on the bar, `player-view-switch` in the full-screen player), `btn-cast` (without HTTPS), `menu-item` with a submenu (`true` while it is open) |
 | `aria-invalid="true"` | `input`, `select` and `segmented-control` of a field with an error |
 | `aria-checked` | `color-swatch`, `segment`; `menu-item` with `role="menuitemradio"`, for example the chosen sort key and direction |
@@ -828,6 +834,8 @@ The base links states to graphics: buttons use the variables `--wmp-image-<varia
 | `data-theme-variant` | root element | Shown variant of the theme: `light` or `dark` (see [Variants](#variants)) |
 | `data-variants` | `theme-option` | Variants of the theme, separated by spaces: `light`, `dark` or `light dark` |
 | `data-kind` | `theme-preview` | Variant the preview shows: `light` or `dark` |
+| `data-kind` | `tile-group` | What the tiles of the group have in common: `artist` (album artist), `letter` (initial letter) or `year` |
+| `data-position` | `list-group`, `tile-group` | Position of the first entry of the group in the whole list, counted from 0, also while only a part of a long list is loaded |
 | `data-item` | `theme-option` | Id of the theme |
 | `data-field` | `field` (appearance in the settings) | `theme` (the `theme-picker`), `theme-appearance` (the `segmented-control` `theme-appearance` with the `segment`s `system`, `light` and `dark`; disabled for themes with one variant); the `section` around them has `data-item="appearance"` |
 | `data-orientation` | `slider` | `horizontal`, `vertical`; also as `aria-orientation` on `slider-thumb` |

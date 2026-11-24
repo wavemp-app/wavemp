@@ -21,16 +21,25 @@ import { isMyMusic, sourceOf } from '@/collection/presentation'
 import { useLibraryTiles } from '@/composables/useLibraryTiles'
 import type { PagedListStatus } from '@/composables/usePagedList'
 import { useViewRoute } from '@/composables/useViewRoute'
-import { listAlbums, listArtists, listGenres, listYears } from '@/library/api'
+import {
+    listAlbumGroups,
+    listAlbums,
+    listArtistGroups,
+    listArtists,
+    listGenres,
+    listYears,
+} from '@/library/api'
 import { queryText } from '@/library/search'
 import { parseSort, sortContext } from '@/library/sorting'
+import { albumTileGrouping, artistTileGrouping } from '@/library/tileGrouping'
 
 /**
  * A section of the library: the songs grouped by album, the recently added songs (newest first),
  * the favorites of the profile, or albums, artists, genres and years as tiles. Search text (?q=,
  * not for years and favorites), sort order (?sort=, ?direction=) and the "my music" filter
  * (?myMusic=true, not for favorites) and the media folder (?source=<id>, not for favorites) come
- * from the query of the route.
+ * from the query of the route. Albums are grouped by album artist, letter or year and artists by
+ * letter, as far as their sort order allows.
  */
 const props = defineProps<{
     /** Section of the library (route parameter), e.g. "songs". */
@@ -106,6 +115,14 @@ function fetchAlbums(offset: number, limit: number) {
     })
 }
 
+function fetchAlbumGroups(offset: number, limit: number) {
+    return listAlbumGroups({
+        ...query(offset, limit),
+        sort: sortState.value.sort as AlbumSort,
+        sourceId: sourceId.value,
+    })
+}
+
 function fetchArtists(offset: number, limit: number) {
     return listArtists({
         ...query(offset, limit),
@@ -113,6 +130,17 @@ function fetchArtists(offset: number, limit: number) {
         sourceId: sourceId.value,
     })
 }
+
+function fetchArtistGroups(offset: number, limit: number) {
+    return listArtistGroups({
+        ...query(offset, limit),
+        sort: sortState.value.sort as ArtistSort,
+        sourceId: sourceId.value,
+    })
+}
+
+const albumGrouping = computed(() => albumTileGrouping(sortState.value, search.value !== ''))
+const artistGrouping = computed(() => artistTileGrouping(sortState.value, search.value !== ''))
 
 function fetchGenres(offset: number, limit: number) {
     return listGenres({
@@ -174,6 +202,8 @@ function fetchYears(offset: number, limit: number) {
             :label="label"
             :fetch-page="fetchAlbums"
             :to-tile="(item: Album) => tiles.album(item)"
+            :grouping="albumGrouping"
+            :fetch-groups="fetchAlbumGroups"
             :reload-key="reloadKey"
             :search="search"
             :filtered="tileFiltered"
@@ -184,6 +214,8 @@ function fetchYears(offset: number, limit: number) {
             :label="label"
             :fetch-page="fetchArtists"
             :to-tile="(item: Artist) => tiles.artist(item)"
+            :grouping="artistGrouping"
+            :fetch-groups="fetchArtistGroups"
             :reload-key="reloadKey"
             :search="search"
             :filtered="tileFiltered"

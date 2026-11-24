@@ -89,6 +89,31 @@ describe('groupTracksByAlbum', () => {
 
         expect(groups[0]).toMatchObject({ year: 2003, genre: 'Pop' })
     })
+
+    it('gives every group the position of its first track in the whole list', () => {
+        const tracks = [
+            track('one', { album: first }),
+            track('two', { album: first }),
+            track('hit', { album: hits }),
+            track('loose'),
+        ]
+
+        expect(groupTracksByAlbum(tracks).map((group) => group.position)).toEqual([0, 2, 3])
+        expect(groupTracksByAlbum(tracks, 4200).map((group) => group.position)).toEqual([
+            4200, 4202, 4203,
+        ])
+    })
+
+    it('starts a group cut at the start of a window at its first loaded track', () => {
+        const window = [track('two', { album: first }), track('hit', { album: hits })]
+
+        const groups = groupTracksByAlbum(window, 51)
+
+        expect(groups.map((group) => [group.id, group.position])).toEqual([
+            ['album:first', 51],
+            ['album:hits', 52],
+        ])
+    })
 })
 
 describe('groupTracksByDisc', () => {
@@ -96,7 +121,7 @@ describe('groupTracksByDisc', () => {
         const groups = groupTracksByDisc([track('one', { discNumber: 1 }), track('two')], 'Album')
 
         expect(groups).toHaveLength(1)
-        expect(groups[0]).toMatchObject({ id: 'album', title: 'Album' })
+        expect(groups[0]).toMatchObject({ id: 'album', title: 'Album', position: 0 })
         expect(groups[0]?.disc).toBeUndefined()
     })
 
@@ -114,6 +139,7 @@ describe('groupTracksByDisc', () => {
             [1, ['b']],
             [2, ['a', 'c']],
         ])
+        expect(groups.map((group) => group.position)).toEqual([0, 1])
     })
 })
 
@@ -141,6 +167,8 @@ describe('groupTracksAsList', () => {
         })
         expect(groups[0]?.albumId).toBeUndefined()
         expect(groups[0]?.tracks.map((item) => item.id)).toEqual(['two', 'hit', 'loose', 'one'])
+        expect(groups[0]?.position).toBe(0)
+        expect(groupTracksAsList(tracks, 300)[0]?.position).toBe(300)
     })
 
     it('keeps growing with the pages of a long list in one group', () => {

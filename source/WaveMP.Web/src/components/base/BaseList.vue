@@ -17,6 +17,11 @@ export interface ListGroup<Row extends ListRowBase> {
      * list), and the list names its rows.
      */
     readonly title?: string
+    /**
+     * Position of the first row of the group in the whole list (data-position), for lists that
+     * load a window of a long list.
+     */
+    readonly position?: number
     readonly rows: readonly Row[]
 }
 </script>
@@ -286,6 +291,7 @@ function onKeydown(event: KeyboardEvent, rowId: string): void {
             data-part="list-group"
             role="rowgroup"
             :aria-labelledby="group.title !== undefined ? titleId(group.id) : undefined"
+            :data-position="group.position"
         >
             <div v-if="group.title !== undefined" data-part="list-group-header" role="row">
                 <span

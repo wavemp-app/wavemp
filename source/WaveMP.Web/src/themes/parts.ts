@@ -104,6 +104,10 @@ export const parts = [
     'badge',
 
     // Library
+    'tile-groups',
+    'tile-group',
+    'tile-group-header',
+    'tile-group-title',
     'tile-list',
     'tile-item',
     'tile',
@@ -116,6 +120,7 @@ export const parts = [
     'detail-actions',
     'btn-detail-back',
     'load-more',
+    'load-previous',
     'file-list',
     'file-item',
     'file-path',
