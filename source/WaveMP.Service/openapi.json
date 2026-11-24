@@ -448,6 +448,541 @@
         ]
       }
     },
+    "/api/v1/artists/{id}/picture": {
+      "get": {
+        "tags": [
+          "ArtistPictures"
+        ],
+        "summary": "Returns the shown picture of an artist: the picture file in its folder, scaled to fit into a square of 96, 192, 300, 600, 1000 or 2000 pixels (the requested size rounded up; never enlarged; as stored if it cannot be scaled), otherwise the uploaded, otherwise the online picture as square WebP of 96, 300 or 1000 pixels. Every picture carries a strong ETag of its version and size, Last-Modified and Cache-Control: private, no-cache; a request with a matching If-None-Match returns 304. Artists without a picture of their own answer 404; clients show the collage of picture.albumIds instead.",
+        "operationId": "GetArtistPicture",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Id of the artist.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "description": "Largest width and height in pixels the client shows the picture with (1 to 4096), its width in CSS pixels times the pixel density of the screen. 1000 if missing.",
+            "schema": {
+              "maximum": 4096,
+              "minimum": 1,
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "The picture.",
+            "content": {
+              "image/webp": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "image/jpeg": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "image/png": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "image/gif": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "image/bmp": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid size (code `request.invalid`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The artist does not exist (code `artist.not_found`) or has no picture of its own (code `artist.picture_not_found`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/api/v1/artists/{id}/uploaded-picture": {
+      "get": {
+        "tags": [
+          "ArtistPictures"
+        ],
+        "summary": "Returns the uploaded picture of an artist, for admins only, also while the picture file in the artist folder hides it: square WebP of 96, 300 or 1000 pixels (the requested size rounded up; 1000 if missing), with ETag and 304 like GetArtistPicture.",
+        "operationId": "GetArtistUploadedPicture",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Id of the artist.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "description": "Largest width and height in pixels the client shows the picture with (1 to 4096).",
+            "schema": {
+              "maximum": 4096,
+              "minimum": 1,
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "No valid session.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "The picture.",
+            "content": {
+              "image/webp": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid size (code `request.invalid`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The profile of the session is not an admin.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The artist does not exist (code `artist.not_found`) or has no uploaded picture (code `artist.picture_not_found`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "ArtistPictures"
+        ],
+        "summary": "Uploads a picture of an artist, for admins only: a JPEG, PNG or WebP picture in `file` (10 MiB at most by default), recognized by its content. The server cuts the largest square out of its middle, stores it as WebP in several sizes without its metadata and discards the uploaded file. Replaces an earlier uploaded picture. It is shown unless there is a picture file in the artist folder.",
+        "operationId": "UploadArtistPicture",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Id of the artist.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "A JPEG, PNG or WebP picture (10 MiB at most by default). The server cuts the largest square out of its middle, so clients that let the admin crop the picture upload the cropped square.",
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "401": {
+            "description": "No valid session.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "The artist with its new picture.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Artist"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "No `file` (code `request.invalid`, `file`: `required`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The profile of the session is not an admin.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The artist does not exist (code `artist.not_found`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "The picture is too large (code `artist.picture_too_large`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "The picture is not a JPEG, PNG or WebP (code `artist.picture_unsupported_format`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "The picture is damaged (code `artist.picture_unreadable`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Pictures cannot be processed: ffmpeg is missing or the data folder cannot be written (code `service.unavailable`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "ArtistPictures"
+        ],
+        "summary": "Removes the uploaded picture of an artist, for admins only. Succeeds also without one.",
+        "operationId": "DeleteArtistUploadedPicture",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Id of the artist.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "No valid session.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "The artist has no uploaded picture."
+          },
+          "403": {
+            "description": "The profile of the session is not an admin.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The artist does not exist (code `artist.not_found`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/api/v1/artists/{id}/online-picture": {
+      "get": {
+        "tags": [
+          "ArtistPictures"
+        ],
+        "summary": "Returns the online picture of an artist, for admins only, also while another source hides it: square WebP of 96, 300 or 1000 pixels (the requested size rounded up; 1000 if missing), with ETag and 304 like GetArtistPicture.",
+        "operationId": "GetArtistOnlinePicture",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Id of the artist.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "description": "Largest width and height in pixels the client shows the picture with (1 to 4096).",
+            "schema": {
+              "maximum": 4096,
+              "minimum": 1,
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "No valid session.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "The picture.",
+            "content": {
+              "image/webp": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid size (code `request.invalid`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The profile of the session is not an admin.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The artist does not exist (code `artist.not_found`) or has no online picture (code `artist.picture_not_found`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "ArtistPictures"
+        ],
+        "summary": "Removes the online picture of an artist with its credit, for admins only. Succeeds also without one.",
+        "operationId": "DeleteArtistOnlinePicture",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Id of the artist.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "No valid session.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "The artist has no online picture."
+          },
+          "403": {
+            "description": "The profile of the session is not an admin.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The artist does not exist (code `artist.not_found`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
     "/api/v1/artists": {
       "get": {
         "tags": [
@@ -13723,7 +14258,8 @@
           "albumCount",
           "trackCount",
           "firstSeenAt",
-          "isFavorite"
+          "isFavorite",
+          "picture"
         ],
         "type": "object",
         "properties": {
@@ -13753,6 +14289,10 @@
           "isFavorite": {
             "type": "boolean",
             "description": "Whether the current profile marked the artist as favorite."
+          },
+          "picture": {
+            "description": "The picture of the artist: its own picture (GetArtistPicture) or a collage of its album covers.",
+            "$ref": "#/components/schemas/ArtistPicture"
           }
         },
         "description": "An artist of the library."
@@ -13790,6 +14330,127 @@
           }
         },
         "description": "One page of a collection."
+      },
+      "ArtistPicture": {
+        "required": [
+          "kind",
+          "albumIds",
+          "hasLocalPicture",
+          "hasUploadedPicture",
+          "hasOnlinePicture"
+        ],
+        "type": "object",
+        "properties": {
+          "kind": {
+            "$ref": "#/components/schemas/ArtistPictureKind"
+          },
+          "version": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Version of the shown picture with Local, Uploaded and Online, otherwise null. It changes whenever another picture is shown, so clients can use it as part of their cache key."
+          },
+          "albumIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Ids of up to four albums with a cover for the collage, only with Albums, otherwise empty: albums with the artist as album artist first, then the newest first (albums without year last), then by title. Their pictures come from the cover endpoint of the albums."
+          },
+          "hasLocalPicture": {
+            "type": "boolean",
+            "description": "Whether the scan found a picture file in the folder of the artist."
+          },
+          "hasUploadedPicture": {
+            "type": "boolean",
+            "description": "Whether an admin uploaded a picture; it is hidden while there is a picture file in the folder of the artist."
+          },
+          "hasOnlinePicture": {
+            "type": "boolean",
+            "description": "Whether an admin took over an online picture; it is hidden while there is a picture file in the folder of the artist or an uploaded picture."
+          },
+          "onlineCredit": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "The credit of the online picture whenever one is stored, also while it is hidden.",
+                "$ref": "#/components/schemas/ArtistPictureCredit"
+              }
+            ]
+          },
+          "musicBrainzArtistId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The MusicBrainz artist an admin chose in the online lookup, if any.",
+            "format": "uuid"
+          }
+        },
+        "description": "The picture of an artist: the picture file in its folder (Local), else the picture an admin uploaded (Uploaded), else the picture an admin took over from the online lookup (Online), else a collage of the covers of its albums (Albums), else none."
+      },
+      "ArtistPictureCredit": {
+        "required": [
+          "provider"
+        ],
+        "type": "object",
+        "properties": {
+          "provider": {
+            "$ref": "#/components/schemas/ArtistPictureProvider"
+          },
+          "author": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Author of the picture as the service names it."
+          },
+          "license": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Short name of the license, e.g. CC BY-SA 4.0."
+          },
+          "licenseUrl": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Address of the license text."
+          },
+          "sourceUrl": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Address of the page of the picture at the service."
+          }
+        },
+        "description": "The credit of an online artist picture. All texts are plain text (never markup); clients show them as text. The addresses are absolute https addresses."
+      },
+      "ArtistPictureKind": {
+        "enum": [
+          "Local",
+          "Uploaded",
+          "Online",
+          "Albums",
+          "None"
+        ],
+        "type": "string",
+        "description": "What an artist shows as its picture, in the order of priority."
+      },
+      "ArtistPictureProvider": {
+        "enum": [
+          "Wikimedia",
+          "FanartTv"
+        ],
+        "type": "string",
+        "description": "The service an online artist picture comes from."
       },
       "ArtistPictureSettings": {
         "required": [
@@ -17157,6 +17818,10 @@
           "avatar.unsupported_format",
           "avatar.too_large",
           "avatar.unreadable",
+          "artist.picture_not_found",
+          "artist.picture_too_large",
+          "artist.picture_unsupported_format",
+          "artist.picture_unreadable",
           "lyrics.not_found",
           "lyrics.download_disabled",
           "lyrics.file_exists",
@@ -21712,6 +22377,9 @@
   "tags": [
     {
       "name": "Albums"
+    },
+    {
+      "name": "ArtistPictures"
     },
     {
       "name": "Artists"

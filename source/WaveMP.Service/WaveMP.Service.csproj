@@ -32,6 +32,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\WaveMP.Core.ArtistPictures\WaveMP.Core.ArtistPictures.csproj" />
     <ProjectReference Include="..\WaveMP.Core.Autoplay\WaveMP.Core.Autoplay.csproj" />
     <ProjectReference Include="..\WaveMP.Core.Backups\WaveMP.Core.Backups.csproj" />
     <ProjectReference Include="..\WaveMP.Core.Caching\WaveMP.Core.Caching.csproj" />

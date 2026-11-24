@@ -31,4 +31,9 @@ public sealed class ArtistDto
     /// Whether the current profile marked the artist as favorite.
     /// </summary>
     public required bool IsFavorite { get; init; }
+
+    /// <summary>
+    /// The picture of the artist: its own picture (GetArtistPicture) or a collage of its album covers.
+    /// </summary>
+    public required ArtistPictureDto Picture { get; init; }
 }

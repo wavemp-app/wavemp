@@ -334,6 +334,31 @@ public enum ProblemCodeDto
     AvatarUnreadable,
 
     /// <summary>
+    /// The artist has no picture of its own (clients show the collage of its album covers instead), or no stored
+    /// picture of the requested kind (404).
+    /// </summary>
+    [JsonStringEnumMemberName("artist.picture_not_found")]
+    ArtistPictureNotFound,
+
+    /// <summary>
+    /// The uploaded artist picture is larger than allowed (413).
+    /// </summary>
+    [JsonStringEnumMemberName("artist.picture_too_large")]
+    ArtistPictureTooLarge,
+
+    /// <summary>
+    /// The uploaded artist picture is not a JPEG, PNG or WebP picture (415).
+    /// </summary>
+    [JsonStringEnumMemberName("artist.picture_unsupported_format")]
+    ArtistPictureUnsupportedFormat,
+
+    /// <summary>
+    /// The uploaded artist picture is damaged and cannot be read (422).
+    /// </summary>
+    [JsonStringEnumMemberName("artist.picture_unreadable")]
+    ArtistPictureUnreadable,
+
+    /// <summary>
     /// The track has no lyrics: no lyrics file, no downloaded lyrics and none in its tags (404).
     /// </summary>
     [JsonStringEnumMemberName("lyrics.not_found")]

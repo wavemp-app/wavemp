@@ -4,7 +4,8 @@ using WaveMP.Data.Queries;
 namespace WaveMP.Data.Repositories;
 
 /// <summary>
-/// Reads the artists of the library. Nothing is tracked.
+/// Reads the artists of the library. Nothing is tracked. Every artist comes with its pictures
+/// (<see cref="ArtistRow.Picture"/>); artists without a picture of their own get the albums of their collage.
 /// </summary>
 public interface IArtistRepository
 {

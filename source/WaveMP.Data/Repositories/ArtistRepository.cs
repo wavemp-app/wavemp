@@ -7,7 +7,14 @@ namespace WaveMP.Data.Repositories;
 
 internal sealed class ArtistRepository(WaveMpDbContext dbContext) : IArtistRepository
 {
-    public Task<Page<ArtistRow>> ListAsync(ArtistListQuery query, CancellationToken cancellationToken = default)
+    /// <summary>
+    /// Largest number of album covers of the collage of an artist without a picture of its own.
+    /// </summary>
+    public const int MaxCollageAlbums = 4;
+
+    public async Task<Page<ArtistRow>> ListAsync(
+        ArtistListQuery query,
+        CancellationToken cancellationToken = default)
     {
         IQueryable<Artist> artists = dbContext.Artists.AsNoTracking();
         string? search = query.Search;
@@ -46,14 +53,19 @@ internal sealed class ArtistRepository(WaveMpDbContext dbContext) : IArtistRepos
             _ => artists.OrderBy(artist => artist.NormalizedName, query.Direction),
         };
 
-        return Project(sorted.ThenBy(artist => artist.Id), query.UserId)
+        Page<ArtistRow> page = await Project(sorted.ThenBy(artist => artist.Id), query.UserId)
             .ToPageAsync(query.Offset, query.Limit, cancellationToken);
+        return page with { Items = await WithCollagesAsync(page.Items, cancellationToken) };
     }
 
-    public Task<ArtistRow?> FindAsync(Guid id, Guid? userId = null, CancellationToken cancellationToken = default)
+    public async Task<ArtistRow?> FindAsync(
+        Guid id,
+        Guid? userId = null,
+        CancellationToken cancellationToken = default)
     {
-        return Project(dbContext.Artists.AsNoTracking().Where(artist => artist.Id == id), userId)
+        ArtistRow? artist = await Project(dbContext.Artists.AsNoTracking().Where(artist => artist.Id == id), userId)
             .FirstOrDefaultAsync(cancellationToken);
+        return artist is null ? null : (await WithCollagesAsync([artist], cancellationToken))[0];
     }
 
     public async Task<IReadOnlyList<ArtistRow>> ListByIdsAsync(
@@ -67,8 +79,11 @@ internal sealed class ArtistRepository(WaveMpDbContext dbContext) : IArtistRepos
         }
 
         Guid[] distinct = [.. ids.Distinct()];
-        return await Project(dbContext.Artists.AsNoTracking().Where(artist => distinct.Contains(artist.Id)), userId)
+        List<ArtistRow> rows = await Project(
+                dbContext.Artists.AsNoTracking().Where(artist => distinct.Contains(artist.Id)),
+                userId)
             .ToListAsync(cancellationToken);
+        return await WithCollagesAsync(rows, cancellationToken);
     }
 
     public Task<bool> ExistsAsync(Guid id, CancellationToken cancellationToken = default)
@@ -79,6 +94,7 @@ internal sealed class ArtistRepository(WaveMpDbContext dbContext) : IArtistRepos
     /// <summary>
     /// Albums count with the artist as album artist or with tracks of the artist, tracks with the artist or on albums
     /// of the artist, like the artist filters of the album and track lists. Without a user, no artist is a favorite.
+    /// The albums of the collage are added afterwards by <see cref="WithCollagesAsync"/>.
     /// </summary>
     private IQueryable<ArtistRow> Project(IQueryable<Artist> artists, Guid? userId)
     {
@@ -91,6 +107,103 @@ internal sealed class ArtistRepository(WaveMpDbContext dbContext) : IArtistRepos
             dbContext.Tracks.Count(track =>
                 track.ArtistId == artist.Id || (track.Album != null && track.Album.AlbumArtistId == artist.Id)),
             artist.FirstSeenAt,
-            dbContext.Favorites.Any(favorite => favorite.UserId == user && favorite.ArtistId == artist.Id)));
+            dbContext.Favorites.Any(favorite => favorite.UserId == user && favorite.ArtistId == artist.Id),
+            new ArtistPictureRow(
+                artist.LocalPictureFileId,
+                artist.LocalPictureFile != null ? artist.LocalPictureFile.ModifiedAt : null,
+                artist.Pictures
+                    .Where(picture => picture.Kind == ArtistPictureKind.Uploaded)
+                    .Select(picture => (Guid?)picture.Id)
+                    .FirstOrDefault(),
+                artist.Pictures
+                    .Where(picture => picture.Kind == ArtistPictureKind.Online && picture.Provider != null)
+                    .Select(picture => new ArtistOnlinePictureRow(
+                        picture.Id,
+                        picture.Provider!.Value,
+                        picture.Author,
+                        picture.License,
+                        picture.LicenseUrl,
+                        picture.SourceUrl))
+                    .FirstOrDefault(),
+                artist.MusicBrainzArtistId)));
     }
+
+    /// <summary>
+    /// Adds the albums of the collage to the artists without a picture of their own, with two queries for all of them:
+    /// the albums of the artist as album artist and the albums with its tracks, each only with a cover (of the album
+    /// or of one of its tracks, from the library or online).
+    /// </summary>
+    private async Task<IReadOnlyList<ArtistRow>> WithCollagesAsync(
+        IReadOnlyList<ArtistRow> rows,
+        CancellationToken cancellationToken)
+    {
+        Guid[] ids = [.. rows
+            .Where(row => row.Picture is { HasOwnPicture: false })
+            .Select(row => row.Id)
+            .Distinct()];
+        if (ids.Length == 0)
+        {
+            return rows;
+        }
+
+        IQueryable<Album> withCover = dbContext.Albums.AsNoTracking().Where(album =>
+            dbContext.Covers.Any(cover =>
+                cover.AlbumId == album.Id || (cover.Track != null && cover.Track.AlbumId == album.Id))
+            || dbContext.OnlineCovers.Any(cover =>
+                cover.AlbumId == album.Id || (cover.Track != null && cover.Track.AlbumId == album.Id)));
+        List<CollageAlbum> asAlbumArtist = await withCover
+            .Where(album => album.AlbumArtistId != null && ids.Contains(album.AlbumArtistId.Value))
+            .Select(album => new CollageAlbum(
+                album.AlbumArtistId!.Value,
+                album.Id,
+                true,
+                album.Year,
+                album.NormalizedTitle))
+            .ToListAsync(cancellationToken);
+        List<CollageAlbum> withTracks = await withCover
+            .SelectMany(
+                album => album.Tracks.Where(track => track.ArtistId != null && ids.Contains(track.ArtistId.Value)),
+                (album, track) => new CollageAlbum(
+                    track.ArtistId!.Value,
+                    album.Id,
+                    false,
+                    album.Year,
+                    album.NormalizedTitle))
+            .Distinct()
+            .ToListAsync(cancellationToken);
+
+        var collages = asAlbumArtist
+            .Concat(withTracks)
+            .GroupBy(album => album.ArtistId)
+            .ToDictionary(group => group.Key, group => OrderForCollage(group));
+        return [.. rows.Select(row =>
+            row.Picture is { HasOwnPicture: false } picture && collages.TryGetValue(row.Id, out Guid[]? albumIds)
+                ? row with { Picture = picture with { CollageAlbumIds = albumIds } }
+                : row)];
+    }
+
+    /// <summary>
+    /// The albums of the collage of one artist: each album once, albums with the artist as album artist first, then
+    /// the newest year first (albums without year last), then by title and id.
+    /// </summary>
+    private static Guid[] OrderForCollage(IEnumerable<CollageAlbum> albums)
+    {
+        return [.. albums
+            .GroupBy(album => album.AlbumId)
+            .Select(same => same.OrderByDescending(album => album.IsAlbumArtist).First())
+            .OrderByDescending(album => album.IsAlbumArtist)
+            .ThenBy(album => album.Year is null)
+            .ThenByDescending(album => album.Year)
+            .ThenBy(album => album.NormalizedTitle, StringComparer.Ordinal)
+            .ThenBy(album => album.AlbumId)
+            .Take(MaxCollageAlbums)
+            .Select(album => album.AlbumId)];
+    }
+
+    private sealed record CollageAlbum(
+        Guid ArtistId,
+        Guid AlbumId,
+        bool IsAlbumArtist,
+        int? Year,
+        string NormalizedTitle);
 }

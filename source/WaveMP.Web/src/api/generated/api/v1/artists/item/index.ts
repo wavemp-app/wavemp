@@ -6,6 +6,12 @@ import { createArtistFromDiscriminatorValue, createProblemDetailsFromDiscriminat
 // @ts-ignore
 import { AlbumsRequestBuilderRequestsMetadata, type AlbumsRequestBuilder } from './albums/index.js';
 // @ts-ignore
+import { OnlinePictureRequestBuilderRequestsMetadata, type OnlinePictureRequestBuilder } from './onlinePicture/index.js';
+// @ts-ignore
+import { PictureRequestBuilderRequestsMetadata, type PictureRequestBuilder } from './picture/index.js';
+// @ts-ignore
+import { type UploadedPictureRequestBuilder, UploadedPictureRequestBuilderRequestsMetadata } from './uploadedPicture/index.js';
+// @ts-ignore
 import { type BaseRequestBuilder, type KeysToExcludeForNavigationMetadata, type NavigationMetadata, type Parsable, type ParsableFactory, type RequestConfiguration, type RequestInformation, type RequestsMetadata } from '@microsoft/kiota-abstractions';
 
 /**
@@ -16,6 +22,18 @@ export interface ArtistsItemRequestBuilder extends BaseRequestBuilder<ArtistsIte
      * The albums property
      */
     get albums(): AlbumsRequestBuilder;
+    /**
+     * The onlinePicture property
+     */
+    get onlinePicture(): OnlinePictureRequestBuilder;
+    /**
+     * The picture property
+     */
+    get picture(): PictureRequestBuilder;
+    /**
+     * The uploadedPicture property
+     */
+    get uploadedPicture(): UploadedPictureRequestBuilder;
     /**
      * Returns an artist.
      * @param requestConfiguration Configuration for the request such as headers, query parameters, and middleware options.
@@ -41,6 +59,15 @@ export const ArtistsItemRequestBuilderUriTemplate = "{+baseurl}/api/v1/artists/{
 export const ArtistsItemRequestBuilderNavigationMetadata: Record<Exclude<keyof ArtistsItemRequestBuilder, KeysToExcludeForNavigationMetadata>, NavigationMetadata> = {
     albums: {
         requestsMetadata: AlbumsRequestBuilderRequestsMetadata,
+    },
+    onlinePicture: {
+        requestsMetadata: OnlinePictureRequestBuilderRequestsMetadata,
+    },
+    picture: {
+        requestsMetadata: PictureRequestBuilderRequestsMetadata,
+    },
+    uploadedPicture: {
+        requestsMetadata: UploadedPictureRequestBuilderRequestsMetadata,
     },
 };
 /**

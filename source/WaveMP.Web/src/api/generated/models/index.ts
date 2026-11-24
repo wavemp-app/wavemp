@@ -173,6 +173,10 @@ export interface Artist extends AdditionalDataHolder, Parsable {
      */
     name?: string | null;
     /**
+     * The picture of the artist: its own picture (GetArtistPicture) or a collage of its album covers.
+     */
+    picture?: ArtistPicture | null;
+    /**
      * Tracks of the artist or on albums of the artist.
      */
     trackCount?: number | null;
@@ -197,6 +201,83 @@ export interface ArtistPage extends AdditionalDataHolder, Parsable {
      * Number of items of the whole collection.
      */
     total?: number | null;
+}
+/**
+ * The picture of an artist: the picture file in its folder (Local), else the picture an admin uploaded (Uploaded), else the picture an admin took over from the online lookup (Online), else a collage of the covers of its albums (Albums), else none.
+ */
+export interface ArtistPicture extends AdditionalDataHolder, Parsable {
+    /**
+     * Ids of up to four albums with a cover for the collage, only with Albums, otherwise empty: albums with the artist as album artist first, then the newest first (albums without year last), then by title. Their pictures come from the cover endpoint of the albums.
+     */
+    albumIds?: Guid[] | null;
+    /**
+     * Whether the scan found a picture file in the folder of the artist.
+     */
+    hasLocalPicture?: boolean | null;
+    /**
+     * Whether an admin took over an online picture; it is hidden while there is a picture file in the folder of the artist or an uploaded picture.
+     */
+    hasOnlinePicture?: boolean | null;
+    /**
+     * Whether an admin uploaded a picture; it is hidden while there is a picture file in the folder of the artist.
+     */
+    hasUploadedPicture?: boolean | null;
+    /**
+     * What an artist shows as its picture, in the order of priority.
+     */
+    kind?: ArtistPictureKind | null;
+    /**
+     * The MusicBrainz artist an admin chose in the online lookup, if any.
+     */
+    musicBrainzArtistId?: Guid | null;
+    /**
+     * The onlineCredit property
+     */
+    onlineCredit?: ArtistPictureCredit | null;
+    /**
+     * Version of the shown picture with Local, Uploaded and Online, otherwise null. It changes whenever another picture is shown, so clients can use it as part of their cache key.
+     */
+    version?: string | null;
+}
+/**
+ * The credit of an online artist picture. All texts are plain text (never markup); clients show them as text. The addresses are absolute https addresses.
+ */
+export interface ArtistPictureCredit extends AdditionalDataHolder, Parsable {
+    /**
+     * Author of the picture as the service names it.
+     */
+    author?: string | null;
+    /**
+     * Short name of the license, e.g. CC BY-SA 4.0.
+     */
+    license?: string | null;
+    /**
+     * Address of the license text.
+     */
+    licenseUrl?: string | null;
+    /**
+     * The service an online artist picture comes from.
+     */
+    provider?: ArtistPictureProvider | null;
+    /**
+     * Address of the page of the picture at the service.
+     */
+    sourceUrl?: string | null;
+}
+export type ArtistPictureKind = (typeof ArtistPictureKindObject)[keyof typeof ArtistPictureKindObject];
+export type ArtistPictureProvider = (typeof ArtistPictureProviderObject)[keyof typeof ArtistPictureProviderObject];
+/**
+ * Settings of the artist pictures from the internet (Wikidata and Wikimedia Commons through the MusicBrainz artist, and fanart.tv with an API key). The API key itself is never returned.
+ */
+export interface ArtistPictureSettings extends AdditionalDataHolder, Parsable {
+    /**
+     * Whether an API key of fanart.tv is stored; only then is fanart.tv asked. The key can be set or removed (UpdateArtistPictureSettings) but never read.
+     */
+    fanartTvApiKeySet?: boolean | null;
+    /**
+     * Whether admins may look up artist pictures online. Off by default; while it is off, WaveMP sends no request for artist pictures to any service.
+     */
+    onlineLookupEnabled?: boolean | null;
 }
 /**
  * An artist referred to by a track or an album.
@@ -532,6 +613,33 @@ export function createArtistFromDiscriminatorValue(parseNode: ParseNode | undefi
 // @ts-ignore
 export function createArtistPageFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
     return deserializeIntoArtistPage;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {ArtistPictureCredit}
+ */
+// @ts-ignore
+export function createArtistPictureCreditFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoArtistPictureCredit;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {ArtistPicture}
+ */
+// @ts-ignore
+export function createArtistPictureFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoArtistPicture;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {ArtistPictureSettings}
+ */
+// @ts-ignore
+export function createArtistPictureSettingsFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoArtistPictureSettings;
 }
 /**
  * Creates a new instance of the appropriate class based on discriminator value
@@ -1899,6 +2007,15 @@ export function createUpdateAlbumTagsFromDiscriminatorValue(parseNode: ParseNode
 /**
  * Creates a new instance of the appropriate class based on discriminator value
  * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {UpdateArtistPictureSettings}
+ */
+// @ts-ignore
+export function createUpdateArtistPictureSettingsFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoUpdateArtistPictureSettings;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
  * @returns {UpdateAutoplaySettings}
  */
 // @ts-ignore
@@ -2386,6 +2503,7 @@ export function deserializeIntoArtist(artist: Partial<Artist> | undefined = {}) 
         "id": n => { artist.id = n.getGuidValue(); },
         "isFavorite": n => { artist.isFavorite = n.getBooleanValue(); },
         "name": n => { artist.name = n.getStringValue(); },
+        "picture": n => { artist.picture = n.getObjectValue<ArtistPicture>(createArtistPictureFromDiscriminatorValue); },
         "trackCount": n => { artist.trackCount = n.getNumberValue(); },
     }
 }
@@ -2401,6 +2519,51 @@ export function deserializeIntoArtistPage(artistPage: Partial<ArtistPage> | unde
         "limit": n => { artistPage.limit = n.getNumberValue(); },
         "offset": n => { artistPage.offset = n.getNumberValue(); },
         "total": n => { artistPage.total = n.getNumberValue(); },
+    }
+}
+/**
+ * The deserialization information for the current model
+ * @param ArtistPicture The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoArtistPicture(artistPicture: Partial<ArtistPicture> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "albumIds": n => { artistPicture.albumIds = n.getCollectionOfPrimitiveValues<Guid>("string"); },
+        "hasLocalPicture": n => { artistPicture.hasLocalPicture = n.getBooleanValue(); },
+        "hasOnlinePicture": n => { artistPicture.hasOnlinePicture = n.getBooleanValue(); },
+        "hasUploadedPicture": n => { artistPicture.hasUploadedPicture = n.getBooleanValue(); },
+        "kind": n => { artistPicture.kind = n.getEnumValue<ArtistPictureKind>(ArtistPictureKindObject); },
+        "musicBrainzArtistId": n => { artistPicture.musicBrainzArtistId = n.getGuidValue(); },
+        "onlineCredit": n => { artistPicture.onlineCredit = n.getObjectValue<ArtistPictureCredit>(createArtistPictureCreditFromDiscriminatorValue); },
+        "version": n => { artistPicture.version = n.getStringValue(); },
+    }
+}
+/**
+ * The deserialization information for the current model
+ * @param ArtistPictureCredit The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoArtistPictureCredit(artistPictureCredit: Partial<ArtistPictureCredit> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "author": n => { artistPictureCredit.author = n.getStringValue(); },
+        "license": n => { artistPictureCredit.license = n.getStringValue(); },
+        "licenseUrl": n => { artistPictureCredit.licenseUrl = n.getStringValue(); },
+        "provider": n => { artistPictureCredit.provider = n.getEnumValue<ArtistPictureProvider>(ArtistPictureProviderObject); },
+        "sourceUrl": n => { artistPictureCredit.sourceUrl = n.getStringValue(); },
+    }
+}
+/**
+ * The deserialization information for the current model
+ * @param ArtistPictureSettings The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoArtistPictureSettings(artistPictureSettings: Partial<ArtistPictureSettings> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "fanartTvApiKeySet": n => { artistPictureSettings.fanartTvApiKeySet = n.getBooleanValue(); },
+        "onlineLookupEnabled": n => { artistPictureSettings.onlineLookupEnabled = n.getBooleanValue(); },
     }
 }
 /**
@@ -3060,6 +3223,7 @@ export function deserializeIntoLibraryIssueTrack(libraryIssueTrack: Partial<Libr
 export function deserializeIntoLibrarySettings(librarySettings: Partial<LibrarySettings> | undefined = {}) : Record<string, (node: ParseNode) => void> {
     return {
         "albumCoverNames": n => { librarySettings.albumCoverNames = n.getCollectionOfPrimitiveValues<string>("string"); },
+        "artistPictureNames": n => { librarySettings.artistPictureNames = n.getCollectionOfPrimitiveValues<string>("string"); },
         "audioExtensions": n => { librarySettings.audioExtensions = n.getCollectionOfPrimitiveValues<string>("string"); },
         "coverPriority": n => { librarySettings.coverPriority = n.getEnumValue<CoverPriority>(CoverPriorityObject); },
         "downloadLyrics": n => { librarySettings.downloadLyrics = n.getBooleanValue(); },
@@ -4513,6 +4677,18 @@ export function deserializeIntoUpdateAlbumTags(updateAlbumTags: Partial<UpdateAl
 }
 /**
  * The deserialization information for the current model
+ * @param UpdateArtistPictureSettings The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoUpdateArtistPictureSettings(updateArtistPictureSettings: Partial<UpdateArtistPictureSettings> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "fanartTvApiKey": n => { updateArtistPictureSettings.fanartTvApiKey = n.getStringValue(); },
+        "onlineLookupEnabled": n => { updateArtistPictureSettings.onlineLookupEnabled = n.getBooleanValue(); },
+    }
+}
+/**
+ * The deserialization information for the current model
  * @param UpdateAutoplaySettings The instance to deserialize into.
  * @returns {Record<string, (node: ParseNode) => void>}
  */
@@ -4604,6 +4780,7 @@ export function deserializeIntoUpdateEqualizerSettings(updateEqualizerSettings: 
 export function deserializeIntoUpdateLibrarySettings(updateLibrarySettings: Partial<UpdateLibrarySettings> | undefined = {}) : Record<string, (node: ParseNode) => void> {
     return {
         "albumCoverNames": n => { updateLibrarySettings.albumCoverNames = n.getCollectionOfPrimitiveValues<string>("string"); },
+        "artistPictureNames": n => { updateLibrarySettings.artistPictureNames = n.getCollectionOfPrimitiveValues<string>("string"); },
         "audioExtensions": n => { updateLibrarySettings.audioExtensions = n.getCollectionOfPrimitiveValues<string>("string"); },
         "coverPriority": n => { updateLibrarySettings.coverPriority = n.getEnumValue<CoverPriority>(CoverPriorityObject); },
         "downloadLyrics": n => { updateLibrarySettings.downloadLyrics = n.getBooleanValue(); },
@@ -5630,6 +5807,10 @@ export interface LibrarySettings extends AdditionalDataHolder, Parsable {
      * Base names of pictures that are album covers, in the order of their priority.
      */
     albumCoverNames?: string[] | null;
+    /**
+     * Base names of pictures that are artist pictures in the folder named after the artist, in the order of their priority (default artist, folder, photo).
+     */
+    artistPictureNames?: string[] | null;
     /**
      * Extensions of audio files, lower case without dot.
      */
@@ -7137,6 +7318,7 @@ export function serializeArtist(writer: SerializationWriter, artist: Partial<Art
     writer.writeGuidValue("id", artist.id);
     writer.writeBooleanValue("isFavorite", artist.isFavorite);
     writer.writeStringValue("name", artist.name);
+    writer.writeObjectValue<ArtistPicture>("picture", artist.picture, serializeArtistPicture);
     writer.writeNumberValue("trackCount", artist.trackCount);
     writer.writeAdditionalData(artist.additionalData);
 }
@@ -7154,6 +7336,54 @@ export function serializeArtistPage(writer: SerializationWriter, artistPage: Par
     writer.writeNumberValue("offset", artistPage.offset);
     writer.writeNumberValue("total", artistPage.total);
     writer.writeAdditionalData(artistPage.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param ArtistPicture The instance to serialize from.
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeArtistPicture(writer: SerializationWriter, artistPicture: Partial<ArtistPicture> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!artistPicture || isSerializingDerivedType) { return; }
+    writer.writeCollectionOfPrimitiveValues<Guid>("albumIds", artistPicture.albumIds);
+    writer.writeBooleanValue("hasLocalPicture", artistPicture.hasLocalPicture);
+    writer.writeBooleanValue("hasOnlinePicture", artistPicture.hasOnlinePicture);
+    writer.writeBooleanValue("hasUploadedPicture", artistPicture.hasUploadedPicture);
+    writer.writeEnumValue<ArtistPictureKind>("kind", artistPicture.kind);
+    writer.writeGuidValue("musicBrainzArtistId", artistPicture.musicBrainzArtistId);
+    writer.writeObjectValue<ArtistPictureCredit>("onlineCredit", artistPicture.onlineCredit, serializeArtistPictureCredit);
+    writer.writeStringValue("version", artistPicture.version);
+    writer.writeAdditionalData(artistPicture.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param ArtistPictureCredit The instance to serialize from.
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeArtistPictureCredit(writer: SerializationWriter, artistPictureCredit: Partial<ArtistPictureCredit> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!artistPictureCredit || isSerializingDerivedType) { return; }
+    writer.writeStringValue("author", artistPictureCredit.author);
+    writer.writeStringValue("license", artistPictureCredit.license);
+    writer.writeStringValue("licenseUrl", artistPictureCredit.licenseUrl);
+    writer.writeEnumValue<ArtistPictureProvider>("provider", artistPictureCredit.provider);
+    writer.writeStringValue("sourceUrl", artistPictureCredit.sourceUrl);
+    writer.writeAdditionalData(artistPictureCredit.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param ArtistPictureSettings The instance to serialize from.
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeArtistPictureSettings(writer: SerializationWriter, artistPictureSettings: Partial<ArtistPictureSettings> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!artistPictureSettings || isSerializingDerivedType) { return; }
+    writer.writeBooleanValue("fanartTvApiKeySet", artistPictureSettings.fanartTvApiKeySet);
+    writer.writeBooleanValue("onlineLookupEnabled", artistPictureSettings.onlineLookupEnabled);
+    writer.writeAdditionalData(artistPictureSettings.additionalData);
 }
 /**
  * Serializes information the current object
@@ -7862,6 +8092,7 @@ export function serializeLibraryIssueTrack(writer: SerializationWriter, libraryI
 export function serializeLibrarySettings(writer: SerializationWriter, librarySettings: Partial<LibrarySettings> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
     if (!librarySettings || isSerializingDerivedType) { return; }
     writer.writeCollectionOfPrimitiveValues<string>("albumCoverNames", librarySettings.albumCoverNames);
+    writer.writeCollectionOfPrimitiveValues<string>("artistPictureNames", librarySettings.artistPictureNames);
     writer.writeCollectionOfPrimitiveValues<string>("audioExtensions", librarySettings.audioExtensions);
     writer.writeEnumValue<CoverPriority>("coverPriority", librarySettings.coverPriority);
     writer.writeBooleanValue("downloadLyrics", librarySettings.downloadLyrics);
@@ -9411,6 +9642,19 @@ export function serializeUpdateAlbumTags(writer: SerializationWriter, updateAlbu
 /**
  * Serializes information the current object
  * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param UpdateArtistPictureSettings The instance to serialize from.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeUpdateArtistPictureSettings(writer: SerializationWriter, updateArtistPictureSettings: Partial<UpdateArtistPictureSettings> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!updateArtistPictureSettings || isSerializingDerivedType) { return; }
+    writer.writeStringValue("fanartTvApiKey", updateArtistPictureSettings.fanartTvApiKey);
+    writer.writeBooleanValue("onlineLookupEnabled", updateArtistPictureSettings.onlineLookupEnabled);
+    writer.writeAdditionalData(updateArtistPictureSettings.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
  * @param UpdateAutoplaySettings The instance to serialize from.
  * @param writer Serialization writer to use to serialize this model
  */
@@ -9509,6 +9753,7 @@ export function serializeUpdateEqualizerSettings(writer: SerializationWriter, up
 export function serializeUpdateLibrarySettings(writer: SerializationWriter, updateLibrarySettings: Partial<UpdateLibrarySettings> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
     if (!updateLibrarySettings || isSerializingDerivedType) { return; }
     writer.writeCollectionOfPrimitiveValues<string>("albumCoverNames", updateLibrarySettings.albumCoverNames);
+    writer.writeCollectionOfPrimitiveValues<string>("artistPictureNames", updateLibrarySettings.artistPictureNames);
     writer.writeCollectionOfPrimitiveValues<string>("audioExtensions", updateLibrarySettings.audioExtensions);
     writer.writeEnumValue<CoverPriority>("coverPriority", updateLibrarySettings.coverPriority);
     writer.writeBooleanValue("downloadLyrics", updateLibrarySettings.downloadLyrics);
@@ -11161,6 +11406,19 @@ export interface UpdateAlbumTags extends AdditionalDataHolder, Parsable {
     year?: number | null;
 }
 /**
+ * Changes the settings of the artist pictures. Missing or null values stay unchanged.
+ */
+export interface UpdateArtistPictureSettings extends AdditionalDataHolder, Parsable {
+    /**
+     * The personal API key of fanart.tv: 1 to 64 letters (A to Z) or digits, surrounding white space is removed. An empty string removes the stored key. Write-only: responses only say whether a key is stored.
+     */
+    fanartTvApiKey?: string | null;
+    /**
+     * Switches the online lookup of artist pictures on or off.
+     */
+    onlineLookupEnabled?: boolean | null;
+}
+/**
  * Changes the autoplay of the current profile. Missing or null values stay unchanged.
  */
 export interface UpdateAutoplaySettings extends AdditionalDataHolder, Parsable {
@@ -11259,6 +11517,10 @@ export interface UpdateLibrarySettings extends AdditionalDataHolder, Parsable {
      * Base names of album covers (without extension), in the order of their priority.
      */
     albumCoverNames?: string[] | null;
+    /**
+     * Base names of artist pictures (without extension) in the folder named after the artist, in the order of their priority; applies to the next scan.
+     */
+    artistPictureNames?: string[] | null;
     /**
      * Extensions of audio files (1 to 10 letters or digits; a leading dot is removed); applies to the next scan. The extension lrc belongs to lyrics files and is not allowed in any list.
      */
@@ -11936,6 +12198,23 @@ export const AlbumSortObject = {
     FirstSeenAt: "FirstSeenAt",
     Relevance: "Relevance",
 } as const;
+/**
+ * What an artist shows as its picture, in the order of priority.
+ */
+export const ArtistPictureKindObject = {
+    Local: "Local",
+    Uploaded: "Uploaded",
+    Online: "Online",
+    Albums: "Albums",
+    None: "None",
+} as const;
+/**
+ * The service an online artist picture comes from.
+ */
+export const ArtistPictureProviderObject = {
+    Wikimedia: "Wikimedia",
+    FanartTv: "FanartTv",
+} as const;
 export const ArtistSortObject = {
     Name: "Name",
     FirstSeenAt: "FirstSeenAt",
@@ -12349,6 +12628,10 @@ export const ProblemCodeObject = {
     AvatarUnsupported_format: "avatar.unsupported_format",
     AvatarToo_large: "avatar.too_large",
     AvatarUnreadable: "avatar.unreadable",
+    ArtistPicture_not_found: "artist.picture_not_found",
+    ArtistPicture_too_large: "artist.picture_too_large",
+    ArtistPicture_unsupported_format: "artist.picture_unsupported_format",
+    ArtistPicture_unreadable: "artist.picture_unreadable",
     LyricsNot_found: "lyrics.not_found",
     LyricsDownload_disabled: "lyrics.download_disabled",
     LyricsFile_exists: "lyrics.file_exists",

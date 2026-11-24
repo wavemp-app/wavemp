@@ -192,6 +192,30 @@ public sealed class LibrarySeed
     }
 
     /// <summary>
+    /// A stored picture of an artist (uploaded or online); an online picture names Wikimedia Commons with a credit.
+    /// </summary>
+    public ArtistPicture ArtistPicture(Artist artist, ArtistPictureKind kind, DateTimeOffset? createdAt = null)
+    {
+        bool online = kind == ArtistPictureKind.Online;
+        ArtistPicture picture = new()
+        {
+            Id = Guid.CreateVersion7(),
+            ArtistId = artist.Id,
+            Kind = kind,
+            CreatedAt = createdAt ?? DefaultTime,
+            Width = 1000,
+            Height = 1000,
+            Provider = online ? ArtistPictureProvider.Wikimedia : null,
+            Author = online ? "Jane Doe" : null,
+            License = online ? "CC BY-SA 4.0" : null,
+            LicenseUrl = online ? "https://creativecommons.org/licenses/by-sa/4.0/" : null,
+            SourceUrl = online ? "https://commons.wikimedia.org/wiki/File:Example.jpg" : null,
+        };
+        _entities.Add(picture);
+        return picture;
+    }
+
+    /// <summary>
     /// A profile with a unique name; the tests share the users of a database, so names never repeat.
     /// </summary>
     public User User(string? name = null)

@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Options;
+using WaveMP.Core.ArtistPictures.Extensions;
 using WaveMP.Core.Autoplay.Extensions;
 using WaveMP.Core.Backups.Extensions;
 using WaveMP.Core.Caching.Extensions;
@@ -63,6 +64,7 @@ public static class WaveMpApplication
         builder.Services.AddWaveMpOnlineMetadata();
         builder.Services.AddWaveMpCaching();
         builder.Services.AddWaveMpPlaylists();
+        builder.Services.AddWaveMpArtistPictures();
         builder.Services.AddWaveMpCollection();
         builder.Services.AddWaveMpAutoplay();
         builder.Services.AddWaveMpStreaming();
@@ -150,6 +152,7 @@ public static class WaveMpApplication
         await app.Services.InitializeWaveMpPlaylistsAsync(cancellationToken);
         await app.Services.InitializeWaveMpOnlineMetadataAsync(cancellationToken);
         await app.Services.InitializeWaveMpAvatarsAsync(cancellationToken);
+        await app.Services.InitializeWaveMpArtistPicturesAsync(cancellationToken);
         await app.Services.InitializeWaveMpThemesAsync(cancellationToken);
         DataProtectionKeys.PrepareFolder(
             DataProtectionKeys.ResolveFolder(app.Configuration, app.Environment),

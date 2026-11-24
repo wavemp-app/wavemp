@@ -11,8 +11,9 @@ namespace WaveMP.Service.Tests.IntegrationTests;
 /// <summary>
 /// Artist data after the metadata editor or the online search gave the songs of an artist another artist name: the
 /// favorites of all profiles, the date added and a list in the player started from the artist go to the artist that got
-/// the songs once the old artist has no songs left. Each test works on artists of its own. The file watcher is off, so
-/// only the API changes the library.
+/// the songs once the old artist has no songs left; so do its uploaded and its online picture (the online picture is
+/// stored through the data layer, as the online lookup comes later). Each test works on artists of its own. The file
+/// watcher is off, so only the API changes the library.
 /// </summary>
 [TestFixture]
 [Category("Integration")]
@@ -26,6 +27,7 @@ public class ArtistDataCarryOverApiTests
     private HttpClient _anonymous = null!;
     private HttpClient _admin = null!;
     private HttpClient _listener = null!;
+    private byte[] _picture = null!;
 
     [OneTimeSetUp]
     public async Task OneTimeSetUp()
@@ -41,6 +43,15 @@ public class ArtistDataCarryOverApiTests
         await AudioAsync(
             "Right/Right Album/01.mp3",
             new TestTags { Artist = "Right", Album = "Right Album", Title = "Right One" });
+        var pictured = new TestTags { Artist = "Pictured", Album = "Portraits" };
+        await AudioAsync("Pictured/Portraits/01.mp3", pictured with { Title = "Pictured One" });
+        await AudioAsync("Pictured/Portraits/02.mp3", pictured with { Title = "Pictured Two" });
+        using (TemporaryDirectory upload = new())
+        {
+            await TestMediaGenerator.CreateImageAsync(upload.Combine("picture.png"), 320, 320);
+            _picture = await File.ReadAllBytesAsync(upload.Combine("picture.png"));
+        }
+
         var hosted = new TestTags { AlbumArtist = "Hosts", Album = "Night Mix" };
         await AudioAsync("Hosts/Night Mix/01.mp3", hosted with { Artist = "Singer A", Title = "Mix One" });
         await AudioAsync("Hosts/Night Mix/02.mp3", hosted with { Artist = "Singer B", Title = "Mix Two" });
@@ -137,6 +148,41 @@ public class ArtistDataCarryOverApiTests
         (await ArtistFavoriteAsync(_listener, pair)).AddedAt.Should().Be(listenerMarked.AddedAt);
         (await ArtistFavoriteIdsAsync(_admin)).Should().NotContain([left.Id, right.Id]);
         (await ArtistFavoriteIdsAsync(_listener)).Should().NotContain([left.Id, right.Id]);
+    }
+
+    [Test]
+    public async Task UpdateTrackMetadata_ArtistWithPictures_UploadedAndOnlinePictureFollowTheRenamedArtist()
+    {
+        TrackDto first = await TrackAsync("Pictured One");
+        Guid oldId = first.Artist!.Id;
+        HttpResponseMessage upload = await _admin.PutAsync(
+            $"/api/v1/artists/{oldId}/uploaded-picture",
+            new MultipartFormDataContent { { new ByteArrayContent(_picture), "file", "picture.png" } });
+        upload.StatusCode.Should().Be(HttpStatusCode.OK, await upload.Content.ReadAsStringAsync());
+        ArtistDto old = (await upload.Content.ReadFromJsonAsync<ArtistDto>(HttpClientExtensions.JsonOptions))!;
+        Guid onlineId = await _factory.AddOnlineArtistPictureAsync(oldId, _picture);
+
+        await RenameArtistAsync("Pictured One", "Pictured Renamed");
+        await RenameArtistAsync("Pictured Two", "Pictured Renamed");
+
+        (await _admin.GetAsync($"/api/v1/artists/{oldId}")).StatusCode.Should().Be(HttpStatusCode.NotFound);
+        Guid renamedId = (await TrackAsync("Pictured One")).Artist!.Id;
+        renamedId.Should().NotBe(oldId);
+        ArtistDto renamed = await _listener.GetJsonAsync<ArtistDto>($"/api/v1/artists/{renamedId}");
+        renamed.Picture.Should().BeEquivalentTo(new
+        {
+            Kind = ArtistPictureKindDto.Uploaded,
+            old.Picture.Version,
+            HasUploadedPicture = true,
+            HasOnlinePicture = true,
+        });
+        renamed.Picture.OnlineCredit!.Author.Should().Be("Jane Doe");
+        HttpResponseMessage shown = await _listener.GetAsync($"/api/v1/artists/{renamedId}/picture?size=96");
+        shown.StatusCode.Should().Be(HttpStatusCode.OK);
+        shown.Headers.ETag!.Tag.Should().StartWith($"\"{old.Picture.Version}-");
+        HttpResponseMessage online = await _admin.GetAsync($"/api/v1/artists/{renamedId}/online-picture?size=96");
+        online.StatusCode.Should().Be(HttpStatusCode.OK);
+        online.Headers.ETag!.Tag.Should().StartWith($"\"o-{onlineId:N}-");
     }
 
     [Test]

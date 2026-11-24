@@ -18,6 +18,7 @@ public static class LibraryMappingExtensions
             TrackCount = artist.TrackCount,
             FirstSeenAt = artist.FirstSeenAt,
             IsFavorite = artist.IsFavorite,
+            Picture = artist.Picture.ToPictureDto(),
         };
     }
 
