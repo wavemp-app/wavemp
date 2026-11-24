@@ -1,6 +1,15 @@
 import { expect, test, type Page } from "@playwright/test";
-import { findAlbumId, findTrackId } from "./helpers/api";
+import { send, sessionHeaders } from "../screenshots/helpers";
+import {
+    adminToken,
+    deleteUser,
+    findAlbumId,
+    findTrackId,
+    uniqueSuffix,
+} from "./helpers/api";
+import { homeUrl, profileTile } from "./helpers/navigation";
 import { withoutSavedPlayback } from "./helpers/player";
+import { emptyStorageState } from "./helpers/storage";
 
 // Layout options of the theme API (THEMING.md, section "Layout options"): a theme switches optional
 // parts of the desktop layout on with variables on :root. The tests use the default theme with a
@@ -482,5 +491,147 @@ test.describe("with the docked queue pane", () => {
         await expect(page.locator("[data-part='tile']").first()).toBeVisible();
 
         await expect(page.locator("[data-part='queue-pane']")).toHaveCount(0);
+    });
+});
+
+// Daylight switches on all three options in its theme file: on the desktop it shows the breadcrumb
+// in the header, the docked queue and the view options; on phones it keeps the fixed mobile base.
+test.describe("in the theme Daylight", () => {
+    test.use({ storageState: emptyStorageState });
+
+    let profile: { id: string; name: string } | undefined;
+
+    test.beforeEach(async ({ page, request }) => {
+        const name = `Daylight Layout ${uniqueSuffix()}`;
+        const created = await request.post("/api/v1/users", {
+            data: { name, role: "Admin" },
+            headers: { Authorization: `Bearer ${await adminToken(request)}` },
+        });
+        expect(created.status(), await created.text()).toBe(201);
+        profile = { id: (await created.json()).id as string, name };
+        const headers = await sessionHeaders(request, profile.id);
+        await send(request, headers, "patch", "/api/v1/me/settings", {
+            language: "en",
+            theme: { id: "daylight", appearance: "Light" },
+        });
+        await page.goto("/profiles");
+        await profileTile(page, name).click();
+        await expect(page).toHaveURL(homeUrl);
+        await expect(page.locator(":root")).toHaveAttribute(
+            "data-theme",
+            "daylight",
+        );
+    });
+
+    test.afterEach(async ({ request }) => {
+        if (profile) {
+            await deleteUser(request, profile.id);
+            profile = undefined;
+        }
+    });
+
+    test("shows the breadcrumb bar, the docked queue and the album groups on the desktop", async ({
+        page,
+        isMobile,
+    }) => {
+        test.skip(isMobile, "Desktop layout only");
+        await page.goto("/library/songs");
+        const list = page.locator("[data-part='app'] [data-part='list']");
+        await expect(
+            list.locator("[data-part='list-row']").first(),
+        ).toBeVisible();
+
+        // The breadcrumb stands in the header, the tree on the left.
+        const breadcrumb = page.locator(`${header} > [data-part='breadcrumb']`);
+        await expect(breadcrumb).toBeVisible();
+        await expect(
+            breadcrumb.locator("[data-part='breadcrumb-link']"),
+        ).toHaveText(["Music", "Library", "Songs"]);
+        await expect(
+            page.locator(`${toolbar} > [data-part='breadcrumb']`),
+        ).toHaveCount(0);
+        await expect(
+            page
+                .locator(
+                    "[data-part='app'] > [data-part='sidebar'] [data-part='tree']",
+                )
+                .first(),
+        ).toBeVisible();
+
+        // The songs are grouped by album, each with its cover and details.
+        const group = list
+            .locator("[data-part='list-group']")
+            .filter({ hasText: "E2E Album" })
+            .first();
+        await expect(
+            group.locator("[data-part='list-group-header']"),
+        ).toContainText("E2E Album");
+        await expect(
+            group.locator("[data-part='list-group-info'] [data-part='cover']"),
+        ).toBeVisible();
+        await expect(
+            group.locator(
+                "[data-part='list-group-meta'] [data-part='meta-item']",
+            ),
+        ).toHaveCount(4);
+
+        // The view options are offered.
+        await expect(page.locator(viewSwitch)).toBeEnabled();
+        await page.locator(viewSwitch).click();
+        await expect(
+            page.locator(`${viewMenu} [data-part='menu-item']`),
+        ).toHaveText(["Grouped by album", "List"]);
+        await page.keyboard.press("Escape");
+
+        // The queue is docked on the right, from the height of the toolbar down to the transport.
+        const pane = page.locator(queuePane);
+        await expect(pane).toBeVisible();
+        const paneBox = (await pane.boundingBox())!;
+        const toolbarBox = (await page.locator(toolbar).boundingBox())!;
+        const content = (await page
+            .locator("[data-part='app'] > [data-part='content']")
+            .boundingBox())!;
+        expect(Math.abs(paneBox.y - toolbarBox.y)).toBeLessThan(1);
+        expect(toolbarBox.x + toolbarBox.width).toBeLessThanOrEqual(
+            paneBox.x + 0.5,
+        );
+        expect(paneBox.x).toBeGreaterThanOrEqual(
+            content.x + content.width - 0.5,
+        );
+        expect(paneBox.x + paneBox.width).toBeGreaterThan(
+            page.viewportSize()!.width - 2,
+        );
+        await expect(
+            pane.locator(
+                "[data-part='segmented-control'][data-item='queue-pane-view'] [data-part='segment']",
+            ),
+        ).toHaveText(["Queue", "Lyrics"]);
+        await expect(
+            pane.locator("[data-part='queue-pane-summary']"),
+        ).toBeVisible();
+    });
+
+    test("keeps the fixed mobile base on phones", async ({
+        page,
+        isMobile,
+    }) => {
+        test.skip(!isMobile, "Mobile layout only");
+        await page.goto("/library/songs");
+        await expect(
+            page.locator("[data-part='list-row']").first(),
+        ).toBeVisible();
+
+        await expect(
+            page.locator(`${toolbar} > [data-part='breadcrumb']`),
+        ).toHaveCount(1);
+        await expect(
+            page.locator(`${header} > [data-part='breadcrumb']`),
+        ).toHaveCount(0);
+        await expect(page.locator("[data-part='queue-pane']")).toHaveCount(0);
+        await expect(page.locator(viewSwitch)).toBeDisabled();
+        await expect(page.locator("[data-part='bottom-nav']")).toBeVisible();
+        await expect(
+            page.locator("[data-part='list-group-header']").first(),
+        ).toBeVisible();
     });
 });

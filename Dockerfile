@@ -140,7 +140,8 @@ COPY assets/licenses/libva-intel-driver/ /licenses/libva-intel-driver/
 COPY assets/licenses/onevpl-intel-gpu/ /licenses/onevpl-intel-gpu/
 COPY assets/licenses/intel-gmmlib/ /licenses/intel-gmmlib/
 COPY assets/web/icons/phosphor/LICENSE /licenses/phosphor-icons/LICENSE
-# The font Selawik of the theme Midnight (SIL Open Font License 1.1).
+# The font Selawik of the themes Midnight and Daylight (SIL Open Font License 1.1); both themes
+# ship the same files with the same license text.
 COPY assets/web/themes/midnight/fonts/OFL.txt /licenses/selawik/OFL.txt
 # The fonts Pixelify Sans of the theme Classic 9x and Silkscreen of the theme Skinned (SIL Open Font
 # License 1.1).

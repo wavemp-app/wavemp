@@ -359,6 +359,29 @@ describe('font of Midnight', () => {
     })
 })
 
+describe('Daylight', () => {
+    const css = readCss(path.join(webAssets, 'themes', 'daylight', 'theme.css'))
+
+    it('uses the shipped Selawik in its regular and semibold weights, the same files as Midnight', () => {
+        const family = /--wmp-font-family:\s*([^;]+);/.exec(css)?.[1]?.replace(/\s+/g, ' ')
+        expect(family).toBe('"Selawik", system-ui, sans-serif')
+        expect(fontFaceWeights(css, 'Selawik')).toEqual(['400', '600'])
+        expect(/--wmp-font-weight-bold:\s*(\d+);/.exec(css)?.[1]).toBe('600')
+        const fonts = (theme: string, file: string) =>
+            readFileSync(path.join(webAssets, 'themes', theme, 'fonts', file))
+        for (const file of ['OFL.txt', 'selawik-regular.woff2', 'selawik-semibold.woff2']) {
+            expect(fonts('daylight', file).equals(fonts('midnight', file)), file).toBe(true)
+        }
+    })
+
+    it('switches on all three layout options on :root', () => {
+        const root = /^:root\s*\{([^}]*)\}/m.exec(css)?.[1] ?? ''
+        expect(root).toMatch(/--wmp-layout-breadcrumb:\s*header;/)
+        expect(root).toMatch(/--wmp-layout-queue-pane:\s*docked;/)
+        expect(root).toMatch(/--wmp-layout-view-options:\s*on;/)
+    })
+})
+
 /** Weights of the @font-face rules of a family, sorted, one entry per rule. */
 function fontFaceWeights(css: string, family: string): string[] {
     return [...css.matchAll(/@font-face\s*\{([^}]*)\}/g)]

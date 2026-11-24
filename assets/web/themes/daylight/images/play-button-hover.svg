@@ -1,27 +1,36 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-    <!-- Large round play button (Daylight): an azure glass orb with a sunlit rim and a stronger sky halo (hover). -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 72 72">
+    <!-- Play button of Daylight, under the pointer, with a brighter core and halo: an azure orb in a frosted bezel, lit from above. -->
     <defs>
-        <radialGradient id="halo" cx="50%" cy="54%" r="50%">
-            <stop offset="0.72" stop-color="#5fb9f2" stop-opacity="0.7"/>
-            <stop offset="1" stop-color="#5fb9f2" stop-opacity="0"/>
+        <radialGradient id="glow" cx="50%" cy="52%" r="50%">
+            <stop offset="0.78" stop-color="#4aa3ea" stop-opacity="0.6"/>
+            <stop offset="1" stop-color="#4aa3ea" stop-opacity="0"/>
         </radialGradient>
-        <radialGradient id="body" cx="50%" cy="88%" r="70%">
-            <stop offset="0" stop-color="#7fd4ff"/>
-            <stop offset="0.38" stop-color="#2585dd"/>
-            <stop offset="0.8" stop-color="#0f5fb2"/>
-            <stop offset="1" stop-color="#08458a"/>
-        </radialGradient>
-        <linearGradient id="rim" x1="0" y1="0" x2="0" y2="1">
+        <linearGradient id="bezel" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0" stop-color="#ffffff"/>
-            <stop offset="0.5" stop-color="#7cc4f2"/>
-            <stop offset="1" stop-color="#0b4b92"/>
+            <stop offset="0.55" stop-color="#e6f0fa"/>
+            <stop offset="1" stop-color="#bcd3ea"/>
         </linearGradient>
-        <linearGradient id="gloss" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stop-color="#ffffff" stop-opacity="0.85"/>
-            <stop offset="1" stop-color="#ffffff" stop-opacity="0.05"/>
+        <linearGradient id="bezel-edge" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#a9c4df"/>
+            <stop offset="1" stop-color="#5f84ab"/>
         </linearGradient>
+        <radialGradient id="core" cx="50%" cy="92%" r="78%">
+            <stop offset="0" stop-color="#7fd0ff"/>
+            <stop offset="0.45" stop-color="#2475c6"/>
+            <stop offset="1" stop-color="#114b8f"/>
+        </radialGradient>
+        <linearGradient id="shine" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#ffffff" stop-opacity="0.95"/>
+            <stop offset="1" stop-color="#ffffff" stop-opacity="0.04"/>
+        </linearGradient>
+        <radialGradient id="bounce" cx="50%" cy="100%" r="60%">
+            <stop offset="0" stop-color="#b8e4ff" stop-opacity="0.7"/>
+            <stop offset="1" stop-color="#b8e4ff" stop-opacity="0"/>
+        </radialGradient>
     </defs>
-    <circle cx="32" cy="33" r="31" fill="url(#halo)"/>
-    <circle cx="32" cy="32" r="25" fill="url(#body)" stroke="url(#rim)" stroke-width="1.75"/>
-    <ellipse cx="32" cy="20.5" rx="17.5" ry="9" fill="url(#gloss)"/>
+    <circle cx="36" cy="37" r="35" fill="url(#glow)"/>
+    <circle cx="36" cy="36" r="30.5" fill="url(#bezel)" stroke="url(#bezel-edge)" stroke-width="1"/>
+    <circle cx="36" cy="36" r="25" fill="url(#core)" stroke="#0b3b73" stroke-width="1"/>
+    <ellipse cx="36" cy="54" rx="15" ry="6" fill="url(#bounce)"/>
+    <path d="M14.5 32 C15.5 20 24.5 12.5 36 12.5 C47.5 12.5 56.5 20 57.5 32 C50.5 28.5 43.5 27 36 27 C28.5 27 21.5 28.5 14.5 32 Z" fill="url(#shine)"/>
 </svg>

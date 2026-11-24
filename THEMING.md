@@ -98,6 +98,8 @@ Some parts of the desktop layout are optional. A theme switches them on with the
 
 `--wmp-queue-pane-width` (`18rem`) is the width of the column of the docked play queue.
 
+Of the shipped themes, Daylight switches on all three options (`assets/web/themes/daylight/theme.css`): it is a working example of a desktop layout with the breadcrumb in the header, the docked play queue with its tabs at the height of the toolbar and the view options.
+
 Example: a theme that shows the breadcrumb in the header on the desktop.
 
 ```css
