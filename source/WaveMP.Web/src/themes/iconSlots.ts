@@ -33,6 +33,9 @@ export const iconSlots = {
     'breadcrumb-separator': { file: fill('caret-right'), area: 'toolbar' },
     'view-tiles': { file: fill('squares-four'), area: 'toolbar', reserved: true },
     'view-details': { file: fill('rows'), area: 'toolbar' },
+    // Entries of the view menu of view-switch (a menu, hence regular)
+    'view-grouped': { file: regular('stack'), area: 'toolbar' },
+    'view-list': { file: regular('list-dashes'), area: 'toolbar' },
     sort: { file: fill('sort-ascending'), area: 'toolbar' },
     dropdown: { file: fill('caret-down'), area: 'toolbar' },
     search: { file: fill('magnifying-glass'), area: 'toolbar' },

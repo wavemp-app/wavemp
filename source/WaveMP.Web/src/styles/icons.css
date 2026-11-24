@@ -79,6 +79,14 @@
         --_icon: var(--wmp-icon-view-details);
     }
 
+    [data-icon='view-grouped'] {
+        --_icon: var(--wmp-icon-view-grouped);
+    }
+
+    [data-icon='view-list'] {
+        --_icon: var(--wmp-icon-view-list);
+    }
+
     [data-icon='sort'] {
         --_icon: var(--wmp-icon-sort);
     }

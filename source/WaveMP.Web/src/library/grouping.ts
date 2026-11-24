@@ -18,6 +18,8 @@ export interface TrackGroup {
     readonly title: string | null
     /** Disc number of a group of one disc of an album (the view shows "Disc n"). */
     readonly disc?: number
+    /** The one group of a plain list: it has no heading and no cover or details. */
+    readonly untitled?: boolean
     /** Album artist, for tracks without album the artist of the first track. */
     readonly artist: ArtistReference | null
     readonly isCompilation: boolean
@@ -120,4 +122,28 @@ export function groupTracksByDisc(tracks: readonly Track[], albumTitle: string):
             disc,
             tracks: tracks.filter((track) => (track.discNumber ?? 1) === disc),
         }))
+}
+
+/**
+ * The tracks as a plain list: one group without heading, cover and details that holds all tracks
+ * in their order (the view "List" of the view options). No group for an empty list.
+ */
+export function groupTracksAsList(tracks: readonly Track[]): TrackGroup[] {
+    if (tracks.length === 0) {
+        return []
+    }
+
+    return [
+        {
+            id: 'list',
+            title: null,
+            untitled: true,
+            artist: null,
+            isCompilation: false,
+            year: null,
+            genre: null,
+            cover: null,
+            tracks,
+        },
+    ]
 }

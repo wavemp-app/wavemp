@@ -12,7 +12,11 @@ export interface ListRowBase {
 
 export interface ListGroup<Row extends ListRowBase> {
     readonly id: string
-    readonly title: string
+    /**
+     * Title of the group; a group without title has no heading row (e.g. the one group of a plain
+     * list), and the list names its rows.
+     */
+    readonly title?: string
     readonly rows: readonly Row[]
 }
 </script>
@@ -281,9 +285,9 @@ function onKeydown(event: KeyboardEvent, rowId: string): void {
             :key="group.id"
             data-part="list-group"
             role="rowgroup"
-            :aria-labelledby="titleId(group.id)"
+            :aria-labelledby="group.title !== undefined ? titleId(group.id) : undefined"
         >
-            <div data-part="list-group-header" role="row">
+            <div v-if="group.title !== undefined" data-part="list-group-header" role="row">
                 <span
                     :id="titleId(group.id)"
                     data-part="list-group-title"

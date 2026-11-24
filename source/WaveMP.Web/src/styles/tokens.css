@@ -116,6 +116,8 @@
         --wmp-icon-breadcrumb-separator: url('/icons/phosphor/fill/caret-right-fill.svg');
         --wmp-icon-view-tiles: url('/icons/phosphor/fill/squares-four-fill.svg');
         --wmp-icon-view-details: url('/icons/phosphor/fill/rows-fill.svg');
+        --wmp-icon-view-grouped: url('/icons/phosphor/regular/stack.svg');
+        --wmp-icon-view-list: url('/icons/phosphor/regular/list-dashes.svg');
         --wmp-icon-sort: url('/icons/phosphor/fill/sort-ascending-fill.svg');
         --wmp-icon-dropdown: url('/icons/phosphor/fill/caret-down-fill.svg');
         --wmp-icon-search: url('/icons/phosphor/fill/magnifying-glass-fill.svg');

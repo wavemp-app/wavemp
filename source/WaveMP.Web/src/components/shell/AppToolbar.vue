@@ -8,6 +8,7 @@ import BaseSearchField from '@/components/base/BaseSearchField.vue'
 import AppBreadcrumb from './AppBreadcrumb.vue'
 import { useLayoutOptions } from '@/composables/useLayoutOptions'
 import { useSearchField } from '@/composables/useSearchField'
+import { listViews, parseListView, viewContext, viewItemId, withListView } from '@/library/listView'
 import { queryText } from '@/library/search'
 import {
     effectiveSort,
@@ -30,6 +31,34 @@ const router = useRouter()
 
 // The breadcrumb stands here unless the theme moves it into the header (layout option).
 const layout = useLayoutOptions()
+
+// View options of the list of the current page (grouped by album or a plain list), offered only
+// where the theme switches them on; the choice is part of the query of the route, like the sort.
+const viewMenu = ref<InstanceType<typeof BaseContextMenu> | null>(null)
+const viewList = computed(() =>
+    layout.value.viewOptions === 'on' ? viewContext(props.location ?? route) : null,
+)
+const viewItems = computed<MenuItem[]>(() => {
+    const view = parseListView(route.query)
+    return listViews.map((option) => ({
+        id: viewItemId(option),
+        label: t(`listView.${option}`),
+        icon: viewItemId(option),
+        checked: option === view,
+    }))
+})
+
+function openView(event: MouseEvent): void {
+    const rect = (event.currentTarget as HTMLElement).getBoundingClientRect()
+    void viewMenu.value?.openAt(rect.left, rect.bottom + 4)
+}
+
+function chooseView(id: string): void {
+    const view = listViews.find((option) => viewItemId(option) === id)
+    if (viewList.value && view) {
+        void router.replace({ query: withListView(route.query, view) })
+    }
+}
 
 // Search: typing opens the search page of the library.
 const { text: searchText, submit: submitSearch } = useSearchField()
@@ -111,7 +140,7 @@ function chooseSort(id: string): void {
 <template>
     <div data-part="toolbar">
         <AppBreadcrumb v-if="layout.breadcrumb === 'toolbar'" :location="location" />
-        <!-- One view per list for now; tiles and details as options follow later. -->
+        <!-- Disabled unless the theme offers the view options and the page shows a list of songs. -->
         <BaseButton
             part="view-switch"
             variant="icon"
@@ -119,7 +148,15 @@ function chooseSort(id: string): void {
             dropdown
             :label="t('toolbar.view')"
             aria-haspopup="menu"
-            disabled
+            :disabled="!viewList"
+            @click="openView"
+        />
+        <BaseContextMenu
+            v-if="viewList"
+            ref="viewMenu"
+            :items="viewItems"
+            :label="t('listView.menu')"
+            @select="chooseView"
         />
         <BaseButton
             part="sort"

@@ -7,6 +7,7 @@ import { searchDelay } from '@/composables/useSearchField'
 import { createWaveMpI18n } from '@/i18n'
 import { createRoutes } from '@/router/routes'
 import { usePageTitleStore } from '@/stores/pageTitle'
+import { defaultLayoutOptions, layoutOptions } from '@/themes/layoutOptions'
 
 async function mountToolbar(path: string) {
     const router = createRouter({ history: createMemoryHistory(), routes: createRoutes() })
@@ -92,5 +93,124 @@ describe('AppToolbar', () => {
             .map((label) => label.text())
         expect(labels).toEqual(['Music', 'Library', 'Album', 'First Album'])
         wrapper.unmount()
+    })
+
+    describe('view options', () => {
+        function stubDesktop(desktop: boolean): void {
+            vi.stubGlobal(
+                'matchMedia',
+                (query: string) =>
+                    ({
+                        matches: query === '(width >= 64rem)' && desktop,
+                        addEventListener: () => undefined,
+                        removeEventListener: () => undefined,
+                    }) as unknown as MediaQueryList,
+            )
+        }
+
+        function offerViews(): void {
+            document.documentElement.style.setProperty('--wmp-layout-view-options', 'on')
+        }
+
+        function viewEntries(wrapper: Awaited<ReturnType<typeof mountToolbar>>['wrapper']) {
+            return wrapper.findAll(
+                '[data-part="context-menu"][aria-label="View options"] [data-part="menu-item"]',
+            )
+        }
+
+        afterEach(() => {
+            vi.unstubAllGlobals()
+            document.documentElement.style.removeProperty('--wmp-layout-view-options')
+            layoutOptions.value = defaultLayoutOptions
+        })
+
+        it('stays disabled while the theme does not offer the view options', async () => {
+            stubDesktop(true)
+            const { wrapper } = await mountToolbar('/library/songs')
+
+            expect(wrapper.get('[data-part="view-switch"]').attributes('disabled')).toBeDefined()
+            expect(wrapper.findAll('[data-part="context-menu"]')).toHaveLength(1)
+            wrapper.unmount()
+        })
+
+        it('offers grouped and list on a list of songs and puts the choice into the route', async () => {
+            stubDesktop(true)
+            offerViews()
+            const { wrapper, router } = await mountToolbar('/library/songs?sort=Title')
+
+            const button = wrapper.get('[data-part="view-switch"]')
+            expect(button.attributes('disabled')).toBeUndefined()
+            expect(button.attributes('aria-haspopup')).toBe('menu')
+            await button.trigger('click')
+            await flushPromises()
+
+            let entries = viewEntries(wrapper)
+            expect(entries.map((entry) => entry.attributes('data-item'))).toEqual([
+                'view-grouped',
+                'view-list',
+            ])
+            expect(entries.map((entry) => entry.text())).toEqual(['Grouped by album', 'List'])
+            expect(entries.map((entry) => entry.attributes('role'))).toEqual([
+                'menuitemradio',
+                'menuitemradio',
+            ])
+            expect(entries.map((entry) => entry.attributes('aria-checked'))).toEqual([
+                'true',
+                'false',
+            ])
+            expect(entries[1]!.find('[data-icon="view-list"]').exists()).toBe(true)
+
+            await entries[1]!.trigger('click')
+            await flushPromises()
+            expect(router.currentRoute.value.query).toEqual({ sort: 'Title', view: 'list' })
+            entries = viewEntries(wrapper)
+            expect(entries.map((entry) => entry.attributes('aria-checked'))).toEqual([
+                'false',
+                'true',
+            ])
+
+            await entries[0]!.trigger('click')
+            await flushPromises()
+            expect(router.currentRoute.value.query).toEqual({ sort: 'Title' })
+            wrapper.unmount()
+        })
+
+        it.each(['/library/recently-added', '/library/genres/Rock', '/library/years/2001'])(
+            'offers the views on %s',
+            async (path) => {
+                stubDesktop(true)
+                offerViews()
+                const { wrapper } = await mountToolbar(path)
+
+                expect(
+                    wrapper.get('[data-part="view-switch"]').attributes('disabled'),
+                ).toBeUndefined()
+                wrapper.unmount()
+            },
+        )
+
+        it.each(['/library/albums', '/library/albums/first', '/library/search?q=rock', '/'])(
+            'stays disabled on %s, which shows no list of songs',
+            async (path) => {
+                stubDesktop(true)
+                offerViews()
+                const { wrapper } = await mountToolbar(path)
+
+                expect(
+                    wrapper.get('[data-part="view-switch"]').attributes('disabled'),
+                ).toBeDefined()
+                expect(viewEntries(wrapper)).toHaveLength(0)
+                wrapper.unmount()
+            },
+        )
+
+        it('stays disabled on phones, whatever the theme sets', async () => {
+            stubDesktop(false)
+            offerViews()
+            const { wrapper } = await mountToolbar('/library/songs')
+
+            expect(wrapper.get('[data-part="view-switch"]').attributes('disabled')).toBeDefined()
+            wrapper.unmount()
+        })
     })
 })

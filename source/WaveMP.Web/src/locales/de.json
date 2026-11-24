@@ -1868,6 +1868,11 @@
       "rating": "Bewertung"
     }
   },
+  "listView": {
+    "menu": "Ansichtsoptionen",
+    "grouped": "Nach Album gruppiert",
+    "list": "Liste"
+  },
   "contextMenu": {
     "more": "Weitere Optionen",
     "labels": {

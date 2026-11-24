@@ -305,5 +305,23 @@
         [data-part='list-group-rows'] {
             grid-column: 2 / -1;
         }
+
+        /*
+         * A plain list (the view "List" of the view options) has no group details: its column
+         * headers and rows take the whole width.
+         */
+        [data-part='list'][data-state~='ungrouped'] {
+            grid-template-columns: var(--wmp-list-columns);
+        }
+
+        [data-part='list'][data-state~='ungrouped']
+            > [data-part='list-header']
+            > [data-part='list-column']:first-child {
+            grid-column-start: auto;
+        }
+
+        [data-part='list'][data-state~='ungrouped'] [data-part='list-group-rows'] {
+            grid-column: 1 / -1;
+        }
     }
 }

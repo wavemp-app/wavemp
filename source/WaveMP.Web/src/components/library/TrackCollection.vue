@@ -6,9 +6,12 @@ import BaseButton from '@/components/base/BaseButton.vue'
 import LibraryEmpty from './LibraryEmpty.vue'
 import LoadMore from './LoadMore.vue'
 import TrackGroupList from './TrackGroupList.vue'
+import { useLayoutOptions } from '@/composables/useLayoutOptions'
 import { usePagedList, type PagedListStatus } from '@/composables/usePagedList'
+import { useViewRoute } from '@/composables/useViewRoute'
 import { listTracks } from '@/library/api'
-import { groupTracksByAlbum } from '@/library/grouping'
+import { groupTracksAsList, groupTracksByAlbum } from '@/library/grouping'
+import { parseListView } from '@/library/listView'
 
 export interface TrackFilter {
     readonly artistId?: string
@@ -23,7 +26,9 @@ export interface TrackFilter {
 
 /**
  * Tracks of the library grouped by album, loaded page by page: all tracks or those of a filter or a
- * search text, in the requested order (the defaults of the server otherwise).
+ * search text, in the requested order (the defaults of the server otherwise). Where the theme offers
+ * the view options (layout option --wmp-layout-view-options), the view of the route (?view=list)
+ * shows them as a plain list instead; otherwise the query is ignored and the list stays grouped.
  */
 const props = withDefaults(
     defineProps<{
@@ -59,7 +64,18 @@ const list = usePagedList<Track>((offset, limit) =>
     }),
 )
 
-const groups = computed(() => groupTracksByAlbum(list.items.value))
+const route = useViewRoute()
+const layout = useLayoutOptions()
+const view = computed(() =>
+    layout.value.viewOptions === 'on' ? parseListView(route.value.query) : 'grouped',
+)
+
+// The groups come from all loaded pages, so a group that spans two pages joins up.
+const groups = computed(() =>
+    view.value === 'list'
+        ? groupTracksAsList(list.items.value)
+        : groupTracksByAlbum(list.items.value),
+)
 const filtered = computed(() => Object.values(props.filter).some((value) => value !== undefined))
 
 watch(

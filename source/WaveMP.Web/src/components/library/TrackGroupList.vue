@@ -24,7 +24,8 @@ import { useContextMenuStore } from '@/stores/contextMenu'
 import { usePlayerStore } from '@/stores/player'
 
 /**
- * Tracks grouped by album (or by disc on the album page), with cover and details of each group.
+ * Tracks grouped by album (or by disc on the album page), with cover and details of each group,
+ * or as a plain list (one group without title from groupTracksAsList, state "ungrouped").
  * Details link to the pages of album, artist, genre and year; the context menu of a row (right
  * click, long press, the button "More options" or the keyboard) applies to all selected tracks
  * (Ctrl and Shift with a click choose several). The columns rating and favorite
@@ -70,7 +71,11 @@ const columns = computed(() => [
     { id: 'favorite', label: t('list.columns.favorite') },
 ])
 
-function groupTitle(group: TrackGroup): string {
+function groupTitle(group: TrackGroup): string | undefined {
+    if (group.untitled) {
+        return undefined
+    }
+
     if (group.disc !== undefined) {
         return t('library.disc', { number: format.number(group.disc) })
     }
@@ -110,8 +115,18 @@ function trackArtist(track: Track): string {
 }
 
 const allTracks = computed(() => props.groups.flatMap((group) => group.tracks))
-/** "has-video" keeps a column for the video badge before the titles of all rows. */
-const listState = computed(() => trackListState(allTracks.value, props.state))
+/** A plain list (the view "List"): its group has no heading, cover or details. */
+const ungrouped = computed(
+    () => props.groups.length > 0 && props.groups.every((group) => group.untitled),
+)
+/**
+ * "has-video" keeps a column for the video badge before the titles of all rows; "ungrouped" tells
+ * a plain list, whose rows take the whole width.
+ */
+const listState = computed(() => {
+    const state = trackListState(allTracks.value, props.state)
+    return ungrouped.value ? [state, 'ungrouped'].filter(Boolean).join(' ') : state
+})
 
 function openMenu(rowId: string, x: number, y: number): void {
     const chosen = new Set(selection.value.includes(rowId) ? selection.value : [rowId])
@@ -164,7 +179,7 @@ function activate(rowId: string): void {
         @row-menu="openMenu"
         @row-activate="activate"
     >
-        <template v-if="showGroupInfo" #group-info="{ group }">
+        <template v-if="showGroupInfo && !ungrouped" #group-info="{ group }">
             <template v-if="infoOf(group)">
                 <LibraryCover
                     v-if="infoOf(group)?.cover"

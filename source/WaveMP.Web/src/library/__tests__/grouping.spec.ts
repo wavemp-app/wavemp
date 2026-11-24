@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Track } from '@/api/generated/models'
-import { groupTracksByAlbum, groupTracksByDisc } from '../grouping'
+import { groupTracksAsList, groupTracksByAlbum, groupTracksByDisc } from '../grouping'
 
 const alpha = { id: 'alpha', name: 'Alpha Band' }
 const beta = { id: 'beta', name: 'Beta Singer' }
@@ -114,5 +114,59 @@ describe('groupTracksByDisc', () => {
             [1, ['b']],
             [2, ['a', 'c']],
         ])
+    })
+})
+
+describe('groupTracksAsList', () => {
+    it('puts all tracks into one group without title, cover and details, in their order', () => {
+        const tracks = [
+            track('two', { album: first, artist: alpha, year: 2001, genre: 'Rock' }),
+            track('hit', { album: hits, artist: beta, hasCover: true }),
+            track('loose', { artist: beta }),
+            track('one', { album: first, artist: alpha }),
+        ]
+
+        const groups = groupTracksAsList(tracks)
+
+        expect(groups).toHaveLength(1)
+        expect(groups[0]).toMatchObject({
+            id: 'list',
+            title: null,
+            untitled: true,
+            artist: null,
+            isCompilation: false,
+            year: null,
+            genre: null,
+            cover: null,
+        })
+        expect(groups[0]?.albumId).toBeUndefined()
+        expect(groups[0]?.tracks.map((item) => item.id)).toEqual(['two', 'hit', 'loose', 'one'])
+    })
+
+    it('keeps growing with the pages of a long list in one group', () => {
+        const page = (start: number) =>
+            Array.from({ length: 100 }, (_, index) =>
+                track(`song-${start + index}`, {
+                    album: { ...first, id: `album-${Math.floor((start + index) / 10)}` },
+                }),
+            )
+
+        const loaded = [...page(0), ...page(100)]
+        const groups = groupTracksAsList(loaded)
+
+        expect(groups).toHaveLength(1)
+        expect(groups[0]?.tracks).toHaveLength(200)
+        expect(groups[0]?.tracks[150]?.id).toBe('song-150')
+    })
+
+    it('has no group for an empty list', () => {
+        expect(groupTracksAsList([])).toEqual([])
+    })
+
+    it('is never untitled when grouped by album or disc', () => {
+        const tracks = [track('one', { album: first, artist: alpha })]
+
+        expect(groupTracksByAlbum(tracks)[0]?.untitled).toBeUndefined()
+        expect(groupTracksByDisc(tracks, 'First Album')[0]?.untitled).toBeUndefined()
     })
 })
