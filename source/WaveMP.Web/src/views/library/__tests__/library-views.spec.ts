@@ -41,7 +41,17 @@ vi.mock('@/library/onlineMetadata', async (importOriginal) => ({
     ...online,
 }))
 
+const artistPictureApi = vi.hoisted(() => ({
+    fetchArtistPicture: vi.fn(),
+    fetchUploadedArtistPicture: vi.fn(),
+    fetchOnlineArtistPicture: vi.fn(),
+    fetchCandidatePreview: vi.fn(),
+}))
+
+vi.mock('@/library/artistPictureApi', () => artistPictureApi)
+
 const LibraryView = (await import('../LibraryView.vue')).default
+const ArtistView = (await import('../ArtistView.vue')).default
 const AlbumView = (await import('../AlbumView.vue')).default
 const SearchView = (await import('../SearchView.vue')).default
 const TrackView = (await import('../TrackView.vue')).default
@@ -411,6 +421,108 @@ describe('AlbumView', () => {
         expect(wrapper.get('[data-part="empty-state-text"]').text()).toBe(
             'This album no longer exists.',
         )
+        wrapper.unmount()
+    })
+})
+
+describe('ArtistView', () => {
+    const onlineArtist = {
+        id: 'alpha',
+        name: 'Alpha Band',
+        albumCount: 0,
+        trackCount: 0,
+        picture: {
+            kind: 'Online' as const,
+            version: 'o-1',
+            hasOnlinePicture: true,
+            onlineCredit: {
+                provider: 'Wikimedia' as const,
+                author: 'Jane Doe',
+                license: 'CC BY-SA 4.0',
+                licenseUrl: 'https://creativecommons.org/licenses/by-sa/4.0/',
+                sourceUrl: 'https://commons.wikimedia.org/wiki/File:Alpha.jpg',
+            },
+        },
+    }
+
+    beforeEach(() => {
+        setActivePinia(createPinia())
+        for (const mock of Object.values(api)) {
+            mock.mockReset()
+        }
+        for (const mock of Object.values(artistPictureApi)) {
+            mock.mockReset()
+        }
+        api.listTracks.mockResolvedValue({ items: [], total: 0 })
+        api.listArtistAlbums.mockResolvedValue({ items: [], total: 0 })
+        artistPictureApi.fetchArtistPicture.mockResolvedValue(undefined)
+    })
+
+    it('shows the picture of the artist with the credit of an online picture', async () => {
+        api.getArtist.mockResolvedValue(onlineArtist)
+
+        const { wrapper } = await mountView(ArtistView, '/library/artists/alpha', { id: 'alpha' })
+
+        const header = wrapper.get('[data-part="detail-header"]')
+        expect(header.get('[data-part="cover"]').attributes('data-kind')).toBe('artist')
+        expect(artistPictureApi.fetchArtistPicture).toHaveBeenCalledWith('alpha', 300)
+        expect(header.get('[data-part="detail-info"] > [data-part="artist-credit"]').text()).toBe(
+            'Photo: Jane Doe, CC BY-SA 4.0, Wikimedia Commons',
+        )
+        expect(wrapper.find('[data-item="artist-picture"]').exists()).toBe(false)
+        wrapper.unmount()
+    })
+
+    it('shows the collage of album covers without a credit', async () => {
+        api.getArtist.mockResolvedValue({
+            ...onlineArtist,
+            picture: { kind: 'Albums' as const, albumIds: ['first', 'second', 'third'] },
+        })
+
+        const { wrapper } = await mountView(ArtistView, '/library/artists/alpha', { id: 'alpha' })
+
+        const collage = wrapper.get('[data-part="detail-header"] > [data-part="artist-collage"]')
+        expect(collage.attributes('data-count')).toBe('3')
+        expect(wrapper.find('[data-part="artist-credit"]').exists()).toBe(false)
+        wrapper.unmount()
+    })
+
+    it('lets admins change the picture and shows the new one', async () => {
+        api.getArtist.mockResolvedValue({ ...onlineArtist, picture: { kind: 'None' as const } })
+        useSessionStore().$patch({
+            token: 'token',
+            expiresAt: new Date(Date.now() + 60_000).toISOString(),
+            profile: {
+                id: 'admin',
+                name: 'Admin',
+                initials: 'A',
+                color: '#1f6fd6',
+                role: 'Admin',
+                isBuiltIn: true,
+            },
+        })
+
+        const { wrapper } = await mountView(ArtistView, '/library/artists/alpha', { id: 'alpha' })
+        const change = wrapper.get(
+            '[data-part="detail-actions"] button[data-item="artist-picture"]',
+        )
+        expect(change.text()).toBe('Change picture')
+        await change.trigger('click')
+        await flushPromises()
+        expect(wrapper.find('[data-part="artist-picture-editor"]').exists()).toBe(true)
+
+        wrapper
+            .findComponent({ name: 'ArtistPictureDialog' })
+            .vm.$emit('changed', { ...onlineArtist, picture: { kind: 'Uploaded', version: 'u-9' } })
+        await flushPromises()
+        expect(artistPictureApi.fetchArtistPicture).toHaveBeenCalledWith('alpha', 300)
+        expect(api.getArtist).toHaveBeenCalledTimes(1)
+
+        api.getArtist.mockResolvedValue(onlineArtist)
+        wrapper.findComponent({ name: 'ArtistPictureDialog' }).vm.$emit('changed', undefined)
+        await flushPromises()
+        expect(api.getArtist).toHaveBeenCalledTimes(2)
+        expect(wrapper.find('[data-part="artist-credit"]').exists()).toBe(true)
         wrapper.unmount()
     })
 })

@@ -16,7 +16,17 @@ const avatarApi = vi.hoisted(() => ({ fetchAvatar: vi.fn(), fetchAvatarPreset: v
 
 vi.mock('@/profiles/avatarApi', () => avatarApi)
 
-const { maxCachedCovers, useCoversStore } = await import('../covers')
+const artistApi = vi.hoisted(() => ({
+    fetchArtistPicture: vi.fn(),
+    fetchUploadedArtistPicture: vi.fn(),
+    fetchOnlineArtistPicture: vi.fn(),
+    fetchCandidatePreview: vi.fn(),
+}))
+
+vi.mock('@/library/artistPictureApi', () => artistApi)
+
+const { artistCandidateId, artistPictureSlotKinds, maxCachedCovers, useCoversStore } =
+    await import('../covers')
 
 describe('covers store', () => {
     let created = 0
@@ -31,6 +41,9 @@ describe('covers store', () => {
         playlistApi.fetchPlaylistCover.mockReset().mockResolvedValue(new Uint8Array([5]).buffer)
         avatarApi.fetchAvatar.mockReset().mockResolvedValue(new Uint8Array([6]).buffer)
         avatarApi.fetchAvatarPreset.mockReset().mockResolvedValue(new Uint8Array([7]).buffer)
+        for (const fetch of Object.values(artistApi)) {
+            fetch.mockReset().mockResolvedValue(new Uint8Array([8]).buffer)
+        }
         createObjectURL.mockClear()
         revokeObjectURL.mockClear()
         vi.stubGlobal('URL', { ...URL, createObjectURL, revokeObjectURL })
@@ -101,6 +114,37 @@ describe('covers store', () => {
         expect(avatarApi.fetchAvatar).toHaveBeenCalledWith('u', 96)
         expect(avatarApi.fetchAvatarPreset).toHaveBeenCalledWith('leaf', 300)
         expect(api.fetchAlbumCover).not.toHaveBeenCalled()
+    })
+
+    it('loads the pictures of artists and the previews of candidates through their endpoints', async () => {
+        const store = useCoversStore()
+
+        expect(await store.acquire('artist', 'a', 96, 'u-1')).toBe('blob:cover-1')
+        expect(await store.acquire('artist', 'a', 96, 'u-2')).toBe('blob:cover-2')
+        expect(await store.acquire('artist-uploaded', 'a', 300)).toBe('blob:cover-3')
+        expect(await store.acquire('artist-online', 'a', 1000)).toBe('blob:cover-4')
+        expect(await store.acquire('artist-candidate', artistCandidateId('a', 'c1'), 300)).toBe(
+            'blob:cover-5',
+        )
+
+        expect(artistApi.fetchArtistPicture).toHaveBeenCalledTimes(2)
+        expect(artistApi.fetchArtistPicture).toHaveBeenCalledWith('a', 96)
+        expect(artistApi.fetchUploadedArtistPicture).toHaveBeenCalledWith('a', 300)
+        expect(artistApi.fetchOnlineArtistPicture).toHaveBeenCalledWith('a', 1000)
+        expect(artistApi.fetchCandidatePreview).toHaveBeenCalledWith('a', 'c1', 300)
+        expect(api.fetchAlbumCover).not.toHaveBeenCalled()
+    })
+
+    it('loads the uploaded and online pictures of artists again after a change', async () => {
+        const store = useCoversStore()
+        await store.acquire('artist-uploaded', 'a', 300, store.versionOf('artist-uploaded'))
+        store.release('artist-uploaded', 'a', 300, store.versionOf('artist-uploaded'))
+
+        store.invalidate(artistPictureSlotKinds)
+        await store.acquire('artist-uploaded', 'a', 300, store.versionOf('artist-uploaded'))
+
+        expect(artistApi.fetchUploadedArtistPicture).toHaveBeenCalledTimes(2)
+        expect(store.versionOf('album')).toBeUndefined()
     })
 
     it('loads covers of tracks through their endpoint', async () => {

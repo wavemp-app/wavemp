@@ -24,11 +24,18 @@ import { validationMessagesByField, type ValidationMessageOptions } from '@/i18n
 import { useCoversStore } from '@/stores/covers'
 import { useLibrarySettingsStore } from '@/stores/librarySettings'
 
-type Field = 'interval' | 'audio' | 'video' | 'images' | 'coverNames' | 'coverPriority'
+type Field =
+    | 'interval'
+    | 'audio'
+    | 'video'
+    | 'images'
+    | 'coverNames'
+    | 'artistPictureNames'
+    | 'coverPriority'
 
 /**
- * Settings of the library: scan interval, file watcher, extension lists, album cover names, the
- * global cover rule, the download of lyrics (off by default, because it sends the titles of the
+ * Settings of the library: scan interval, file watcher, extension lists, album cover names, names
+ * of the pictures in artist folders, the global cover rule, the download of lyrics (off by default, because it sends the titles of the
  * library to an online service) and whether Subsonic apps may download the original files. A
  * changed cover rule loads the covers of albums and songs again. Saving sends only the changed
  * values, so settings changed elsewhere since the page was loaded stay as they are.
@@ -44,6 +51,7 @@ const audio = ref('')
 const video = ref('')
 const images = ref('')
 const coverNames = ref('')
+const artistPictureNames = ref('')
 const coverPriority = ref<string>('AlbumFirst')
 const downloadLyrics = ref(false)
 const subsonicDownloads = ref(false)
@@ -60,6 +68,7 @@ const fields: Record<string, Field> = {
     videoExtensions: 'video',
     imageExtensions: 'images',
     albumCoverNames: 'coverNames',
+    artistPictureNames: 'artistPictureNames',
     coverPriority: 'coverPriority',
 }
 
@@ -76,6 +85,7 @@ const messageKeys: Record<Field, ValidationMessageOptions['keys']> = {
     video: extensionKeys,
     images: extensionKeys,
     coverNames: { invalid_format: 'adminLibrary.errors.coverNames' },
+    artistPictureNames: { invalid_format: 'adminLibrary.errors.coverNames' },
     coverPriority: {},
 }
 
@@ -90,6 +100,7 @@ function show(settings: LibrarySettings | null): void {
     video.value = formatList(settings.videoExtensions)
     images.value = formatList(settings.imageExtensions)
     coverNames.value = formatList(settings.albumCoverNames)
+    artistPictureNames.value = formatList(settings.artistPictureNames)
     coverPriority.value = coverPriorityOf(settings.coverPriority)
     downloadLyrics.value = settings.downloadLyrics ?? false
     subsonicDownloads.value = settings.subsonicDownloads ?? false
@@ -139,6 +150,7 @@ async function save(): Promise<void> {
                 videoExtensions: parseList(video.value),
                 imageExtensions: parseList(images.value),
                 albumCoverNames: parseList(coverNames.value),
+                artistPictureNames: parseList(artistPictureNames.value),
                 coverPriority: coverPriorityOf(coverPriority.value as CoverPriority),
                 downloadLyrics: downloadLyrics.value,
                 subsonicDownloads: subsonicDownloads.value,
@@ -232,6 +244,14 @@ onMounted(async () => {
             :label="t('adminLibrary.albumCoverNames')"
             :hint="t('adminLibrary.coverNamesHint')"
             :error="errors.coverNames"
+            :disabled="locked"
+        />
+        <BaseTextField
+            v-model="artistPictureNames"
+            data-field="artist-picture-names"
+            :label="t('adminLibrary.artistPictureNames')"
+            :hint="t('adminLibrary.artistPictureNamesHint')"
+            :error="errors.artistPictureNames"
             :disabled="locked"
         />
         <BaseSegmentedField

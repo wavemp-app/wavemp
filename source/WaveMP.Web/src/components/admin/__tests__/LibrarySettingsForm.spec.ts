@@ -13,6 +13,7 @@ const settings = {
     videoExtensions: ['mkv'],
     imageExtensions: ['jpg'],
     albumCoverNames: ['cover', 'folder'],
+    artistPictureNames: ['artist', 'folder', 'photo'],
     coverPriority: 'AlbumFirst' as const,
     downloadLyrics: false,
     subsonicDownloads: false,
@@ -59,7 +60,7 @@ describe('LibrarySettingsForm', () => {
         await flushPromises()
 
         const fields = () => wrapper.findAll('select, input')
-        expect(fields().length).toBe(8)
+        expect(fields().length).toBe(9)
         for (const field of fields()) {
             expect(field.attributes('disabled')).toBeDefined()
         }
@@ -98,6 +99,7 @@ describe('LibrarySettingsForm', () => {
             'mkv',
             'jpg',
             'cover, folder',
+            'artist, folder, photo',
         ])
         wrapper.unmount()
     })
@@ -191,6 +193,33 @@ describe('LibrarySettingsForm', () => {
         await flushPromises()
 
         expect(update).toHaveBeenCalledWith(expect.objectContaining({ subsonicDownloads: true }))
+        wrapper.unmount()
+    })
+
+    it('saves the names of artist pictures as list and shows their errors', async () => {
+        const { wrapper, update } = await mountForm()
+        update.mockResolvedValue({ ...settings, artistPictureNames: ['portrait', 'artist'] })
+
+        const field = wrapper.get('[data-field="artist-picture-names"]')
+        expect(field.text()).toContain('Names of artist pictures')
+        await field.get('input').setValue(' Portrait, artist ,')
+        await wrapper.get('form').trigger('submit')
+        await flushPromises()
+
+        expect(update).toHaveBeenCalledWith({ artistPictureNames: ['Portrait', 'artist'] })
+        expect((field.get('input').element as HTMLInputElement).value).toBe('portrait, artist')
+
+        update.mockRejectedValue({
+            responseStatusCode: 400,
+            code: 'request.invalid',
+            errors: [{ field: 'artistPictureNames', code: 'invalid_format' }],
+        })
+        await wrapper.get('form').trigger('submit')
+        await flushPromises()
+
+        expect(
+            wrapper.get('[data-field="artist-picture-names"] [data-part="field-error"]').text(),
+        ).toBe('Use names without slashes, without a leading dot and with at most 50 characters.')
         wrapper.unmount()
     })
 

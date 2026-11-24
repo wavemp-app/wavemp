@@ -85,6 +85,8 @@ import DetailHeader from '@/components/library/DetailHeader.vue'
 import LibraryEmpty from '@/components/library/LibraryEmpty.vue'
 import LoadMore from '@/components/library/LoadMore.vue'
 import MetaItem from '@/components/library/MetaItem.vue'
+import ArtistCredit from '@/components/library/ArtistCredit.vue'
+import ArtistMatchList from '@/components/library/ArtistMatchList.vue'
 import OnlineCompareTable from '@/components/library/OnlineCompareTable.vue'
 import OnlineMatchList from '@/components/library/OnlineMatchList.vue'
 import { compareRows, defaultSelection, onlineTrackFields } from '@/library/onlineMetadata'
@@ -346,6 +348,43 @@ function openSortSample(event: MouseEvent): void {
 
 /** A picture of the theme stands in for a cover from the server. */
 const sampleCover = '/themes/midnight/images/cover-placeholder.svg'
+
+/** Credit of an online artist picture, as the API delivers it. */
+const sampleArtistCredit = {
+    provider: 'Wikimedia' as const,
+    author: 'Jane Doe',
+    license: 'CC BY-SA 4.0',
+    licenseUrl: 'https://creativecommons.org/licenses/by-sa/4.0/',
+    sourceUrl: 'https://commons.wikimedia.org/wiki/File:Sample.jpg',
+}
+/** Artists of MusicBrainz with the name of an artist, for the dialog of an artist picture. */
+const sampleArtistMatches = computed(() => [
+    {
+        musicBrainzArtistId: 'sample-mb-1',
+        name: t('placeholders.artist', { number: 1 }),
+        disambiguation: 'rock band',
+        type: 'Group',
+        country: 'DE',
+        lifeSpanBegin: '1991',
+        lifeSpanEnd: '2004',
+        score: 100,
+        isRemembered: true,
+    },
+    {
+        musicBrainzArtistId: 'sample-mb-2',
+        name: t('placeholders.artist', { number: 1 }),
+        type: 'Person',
+        country: 'GB',
+        score: 72,
+        isRemembered: false,
+    },
+])
+const sampleArtistMatch = ref<string | null>('sample-mb-1')
+const samplePictureSources = ['local', 'uploaded', 'online', 'albums'] as const
+const samplePictureCandidates = [
+    { id: 'c1', provider: 'Wikimedia', author: 'Jane Doe', license: 'CC BY-SA 4.0', size: true },
+    { id: 'c2', provider: 'FanartTv', author: null, license: null, size: false },
+] as const
 const sliders = ref([0, 0.5, 1])
 
 // Equalizer (fixture): on with the own curve, off without Web Audio
@@ -1202,6 +1241,45 @@ const sampleTranscodeJobs = computed<TranscodeJob[]>(() => {
                     </form>
                 </section>
             </div>
+            <div data-part="view" data-view="library-artist">
+                <DetailHeader
+                    :title="t('placeholders.artist', { number: 1 })"
+                    :back="{ name: 'library-section', params: { section: 'artists' } }"
+                >
+                    <template #media>
+                        <span
+                            data-part="artist-collage"
+                            data-count="3"
+                            aria-hidden="true"
+                            :style="{ '--wmp-item-count': 3 }"
+                        >
+                            <span
+                                v-for="tile in 3"
+                                :key="tile"
+                                data-part="artist-collage-tile"
+                                :data-index="tile - 1"
+                            >
+                                <BaseCover :src="sampleCover" />
+                            </span>
+                        </span>
+                    </template>
+                    <MetaItem field="albums" :label="t('list.albums')">{{
+                        format.number(3)
+                    }}</MetaItem>
+                    <ArtistCredit :credit="sampleArtistCredit" />
+                    <template #actions>
+                        <BaseButton
+                            data-item="artist-picture"
+                            icon="change-cover"
+                            :label="t('artistPictures.change')"
+                        />
+                    </template>
+                </DetailHeader>
+                <BaseCover data-kind="artist" :src="sampleCover" />
+                <BaseCover data-kind="artist" :placeholder="false">
+                    <BaseIcon name="artist" />
+                </BaseCover>
+            </div>
             <div data-part="view" data-view="playlist">
                 <DetailHeader :title="t('placeholders.playlist', { number: 1 })">
                     <template #media>
@@ -1746,6 +1824,101 @@ const sampleTranscodeJobs = computed<TranscodeJob[]>(() => {
                         cover-state="missing"
                         :cover-url="null"
                     />
+                </section>
+            </div>
+            <div data-part="artist-picture-editor" data-state="online">
+                <section data-part="online-section" data-item="sources">
+                    <h3 data-part="online-section-title">
+                        {{ t('artistPictures.sources.title') }}
+                    </h3>
+                    <ol data-part="picture-sources">
+                        <li
+                            v-for="source in samplePictureSources"
+                            :key="source"
+                            data-part="picture-source"
+                            :data-source="source"
+                            :data-state="
+                                source === 'uploaded'
+                                    ? 'active'
+                                    : source === 'local'
+                                      ? 'missing'
+                                      : 'available'
+                            "
+                            :aria-current="source === 'uploaded' ? 'true' : undefined"
+                        >
+                            <span data-part="picture-source-name">
+                                {{ t(`artistPictures.sources.names.${source}`) }}
+                            </span>
+                            <span data-part="picture-source-state">
+                                {{
+                                    source === 'uploaded'
+                                        ? t('artistPictures.sources.shown')
+                                        : source === 'local'
+                                          ? t('artistPictures.sources.missing.local')
+                                          : source === 'online'
+                                            ? t('artistPictures.sources.hiddenBy.uploaded')
+                                            : t('artistPictures.sources.fallback')
+                                }}
+                            </span>
+                        </li>
+                    </ol>
+                </section>
+                <section data-part="online-section" data-item="matches" data-state="ready">
+                    <h3 id="dev-artist-matches" data-part="online-section-title">
+                        {{ t('artistPictures.online.matches') }}
+                    </h3>
+                    <ArtistMatchList
+                        v-model="sampleArtistMatch"
+                        :matches="sampleArtistMatches"
+                        labelledby="dev-artist-matches"
+                    />
+                </section>
+                <section data-part="online-section" data-item="candidates" data-state="ready">
+                    <h3 id="dev-picture-candidates" data-part="online-section-title">
+                        {{ t('artistPictures.online.candidates') }}
+                    </h3>
+                    <div
+                        data-part="picture-candidate-list"
+                        role="radiogroup"
+                        aria-labelledby="dev-picture-candidates"
+                    >
+                        <span data-part="indicator" aria-hidden="true"></span>
+                        <button
+                            v-for="(candidate, index) in samplePictureCandidates"
+                            :key="candidate.id"
+                            type="button"
+                            data-part="picture-candidate"
+                            role="radio"
+                            :data-provider="candidate.provider"
+                            :data-state="index === 0 ? 'selected' : undefined"
+                            :aria-checked="index === 0 ? 'true' : 'false'"
+                            :tabindex="index === 0 ? 0 : -1"
+                        >
+                            <BaseCover :src="sampleCover" />
+                            <span data-part="picture-candidate-provider">
+                                {{
+                                    candidate.provider === 'Wikimedia'
+                                        ? t('artistPictures.providers.wikimedia')
+                                        : t('artistPictures.providers.fanartTv')
+                                }}
+                            </span>
+                            <span v-if="candidate.author" data-part="picture-candidate-author">
+                                {{ candidate.author }}
+                            </span>
+                            <span v-if="candidate.license" data-part="picture-candidate-license">
+                                {{ candidate.license }}
+                            </span>
+                            <span v-if="candidate.size" data-part="picture-candidate-size">
+                                {{
+                                    t('artistPictures.online.size', {
+                                        width: format.number(1280),
+                                        height: format.number(960),
+                                    })
+                                }}
+                            </span>
+                        </button>
+                    </div>
+                    <ArtistCredit :credit="sampleArtistCredit" />
                 </section>
             </div>
             <div data-part="view" data-view="admin-transcoding">

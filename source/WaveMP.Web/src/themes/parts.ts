@@ -121,6 +121,14 @@ export const parts = [
     'file-path',
     'file-meta',
 
+    // Artist pictures
+    'artist-collage',
+    'artist-collage-tile',
+    'artist-credit',
+    'artist-credit-author',
+    'artist-credit-license',
+    'artist-credit-source',
+
     // Playlists
     'playlist-cover',
     'playlist-cover-tile',
@@ -399,6 +407,23 @@ export const parts = [
     'online-compare-field',
     'online-compare-current',
     'online-compare-suggested',
+
+    // Dialog of an artist picture
+    'artist-picture-editor',
+    'picture-sources',
+    'picture-source',
+    'picture-source-name',
+    'picture-source-state',
+    'artist-match-list',
+    'artist-match',
+    'artist-match-name',
+    'artist-match-details',
+    'picture-candidate-list',
+    'picture-candidate',
+    'picture-candidate-provider',
+    'picture-candidate-author',
+    'picture-candidate-license',
+    'picture-candidate-size',
 
     'review-filters',
     'review-bulk',

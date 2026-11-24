@@ -2,15 +2,40 @@ import { defineStore } from 'pinia'
 import { reactive } from 'vue'
 import { statusOf } from '@/api/problems'
 import { fetchAlbumCover, fetchTrackCover } from '@/library/api'
+import {
+    fetchArtistPicture,
+    fetchCandidatePreview,
+    fetchOnlineArtistPicture,
+    fetchUploadedArtistPicture,
+} from '@/library/artistPictureApi'
 import { defaultCoverSize, type CoverSize } from '@/library/covers'
 import { fetchPlaylistCover } from '@/playlists/api'
 import { fetchAvatar, fetchAvatarPreset } from '@/profiles/avatarApi'
 
 /**
  * What a picture belongs to: covers of albums, tracks and playlists, avatars of profiles (by the id
- * of the profile) and built-in avatars (by their id).
+ * of the profile), built-in avatars (by their id), the picture an artist shows, its uploaded and
+ * its online picture (for the admin, by the id of the artist) and the previews of pictures found
+ * online (by artistCandidateId()).
  */
-export type CoverKind = 'album' | 'track' | 'playlist' | 'avatar' | 'avatar-preset'
+export type CoverKind =
+    | 'album'
+    | 'track'
+    | 'playlist'
+    | 'avatar'
+    | 'avatar-preset'
+    | 'artist'
+    | 'artist-uploaded'
+    | 'artist-online'
+    | 'artist-candidate'
+
+/** Kinds of the pictures an admin changes in the dialog of an artist picture. */
+export const artistPictureSlotKinds: readonly CoverKind[] = ['artist-uploaded', 'artist-online']
+
+/** The id of the preview of a picture found online for an artist, for the kind artist-candidate. */
+export function artistCandidateId(artistId: string, candidateId: string): string {
+    return `${artistId}/${candidateId}`
+}
 
 /** Covers kept loaded without a component that shows them, the least recently used go first. */
 export const maxCachedCovers = 100
@@ -35,11 +60,12 @@ interface Entry {
  * an entry of its own. Components acquire a cover while they show it and release it afterwards;
  * requests for the same cover and size are shared. The browser keeps the pictures as well and asks
  * the API with their ETag whether they changed. A missing cover (404) is remembered as null, other
- * errors are not, so the next attempt loads again. Own covers of playlists and avatars carry the
- * version the API names, so a new picture gets a new entry instead of the one already loaded.
- * Covers of albums and tracks have no such version; after a change of a cover rule, invalidate()
- * raises the revision of their kind, and components that show them load them again with
- * versionOf().
+ * errors are not, so the next attempt loads again. Own covers of playlists, avatars and the
+ * pictures of artists carry the version the API names, so a new picture gets a new entry instead
+ * of the one already loaded. Covers of albums and tracks have no such version; after a change of a
+ * cover rule, invalidate() raises the revision of their kind, and components that show them load
+ * them again with versionOf(). The uploaded and the online picture of an artist have no version
+ * in the API either; the dialog of the artist picture invalidates them after every change.
  */
 export const useCoversStore = defineStore('covers', () => {
     const entries = new Map<string, Entry>()
@@ -60,6 +86,16 @@ export const useCoversStore = defineStore('covers', () => {
                 return fetchAvatar(id, size)
             case 'avatar-preset':
                 return fetchAvatarPreset(id, size)
+            case 'artist':
+                return fetchArtistPicture(id, size)
+            case 'artist-uploaded':
+                return fetchUploadedArtistPicture(id, size)
+            case 'artist-online':
+                return fetchOnlineArtistPicture(id, size)
+            case 'artist-candidate': {
+                const [artistId = '', candidateId = ''] = id.split('/')
+                return fetchCandidatePreview(artistId, candidateId, size)
+            }
             default:
                 return fetchTrackCover(id, size)
         }

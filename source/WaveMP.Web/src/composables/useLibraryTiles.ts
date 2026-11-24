@@ -13,8 +13,8 @@ import { useFormat } from '@/composables/useFormat'
 import { artistLabelKey } from '@/library/presentation'
 
 /**
- * Tiles of the library lists: albums with cover and album artist, artists, songs with cover and
- * artist, genres, years, playlists and smart playlists. Albums, artists, songs and playlists bring their context
+ * Tiles of the library lists: albums with cover and album artist, artists with their picture,
+ * songs with cover and artist, genres, years, playlists and smart playlists. Albums, artists, songs and playlists bring their context
  * menu.
  */
 export function useLibraryTiles() {
@@ -45,6 +45,7 @@ export function useLibraryTiles() {
             title: item.name ?? '',
             subtitle: songs(item.trackCount),
             to: { name: 'library-artist', params: { id: item.id ?? '' } },
+            artistPicture: { id: item.id ?? '', picture: item.picture },
             menu: item.id ? { type: 'artist', artist: item } : undefined,
         }
     }

@@ -60,6 +60,24 @@ export function layoutWidthOf(element: Element | null): number {
     return element.getBoundingClientRect().width
 }
 
+/**
+ * The larger side an element is laid out with in CSS pixels: its layout width, or its layout
+ * height where that is larger (e.g. a picture that fills a tile higher than wide); 0 while it is
+ * not laid out.
+ */
+export function layoutSizeOf(element: Element | null): number {
+    if (!element) {
+        return 0
+    }
+
+    if (element instanceof HTMLElement) {
+        return Math.max(element.offsetWidth, element.offsetHeight)
+    }
+
+    const box = element.getBoundingClientRect()
+    return Math.max(box.width, box.height)
+}
+
 /** The pixel density of the screen the element is shown on; 1 where it is unknown. */
 export function pixelRatioOf(element: Element | null): number {
     const view =

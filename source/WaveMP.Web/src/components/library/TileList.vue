@@ -1,6 +1,9 @@
 <script lang="ts">
 import type { RouteLocationRaw } from 'vue-router'
-import type { PlaylistCover as PlaylistCoverModel } from '@/api/generated/models'
+import type {
+    ArtistPicture as ArtistPictureModel,
+    PlaylistCover as PlaylistCoverModel,
+} from '@/api/generated/models'
 import type { MenuTarget } from '@/menus/targets'
 import type { IconSlotName } from '@/themes/iconSlots'
 
@@ -31,6 +34,14 @@ export interface Tile {
         readonly id: string
         readonly cover: PlaylistCoverModel | null | undefined
     }
+    /**
+     * Picture of an artist: its own picture, the collage of its album covers or the icon. Artist
+     * tiles without it show the icon in the shape of artist pictures.
+     */
+    readonly artistPicture?: {
+        readonly id: string
+        readonly picture: ArtistPictureModel | null | undefined
+    }
     /** The element of the context menu of the tile (song, album, artist or playlist). */
     readonly menu?: MenuTarget
     /** Icon slot of a small badge on the cover, e.g. the symbol of smart playlists. */
@@ -42,6 +53,7 @@ export interface Tile {
 import BaseCover from '@/components/base/BaseCover.vue'
 import BaseIcon from '@/components/base/BaseIcon.vue'
 import BaseLink from '@/components/base/BaseLink.vue'
+import ArtistPicture from './ArtistPicture.vue'
 import LibraryCover from './LibraryCover.vue'
 import PlaylistCover from '@/components/playlists/PlaylistCover.vue'
 import ItemMenuButton from '@/components/menus/ItemMenuButton.vue'
@@ -112,6 +124,11 @@ function onPointerdown(event: PointerEvent, tile: Tile): void {
                     :id="tile.playlistCover.id"
                     :cover="tile.playlistCover.cover"
                     :icon="tile.kind === 'smart-playlist' ? 'smart-playlist' : 'playlist'"
+                />
+                <ArtistPicture
+                    v-else-if="tile.kind === 'artist'"
+                    :id="tile.artistPicture?.id"
+                    :picture="tile.artistPicture?.picture"
                 />
                 <BaseCover v-else :placeholder="false">
                     <BaseIcon :name="tile.kind" />

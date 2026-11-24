@@ -314,6 +314,9 @@
         --wmp-cover-size-queue: 2.5rem;
         --wmp-cover-size-queue-pane: 3.5rem;
         --wmp-cover-size-l: 12rem;
+        /* Artists are portraits among square sleeves: their pictures and collages are round. */
+        --wmp-artist-picture-radius: 50%;
+        --wmp-artist-collage-gap: 1px;
         --wmp-stage-transition-duration: 0.6s;
         --wmp-stage-view-background: #000000;
         --wmp-video-ambient-intensity: 0.75;

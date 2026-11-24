@@ -31,6 +31,14 @@ vi.mock('@/library/onlineMetadata', () => ({
     updateOnlineMetadataSettings: vi.fn(),
 }))
 
+vi.mock('@/library/artistPictureApi', () => ({
+    getArtistPictureSettings: vi.fn().mockResolvedValue({
+        onlineLookupEnabled: false,
+        fanartTvApiKeySet: false,
+    }),
+    updateArtistPictureSettings: vi.fn(),
+}))
+
 const finished: Scan = {
     id: 'done',
     status: 'Succeeded',
@@ -107,6 +115,7 @@ describe('AdminLibraryView', () => {
                 'Settings',
                 'Lyrics lookup',
                 'Online search for album info',
+                'Artist pictures online',
             ],
         )
         expect(wrapper.get('[data-part="scan-status"]').attributes('data-state')).toBe('idle')

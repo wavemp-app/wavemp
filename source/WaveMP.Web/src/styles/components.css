@@ -2092,6 +2092,72 @@
         inline-size: min(var(--wmp-cover-size-l), 100%);
     }
 
+    /* --- Artist pictures ----------------------------------------------------------------- */
+
+    /*
+     * Artists are portraits among the square album sleeves: their picture, the icon without one
+     * and the collage of album covers share the radius --wmp-artist-picture-radius (round by
+     * default). The collage is a calm contact sheet of up to four covers, separated by a thin gap
+     * in the color of the surface: one fills it, two stand side by side, three are one large and
+     * two small ones, four a 2x2 grid.
+     */
+    [data-part='cover'][data-kind='artist'] {
+        border-radius: var(--wmp-artist-picture-radius);
+    }
+
+    [data-part='artist-collage'] {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-template-rows: repeat(2, minmax(0, 1fr));
+        gap: var(--wmp-artist-collage-gap);
+        flex: none;
+        inline-size: var(--wmp-cover-size);
+        aspect-ratio: 1;
+        overflow: hidden;
+        border-radius: var(--wmp-artist-picture-radius);
+        background: var(--wmp-color-surface);
+    }
+
+    [data-part='artist-collage-tile'] {
+        display: grid;
+        min-inline-size: 0;
+        min-block-size: 0;
+        overflow: hidden;
+    }
+
+    [data-part='artist-collage'][data-count='1'] > [data-part='artist-collage-tile'] {
+        grid-area: 1 / 1 / -1 / -1;
+    }
+
+    [data-part='artist-collage'][data-count='2'] > [data-part='artist-collage-tile'],
+    [data-part='artist-collage'][data-count='3']
+        > [data-part='artist-collage-tile'][data-index='0'] {
+        grid-row: 1 / -1;
+    }
+
+    [data-part='artist-collage-tile'] > [data-part='cover'] {
+        inline-size: 100%;
+        block-size: 100%;
+        aspect-ratio: auto;
+        border-radius: 0;
+    }
+
+    [data-part='tile'] > [data-part='artist-collage'] {
+        inline-size: 100%;
+    }
+
+    [data-part='detail-header'] > [data-part='artist-collage'] {
+        inline-size: min(var(--wmp-cover-size-l), 100%);
+    }
+
+    /* The credit of an online picture: a quiet caption with links to the license and the source. */
+    [data-part='artist-credit'] {
+        margin: 0;
+        color: var(--wmp-color-text-muted);
+        font-size: var(--wmp-font-size-s);
+        overflow-wrap: anywhere;
+    }
+
     /* Preview of a cover rule: the cover the chosen rule shows, with a caption below. */
     [data-part='cover-preview'] {
         display: grid;
@@ -2676,6 +2742,178 @@
             > [data-part='label'] {
             min-block-size: 0;
         }
+    }
+
+    /* --- Dialog of an artist picture ------------------------------------------------------ */
+
+    [data-part='dialog'][data-item='artist-picture'] {
+        inline-size: min(46rem, calc(100vw - 2rem));
+    }
+
+    [data-part='artist-picture-editor'] {
+        container: wavemp-artist-picture / inline-size;
+        display: grid;
+        gap: var(--wmp-space-l);
+        min-inline-size: 0;
+    }
+
+    [data-part='artist-picture-editor'] > [data-part='segmented-control'] {
+        justify-self: start;
+    }
+
+    [data-part='artist-picture-editor'] [data-part='online-section'] > [data-part='cover'] {
+        inline-size: min(var(--wmp-cover-size-l), 100%);
+    }
+
+    /*
+     * The sources in the order in which they win: a real sequence, so the numbers of the list
+     * stay. The source viewers see stands out with the accent, missing ones step back.
+     */
+    [data-part='picture-sources'] {
+        display: grid;
+        gap: var(--wmp-space-xs);
+        margin: 0;
+        padding-inline-start: var(--wmp-space-xl);
+    }
+
+    [data-part='picture-source'] {
+        padding: var(--wmp-space-xs) var(--wmp-space-s);
+        border-inline-start: 2px solid transparent;
+    }
+
+    [data-part='picture-source']::marker {
+        color: var(--wmp-color-text-muted);
+        font-variant-numeric: tabular-nums;
+    }
+
+    [data-part='picture-source'][data-state='active'] {
+        border-inline-start-color: var(--wmp-color-accent);
+        background: var(--wmp-color-hover);
+    }
+
+    [data-part='picture-source'][data-state='active']::marker {
+        color: var(--wmp-color-accent);
+        font-weight: var(--wmp-font-weight-bold);
+    }
+
+    [data-part='picture-source-name'],
+    [data-part='picture-source-state'] {
+        display: block;
+        overflow-wrap: anywhere;
+    }
+
+    [data-part='picture-source'][data-state='active'] > [data-part='picture-source-name'] {
+        font-weight: var(--wmp-font-weight-bold);
+    }
+
+    [data-part='picture-source-state'] {
+        color: var(--wmp-color-text-muted);
+        font-size: var(--wmp-font-size-s);
+    }
+
+    :is([data-part='artist-match-list'], [data-part='picture-candidate-list']) {
+        position: relative;
+        display: grid;
+        gap: var(--wmp-space-s);
+        min-inline-size: 0;
+    }
+
+    [data-part='artist-match-list'] {
+        grid-template-columns: repeat(auto-fill, minmax(min(14rem, 100%), 1fr));
+    }
+
+    /* Two pictures side by side on phones, three or four in a wide dialog. */
+    [data-part='picture-candidate-list'] {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    @container wavemp-artist-picture (width >= 30rem) {
+        [data-part='picture-candidate-list'] {
+            grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr));
+        }
+    }
+
+    :is([data-part='artist-match-list'], [data-part='picture-candidate-list'])
+        > [data-part='indicator'] {
+        position: absolute;
+        inset-block-start: var(--wmp-indicator-y, 0);
+        left: var(--wmp-indicator-x, 0);
+        inline-size: var(--wmp-indicator-width, 0);
+        block-size: var(--wmp-indicator-height, 0);
+        pointer-events: none;
+    }
+
+    :is([data-part='artist-match'], [data-part='picture-candidate']) {
+        display: grid;
+        align-content: start;
+        gap: var(--wmp-space-xs);
+        min-inline-size: 0;
+        padding: var(--wmp-space-s);
+        border: 1px solid var(--wmp-color-border);
+        border-radius: var(--wmp-radius-m);
+        background: var(--wmp-color-surface);
+        color: inherit;
+        text-align: start;
+        cursor: pointer;
+    }
+
+    [data-part='artist-match'] {
+        justify-items: start;
+        padding-inline: var(--wmp-space-m);
+    }
+
+    :is([data-part='artist-match'], [data-part='picture-candidate']):hover {
+        border-color: var(--wmp-color-accent);
+    }
+
+    :is([data-part='artist-match'], [data-part='picture-candidate'])[aria-checked='true'] {
+        border-color: var(--wmp-color-accent);
+        box-shadow: inset 0 0 0 1px var(--wmp-color-accent);
+    }
+
+    :is([data-part='artist-match'], [data-part='picture-candidate']):focus-visible {
+        outline: 2px solid var(--wmp-color-focus);
+        outline-offset: 2px;
+    }
+
+    :is([data-part='artist-match'], [data-part='picture-candidate'])[aria-disabled='true'] {
+        cursor: default;
+    }
+
+    [data-part='artist-match-name'] {
+        font-weight: var(--wmp-font-weight-bold);
+        overflow-wrap: anywhere;
+    }
+
+    [data-part='artist-match-details'] {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--wmp-space-xs) var(--wmp-space-s);
+        color: var(--wmp-color-text-muted);
+        font-size: var(--wmp-font-size-s);
+    }
+
+    [data-part='picture-candidate'] > [data-part='cover'] {
+        inline-size: 100%;
+        border-radius: var(--wmp-radius-s);
+    }
+
+    [data-part='picture-candidate-provider'] {
+        font-weight: var(--wmp-font-weight-bold);
+        font-size: var(--wmp-font-size-s);
+    }
+
+    :is(
+        [data-part='picture-candidate-author'],
+        [data-part='picture-candidate-license'],
+        [data-part='picture-candidate-size']
+    ) {
+        min-inline-size: 0;
+        overflow: hidden;
+        color: var(--wmp-color-text-muted);
+        font-size: var(--wmp-font-size-s);
+        text-overflow: ellipsis;
+        white-space: nowrap;
     }
 
     /* --- Slider -------------------------------------------------------------------------- */

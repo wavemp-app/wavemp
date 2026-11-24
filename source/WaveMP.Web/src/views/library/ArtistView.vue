@@ -1,13 +1,14 @@
 <script setup lang="ts">
 import { computed, ref, useId, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import type { Album, Artist } from '@/api/generated/models'
+import { ArtistPictureKindObject, type Album, type Artist } from '@/api/generated/models'
 import { statusOf } from '@/api/problems'
 import BaseButton from '@/components/base/BaseButton.vue'
-import BaseCover from '@/components/base/BaseCover.vue'
-import BaseIcon from '@/components/base/BaseIcon.vue'
 import BaseLink from '@/components/base/BaseLink.vue'
 import FavoriteButton from '@/components/collection/FavoriteButton.vue'
+import ArtistCredit from '@/components/library/ArtistCredit.vue'
+import ArtistPicture from '@/components/library/ArtistPicture.vue'
+import ArtistPictureDialog from '@/components/library/ArtistPictureDialog.vue'
 import DetailHeader from '@/components/library/DetailHeader.vue'
 import MetaItem from '@/components/library/MetaItem.vue'
 import TileCollection from '@/components/library/TileCollection.vue'
@@ -17,10 +18,12 @@ import { useFormat } from '@/composables/useFormat'
 import { useLibraryTiles } from '@/composables/useLibraryTiles'
 import type { PagedListStatus } from '@/composables/usePagedList'
 import { getArtist, listArtistAlbums } from '@/library/api'
+import { useSessionStore } from '@/stores/session'
 
 /**
- * An artist with its albums (also those it only contributes to), its songs and the heart that marks
- * it as favorite.
+ * An artist with its picture (with the credit of a picture from an online service), its albums
+ * (also those it only contributes to), its songs and the heart that marks it as favorite. Admins
+ * change the picture in a dialog.
  */
 const props = defineProps<{
     id: string
@@ -31,6 +34,8 @@ const format = useFormat()
 const tiles = useLibraryTiles()
 const albumsTitleId = useId()
 const songsTitleId = useId()
+const session = useSessionStore()
+const editingPicture = ref(false)
 
 const artist = ref<Artist | null>(null)
 const status = ref<'loading' | 'ready' | 'notFound' | 'error'>('loading')
@@ -65,6 +70,27 @@ async function load(): Promise<void> {
     }
 }
 
+/** The picture changed: the answer of the API holds the artist, otherwise it is loaded again. */
+async function onPictureChanged(changed?: Artist): Promise<void> {
+    if (changed?.id === props.id) {
+        artist.value = changed
+        return
+    }
+
+    try {
+        const loaded = await getArtist(props.id)
+        if (loaded) {
+            artist.value = loaded
+        }
+    } catch {
+        // The page keeps what it shows; the next visit loads the artist again.
+    }
+}
+
+const showsOnlinePicture = computed(
+    () => artist.value?.picture?.kind === ArtistPictureKindObject.Online,
+)
+
 function fetchAlbums(offset: number, limit: number) {
     return listArtistAlbums(props.id, { offset, limit, sort: 'Year' })
 }
@@ -91,9 +117,7 @@ useDetailTitle(() => (status.value === 'ready' ? artist.value?.name : null))
                 :back="{ name: 'library-section', params: { section: 'artists' } }"
             >
                 <template #media>
-                    <BaseCover :placeholder="false">
-                        <BaseIcon name="artist" />
-                    </BaseCover>
+                    <ArtistPicture :id="artist.id" :picture="artist.picture" />
                 </template>
                 <MetaItem field="albums" :label="t('list.albums')">
                     {{ format.number(artist.albumCount ?? 0) }}
@@ -101,12 +125,20 @@ useDetailTitle(() => (status.value === 'ready' ? artist.value?.name : null))
                 <MetaItem field="tracks" :label="t('list.songs')">
                     {{ format.number(artist.trackCount ?? 0) }}
                 </MetaItem>
+                <ArtistCredit v-if="showsOnlinePicture" :credit="artist.picture?.onlineCredit" />
                 <template #actions>
                     <FavoriteButton
                         data-item="favorite"
                         type="Artist"
                         :id="artist.id ?? id"
                         :favorite="artist.isFavorite"
+                    />
+                    <BaseButton
+                        v-if="session.isAdmin"
+                        data-item="artist-picture"
+                        icon="change-cover"
+                        :label="t('artistPictures.change')"
+                        @click="editingPicture = true"
                     />
                 </template>
             </DetailHeader>
@@ -136,6 +168,12 @@ useDetailTitle(() => (status.value === 'ready' ? artist.value?.name : null))
                     @status="songsStatus = $event"
                 />
             </section>
+            <ArtistPictureDialog
+                v-if="session.isAdmin"
+                v-model:open="editingPicture"
+                :artist="artist"
+                @changed="onPictureChanged"
+            />
         </template>
     </div>
 </template>

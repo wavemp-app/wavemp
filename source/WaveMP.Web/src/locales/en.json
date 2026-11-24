@@ -1106,6 +1106,8 @@
     "albumCoverNames": "Names of album covers",
     "listHint": "Separate the entries with commas. Applies with the next scan.",
     "coverNamesHint": "File names without extension, the most important first. Applies with the next scan.",
+    "artistPictureNames": "Names of artist pictures",
+    "artistPictureNamesHint": "File names without extension, the most important first, for pictures directly in the folder named like the artist. Applies with the next scan.",
     "coverPriority": "Cover shown first",
     "coverPriorityHint": "Applies to all albums and songs without a rule of their own. If the chosen cover is missing, the other one is shown. A picture with the name of a song always comes first for that song.",
     "save": "Save",
@@ -1831,6 +1833,117 @@
     "errors": {
       "url": "Enter an address that starts with http:// or https://.",
       "interval": "Enter a whole number from {min} to {max}."
+    }
+  },
+  "artistPictures": {
+    "change": "Change picture",
+    "title": "Artist picture",
+    "mode": "Source of the picture",
+    "modes": {
+      "upload": "Upload",
+      "online": "Online"
+    },
+    "sources": {
+      "title": "What viewers see",
+      "names": {
+        "local": "Picture in the artist folder",
+        "uploaded": "Uploaded picture",
+        "online": "Online picture",
+        "albums": "Album covers"
+      },
+      "shown": "Shown",
+      "stored": "Stored",
+      "fallback": "Used when there is no other picture",
+      "hiddenBy": {
+        "local": "Stored, hidden by the picture in the artist folder",
+        "uploaded": "Stored, hidden by the uploaded picture",
+        "online": "Stored, hidden by the online picture"
+      },
+      "missing": {
+        "local": "No picture named like the artist picture names in the artist folder",
+        "uploaded": "None uploaded",
+        "online": "None taken over",
+        "albums": "No album has a cover"
+      }
+    },
+    "upload": {
+      "hint": "Choose a JPEG, PNG or WebP picture of at most 10 MB. You can then move and zoom it to choose the square that is shown.",
+      "choose": "Choose picture",
+      "chooseOther": "Choose another picture",
+      "save": "Upload picture",
+      "saved": "The picture was uploaded.",
+      "remove": "Remove uploaded picture",
+      "removed": "The uploaded picture was removed."
+    },
+    "online": {
+      "hint": "WaveMP sends the name of the artist to MusicBrainz and the MusicBrainz id to Wikidata, Wikimedia Commons and, with a key, fanart.tv. Nothing is taken over before you choose a picture.",
+      "find": "Find pictures online",
+      "matches": "Artist on MusicBrainz",
+      "searchingArtists": "Searching MusicBrainz",
+      "remembered": "Chosen last time",
+      "lifeSpan": "{begin} to {end}",
+      "lifeSpanOpen": "since {begin}",
+      "candidates": "Pictures found",
+      "searchingPictures": "Searching Wikimedia Commons and fanart.tv",
+      "size": "{width} × {height} pixels",
+      "crop": "Part of the picture",
+      "loadingPreview": "Loading the preview",
+      "previewFailed": "The preview cannot be shown. The picture can still be used; its middle square is shown.",
+      "takeOver": "Use this picture",
+      "saved": "The online picture was taken over.",
+      "remove": "Remove online picture",
+      "removed": "The online picture was removed.",
+      "otherArtist": "Choose another artist",
+      "searchAgain": "Search again",
+      "noMatches": "MusicBrainz knows no artist with this name.",
+      "noPictures": "No pictures found for this artist on Wikimedia Commons or fanart.tv.",
+      "disabled": "Online lookup is off. Switch it on under Administration, Library.",
+      "toSettings": "Open the library settings",
+      "musicBrainzUnavailable": "MusicBrainz cannot be reached. Try again later.",
+      "servicesUnavailable": "Wikimedia Commons and fanart.tv cannot be reached. Try again later.",
+      "failed": "The lookup failed. Try again later."
+    },
+    "providers": {
+      "wikimedia": "Wikimedia Commons",
+      "fanartTv": "fanart.tv"
+    },
+    "credit": {
+      "authorLicense": "Photo: {author}, {license}, {source}",
+      "author": "Photo: {author}, {source}",
+      "license": "Photo: {license}, {source}",
+      "source": "Photo: {source}"
+    },
+    "errors": {
+      "type": "Choose a JPEG, PNG or WebP picture.",
+      "size": "The picture is too large (at most 10 MB).",
+      "unreadable": "The picture is damaged and cannot be read.",
+      "artistNotFound": "This artist no longer exists.",
+      "unavailable": "The service cannot be reached or delivered no usable picture. Try again later.",
+      "candidateExpired": "This picture is no longer known. Search again.",
+      "processing": "Pictures cannot be processed right now. Check that ffmpeg is available.",
+      "saveFailed": "The picture could not be changed."
+    }
+  },
+  "artistPictureSettings": {
+    "title": "Artist pictures online",
+    "enabled": "Find artist pictures online",
+    "enabledHint": "Admins can look up pictures of artists on Wikimedia Commons and fanart.tv in the dialog of an artist. While this is off, WaveMP sends no request for artist pictures to any service.",
+    "key": "fanart.tv API key",
+    "keyHint": "Optional. Your personal key from fanart.tv; without it only Wikimedia Commons is searched. The key is never shown again.",
+    "keySaved": "Key saved",
+    "keyState": {
+      "saved": "A key is saved.",
+      "missing": "No key saved."
+    },
+    "removeKey": "Remove key",
+    "keyRemoved": "The key was removed.",
+    "privacy": "The lookup sends the name of the artist to MusicBrainz and the MusicBrainz id of the artist to Wikidata, Wikimedia Commons and, with a key, fanart.tv. Pictures are loaded through WaveMP, never by the browsers of the viewers.",
+    "save": "Save",
+    "saved": "The settings of the artist pictures were saved.",
+    "saveError": "The settings could not be saved.",
+    "loadError": "The settings of the artist pictures could not be loaded.",
+    "errors": {
+      "key": "Enter the key as 1 to 64 letters (A to Z) or digits."
     }
   },
   "files": {

@@ -1106,6 +1106,8 @@
     "albumCoverNames": "Namen von Album-Covern",
     "listHint": "Einträge mit Kommas trennen. Gilt ab dem nächsten Scan.",
     "coverNamesHint": "Dateinamen ohne Endung, die wichtigsten zuerst. Gilt ab dem nächsten Scan.",
+    "artistPictureNames": "Namen von Künstlerbildern",
+    "artistPictureNamesHint": "Dateinamen ohne Endung, die wichtigsten zuerst, für Bilder direkt im Ordner mit dem Namen des Künstlers. Gilt ab dem nächsten Scan.",
     "coverPriority": "Zuerst gezeigtes Cover",
     "coverPriorityHint": "Gilt für alle Alben und Titel ohne eigene Regel. Fehlt das gewählte Cover, wird das andere gezeigt. Ein Bild mit dem Namen eines Titels kommt für diesen Titel immer zuerst.",
     "save": "Speichern",
@@ -1831,6 +1833,117 @@
     "errors": {
       "url": "Gib eine Adresse ein, die mit http:// oder https:// beginnt.",
       "interval": "Gib eine ganze Zahl von {min} bis {max} ein."
+    }
+  },
+  "artistPictures": {
+    "change": "Bild ändern",
+    "title": "Bild des Künstlers",
+    "mode": "Quelle des Bilds",
+    "modes": {
+      "upload": "Hochladen",
+      "online": "Online"
+    },
+    "sources": {
+      "title": "Was alle sehen",
+      "names": {
+        "local": "Bild im Künstlerordner",
+        "uploaded": "Hochgeladenes Bild",
+        "online": "Online-Bild",
+        "albums": "Album-Cover"
+      },
+      "shown": "Wird gezeigt",
+      "stored": "Gespeichert",
+      "fallback": "Wird genutzt, wenn es kein anderes Bild gibt",
+      "hiddenBy": {
+        "local": "Gespeichert, verdeckt vom Bild im Künstlerordner",
+        "uploaded": "Gespeichert, verdeckt vom hochgeladenen Bild",
+        "online": "Gespeichert, verdeckt vom Online-Bild"
+      },
+      "missing": {
+        "local": "Kein Bild mit einem der Namen für Künstlerbilder im Künstlerordner",
+        "uploaded": "Keins hochgeladen",
+        "online": "Keins übernommen",
+        "albums": "Kein Album hat ein Cover"
+      }
+    },
+    "upload": {
+      "hint": "Wähle ein Bild als JPEG, PNG oder WebP mit höchstens 10 MB. Danach kannst du es verschieben und zoomen, um das gezeigte Quadrat zu wählen.",
+      "choose": "Bild wählen",
+      "chooseOther": "Anderes Bild wählen",
+      "save": "Bild hochladen",
+      "saved": "Das Bild wurde hochgeladen.",
+      "remove": "Hochgeladenes Bild entfernen",
+      "removed": "Das hochgeladene Bild wurde entfernt."
+    },
+    "online": {
+      "hint": "WaveMP sendet den Namen des Künstlers an MusicBrainz und die MusicBrainz-ID an Wikidata, Wikimedia Commons und, mit einem Schlüssel, fanart.tv. Übernommen wird nichts, bevor du ein Bild wählst.",
+      "find": "Bilder online suchen",
+      "matches": "Künstler bei MusicBrainz",
+      "searchingArtists": "MusicBrainz wird durchsucht",
+      "remembered": "Zuletzt gewählt",
+      "lifeSpan": "{begin} bis {end}",
+      "lifeSpanOpen": "seit {begin}",
+      "candidates": "Gefundene Bilder",
+      "searchingPictures": "Wikimedia Commons und fanart.tv werden durchsucht",
+      "size": "{width} × {height} Pixel",
+      "crop": "Ausschnitt des Bilds",
+      "loadingPreview": "Die Vorschau wird geladen",
+      "previewFailed": "Die Vorschau kann nicht gezeigt werden. Das Bild lässt sich trotzdem nutzen; gezeigt wird sein mittleres Quadrat.",
+      "takeOver": "Dieses Bild nutzen",
+      "saved": "Das Online-Bild wurde übernommen.",
+      "remove": "Online-Bild entfernen",
+      "removed": "Das Online-Bild wurde entfernt.",
+      "otherArtist": "Anderen Künstler wählen",
+      "searchAgain": "Erneut suchen",
+      "noMatches": "MusicBrainz kennt keinen Künstler mit diesem Namen.",
+      "noPictures": "Für diesen Künstler gibt es keine Bilder auf Wikimedia Commons oder fanart.tv.",
+      "disabled": "Die Online-Suche nach Künstlerbildern ist aus. Schalte sie unter Administration, Bibliothek ein.",
+      "toSettings": "Bibliothekseinstellungen öffnen",
+      "musicBrainzUnavailable": "MusicBrainz ist nicht erreichbar. Versuche es später erneut.",
+      "servicesUnavailable": "Wikimedia Commons und fanart.tv sind nicht erreichbar. Versuche es später erneut.",
+      "failed": "Die Suche ist fehlgeschlagen. Versuche es später erneut."
+    },
+    "providers": {
+      "wikimedia": "Wikimedia Commons",
+      "fanartTv": "fanart.tv"
+    },
+    "credit": {
+      "authorLicense": "Foto: {author}, {license}, {source}",
+      "author": "Foto: {author}, {source}",
+      "license": "Foto: {license}, {source}",
+      "source": "Foto: {source}"
+    },
+    "errors": {
+      "type": "Wähle ein Bild als JPEG, PNG oder WebP.",
+      "size": "Das Bild ist zu groß (höchstens 10 MB).",
+      "unreadable": "Das Bild ist beschädigt und kann nicht gelesen werden.",
+      "artistNotFound": "Diesen Künstler gibt es nicht mehr.",
+      "unavailable": "Der Dienst ist nicht erreichbar oder lieferte kein brauchbares Bild. Versuche es später erneut.",
+      "candidateExpired": "Dieses Bild ist nicht mehr bekannt. Suche erneut.",
+      "processing": "Bilder können gerade nicht verarbeitet werden. Prüfe, ob ffmpeg verfügbar ist.",
+      "saveFailed": "Das Bild konnte nicht geändert werden."
+    }
+  },
+  "artistPictureSettings": {
+    "title": "Künstlerbilder online",
+    "enabled": "Künstlerbilder online suchen",
+    "enabledHint": "Admins können im Dialog eines Künstlers Bilder auf Wikimedia Commons und fanart.tv suchen. Solange das aus ist, sendet WaveMP für Künstlerbilder keine Anfragen an irgendeinen Dienst.",
+    "key": "API-Schlüssel von fanart.tv",
+    "keyHint": "Optional. Dein persönlicher Schlüssel von fanart.tv; ohne ihn wird nur Wikimedia Commons durchsucht. Der Schlüssel wird nie wieder angezeigt.",
+    "keySaved": "Schlüssel gespeichert",
+    "keyState": {
+      "saved": "Ein Schlüssel ist gespeichert.",
+      "missing": "Kein Schlüssel gespeichert."
+    },
+    "removeKey": "Schlüssel entfernen",
+    "keyRemoved": "Der Schlüssel wurde entfernt.",
+    "privacy": "Die Suche sendet den Namen des Künstlers an MusicBrainz und seine MusicBrainz-ID an Wikidata, Wikimedia Commons und, mit einem Schlüssel, fanart.tv. Bilder werden über WaveMP geladen, nie von den Browsern der Zuschauer.",
+    "save": "Speichern",
+    "saved": "Die Einstellungen der Künstlerbilder wurden gespeichert.",
+    "saveError": "Die Einstellungen konnten nicht gespeichert werden.",
+    "loadError": "Die Einstellungen der Künstlerbilder konnten nicht geladen werden.",
+    "errors": {
+      "key": "Gib den Schlüssel als 1 bis 64 Buchstaben (A bis Z) oder Ziffern ein."
     }
   },
   "files": {

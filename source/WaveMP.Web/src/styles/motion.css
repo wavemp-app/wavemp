@@ -29,6 +29,8 @@
         [data-part='theme-option'],
         [data-part='file-choice'],
         [data-part='online-match'],
+        [data-part='artist-match'],
+        [data-part='picture-candidate'],
         [data-part='color-swatch'],
         [data-part='avatar-preset']
     ) {
@@ -63,7 +65,9 @@
             [data-part='segmented-control'],
             [data-part='theme-picker'],
             [data-part='file-choices'],
-            [data-part='online-matches']
+            [data-part='online-matches'],
+            [data-part='artist-match-list'],
+            [data-part='picture-candidate-list']
         ):is(:hover, :focus-within, :active)
         > [data-part='indicator'] {
         transition-property: left, top, inline-size, block-size, opacity;

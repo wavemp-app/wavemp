@@ -2,7 +2,7 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import BaseCover from '@/components/base/BaseCover.vue'
 import { useInView } from '@/composables/useInView'
-import { layoutWidthOf, pixelRatioOf, useShownSize } from '@/composables/useShownSize'
+import { layoutSizeOf, pixelRatioOf, useShownSize } from '@/composables/useShownSize'
 import { coverSizeFor, type CoverSize } from '@/library/covers'
 import { useCoversStore, type CoverKind } from '@/stores/covers'
 
@@ -47,11 +47,14 @@ let held: Held | null = null
 /** The version of the picture in the store: of the own cover and of the cover rules. */
 const version = computed(() => covers.versionOf(props.kind, props.version))
 
-/** The size of the API for the shown width of the cover. */
+/**
+ * The size of the API for the shown size of the cover: its larger side, since a cover that fills
+ * a tile higher than wide (e.g. in the collage of an artist) is cut to that tile.
+ */
 function measure(): CoverSize {
     const element: unknown = cover.value?.$el
     const shown = element instanceof Element ? element : null
-    return coverSizeFor(layoutWidthOf(shown), pixelRatioOf(shown))
+    return coverSizeFor(layoutSizeOf(shown), pixelRatioOf(shown))
 }
 
 /** Frees the held picture; a new version of the same cover keeps showing it until it is loaded. */

@@ -2,6 +2,7 @@
 import { onMounted, ref, useId } from 'vue'
 import { useI18n } from 'vue-i18n'
 import AdminNav from '@/components/admin/AdminNav.vue'
+import ArtistPictureSettingsForm from '@/components/admin/ArtistPictureSettingsForm.vue'
 import LibrarySettingsForm from '@/components/admin/LibrarySettingsForm.vue'
 import LyricsLookupPanel from '@/components/admin/LyricsLookupPanel.vue'
 import MediaSourcesPanel from '@/components/admin/MediaSourcesPanel.vue'
@@ -16,7 +17,8 @@ import { useScansStore } from '@/stores/scans'
 
 /**
  * Admin page of the library: the media folders, start a scan, follow it, see its result, the
- * history, settings and the results of the lyrics lookup.
+ * history, settings, the results of the lyrics lookup, the online search for album info and the
+ * online lookup of artist pictures.
  */
 const { t } = useI18n()
 const scans = useScansStore()
@@ -28,6 +30,7 @@ const scanTitleId = useId()
 const historyTitleId = useId()
 const settingsTitleId = useId()
 const onlineTitleId = useId()
+const artistPicturesTitleId = useId()
 const lyricsLookupsTitleId = useId()
 
 const polling = usePolling(refresh, 1000)
@@ -152,6 +155,16 @@ onMounted(async () => {
                 {{ t('onlineMetadataSettings.title') }}
             </h2>
             <OnlineMetadataSettingsForm />
+        </section>
+        <section
+            data-part="section"
+            data-item="artist-pictures"
+            :aria-labelledby="artistPicturesTitleId"
+        >
+            <h2 :id="artistPicturesTitleId" data-part="section-title">
+                {{ t('artistPictureSettings.title') }}
+            </h2>
+            <ArtistPictureSettingsForm />
         </section>
     </div>
 </template>
