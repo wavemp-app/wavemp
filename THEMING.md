@@ -694,7 +694,8 @@ The internal component overview (`/dev/components`) uses its own parts starting 
 | `sidebar` | additionally `collapsed` (desktop, only the icons) or `expanded` |
 | `tab`, `bottom-nav-item`, `breadcrumb-item`, `tree-item` | `active` for the current page |
 | `tree-item` | additionally `expanded` or `collapsed` for nodes with children |
-| `list` | `placeholder` while the list shows placeholder content (component overview); `busy` while a change of a playlist is being saved; `has-video` while one of its songs has a video: the base then lays out the `list-column` and the `list-cell`s `title` as a grid of two columns, `--wmp-list-badge-width` for the video `badge` and the rest for the `label`, so the titles of all rows stay in line; `ungrouped` while it is a plain list (view `view-list` of the [Layout options](#layout-options)): one `list-group` without heading and details, and on the desktop no column for `list-group-info` |
+| `list` | `placeholder` while the list shows placeholder content (component overview); `busy` while a change of a playlist is being saved; `has-video` while one of its songs has a video: the base then lays out the `list-column` and the `list-cell`s `title` as a grid of two columns, `--wmp-list-badge-width` for the video `badge` and the rest for the `label`, so the titles of all rows stay in line; `ungrouped` while it is a plain list (view `view-list` of the [Layout options](#layout-options)): one `list-group` without heading and details, and on the desktop no column for `list-group-info`; `zoomed-out` while the `group-overview` of the list is open (see [Motion](#motion)) |
+| `tile-groups` | `zoomed-out` while the `group-overview` of the tiles is open |
 | `list-row` | `selected`; `has-video` for songs with a video, additionally `video-only` for songs with a video only (no audio); `playing` for the current song of the player |
 | `btn-favorite` | `on` for a favorite, otherwise `off` |
 | `rating` | `rated` or `unrated` |
@@ -749,6 +750,9 @@ The internal component overview (`/dev/components`) uses its own parts starting 
 | `progress` | `indeterminate` while the share done is unknown |
 | `load-more` | `loading` while the next page loads |
 | `load-previous` | `loading` while the previous page loads |
+| `group-overview` | `loading` while the groups of the list are loaded (the `group-grid` holds only its `indicator`), `ready` with the groups, `error` when they could not be loaded (an `empty-state` with a button to try again takes the place of the grid) |
+| `group-tile` | `current` for the group the overview was opened from: the group of the clicked heading, or the group at the top of the content area |
+| `letter` | `current` for the initial letter of the current group |
 | `file-item` | `audio`, `video`, `image` or `lyrics`; additionally `primary` for the file the song plays |
 | `file-selection-item` | `selected` if a category uses a file the admin selected, `missing` if a selected file is gone, `choices` if a category has more than one file |
 | `file-choice` | `checked` for the selected option, `active` for the file the song uses, `best` for the file of the highest quality, `missing` for a selected file that is gone |
@@ -787,8 +791,9 @@ Every group in which one entry is the active one gives the theme the same means 
 | `online-matches` | selected `online-match` |
 | `artist-match-list` | chosen `artist-match` |
 | `picture-candidate-list` | chosen `picture-candidate` |
+| `group-grid` | current `group-tile` (`aria-current="true"` and `data-state="current"`) |
 
-- The state is an attribute of the entry: `aria-current="page"` and `data-state="active"`, or `aria-checked="true"`.
+- The state is an attribute of the entry: `aria-current="page"` and `data-state="active"`, or `aria-checked="true"` (in `group-grid` `aria-current="true"` and `data-state="current"`).
 - The group has an `indicator` as its first child: empty, `aria-hidden`, hidden by the base (`display: none`) and laid over the active entry (`position: absolute` in the group, `left: var(--wmp-indicator-x)`, `top: var(--wmp-indicator-y)`, `inline-size: var(--wmp-indicator-width)`, `block-size: var(--wmp-indicator-height)`; in a `segmented-control` the whole height). A theme shows it and decides its shape, for example a line below the entry or a sliding pane of glass behind it. The group is a containing block (`position: relative`).
 - The group carries the runtime variables `--wmp-item-count`, `--wmp-active-index`, `--wmp-indicator-x`, `--wmp-indicator-y`, `--wmp-indicator-width` and `--wmp-indicator-height` (see [Runtime variables](#runtime-variables)). The app measures the box again when the active entry changes and when the group or its entries change their size. Without an active entry (`--wmp-active-index: -1`) the box has no size.
 - Two things follow from the measuring, and all shipped themes handle them in CSS only. An indicator without an active entry is a box without size, so it should paint nothing outside its box: no outer `box-shadow`, `outline` or `border` (a glow can be a `filter: drop-shadow()`, which follows painted content and draws nothing for an empty box). And the variables are set for the first time after the page is drawn and again after it is rebuilt, so an indicator with an unconditional `transition` slides in from the corner of the group. Let it move only while the person works with the group (`:hover`, `:focus-within`, `:active`), as the base does with the durations of [Motion](#motion) and as in the example below; a click or an arrow key still animates it, and the screenshots of the regression stay stable.
@@ -818,18 +823,19 @@ Example of a line that slides below the active tab:
 | Attribute or state | Parts |
 |---|---|
 | `aria-current="page"` | `tab`, `bottom-nav-item`, `breadcrumb-link`, `tree-item`, `admin-nav-item` |
-| `aria-current="true"` | `profile-tile` of the current profile, `queue-item` of the current song, `picture-source` viewers see |
-| `aria-busy="true"` | `profile-select` while a profile is being selected; `autoplay` while its songs are chosen; `view` while its content loads; `load-more` while the next page loads; `load-previous` while the previous page loads |
-| `aria-expanded` | `tree-item`, `btn-menu`, `btn-sidebar-toggle`, `btn-profile`, `btn-sleep-timer`, `btn-preset-picker`, `btn-color-scheme-picker`, `now-playing-mini` (mobile: the full-screen player on the bar, `player-view-switch` in the full-screen player), `btn-cast` (without HTTPS), `menu-item` with a submenu (`true` while it is open) |
+| `aria-current="true"` | `profile-tile` of the current profile, `queue-item` of the current song, `picture-source` viewers see, `group-tile` of the current group |
+| `aria-busy="true"` | `profile-select` while a profile is being selected; `autoplay` while its songs are chosen; `view` while its content loads; `load-more` while the next page loads; `load-previous` while the previous page loads; `group-overview` while the groups load |
+| `aria-expanded` | `tree-item`, `btn-menu`, `btn-sidebar-toggle`, `btn-profile`, `btn-sleep-timer`, `btn-preset-picker`, `btn-color-scheme-picker`, `now-playing-mini` (mobile: the full-screen player on the bar, `player-view-switch` in the full-screen player), `btn-cast` (without HTTPS), `menu-item` with a submenu (`true` while it is open), `btn-group-jump` (`true` while its `group-overview` is open) |
 | `aria-invalid="true"` | `input`, `select` and `segmented-control` of a field with an error |
+| `aria-haspopup="dialog"` | `btn-group-jump` |
 | `aria-checked` | `color-swatch`, `segment`; `menu-item` with `role="menuitemradio"`, for example the chosen sort key and direction |
 | `aria-selected` | `list-row`; lists of songs allow several selected rows (`aria-multiselectable="true"` on `list`): Ctrl or Cmd with a click adds or removes a row, Shift with a click or an arrow key selects a range, Ctrl+A selects all; every selected row also has the state `selected` and the context menu applies to all of them |
 | `aria-pressed` | `btn-shuffle`, `btn-repeat`, `btn-crossfade`, `btn-autoplay`, `btn-auto-change`, `btn-mute`, `btn-favorite`, `rating-star`, `btn-sleep-timer`, the `button` `power` of `equalizer-controls` and other toggle buttons |
-| `aria-disabled="true"` | `tree-item`, `slider-thumb`, `btn-cast` without HTTPS (it stays focusable to show `cast-hint`); `segmented-control` and its `segment`s while the whole group is disabled, for example the ReplayGain mode while casting (the segments stay focusable; a single option that cannot be chosen is a disabled `button` instead) |
+| `aria-disabled="true"` | `tree-item`, `slider-thumb`, `btn-cast` without HTTPS (it stays focusable to show `cast-hint`); `segmented-control` and its `segment`s while the whole group is disabled, for example the ReplayGain mode while casting (the segments stay focusable; a single option that cannot be chosen is a disabled `button` instead); `letter` without a group in the `letter-bar` (it stays in the bar, so the alphabet keeps its places) |
 | `aria-valuemin`, `aria-valuemax`, `aria-valuenow`, `aria-valuetext` | `slider-thumb`, `progress` (`aria-valuenow` from 0 to 100, missing while indeterminate), `meter` (`aria-valuenow` from 0 to 100) |
 | `:disabled` | buttons and inputs |
 | `:checked` | `checkbox` |
-| `[open]` | `dialog`, `disclosure` |
+| `[open]` | `dialog`, `disclosure`, `group-overview` |
 | `:popover-open` | `context-menu` |
 
 The base links states to graphics: buttons use the variables `--wmp-image-<variant>-button`, `-hover`, `-active` and `-disabled` for `:hover`, `:active` and `[aria-pressed='true']`, and `:disabled`. A theme can therefore change all button states by setting variables only.
@@ -846,6 +852,8 @@ The base links states to graphics: buttons use the variables `--wmp-image-<varia
 | `data-variants` | `theme-option` | Variants of the theme, separated by spaces: `light`, `dark` or `light dark` |
 | `data-kind` | `theme-preview` | Variant the preview shows: `light` or `dark` |
 | `data-kind` | `tile-group` | What the tiles of the group have in common: `artist` (album artist), `letter` (initial letter) or `year` |
+| `data-kind` | `group-tile` | What the group of the tile is: `album` (songs of one album, with its cover and artist), `artist` (albums of one album artist), `letter` (initial letter A to Z or `#`), `year` (albums of one year), `disc` (a disc of an album) or `unknown` (songs without album, with their artist as `group-tile-detail` if they have one; albums without album artist or year) |
+| `data-item` | `letter` | The letter: `A` to `Z`, or `#` for digits, special characters and other scripts |
 | `data-position` | `list-group`, `tile-group` | Position of the first entry of the group in the whole list, counted from 0, also while only a part of a long list is loaded |
 | `data-item` | `theme-option` | Id of the theme |
 | `data-field` | `field` (appearance in the settings) | `theme` (the `theme-picker`), `theme-appearance` (the `segmented-control` `theme-appearance` with the `segment`s `system`, `light` and `dark`; disabled for themes with one variant); the `section` around them has `data-item="appearance"` |
