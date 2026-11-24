@@ -128,7 +128,11 @@ internal sealed class TagLibTagWriter : ITagWriter
             tag.Performers = ToArray(artist.Value);
         }
 
-        if (changes.AlbumArtist is { } albumArtist)
+        if (changes.AlbumArtists is { } albumArtists)
+        {
+            tag.AlbumArtists = [.. albumArtists.Value];
+        }
+        else if (changes.AlbumArtist is { } albumArtist)
         {
             tag.AlbumArtists = ToArray(albumArtist.Value);
         }
@@ -154,6 +158,12 @@ internal sealed class TagLibTagWriter : ITagWriter
             }
         }
 
+        // A count is only written next to a number.
+        if (changes.TrackCount is { } trackCount && tag.Track > 0)
+        {
+            tag.TrackCount = ToNumber(trackCount.Value);
+        }
+
         if (changes.DiscNumber is { } discNumber)
         {
             tag.Disc = ToNumber(discNumber.Value);
@@ -163,7 +173,16 @@ internal sealed class TagLibTagWriter : ITagWriter
             }
         }
 
-        if (changes.Genre is { } genre)
+        if (changes.DiscCount is { } discCount && tag.Disc > 0)
+        {
+            tag.DiscCount = ToNumber(discCount.Value);
+        }
+
+        if (changes.Genres is { } genres)
+        {
+            tag.Genres = [.. genres.Value];
+        }
+        else if (changes.Genre is { } genre)
         {
             tag.Genres = ToArray(genre.Value);
         }

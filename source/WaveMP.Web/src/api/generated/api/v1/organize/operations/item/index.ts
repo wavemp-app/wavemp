@@ -4,6 +4,8 @@
 // @ts-ignore
 import { createOrganizeOperationFromDiscriminatorValue, createProblemDetailsFromDiscriminatorValue, type OrganizeOperation, type ProblemDetails } from '../../../../../models/index.js';
 // @ts-ignore
+import { CancelRequestBuilderRequestsMetadata, type CancelRequestBuilder } from './cancel/index.js';
+// @ts-ignore
 import { ItemsRequestBuilderRequestsMetadata, type ItemsRequestBuilder } from './items/index.js';
 // @ts-ignore
 import { type BaseRequestBuilder, type KeysToExcludeForNavigationMetadata, type NavigationMetadata, type Parsable, type ParsableFactory, type RequestConfiguration, type RequestInformation, type RequestsMetadata } from '@microsoft/kiota-abstractions';
@@ -12,6 +14,10 @@ import { type BaseRequestBuilder, type KeysToExcludeForNavigationMetadata, type 
  * Builds and executes requests for operations under /api/v1/organize/operations/{id}
  */
 export interface OperationsItemRequestBuilder extends BaseRequestBuilder<OperationsItemRequestBuilder> {
+    /**
+     * The cancel property
+     */
+    get cancel(): CancelRequestBuilder;
     /**
      * The items property
      */
@@ -55,6 +61,9 @@ export const OperationsItemRequestBuilderUriTemplate = "{+baseurl}/api/v1/organi
  * Metadata for all the navigation properties in the request builder.
  */
 export const OperationsItemRequestBuilderNavigationMetadata: Record<Exclude<keyof OperationsItemRequestBuilder, KeysToExcludeForNavigationMetadata>, NavigationMetadata> = {
+    cancel: {
+        requestsMetadata: CancelRequestBuilderRequestsMetadata,
+    },
     items: {
         requestsMetadata: ItemsRequestBuilderRequestsMetadata,
     },

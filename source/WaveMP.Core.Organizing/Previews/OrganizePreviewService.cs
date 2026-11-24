@@ -1,9 +1,14 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using WaveMP.Core.Jobs.Definitions;
+using WaveMP.Core.Jobs.Runs;
+using WaveMP.Core.Jobs.Services;
 using WaveMP.Core.Metadata.Files;
 using WaveMP.Core.Metadata.Resolutions;
 using WaveMP.Core.Metadata.Sources;
 using WaveMP.Core.Organizing.Files;
+using WaveMP.Core.Organizing.Jobs;
+using WaveMP.Core.Organizing.Operations;
 using WaveMP.Core.Organizing.Options;
 using WaveMP.Core.Organizing.OwnAlbums;
 using WaveMP.Core.Organizing.Templates;
@@ -20,6 +25,9 @@ namespace WaveMP.Core.Organizing.Previews;
 
 internal sealed class OrganizePreviewService(
     IOrganizeRepository repository,
+    IJobService jobs,
+    IJobRunTracker tracker,
+    OrganizeRunRegistry registry,
     IOwnAlbumRepository ownAlbums,
     IOwnAlbumCoverStore covers,
     IOrganizingSettingsService organizingSettings,
@@ -177,6 +185,11 @@ internal sealed class OrganizePreviewService(
             return OrganizePreviewResult.Failed(OrganizePreviewStatus.MediaReadOnly);
         }
 
+        if (tracker.GetState(JobIds.LibraryOrganize) != JobActivityState.Idle)
+        {
+            return OrganizePreviewResult.Failed(OrganizePreviewStatus.Busy);
+        }
+
         OrganizeOperation operation = NewOperation(
             OrganizeOperationKind.Library,
             Guid.CreateVersion7(),
@@ -185,7 +198,20 @@ internal sealed class OrganizePreviewService(
         operation.Status = OrganizeOperationStatus.Planning;
         operation.SourceId = sourceId;
         await repository.AddOperationAsync(operation, cancellationToken);
-        await PlanLibraryAsync(operation.Id, cancellationToken);
+
+        // Planned by the organize job, with its progress in the counters of the operation.
+        JobRunStartResult started = await jobs.StartRunAsync(
+            new JobRunRequest(
+                JobIds.LibraryOrganize,
+                JobRunTrigger.Manual,
+                LibraryOrganizeJob.CreatePayload(operation.Id)),
+            CancellationToken.None);
+        if (!started.IsSuccess)
+        {
+            await repository.DeletePreviewAsync(operation.Id, CancellationToken.None);
+            return OrganizePreviewResult.Failed(OrganizePreviewStatus.Busy);
+        }
+
         return new OrganizePreviewResult(
             OrganizePreviewStatus.Created,
             await repository.FindOperationAsync(operation.Id, cancellationToken));
@@ -229,6 +255,19 @@ internal sealed class OrganizePreviewService(
             int batchSize = Math.Max(1, options.Value.PlanningBatchSize);
             while (true)
             {
+                if (operation.CancelRequestedAt is not null || registry.IsCancelRequested(operationId))
+                {
+                    await repository.FinishPlanningAsync(
+                        operationId,
+                        OrganizeOperationStatus.Canceled,
+                        null,
+                        Now(),
+                        null,
+                        CancellationToken.None);
+                    registry.Clear(operationId);
+                    return;
+                }
+
                 IReadOnlyList<Guid> ids = await repository.ListTrackIdsAsync(
                     operation.SourceId,
                     after,

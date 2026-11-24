@@ -1408,7 +1408,8 @@
       "coverCache": "Cover vorbereiten",
       "databaseBackup": "Datenbanksicherung",
       "lyricsDownload": "Songtexte herunterladen",
-      "libraryCheck": "Bibliothekskontrolle"
+      "libraryCheck": "Bibliothekskontrolle",
+      "libraryOrganize": "Dateien ordnen"
     },
     "lastRun": "Zuletzt {date}",
     "duration": "Dauer {duration}",
@@ -1422,7 +1423,8 @@
     "alreadyRunning": "Dieser Job läuft bereits.",
     "loadError": "Die Jobs konnten nicht geladen werden.",
     "runError": "Der Job konnte nicht gestartet werden.",
-    "afterScanWhenLyricsOn": "Läuft nach Scans, solange das Herunterladen von Songtexten eingeschaltet ist"
+    "afterScanWhenLyricsOn": "Läuft nach Scans, solange das Herunterladen von Songtexten eingeschaltet ist",
+    "whenOrganizing": "Läuft, wenn Dateien geordnet werden oder eine Neuordnung in der Vorschau geplant wird"
   },
   "adminCache": {
     "title": "Cache",

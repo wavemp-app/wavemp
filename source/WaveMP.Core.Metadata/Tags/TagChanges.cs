@@ -43,6 +43,27 @@ public sealed record TagChanges
     public TagChange<string?>? Genre { get; init; }
 
     /// <summary>
+    /// All album artists; replaces all album artists of the file and wins over <see cref="AlbumArtist"/>. An empty
+    /// list removes the field. Puts back the values of a backup.
+    /// </summary>
+    public TagChange<IReadOnlyList<string>>? AlbumArtists { get; init; }
+
+    /// <summary>
+    /// All genres; replaces all genres of the file and wins over <see cref="Genre"/>. An empty list removes the field.
+    /// </summary>
+    public TagChange<IReadOnlyList<string>>? Genres { get; init; }
+
+    /// <summary>
+    /// The number of tracks; written after <see cref="TrackNumber"/>.
+    /// </summary>
+    public TagChange<int?>? TrackCount { get; init; }
+
+    /// <summary>
+    /// The number of discs; written after <see cref="DiscNumber"/>.
+    /// </summary>
+    public TagChange<int?>? DiscCount { get; init; }
+
+    /// <summary>
     /// Whether nothing changes.
     /// </summary>
     public bool IsEmpty => Title is null
@@ -52,5 +73,9 @@ public sealed record TagChanges
         && Year is null
         && TrackNumber is null
         && DiscNumber is null
-        && Genre is null;
+        && Genre is null
+        && AlbumArtists is null
+        && Genres is null
+        && TrackCount is null
+        && DiscCount is null;
 }

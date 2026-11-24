@@ -32,7 +32,79 @@ public interface IOrganizeService
     /// Whether each media source can be organized, and the operation that is queued or running.
     /// </summary>
     Task<OrganizeAvailability> GetAvailabilityAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Confirms a preview and starts its run by the organize job. The preview must still be valid: not expired, made
+    /// with the current layout template, its own album unchanged since, its undo not overtaken, its media folders
+    /// writable, and without conflicts unless they are skipped. The run checks every item against the disk again.
+    /// </summary>
+    /// <param name="id">The operation in the state previewed.</param>
+    /// <param name="skipConflicts">Whether items with conflicts are left out.</param>
+    /// <param name="cancellationToken">Aborts the request.</param>
+    Task<OrganizeApplyResult> ApplyAsync(Guid id, bool skipConflicts, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Asks an operation that is planning, queued or running to stop: between two items, never in the middle of one.
+    /// Done items stay done and can be undone.
+    /// </summary>
+    Task<OrganizeCancelResult> CancelAsync(Guid id, CancellationToken cancellationToken = default);
 }
+
+/// <summary>
+/// The outcome of confirming a preview.
+/// </summary>
+/// <param name="Status">What happened.</param>
+/// <param name="Operation">The queued operation.</param>
+public sealed record OrganizeApplyResult(OrganizeApplyStatus Status, OrganizeOperation? Operation)
+{
+    public static OrganizeApplyResult Failed(OrganizeApplyStatus status)
+    {
+        return new OrganizeApplyResult(status, null);
+    }
+}
+
+public enum OrganizeApplyStatus
+{
+    Queued,
+    NotFound,
+
+    /// <summary>
+    /// The operation is no preview that waits for its confirmation.
+    /// </summary>
+    NotPreviewed,
+
+    /// <summary>
+    /// The preview was not confirmed in time.
+    /// </summary>
+    PreviewExpired,
+
+    /// <summary>
+    /// The preview has conflicts and they are not skipped.
+    /// </summary>
+    Conflicts,
+
+    /// <summary>
+    /// The layout template, the own album or the undone operation changed since the preview.
+    /// </summary>
+    PreviewOutdated,
+
+    /// <summary>
+    /// A media folder of the operation cannot be written.
+    /// </summary>
+    MediaReadOnly,
+
+    /// <summary>
+    /// Another operation is queued or running, or the organize job is busy.
+    /// </summary>
+    Busy,
+}
+
+/// <summary>
+/// The outcome of asking an operation to stop.
+/// </summary>
+/// <param name="Status">What happened.</param>
+/// <param name="Operation">The operation, if it exists.</param>
+public sealed record OrganizeCancelResult(OrganizeCancelStatus Status, OrganizeOperation? Operation);
 
 /// <summary>
 /// Whether the media sources can be organized.

@@ -336,7 +336,7 @@ public class TrackMetadataEditorTests
     }
 
     [Test]
-    public void ToBackup_TextsWithNul_RemovesTheNulCharacters()
+    public void TagBackupsCreate_TextsWithNul_RemovesTheNulCharacters()
     {
         TagSnapshot snapshot = _snapshot with
         {
@@ -347,8 +347,10 @@ public class TrackMetadataEditorTests
             Genres = ["Ro\0ck"],
         };
 
-        TagBackup backup = TrackMetadataEditor.ToBackup(snapshot, _audio, _now);
+        TagBackup backup = TagBackups.Create(snapshot, _audio.Id, _audio.RelativePath, _now);
 
+        (backup.MediaFileId, backup.RelativePath, backup.CreatedAt)
+            .Should().Be((_audio.Id, _audio.RelativePath, _now));
         (backup.Title, backup.Album).Should().Be(("Title", "Album"));
         backup.Performers.Should().Equal("Artist");
         backup.AlbumArtists.Should().Equal(string.Empty);

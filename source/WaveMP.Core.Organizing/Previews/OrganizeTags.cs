@@ -42,9 +42,32 @@ public static class OrganizeTags
             TrackNumber = current?.TrackNumber,
             TrackCount = current?.TrackCount,
             DiscNumber = current?.DiscNumber,
+            DiscCount = current?.DiscCount,
             Year = current?.Year,
             Genres = current?.Genres is { } genres ? [genres] : current?.Genre is { } genre ? [genre] : [],
         };
+    }
+
+    /// <summary>
+    /// Whether the file still has the values of a <see cref="Snapshot"/> taken before (its fields only), e.g. the tags
+    /// at the time of a preview.
+    /// </summary>
+    public static bool StillMatches(OrganizeTagValues snapshot, MediaFileTags? current)
+    {
+        OrganizeTagValues now = Snapshot(snapshot.Fields, current);
+        return snapshot.Fields.All(field => field switch
+        {
+            OrganizeTagField.Album => SameText(snapshot.Album, now.Album),
+            OrganizeTagField.AlbumArtist => snapshot.AlbumArtists.Select(MetadataText.Normalize)
+                .SequenceEqual(now.AlbumArtists.Select(MetadataText.Normalize)),
+            OrganizeTagField.TrackNumber => snapshot.TrackNumber == now.TrackNumber,
+            OrganizeTagField.TrackCount => snapshot.TrackCount == now.TrackCount,
+            OrganizeTagField.DiscNumber => snapshot.DiscNumber == now.DiscNumber,
+            OrganizeTagField.Year => snapshot.Year == now.Year,
+            OrganizeTagField.Genre => snapshot.Genres.Select(MetadataText.Normalize)
+                .SequenceEqual(now.Genres.Select(MetadataText.Normalize)),
+            _ => true,
+        });
     }
 
     /// <summary>
@@ -60,9 +83,45 @@ public static class OrganizeTags
             TrackNumber = backup.TrackNumber,
             TrackCount = backup.TrackCount,
             DiscNumber = backup.DiscNumber,
+            DiscCount = backup.DiscCount,
             Year = backup.Year,
             Genres = [.. backup.Genres],
         };
+    }
+
+    /// <summary>
+    /// The changes the tag writer writes for <paramref name="values"/>: every named field, album artists and genres
+    /// as lists, the number of discs together with the disc number.
+    /// </summary>
+    public static TagChanges ToTagChanges(OrganizeTagValues values)
+    {
+        TagChanges changes = new();
+        foreach (OrganizeTagField field in values.Fields.Distinct())
+        {
+            changes = field switch
+            {
+                OrganizeTagField.Album => changes with { Album = new TagChange<string?>(values.Album) },
+                OrganizeTagField.AlbumArtist => changes with
+                {
+                    AlbumArtists = new TagChange<IReadOnlyList<string>>([.. values.AlbumArtists]),
+                },
+                OrganizeTagField.TrackNumber => changes with { TrackNumber = new TagChange<int?>(Positive(values.TrackNumber)) },
+                OrganizeTagField.TrackCount => changes with { TrackCount = new TagChange<int?>(Positive(values.TrackCount)) },
+                OrganizeTagField.DiscNumber => changes with
+                {
+                    DiscNumber = new TagChange<int?>(Positive(values.DiscNumber)),
+                    DiscCount = new TagChange<int?>(Positive(values.DiscCount)),
+                },
+                OrganizeTagField.Year => changes with { Year = new TagChange<int?>(Positive(values.Year)) },
+                OrganizeTagField.Genre => changes with
+                {
+                    Genres = new TagChange<IReadOnlyList<string>>([.. values.Genres]),
+                },
+                _ => changes,
+            };
+        }
+
+        return changes;
     }
 
     /// <summary>
@@ -132,6 +191,7 @@ public static class OrganizeTags
             TrackNumber = values.TrackNumber,
             TrackCount = values.TrackCount,
             DiscNumber = values.DiscNumber,
+            DiscCount = values.DiscCount,
             Year = values.Year,
             Genres = [.. values.Genres],
         };

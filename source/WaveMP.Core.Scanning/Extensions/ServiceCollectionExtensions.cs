@@ -30,6 +30,7 @@ public static class ServiceCollectionExtensions
 
         services.AddSingleton<IScanProgressTracker, ScanProgressTracker>();
         services.AddSingleton<LibraryWriteLock>();
+        services.AddSingleton<LibraryMaintenanceLock>();
         services.AddScoped<LibraryWriter>();
         services.AddScoped<ILibraryScanner, LibraryScanner>();
         services.AddScoped<IScanService, ScanService>();

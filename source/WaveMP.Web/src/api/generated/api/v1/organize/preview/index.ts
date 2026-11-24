@@ -11,7 +11,7 @@ import { type BaseRequestBuilder, type Parsable, type ParsableFactory, type Requ
  */
 export interface PreviewRequestBuilder extends BaseRequestBuilder<PreviewRequestBuilder> {
     /**
-     * Computes the preview of an organize operation by the saved layout template: for an own album (its tags and files) or for the library (all songs, or those of one media source). Nothing on disk changes. The preview can be applied until expiresAt; a library preview may still be in the state Planning when it is returned.
+     * Computes the preview of an organize operation by the saved layout template: for an own album (its tags and files) or for the library (all songs, or those of one media source). Nothing on disk changes. The preview can be applied until expiresAt. A library preview is returned in the state Planning: the job library-organize plans it (totalItems grows meanwhile, CancelOrganizeOperation stops it) and it becomes Previewed.
      * @param body Asks for the preview of an organize operation.
      * @param requestConfiguration Configuration for the request such as headers, query parameters, and middleware options.
      * @returns {Promise<OrganizeOperation>}
@@ -23,7 +23,7 @@ export interface PreviewRequestBuilder extends BaseRequestBuilder<PreviewRequest
      */
      post(body: CreateOrganizePreview, requestConfiguration?: RequestConfiguration<object> | undefined) : Promise<OrganizeOperation | undefined>;
     /**
-     * Computes the preview of an organize operation by the saved layout template: for an own album (its tags and files) or for the library (all songs, or those of one media source). Nothing on disk changes. The preview can be applied until expiresAt; a library preview may still be in the state Planning when it is returned.
+     * Computes the preview of an organize operation by the saved layout template: for an own album (its tags and files) or for the library (all songs, or those of one media source). Nothing on disk changes. The preview can be applied until expiresAt. A library preview is returned in the state Planning: the job library-organize plans it (totalItems grows meanwhile, CancelOrganizeOperation stops it) and it becomes Previewed.
      * @param body Asks for the preview of an organize operation.
      * @param requestConfiguration Configuration for the request such as headers, query parameters, and middleware options.
      * @returns {RequestInformation}

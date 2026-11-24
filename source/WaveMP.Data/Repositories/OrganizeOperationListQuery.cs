@@ -47,3 +47,21 @@ public enum OrganizeDiscardStatus
     /// </summary>
     NotPreview,
 }
+
+/// <summary>
+/// Result of asking an organize operation to stop.
+/// </summary>
+public enum OrganizeCancelStatus
+{
+    /// <summary>
+    /// The operation stops before its next item (or before it starts, or before the next part of its plan).
+    /// </summary>
+    Requested,
+
+    NotFound,
+
+    /// <summary>
+    /// The operation is not planning, queued or running.
+    /// </summary>
+    NotCancelable,
+}

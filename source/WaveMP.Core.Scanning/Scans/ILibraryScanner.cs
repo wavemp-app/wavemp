@@ -36,4 +36,21 @@ public interface ILibraryScanner
         string directoryPath,
         IReadOnlyCollection<string> changedFiles,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Brings the library in line with folders whose files WaveMP moved or renamed after it stored their new paths
+    /// (the organization of the media files): each folder is read like <see cref="RefreshFolderAsync"/>; a folder
+    /// without new, changed or removed files has its songs formed again from the stored files, so albums known by
+    /// their folder and metadata taken from the path follow the new place. Then removes artists and albums without
+    /// tracks and updates album covers, artist pictures and compilations once for all folders. Missing folders are
+    /// skipped. Holds the <see cref="Writers.LibraryWriteLock"/> for each folder, not the
+    /// <see cref="Writers.LibraryMaintenanceLock"/>. Returns the number of folders read.
+    /// </summary>
+    /// <param name="folders">The folders with the files that changed for sure, e.g. after their tags were
+    /// written.</param>
+    /// <param name="cancellationToken">Aborts reading the folders.</param>
+    /// <exception cref="WaveMP.Core.Metadata.Probes.ProbeUnavailableException">ffprobe cannot be started.</exception>
+    Task<int> RefreshFoldersAsync(
+        IReadOnlyCollection<FolderRefresh> folders,
+        CancellationToken cancellationToken = default);
 }

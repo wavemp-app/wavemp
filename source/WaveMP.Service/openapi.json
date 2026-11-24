@@ -6559,7 +6559,7 @@
         "tags": [
           "Organize"
         ],
-        "summary": "Computes the preview of an organize operation by the saved layout template: for an own album (its tags and files) or for the library (all songs, or those of one media source). Nothing on disk changes. The preview can be applied until expiresAt; a library preview may still be in the state Planning when it is returned.",
+        "summary": "Computes the preview of an organize operation by the saved layout template: for an own album (its tags and files) or for the library (all songs, or those of one media source). Nothing on disk changes. The preview can be applied until expiresAt. A library preview is returned in the state Planning: the job library-organize plans it (totalItems grows meanwhile, CancelOrganizeOperation stops it) and it becomes Previewed.",
         "operationId": "CreateOrganizePreview",
         "requestBody": {
           "description": "What to organize.",
@@ -6639,7 +6639,7 @@
             }
           },
           "409": {
-            "description": "The own album has no songs (code `organize.own_album_empty`), a media folder cannot be written (code `organize.media_read_only`), the saved template cannot be used (code `organize.template_invalid`) or another operation is queued or running (code `organize.busy`).",
+            "description": "The own album has no songs (code `organize.own_album_empty`), a media folder cannot be written (code `organize.media_read_only`), the saved template cannot be used (code `organize.template_invalid`) or another operation is queued or running or the organize job is busy (code `organize.busy`).",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -6728,6 +6728,196 @@
           },
           "409": {
             "description": "The operation cannot be undone (code `organize.not_undoable`), was undone already (code `organize.already_undone`), a media folder cannot be written (code `organize.media_read_only`) or another operation is queued or running (code `organize.busy`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/api/v1/organize/apply": {
+      "post": {
+        "tags": [
+          "Organize"
+        ],
+        "summary": "Confirms a preview: the organize job (library-organize) moves the files, writes the tags into the audio files (after a backup) and records every step before it happens, so the operation can be undone and a stop of the server in the middle is put back on the next start. Every song is checked against the disk again right before it moves; a song that changed since the preview stops the run (status Stopped, the failed item names its conflict). No file is ever replaced. Follow the progress with GetOrganizeOperation.",
+        "operationId": "ApplyOrganizeOperation",
+        "requestBody": {
+          "description": "The preview and whether its conflicts are skipped.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApplyOrganizeOperation"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApplyOrganizeOperation"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "The operation is queued; Location points to it.",
+            "headers": {
+              "Location": {
+                "description": "Address of the queued run, to follow its progress.",
+                "required": true,
+                "schema": {
+                  "type": "string",
+                  "format": "uri-reference"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganizeOperation"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is invalid (code `request.invalid`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The operation does not exist (code `organize.operation_not_found`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The operation is no preview waiting for its confirmation (code `organize.not_previewed`), the preview expired (code `organize.preview_expired`), it has conflicts and skipConflicts is not set (code `organize.conflicts`), the template, the own album or the undone operation changed since the preview (code `organize.preview_outdated`), a media folder cannot be written (code `organize.media_read_only`) or another operation is queued or running (code `organize.busy`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/api/v1/organize/operations/{id}/cancel": {
+      "post": {
+        "tags": [
+          "Organize"
+        ],
+        "summary": "Asks an organize operation that is planning, queued or running to stop. A run stops between two songs, never in the middle of one; the songs done before stay done and can be undone. The operation ends as Canceled.",
+        "operationId": "CancelOrganizeOperation",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Id of the operation.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "The operation stops soon; Location points to it.",
+            "headers": {
+              "Location": {
+                "description": "Address of the queued run, to follow its progress.",
+                "required": true,
+                "schema": {
+                  "type": "string",
+                  "format": "uri-reference"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganizeOperation"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The operation does not exist (code `organize.operation_not_found`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The operation is not planning, queued or running (code `organize.not_cancelable`).",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -16985,6 +17175,27 @@
         },
         "description": "The fields of a match the admin applies to an album."
       },
+      "ApplyOrganizeOperation": {
+        "required": [
+          "operationId"
+        ],
+        "type": "object",
+        "properties": {
+          "operationId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The operation in the state Previewed.",
+            "format": "uuid"
+          },
+          "skipConflicts": {
+            "type": "boolean",
+            "description": "Whether the songs with conflicts are left out; required to confirm a preview with conflicts."
+          }
+        },
+        "description": "Confirms the preview of an organize operation, so its files are moved."
+      },
       "ApplyTrackOnlineMetadata": {
         "type": "object",
         "properties": {
@@ -18796,7 +19007,8 @@
           "cover-cache",
           "database-backup",
           "lyrics-download",
-          "library-check"
+          "library-check",
+          "library-organize"
         ],
         "type": "string",
         "description": "Id of a background job."
@@ -22161,7 +22373,12 @@
           "organize.busy",
           "organize.not_undoable",
           "organize.already_undone",
-          "organize.not_preview"
+          "organize.not_preview",
+          "organize.not_previewed",
+          "organize.preview_expired",
+          "organize.conflicts",
+          "organize.preview_outdated",
+          "organize.not_cancelable"
         ],
         "type": "string",
         "description": "Machine-readable code of a problem, part of every Problem Details response. Clients translate it."

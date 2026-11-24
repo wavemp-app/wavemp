@@ -29,12 +29,15 @@ namespace WaveMP.Core.Scanning.Scans;
 /// missing or unreadable, or whose full scan finds no files at all while the library has files of it, is skipped with
 /// an issue and its library stays unchanged, so an unmounted folder never empties the library; if every source of the
 /// scan is skipped, the scan fails. Reading and writing a folder and the clean-up hold the
-/// <see cref="LibraryWriteLock"/>, so other writers wait at most for one folder.
+/// <see cref="LibraryWriteLock"/>, so other writers wait at most for one folder. The whole run holds the
+/// <see cref="LibraryMaintenanceLock"/>, so it waits for a running organization of the media files and such a run waits
+/// for the scan.
 /// </summary>
 internal sealed class LibraryScanner(
     ILibraryScanRepository library,
     LibraryWriter writer,
     LibraryWriteLock writeLock,
+    LibraryMaintenanceLock maintenanceLock,
     IMediaMetadataReader reader,
     IMediaProber prober,
     ISettingsSnapshot<LibrarySettings> settings,
@@ -53,7 +56,15 @@ internal sealed class LibraryScanner(
         progress.Start(runId);
         try
         {
-            return await RunAsync(scope, cancellationToken);
+            if (maintenanceLock.IsHeld)
+            {
+                logger.LogInformation("The scan waits until the files are no longer being organized");
+            }
+
+            using (await maintenanceLock.AcquireAsync(cancellationToken))
+            {
+                return await RunAsync(scope, cancellationToken);
+            }
         }
         finally
         {
@@ -155,6 +166,99 @@ internal sealed class LibraryScanner(
             written.AdoptedTrackIds.Count,
             written.TracksRemoved + vanished);
         return true;
+    }
+
+    public async Task<int> RefreshFoldersAsync(
+        IReadOnlyCollection<FolderRefresh> folders,
+        CancellationToken cancellationToken = default)
+    {
+        ScanOptions scanOptions = options.Value;
+        LibrarySettings librarySettings = settings.Current;
+        IssueCollector issues = new(scanOptions.MaxIssuesPerScan);
+        int refreshed = 0;
+        foreach (FolderRefresh folder in folders)
+        {
+            if (sources.Find(folder.SourceId) is not { } source)
+            {
+                continue;
+            }
+
+            string directory = ScanScope.Normalize(folder.DirectoryPath);
+            using (await writeLock.AcquireAsync(cancellationToken))
+            {
+                if (!Directory.Exists(source.RootPath))
+                {
+                    continue;
+                }
+
+                DiscoveredDirectory? discovered = MediaFolderWalker.WalkFolder(
+                    source.RootPath,
+                    directory,
+                    new MediaKindClassifier(librarySettings),
+                    scanOptions.MaxPathBytes,
+                    path => issues.Add(source, path, ScanIssueCode.PathTooLong),
+                    cancellationToken);
+                if (discovered is null)
+                {
+                    continue;
+                }
+
+                IReadOnlyList<MediaFileSnapshot> stored = await library.GetFolderSnapshotsAsync(
+                    source.Id,
+                    directory,
+                    cancellationToken);
+                ScanPlan plan = ScanPlanner.Plan(
+                    [discovered],
+                    stored,
+                    ScannerVersions.MetadataOf,
+                    folder.ChangedFiles.ToHashSet(StringComparer.Ordinal));
+                if (plan.ChangedDirectories is [DirectoryPlan changed])
+                {
+                    TrackMoves moves = TrackMovePlanner.Plan([(source.Id, plan, stored)]);
+                    IReadOnlyDictionary<string, MediaFileMetadata> read = await ReadAsync(
+                        source,
+                        changed.FilesToRead,
+                        scanOptions.MetadataParallelism,
+                        issues,
+                        null,
+                        cancellationToken);
+                    FolderWriteResult written = await writer.WriteFolderAsync(
+                        source.Id,
+                        changed,
+                        read,
+                        timeProvider.GetUtcNow(),
+                        moves,
+                        cancellationToken);
+                    await library.DeleteVanishedTracksAsync(
+                        [.. moves.Deferred.Where(track => !written.AdoptedTrackIds.Contains(track.TrackId))],
+                        cancellationToken);
+                }
+                else if (stored.Count > 0)
+                {
+                    // Nothing new on disk, but the songs are at a new place: albums known by their folder and metadata
+                    // taken from the path follow it.
+                    await writer.RewriteFolderAsync(source.Id, directory, timeProvider.GetUtcNow(), cancellationToken);
+                }
+
+                refreshed++;
+            }
+        }
+
+        using (await writeLock.AcquireAsync(cancellationToken))
+        {
+            await library.DeleteOrphansAsync(timeProvider.GetUtcNow(), cancellationToken);
+            await writer.UpdateAlbumCoversAsync(librarySettings.AlbumCoverNames, cancellationToken);
+            await writer.UpdateArtistPicturesAsync(librarySettings.ArtistPictureNames, cancellationToken);
+            await writer.UpdateAlbumCompilationsAsync(timeProvider.GetUtcNow(), cancellationToken);
+        }
+
+        foreach (ScanIssue issue in issues.Listed)
+        {
+            logger.LogWarning("The file {File} has a problem: {Issue}", issue.Path, issue.Code);
+        }
+
+        logger.LogInformation("{Folders} folders read again after their files were moved", refreshed);
+        return refreshed;
     }
 
     private async Task<ScanResult> RunAsync(ScanScope scope, CancellationToken cancellationToken)

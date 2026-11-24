@@ -126,30 +126,6 @@ internal sealed class TrackMetadataEditor(
     }
 
     /// <summary>
-    /// The backup of the tags of a file. PostgreSQL does not allow NUL characters in texts, so they are removed.
-    /// </summary>
-    internal static TagBackup ToBackup(TagSnapshot snapshot, MediaFile file, DateTimeOffset now)
-    {
-        return new TagBackup
-        {
-            Id = Guid.CreateVersion7(now),
-            MediaFileId = file.Id,
-            RelativePath = file.RelativePath,
-            Title = WithoutNul(snapshot.Title),
-            Performers = [.. snapshot.Performers.Select(value => WithoutNul(value)!)],
-            AlbumArtists = [.. snapshot.AlbumArtists.Select(value => WithoutNul(value)!)],
-            Album = WithoutNul(snapshot.Album),
-            Year = snapshot.Year,
-            TrackNumber = snapshot.TrackNumber,
-            TrackCount = snapshot.TrackCount,
-            DiscNumber = snapshot.DiscNumber,
-            DiscCount = snapshot.DiscCount,
-            Genres = [.. snapshot.Genres.Select(value => WithoutNul(value)!)],
-            CreatedAt = now,
-        };
-    }
-
-    /// <summary>
     /// Whether the editor can write the audio file, checked on disk: a stored flag would miss a media folder that is
     /// mounted writable later, since that changes neither size nor change time of the file. A flag that differs is
     /// stored. Returns the full path of a file that exists.
@@ -200,7 +176,7 @@ internal sealed class TrackMetadataEditor(
         }
 
         await repository.AddTagBackupAsync(
-            ToBackup(snapshot.Snapshot, audio, timeProvider.GetUtcNow()),
+            TagBackups.Create(snapshot.Snapshot, audio.Id, audio.RelativePath, timeProvider.GetUtcNow()),
             cancellationToken);
 
         TagWriteStatus status = tagWriter.Write(fullPath, MediaFileKind.Audio, changes);
@@ -243,10 +219,5 @@ internal sealed class TrackMetadataEditor(
     private static TagChange<int?>? Number(TagChange<int?>? change)
     {
         return change is { } value ? new TagChange<int?>(value.Value is > 0 ? value.Value : null) : null;
-    }
-
-    private static string? WithoutNul(string? text)
-    {
-        return text?.Replace("\0", string.Empty, StringComparison.Ordinal);
     }
 }

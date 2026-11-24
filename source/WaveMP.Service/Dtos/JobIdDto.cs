@@ -40,4 +40,11 @@ public enum JobIdDto
     /// </summary>
     [JsonStringEnumMemberName("library-check")]
     LibraryCheck,
+
+    /// <summary>
+    /// Organizes the media files: plans the preview of reorganizing the library and runs the organize operations an
+    /// admin confirmed; started by the organize endpoints only, see ApplyOrganizeOperation.
+    /// </summary>
+    [JsonStringEnumMemberName("library-organize")]
+    LibraryOrganize,
 }

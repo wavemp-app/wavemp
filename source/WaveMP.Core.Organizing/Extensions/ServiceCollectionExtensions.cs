@@ -2,7 +2,10 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
+using WaveMP.Core.Jobs.Definitions;
+using WaveMP.Core.Jobs.Extensions;
 using WaveMP.Core.Organizing.Files;
+using WaveMP.Core.Organizing.Jobs;
 using WaveMP.Core.Organizing.Operations;
 using WaveMP.Core.Organizing.Options;
 using WaveMP.Core.Organizing.OwnAlbums;
@@ -16,9 +19,11 @@ public static class ServiceCollectionExtensions
     /// <summary>
     /// Registers the organization of the media files: the preview of layout templates, the own albums with their
     /// covers in the folder <c>own-album-covers</c> of the data folder, the previews and the log of organize
-    /// operations, and the file moves that never replace a file. Settings come from the section <c>Organizing</c>.
-    /// Needs <c>AddWaveMpData</c>, <c>AddWaveMpSettings</c>, <c>AddWaveMpMetadata</c> and <c>AddWaveMpScanning</c>.
-    /// The cover folder is prepared on start by <see cref="ServiceProviderExtensions.InitializeWaveMpOrganizingAsync"/>.
+    /// operations, the file moves that never replace a file and the job <c>library-organize</c>, which plans the
+    /// previews of the library and runs the confirmed operations. Settings come from the section <c>Organizing</c>.
+    /// Needs <c>AddWaveMpData</c>, <c>AddWaveMpSettings</c>, <c>AddWaveMpMetadata</c>, <c>AddWaveMpJobs</c> and
+    /// <c>AddWaveMpScanning</c>. The cover folder is prepared and an interrupted run is put back on start by
+    /// <see cref="ServiceProviderExtensions.InitializeWaveMpOrganizingAsync"/>.
     /// </summary>
     public static IServiceCollection AddWaveMpOrganizing(this IServiceCollection services)
     {
@@ -38,6 +43,10 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IOwnAlbumService, OwnAlbumService>();
         services.AddScoped<IOrganizePreviewService, OrganizePreviewService>();
         services.AddScoped<IOrganizeService, OrganizeService>();
+        services.AddSingleton<OrganizeRunRegistry>();
+        services.AddScoped<IOrganizeExecutor, OrganizeExecutor>();
+        services.AddScoped<OrganizeRecovery>();
+        services.AddWaveMpJob<LibraryOrganizeJob>(JobIds.LibraryOrganize);
         return services;
     }
 }

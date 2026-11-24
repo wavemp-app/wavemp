@@ -113,8 +113,8 @@ public static class WaveMpApplication
     /// Validates the database and PIN configuration, exports the database and applies pending migrations, creates the
     /// built-in admin profile on the first start and applies <c>ADMIN_PIN</c> to it, loads the keys that sign the
     /// session tokens and the media URLs and the server settings, prepares the cache folder and the folder of the Data
-    /// Protection keys, loads the media sources, and plans the background jobs (they start to run once the application
-    /// has started). Returns <c>false</c> if the configuration is invalid or the export before the migrations failed;
+    /// Protection keys, loads the media sources, puts back what an interrupted organize run left half done, and plans
+    /// the background jobs (they start to run once the application has started). Returns <c>false</c> if the configuration is invalid or the export before the migrations failed;
     /// the reason is logged.
     /// </summary>
     public static async Task<bool> InitializeAsync(WebApplication app, CancellationToken cancellationToken = default)
@@ -152,7 +152,6 @@ public static class WaveMpApplication
         await app.Services.InitializeWaveMpSettingsAsync(cancellationToken);
         await app.Services.InitializeWaveMpCacheAsync(cancellationToken);
         await app.Services.InitializeWaveMpPlaylistsAsync(cancellationToken);
-        await app.Services.InitializeWaveMpOrganizingAsync(cancellationToken);
         await app.Services.InitializeWaveMpOnlineMetadataAsync(cancellationToken);
         await app.Services.InitializeWaveMpAvatarsAsync(cancellationToken);
         await app.Services.InitializeWaveMpArtistPicturesAsync(cancellationToken);
@@ -161,6 +160,7 @@ public static class WaveMpApplication
             DataProtectionKeys.ResolveFolder(app.Configuration, app.Environment),
             app.Logger);
         await app.Services.InitializeWaveMpMediaSourcesAsync(cancellationToken);
+        await app.Services.InitializeWaveMpOrganizingAsync(cancellationToken);
         await app.Services.InitializeWaveMpJobsAsync(cancellationToken);
         return true;
     }

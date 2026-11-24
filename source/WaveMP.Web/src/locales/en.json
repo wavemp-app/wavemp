@@ -1408,7 +1408,8 @@
       "coverCache": "Prepare covers",
       "databaseBackup": "Database backup",
       "lyricsDownload": "Download lyrics",
-      "libraryCheck": "Library check"
+      "libraryCheck": "Library check",
+      "libraryOrganize": "Organize files"
     },
     "lastRun": "Last run {date}",
     "duration": "took {duration}",
@@ -1422,7 +1423,8 @@
     "alreadyRunning": "This job is already running.",
     "loadError": "The jobs could not be loaded.",
     "runError": "The job could not be started.",
-    "afterScanWhenLyricsOn": "Runs after scans while the download of lyrics is on"
+    "afterScanWhenLyricsOn": "Runs after scans while the download of lyrics is on",
+    "whenOrganizing": "Runs when files are organized or a reorganization is previewed"
   },
   "adminCache": {
     "title": "Cache",

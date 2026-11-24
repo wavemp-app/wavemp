@@ -205,6 +205,17 @@ internal sealed class OrganizeRepository(WaveMpDbContext dbContext) : IOrganizeR
         dbContext.OrganizeItems.AddRange(items);
         await dbContext.SaveChangesAsync(cancellationToken);
         dbContext.ChangeTracker.Clear();
+
+        // The progress of the planning.
+        foreach (IGrouping<Guid, OrganizeItem> operation in items.GroupBy(item => item.OperationId))
+        {
+            int count = operation.Count();
+            await dbContext.OrganizeOperations
+                .Where(row => row.Id == operation.Key)
+                .ExecuteUpdateAsync(
+                    setters => setters.SetProperty(row => row.TotalItems, row => row.TotalItems + count),
+                    cancellationToken);
+        }
     }
 
     public async Task<bool> FinishPlanningAsync(
@@ -349,6 +360,341 @@ internal sealed class OrganizeRepository(WaveMpDbContext dbContext) : IOrganizeR
                 dbContext.ChangeTracker.Clear();
             },
             cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<Guid>> ListItemSourceIdsAsync(
+        Guid operationId,
+        CancellationToken cancellationToken = default)
+    {
+        return await dbContext.OrganizeItems.AsNoTracking()
+            .Where(item => item.OperationId == operationId
+                && (item.Status == OrganizeItemStatus.Pending || item.Status == OrganizeItemStatus.Conflict))
+            .Select(item => item.SourceId)
+            .Distinct()
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<bool> QueueAsync(Guid id, bool skipConflicts, CancellationToken cancellationToken = default)
+    {
+        return await dbContext.OrganizeOperations
+            .Where(operation => operation.Id == id && operation.Status == OrganizeOperationStatus.Previewed)
+            .ExecuteUpdateAsync(
+                setters => setters
+                    .SetProperty(operation => operation.Status, OrganizeOperationStatus.Queued)
+                    .SetProperty(operation => operation.SkipConflicts, skipConflicts),
+                cancellationToken) > 0;
+    }
+
+    public async Task<bool> UnqueueAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        return await dbContext.OrganizeOperations
+            .Where(operation => operation.Id == id && operation.Status == OrganizeOperationStatus.Queued)
+            .ExecuteUpdateAsync(
+                setters => setters
+                    .SetProperty(operation => operation.Status, OrganizeOperationStatus.Previewed)
+                    .SetProperty(operation => operation.SkipConflicts, false)
+                    .SetProperty(operation => operation.CancelRequestedAt, (DateTimeOffset?)null),
+                cancellationToken) > 0;
+    }
+
+    public async Task<IReadOnlyList<Guid>> ListOperationIdsAsync(
+        OrganizeOperationStatus status,
+        CancellationToken cancellationToken = default)
+    {
+        return await dbContext.OrganizeOperations.AsNoTracking()
+            .Where(operation => operation.Status == status)
+            .OrderBy(operation => operation.CreatedAt)
+            .ThenBy(operation => operation.Id)
+            .Select(operation => operation.Id)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<bool> StartRunAsync(
+        Guid id,
+        DateTimeOffset startedAt,
+        Guid? jobRunId,
+        CancellationToken cancellationToken = default)
+    {
+        return await dbContext.OrganizeOperations
+            .Where(operation => operation.Id == id && operation.Status == OrganizeOperationStatus.Queued)
+            .ExecuteUpdateAsync(
+                setters => setters
+                    .SetProperty(operation => operation.Status, OrganizeOperationStatus.Running)
+                    .SetProperty(operation => operation.StartedAt, startedAt)
+                    .SetProperty(operation => operation.JobRunId, jobRunId),
+                cancellationToken) > 0;
+    }
+
+    public async Task FinishRunAsync(
+        Guid id,
+        OrganizeOperationStatus status,
+        OrganizeErrorCode? errorCode,
+        DateTimeOffset finishedAt,
+        CancellationToken cancellationToken = default)
+    {
+        (int done, int skipped, int failed) = await CountRunAsync(id, cancellationToken);
+        await dbContext.OrganizeOperations
+            .Where(operation => operation.Id == id)
+            .ExecuteUpdateAsync(
+                setters => setters
+                    .SetProperty(operation => operation.Status, status)
+                    .SetProperty(operation => operation.ErrorCode, errorCode)
+                    .SetProperty(operation => operation.FinishedAt, finishedAt)
+                    .SetProperty(operation => operation.DoneItems, done)
+                    .SetProperty(operation => operation.SkippedItems, skipped)
+                    .SetProperty(operation => operation.FailedItems, failed),
+                cancellationToken);
+    }
+
+    public async Task<OrganizeCancelStatus> RequestCancelAsync(
+        Guid id,
+        DateTimeOffset requestedAt,
+        CancellationToken cancellationToken = default)
+    {
+        int changed = await dbContext.OrganizeOperations
+            .Where(operation => operation.Id == id
+                && (operation.Status == OrganizeOperationStatus.Planning
+                    || operation.Status == OrganizeOperationStatus.Queued
+                    || operation.Status == OrganizeOperationStatus.Running))
+            .ExecuteUpdateAsync(
+                setters => setters.SetProperty(
+                    operation => operation.CancelRequestedAt,
+                    operation => operation.CancelRequestedAt ?? requestedAt),
+                cancellationToken);
+        if (changed > 0)
+        {
+            return OrganizeCancelStatus.Requested;
+        }
+
+        return await dbContext.OrganizeOperations.AnyAsync(operation => operation.Id == id, cancellationToken)
+            ? OrganizeCancelStatus.NotCancelable
+            : OrganizeCancelStatus.NotFound;
+    }
+
+    public async Task<IReadOnlyList<OrganizeItem>> ListItemsAfterAsync(
+        Guid operationId,
+        int afterSequence,
+        int count,
+        CancellationToken cancellationToken = default)
+    {
+        return await dbContext.OrganizeItems.AsNoTracking()
+            .Where(item => item.OperationId == operationId && item.Sequence > afterSequence)
+            .Include(item => item.Moves.OrderBy(move => move.Sequence))
+            .OrderBy(item => item.Sequence)
+            .Take(count)
+            .AsSplitQuery()
+            .ToListAsync(cancellationToken);
+    }
+
+    public Task<int> SkipConflictItemsAsync(
+        Guid operationId,
+        DateTimeOffset finishedAt,
+        CancellationToken cancellationToken = default)
+    {
+        return dbContext.OrganizeItems
+            .Where(item => item.OperationId == operationId && item.Status == OrganizeItemStatus.Conflict)
+            .ExecuteUpdateAsync(
+                setters => setters
+                    .SetProperty(item => item.Status, OrganizeItemStatus.Skipped)
+                    .SetProperty(item => item.FinishedAt, finishedAt),
+                cancellationToken);
+    }
+
+    public async Task BeginItemAsync(
+        Guid itemId,
+        IReadOnlyList<string> createdFolders,
+        CancellationToken cancellationToken = default)
+    {
+        List<string> folders = [.. createdFolders];
+        await dbContext.OrganizeItems
+            .Where(item => item.Id == itemId)
+            .ExecuteUpdateAsync(
+                setters => setters
+                    .SetProperty(item => item.Status, OrganizeItemStatus.Running)
+                    .SetProperty(item => item.CreatedFolders, folders),
+                cancellationToken);
+    }
+
+    public Task AddItemTagBackupAsync(
+        Guid itemId,
+        TagBackup backup,
+        Guid? ownAlbumId,
+        Guid? trackId,
+        CancellationToken cancellationToken = default)
+    {
+        IExecutionStrategy strategy = dbContext.Database.CreateExecutionStrategy();
+        return strategy.ExecuteAsync(
+            async token =>
+            {
+                dbContext.ChangeTracker.Clear();
+                await using IDbContextTransaction transaction = await dbContext.Database.BeginTransactionAsync(token);
+                dbContext.TagBackups.Add(backup);
+                await dbContext.SaveChangesAsync(token);
+                await dbContext.OrganizeItems
+                    .Where(item => item.Id == itemId)
+                    .ExecuteUpdateAsync(setters => setters.SetProperty(item => item.TagBackupId, backup.Id), token);
+                if (ownAlbumId is { } albumId && trackId is { } track)
+                {
+                    await dbContext.OwnAlbumTracks
+                        .Where(member => member.OwnAlbumId == albumId
+                            && member.TrackId == track
+                            && member.State == OwnAlbumTrackState.Member
+                            && member.OriginalTagBackupId == null)
+                        .ExecuteUpdateAsync(
+                            setters => setters.SetProperty(member => member.OriginalTagBackupId, backup.Id),
+                            token);
+                }
+
+                await transaction.CommitAsync(token);
+                dbContext.ChangeTracker.Clear();
+            },
+            cancellationToken);
+    }
+
+    public Task UpdateMoveFingerprintAsync(
+        Guid moveId,
+        long size,
+        DateTimeOffset modifiedAt,
+        CancellationToken cancellationToken = default)
+    {
+        return dbContext.OrganizeFileMoves
+            .Where(move => move.Id == moveId)
+            .ExecuteUpdateAsync(
+                setters => setters
+                    .SetProperty(move => move.Size, size)
+                    .SetProperty(move => move.ModifiedAt, modifiedAt),
+                cancellationToken);
+    }
+
+    public async Task EndItemAsync(
+        Guid itemId,
+        OrganizeItemStatus status,
+        OrganizeConflict? conflict,
+        DateTimeOffset finishedAt,
+        CancellationToken cancellationToken = default)
+    {
+        IQueryable<OrganizeItem> items = dbContext.OrganizeItems.Where(item => item.Id == itemId);
+        if (conflict is { } code)
+        {
+            await items.ExecuteUpdateAsync(
+                setters => setters
+                    .SetProperty(item => item.Status, status)
+                    .SetProperty(item => item.Conflict, code)
+                    .SetProperty(item => item.FinishedAt, finishedAt),
+                cancellationToken);
+        }
+        else
+        {
+            await items.ExecuteUpdateAsync(
+                setters => setters
+                    .SetProperty(item => item.Status, status)
+                    .SetProperty(item => item.FinishedAt, finishedAt),
+                cancellationToken);
+        }
+
+        if (status == OrganizeItemStatus.RolledBack)
+        {
+            await dbContext.OrganizeFileMoves
+                .Where(move => move.ItemId == itemId)
+                .ExecuteUpdateAsync(
+                    setters => setters.SetProperty(move => move.Status, OrganizeMoveStatus.RolledBack),
+                    cancellationToken);
+        }
+    }
+
+    public async Task SetRemovedFoldersAsync(
+        Guid itemId,
+        IReadOnlyList<string> removedFolders,
+        CancellationToken cancellationToken = default)
+    {
+        List<string> folders = [.. removedFolders];
+        await dbContext.OrganizeItems
+            .Where(item => item.Id == itemId)
+            .ExecuteUpdateAsync(setters => setters.SetProperty(item => item.RemovedFolders, folders), cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<OrganizeItem>> ListRunningItemsAsync(CancellationToken cancellationToken = default)
+    {
+        return await dbContext.OrganizeItems.AsNoTracking()
+            .Where(item => item.Status == OrganizeItemStatus.Running)
+            .Include(item => item.Moves.OrderBy(move => move.Sequence))
+            .OrderBy(item => item.OperationId)
+            .ThenBy(item => item.Sequence)
+            .AsSplitQuery()
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<Guid>> InterruptActiveAsync(
+        DateTimeOffset finishedAt,
+        CancellationToken cancellationToken = default)
+    {
+        List<Guid> ids = await dbContext.OrganizeOperations.AsNoTracking()
+            .Where(operation => operation.Status == OrganizeOperationStatus.Planning
+                || operation.Status == OrganizeOperationStatus.Queued
+                || operation.Status == OrganizeOperationStatus.Running)
+            .Select(operation => operation.Id)
+            .ToListAsync(cancellationToken);
+        foreach (Guid id in ids)
+        {
+            await FinishRunAsync(
+                id,
+                OrganizeOperationStatus.Interrupted,
+                OrganizeErrorCode.Interrupted,
+                finishedAt,
+                cancellationToken);
+        }
+
+        return ids;
+    }
+
+    public Task SetUndoneByAsync(Guid id, Guid undoId, CancellationToken cancellationToken = default)
+    {
+        return dbContext.OrganizeOperations
+            .Where(operation => operation.Id == id)
+            .ExecuteUpdateAsync(setters => setters.SetProperty(operation => operation.UndoneById, undoId), cancellationToken);
+    }
+
+    public async Task UpdateOwnAlbumAppliedAtAsync(Guid ownAlbumId, CancellationToken cancellationToken = default)
+    {
+        DateTimeOffset? appliedAt = await dbContext.OrganizeOperations.AsNoTracking()
+            .Where(operation => operation.OwnAlbumId == ownAlbumId
+                && operation.Kind == OrganizeOperationKind.OwnAlbum
+                && operation.UndoneById == null
+                && operation.FinishedAt != null
+                && (operation.Status == OrganizeOperationStatus.Completed
+                    || operation.Status == OrganizeOperationStatus.Stopped
+                    || operation.Status == OrganizeOperationStatus.Canceled
+                    || operation.Status == OrganizeOperationStatus.Interrupted)
+                && (operation.Status == OrganizeOperationStatus.Completed || operation.DoneItems > 0))
+            .MaxAsync(operation => operation.FinishedAt, cancellationToken);
+        await dbContext.OwnAlbums
+            .Where(album => album.Id == ownAlbumId)
+            .ExecuteUpdateAsync(setters => setters.SetProperty(album => album.AppliedAt, appliedAt), cancellationToken);
+    }
+
+    public Task<int> DeleteOldPreviewsAsync(DateTimeOffset createdBefore, CancellationToken cancellationToken = default)
+    {
+        return dbContext.OrganizeOperations
+            .Where(operation => operation.CreatedAt < createdBefore
+                && (operation.Status == OrganizeOperationStatus.Previewed
+                    || operation.Status == OrganizeOperationStatus.Expired
+                    || (operation.Status == OrganizeOperationStatus.Failed && operation.StartedAt == null)))
+            .ExecuteDeleteAsync(cancellationToken);
+    }
+
+    private async Task<(int Done, int Skipped, int Failed)> CountRunAsync(Guid id, CancellationToken cancellationToken)
+    {
+        var counts = await dbContext.OrganizeItems.AsNoTracking()
+            .Where(item => item.OperationId == id)
+            .GroupBy(item => item.Status)
+            .Select(group => new { Status = group.Key, Count = group.Count() })
+            .ToListAsync(cancellationToken);
+        int Count(params OrganizeItemStatus[] statuses) =>
+            counts.Where(row => statuses.Contains(row.Status)).Sum(row => row.Count);
+        return (
+            Count(OrganizeItemStatus.Done),
+            Count(OrganizeItemStatus.Skipped),
+            Count(OrganizeItemStatus.Failed, OrganizeItemStatus.RolledBack));
     }
 
     private async Task RelocateInTransactionAsync(TrackRelocation relocation, CancellationToken cancellationToken)

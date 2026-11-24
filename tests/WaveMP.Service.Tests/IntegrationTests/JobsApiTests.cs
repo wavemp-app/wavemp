@@ -73,7 +73,10 @@ public class JobsApiTests
         JobDto backup = jobs.Items.Should().ContainSingle(job => job.Id == JobIdDto.DatabaseBackup).Subject;
         JobDto lyrics = jobs.Items.Should().ContainSingle(job => job.Id == JobIdDto.LyricsDownload).Subject;
         JobDto check = jobs.Items.Should().ContainSingle(job => job.Id == JobIdDto.LibraryCheck).Subject;
-        jobs.Total.Should().Be(5);
+        JobDto organize = jobs.Items.Should().ContainSingle(job => job.Id == JobIdDto.LibraryOrganize).Subject;
+        jobs.Total.Should().Be(6);
+        organize.IntervalMinutes.Should().BeNull("it runs only for an organize operation");
+        organize.NextRunAt.Should().BeNull();
         check.IntervalMinutes.Should().BeNull();
         check.NextRunAt.Should().BeNull();
         lyrics.IntervalMinutes.Should().BeNull();

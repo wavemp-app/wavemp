@@ -114,6 +114,8 @@ describe('presentation of the administration', () => {
         expect(jobScheduleKey('cover-cache')).toBe('adminJobs.afterScan')
         expect(jobNameKey('library-check')).toBe('adminJobs.names.libraryCheck')
         expect(jobScheduleKey('library-check')).toBe('adminJobs.afterScan')
+        expect(jobNameKey('library-organize')).toBe('adminJobs.names.libraryOrganize')
+        expect(jobScheduleKey('library-organize')).toBe('adminJobs.whenOrganizing')
         expect(jobScheduleKey('library-scan')).toBe('adminJobs.manualOnly')
         expect(jobScheduleKey(null)).toBe('adminJobs.manualOnly')
     })

@@ -2412,6 +2412,26 @@ public class LibraryScannerTests
     }
 
     [Test]
+    public async Task ScanAsync_WhileTheMaintenanceLockIsHeld_WaitsAndThenScans()
+    {
+        await AudioAsync("Band/Album/01 - One.mp3");
+        LibraryMaintenanceLock maintenanceLock = _services.GetRequiredService<LibraryMaintenanceLock>();
+
+        Task<ScanResult> scan;
+        using (await maintenanceLock.AcquireAsync())
+        {
+            scan = ScanAsync();
+            await Task.Delay(300);
+            scan.IsCompleted.Should().BeFalse("an organize run holds the lock");
+            await using WaveMpDbContext db = _database.CreateDbContext();
+            (await db.Tracks.CountAsync()).Should().Be(0);
+        }
+
+        (await scan.WaitAsync(TimeSpan.FromSeconds(60))).Statistics.TracksTotal.Should().Be(1);
+        maintenanceLock.IsHeld.Should().BeFalse();
+    }
+
+    [Test]
     public async Task RefreshFolderAsync_DuringAScan_DoesNotChangeItsProgress()
     {
         await AudioAsync("Band/Album/01 - One.mp3", tags: new TestTags { Title = "Before" });

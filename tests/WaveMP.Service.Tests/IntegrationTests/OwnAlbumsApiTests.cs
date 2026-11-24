@@ -71,6 +71,8 @@ public class OwnAlbumsApiTests
     [TestCase("GET", OrganizePath + "/operations")]
     [TestCase("GET", OrganizePath + "/availability")]
     [TestCase("POST", OrganizePath + "/preview")]
+    [TestCase("POST", OrganizePath + "/apply")]
+    [TestCase("POST", OrganizePath + "/operations/00000000-0000-0000-0000-000000000001/cancel")]
     public async Task Endpoints_WithoutSession_Return401AndForUsers403(string method, string path)
     {
         (await _anonymous.SendJsonAsync(method, path, "{}")).StatusCode.Should().Be(HttpStatusCode.Unauthorized);
@@ -253,6 +255,57 @@ public class OwnAlbumsApiTests
         await (await _admin.GetAsync($"{OrganizePath}/operations/{operation.Id}/items"))
             .ShouldBeProblemAsync(HttpStatusCode.NotFound, "organize.operation_not_found");
         await (await _admin.DeleteAsync($"{OrganizePath}/operations/{operation.Id}"))
+            .ShouldBeProblemAsync(HttpStatusCode.NotFound, "organize.operation_not_found");
+        await _admin.DeleteAsync($"{AlbumsPath}/{album.Id}");
+    }
+
+    [Test]
+    public async Task ApplyOrganizeOperation_ChecksThePreviewAndRunsItInTheBackground()
+    {
+        OwnAlbumDto album = await CreateAsync("Applied");
+        await _admin.PutAsJsonAsync($"{AlbumsPath}/{album.Id}/tracks", new { trackIds = new[] { _second.Id } });
+        OrganizeOperationDto preview = (await (await _admin.PostAsJsonAsync(
+                $"{OrganizePath}/preview",
+                new { kind = "OwnAlbum", ownAlbumId = album.Id }))
+            .Content.ReadFromJsonAsync<OrganizeOperationDto>(HttpClientExtensions.JsonOptions))!;
+
+        (await (await _admin.SendJsonAsync("POST", $"{OrganizePath}/apply", "{}")).ShouldBeValidationProblemAsync())
+            .Select(error => (error.Field, error.Code)).Should().Equal(("operationId", ValidationErrorCodeDto.Required));
+        await (await _admin.PostAsJsonAsync($"{OrganizePath}/apply", new { operationId = Guid.NewGuid() }))
+            .ShouldBeProblemAsync(HttpStatusCode.NotFound, "organize.operation_not_found");
+        await (await _admin.PostAsJsonAsync($"{OrganizePath}/apply", new { operationId = preview.Id }))
+            .ShouldBeProblemAsync(HttpStatusCode.Conflict, "organize.conflicts");
+
+        HttpResponseMessage response = await _admin.PostAsJsonAsync(
+            $"{OrganizePath}/apply",
+            new { operationId = preview.Id, skipConflicts = true });
+
+        response.StatusCode.Should().Be(HttpStatusCode.Accepted);
+        response.Headers.Location!.AbsolutePath.Should().Be($"{OrganizePath}/operations/{preview.Id}");
+        OrganizeOperationDto queued =
+            (await response.Content.ReadFromJsonAsync<OrganizeOperationDto>(HttpClientExtensions.JsonOptions))!;
+        queued.SkipConflicts.Should().BeTrue();
+        OrganizeOperationDto? finished = null;
+        for (int attempt = 0; attempt < 300 && finished is null; attempt++)
+        {
+            OrganizeOperationDto current = await _admin.GetJsonAsync<OrganizeOperationDto>(
+                $"{OrganizePath}/operations/{preview.Id}");
+            if (current.Status is OrganizeOperationStatusDto.Queued or OrganizeOperationStatusDto.Running)
+            {
+                await Task.Delay(100);
+                continue;
+            }
+
+            finished = current;
+        }
+
+        (finished!.Status, finished.SkippedItems, finished.DoneItems)
+            .Should().Be((OrganizeOperationStatusDto.Completed, 1, 0), "the only song has a conflict and is skipped");
+        await (await _admin.PostAsJsonAsync($"{OrganizePath}/apply", new { operationId = preview.Id }))
+            .ShouldBeProblemAsync(HttpStatusCode.Conflict, "organize.not_previewed");
+        await (await _admin.PostAsync($"{OrganizePath}/operations/{preview.Id}/cancel", null))
+            .ShouldBeProblemAsync(HttpStatusCode.Conflict, "organize.not_cancelable");
+        await (await _admin.PostAsync($"{OrganizePath}/operations/{Guid.NewGuid()}/cancel", null))
             .ShouldBeProblemAsync(HttpStatusCode.NotFound, "organize.operation_not_found");
         await _admin.DeleteAsync($"{AlbumsPath}/{album.Id}");
     }

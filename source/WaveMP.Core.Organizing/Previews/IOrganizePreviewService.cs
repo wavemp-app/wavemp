@@ -19,8 +19,9 @@ public interface IOrganizePreviewService
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Previews moving every song of the library (or of one source) by the layout template; tags stay. The operation
-    /// is planned in the state <see cref="OrganizeOperationStatus.Planning"/> and then previewed.
+    /// Previews moving every song of the library (or of one source) by the layout template; tags stay. Returns the
+    /// operation in the state <see cref="OrganizeOperationStatus.Planning"/>; the organize job plans it (its counters
+    /// grow meanwhile) and then it is previewed. Busy while the organize job is queued or running.
     /// </summary>
     Task<OrganizePreviewResult> PreviewLibraryAsync(
         Guid? sourceId,
@@ -28,8 +29,8 @@ public interface IOrganizePreviewService
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Plans a library operation in the state <see cref="OrganizeOperationStatus.Planning"/>; ends it as previewed or
-    /// failed.
+    /// Plans a library operation in the state <see cref="OrganizeOperationStatus.Planning"/>; ends it as previewed,
+    /// failed, or canceled if the admin asked it to stop.
     /// </summary>
     Task PlanLibraryAsync(Guid operationId, CancellationToken cancellationToken = default);
 

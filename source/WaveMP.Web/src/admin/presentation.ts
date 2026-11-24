@@ -230,6 +230,10 @@ const jobNames: Record<string, JobPresentation> = {
         labelKey: 'adminJobs.names.libraryCheck',
         scheduleKey: 'adminJobs.afterScan',
     },
+    'library-organize': {
+        labelKey: 'adminJobs.names.libraryOrganize',
+        scheduleKey: 'adminJobs.whenOrganizing',
+    },
 }
 
 /** Message key of the name of a job; unknown jobs are shown with their id. */

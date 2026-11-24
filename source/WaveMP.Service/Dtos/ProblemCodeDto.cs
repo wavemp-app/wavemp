@@ -627,4 +627,34 @@ public enum ProblemCodeDto
     /// </summary>
     [JsonStringEnumMemberName("organize.not_preview")]
     OrganizeNotPreview,
+
+    /// <summary>
+    /// The operation is no preview waiting for its confirmation, e.g. it is still being planned or ran already (409).
+    /// </summary>
+    [JsonStringEnumMemberName("organize.not_previewed")]
+    OrganizeNotPreviewed,
+
+    /// <summary>
+    /// The preview was not confirmed in time; make a new one (409).
+    /// </summary>
+    [JsonStringEnumMemberName("organize.preview_expired")]
+    OrganizePreviewExpired,
+
+    /// <summary>
+    /// The preview has conflicts; confirm it with skipConflicts to leave those songs out (409).
+    /// </summary>
+    [JsonStringEnumMemberName("organize.conflicts")]
+    OrganizeConflicts,
+
+    /// <summary>
+    /// The layout template, the own album or the undone operation changed since the preview; make a new one (409).
+    /// </summary>
+    [JsonStringEnumMemberName("organize.preview_outdated")]
+    OrganizePreviewOutdated,
+
+    /// <summary>
+    /// The operation is not planning, queued or running, so it cannot be stopped (409).
+    /// </summary>
+    [JsonStringEnumMemberName("organize.not_cancelable")]
+    OrganizeNotCancelable,
 }

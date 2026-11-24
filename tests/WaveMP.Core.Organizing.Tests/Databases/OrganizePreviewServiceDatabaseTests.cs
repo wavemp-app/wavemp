@@ -137,18 +137,18 @@ public sealed class OrganizePreviewServiceDatabaseTests : OrganizingDatabaseTest
         await ScanAsync();
         IReadOnlyList<string> before = Snapshot();
 
-        OrganizePreviewResult result = await PreviewAsync(service => service.PreviewLibraryAsync(null, null));
+        OrganizeOperation operation = await LibraryPreviewAsync();
 
-        result.Operation!.Status.Should().Be(OrganizeOperationStatus.Previewed);
-        result.Operation.Kind.Should().Be(OrganizeOperationKind.Library);
-        IReadOnlyList<OrganizeItem> items = await ItemsAsync(result.Operation.Id);
+        operation.Status.Should().Be(OrganizeOperationStatus.Previewed);
+        operation.Kind.Should().Be(OrganizeOperationKind.Library);
+        IReadOnlyList<OrganizeItem> items = await ItemsAsync(operation.Id);
         items.Should().HaveCount(3);
         items.Where(item => item.Kind == OrganizeItemKind.Track).Select(item => item.ToBaseName)
             .Should().BeEquivalentTo("01 One", "02 Two");
         OrganizeItem folder = items.Single(item => item.Kind == OrganizeItemKind.FolderFiles);
         folder.Moves.Single().ToPath.Should().Be("Band/Record/cover.jpg");
         items.Should().OnlyContain(item => item.Conflict == null && item.TagChanges == null);
-        result.Operation.TotalItems.Should().Be(3);
+        operation.TotalItems.Should().Be(3);
         Snapshot().Should().Equal(before);
     }
 
@@ -158,8 +158,8 @@ public sealed class OrganizePreviewServiceDatabaseTests : OrganizingDatabaseTest
         await AudioAsync("Messy/one.mp3", new TestTags { Title = "One", Artist = "Band", Album = "Record", Track = "1" });
         await ScanAsync();
         Guid trackId = await TrackIdAsync("One");
-        OrganizePreviewResult preview = await PreviewAsync(service => service.PreviewLibraryAsync(null, null));
-        OrganizeItem item = (await ItemsAsync(preview.Operation!.Id)).Single();
+        OrganizeOperation operation = await LibraryPreviewAsync();
+        OrganizeItem item = (await ItemsAsync(operation.Id)).Single();
         OrganizeFileMove move = item.Moves.Single();
 
         // What the executor of the next step does: move the file without replacing, then record it in one transaction.
@@ -169,7 +169,7 @@ public sealed class OrganizePreviewServiceDatabaseTests : OrganizingDatabaseTest
         await InScopeAsync(async services =>
         {
             await services.GetRequiredService<IOrganizeRepository>().RelocateTrackAsync(new TrackRelocation(
-                preview.Operation.Id,
+                operation.Id,
                 item.Id,
                 trackId,
                 item.ToDirectoryPath,
@@ -179,7 +179,7 @@ public sealed class OrganizePreviewServiceDatabaseTests : OrganizingDatabaseTest
                 Now));
             return true;
         });
-        await SetStatusAsync(preview.Operation.Id, OrganizeOperationStatus.Completed);
+        await SetStatusAsync(operation.Id, OrganizeOperationStatus.Completed);
 
         await using (WaveMpDbContext db = CreateDbContext())
         {
@@ -194,10 +194,10 @@ public sealed class OrganizePreviewServiceDatabaseTests : OrganizingDatabaseTest
             (await db.OrganizeOperations.SingleAsync()).DoneItems.Should().Be(1);
         }
 
-        OrganizePreviewResult undo = await PreviewAsync(service => service.PreviewUndoAsync(preview.Operation.Id, null));
+        OrganizePreviewResult undo = await PreviewAsync(service => service.PreviewUndoAsync(operation.Id, null));
 
         undo.Status.Should().Be(OrganizePreviewStatus.Created);
-        (undo.Operation!.Kind, undo.Operation.UndoOfId).Should().Be((OrganizeOperationKind.Undo, preview.Operation.Id));
+        (undo.Operation!.Kind, undo.Operation.UndoOfId).Should().Be((OrganizeOperationKind.Undo, operation.Id));
         OrganizeItem back = (await ItemsAsync(undo.Operation.Id)).Single();
         back.Conflict.Should().BeNull();
         back.UndoOfItemId.Should().Be(item.Id);
@@ -208,11 +208,11 @@ public sealed class OrganizePreviewServiceDatabaseTests : OrganizingDatabaseTest
             .Should().Be(OrganizePreviewStatus.NotUndoable);
         await using (WaveMpDbContext db = CreateDbContext())
         {
-            await db.OrganizeOperations.Where(row => row.Id == preview.Operation.Id)
+            await db.OrganizeOperations.Where(row => row.Id == operation.Id)
                 .ExecuteUpdateAsync(setters => setters.SetProperty(row => row.UndoneById, undo.Operation.Id));
         }
 
-        (await PreviewAsync(service => service.PreviewUndoAsync(preview.Operation.Id, null))).Status
+        (await PreviewAsync(service => service.PreviewUndoAsync(operation.Id, null))).Status
             .Should().Be(OrganizePreviewStatus.AlreadyUndone);
     }
 
@@ -221,7 +221,7 @@ public sealed class OrganizePreviewServiceDatabaseTests : OrganizingDatabaseTest
     {
         await AudioAsync("Messy/one.mp3", new TestTags { Title = "One", Artist = "Band", Album = "Record", Track = "1" });
         await ScanAsync();
-        OrganizeOperation preview = (await PreviewAsync(service => service.PreviewLibraryAsync(null, null))).Operation!;
+        OrganizeOperation preview = await LibraryPreviewAsync();
 
         (await PreviewAsync(service => service.PreviewUndoAsync(preview.Id, null))).Status
             .Should().Be(OrganizePreviewStatus.NotUndoable);
@@ -237,8 +237,8 @@ public sealed class OrganizePreviewServiceDatabaseTests : OrganizingDatabaseTest
     {
         await AudioAsync("Messy/one.mp3", new TestTags { Title = "One", Artist = "Band", Album = "Record", Track = "1" });
         await ScanAsync();
-        OrganizeOperation first = (await PreviewAsync(service => service.PreviewLibraryAsync(null, null))).Operation!;
-        OrganizeOperation second = (await PreviewAsync(service => service.PreviewLibraryAsync(null, null))).Operation!;
+        OrganizeOperation first = await LibraryPreviewAsync();
+        OrganizeOperation second = await LibraryPreviewAsync();
         Guid run = await AddOperationAsync(OrganizeOperationStatus.Completed);
 
         Now = Now.AddHours(2);

@@ -136,6 +136,19 @@ export interface ApplyAlbumOnlineMetadata extends AdditionalDataHolder, Parsable
     tags?: UpdateAlbumTags | null;
 }
 /**
+ * Confirms the preview of an organize operation, so its files are moved.
+ */
+export interface ApplyOrganizeOperation extends AdditionalDataHolder, Parsable {
+    /**
+     * The operation in the state Previewed.
+     */
+    operationId?: Guid | null;
+    /**
+     * Whether the songs with conflicts are left out; required to confirm a preview with conflicts.
+     */
+    skipConflicts?: boolean | null;
+}
+/**
  * The fields of a match the admin applies to a song.
  */
 export interface ApplyTrackOnlineMetadata extends AdditionalDataHolder, Parsable {
@@ -669,6 +682,15 @@ export function createAlbumReferenceFromDiscriminatorValue(parseNode: ParseNode 
 // @ts-ignore
 export function createApplyAlbumOnlineMetadataFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
     return deserializeIntoApplyAlbumOnlineMetadata;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {ApplyOrganizeOperation}
+ */
+// @ts-ignore
+export function createApplyOrganizeOperationFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoApplyOrganizeOperation;
 }
 /**
  * Creates a new instance of the appropriate class based on discriminator value
@@ -2876,6 +2898,18 @@ export function deserializeIntoApplyAlbumOnlineMetadata(applyAlbumOnlineMetadata
     return {
         "coverReleaseId": n => { applyAlbumOnlineMetadata.coverReleaseId = n.getGuidValue(); },
         "tags": n => { applyAlbumOnlineMetadata.tags = n.getObjectValue<UpdateAlbumTags>(createUpdateAlbumTagsFromDiscriminatorValue); },
+    }
+}
+/**
+ * The deserialization information for the current model
+ * @param ApplyOrganizeOperation The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoApplyOrganizeOperation(applyOrganizeOperation: Partial<ApplyOrganizeOperation> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "operationId": n => { applyOrganizeOperation.operationId = n.getGuidValue(); },
+        "skipConflicts": n => { applyOrganizeOperation.skipConflicts = n.getBooleanValue(); },
     }
 }
 /**
@@ -8889,6 +8923,19 @@ export function serializeApplyAlbumOnlineMetadata(writer: SerializationWriter, a
 }
 /**
  * Serializes information the current object
+ * @param ApplyOrganizeOperation The instance to serialize from.
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeApplyOrganizeOperation(writer: SerializationWriter, applyOrganizeOperation: Partial<ApplyOrganizeOperation> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!applyOrganizeOperation || isSerializingDerivedType) { return; }
+    writer.writeGuidValue("operationId", applyOrganizeOperation.operationId);
+    writer.writeBooleanValue("skipConflicts", applyOrganizeOperation.skipConflicts);
+    writer.writeAdditionalData(applyOrganizeOperation.additionalData);
+}
+/**
+ * Serializes information the current object
  * @param ApplyTrackOnlineMetadata The instance to serialize from.
  * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
  * @param writer Serialization writer to use to serialize this model
@@ -14582,6 +14629,7 @@ export const JobIdObject = {
     DatabaseBackup: "database-backup",
     LyricsDownload: "lyrics-download",
     LibraryCheck: "library-check",
+    LibraryOrganize: "library-organize",
 } as const;
 /**
  * State of a job run.
@@ -15026,6 +15074,11 @@ export const ProblemCodeObject = {
     OrganizeNot_undoable: "organize.not_undoable",
     OrganizeAlready_undone: "organize.already_undone",
     OrganizeNot_preview: "organize.not_preview",
+    OrganizeNot_previewed: "organize.not_previewed",
+    OrganizePreview_expired: "organize.preview_expired",
+    OrganizeConflicts: "organize.conflicts",
+    OrganizePreview_outdated: "organize.preview_outdated",
+    OrganizeNot_cancelable: "organize.not_cancelable",
 } as const;
 /**
  * How the period of a recap was chosen. The days of a shared recap are fixed when it is shared.

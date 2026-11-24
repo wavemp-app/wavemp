@@ -4,9 +4,9 @@ namespace WaveMP.Core.Scanning.Writers;
 /// Lets only one writer at a time change the library and the tags of its files: the scan for each folder it reads and
 /// writes and for its clean-up, reading a folder again and the metadata editor while it writes tags. This keeps
 /// writers from creating the same artist, album or file at the same time and keeps the scan from reading a file while
-/// its tags are written. Not reentrant.
+/// its tags are written. The organization of the media files holds it for every song it moves. Not reentrant.
 /// </summary>
-internal sealed class LibraryWriteLock : IDisposable
+public sealed class LibraryWriteLock : IDisposable
 {
     private readonly SemaphoreSlim _semaphore = new(1, 1);
 

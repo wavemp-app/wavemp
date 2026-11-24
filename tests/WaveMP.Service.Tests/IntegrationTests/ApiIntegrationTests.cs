@@ -151,8 +151,9 @@ public class ApiIntegrationTests
 
         // Users, sessions, playlists, playlist entries, smart playlists, playlists converted from smart playlists,
         // history entries, Subsonic app passwords, themes, media sources, recap shares, own albums and the previews
-        // of organize operations and of their undos; scans, job runs and backups.
-        responses.Should().HaveCount(17);
+        // of organize operations and of their undos; scans, job runs, backups and the confirmed and canceled organize
+        // operations.
+        responses.Should().HaveCount(19);
         responses.Should().AllSatisfy(response =>
         {
             JsonNode location = response["headers"]!["Location"]!;
@@ -309,7 +310,7 @@ public class ApiIntegrationTests
     [TestCase("Scans", 4)]
     [TestCase("Jobs", 5)]
     [TestCase("Settings", 14)]
-    [TestCase("Organize", 8)]
+    [TestCase("Organize", 10)]
     [TestCase("OwnAlbums", 12)]
     [TestCase("Cache", 2)]
     [TestCase("Transcoding", 3)]

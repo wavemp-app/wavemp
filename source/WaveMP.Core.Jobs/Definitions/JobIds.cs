@@ -31,4 +31,10 @@ public static class JobIds
     /// and when an admin starts it.
     /// </summary>
     public const string LibraryCheck = "library-check";
+
+    /// <summary>
+    /// Organizes the media files: plans the preview of reorganizing the library by the layout template and runs the
+    /// organize operations an admin confirmed (moves, tags, undos). Started by the organize endpoints only.
+    /// </summary>
+    public const string LibraryOrganize = "library-organize";
 }

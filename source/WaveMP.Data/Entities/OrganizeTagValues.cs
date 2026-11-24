@@ -27,6 +27,12 @@ public sealed class OrganizeTagValues
     /// </summary>
     public int? DiscNumber { get; set; }
 
+    /// <summary>
+    /// The number of discs, written together with <see cref="DiscNumber"/> (only next to a number); used to put back
+    /// the values of a backup.
+    /// </summary>
+    public int? DiscCount { get; set; }
+
     public int? Year { get; set; }
 
     /// <summary>

@@ -16,7 +16,8 @@ namespace WaveMP.Service.Controllers;
 
 /// <summary>
 /// Organization of the media files by the layout template, for admins only: previews of own albums, of the library and
-/// of undos, and the log of the organize operations. A preview never touches a file.
+/// of undos, their confirmation and cancellation, and the log of the organize operations. A preview never touches a
+/// file; only a confirmed operation moves files, by the job library-organize.
 /// </summary>
 [ApiController]
 [Authorize(Policy = AuthorizationPolicies.Admin)]
@@ -69,7 +70,8 @@ public sealed class OrganizeController(
     /// <summary>
     /// Computes the preview of an organize operation by the saved layout template: for an own album (its tags and
     /// files) or for the library (all songs, or those of one media source). Nothing on disk changes. The preview can
-    /// be applied until expiresAt; a library preview may still be in the state Planning when it is returned.
+    /// be applied until expiresAt. A library preview is returned in the state Planning: the job library-organize plans
+    /// it (totalItems grows meanwhile, CancelOrganizeOperation stops it) and it becomes Previewed.
     /// </summary>
     /// <param name="request">What to organize.</param>
     /// <param name="cancellationToken">Aborts the request.</param>
@@ -80,7 +82,7 @@ public sealed class OrganizeController(
     /// <c>source.not_found</c>) does not exist.</response>
     /// <response code="409">The own album has no songs (code <c>organize.own_album_empty</c>), a media folder cannot be
     /// written (code <c>organize.media_read_only</c>), the saved template cannot be used (code
-    /// <c>organize.template_invalid</c>) or another operation is queued or running (code
+    /// <c>organize.template_invalid</c>) or another operation is queued or running or the organize job is busy (code
     /// <c>organize.busy</c>).</response>
     [HttpPost("preview", Name = "CreateOrganizePreview")]
     [Consumes("application/json")]
@@ -126,6 +128,94 @@ public sealed class OrganizeController(
     {
         OrganizePreviewResult result = await previews.PreviewUndoAsync(id, User.GetUserId(), cancellationToken);
         return Created(result);
+    }
+
+    /// <summary>
+    /// Confirms a preview: the organize job (library-organize) moves the files, writes the tags into the audio files
+    /// (after a backup) and records every step before it happens, so the operation can be undone and a stop of the
+    /// server in the middle is put back on the next start. Every song is checked against the disk again right before
+    /// it moves; a song that changed since the preview stops the run (status Stopped, the failed item names its
+    /// conflict). No file is ever replaced. Follow the progress with GetOrganizeOperation.
+    /// </summary>
+    /// <param name="request">The preview and whether its conflicts are skipped.</param>
+    /// <param name="cancellationToken">Aborts the request.</param>
+    /// <response code="202">The operation is queued; Location points to it.</response>
+    /// <response code="400">The request is invalid (code <c>request.invalid</c>).</response>
+    /// <response code="404">The operation does not exist (code <c>organize.operation_not_found</c>).</response>
+    /// <response code="409">The operation is no preview waiting for its confirmation (code
+    /// <c>organize.not_previewed</c>), the preview expired (code <c>organize.preview_expired</c>), it has conflicts and
+    /// skipConflicts is not set (code <c>organize.conflicts</c>), the template, the own album or the undone operation
+    /// changed since the preview (code <c>organize.preview_outdated</c>), a media folder cannot be written (code
+    /// <c>organize.media_read_only</c>) or another operation is queued or running (code
+    /// <c>organize.busy</c>).</response>
+    [HttpPost("apply", Name = "ApplyOrganizeOperation")]
+    [Consumes("application/json")]
+    [ProducesResponseType<OrganizeOperationDto>(StatusCodes.Status202Accepted, "application/json")]
+    [ProducesResponseType<ValidationProblemDto>(StatusCodes.Status400BadRequest, "application/problem+json")]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound, "application/problem+json")]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict, "application/problem+json")]
+    public async Task<ActionResult<OrganizeOperationDto>> ApplyOrganizeOperationAsync(
+        ApplyOrganizeOperationDto request,
+        CancellationToken cancellationToken)
+    {
+        OrganizeApplyResult result = await organize.ApplyAsync(
+            request.OperationId!.Value,
+            request.SkipConflicts,
+            cancellationToken);
+        return result.Status switch
+        {
+            OrganizeApplyStatus.Queued => AcceptedAtRoute(
+                OperationRoute,
+                new { id = result.Operation!.Id },
+                result.Operation.ToDto()),
+            OrganizeApplyStatus.NotPreviewed => this.Problem(
+                ProblemCodeDto.OrganizeNotPreviewed,
+                StatusCodes.Status409Conflict),
+            OrganizeApplyStatus.PreviewExpired => this.Problem(
+                ProblemCodeDto.OrganizePreviewExpired,
+                StatusCodes.Status409Conflict),
+            OrganizeApplyStatus.Conflicts => this.Problem(ProblemCodeDto.OrganizeConflicts, StatusCodes.Status409Conflict),
+            OrganizeApplyStatus.PreviewOutdated => this.Problem(
+                ProblemCodeDto.OrganizePreviewOutdated,
+                StatusCodes.Status409Conflict),
+            OrganizeApplyStatus.MediaReadOnly => this.Problem(
+                ProblemCodeDto.OrganizeMediaReadOnly,
+                StatusCodes.Status409Conflict),
+            OrganizeApplyStatus.Busy => this.Problem(ProblemCodeDto.OrganizeBusy, StatusCodes.Status409Conflict),
+            _ => OperationNotFound(),
+        };
+    }
+
+    /// <summary>
+    /// Asks an organize operation that is planning, queued or running to stop. A run stops between two songs, never in
+    /// the middle of one; the songs done before stay done and can be undone. The operation ends as Canceled.
+    /// </summary>
+    /// <param name="id">Id of the operation.</param>
+    /// <param name="cancellationToken">Aborts the request.</param>
+    /// <response code="202">The operation stops soon; Location points to it.</response>
+    /// <response code="404">The operation does not exist (code <c>organize.operation_not_found</c>).</response>
+    /// <response code="409">The operation is not planning, queued or running (code
+    /// <c>organize.not_cancelable</c>).</response>
+    [HttpPost("operations/{id:guid}/cancel", Name = "CancelOrganizeOperation")]
+    [ProducesResponseType<OrganizeOperationDto>(StatusCodes.Status202Accepted, "application/json")]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound, "application/problem+json")]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict, "application/problem+json")]
+    public async Task<ActionResult<OrganizeOperationDto>> CancelOrganizeOperationAsync(
+        Guid id,
+        CancellationToken cancellationToken)
+    {
+        OrganizeCancelResult result = await organize.CancelAsync(id, cancellationToken);
+        return result switch
+        {
+            { Status: OrganizeCancelStatus.Requested, Operation: { } operation } => AcceptedAtRoute(
+                OperationRoute,
+                new { id },
+                operation.ToDto()),
+            { Status: OrganizeCancelStatus.NotCancelable } => this.Problem(
+                ProblemCodeDto.OrganizeNotCancelable,
+                StatusCodes.Status409Conflict),
+            _ => OperationNotFound(),
+        };
     }
 
     /// <summary>

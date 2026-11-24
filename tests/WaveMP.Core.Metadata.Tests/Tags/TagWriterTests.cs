@@ -218,6 +218,43 @@ public class TagWriterTests
             .Should().Be((5, 12, 2, 2));
     }
 
+    [TestCase(AudioFormat.Mp3, "mp3")]
+    [TestCase(AudioFormat.Flac, "flac")]
+    [TestCase(AudioFormat.M4a, "m4a")]
+    public async Task Write_ListsAndCounts_PutBackTheValuesOfABackup(AudioFormat format, string extension)
+    {
+        string path = _directory.Combine($"song.{extension}");
+        await TestMediaGenerator.CreateAudioAsync(path, format, _tags);
+
+        _writer.Write(path, MediaFileKind.Audio, new TagChanges
+        {
+            AlbumArtist = new TagChange<string?>("Ignored"),
+            AlbumArtists = new TagChange<IReadOnlyList<string>>(["First", "Second"]),
+            Genres = new TagChange<IReadOnlyList<string>>(["Pop", "Soul"]),
+            TrackNumber = new TagChange<int?>(4),
+            TrackCount = new TagChange<int?>(9),
+            DiscNumber = new TagChange<int?>(1),
+            DiscCount = new TagChange<int?>(3),
+        }).Should().Be(TagWriteStatus.Written);
+
+        TagSnapshot snapshot = ReadSnapshot(path);
+        snapshot.AlbumArtists.Should().Equal("First", "Second");
+        snapshot.Genres.Should().Equal("Pop", "Soul");
+        (snapshot.TrackNumber, snapshot.TrackCount, snapshot.DiscNumber, snapshot.DiscCount)
+            .Should().Be((4, 9, 1, 3));
+
+        _writer.Write(path, MediaFileKind.Audio, new TagChanges
+        {
+            AlbumArtists = new TagChange<IReadOnlyList<string>>([]),
+            TrackNumber = new TagChange<int?>(null),
+            TrackCount = new TagChange<int?>(9),
+        }).Should().Be(TagWriteStatus.Written);
+
+        TagSnapshot removed = ReadSnapshot(path);
+        removed.AlbumArtists.Should().BeEmpty();
+        (removed.TrackNumber, removed.TrackCount).Should().Be((null, null), "a count is only written with a number");
+    }
+
     [TestCase(MediaFileKind.Video)]
     [TestCase(MediaFileKind.Image)]
     public async Task Write_NoAudio_ReturnsNotAudioAndLeavesTheFileUnchanged(MediaFileKind kind)
