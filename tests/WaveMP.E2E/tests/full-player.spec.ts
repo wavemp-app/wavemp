@@ -293,6 +293,30 @@ test.describe('full-screen player', () => {
         })
     })
 
+    test('closes on a fast flick whose moves arrived as one', async ({ page, request }) => {
+        await playPaused(page, await findTrackId(request, 'Loose Song'), 'Loose Song')
+        await expandPlayer(page)
+        const transport = part(page, 'transport')
+        const cdp = await touch(page)
+        const start = await coverPoint(page)
+
+        // A busy phone hands the moves of a flick over as one: 160 pixels 40 milliseconds after
+        // the finger pressed, and it lets go 8 milliseconds later. The speed counts from the press.
+        const base = Date.now()
+        await touchAt(cdp, 'touchStart', [start], base, 0)
+        await touchAt(cdp, 'touchMove', [{ x: start.x, y: start.y + 160 }], base, 40)
+        await touchAt(cdp, 'touchEnd', [], base, 48)
+
+        await expect(transport).toHaveAttribute('data-state', /\bdismissing\b/)
+        const duration = await transport.evaluate((element) =>
+            Number.parseFloat(getComputedStyle(element).getPropertyValue('--wmp-swipe-duration')),
+        )
+        expect(duration).toBeLessThanOrEqual(300)
+        await expect(transport).not.toHaveAttribute('data-state', /\bexpanded\b/, {
+            timeout: 2000,
+        })
+    })
+
     test('chooses cover, video and visualization with the view switch', async ({
         page,
         request,

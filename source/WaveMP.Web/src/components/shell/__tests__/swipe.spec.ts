@@ -85,6 +85,23 @@ describe('swipe tracker', () => {
         expect(tracker.velocity(150)).toBe(1)
     })
 
+    it('measures from the press when the moves of a flick arrive as one', () => {
+        // A busy phone hands the moves of a fast flick over as one: pressed at 100, the drag
+        // starts 40 milliseconds later at 260, and the finger lets go 8 milliseconds after that.
+        const tracker = new SwipeTracker()
+        tracker.begin(260, 40, { y: 100, time: 0 })
+        expect(tracker.move(260, 40)).toBe(0)
+        expect(tracker.velocity(48)).toBe(4)
+    })
+
+    it('replaces the last moment by a move at the same time', () => {
+        const tracker = new SwipeTracker()
+        tracker.begin(100, 0)
+        tracker.move(250, 150)
+        expect(tracker.move(260, 150)).toBe(160)
+        expect(tracker.velocity(150)).toBeCloseTo(160 / 150, 5)
+    })
+
     it('has no speed when the finger rested before it let go', () => {
         const tracker = new SwipeTracker()
         tracker.begin(100, 0)

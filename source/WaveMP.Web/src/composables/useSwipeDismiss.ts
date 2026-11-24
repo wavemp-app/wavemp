@@ -26,7 +26,8 @@ const excludedTargets =
  * events, so the drag can keep the page from scrolling) or a mouse or pen (pointer events). A drag
  * starts when the finger moves down from the top of the element (not scrolled) by
  * swipeStartThreshold pixels, more down than sideways, and not on a slider or a field. While it
- * drags, offset follows the finger; when it lets go, the element closes or snaps back (swipe.ts).
+ * drags, offset follows the finger; when it lets go, the element closes or snaps back (swipe.ts),
+ * with the speed of the finger counted from where it pressed.
  * The phase, the offset, the progress and the duration of the movement after the finger let go are
  * for the theme API; a click after a drag is swallowed, so the drag does not also tap a button.
  */
@@ -40,7 +41,8 @@ export function useSwipeDismiss(element: Ref<HTMLElement | null>, options: Swipe
     const reducedMotion = useMediaQuery('(prefers-reduced-motion: reduce)')
 
     const tracker = new SwipeTracker()
-    let pressed: { x: number; y: number } | null = null
+    /** Where and when the finger pressed (the time of the event, in milliseconds). */
+    let pressed: { x: number; y: number; time: number } | null = null
     let pointerId: number | null = null
     let touchId: number | null = null
     let timer: ReturnType<typeof setTimeout> | undefined
@@ -76,8 +78,8 @@ export function useSwipeDismiss(element: Ref<HTMLElement | null>, options: Swipe
         return !(target instanceof Element && target.closest(excludedTargets))
     }
 
-    function press(x: number, y: number): void {
-        pressed = { x, y }
+    function press(x: number, y: number, time: number): void {
+        pressed = { x, y, time }
     }
 
     /** The finger moved; true while it drags the element. */
@@ -103,7 +105,8 @@ export function useSwipeDismiss(element: Ref<HTMLElement | null>, options: Swipe
             phase.value = 'dragging'
             height.value = element.value?.clientHeight ?? 0
             duration.value = 0
-            tracker.begin(y, time)
+            // The speed counts from the press, also when the moves arrive as one.
+            tracker.begin(y, time, { y: pressed.y, time: pressed.time })
         }
 
         offset.value = tracker.move(y, time)
@@ -181,7 +184,7 @@ export function useSwipeDismiss(element: Ref<HTMLElement | null>, options: Swipe
 
         if (canStart(event.target)) {
             touchId = touch.identifier
-            press(touch.clientX, touch.clientY)
+            press(touch.clientX, touch.clientY, event.timeStamp)
             followTouch(event.target)
         }
     }
@@ -248,7 +251,7 @@ export function useSwipeDismiss(element: Ref<HTMLElement | null>, options: Swipe
         }
 
         pointerId = event.pointerId
-        press(event.clientX, event.clientY)
+        press(event.clientX, event.clientY, event.timeStamp)
     }
 
     function onPointermove(event: PointerEvent): void {

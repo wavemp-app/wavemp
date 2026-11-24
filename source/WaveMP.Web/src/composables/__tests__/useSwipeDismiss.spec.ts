@@ -131,6 +131,22 @@ describe('useSwipeDismiss', () => {
         expect(host.emitted('dismiss')).toHaveLength(1)
     })
 
+    it('closes on a fast flick whose moves arrived as one', async () => {
+        const host = mountHost()
+        const button = host.get('button').element
+        // A busy device hands the moves over as one: the speed counts from where it pressed.
+        pointer('pointerdown', 100, 0, button)
+        pointer('pointermove', 260, 40, button)
+        pointer('pointerup', 260, 48, button)
+        await host.vm.$nextTick()
+
+        expect(state(host).phase).toBe('dismissing')
+        // 4 pixels per millisecond for the whole height.
+        expect(state(host).duration).toBe(height / 4)
+        vi.advanceTimersByTime(state(host).duration)
+        expect(host.emitted('dismiss')).toHaveLength(1)
+    })
+
     it('swallows the click after a drag, not a tap', async () => {
         const host = mountHost()
         const button = host.get('button')

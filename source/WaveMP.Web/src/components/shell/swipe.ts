@@ -1,7 +1,8 @@
 // Swiping the full-screen player down (mobile): the player follows the finger while it drags and,
 // when the finger lets go, closes or snaps back depending on the distance and the speed of the
 // finger. A fast flick closes it even after a short distance, and the player then leaves the screen
-// at about the speed of the flick.
+// at about the speed of the flick. The speed counts from where the finger pressed, so a flick whose
+// moves a busy device hands over as one still has its speed.
 
 /** Pixels the finger has to move before a drag starts, so a tap stays a tap. */
 export const swipeStartThreshold = 8
@@ -58,27 +59,37 @@ export function swipeProgress(offset: number, height: number): number {
     return height > 0 ? Math.min(1, Math.max(0, offset / height)) : 0
 }
 
-interface SwipeSample {
+/** A point of the finger (its height) at a time, in milliseconds. */
+export interface SwipeSample {
     readonly y: number
     readonly time: number
 }
 
 /**
  * Follows one drag of the finger: where it started, how far the player moved down (never up) and
- * how fast the finger moved at the end.
+ * how fast the finger moved at the end, counted from where the finger pressed.
  */
 export class SwipeTracker {
     private startY = 0
     private samples: SwipeSample[] = []
 
-    /** The drag starts at the point of the finger. */
-    begin(y: number, time: number): void {
+    /**
+     * The drag starts at the point of the finger, past swipeStartThreshold. The player follows the
+     * finger from this point, so it does not jump by the threshold; the speed counts from origin,
+     * where the finger pressed. A busy device can hand all the moves of a fast flick over as one,
+     * and without the press that one move would have no speed.
+     */
+    begin(y: number, time: number, origin?: SwipeSample): void {
         this.startY = y
-        this.samples = [{ y, time }]
+        this.samples = origin ? [origin, { y, time }] : [{ y, time }]
     }
 
     /** The finger moved; returns how far the player follows it down, in pixels. */
     move(y: number, time: number): number {
+        // A move at the same time as the last one replaces it: no moment without time in between.
+        if (this.samples.at(-1)?.time === time) {
+            this.samples.pop()
+        }
         this.samples.push({ y, time })
         // Only the moments of the window and one before it count for the speed.
         const from = time - swipeVelocityWindow
