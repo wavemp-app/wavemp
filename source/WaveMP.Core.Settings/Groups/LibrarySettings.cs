@@ -51,6 +51,13 @@ public sealed class LibrarySettings
     public IReadOnlyList<string> AlbumCoverNames { get; init; } = ["cover", "folder", "front", "album", "albumart"];
 
     /// <summary>
+    /// Base names of pictures that are the picture of an artist in the artist's folder (the folder named after the
+    /// artist, e.g. <c>Artist/artist.jpg</c>), in the order of their priority. Lower case; compared without regard to
+    /// case.
+    /// </summary>
+    public IReadOnlyList<string> ArtistPictureNames { get; init; } = ["artist", "folder", "photo"];
+
+    /// <summary>
     /// Which cover a track shows: the cover of its album or its own; the other one is the fallback. Applies to all
     /// albums and tracks without a rule of their own (a rule of an album or a track overrides it). Stored as its name.
     /// </summary>

@@ -23,7 +23,8 @@ public sealed class SettingsController(
     ICacheSettingsService cacheSettings,
     ITranscodingSettingsService transcodingSettings,
     IBackupSettingsService backupSettings,
-    IOnlineMetadataSettingsService onlineMetadataSettings) : ControllerBase
+    IOnlineMetadataSettingsService onlineMetadataSettings,
+    IArtistPictureSettingsService artistPictureSettings) : ControllerBase
 {
     /// <summary>
     /// Returns the settings of the media library.
@@ -262,6 +263,54 @@ public sealed class SettingsController(
                 error.Reason.ToCode(),
                 error.Minimum,
                 error.Maximum);
+        }
+
+        return ValidationProblem();
+    }
+
+    /// <summary>
+    /// Returns the settings of the artist pictures from the internet. The API key of fanart.tv is never returned, only
+    /// whether one is stored.
+    /// </summary>
+    /// <param name="cancellationToken">Aborts the request.</param>
+    /// <response code="200">The settings of the artist pictures.</response>
+    [HttpGet("artist-pictures", Name = "GetArtistPictureSettings")]
+    [ProducesResponseType<ArtistPictureSettingsDto>(StatusCodes.Status200OK, "application/json")]
+    public async Task<ActionResult<ArtistPictureSettingsDto>> GetArtistPictureSettingsAsync(
+        CancellationToken cancellationToken)
+    {
+        ArtistPictureSettings settings = await artistPictureSettings.GetAsync(cancellationToken);
+        return Ok(settings.ToDto());
+    }
+
+    /// <summary>
+    /// Changes the settings of the artist pictures. Missing or null values stay unchanged; an empty API key removes the
+    /// stored one. Changes apply to the next request. While the online lookup is off, WaveMP sends no request for
+    /// artist pictures to any service.
+    /// </summary>
+    /// <param name="request">The changes.</param>
+    /// <param name="cancellationToken">Aborts the request.</param>
+    /// <response code="200">The changed settings, without the API key.</response>
+    /// <response code="400">The request is invalid (code <c>request.invalid</c>, errors by field:
+    /// <c>invalid_format</c> for an API key that is not 1 to 64 letters or digits).</response>
+    [HttpPatch("artist-pictures", Name = "UpdateArtistPictureSettings")]
+    [Consumes("application/json")]
+    [ProducesResponseType<ArtistPictureSettingsDto>(StatusCodes.Status200OK, "application/json")]
+    [ProducesResponseType<ValidationProblemDto>(StatusCodes.Status400BadRequest, "application/problem+json")]
+    public async Task<ActionResult<ArtistPictureSettingsDto>> UpdateArtistPictureSettingsAsync(
+        UpdateArtistPictureSettingsDto request,
+        CancellationToken cancellationToken)
+    {
+        ArtistPictureSettingsResult result =
+            await artistPictureSettings.UpdateAsync(request.ToCommand(), cancellationToken);
+        if (result.IsSuccess)
+        {
+            return Ok(result.Settings.ToDto());
+        }
+
+        foreach (ArtistPictureSettingsValidationError error in result.Errors)
+        {
+            ModelState.AddValidationError(error.Field.ToJsonName(), error.Reason.ToCode());
         }
 
         return ValidationProblem();

@@ -15,10 +15,10 @@ namespace WaveMP.Core.Scanning.Writers;
 
 /// <summary>
 /// Writes the result of the scan of a folder into the library: files, tracks with their primary files and covers,
-/// artists and albums. All changes of a folder are saved together. Album covers are written after all folders. The
-/// files the admin selected for a track win over the quality rule as long as they exist; whether they do is stored
-/// with each selection. A song that moves from one album or artist to another one is recorded with the changes of its
-/// folder (see <see cref="ILibraryScanRepository.RecordAlbumMovesAsync"/> and
+/// artists and albums. All changes of a folder are saved together. Album covers and the pictures in the folders of
+/// artists are written after all folders. The files the admin selected for a track win over the quality rule as long
+/// as they exist; whether they do is stored with each selection. A song that moves from one album or artist to another
+/// one is recorded with the changes of its folder (see <see cref="ILibraryScanRepository.RecordAlbumMovesAsync"/> and
 /// <see cref="ILibraryScanRepository.RecordArtistMovesAsync"/>). A song counts for an artist as its track artist and
 /// as the album artist of its album, and leaves an artist only when that artist has neither role on it any more; a
 /// song that loses its album or artist or gets its first one records nothing. A song whose folder was renamed or moved
@@ -318,6 +318,42 @@ public sealed class LibraryWriter(ILibraryScanRepository library)
         }
 
         await library.SaveChangesAsync(cancellationToken);
+    }
+
+    /// <summary>
+    /// Sets the picture in the folder of every artist by the rules of <see cref="ArtistPictureCandidates"/>, over the
+    /// whole library, and clears it where there is none any more. Only artists whose picture changes are written. Runs
+    /// after the album covers, also after artists were removed, so a renamed artist finds the picture of its own
+    /// folder.
+    /// </summary>
+    public async Task UpdateArtistPicturesAsync(
+        IReadOnlyList<string> pictureNames,
+        CancellationToken cancellationToken = default)
+    {
+        IReadOnlyList<ArtistFolder> folders = await library.GetArtistFoldersAsync(cancellationToken);
+        IReadOnlyList<ArtistPictureImage> images = await library.GetArtistPictureImagesAsync(
+            [.. pictureNames.Select(FileGrouper.NormalizeBaseName)],
+            cancellationToken);
+        IReadOnlyDictionary<Guid, IReadOnlyList<ArtistPictureImage>> desired =
+            ArtistPictureCandidates.Select(folders, images, pictureNames);
+        IReadOnlyDictionary<Guid, Guid> current = await library.GetArtistLocalPicturesAsync(cancellationToken);
+
+        Dictionary<Guid, Guid?> changes = [];
+        foreach ((Guid artistId, IReadOnlyList<ArtistPictureImage> candidates) in desired)
+        {
+            Guid fileId = candidates[0].MediaFileId;
+            if (!current.TryGetValue(artistId, out Guid stored) || stored != fileId)
+            {
+                changes[artistId] = fileId;
+            }
+        }
+
+        foreach (Guid artistId in current.Keys.Where(artistId => !desired.ContainsKey(artistId)))
+        {
+            changes[artistId] = null;
+        }
+
+        await library.SetArtistLocalPicturesAsync(changes, cancellationToken);
     }
 
     /// <summary>

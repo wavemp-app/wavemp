@@ -170,6 +170,33 @@ public interface ILibraryScanRepository
     Task<IReadOnlyList<Cover>> LoadAlbumCoversAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// The folders of all sources that contain tracks of an artist, as track artist or as album artist of their album,
+    /// with the normalized name of the artist.
+    /// </summary>
+    Task<IReadOnlyList<ArtistFolder>> GetArtistFoldersAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// The readable pictures (without an issue of the scan) whose normalized base name is one of
+    /// <paramref name="normalizedBaseNames"/>.
+    /// </summary>
+    Task<IReadOnlyList<ArtistPictureImage>> GetArtistPictureImagesAsync(
+        IReadOnlyCollection<string> normalizedBaseNames,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// The picture in the folder of every artist that has one.
+    /// </summary>
+    Task<IReadOnlyDictionary<Guid, Guid>> GetArtistLocalPicturesAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Sets the picture in the folder of the given artists (<c>null</c> clears it), in one statement. Artists that no
+    /// longer exist are skipped.
+    /// </summary>
+    Task SetArtistLocalPicturesAsync(
+        IReadOnlyDictionary<Guid, Guid?> pictures,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Deletes albums without tracks and artists without tracks and albums, in one transaction. Before an album without
     /// tracks is deleted, its data goes to the albums its songs moved to (see <see cref="RecordAlbumMovesAsync"/>):
     /// the album favorites of all profiles, the cover rule, the online cover and the first seen date, by the rules of
@@ -180,8 +207,11 @@ public interface ILibraryScanRepository
     /// the same rules (<see cref="ArtistSuccessionPlanner"/>): the artist favorites of all profiles and the first seen
     /// date to every artist that got its songs (the union of the favorites with the earliest time per profile, the
     /// earliest first seen date), a list in the player started from it to the main successor (the artist that got most
-    /// of them, then the earliest first seen date, then the smallest id). Nothing is passed on while the old artist
-    /// still has songs or albums. Returns the number of deleted albums and artists.
+    /// of them, then the earliest first seen date, then the smallest id), and its uploaded picture, its online picture
+    /// and its MusicBrainz artist to the main successor, each only if that has none (the pictures not passed on are
+    /// removed with their artist). The picture in the folder of an artist is not passed on; the scan finds the picture
+    /// of the new artist in its own folder (see <see cref="SetArtistLocalPicturesAsync"/>). Nothing is passed on while
+    /// the old artist still has songs or albums. Returns the number of deleted albums and artists.
     /// </summary>
     Task<(int Albums, int Artists)> DeleteOrphansAsync(
         DateTimeOffset now,

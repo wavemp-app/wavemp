@@ -30,6 +30,7 @@ public static partial class LibrarySettingsValidator
             CoverPriority = settings.CoverPriority,
             DownloadLyrics = settings.DownloadLyrics,
             SubsonicDownloads = settings.SubsonicDownloads,
+            ArtistPictureNames = NormalizeList(settings.ArtistPictureNames, trimDot: false),
         };
     }
 
@@ -82,14 +83,8 @@ public static partial class LibrarySettingsValidator
             errors.Add(new(LibrarySettingsField.VideoExtensions, SettingsErrorReason.Empty));
         }
 
-        if (settings.AlbumCoverNames.Count > MaxEntries)
-        {
-            errors.Add(new(LibrarySettingsField.AlbumCoverNames, SettingsErrorReason.TooMany, Maximum: MaxEntries));
-        }
-        else if (!settings.AlbumCoverNames.All(IsValidCoverName))
-        {
-            errors.Add(new(LibrarySettingsField.AlbumCoverNames, SettingsErrorReason.Invalid));
-        }
+        AddPictureNameErrors(errors, LibrarySettingsField.AlbumCoverNames, settings.AlbumCoverNames);
+        AddPictureNameErrors(errors, LibrarySettingsField.ArtistPictureNames, settings.ArtistPictureNames);
 
         // The stored JSON may hold a number instead of the name.
         if (!Enum.IsDefined(settings.CoverPriority))
@@ -98,6 +93,25 @@ public static partial class LibrarySettingsValidator
         }
 
         return errors;
+    }
+
+    /// <summary>
+    /// Base names of pictures (album covers, artist pictures): at most <see cref="MaxEntries"/>, each a file name
+    /// without folder.
+    /// </summary>
+    private static void AddPictureNameErrors(
+        List<SettingsValidationError> errors,
+        LibrarySettingsField field,
+        IReadOnlyList<string> names)
+    {
+        if (names.Count > MaxEntries)
+        {
+            errors.Add(new(field, SettingsErrorReason.TooMany, Maximum: MaxEntries));
+        }
+        else if (!names.All(IsValidCoverName))
+        {
+            errors.Add(new(field, SettingsErrorReason.Invalid));
+        }
     }
 
     private static bool IsValidCoverName(string name)

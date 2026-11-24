@@ -132,6 +132,14 @@ namespace WaveMP.Data.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("first_seen_at");
 
+                    b.Property<Guid?>("LocalPictureFileId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("local_picture_file_id");
+
+                    b.Property<Guid?>("MusicBrainzArtistId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("music_brainz_artist_id");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(512)
@@ -146,6 +154,9 @@ namespace WaveMP.Data.Migrations
 
                     b.HasKey("Id")
                         .HasName("pk_artists");
+
+                    b.HasIndex("LocalPictureFileId")
+                        .HasDatabaseName("ix_artists_local_picture_file_id");
 
                     b.HasIndex("Name")
                         .HasDatabaseName("ix_artists_name_trgm");
@@ -187,6 +198,76 @@ namespace WaveMP.Data.Migrations
                     b.ToTable("artist_moves", null, t =>
                         {
                             t.HasCheckConstraint("ck_artist_moves_distinct_artists", "from_artist_id <> to_artist_id");
+                        });
+                });
+
+            modelBuilder.Entity("WaveMP.Data.Entities.ArtistPicture", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("ArtistId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("artist_id");
+
+                    b.Property<string>("Author")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("author");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<int>("Height")
+                        .HasColumnType("integer")
+                        .HasColumnName("height");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("kind");
+
+                    b.Property<string>("License")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("license");
+
+                    b.Property<string>("LicenseUrl")
+                        .HasMaxLength(2048)
+                        .HasColumnType("character varying(2048)")
+                        .HasColumnName("license_url");
+
+                    b.Property<Guid?>("MusicBrainzArtistId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("music_brainz_artist_id");
+
+                    b.Property<string>("Provider")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("provider");
+
+                    b.Property<string>("SourceUrl")
+                        .HasMaxLength(2048)
+                        .HasColumnType("character varying(2048)")
+                        .HasColumnName("source_url");
+
+                    b.Property<int>("Width")
+                        .HasColumnType("integer")
+                        .HasColumnName("width");
+
+                    b.HasKey("Id")
+                        .HasName("pk_artist_pictures");
+
+                    b.HasIndex("ArtistId", "Kind")
+                        .IsUnique()
+                        .HasDatabaseName("ix_artist_pictures_artist_id_kind");
+
+                    b.ToTable("artist_pictures", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_artist_pictures_provider", "(kind = 'Online') = (provider IS NOT NULL)");
                         });
                 });
 
@@ -1935,6 +2016,17 @@ namespace WaveMP.Data.Migrations
                     b.Navigation("ToAlbum");
                 });
 
+            modelBuilder.Entity("WaveMP.Data.Entities.Artist", b =>
+                {
+                    b.HasOne("WaveMP.Data.Entities.MediaFile", "LocalPictureFile")
+                        .WithMany()
+                        .HasForeignKey("LocalPictureFileId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_artists_media_files_local_picture_file_id");
+
+                    b.Navigation("LocalPictureFile");
+                });
+
             modelBuilder.Entity("WaveMP.Data.Entities.ArtistMove", b =>
                 {
                     b.HasOne("WaveMP.Data.Entities.Artist", "FromArtist")
@@ -1954,6 +2046,18 @@ namespace WaveMP.Data.Migrations
                     b.Navigation("FromArtist");
 
                     b.Navigation("ToArtist");
+                });
+
+            modelBuilder.Entity("WaveMP.Data.Entities.ArtistPicture", b =>
+                {
+                    b.HasOne("WaveMP.Data.Entities.Artist", "Artist")
+                        .WithMany("Pictures")
+                        .HasForeignKey("ArtistId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_artist_pictures_artists_artist_id");
+
+                    b.Navigation("Artist");
                 });
 
             modelBuilder.Entity("WaveMP.Data.Entities.Cover", b =>
@@ -2333,6 +2437,11 @@ namespace WaveMP.Data.Migrations
                     b.Navigation("Covers");
 
                     b.Navigation("Tracks");
+                });
+
+            modelBuilder.Entity("WaveMP.Data.Entities.Artist", b =>
+                {
+                    b.Navigation("Pictures");
                 });
 
             modelBuilder.Entity("WaveMP.Data.Entities.Playlist", b =>

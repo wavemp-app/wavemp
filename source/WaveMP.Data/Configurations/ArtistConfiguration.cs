@@ -25,5 +25,11 @@ internal sealed class ArtistConfiguration : IEntityTypeConfiguration<Artist>
             .HasDatabaseName(NameTrigramIndex)
             .HasMethod(LibraryColumns.TrigramIndexMethod)
             .HasOperators(LibraryColumns.TrigramOperators);
+
+        // The picture in the folder of the artist; the database clears it when the file is removed.
+        builder.HasOne(artist => artist.LocalPictureFile)
+            .WithMany()
+            .HasForeignKey(artist => artist.LocalPictureFileId)
+            .OnDelete(DeleteBehavior.SetNull);
     }
 }

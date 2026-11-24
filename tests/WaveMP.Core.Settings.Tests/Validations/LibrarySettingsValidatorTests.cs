@@ -27,12 +27,49 @@ public class LibrarySettingsValidatorTests
         {
             AudioExtensions = [" .MP3", "flac", "", "  ", "Mp3", "..ogg"],
             AlbumCoverNames = [" Cover ", "FOLDER", "cover"],
+            ArtistPictureNames = [" Photo", "ARTIST", "", "photo"],
         };
 
         LibrarySettings normalized = LibrarySettingsValidator.Normalize(settings);
 
         normalized.AudioExtensions.Should().Equal("mp3", "flac", "ogg");
         normalized.AlbumCoverNames.Should().Equal("cover", "folder");
+        normalized.ArtistPictureNames.Should().Equal("photo", "artist");
+    }
+
+    [Test]
+    public void ArtistPictureNames_ByDefault_AreArtistFolderAndPhoto()
+    {
+        new LibrarySettings().ArtistPictureNames.Should().Equal("artist", "folder", "photo");
+    }
+
+    [TestCase(".artist")]
+    [TestCase("artists/photo")]
+    [TestCase("artists\\photo")]
+    [TestCase("abcdefghijabcdefghijabcdefghijabcdefghijabcdefghijk")]
+    public void Validate_InvalidArtistPictureName_IsInvalid(string name)
+    {
+        LibrarySettings settings = new() { ArtistPictureNames = ["artist", name] };
+
+        IReadOnlyList<SettingsValidationError> errors = LibrarySettingsValidator.Validate(settings);
+
+        errors.Should().Equal(
+            new SettingsValidationError(LibrarySettingsField.ArtistPictureNames, SettingsErrorReason.Invalid));
+    }
+
+    [Test]
+    public void Validate_TooManyArtistPictureNames_IsReportedAndNoNamesAreValid()
+    {
+        LibrarySettings tooMany = new()
+        {
+            ArtistPictureNames = [.. Enumerable.Range(0, 51).Select(index => $"artist{index}")],
+        };
+
+        LibrarySettingsValidator.Validate(tooMany).Should().Equal(new SettingsValidationError(
+            LibrarySettingsField.ArtistPictureNames,
+            SettingsErrorReason.TooMany,
+            Maximum: 50));
+        LibrarySettingsValidator.Validate(new LibrarySettings { ArtistPictureNames = [] }).Should().BeEmpty();
     }
 
     [TestCase(14, true)]

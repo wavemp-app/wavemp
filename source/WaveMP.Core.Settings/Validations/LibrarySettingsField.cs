@@ -12,4 +12,5 @@ public enum LibrarySettingsField
     ImageExtensions,
     AlbumCoverNames,
     CoverPriority,
+    ArtistPictureNames,
 }

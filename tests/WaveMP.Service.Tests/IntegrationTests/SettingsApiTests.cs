@@ -26,6 +26,7 @@ public class SettingsApiTests
         settings.VideoExtensions.Should().Contain(["mp4", "mkv"]);
         settings.ImageExtensions.Should().Contain(["jpg", "png"]);
         settings.AlbumCoverNames.Should().Equal("cover", "folder", "front", "album", "albumart");
+        settings.ArtistPictureNames.Should().Equal("artist", "folder", "photo");
         settings.DownloadLyrics.Should().BeFalse();
         await factory.DeleteDatabaseAsync();
     }
@@ -45,6 +46,7 @@ public class SettingsApiTests
                     fileWatcherEnabled = false,
                     audioExtensions = new[] { " .MP3", "Flac", "mp3" },
                     albumCoverNames = new[] { "Front", "cover" },
+                    artistPictureNames = new[] { " Band ", "ARTIST", "band" },
                 },
                 HttpClientExtensions.JsonOptions);
             response.StatusCode.Should().Be(HttpStatusCode.OK, await response.Content.ReadAsStringAsync());
@@ -59,6 +61,7 @@ public class SettingsApiTests
         updated.FileWatcherEnabled.Should().BeFalse();
         updated.AudioExtensions.Should().Equal("mp3", "flac");
         updated.AlbumCoverNames.Should().Equal("front", "cover");
+        updated.ArtistPictureNames.Should().Equal("band", "artist");
         updated.VideoExtensions.Should().Contain("mkv");
         loaded.Should().BeEquivalentTo(updated);
         (await restarted.GetJsonAsync<PageDto<JobDto>>("/api/v1/jobs")).Items
@@ -73,6 +76,7 @@ public class SettingsApiTests
     [TestCase("{\"audioExtensions\":[\"mp3\",\"mp4\"]}", "videoExtensions")]
     [TestCase("{\"imageExtensions\":[\"jpg\",\"mkv\"]}", "imageExtensions")]
     [TestCase("{\"albumCoverNames\":[\"covers/front\"]}", "albumCoverNames")]
+    [TestCase("{\"artistPictureNames\":[\".artist\"]}", "artistPictureNames")]
     [TestCase("{\"audioExtensions\":[],\"videoExtensions\":[]}", "audioExtensions")]
     public async Task UpdateLibrarySettings_WithInvalidValues_ReportsTheField(string body, string field)
     {

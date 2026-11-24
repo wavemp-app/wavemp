@@ -14,4 +14,5 @@ public sealed record UpdateLibrarySettingsCommand(
     IReadOnlyList<string>? AlbumCoverNames = null,
     CoverPriority? CoverPriority = null,
     bool? DownloadLyrics = null,
-    bool? SubsonicDownloads = null);
+    bool? SubsonicDownloads = null,
+    IReadOnlyList<string>? ArtistPictureNames = null);

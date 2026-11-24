@@ -348,6 +348,84 @@ internal sealed class LibraryScanRepository(WaveMpDbContext dbContext) : ILibrar
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<IReadOnlyList<ArtistFolder>> GetArtistFoldersAsync(
+        CancellationToken cancellationToken = default)
+    {
+        List<ArtistFolder> asTrackArtist = await dbContext.Tracks.AsNoTracking()
+            .Where(track => track.ArtistId != null)
+            .Select(track => new ArtistFolder(
+                track.ArtistId!.Value,
+                track.Artist!.Name,
+                track.SourceId,
+                track.DirectoryPath))
+            .Distinct()
+            .ToListAsync(cancellationToken);
+        List<ArtistFolder> asAlbumArtist = await dbContext.Tracks.AsNoTracking()
+            .Where(track => track.Album != null && track.Album.AlbumArtistId != null)
+            .Select(track => new ArtistFolder(
+                track.Album!.AlbumArtistId!.Value,
+                track.Album.AlbumArtist!.Name,
+                track.SourceId,
+                track.DirectoryPath))
+            .Distinct()
+            .ToListAsync(cancellationToken);
+        return [.. asTrackArtist.Union(asAlbumArtist)];
+    }
+
+    public async Task<IReadOnlyList<ArtistPictureImage>> GetArtistPictureImagesAsync(
+        IReadOnlyCollection<string> normalizedBaseNames,
+        CancellationToken cancellationToken = default)
+    {
+        string[] names = [.. normalizedBaseNames];
+        return await dbContext.MediaFiles.AsNoTracking()
+            .Where(file => file.Kind == MediaFileKind.Image
+                && file.Issue == null
+                && names.Contains(file.NormalizedBaseName))
+            .Select(file => new ArtistPictureImage(
+                file.Id,
+                file.SourceId,
+                file.RelativePath,
+                file.DirectoryPath,
+                file.NormalizedBaseName,
+                file.Size,
+                file.Width,
+                file.Height))
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<IReadOnlyDictionary<Guid, Guid>> GetArtistLocalPicturesAsync(
+        CancellationToken cancellationToken = default)
+    {
+        return await dbContext.Artists.AsNoTracking()
+            .Where(artist => artist.LocalPictureFileId != null)
+            .ToDictionaryAsync(artist => artist.Id, artist => artist.LocalPictureFileId!.Value, cancellationToken);
+    }
+
+    public async Task SetArtistLocalPicturesAsync(
+        IReadOnlyDictionary<Guid, Guid?> pictures,
+        CancellationToken cancellationToken = default)
+    {
+        if (pictures.Count == 0)
+        {
+            return;
+        }
+
+        Guid[] artistIds = [.. pictures.Keys];
+        Guid?[] fileIds = [.. artistIds.Select(id => pictures[id])];
+
+        // A file removed in the meantime is not set; the next scan finds the picture again.
+        await dbContext.Database.ExecuteSqlAsync(
+            $"""
+            UPDATE artists
+            SET local_picture_file_id = changed.file_id
+            FROM unnest({artistIds}, {fileIds}) AS changed(artist_id, file_id)
+            WHERE artists.id = changed.artist_id
+                AND (changed.file_id IS NULL
+                    OR EXISTS (SELECT 1 FROM media_files WHERE media_files.id = changed.file_id))
+            """,
+            cancellationToken);
+    }
+
     public Task<(int Albums, int Artists)> DeleteOrphansAsync(
         DateTimeOffset now,
         CancellationToken cancellationToken = default)
@@ -545,8 +623,8 @@ internal sealed class LibraryScanRepository(WaveMpDbContext dbContext) : ILibrar
     /// <summary>
     /// Gives the data of the artists left empty to the artists their songs moved to, by the plan of
     /// <see cref="ArtistSuccessionPlanner"/>. Runs in the transaction of <see cref="DeleteOrphansAsync"/>, after the
-    /// albums left empty are deleted and before the artists left empty are deleted (their moves and favorites go with
-    /// them). Artists have no change time, so nothing else is touched.
+    /// albums left empty are deleted and before the artists left empty are deleted (their moves, favorites and the
+    /// pictures not passed on go with them). Artists have no change time, so nothing else is touched.
     /// </summary>
     private async Task CarryOverArtistsAsync(List<Guid> orphans, CancellationToken cancellationToken)
     {
@@ -567,7 +645,16 @@ internal sealed class LibraryScanRepository(WaveMpDbContext dbContext) : ILibrar
                 artist.Id,
                 dbContext.Tracks.Any(track => track.ArtistId == artist.Id)
                     || dbContext.Albums.Any(album => album.AlbumArtistId == artist.Id),
-                artist.FirstSeenAt))
+                artist.FirstSeenAt,
+                dbContext.ArtistPictures
+                    .Where(picture => picture.ArtistId == artist.Id && picture.Kind == ArtistPictureKind.Uploaded)
+                    .Select(picture => (Guid?)picture.Id)
+                    .FirstOrDefault(),
+                dbContext.ArtistPictures
+                    .Where(picture => picture.ArtistId == artist.Id && picture.Kind == ArtistPictureKind.Online)
+                    .Select(picture => (Guid?)picture.Id)
+                    .FirstOrDefault(),
+                artist.MusicBrainzArtistId))
             .ToListAsync(cancellationToken);
         List<ArtistSuccessionFavorite> favorites = await dbContext.Favorites.AsNoTracking()
             .Where(favorite => favorite.ArtistId != null && orphans.Contains(favorite.ArtistId.Value))
@@ -605,12 +692,29 @@ internal sealed class LibraryScanRepository(WaveMpDbContext dbContext) : ILibrar
         {
             Guid[] artistIds = [.. plan.Updates.Select(update => update.ArtistId)];
             DateTimeOffset[] firstSeenAt = [.. plan.Updates.Select(update => update.FirstSeenAt)];
+            Guid?[] musicBrainzArtistIds = [.. plan.Updates.Select(update => update.MusicBrainzArtistId)];
             await dbContext.Database.ExecuteSqlAsync(
                 $"""
                 UPDATE artists
-                SET first_seen_at = changed.first_seen_at
-                FROM unnest({artistIds}, {firstSeenAt}) AS changed(artist_id, first_seen_at)
+                SET first_seen_at = changed.first_seen_at, music_brainz_artist_id = changed.music_brainz_artist_id
+                FROM unnest({artistIds}, {firstSeenAt}, {musicBrainzArtistIds})
+                    AS changed(artist_id, first_seen_at, music_brainz_artist_id)
                 WHERE artists.id = changed.artist_id
+                """,
+                cancellationToken);
+        }
+
+        // The main successor has no picture of the kind (one per artist and kind), so the unique index holds.
+        if (plan.Pictures.Count > 0)
+        {
+            Guid[] pictureIds = [.. plan.Pictures.Select(picture => picture.PictureId)];
+            Guid[] artistIds = [.. plan.Pictures.Select(picture => picture.ArtistId)];
+            await dbContext.Database.ExecuteSqlAsync(
+                $"""
+                UPDATE artist_pictures
+                SET artist_id = moved.artist_id
+                FROM unnest({pictureIds}, {artistIds}) AS moved(picture_id, artist_id)
+                WHERE artist_pictures.id = moved.picture_id
                 """,
                 cancellationToken);
         }

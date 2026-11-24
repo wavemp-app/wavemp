@@ -11,7 +11,8 @@ public static class ServiceCollectionExtensions
 {
     /// <summary>
     /// Registers the server settings: the store, the snapshots of the groups, the library settings, the cache
-    /// settings, the transcoding settings, the backup settings and the settings of the online search for album info.
+    /// settings, the transcoding settings, the backup settings, the settings of the online search for album info and
+    /// the settings of the artist pictures.
     /// Needs the repositories of <c>AddWaveMpData</c>.
     /// </summary>
     public static IServiceCollection AddWaveMpSettings(this IServiceCollection services)
@@ -39,6 +40,10 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<ISettingsSnapshot<OnlineMetadataSettings>>(provider =>
             provider.GetRequiredService<SettingsSnapshot<OnlineMetadataSettings>>());
         services.AddScoped<IOnlineMetadataSettingsService, OnlineMetadataSettingsService>();
+        services.AddSingleton<SettingsSnapshot<ArtistPictureSettings>>();
+        services.AddSingleton<ISettingsSnapshot<ArtistPictureSettings>>(provider =>
+            provider.GetRequiredService<SettingsSnapshot<ArtistPictureSettings>>());
+        services.AddScoped<IArtistPictureSettingsService, ArtistPictureSettingsService>();
 
         return services;
     }

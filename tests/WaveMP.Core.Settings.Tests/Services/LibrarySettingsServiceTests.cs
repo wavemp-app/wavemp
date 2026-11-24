@@ -71,7 +71,19 @@ public class LibrarySettingsServiceTests
         result.Settings.FileWatcherEnabled.Should().BeFalse();
         result.Settings.ImageExtensions.Should().Equal("png");
         result.Settings.AlbumCoverNames.Should().Equal("front");
+        result.Settings.ArtistPictureNames.Should().Equal("artist", "folder", "photo");
         await _store.Received(1).SaveAsync(LibrarySettings.Key, result.Settings, Arg.Any<CancellationToken>());
+    }
+
+    [Test]
+    public async Task UpdateAsync_WithArtistPictureNames_SavesThemNormalized()
+    {
+        LibrarySettingsResult result = await _service.UpdateAsync(
+            new UpdateLibrarySettingsCommand(ArtistPictureNames: [" Band ", "ARTIST"]));
+
+        result.IsSuccess.Should().BeTrue();
+        result.Settings!.ArtistPictureNames.Should().Equal("band", "artist");
+        result.Settings.AlbumCoverNames.Should().Equal("cover", "folder", "front", "album", "albumart");
     }
 
     [Test]

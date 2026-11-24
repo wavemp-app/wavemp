@@ -16,6 +16,8 @@ using WaveMP.Core.Scanning.Scans;
 using WaveMP.Core.Scanning.Selections;
 using WaveMP.Core.Scanning.Writers;
 using WaveMP.Core.Settings.Extensions;
+using WaveMP.Core.Settings.Groups;
+using WaveMP.Core.Settings.Services;
 using WaveMP.Data;
 using WaveMP.Data.Entities;
 using WaveMP.Data.Extensions;
@@ -167,6 +169,82 @@ public class LibraryScannerTests
         twoDiscs.Covers.Should().ContainSingle(cover => cover.IsPrimary)
             .Which.MediaFile!.FileName.Should().Be("front.png");
         twoDiscs.AlbumArtist!.Name.Should().Be("Band");
+    }
+
+    [Test]
+    public async Task Scan_PictureInTheArtistFolder_IsThePictureOfTheArtistButNotOfOthers()
+    {
+        TestTags band = new() { Artist = "Band", Album = "Album" };
+        await AudioAsync("Band/Album/01 - One.mp3", tags: band with { Title = "One" });
+        await AudioAsync("Band/Album/02 - Two.mp3", tags: band with { Title = "Two", Artist = "Guest" });
+        await ImageAsync("Band/folder.jpg", 300, 300);
+        await ImageAsync("Band/artist.png", 200, 200);
+        await ImageAsync("Band/Album/folder.jpg", 400, 400);
+        TestTags hits = new() { Album = "Hits", AlbumArtist = "Various Artists" };
+        await AudioAsync("Compilations/Hits/01.mp3", tags: hits with { Title = "Hit", Artist = "Solo" });
+        await ImageAsync("Compilations/folder.jpg", 300, 300);
+
+        await ScanAsync();
+
+        await using WaveMpDbContext db = _database.CreateDbContext();
+        using AssertionScope scope = new();
+        (await LocalPictureFileOfAsync(db, "Band")).Should().Be("Band/artist.png");
+        (await LocalPictureFileOfAsync(db, "Guest")).Should().BeNull();
+        (await LocalPictureFileOfAsync(db, "Solo")).Should().BeNull();
+        (await LocalPictureFileOfAsync(db, "Various Artists")).Should().BeNull();
+    }
+
+    [Test]
+    public async Task Rescan_ChangedPicturesOfTheArtistFolder_ChangeAndClearThePictureOfTheArtist()
+    {
+        await AudioAsync("Band/Album/01 - One.mp3", tags: new TestTags { Artist = "Band", Album = "Album" });
+        await ImageAsync("Band/photo.jpg", 300, 300);
+        await ScanAsync();
+        await using (WaveMpDbContext db = _database.CreateDbContext())
+        {
+            (await LocalPictureFileOfAsync(db, "Band")).Should().Be("Band/photo.jpg");
+        }
+
+        await ImageAsync("Band/artist.jpg", 100, 100);
+        await ScanAsync();
+        await using (WaveMpDbContext db = _database.CreateDbContext())
+        {
+            (await LocalPictureFileOfAsync(db, "Band")).Should().Be("Band/artist.jpg");
+        }
+
+        File.Delete(_media.Combine("Band/artist.jpg"));
+        File.Delete(_media.Combine("Band/photo.jpg"));
+        await ScanAsync();
+        await using (WaveMpDbContext db = _database.CreateDbContext())
+        {
+            (await LocalPictureFileOfAsync(db, "Band")).Should().BeNull();
+        }
+    }
+
+    [Test]
+    public async Task Rescan_ChangedArtistPictureNames_ApplyWithoutChangedFiles()
+    {
+        await AudioAsync("Band/01 - One.mp3", tags: new TestTags { Artist = "Band", Title = "One" });
+        await ImageAsync("Band/band.jpg", 300, 300);
+        await ScanAsync();
+        await using (WaveMpDbContext db = _database.CreateDbContext())
+        {
+            (await LocalPictureFileOfAsync(db, "Band")).Should().BeNull();
+        }
+
+        await SetArtistPictureNamesAsync(["band"]);
+        try
+        {
+            await ScanAsync();
+        }
+        finally
+        {
+            // The settings are stored in the database the other tests share.
+            await SetArtistPictureNamesAsync(new LibrarySettings().ArtistPictureNames);
+        }
+
+        await using WaveMpDbContext after = _database.CreateDbContext();
+        (await LocalPictureFileOfAsync(after, "Band")).Should().Be("Band/band.jpg");
     }
 
     [Test]
@@ -2528,14 +2606,25 @@ public class LibraryScannerTests
             ArtistFavorite(first, artistId, _day.AddDays(1)),
             ArtistFavorite(second, artistId, _day.AddDays(2)));
         db.PlaybackStates.Add(PlaybackStateOf(second, PlaybackSourceKind.Artist, artistId));
+        var uploadedPictureId = Guid.CreateVersion7();
+        var onlinePictureId = Guid.CreateVersion7();
+        var musicBrainzArtistId = Guid.NewGuid();
+        db.ArtistPictures.AddRange(
+            ArtistPictureOf(uploadedPictureId, artistId, ArtistPictureKind.Uploaded),
+            ArtistPictureOf(onlinePictureId, artistId, ArtistPictureKind.Online));
         await db.SaveChangesAsync();
         await SetArtistFirstSeenAsync(db, artistId, _day.AddDays(-5));
-        return new ArtistData(first, second, artistId);
+        await db.Artists
+            .Where(artist => artist.Id == artistId)
+            .ExecuteUpdateAsync(setters => setters
+                .SetProperty(artist => artist.MusicBrainzArtistId, musicBrainzArtistId));
+        return new ArtistData(first, second, artistId, uploadedPictureId, onlinePictureId, musicBrainzArtistId);
     }
 
     /// <summary>
     /// Expects the data of <see cref="GiveArtistDataAsync"/> on the artist of the name: the favorites of both profiles
-    /// with their times, the source of the player and the earliest date added, and the old artist gone with its moves.
+    /// with their times, the source of the player, the earliest date added, the uploaded and the online picture and the
+    /// MusicBrainz artist, and the old artist gone with its moves.
     /// </summary>
     private async Task ExpectArtistDataAsync(string name, ArtistData data)
     {
@@ -2552,6 +2641,12 @@ public class LibraryScannerTests
         ]);
         (await SourceOfPlaybackAsync(db, data.Second)).Should().Be(artist.Id);
         artist.FirstSeenAt.Should().Be(_day.AddDays(-5));
+        artist.MusicBrainzArtistId.Should().Be(data.MusicBrainzArtistId);
+        (await db.ArtistPictures
+                .Where(picture => picture.ArtistId == artist.Id)
+                .Select(picture => picture.Id)
+                .ToListAsync())
+            .Should().BeEquivalentTo([data.UploadedPictureId, data.OnlinePictureId]);
         (await db.ArtistMoves.CountAsync()).Should().Be(0);
     }
 
@@ -2893,6 +2988,42 @@ public class LibraryScannerTests
         };
     }
 
+    private static ArtistPicture ArtistPictureOf(Guid id, Guid artistId, ArtistPictureKind kind)
+    {
+        return new ArtistPicture
+        {
+            Id = id,
+            ArtistId = artistId,
+            Kind = kind,
+            CreatedAt = _day,
+            Width = 1000,
+            Height = 1000,
+            Provider = kind == ArtistPictureKind.Online ? ArtistPictureProvider.Wikimedia : null,
+        };
+    }
+
+    /// <summary>
+    /// The relative path of the picture in the folder of the artist, or <c>null</c> without one.
+    /// </summary>
+    private static Task<string?> LocalPictureFileOfAsync(WaveMpDbContext db, string artistName)
+    {
+        return db.Artists
+            .Where(artist => artist.Name == artistName)
+            .Select(artist => artist.LocalPictureFile == null ? null : artist.LocalPictureFile.RelativePath)
+            .SingleAsync();
+    }
+
+    /// <summary>
+    /// Saves the artist picture names in the database and in the settings the scan of <see cref="_services"/> reads.
+    /// </summary>
+    private async Task SetArtistPictureNamesAsync(IReadOnlyList<string> names)
+    {
+        await using AsyncServiceScope scope = _services.CreateAsyncScope();
+        LibrarySettingsResult result = await scope.ServiceProvider.GetRequiredService<ILibrarySettingsService>()
+            .UpdateAsync(new UpdateLibrarySettingsCommand(ArtistPictureNames: names));
+        result.IsSuccess.Should().BeTrue();
+    }
+
     private static Task<Guid> ArtistIdAsync(WaveMpDbContext db, string name)
     {
         return db.Artists.Where(artist => artist.Name == name).Select(artist => artist.Id).SingleAsync();
@@ -3114,7 +3245,13 @@ public class LibraryScannerTests
     /// <summary>
     /// The profiles and the artist of <see cref="GiveArtistDataAsync"/>.
     /// </summary>
-    private sealed record ArtistData(User First, User Second, Guid OldArtistId);
+    private sealed record ArtistData(
+        User First,
+        User Second,
+        Guid OldArtistId,
+        Guid UploadedPictureId,
+        Guid OnlinePictureId,
+        Guid MusicBrainzArtistId);
 
     /// <summary>
     /// The profiles, the ids of all songs by their title, and the ids of the MP3 file, the online cover and the

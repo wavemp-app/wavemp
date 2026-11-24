@@ -44,6 +44,13 @@ public sealed class UpdateLibrarySettingsDto
     public IReadOnlyList<string>? AlbumCoverNames { get; init; }
 
     /// <summary>
+    /// Base names of artist pictures (without extension) in the folder named after the artist, in the order of their
+    /// priority; applies to the next scan.
+    /// </summary>
+    [MaxLength(50)]
+    public IReadOnlyList<string>? ArtistPictureNames { get; init; }
+
+    /// <summary>
     /// The global cover rule; applies at once to all albums and tracks without a rule of their own.
     /// </summary>
     public CoverPriorityDto? CoverPriority { get; init; }

@@ -36,6 +36,12 @@ public sealed class LibrarySettingsDto
     public required IReadOnlyList<string> AlbumCoverNames { get; init; }
 
     /// <summary>
+    /// Base names of pictures that are artist pictures in the folder named after the artist, in the order of their
+    /// priority (default artist, folder, photo).
+    /// </summary>
+    public required IReadOnlyList<string> ArtistPictureNames { get; init; }
+
+    /// <summary>
     /// The global cover rule: whether tracks and albums show the cover of the album or the cover of the track first.
     /// Albums and tracks with a rule of their own (GetAlbumCoverRule, GetTrackCoverRule) override it.
     /// </summary>

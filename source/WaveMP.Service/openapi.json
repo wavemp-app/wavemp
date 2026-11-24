@@ -8287,6 +8287,122 @@
         ]
       }
     },
+    "/api/v1/settings/artist-pictures": {
+      "get": {
+        "tags": [
+          "Settings"
+        ],
+        "summary": "Returns the settings of the artist pictures from the internet. The API key of fanart.tv is never returned, only whether one is stored.",
+        "operationId": "GetArtistPictureSettings",
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "The settings of the artist pictures.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArtistPictureSettings"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      },
+      "patch": {
+        "tags": [
+          "Settings"
+        ],
+        "summary": "Changes the settings of the artist pictures. Missing or null values stay unchanged; an empty API key removes the stored one. Changes apply to the next request. While the online lookup is off, WaveMP sends no request for artist pictures to any service.",
+        "operationId": "UpdateArtistPictureSettings",
+        "requestBody": {
+          "description": "The changes.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateArtistPictureSettings"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateArtistPictureSettings"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "The changed settings, without the API key.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArtistPictureSettings"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is invalid (code `request.invalid`, errors by field: `invalid_format` for an API key that is not 1 to 64 letters or digits).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblem"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
     "/api/v1/me/smart-playlists": {
       "get": {
         "tags": [
@@ -13675,6 +13791,24 @@
         },
         "description": "One page of a collection."
       },
+      "ArtistPictureSettings": {
+        "required": [
+          "onlineLookupEnabled",
+          "fanartTvApiKeySet"
+        ],
+        "type": "object",
+        "properties": {
+          "onlineLookupEnabled": {
+            "type": "boolean",
+            "description": "Whether admins may look up artist pictures online. Off by default; while it is off, WaveMP sends no request for artist pictures to any service."
+          },
+          "fanartTvApiKeySet": {
+            "type": "boolean",
+            "description": "Whether an API key of fanart.tv is stored; only then is fanart.tv asked. The key can be set or removed (UpdateArtistPictureSettings) but never read."
+          }
+        },
+        "description": "Settings of the artist pictures from the internet (Wikidata and Wikimedia Commons through the MusicBrainz artist, and fanart.tv with an API key). The API key itself is never returned."
+      },
       "ArtistReference": {
         "required": [
           "id",
@@ -15512,6 +15646,7 @@
           "videoExtensions",
           "imageExtensions",
           "albumCoverNames",
+          "artistPictureNames",
           "coverPriority",
           "downloadLyrics",
           "subsonicDownloads"
@@ -15554,6 +15689,13 @@
               "type": "string"
             },
             "description": "Base names of pictures that are album covers, in the order of their priority."
+          },
+          "artistPictureNames": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Base names of pictures that are artist pictures in the folder named after the artist, in the order of their priority (default artist, folder, photo)."
           },
           "coverPriority": {
             "description": "The global cover rule: whether tracks and albums show the cover of the album or the cover of the track first. Albums and tracks with a rule of their own (GetAlbumCoverRule, GetTrackCoverRule) override it.",
@@ -20024,6 +20166,28 @@
         },
         "description": "Changes the album tags of the songs of an album. Missing members stay unchanged; null or an empty text removes the value from the tags."
       },
+      "UpdateArtistPictureSettings": {
+        "type": "object",
+        "properties": {
+          "onlineLookupEnabled": {
+            "type": [
+              "null",
+              "boolean"
+            ],
+            "description": "Switches the online lookup of artist pictures on or off."
+          },
+          "fanartTvApiKey": {
+            "maxLength": 256,
+            "minLength": 0,
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The personal API key of fanart.tv: 1 to 64 letters (A to Z) or digits, surrounding white space is removed. An empty string removes the stored key. Write-only: responses only say whether a key is stored."
+          }
+        },
+        "description": "Changes the settings of the artist pictures. Missing or null values stay unchanged."
+      },
       "UpdateAutoplaySettings": {
         "type": "object",
         "properties": {
@@ -20258,6 +20422,17 @@
               "type": "string"
             },
             "description": "Base names of album covers (without extension), in the order of their priority."
+          },
+          "artistPictureNames": {
+            "maxItems": 50,
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            },
+            "description": "Base names of artist pictures (without extension) in the folder named after the artist, in the order of their priority; applies to the next scan."
           },
           "coverPriority": {
             "oneOf": [

@@ -8,9 +8,10 @@ namespace WaveMP.Data.Entities;
 /// track count adds up over all moves. It is stored together with the changed tracks (or with the deletion of a
 /// vanished folder whose songs were found elsewhere), so a move survives an interrupted scan. Once
 /// <see cref="FromArtistId"/> has no tracks and no albums left, its favorites and its first seen date go to every
-/// artist that got its songs, and a list in the player started from it to the main successor (most songs, then the
-/// earliest first seen date, then the smallest id); then the artist is removed with its moves. While it still has
-/// songs, nothing is carried over and the row waits.
+/// artist that got its songs, and a list in the player started from it, its uploaded and its online picture and its
+/// MusicBrainz artist to the main successor (most songs, then the earliest first seen date, then the smallest id; the
+/// pictures and the MusicBrainz artist only if it has none); then the artist is removed with its moves. While it still
+/// has songs, nothing is carried over and the row waits.
 /// </summary>
 public class ArtistMove
 {

@@ -883,6 +883,151 @@ public class LibraryScanRepositoryTests : LibraryDatabaseTests
         (await SourceOfPlaybackAsync(user)).Should().Be(gone.Id);
     }
 
+    [Test]
+    public async Task DeleteOrphansAsync_ArtistRenamed_CarriesItsPicturesAndItsMusicBrainzArtistToTheNewArtist()
+    {
+        LibrarySeed seed = new();
+        Artist old = seed.Artist("Band", _day);
+        Artist renamed = ArtistWithTrack(seed, "The Band", _day.AddDays(1));
+        await SaveAsync(seed);
+        Guid uploaded = await AddArtistPictureAsync(old, ArtistPictureKind.Uploaded);
+        Guid online = await AddArtistPictureAsync(old, ArtistPictureKind.Online);
+        var musicBrainzArtistId = Guid.NewGuid();
+        await SetMusicBrainzArtistAsync(old, musicBrainzArtistId);
+        await AddArtistMovesAsync((old, renamed, 2));
+
+        (int Albums, int Artists) deleted = await CreateRepository().DeleteOrphansAsync(_day.AddDays(30));
+
+        deleted.Should().Be((0, 1));
+        WaveMpDbContext db = CreateDbContext();
+        Artist artist = await db.Artists.SingleAsync();
+        (artist.Id, artist.FirstSeenAt, artist.MusicBrainzArtistId)
+            .Should().Be((renamed.Id, _day, (Guid?)musicBrainzArtistId));
+        (await ArtistPicturesAsync()).Should().BeEquivalentTo([
+            (uploaded, renamed.Id, ArtistPictureKind.Uploaded),
+            (online, renamed.Id, ArtistPictureKind.Online),
+        ]);
+    }
+
+    [Test]
+    public async Task DeleteOrphansAsync_SplitToAnArtistWithItsOwnValues_KeepsThemAndRemovesTheOthersWithTheOldArtist()
+    {
+        // "Old" had most songs of the split; "Main" keeps its own uploaded picture and MusicBrainz artist and only gets
+        // the online picture, "Other" gets nothing.
+        LibrarySeed seed = new();
+        Artist old = seed.Artist("Duo", _day);
+        Artist main = ArtistWithTrack(seed, "Singer", _day.AddDays(1));
+        Artist other = ArtistWithTrack(seed, "Pianist", _day.AddDays(2));
+        await SaveAsync(seed);
+        await AddArtistPictureAsync(old, ArtistPictureKind.Uploaded);
+        Guid online = await AddArtistPictureAsync(old, ArtistPictureKind.Online);
+        Guid own = await AddArtistPictureAsync(main, ArtistPictureKind.Uploaded);
+        var ownMusicBrainzArtistId = Guid.NewGuid();
+        await SetMusicBrainzArtistAsync(old, Guid.NewGuid());
+        await SetMusicBrainzArtistAsync(main, ownMusicBrainzArtistId);
+        await AddArtistMovesAsync((old, main, 3), (old, other, 1));
+
+        await CreateRepository().DeleteOrphansAsync(_day.AddDays(30));
+
+        WaveMpDbContext db = CreateDbContext();
+        (await db.Artists.Select(artist => new { artist.Id, artist.MusicBrainzArtistId }).ToListAsync())
+            .Should().BeEquivalentTo([
+                new { main.Id, MusicBrainzArtistId = (Guid?)ownMusicBrainzArtistId },
+                new { other.Id, MusicBrainzArtistId = (Guid?)null },
+            ]);
+        (await ArtistPicturesAsync()).Should().BeEquivalentTo([
+            (own, main.Id, ArtistPictureKind.Uploaded),
+            (online, main.Id, ArtistPictureKind.Online),
+        ]);
+    }
+
+    [Test]
+    public async Task DeleteOrphansAsync_ArtistLeftEmptyWithoutMoves_IsDeletedWithItsPictures()
+    {
+        LibrarySeed seed = new();
+        Artist gone = seed.Artist("Gone");
+        ArtistWithTrack(seed, "Stays");
+        await SaveAsync(seed);
+        await AddArtistPictureAsync(gone, ArtistPictureKind.Uploaded);
+        await AddArtistPictureAsync(gone, ArtistPictureKind.Online);
+
+        await CreateRepository().DeleteOrphansAsync(_day.AddDays(30));
+
+        (await ArtistPicturesAsync()).Should().BeEmpty();
+    }
+
+    [Test]
+    public async Task GetArtistFoldersAsync_TrackAndAlbumArtists_ReturnsEveryFolderOnceWithTheName()
+    {
+        LibrarySeed seed = new();
+        MediaSource second = seed.Source();
+        Artist band = seed.Artist("Band");
+        Artist guest = seed.Artist("Guest");
+        Album album = seed.Album("Album", band);
+        SongIn(seed, album, "Band/Album/01.mp3", 1000, artist: band);
+        SongIn(seed, album, "Band/Album/02.mp3", 1000, artist: guest);
+        SongIn(seed, null, "Live/03.mp3", 1000, source: second, artist: band);
+        SongIn(seed, null, "Loose/04.mp3", 1000);
+        await SaveAsync(seed);
+
+        IReadOnlyList<ArtistFolder> folders = await CreateRepository().GetArtistFoldersAsync();
+
+        folders.Should().BeEquivalentTo([
+            new ArtistFolder(band.Id, "Band", MediaSource.DefaultId, "Band/Album"),
+            new ArtistFolder(guest.Id, "Guest", MediaSource.DefaultId, "Band/Album"),
+            new ArtistFolder(band.Id, "Band", second.Id, "Live"),
+        ]);
+    }
+
+    [Test]
+    public async Task GetArtistPictureImagesAsync_Names_ReturnsOnlyReadablePicturesOfTheseNames()
+    {
+        LibrarySeed seed = new();
+        MediaFile artist = seed.File("Band/artist.jpg", MediaFileKind.Image, isPrimary: false);
+        seed.File("Band/photo.jpg", MediaFileKind.Image, isPrimary: false, issue: MediaFileIssue.Unreadable);
+        seed.File("Band/cover.jpg", MediaFileKind.Image, isPrimary: false);
+        seed.File("Band/artist.mp3", MediaFileKind.Audio);
+        await SaveAsync(seed);
+
+        IReadOnlyList<ArtistPictureImage> images =
+            await CreateRepository().GetArtistPictureImagesAsync(["ARTIST", "PHOTO"]);
+
+        images.Select(image => (image.MediaFileId, image.DirectoryPath, image.NormalizedBaseName))
+            .Should().Equal((artist.Id, "Band", "ARTIST"));
+    }
+
+    [Test]
+    public async Task SetArtistLocalPicturesAsync_SetAndClear_AreStoredAndARemovedFileClearsThePicture()
+    {
+        LibrarySeed seed = new();
+        Artist band = ArtistWithTrack(seed, "Band");
+        Artist solo = ArtistWithTrack(seed, "Solo");
+        MediaFile bandPicture = seed.File("Band/artist.jpg", MediaFileKind.Image, isPrimary: false);
+        MediaFile soloPicture = seed.File("Solo/artist.jpg", MediaFileKind.Image, isPrimary: false);
+        await SaveAsync(seed);
+        LibraryScanRepository repository = CreateRepository();
+
+        await repository.SetArtistLocalPicturesAsync(new Dictionary<Guid, Guid?>
+        {
+            [band.Id] = bandPicture.Id,
+            [solo.Id] = soloPicture.Id,
+            [Guid.NewGuid()] = bandPicture.Id,
+        });
+        IReadOnlyDictionary<Guid, Guid> set = await repository.GetArtistLocalPicturesAsync();
+        await repository.SetArtistLocalPicturesAsync(new Dictionary<Guid, Guid?> { [solo.Id] = null });
+        IReadOnlyDictionary<Guid, Guid> cleared = await repository.GetArtistLocalPicturesAsync();
+        await CreateDbContext().MediaFiles.Where(file => file.Id == bandPicture.Id).ExecuteDeleteAsync();
+        IReadOnlyDictionary<Guid, Guid> removed = await repository.GetArtistLocalPicturesAsync();
+
+        set.Should().BeEquivalentTo(new Dictionary<Guid, Guid>
+        {
+            [band.Id] = bandPicture.Id,
+            [solo.Id] = soloPicture.Id,
+        });
+        cleared.Should().BeEquivalentTo(new Dictionary<Guid, Guid> { [band.Id] = bandPicture.Id });
+        removed.Should().BeEmpty();
+    }
+
     /// <summary>
     /// An artist with one track, so it is not left empty.
     /// </summary>
@@ -1032,6 +1177,40 @@ public class LibraryScanRepositoryTests : LibraryDatabaseTests
                 .Where(favorite => ids.Contains(favorite.UserId) && favorite.ArtistId != null)
                 .ToListAsync())
             .Select(favorite => (favorite.UserId, favorite.ArtistId!.Value, favorite.CreatedAt))];
+    }
+
+    private async Task<Guid> AddArtistPictureAsync(Artist artist, ArtistPictureKind kind)
+    {
+        var id = Guid.CreateVersion7();
+        WaveMpDbContext db = CreateDbContext();
+        db.ArtistPictures.Add(new ArtistPicture
+        {
+            Id = id,
+            ArtistId = artist.Id,
+            Kind = kind,
+            CreatedAt = _day,
+            Width = 1000,
+            Height = 1000,
+            Provider = kind == ArtistPictureKind.Online ? ArtistPictureProvider.Wikimedia : null,
+            Author = kind == ArtistPictureKind.Online ? "Photographer" : null,
+        });
+        await db.SaveChangesAsync();
+        return id;
+    }
+
+    private async Task SetMusicBrainzArtistAsync(Artist artist, Guid musicBrainzArtistId)
+    {
+        await CreateDbContext().Artists
+            .Where(item => item.Id == artist.Id)
+            .ExecuteUpdateAsync(setters => setters
+                .SetProperty(item => item.MusicBrainzArtistId, musicBrainzArtistId));
+    }
+
+    private async Task<List<(Guid Id, Guid ArtistId, ArtistPictureKind Kind)>> ArtistPicturesAsync()
+    {
+        WaveMpDbContext db = CreateDbContext();
+        return [.. (await db.ArtistPictures.ToListAsync())
+            .Select(picture => (picture.Id, picture.ArtistId, picture.Kind))];
     }
 
     private async Task<List<(Guid Id, Guid AlbumId)>> OnlineCoversAsync()
