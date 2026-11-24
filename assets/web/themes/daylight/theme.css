@@ -1,5 +1,5 @@
 /*
- * Theme "Daylight" for WaveMP, theme API version 7 (see THEMING.md).
+ * Theme "Daylight" for WaveMP, theme API version 8 (see THEMING.md).
  *
  * A light glass media library, seen in daylight. On the desktop the window reads like a calm
  * library: the header is a frosted breadcrumb bar with two touching round glass buttons for back
@@ -642,11 +642,11 @@ a[data-part='breadcrumb-link']:hover {
     --wmp-icon-fill: var(--wmp-favorite-color);
 }
 
-[data-part='load-more'] {
+:is([data-part='load-more'], [data-part='load-previous']) {
     min-inline-size: 10rem;
 }
 
-[data-part='load-more'][data-state~='loading'] {
+:is([data-part='load-more'], [data-part='load-previous'])[data-state~='loading'] {
     color: var(--daylight-slate);
 }
 
@@ -1699,6 +1699,120 @@ a[data-part='breadcrumb-link']:hover {
     border-color: #dbe6f1;
 }
 
+/* --- Quick jump: group headings and the overview of the groups ---------------------------------- */
+
+[data-part='tile-group-header'] {
+    border-block-end-color: var(--daylight-hairline);
+}
+
+[data-part='tile-group-title'] {
+    color: var(--daylight-azure-deep);
+    font-weight: 600;
+}
+
+[data-part='btn-group-jump'] > [data-part='icon'] {
+    --wmp-icon-fill: var(--daylight-slate);
+}
+
+[data-part='btn-group-jump']:hover > [data-part='icon'] {
+    --wmp-icon-fill: var(--daylight-azure);
+}
+
+/* The overview is a sheet of white paper under the frosted title bar of the dialogs. */
+[data-part='group-overview'] {
+    border-color: var(--daylight-hairline-strong);
+    box-shadow:
+        inset 0 0 0 1px rgb(255 255 255 / 80%),
+        0 20px 50px -10px rgb(17 39 62 / 40%);
+}
+
+[data-part='group-overview']::backdrop {
+    background: rgb(17 39 62 / 30%);
+    backdrop-filter: blur(2px);
+}
+
+[data-part='group-overview-header'] {
+    border-block-end-color: var(--daylight-hairline);
+    background: var(--wmp-header-background);
+}
+
+[data-part='group-overview-header'] [data-part='icon'] {
+    --wmp-icon-fill: #2c4763;
+}
+
+/* The letters lie on frosted glass; the current one is an azure pill. */
+[data-part='letter-bar'] {
+    border-color: var(--daylight-hairline);
+    background: var(--daylight-glass);
+}
+
+[data-part='letter'] {
+    border-radius: var(--wmp-radius-m);
+    color: var(--daylight-ink);
+}
+
+[data-part='letter']:hover:not([aria-disabled='true']) {
+    background: var(--daylight-frost);
+    color: var(--daylight-azure-deep);
+}
+
+[data-part='letter'][aria-disabled='true'] {
+    color: #9fb2c6;
+}
+
+[data-part='letter'][data-state~='current'] {
+    background: linear-gradient(#2a72bf, var(--daylight-azure-deep));
+    box-shadow: inset 0 1px rgb(255 255 255 / 30%);
+    color: #ffffff;
+}
+
+/*
+ * Groups are white cards with a hairline. The current one lies on the azure plaque of a selection,
+ * and its indicator is a short azure bar at its leading edge.
+ */
+[data-part='group-tile'] {
+    border-color: var(--daylight-hairline);
+    background: var(--daylight-frost);
+    transition:
+        background-color var(--wmp-motion-duration-fast) var(--wmp-motion-easing-standard),
+        border-color var(--wmp-motion-duration-fast) var(--wmp-motion-easing-standard);
+}
+
+[data-part='group-tile']:hover {
+    border-color: var(--daylight-selection-edge);
+    background: var(--daylight-hover);
+}
+
+[data-part='group-tile'][data-state~='current'] {
+    border-color: var(--daylight-selection-edge);
+    background: var(--daylight-selection);
+    color: var(--daylight-ink);
+}
+
+[data-part='group-grid'] > [data-part='indicator'] {
+    z-index: 1;
+    display: block;
+    background: linear-gradient(var(--daylight-azure), var(--daylight-azure)) 1px 50% / 3px 45%
+        no-repeat;
+}
+
+[data-part='group-tile'] > [data-part='cover'] > [data-part='icon'] {
+    --wmp-icon-fill: linear-gradient(#8fc3ee, #2a72bf);
+}
+
+[data-part='group-tile'] > [data-part='label'] {
+    color: var(--daylight-ink);
+    font-weight: 600;
+}
+
+[data-part='group-tile-detail'] {
+    color: var(--daylight-ink);
+}
+
+[data-part='group-tile-count'] {
+    color: var(--daylight-slate);
+}
+
 /* --- Playlists ---------------------------------------------------------------------------------- */
 
 [data-part='drag-handle'] {
@@ -1783,6 +1897,7 @@ a[data-part='breadcrumb-link']:hover {
     [data-part='stage'],
     [data-part='transport'][data-state~='expanded'],
     [data-part='tile'],
+    [data-part='group-tile'],
     [data-part='profile-tile'],
     [data-part='bottom-nav']:is(:hover, :focus-within, :active) > [data-part='indicator'],
     [data-part='admin-nav']:is(:hover, :focus-within, :active) > [data-part='indicator'],
@@ -1799,7 +1914,8 @@ a[data-part='breadcrumb-link']:hover {
     }
 
     [data-part='sidebar-backdrop'],
-    [data-part='dialog']::backdrop {
+    [data-part='dialog']::backdrop,
+    [data-part='group-overview']::backdrop {
         backdrop-filter: none;
     }
 }

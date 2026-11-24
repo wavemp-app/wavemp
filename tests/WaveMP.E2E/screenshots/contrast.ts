@@ -135,8 +135,27 @@ function collectAndHide(): { targets: Target[]; skipped: string[] } {
         return { x: left, y: top, width: right - left, height: bottom - top }
     }
 
+    /**
+     * Whether the element lies within the height of every area around it that scrolls: a row cut
+     * off at the edge of a scrolling area (e.g. the grid of a modal dialog, whose backdrop still
+     * belongs to the dialog) is not drawn in its whole box.
+     */
+    const insideScrollAreas = (element: Element, rect: Target['rect']): boolean => {
+        for (let area = element.parentElement; area; area = area.parentElement) {
+            if (!/auto|scroll/.test(getComputedStyle(area).overflowY)) {
+                continue
+            }
+            const box = area.getBoundingClientRect()
+            if (rect.y < box.top - 1 || rect.y + rect.height > box.bottom + 1) {
+                return false
+            }
+        }
+        return true
+    }
+
     /** Whether the element is drawn on top in its whole box (not partly under a menu). */
     const onTop = (element: Element, rect: Target['rect']): boolean =>
+        insideScrollAreas(element, rect) &&
         [
             [0.5, 0.5],
             [0.1, 0.2],

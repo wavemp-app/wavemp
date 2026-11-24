@@ -1,5 +1,5 @@
 /*
- * Theme "Skinned" for WaveMP, theme API version 7 (see THEMING.md).
+ * Theme "Skinned" for WaveMP, theme API version 8 (see THEMING.md).
  *
  * The look of a classic skinnable desktop music player: a compact body of dark gunmetal plastic
  * with small bevelled buttons and one lit, green dot-matrix display for the title, the artist and
@@ -915,7 +915,7 @@ a[data-part='breadcrumb-link']:hover {
     color: #9aa3ad;
 }
 
-[data-part='load-more'] {
+:is([data-part='load-more'], [data-part='load-previous']) {
     min-inline-size: 10rem;
 }
 
@@ -1961,6 +1961,140 @@ a[data-part='breadcrumb-link']:hover {
     font-weight: var(--wmp-font-weight-bold);
 }
 
+/* --- Quick jump: group headings and the overview of the groups ------------------------------ */
+
+[data-part='tile-group-header'] {
+    border-block-end: 1px solid #0d0e11;
+    box-shadow: 0 1px #33363e;
+}
+
+[data-part='tile-group-title'] {
+    color: #e6ebf0;
+}
+
+[data-part='btn-group-jump'] > [data-part='icon'] {
+    --wmp-icon-fill: #9aa3ad;
+}
+
+[data-part='btn-group-jump']:hover,
+[data-part='btn-group-jump']:hover > [data-part='icon'] {
+    --wmp-icon-fill: #ffcf5c;
+
+    color: #ffcf5c;
+}
+
+/*
+ * The overview is a plate of the body with the ribbed strip as title bar. The letters glow on the
+ * green dot-matrix display, the current one lit in amber; the groups are the entries of the
+ * playlist window, in green on near-black, and the current group is the amber selection.
+ */
+[data-part='group-overview'] {
+    border: 0;
+    box-shadow:
+        var(--skinned-frame),
+        0 0.75rem 2rem rgb(0 0 0 / 55%);
+}
+
+[data-part='group-overview-header'] {
+    border-block-end: 1px solid #0d0e11;
+    background: var(--skinned-ribbed);
+    box-shadow: inset 0 1px #4a4e58;
+}
+
+[data-part='group-overview-title'] {
+    color: #e6ebf0;
+}
+
+[data-part='group-overview-header'] > [data-part='btn-close'] {
+    border-radius: var(--wmp-radius-s);
+    background: var(--skinned-key);
+    box-shadow: var(--skinned-raised);
+}
+
+[data-part='group-overview-header'] > [data-part='btn-close']:active {
+    background: var(--skinned-key-pressed);
+    box-shadow: var(--skinned-pressed);
+}
+
+[data-part='letter-bar'] {
+    margin: 0.25rem;
+    border: 0;
+    border-radius: var(--wmp-radius-s);
+    background: var(--skinned-lcd);
+    box-shadow: var(--skinned-sunken);
+}
+
+[data-part='letter'] {
+    border-radius: 1px;
+    color: #4cf07a;
+    font-family: var(--skinned-lcd-font);
+    font-weight: var(--wmp-font-weight-normal);
+    text-shadow: 0 0 4px rgb(76 240 122 / 55%);
+}
+
+[data-part='letter']:hover:not([aria-disabled='true']) {
+    background: rgb(76 240 122 / 14%);
+}
+
+[data-part='letter'][aria-disabled='true'] {
+    color: #1f4a2b;
+    text-shadow: none;
+}
+
+[data-part='letter'][data-state~='current'] {
+    background: #ffcf5c;
+    color: #0a1a0f;
+    text-shadow: none;
+}
+
+[data-part='group-grid'] {
+    gap: 2px;
+    margin: 0.25rem;
+    border-radius: var(--wmp-radius-s);
+    background: #0c0d10;
+    box-shadow: var(--skinned-sunken);
+}
+
+[data-part='group-tile'] {
+    border: 0;
+    border-radius: 1px;
+    background: transparent;
+    color: #a8f0bc;
+}
+
+[data-part='group-tile']:hover {
+    background: #1a1c21;
+    box-shadow:
+        inset 1px 1px #33363e,
+        inset -1px -1px #0d0e11;
+}
+
+[data-part='group-tile'][data-state~='current'] {
+    --wmp-icon-fill: #ffcf5c;
+
+    background: #3a2a08;
+    box-shadow: inset 0 0 0 1px #6b4f12;
+    color: #ffcf5c;
+}
+
+[data-part='group-tile'] > [data-part='cover'] {
+    border-radius: 1px;
+    box-shadow: 0 0 0 1px #0d0e11;
+}
+
+[data-part='group-tile-detail'] {
+    color: #d8dde3;
+}
+
+[data-part='group-tile-count'] {
+    color: #9aa3ad;
+}
+
+[data-part='group-tile'][data-state~='current']
+    > :is([data-part='group-tile-detail'], [data-part='group-tile-count']) {
+    color: #f0d590;
+}
+
 /* --- Playlists ------------------------------------------------------------------------------ */
 
 [data-part='playlist-choice'] {
@@ -2049,6 +2183,7 @@ a[data-part='breadcrumb-link']:hover {
     [data-part='select'],
     [data-part='list'],
     [data-part='dialog'],
+    [data-part='group-overview'],
     [data-part='context-menu'],
     [data-part='bottom-nav-item'],
     [data-part='admin-nav-item'],
@@ -2066,6 +2201,8 @@ a[data-part='breadcrumb-link']:hover {
     [data-part='admin-nav-item'][data-state~='active'],
     [data-part='recap-nav-item'][data-state~='active'],
     [data-part='theme-option'][aria-checked='true'],
+    [data-part='group-tile'][data-state~='current'],
+    [data-part='letter'][data-state~='current'],
     [data-variant][aria-pressed='true'] {
         outline: 2px solid Highlight;
         outline-offset: -3px;

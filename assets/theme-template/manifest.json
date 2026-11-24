@@ -3,7 +3,7 @@
   "name": "My Theme",
   "author": "Your Name",
   "version": "1.0.0",
-  "themeApi": 7,
+  "themeApi": 8,
   "variants": ["light", "dark"],
   "previews": {
     "light": "preview-light.svg",

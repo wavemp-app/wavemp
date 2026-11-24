@@ -139,7 +139,7 @@ public class ThemesApiTests
                 Name = "Aurora",
                 Author = "Test Author",
                 Version = "1.0.0",
-                ThemeApi = 7,
+                ThemeApi = 8,
                 Variants = new[] { ThemeVariantDto.Light, ThemeVariantDto.Dark },
             });
         theme.StylesheetUrl.Should().MatchRegex("^/api/v1/themes/aurora/files/[0-9a-f]{32}\\.css$");
@@ -277,7 +277,7 @@ public class ThemesApiTests
         JsonArray errors = await ShouldBeInvalidThemeAsync(await InstallAsync(new ThemePackageBuilder(themeApi: 99)));
 
         errors.Should().ContainSingle().Which!.ToJsonString().Should().Be(
-            """{"code":"manifest.unsupported_api_version","path":"manifest.json","field":"themeApi","min":5,"max":7}""");
+            """{"code":"manifest.unsupported_api_version","path":"manifest.json","field":"themeApi","min":5,"max":8}""");
     }
 
     [Test]

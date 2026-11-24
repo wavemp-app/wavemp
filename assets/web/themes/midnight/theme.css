@@ -1,5 +1,5 @@
 /*
- * Theme "Midnight" for WaveMP, theme API version 7 (see THEMING.md).
+ * Theme "Midnight" for WaveMP, theme API version 8 (see THEMING.md).
  *
  * A dark glass look: a glossy black header and transport bar with round glass buttons and a
  * glowing blue play button, a light toolbar, a white sidebar and a white library list grouped by
@@ -916,8 +916,8 @@ a[data-part="breadcrumb-link"]:hover {
     color: #2b4f7a;
 }
 
-/* "Show more" is a glass button below the list. */
-[data-part="load-more"] {
+/* "Show more" and "Show previous entries" are glass buttons below and above the list. */
+:is([data-part="load-more"], [data-part="load-previous"]) {
     min-inline-size: 10rem;
     border: 1px solid #a9b2bd;
     border-radius: 999px;
@@ -926,7 +926,7 @@ a[data-part="breadcrumb-link"]:hover {
         0 1px 2px rgb(0 0 0 / 12%);
 }
 
-[data-part="load-more"][data-state~="loading"] {
+:is([data-part="load-more"], [data-part="load-previous"])[data-state~="loading"] {
     color: #5f6873;
 }
 
@@ -1516,6 +1516,112 @@ a[data-part="breadcrumb-link"]:hover {
     box-shadow: inset 0 0 0 1px #9cc8f0;
 }
 
+/* --- Quick jump: group headings and the overview of the groups ---------------------------------- */
+
+[data-part="tile-group-header"] {
+    border-block-end: 1px solid #c9d1da;
+}
+
+[data-part="tile-group-title"] {
+    color: #1e2329;
+}
+
+[data-part="btn-group-jump"] > [data-part="icon"] {
+    --wmp-icon-fill: #6f7782;
+}
+
+[data-part="btn-group-jump"]:hover > [data-part="icon"] {
+    --wmp-icon-fill: #1f6fd6;
+}
+
+/* The overview is a white window with the glossy toolbar as its title bar, like the dialogs. */
+[data-part="group-overview"] {
+    box-shadow:
+        0 0 0 1px rgb(255 255 255 / 60%) inset,
+        0 1rem 3rem rgb(0 0 0 / 45%);
+}
+
+[data-part="group-overview-header"] {
+    border-block-end: 1px solid #c3cbd4;
+    background: linear-gradient(#fdfdfe, #eceff2 48%, #dfe3e8 52%, #e8ebef);
+}
+
+[data-part="group-overview-header"] [data-part="icon"] {
+    --wmp-icon-fill: #4a4f57;
+}
+
+/* The letters sit on a strip of black glass like the header; the current one glows blue. */
+[data-part="letter-bar"] {
+    border-color: #000000;
+    background: linear-gradient(90deg, #2c3036, #121417 50%, #030405);
+    box-shadow: inset 1px 0 rgb(255 255 255 / 12%);
+}
+
+[data-part="letter"] {
+    color: #d7dce3;
+}
+
+[data-part="letter"]:hover:not([aria-disabled="true"]) {
+    background: radial-gradient(
+        80% 80% at 50% 50%,
+        rgb(120 190 255 / 35%),
+        rgb(40 120 220 / 0%)
+    );
+    color: #ffffff;
+}
+
+[data-part="letter"][aria-disabled="true"] {
+    color: #5b636d;
+}
+
+[data-part="letter"][data-state~="current"] {
+    background: linear-gradient(#2a78d8, #1c69cc 50%, #155dbe 51%, #1a66c8);
+    box-shadow:
+        inset 0 1px rgb(255 255 255 / 35%),
+        0 0 0.5rem rgb(80 170 255 / 70%);
+    color: #ffffff;
+}
+
+/* Groups are glossy white keys; the current one lies on a light blue plate that glows. */
+[data-part="group-tile"] {
+    border-color: #c3cbd4;
+    border-radius: var(--wmp-radius-s);
+    background: var(--wmp-image-default-button);
+    box-shadow: inset 0 1px rgb(255 255 255 / 90%);
+}
+
+[data-part="group-tile"]:hover {
+    border-color: #9cc8f0;
+    background: var(--wmp-image-default-button-hover);
+}
+
+[data-part="group-tile"][data-state~="current"] {
+    border-color: #7fb2e6;
+    background: transparent;
+    color: #10253f;
+}
+
+[data-part="group-grid"] > [data-part="indicator"] {
+    display: block;
+    border-radius: var(--wmp-radius-s);
+    background: linear-gradient(#e2f0fd, #c6e0fa);
+    filter: drop-shadow(0 0 0.375rem rgb(59 155 255 / 55%));
+}
+
+[data-part="group-tile"] > [data-part="cover"] {
+    box-shadow:
+        0 1px 3px rgb(0 0 0 / 30%),
+        0 0 0 1px rgb(0 0 0 / 12%);
+}
+
+[data-part="group-tile-detail"] {
+    color: #1e2329;
+}
+
+[data-part="group-tile-count"] {
+    color: #4f5862;
+}
+
 /* --- Playlists ------------------------------------------------------------------------------- */
 
 [data-part="drag-handle"] {
@@ -1846,6 +1952,12 @@ a[data-part="breadcrumb-link"]:hover {
 
     [data-part="mode-switch"] {
         --wmp-icon-size: 1.125rem;
+    }
+
+    /* In a row under the title bar the black glass of the letters shines from the top. */
+    [data-part="letter-bar"] {
+        background: linear-gradient(#43484f 0%, #24272c 46%, #050607 52%, #0e1013 100%);
+        box-shadow: inset 0 1px rgb(255 255 255 / 12%);
     }
 }
 

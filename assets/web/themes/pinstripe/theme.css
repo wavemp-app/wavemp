@@ -1,5 +1,5 @@
 /*
- * Theme "Pinstripe" for WaveMP, theme API version 7 (see THEMING.md).
+ * Theme "Pinstripe" for WaveMP, theme API version 8 (see THEMING.md).
  *
  * A light hi-fi look on fine horizontal pinstripes. The transport bar moves to the top of the
  * window and forms one brushed-metal plate with the header: round gel buttons on the left, a
@@ -594,13 +594,13 @@ a[data-part='breadcrumb-link']:hover {
     --wmp-icon-fill: #0b6b75;
 }
 
-[data-part='load-more'] {
+:is([data-part='load-more'], [data-part='load-previous']) {
     min-inline-size: 10rem;
     border-color: #8e959d;
     border-radius: var(--wmp-radius-round);
 }
 
-[data-part='load-more'][data-state~='loading'] {
+:is([data-part='load-more'], [data-part='load-previous'])[data-state~='loading'] {
     color: #4d535b;
 }
 
@@ -1622,6 +1622,116 @@ a[data-part='breadcrumb-link']:hover {
 
 [data-part='menu-separator'] {
     border-color: #d3d7dc;
+}
+
+/* --- Quick jump: group headings and the overview of the groups ---------------------------------- */
+
+[data-part='tile-group-header'] {
+    border-block-end-color: #c9ced4;
+}
+
+[data-part='tile-group-title'] {
+    color: #1d2126;
+    text-shadow: 0 1px 0 #ffffff;
+}
+
+[data-part='btn-group-jump'] > [data-part='icon'] {
+    --wmp-icon-fill: #4d535b;
+}
+
+[data-part='btn-group-jump']:hover > [data-part='icon'] {
+    --wmp-icon-fill: #0b6b75;
+}
+
+/*
+ * The overview is a window with a strip of the metal plate as its title bar. The letters read on
+ * a backlit display in a dark bezel, the current one in reverse; the groups are white cells of a
+ * table, and the current one is deep teal gel like a selected row.
+ */
+[data-part='group-overview'] {
+    border-color: #6c737b;
+    box-shadow: 0 1.25rem 3rem rgb(0 0 0 / 40%);
+}
+
+[data-part='group-overview-header'] {
+    border-block-end: 1px solid #7d848c;
+    background:
+        url('/themes/pinstripe/images/brushed-metal.svg') 0 0 / 640px 160px repeat,
+        linear-gradient(#eceef1, #cdd1d6);
+    text-shadow: 0 1px 0 rgb(255 255 255 / 55%);
+}
+
+[data-part='group-overview-title'] {
+    color: #1d2126;
+}
+
+[data-part='letter-bar'] {
+    border: 1px solid #4c535b;
+    background:
+        repeating-linear-gradient(rgb(30 42 27 / 4%) 0 1px, rgb(30 42 27 / 0%) 1px 3px),
+        radial-gradient(120% 120% at 50% 0%, #e8efda, #c6d2b2 80%);
+    box-shadow:
+        inset 0 2px 5px rgb(0 0 0 / 38%),
+        inset 0 0 0 1px rgb(255 255 255 / 25%);
+}
+
+[data-part='letter'] {
+    color: #1e2a1b;
+    font-variant-numeric: tabular-nums;
+}
+
+[data-part='letter']:hover:not([aria-disabled='true']) {
+    background: rgb(30 42 27 / 12%);
+}
+
+[data-part='letter'][aria-disabled='true'] {
+    color: rgb(30 42 27 / 35%);
+}
+
+[data-part='letter'][data-state~='current'] {
+    background: #1e2a1b;
+    color: #e8efda;
+}
+
+[data-part='group-tile'] {
+    border-color: #b4bac1;
+    border-radius: var(--wmp-radius-s);
+    background: linear-gradient(#ffffff, #f3f4f6);
+    box-shadow: 0 1px 0 rgb(255 255 255 / 80%);
+}
+
+[data-part='group-tile']:hover {
+    border-color: #b4c9cc;
+    background: #dfeff0;
+}
+
+[data-part='group-tile'][data-state~='current'] {
+    --wmp-icon-fill: #ffffff;
+
+    border-color: #0b5c65;
+    background: linear-gradient(#147b87, #0b6672);
+    box-shadow: inset 0 1px rgb(255 255 255 / 30%);
+    color: #ffffff;
+}
+
+[data-part='group-tile'] > [data-part='cover'] {
+    border-radius: 0.125rem;
+    box-shadow:
+        0 0 0 1px rgb(0 0 0 / 18%),
+        0 2px 4px rgb(0 0 0 / 20%);
+}
+
+[data-part='group-tile'] > [data-part='cover'] > [data-part='icon'] {
+    --wmp-icon-fill: linear-gradient(#3b4c35, #1e2a1b);
+}
+
+[data-part='group-tile-count'] {
+    color: #4d535b;
+}
+
+[data-part='group-tile'][data-state~='current']
+    > :is([data-part='group-tile-detail'], [data-part='group-tile-count']) {
+    color: #ffffff;
 }
 
 /* --- Playlists ------------------------------------------------------------------------------- */

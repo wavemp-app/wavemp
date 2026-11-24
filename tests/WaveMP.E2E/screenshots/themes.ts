@@ -16,6 +16,7 @@ import {
     findTrackId,
     findUserByName,
 } from '../tests/helpers/api'
+import { expectOverviewReady, groupHeading, mockLongTrackList } from '../tests/helpers/groupJump'
 import { homeUrl, profileTile } from '../tests/helpers/navigation'
 import { part, prepareProfile, send, sessionHeaders, stillCovers } from './helpers'
 
@@ -426,6 +427,25 @@ export const themeViews: readonly ThemeView[] = [
         open: openShortcuts,
     },
     {
+        // The overview of the groups of a long list of songs (quick jump), opened from the heading
+        // of the first group: the letter bar with the current letter and a letter without groups
+        // (Q), the current album tile with the indicator and the zoomed-out list behind it. The
+        // test media has too few albums for the letter bar, so the list comes from page.route.
+        name: 'group-overview',
+        device: 'desktop',
+        stable: true,
+        async open(page) {
+            await mockLongTrackList(page)
+            await page.goto('/library/songs')
+            await groupHeading(page, 0).click()
+            const overview = await expectOverviewReady(page)
+            await expect(overview.locator("[data-part='letter-bar']")).toBeVisible()
+            await expect(
+                overview.locator("[data-part='group-tile'][data-state~='current']"),
+            ).toBeFocused()
+        },
+    },
+    {
         name: 'phone-library',
         device: 'phone',
         stable: true,
@@ -603,6 +623,8 @@ export async function visitThemeViews(
                 await expectPlayer(page, player)
                 await settle(page)
                 await visit(page, view)
+                // Requests a view answered itself (page.route) end with the view.
+                await page.unrouteAll({ behavior: 'ignoreErrors' })
             }
         } finally {
             await context.close()

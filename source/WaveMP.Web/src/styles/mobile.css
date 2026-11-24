@@ -623,6 +623,7 @@
         :is(
             [data-part='header'] > [data-part='logo'],
             [data-part='btn-review-inbox'],
+            [data-part='btn-group-jump'],
             [data-part='tree-item'],
             [data-part='now-playing-mini'],
             [data-part='field'][data-variant='checkbox'],

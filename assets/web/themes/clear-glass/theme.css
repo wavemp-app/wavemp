@@ -1,5 +1,5 @@
 /*
- * Theme "Clear Glass" for WaveMP, theme API version 7 (see THEMING.md).
+ * Theme "Clear Glass" for WaveMP, theme API version 8 (see THEMING.md).
  *
  * Thick, clear glass floating over light. Behind the app lies a field of light with soft caustic
  * filaments around two pools of light, washed with the color of the current cover
@@ -1059,11 +1059,11 @@ a[data-part='breadcrumb-link']:hover {
     justify-self: start;
 }
 
-[data-part='load-more'] {
+:is([data-part='load-more'], [data-part='load-previous']) {
     min-inline-size: 10rem;
 }
 
-[data-part='load-more'][data-state~='loading'] {
+:is([data-part='load-more'], [data-part='load-previous'])[data-state~='loading'] {
     color: var(--cg-muted);
 }
 
@@ -1339,6 +1339,145 @@ a[data-part='breadcrumb-link']:hover {
 
 [data-part='playlist-choice'][data-state~='busy'] {
     background: var(--cg-row-selected);
+}
+
+/* --- Quick jump: group headings and the overview of the groups -------------------------------- */
+
+[data-part='tile-group-header'] {
+    border-block-end-color: var(--wmp-color-border);
+}
+
+[data-part='tile-group-title'] {
+    color: var(--cg-ink);
+    font-weight: 500;
+    letter-spacing: -0.01em;
+}
+
+[data-part='btn-group-jump'] > [data-part='icon'] {
+    --wmp-icon-fill: var(--cg-muted);
+}
+
+[data-part='btn-group-jump']:hover > [data-part='icon'] {
+    --wmp-icon-fill: var(--cg-edge);
+}
+
+/*
+ * The overview is a pane of thick glass like the dialogs. Its groups are clear panes that brighten
+ * under the pointer; the current group and the current letter lie under the raised lens of the
+ * groups with one active element.
+ */
+[data-part='group-overview'] {
+    box-shadow: var(--cg-rim), var(--cg-hairline), 0 30px 70px -20px rgb(12 22 36 / 50%);
+}
+
+:root[data-theme-variant='dark'] [data-part='group-overview'] {
+    box-shadow: var(--cg-rim), var(--cg-hairline), 0 30px 70px -20px rgb(0 0 0 / 80%);
+}
+
+[data-part='group-overview']::backdrop {
+    -webkit-backdrop-filter: blur(6px) saturate(120%);
+    backdrop-filter: blur(6px) saturate(120%);
+}
+
+[data-part='group-overview-header'] {
+    padding-inline-start: 1.5rem;
+    border-block-end: 0;
+}
+
+[data-part='group-overview-title'] {
+    font-weight: 500;
+    letter-spacing: -0.01em;
+}
+
+[data-part='group-overview-header'] [data-part='icon'] {
+    --wmp-icon-fill: var(--cg-muted);
+}
+
+[data-part='letter-bar'] {
+    border-color: transparent;
+    background: var(--cg-groove);
+    box-shadow: var(--cg-groove-shadow);
+}
+
+[data-part='letter'] {
+    border-radius: 999px;
+    color: var(--cg-ink);
+}
+
+[data-part='letter']:hover:not([aria-disabled='true']) {
+    background: var(--cg-hover);
+    box-shadow: var(--cg-hover-rim);
+}
+
+[data-part='letter'][aria-disabled='true'] {
+    color: color-mix(in srgb, var(--cg-muted) 55%, transparent);
+}
+
+[data-part='letter'][data-state~='current'] {
+    background: var(--cg-lens);
+    box-shadow: var(--cg-lens-inset);
+    color: var(--cg-ink);
+    filter: var(--cg-lens-drop);
+}
+
+[data-part='group-grid'] {
+    gap: 0.625rem;
+}
+
+[data-part='group-tile'] {
+    border-color: transparent;
+    border-radius: 1.125rem;
+    background: var(--cg-glass);
+    box-shadow:
+        inset 0 1px 0 rgb(255 255 255 / 12%),
+        var(--cg-hairline);
+    color: var(--cg-ink);
+    transition:
+        background-color var(--wmp-motion-duration-medium) var(--wmp-motion-easing-standard),
+        box-shadow var(--wmp-motion-duration-medium) var(--wmp-motion-easing-standard);
+}
+
+[data-part='group-tile']:hover {
+    border-color: transparent;
+    background: var(--cg-hover);
+    box-shadow: var(--cg-hover-rim);
+}
+
+[data-part='group-tile'][data-state~='current'] {
+    border-color: transparent;
+    background: transparent;
+    box-shadow: none;
+    color: var(--cg-ink);
+}
+
+[data-part='group-grid'] > [data-part='indicator'] {
+    display: block;
+    border-radius: 1.125rem;
+    background: var(--cg-lens);
+    box-shadow: var(--cg-lens-inset);
+    filter: var(--cg-lens-drop);
+}
+
+[data-part='group-tile'] > [data-part='cover'] {
+    border-radius: 0.625rem;
+    box-shadow: var(--cg-hairline);
+}
+
+[data-part='group-tile'] > [data-part='cover'] > [data-part='icon'] {
+    --wmp-icon-fill: linear-gradient(160deg, #7f97a9, #4d6476);
+}
+
+[data-part='group-tile'] > [data-part='label'] {
+    font-weight: 600;
+}
+
+[data-part='group-tile-count'] {
+    color: var(--cg-muted);
+}
+
+/* The lens of the current group is lighter in the dark variant: its count takes the ink. */
+[data-part='group-tile'][data-state~='current'] > [data-part='group-tile-count'] {
+    color: var(--cg-ink);
 }
 
 /* --- Forms ------------------------------------------------------------------------------------- */
@@ -2640,6 +2779,12 @@ a[data-part='breadcrumb-link']:hover {
     [data-part='theme-picker'] {
         gap: 1rem;
     }
+
+    /* The pane of the overview has the large radius of the dialogs. */
+    [data-part='group-overview'] {
+        border: 0;
+        border-radius: 1.75rem;
+    }
 }
 
 /* --- Preferences of the user ------------------------------------------------------------------- */
@@ -2673,7 +2818,8 @@ a[data-part='breadcrumb-link']:hover {
     [data-part='stage-view'] > [data-part='cover'],
     [data-part='btn-play'],
     [data-part='profile-tile'],
-    [data-part='tile'] {
+    [data-part='tile'],
+    [data-part='group-tile'] {
         transition: none;
     }
 
@@ -2749,7 +2895,8 @@ a[data-part='breadcrumb-link']:hover {
             [data-part='tree'],
             [data-part='segmented-control'],
             [data-part='theme-picker'],
-            [data-part='file-choices']
+            [data-part='file-choices'],
+            [data-part='group-grid']
         )
         > [data-part='indicator'] {
         display: none;
@@ -2763,7 +2910,9 @@ a[data-part='breadcrumb-link']:hover {
     [data-part='recap-nav-item'][data-state~='active'],
     [data-part='theme-option'][aria-checked='true'],
     [data-part='file-choice'][aria-checked='true'],
-    [data-part='queue-item'][data-state~='current'] {
+    [data-part='queue-item'][data-state~='current'],
+    [data-part='group-tile'][data-state~='current'],
+    [data-part='letter'][data-state~='current'] {
         outline: 2px solid Highlight;
         outline-offset: -2px;
     }

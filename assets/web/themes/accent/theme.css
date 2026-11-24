@@ -1,5 +1,5 @@
 /*
- * Theme "Accent" for WaveMP, theme API version 7 (see THEMING.md).
+ * Theme "Accent" for WaveMP, theme API version 8 (see THEMING.md).
  *
  * Flat panes of frosted glass on a soft-focus field. The field is a quiet wash of mist and a warm
  * glow, crossed by fine contour waves that stay sharp in the gaps and melt under the panes (backdrop
@@ -1201,7 +1201,7 @@ a[data-part='breadcrumb-link']:hover {
     color: var(--wmp-color-text-muted);
 }
 
-[data-part='load-more'] {
+:is([data-part='load-more'], [data-part='load-previous']) {
     min-inline-size: 10rem;
 }
 
@@ -1871,6 +1871,135 @@ a[data-part='breadcrumb-link']:hover {
     color: var(--wmp-color-text-muted);
 }
 
+/* --- Quick jump: group headings and the overview of the groups -------------------------------- */
+
+[data-part='tile-group-header'] {
+    border-block-end-color: var(--acc-hairline);
+}
+
+[data-part='tile-group-title'] {
+    font-weight: 650;
+    letter-spacing: -0.01em;
+}
+
+[data-part='btn-group-jump']:hover,
+[data-part='btn-group-jump']:hover > [data-part='icon'] {
+    color: var(--wmp-color-text);
+}
+
+/*
+ * The overview is a frosted pane like the dialogs. Groups are quiet cards; the current one lies on
+ * a chip with the short ember line at its start edge, and the current letter carries the line
+ * below it (beside it in the rail of a phone).
+ */
+[data-part='group-overview'] {
+    border: 1px solid var(--acc-hairline);
+    box-shadow:
+        inset 0 1px 0 var(--acc-edge),
+        var(--acc-shadow-float);
+}
+
+[data-part='group-overview-header'] {
+    border-block-end-color: var(--acc-hairline);
+}
+
+[data-part='group-overview-title'] {
+    font-weight: 650;
+    letter-spacing: -0.01em;
+}
+
+[data-part='letter-bar'] {
+    border-color: var(--acc-hairline);
+}
+
+[data-part='letter'] {
+    position: relative;
+    border-radius: var(--wmp-radius-m);
+    color: var(--wmp-color-text);
+}
+
+[data-part='letter']:hover:not([aria-disabled='true']) {
+    background: var(--wmp-color-hover);
+    color: var(--wmp-color-text);
+}
+
+[data-part='letter'][aria-disabled='true'] {
+    color: var(--wmp-color-text-disabled);
+}
+
+[data-part='letter'][data-state~='current'] {
+    background: var(--acc-chip);
+    box-shadow: inset 0 0 0 1px var(--acc-hairline);
+    color: var(--wmp-color-text);
+}
+
+[data-part='letter'][data-state~='current']::after {
+    position: absolute;
+    inset-block-start: 50%;
+    inset-inline-start: 0.125rem;
+    inline-size: 0.1875rem;
+    block-size: 0.75rem;
+    border-radius: 999px;
+    background: var(--acc-line);
+    translate: 0 -50%;
+    content: '';
+}
+
+[data-part='group-tile'] {
+    border-color: var(--acc-hairline);
+    border-radius: var(--wmp-radius-l);
+    background: transparent;
+    transition:
+        background-color var(--wmp-motion-duration-fast) var(--wmp-motion-easing-standard),
+        border-color var(--wmp-motion-duration-fast) var(--wmp-motion-easing-standard);
+}
+
+[data-part='group-tile']:hover {
+    border-color: var(--acc-hairline);
+    background: var(--wmp-color-hover);
+}
+
+[data-part='group-tile'][data-state~='current'] {
+    border-color: var(--acc-hairline);
+    background: transparent;
+    color: var(--wmp-color-text);
+}
+
+[data-part='group-grid'] > [data-part='indicator'] {
+    display: block;
+    border-radius: var(--wmp-radius-l);
+    background: var(--acc-chip);
+    filter: drop-shadow(0 1px 2px rgb(22 27 32 / 12%));
+}
+
+[data-part='group-grid'] > [data-part='indicator']::after {
+    position: absolute;
+    inset-block-start: 50%;
+    inset-inline-start: 0.3125rem;
+    z-index: 1;
+    inline-size: 0.1875rem;
+    block-size: min(1.25rem, var(--wmp-indicator-height, 0px));
+    border-radius: 999px;
+    background: var(--acc-line);
+    translate: 0 -50%;
+    content: '';
+}
+
+[data-part='group-tile'] > [data-part='cover'] {
+    border-radius: var(--wmp-radius-m);
+    box-shadow:
+        0 0 0 1px var(--acc-hairline),
+        0 1px 3px rgb(22 27 32 / 10%);
+}
+
+[data-part='group-tile'] > [data-part='label'] {
+    font-weight: 600;
+}
+
+[data-part='group-tile-count'] {
+    color: var(--wmp-color-text-muted);
+}
+
 /* --- Motion ----------------------------------------------------------------------------------- */
 
 @media (prefers-reduced-motion: reduce) {
@@ -1889,6 +2018,7 @@ a[data-part='breadcrumb-link']:hover {
         > [data-part='indicator'],
     [data-variant],
     [data-part='tile'],
+    [data-part='group-tile'],
     [data-part='profile-tile'],
     [data-part='slider-thumb'],
     [data-part='btn-play'] {
@@ -1945,6 +2075,8 @@ a[data-part='breadcrumb-link']:hover {
         )
         > [data-part='indicator']::after,
     [data-part='profile-tile'][data-state~='current']::after,
+    [data-part='group-grid'] > [data-part='indicator']::after,
+    [data-part='letter'][data-state~='current']::after,
     [data-part='queue-item'][data-state~='current']::before,
     [data-part='list-row'][data-state~='playing'] > [data-part='list-cell']:first-child::before,
     [data-variant][aria-pressed='true']::after {
@@ -2198,5 +2330,14 @@ a[data-part='breadcrumb-link']:hover {
 
     [data-view='now-playing'] > [data-part='queue'] {
         border-inline-start: 1px solid var(--acc-hairline);
+    }
+
+    /* In the row of letters under the title the ember line lies below the current letter. */
+    [data-part='letter'][data-state~='current']::after {
+        inset-block: auto 0.3125rem;
+        inset-inline-start: 50%;
+        inline-size: 0.75rem;
+        block-size: 0.1875rem;
+        translate: -50% 0;
     }
 }

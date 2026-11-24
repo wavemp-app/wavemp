@@ -1,5 +1,5 @@
 /*
- * Theme "Classic 9x" for WaveMP, theme API version 7 (see THEMING.md).
+ * Theme "Classic 9x" for WaveMP, theme API version 8 (see THEMING.md).
  *
  * The look of a late-1990s desktop application window: gray surfaces with sharp 3D bevels,
  * raised buttons that press in, a dark blue title bar with a gradient, sunken white fields for
@@ -910,7 +910,7 @@ a[data-part='breadcrumb-link']:hover {
     color: #3b3b3b;
 }
 
-[data-part='load-more'] {
+:is([data-part='load-more'], [data-part='load-previous']) {
     min-inline-size: 10rem;
 }
 
@@ -1930,6 +1930,142 @@ a[data-part='breadcrumb-link']:hover {
     font-weight: var(--wmp-font-weight-bold);
 }
 
+/* --- Quick jump: group headings and the overview of the groups ------------------------------ */
+
+[data-part='tile-group-header'] {
+    border-block-end: 1px solid #ffffff;
+    box-shadow: inset 0 -1px #808080;
+}
+
+[data-part='tile-group-title'] {
+    color: #000000;
+}
+
+[data-part='btn-group-jump'] {
+    border-radius: 0;
+}
+
+[data-part='btn-group-jump'] > [data-part='icon'] {
+    --wmp-icon-fill: #000000;
+}
+
+[data-part='btn-group-jump']:hover,
+[data-part='btn-group-jump']:hover > [data-part='icon'] {
+    --wmp-icon-fill: #0b2a7a;
+
+    color: #0b2a7a;
+}
+
+/*
+ * The overview is a raised window with a navy title bar. The letters are a row of small gray
+ * buttons, the current one pushed in; the groups lie in a sunken white well like the entries of a
+ * list view, and the current group carries the navy selection.
+ */
+[data-part='group-overview'] {
+    padding: 3px;
+    border: 0;
+    border-radius: 0;
+    box-shadow:
+        var(--c9-window),
+        3px 3px 0 rgb(0 0 0 / 35%);
+}
+
+[data-part='group-overview-header'] {
+    --wmp-icon-fill: #ffffff;
+
+    border-block-end: 0;
+    background: var(--c9-title);
+    color: #ffffff;
+}
+
+[data-part='group-overview-header'] :focus-visible {
+    outline-color: #ffffff;
+}
+
+[data-part='group-overview-header'] > [data-part='btn-close'] {
+    --wmp-icon-fill: #000000;
+
+    background: #c3c3c3;
+    box-shadow: var(--c9-raised);
+    color: #000000;
+}
+
+[data-part='group-overview-header'] > [data-part='btn-close']:active {
+    box-shadow: var(--c9-pressed);
+}
+
+[data-part='letter-bar'] {
+    gap: 2px;
+    border: 0;
+    background: #c3c3c3;
+}
+
+[data-part='letter'] {
+    border-radius: 0;
+    background: #c3c3c3;
+    box-shadow: var(--c9-raised);
+    color: #000000;
+}
+
+[data-part='letter']:hover:not([aria-disabled='true']) {
+    background: #c3c3c3;
+}
+
+[data-part='letter']:active:not([aria-disabled='true']) {
+    box-shadow: var(--c9-pressed);
+}
+
+/* Letters without groups are etched like disabled buttons. */
+[data-part='letter'][aria-disabled='true'] {
+    color: #808080;
+    text-shadow: 1px 1px #ffffff;
+}
+
+[data-part='letter'][data-state~='current'] {
+    background: var(--c9-dither);
+    box-shadow: var(--c9-pressed);
+    color: #000000;
+}
+
+[data-part='group-grid'] {
+    margin: 0.25rem;
+    background: #ffffff;
+    box-shadow: var(--c9-sunken);
+}
+
+[data-part='group-tile'] {
+    border: 1px solid transparent;
+    border-radius: 0;
+    background: transparent;
+    color: #000000;
+}
+
+[data-part='group-tile']:hover {
+    border: 1px dotted #000000;
+    background: #e3e3e3;
+}
+
+[data-part='group-tile'][data-state~='current'] {
+    --wmp-color-text-muted: #dfe6f5;
+
+    border: 1px solid #0b2a7a;
+    background: #0b2a7a;
+    color: #ffffff;
+}
+
+[data-part='group-tile'][data-state~='current']:focus-visible {
+    outline-color: #ffffff;
+}
+
+[data-part='group-tile'] > [data-part='cover'] {
+    border-radius: 0;
+    box-shadow: var(--c9-thin-sunken);
+}
+
+[data-part='group-tile-count'] {
+    color: var(--wmp-color-text-muted);
+}
+
 /* --- Playlists ------------------------------------------------------------------------------ */
 
 [data-part='playlist-choice'] {
@@ -1968,6 +2104,7 @@ a[data-part='breadcrumb-link']:hover {
     [data-part='select'],
     [data-part='list'],
     [data-part='dialog'],
+    [data-part='group-overview'],
     [data-part='context-menu'],
     [data-part='bottom-nav-item'],
     [data-part='admin-nav-item'],
@@ -1984,6 +2121,8 @@ a[data-part='breadcrumb-link']:hover {
     [data-part='admin-nav-item'][data-state~='active'],
     [data-part='recap-nav-item'][data-state~='active'],
     [data-part='theme-option'][aria-checked='true'],
+    [data-part='group-tile'][data-state~='current'],
+    [data-part='letter'][data-state~='current'],
     [data-variant][aria-pressed='true'] {
         outline: 2px solid Highlight;
         outline-offset: -3px;

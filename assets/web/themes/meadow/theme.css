@@ -1,5 +1,5 @@
 /*
- * Theme "Meadow" for WaveMP, theme API version 7 (see THEMING.md).
+ * Theme "Meadow" for WaveMP, theme API version 8 (see THEMING.md).
  *
  * A cheerful, chunky desktop look on a sunny day: a strong blue window frame with a glossy title
  * bar and transport bar, the client area inside it with rounded edges, a periwinkle task pane with
@@ -699,12 +699,12 @@ a[data-part='breadcrumb-link']:hover {
 }
 
 /* "Show more" is a chunky button below the list. */
-[data-part='load-more'] {
+:is([data-part='load-more'], [data-part='load-previous']) {
     min-inline-size: 10rem;
     border-radius: var(--wmp-radius-round);
 }
 
-[data-part='load-more'][data-state~='loading'] {
+:is([data-part='load-more'], [data-part='load-previous'])[data-state~='loading'] {
     color: #465a82;
 }
 
@@ -1850,6 +1850,134 @@ a[data-part='breadcrumb-link']:hover {
     background: linear-gradient(#e2ecfe, #c6d9fb);
 }
 
+/* --- Quick jump: group headings and the overview of the groups ------------------------------ */
+
+[data-part='tile-group-header'] {
+    border-block-end: 2px solid #c6d7f7;
+}
+
+[data-part='tile-group-title'] {
+    color: #0b45b8;
+    font-weight: 800;
+}
+
+[data-part='btn-group-jump'] > [data-part='icon'] {
+    --wmp-icon-fill: #3e69c4;
+}
+
+[data-part='btn-group-jump']:hover > [data-part='icon'] {
+    --wmp-icon-fill: #23781e;
+}
+
+/* The overview is a small window with the blue title bar of the dialogs. */
+[data-part='group-overview'] {
+    border: 2px solid #0b4bc9;
+    box-shadow:
+        inset 0 0 0 1px rgb(255 255 255 / 70%),
+        0 1rem 3rem rgb(0 20 80 / 45%);
+}
+
+[data-part='group-overview-header'] {
+    --wmp-icon-fill: #ffffff;
+    --wmp-color-focus: #ffd84d;
+
+    border-block-end: 1px solid #062f8a;
+    background: var(--wmp-header-background);
+    color: #ffffff;
+    text-shadow: 0 1px 1px rgb(0 20 80 / 55%);
+}
+
+[data-part='group-overview-header'] [data-variant] {
+    --wmp-icon-fill: #ffffff;
+    --wmp-image-icon-button-hover: rgb(255 255 255 / 22%);
+
+    color: #ffffff;
+}
+
+/* The letters are white keys on the periwinkle of the task pane; the current one is green. */
+[data-part='letter-bar'] {
+    border-color: #5b7fd0;
+    background: linear-gradient(90deg, #97b6f2, #7a9ce6);
+}
+
+[data-part='letter'] {
+    margin: 1px;
+    border: 1px solid #b9cdf3;
+    border-radius: var(--wmp-radius-s);
+    background: linear-gradient(#ffffff, #e4eefe);
+    color: #0b45b8;
+}
+
+[data-part='letter']:hover:not([aria-disabled='true']) {
+    border-color: #ffffff;
+    background: linear-gradient(#ffffff, #f5f9ff);
+}
+
+[data-part='letter'][aria-disabled='true'] {
+    border-color: transparent;
+    background: transparent;
+    color: #4a64a6;
+}
+
+[data-part='letter'][data-state~='current'] {
+    border-color: #185c14;
+    background: linear-gradient(#2a8424, #1d6a19);
+    box-shadow: inset 0 1px rgb(255 255 255 / 35%);
+    color: #ffffff;
+}
+
+/*
+ * Groups are raised white tiles like the hovered tiles of the library; the current one is light
+ * blue with the line of grass along its bottom edge.
+ */
+[data-part='group-tile'] {
+    border-color: #b9cdf3;
+    background: linear-gradient(#ffffff, #eef4ff);
+    box-shadow: 0 1px 2px rgb(16 40 110 / 15%);
+}
+
+[data-part='group-tile']:hover {
+    border-color: #7d9fdf;
+    background: linear-gradient(#f5f9ff, #e4eefe);
+}
+
+[data-part='group-tile'][data-state~='current'] {
+    border-color: #7d9fdf;
+    background: linear-gradient(#e2ecfe, #c6d9fb);
+    color: #0a1a40;
+}
+
+[data-part='group-grid'] > [data-part='indicator'] {
+    z-index: 2;
+    display: block;
+    background: linear-gradient(90deg, #4cb53c, #23781e) 50% calc(100% - 0.25rem) /
+        calc(100% - 1rem) 0.1875rem no-repeat;
+}
+
+[data-part='group-tile'] > [data-part='cover'] {
+    border: 2px solid #ffffff;
+    border-radius: var(--wmp-radius-s);
+    box-shadow:
+        0 0 0 1px #b9cbed,
+        0 2px 4px rgb(16 40 110 / 20%);
+}
+
+[data-part='group-tile'] > [data-part='cover'] > [data-part='icon'] {
+    --wmp-icon-fill: linear-gradient(#7fa3e6, #3e69c4);
+}
+
+[data-part='group-tile'] > [data-part='label'] {
+    color: #0b45b8;
+}
+
+[data-part='group-tile-detail'] {
+    color: #10204a;
+}
+
+[data-part='group-tile-count'] {
+    color: #3b4f78;
+}
+
 /* --- Equalizer --------------------------------------------------------------------------- */
 
 /* A chunky blue console with green faders. */
@@ -1961,6 +2089,12 @@ a[data-part='breadcrumb-link']:hover {
 @media (forced-colors: active) {
     [data-part='indicator'] {
         background: Highlight;
+    }
+
+    /* Over the current group the indicator stays the line along its bottom edge. */
+    [data-part='group-grid'] > [data-part='indicator'] {
+        background: linear-gradient(Highlight, Highlight) 50% calc(100% - 0.25rem) /
+            calc(100% - 1rem) 0.1875rem no-repeat;
     }
 }
 
