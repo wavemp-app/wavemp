@@ -6508,6 +6508,1630 @@
         ]
       }
     },
+    "/api/v1/organize/availability": {
+      "get": {
+        "tags": [
+          "Organize"
+        ],
+        "summary": "Whether the files can be organized: per media source (a read-only mount answers ReadOnly), and the operation that is queued or running.",
+        "operationId": "GetOrganizeAvailability",
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "The availability.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganizeAvailability"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/api/v1/organize/preview": {
+      "post": {
+        "tags": [
+          "Organize"
+        ],
+        "summary": "Computes the preview of an organize operation by the saved layout template: for an own album (its tags and files) or for the library (all songs, or those of one media source). Nothing on disk changes. The preview can be applied until expiresAt; a library preview may still be in the state Planning when it is returned.",
+        "operationId": "CreateOrganizePreview",
+        "requestBody": {
+          "description": "What to organize.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateOrganizePreview"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateOrganizePreview"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "The preview; Location points to the operation, its items list the changes.",
+            "headers": {
+              "Location": {
+                "description": "Address of the created resource.",
+                "required": true,
+                "schema": {
+                  "type": "string",
+                  "format": "uri-reference"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganizeOperation"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is invalid, e.g. the kind OwnAlbum without ownAlbumId (code `request.invalid`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The own album (code `organize.own_album_not_found`) or the media source (code `source.not_found`) does not exist.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The own album has no songs (code `organize.own_album_empty`), a media folder cannot be written (code `organize.media_read_only`), the saved template cannot be used (code `organize.template_invalid`) or another operation is queued or running (code `organize.busy`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/api/v1/organize/undo/{id}": {
+      "post": {
+        "tags": [
+          "Organize"
+        ],
+        "summary": "Computes the preview of undoing an organize operation: the files move back and changed tags are restored, unless they were changed again since. Nothing on disk changes.",
+        "operationId": "CreateOrganizeUndoPreview",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Id of the operation to undo.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "The preview of the undo; Location points to it.",
+            "headers": {
+              "Location": {
+                "description": "Address of the created resource.",
+                "required": true,
+                "schema": {
+                  "type": "string",
+                  "format": "uri-reference"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganizeOperation"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The operation does not exist (code `organize.operation_not_found`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The operation cannot be undone (code `organize.not_undoable`), was undone already (code `organize.already_undone`), a media folder cannot be written (code `organize.media_read_only`) or another operation is queued or running (code `organize.busy`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/api/v1/organize/operations": {
+      "get": {
+        "tags": [
+          "Organize"
+        ],
+        "summary": "Lists the organize operations, newest first: previews, runs and undos.",
+        "operationId": "ListOrganizeOperations",
+        "parameters": [
+          {
+            "name": "offset",
+            "in": "query",
+            "description": "Number of operations to skip.",
+            "schema": {
+              "maximum": 2147483647,
+              "minimum": 0,
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Maximum number of operations of the page.",
+            "schema": {
+              "maximum": 100,
+              "minimum": 1,
+              "type": "integer",
+              "format": "int32",
+              "default": 50
+            }
+          },
+          {
+            "name": "kind",
+            "in": "query",
+            "description": "Only operations of this kind.",
+            "schema": {
+              "$ref": "#/components/schemas/OrganizeOperationKind"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "description": "Only operations in this state.",
+            "schema": {
+              "$ref": "#/components/schemas/OrganizeOperationStatus"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "One page of operations.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganizeOperationPage"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid query parameters (code `request.invalid`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblem"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/api/v1/organize/operations/{id}": {
+      "get": {
+        "tags": [
+          "Organize"
+        ],
+        "summary": "Returns an organize operation.",
+        "operationId": "GetOrganizeOperation",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Id of the operation.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "The operation.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganizeOperation"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The operation does not exist (code `organize.operation_not_found`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "Organize"
+        ],
+        "summary": "Discards a preview (also an expired one). Operations that ran stay in the log.",
+        "operationId": "DeleteOrganizeOperation",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Id of the operation.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "The preview was discarded."
+          },
+          "404": {
+            "description": "The operation does not exist (code `organize.operation_not_found`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The operation is no preview (code `organize.not_preview`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/api/v1/organize/operations/{id}/items": {
+      "get": {
+        "tags": [
+          "Organize"
+        ],
+        "summary": "Lists the items of an organize operation in their order, all or only those with a conflict or a warning.",
+        "operationId": "ListOrganizeItems",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Id of the operation.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "description": "Number of items to skip.",
+            "schema": {
+              "maximum": 2147483647,
+              "minimum": 0,
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Maximum number of items of the page.",
+            "schema": {
+              "maximum": 100,
+              "minimum": 1,
+              "type": "integer",
+              "format": "int32",
+              "default": 50
+            }
+          },
+          {
+            "name": "filter",
+            "in": "query",
+            "description": "Which items; all by default.",
+            "schema": {
+              "default": "All",
+              "$ref": "#/components/schemas/OrganizeItemFilter"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "One page of items.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganizeItemPage"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid query parameters (code `request.invalid`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The operation does not exist (code `organize.operation_not_found`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/api/v1/own-albums": {
+      "get": {
+        "tags": [
+          "OwnAlbums"
+        ],
+        "summary": "Lists the own albums.",
+        "operationId": "ListOwnAlbums",
+        "parameters": [
+          {
+            "name": "offset",
+            "in": "query",
+            "description": "Number of albums to skip.",
+            "schema": {
+              "maximum": 2147483647,
+              "minimum": 0,
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Maximum number of albums of the page.",
+            "schema": {
+              "maximum": 100,
+              "minimum": 1,
+              "type": "integer",
+              "format": "int32",
+              "default": 50
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "description": "Sort key; Title by default.",
+            "schema": {
+              "default": "Title",
+              "$ref": "#/components/schemas/OwnAlbumSort"
+            }
+          },
+          {
+            "name": "direction",
+            "in": "query",
+            "description": "Sort direction; ascending by default.",
+            "schema": {
+              "default": "Asc",
+              "$ref": "#/components/schemas/SortDirection"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "One page of own albums.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OwnAlbumPage"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid query parameters (code `request.invalid`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblem"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "OwnAlbums"
+        ],
+        "summary": "Creates an own album without songs.",
+        "operationId": "CreateOwnAlbum",
+        "requestBody": {
+          "description": "The album.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateOwnAlbum"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateOwnAlbum"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "The new own album; Location points to it.",
+            "headers": {
+              "Location": {
+                "description": "Address of the created resource.",
+                "required": true,
+                "schema": {
+                  "type": "string",
+                  "format": "uri-reference"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OwnAlbum"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is invalid (code `request.invalid`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblem"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/api/v1/own-albums/{id}": {
+      "get": {
+        "tags": [
+          "OwnAlbums"
+        ],
+        "summary": "Returns an own album.",
+        "operationId": "GetOwnAlbum",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Id of the own album.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "The own album.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OwnAlbum"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The own album does not exist (code `organize.own_album_not_found`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      },
+      "patch": {
+        "tags": [
+          "OwnAlbums"
+        ],
+        "summary": "Changes title, album artist, year or genre of an own album. No file changes until the album is applied again.",
+        "operationId": "UpdateOwnAlbum",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Id of the own album.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "The changes.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateOwnAlbum"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateOwnAlbum"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "The changed own album.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OwnAlbum"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is invalid (code `request.invalid`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The own album does not exist (code `organize.own_album_not_found`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "OwnAlbums"
+        ],
+        "summary": "Deletes an own album and its cover. The songs and their files stay as they are; the log of organize operations keeps its entries.",
+        "operationId": "DeleteOwnAlbum",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Id of the own album.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "The own album was deleted."
+          },
+          "404": {
+            "description": "The own album does not exist (code `organize.own_album_not_found`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/api/v1/own-albums/{id}/tracks": {
+      "get": {
+        "tags": [
+          "OwnAlbums"
+        ],
+        "summary": "Lists the songs of an own album by position, then the songs taken out since the last apply (state Removed).",
+        "operationId": "ListOwnAlbumTracks",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Id of the own album.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "description": "Number of songs to skip.",
+            "schema": {
+              "maximum": 2147483647,
+              "minimum": 0,
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Maximum number of songs of the page.",
+            "schema": {
+              "maximum": 100,
+              "minimum": 1,
+              "type": "integer",
+              "format": "int32",
+              "default": 50
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "One page of songs.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OwnAlbumTrackPage"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid query parameters (code `request.invalid`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The own album does not exist (code `organize.own_album_not_found`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "OwnAlbums"
+        ],
+        "summary": "Sets the songs of an own album in this order (also to sort them). Songs left out are dropped, or marked as Removed if the album was applied, so the next apply restores their original tags.",
+        "operationId": "SetOwnAlbumTracks",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Id of the own album.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "The songs.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OwnAlbumTracks"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/OwnAlbumTracks"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "The changed own album.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OwnAlbum"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is invalid (code `request.invalid`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The own album (code `organize.own_album_not_found`) or a song (code `track.not_found`) does not exist.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "A song has no audio file (code `track.no_audio`), belongs to another own album (code `organize.track_in_other_own_album`), or the album would get too many songs (code `organize.own_album_too_many_tracks`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "OwnAlbums"
+        ],
+        "summary": "Adds songs at the end of an own album; songs that are members already stay where they are.",
+        "operationId": "AddOwnAlbumTracks",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Id of the own album.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "The songs.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OwnAlbumTracks"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/OwnAlbumTracks"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "The changed own album.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OwnAlbum"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is invalid (code `request.invalid`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The own album (code `organize.own_album_not_found`) or a song (code `track.not_found`) does not exist.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "A song has no audio file (code `track.no_audio`), belongs to another own album (code `organize.track_in_other_own_album`), or the album would get too many songs (code `organize.own_album_too_many_tracks`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/api/v1/own-albums/{id}/tracks/{trackId}": {
+      "delete": {
+        "tags": [
+          "OwnAlbums"
+        ],
+        "summary": "Takes a song out of an own album: dropped, or marked as Removed if the album was applied.",
+        "operationId": "RemoveOwnAlbumTrack",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Id of the own album.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "trackId",
+            "in": "path",
+            "description": "Id of the song.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "The changed own album.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OwnAlbum"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The own album (code `organize.own_album_not_found`) does not exist or the song is not part of it (code `track.not_found`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/api/v1/own-albums/{id}/cover": {
+      "get": {
+        "tags": [
+          "OwnAlbums"
+        ],
+        "summary": "Returns the cover of an own album as uploaded, with a strong ETag, Last-Modified and Cache-Control: private, no-cache; a request with a matching If-None-Match returns 304.",
+        "operationId": "GetOwnAlbumCover",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Id of the own album.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "The picture.",
+            "content": {
+              "image/jpeg": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "image/png": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "image/webp": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The own album does not exist (code `organize.own_album_not_found`) or has no cover (code `cover.not_found`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "OwnAlbums"
+        ],
+        "summary": "Uploads the cover of an own album as the raw bytes of a JPEG, PNG or WebP picture (10 MiB at most by default). The picture is kept as uploaded; applying the album writes it as cover.{ext} into the album folder. Replaces an earlier cover.",
+        "operationId": "SetOwnAlbumCover",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Id of the own album.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "image/jpeg": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            },
+            "image/png": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            },
+            "image/webp": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "The own album with its new cover.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OwnAlbum"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The own album does not exist (code `organize.own_album_not_found`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "The picture is too large (code `cover.too_large`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "The content is not a JPEG, PNG or WebP picture (code `cover.unsupported_format`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The cover cannot be stored (code `service.unavailable`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "OwnAlbums"
+        ],
+        "summary": "Removes the cover of an own album. A cover already written into the album folder stays there. Succeeds also without a cover.",
+        "operationId": "DeleteOwnAlbumCover",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Id of the own album.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "The own album has no cover."
+          },
+          "404": {
+            "description": "The own album does not exist (code `organize.own_album_not_found`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
     "/api/v1/me/playback-state": {
       "get": {
         "tags": [
@@ -16247,6 +17871,83 @@
         },
         "description": "Adds a media source."
       },
+      "CreateOrganizePreview": {
+        "required": [
+          "kind"
+        ],
+        "type": "object",
+        "properties": {
+          "kind": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "What to organize.",
+                "$ref": "#/components/schemas/OrganizePreviewKind"
+              }
+            ]
+          },
+          "ownAlbumId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The own album to apply; required for the kind OwnAlbum.",
+            "format": "uuid"
+          },
+          "sourceId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The media source to reorganize for the kind Library; all sources if missing.",
+            "format": "uuid"
+          }
+        },
+        "description": "Asks for the preview of an organize operation."
+      },
+      "CreateOwnAlbum": {
+        "required": [
+          "title",
+          "albumArtist"
+        ],
+        "type": "object",
+        "properties": {
+          "title": {
+            "maxLength": 512,
+            "minLength": 0,
+            "type": "string",
+            "description": "Title of the album, 1 to 512 characters."
+          },
+          "albumArtist": {
+            "maxLength": 512,
+            "minLength": 0,
+            "type": "string",
+            "description": "Album artist, 1 to 512 characters."
+          },
+          "year": {
+            "maximum": 9999,
+            "minimum": 1,
+            "type": [
+              "null",
+              "integer"
+            ],
+            "description": "Year written into the songs (1 to 9999); missing keeps the year of each song.",
+            "format": "int32"
+          },
+          "genre": {
+            "maxLength": 128,
+            "minLength": 0,
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Genre written into the songs, at most 128 characters; missing or empty keeps the genre of each song."
+          }
+        },
+        "description": "Creates an own album without songs. Texts are trimmed."
+      },
       "CreatePlayHistoryEntry": {
         "required": [
           "trackId"
@@ -19043,6 +20744,603 @@
         },
         "description": "The matches of a song in MusicBrainz, the best first, next to its current tags."
       },
+      "OrganizeAvailability": {
+        "required": [
+          "sources",
+          "isAvailable"
+        ],
+        "type": "object",
+        "properties": {
+          "sources": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SourceAvailability"
+            }
+          },
+          "isAvailable": {
+            "type": "boolean",
+            "description": "Whether at least one source can be organized."
+          },
+          "activeOperationId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The operation that is queued or running; previews and further runs wait for it.",
+            "format": "uuid"
+          }
+        },
+        "description": "Whether files can be organized: per media source, and the operation that is queued or running."
+      },
+      "OrganizeConflict": {
+        "enum": [
+          "target_exists",
+          "duplicate_target",
+          "path_too_long",
+          "unsafe_path",
+          "source_missing",
+          "not_writable",
+          "no_audio",
+          "source_inactive",
+          "cover_exists",
+          "changed_since"
+        ],
+        "type": "string"
+      },
+      "OrganizeErrorCode": {
+        "enum": [
+          "unexpected",
+          "item_failed",
+          "interrupted",
+          "media_read_only"
+        ],
+        "type": "string"
+      },
+      "OrganizeFileKind": {
+        "enum": [
+          "Audio",
+          "Video",
+          "Image",
+          "Lyrics",
+          "AlbumCover"
+        ],
+        "type": "string",
+        "description": "Kind of a file an organize operation moves; AlbumCover is the cover of an own album written from the server."
+      },
+      "OrganizeFileMove": {
+        "required": [
+          "id",
+          "fileKind",
+          "status"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "fileKind": {
+            "$ref": "#/components/schemas/OrganizeFileKind"
+          },
+          "fromPath": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Path before, relative to the folder of the source."
+          },
+          "toPath": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Path afterwards, relative to the folder of the source."
+          },
+          "status": {
+            "$ref": "#/components/schemas/OrganizeMoveStatus"
+          }
+        },
+        "description": "One file of an organize item. Without fromPath the cover of an own album is written from the server; without toPath a file the undone operation wrote is removed."
+      },
+      "OrganizeItem": {
+        "required": [
+          "id",
+          "sequence",
+          "kind",
+          "status",
+          "sourceId",
+          "fromDirectoryPath",
+          "fromBaseName",
+          "toDirectoryPath",
+          "toBaseName",
+          "warnings",
+          "displayTitle",
+          "moves"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "sequence": {
+            "type": "integer",
+            "description": "Order of the item in the run, starting at 0.",
+            "format": "int32"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/OrganizeItemKind"
+          },
+          "status": {
+            "$ref": "#/components/schemas/OrganizeItemStatus"
+          },
+          "trackId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The song; null for other kinds and after the song left the library.",
+            "format": "uuid"
+          },
+          "sourceId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "fromDirectoryPath": {
+            "type": "string",
+            "description": "Folder before; empty for the folder of the source."
+          },
+          "fromBaseName": {
+            "type": "string",
+            "description": "Base name of the files of the song before; empty for other kinds."
+          },
+          "toDirectoryPath": {
+            "type": "string",
+            "description": "Folder afterwards; empty for the folder of the source."
+          },
+          "toBaseName": {
+            "type": "string",
+            "description": "Base name of the files of the song afterwards; empty for other kinds."
+          },
+          "conflict": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "Why the item cannot run; null without conflict.",
+                "$ref": "#/components/schemas/OrganizeConflict"
+              }
+            ]
+          },
+          "warnings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrganizeWarning"
+            }
+          },
+          "displayTitle": {
+            "type": "string",
+            "description": "Title of the song (or of the album or folder) at the time of the preview."
+          },
+          "displayArtist": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "tagChanges": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "The tags written into the audio file; null if the tags stay.",
+                "$ref": "#/components/schemas/OrganizeTagValues"
+              }
+            ]
+          },
+          "tagsBefore": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "The values of the changed tags before, as the library read them.",
+                "$ref": "#/components/schemas/OrganizeTagValues"
+              }
+            ]
+          },
+          "moves": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrganizeFileMove"
+            },
+            "description": "The files that move, in their order."
+          }
+        },
+        "description": "One change of an organize operation: the files of a song move together (all keep the same base name) and its tags may change, or a cover or the files of a folder without a song move. Paths are relative to the folder of the media source, with / as separator."
+      },
+      "OrganizeItemFilter": {
+        "enum": [
+          "All",
+          "Conflicts",
+          "Warnings"
+        ],
+        "type": "string",
+        "description": "Which items of an organize operation are listed: all, those with a conflict, or those with a warning."
+      },
+      "OrganizeItemKind": {
+        "enum": [
+          "Track",
+          "AlbumCover",
+          "FolderFiles"
+        ],
+        "type": "string",
+        "description": "What an item of an organize operation changes: the files and tags of a song, the cover of an own album in its album folder, or the files of a folder without a song (e.g. its cover) that follow its songs."
+      },
+      "OrganizeItemPage": {
+        "required": [
+          "items",
+          "offset",
+          "limit",
+          "total"
+        ],
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrganizeItem"
+            },
+            "description": "Items of the page, at most limit."
+          },
+          "offset": {
+            "type": "integer",
+            "description": "Number of items skipped before this page.",
+            "format": "int32"
+          },
+          "limit": {
+            "type": "integer",
+            "description": "Maximum number of items of the page, as requested.",
+            "format": "int32"
+          },
+          "total": {
+            "type": "integer",
+            "description": "Number of items of the whole collection.",
+            "format": "int32"
+          }
+        },
+        "description": "One page of a collection."
+      },
+      "OrganizeItemStatus": {
+        "enum": [
+          "Pending",
+          "Conflict",
+          "Running",
+          "Done",
+          "Skipped",
+          "Failed",
+          "RolledBack"
+        ],
+        "type": "string",
+        "description": "State of an item of an organize operation."
+      },
+      "OrganizeMoveStatus": {
+        "enum": [
+          "Pending",
+          "Moved",
+          "RolledBack"
+        ],
+        "type": "string",
+        "description": "State of one file move of an organize operation."
+      },
+      "OrganizeOperation": {
+        "required": [
+          "id",
+          "kind",
+          "status",
+          "template",
+          "skipConflicts",
+          "totalItems",
+          "doneItems",
+          "skippedItems",
+          "failedItems",
+          "conflictItems",
+          "warningItems",
+          "canUndo",
+          "createdAt"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/OrganizeOperationKind"
+          },
+          "status": {
+            "$ref": "#/components/schemas/OrganizeOperationStatus"
+          },
+          "ownAlbumId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The own album that is applied; null for other kinds and after the album was deleted.",
+            "format": "uuid"
+          },
+          "sourceId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The media source a library operation is limited to; null for all sources.",
+            "format": "uuid"
+          },
+          "undoOfId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The operation an undo operation undoes.",
+            "format": "uuid"
+          },
+          "undoneById": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The undo operation that undid this operation.",
+            "format": "uuid"
+          },
+          "template": {
+            "type": "string",
+            "description": "The layout template of the preview."
+          },
+          "displayTitle": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Name for the log, e.g. the title of the own album at the time of the preview."
+          },
+          "errorCode": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "Why the operation failed or stopped.",
+                "$ref": "#/components/schemas/OrganizeErrorCode"
+              }
+            ]
+          },
+          "skipConflicts": {
+            "type": "boolean",
+            "description": "Whether the run leaves out items with conflicts."
+          },
+          "totalItems": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "doneItems": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "skippedItems": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "failedItems": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "conflictItems": {
+            "type": "integer",
+            "description": "Number of items with a conflict.",
+            "format": "int32"
+          },
+          "warningItems": {
+            "type": "integer",
+            "description": "Number of items with at least one warning.",
+            "format": "int32"
+          },
+          "canUndo": {
+            "type": "boolean",
+            "description": "Whether the operation can be undone now (UndoOrganizeOperation)."
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "previewedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "When the preview was ready.",
+            "format": "date-time"
+          },
+          "expiresAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Until when the preview can be applied.",
+            "format": "date-time"
+          },
+          "startedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "finishedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          }
+        },
+        "description": "An organize operation: a preview, a run or an entry of the log that can be undone."
+      },
+      "OrganizeOperationKind": {
+        "enum": [
+          "OwnAlbum",
+          "Library",
+          "Undo"
+        ],
+        "type": "string",
+        "description": "What an organize operation does."
+      },
+      "OrganizeOperationPage": {
+        "required": [
+          "items",
+          "offset",
+          "limit",
+          "total"
+        ],
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrganizeOperation"
+            },
+            "description": "Items of the page, at most limit."
+          },
+          "offset": {
+            "type": "integer",
+            "description": "Number of items skipped before this page.",
+            "format": "int32"
+          },
+          "limit": {
+            "type": "integer",
+            "description": "Maximum number of items of the page, as requested.",
+            "format": "int32"
+          },
+          "total": {
+            "type": "integer",
+            "description": "Number of items of the whole collection.",
+            "format": "int32"
+          }
+        },
+        "description": "One page of a collection."
+      },
+      "OrganizeOperationStatus": {
+        "enum": [
+          "Planning",
+          "Previewed",
+          "Queued",
+          "Running",
+          "Completed",
+          "Stopped",
+          "Canceled",
+          "Failed",
+          "Interrupted",
+          "Expired"
+        ],
+        "type": "string",
+        "description": "State of an organize operation: Planning while the preview is computed, Previewed until it is applied or expires, Queued and Running while files move, then Completed, Stopped (an item failed), Canceled, Failed (nothing changed), Interrupted (the server stopped; the interrupted item was put back) or Expired (the preview was not applied in time)."
+      },
+      "OrganizePreviewKind": {
+        "enum": [
+          "OwnAlbum",
+          "Library"
+        ],
+        "type": "string"
+      },
+      "OrganizeTagField": {
+        "enum": [
+          "Album",
+          "AlbumArtist",
+          "TrackNumber",
+          "TrackCount",
+          "DiscNumber",
+          "Year",
+          "Genre"
+        ],
+        "type": "string",
+        "description": "A tag an organize operation writes into an audio file."
+      },
+      "OrganizeTagValues": {
+        "required": [
+          "fields",
+          "albumArtists",
+          "genres"
+        ],
+        "type": "object",
+        "properties": {
+          "fields": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrganizeTagField"
+            }
+          },
+          "album": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "albumArtists": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "trackNumber": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "trackCount": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "discNumber": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "year": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "genres": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "description": "Values of tags of an audio file. Only the fields named in fields count; a named field without value is removed."
+      },
+      "OrganizeWarning": {
+        "enum": [
+          "metadata_changes",
+          "album_merges",
+          "cover_not_written",
+          "other_cover_exists",
+          "tags_changed_since"
+        ],
+        "type": "string",
+        "description": "Something to check in an item of an organize operation; the item still runs. Clients translate it."
+      },
       "OrganizingSettings": {
         "required": [
           "layoutTemplate",
@@ -19060,6 +21358,236 @@
           }
         },
         "description": "Settings of the organization of the media files."
+      },
+      "OwnAlbum": {
+        "required": [
+          "id",
+          "title",
+          "albumArtist",
+          "hasCover",
+          "trackCount",
+          "removedTrackCount",
+          "status",
+          "createdAt",
+          "updatedAt"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string"
+          },
+          "albumArtist": {
+            "type": "string"
+          },
+          "year": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "description": "Year written into the songs; null keeps the year of each song.",
+            "format": "int32"
+          },
+          "genre": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Genre written into the songs; null keeps the genre of each song."
+          },
+          "hasCover": {
+            "type": "boolean",
+            "description": "Whether a cover was uploaded (GetOwnAlbumCover); it is written as cover.{ext} into the album folder."
+          },
+          "coverUpdatedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "When the cover was uploaded; also its version for caches. Null without cover.",
+            "format": "date-time"
+          },
+          "trackCount": {
+            "type": "integer",
+            "description": "Number of songs that are members.",
+            "format": "int32"
+          },
+          "removedTrackCount": {
+            "type": "integer",
+            "description": "Number of songs taken out since the last apply; the next apply restores their original tags.",
+            "format": "int32"
+          },
+          "status": {
+            "$ref": "#/components/schemas/OwnAlbumStatus"
+          },
+          "appliedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "When the album was applied for the last time.",
+            "format": "date-time"
+          },
+          "libraryAlbumId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The album of the library its first song belongs to, once the album was applied.",
+            "format": "uuid"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "description": "An own album: an album the admin puts together from songs of the library. Applying it (an organize preview of kind OwnAlbum, then apply) writes its values into the tags of the audio files and moves the files by the layout template."
+      },
+      "OwnAlbumPage": {
+        "required": [
+          "items",
+          "offset",
+          "limit",
+          "total"
+        ],
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OwnAlbum"
+            },
+            "description": "Items of the page, at most limit."
+          },
+          "offset": {
+            "type": "integer",
+            "description": "Number of items skipped before this page.",
+            "format": "int32"
+          },
+          "limit": {
+            "type": "integer",
+            "description": "Maximum number of items of the page, as requested.",
+            "format": "int32"
+          },
+          "total": {
+            "type": "integer",
+            "description": "Number of items of the whole collection.",
+            "format": "int32"
+          }
+        },
+        "description": "One page of a collection."
+      },
+      "OwnAlbumSort": {
+        "enum": [
+          "Title",
+          "UpdatedAt"
+        ],
+        "type": "string",
+        "description": "Sort key of the own albums; ties are sorted by id."
+      },
+      "OwnAlbumStatus": {
+        "enum": [
+          "Draft",
+          "Applied",
+          "Changed"
+        ],
+        "type": "string",
+        "description": "Whether an own album was applied to the files: never (Draft), applied and unchanged since (Applied), or changed since it was applied (Changed)."
+      },
+      "OwnAlbumTrack": {
+        "required": [
+          "position",
+          "state",
+          "addedAt",
+          "track"
+        ],
+        "type": "object",
+        "properties": {
+          "position": {
+            "type": "integer",
+            "description": "Index of the song in the album, starting at 0; its track number becomes position + 1.",
+            "format": "int32"
+          },
+          "state": {
+            "$ref": "#/components/schemas/OwnAlbumTrackState"
+          },
+          "addedAt": {
+            "type": "string",
+            "description": "When the song was added.",
+            "format": "date-time"
+          },
+          "track": {
+            "$ref": "#/components/schemas/Track"
+          }
+        },
+        "description": "A song of an own album."
+      },
+      "OwnAlbumTrackPage": {
+        "required": [
+          "items",
+          "offset",
+          "limit",
+          "total"
+        ],
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OwnAlbumTrack"
+            },
+            "description": "Items of the page, at most limit."
+          },
+          "offset": {
+            "type": "integer",
+            "description": "Number of items skipped before this page.",
+            "format": "int32"
+          },
+          "limit": {
+            "type": "integer",
+            "description": "Maximum number of items of the page, as requested.",
+            "format": "int32"
+          },
+          "total": {
+            "type": "integer",
+            "description": "Number of items of the whole collection.",
+            "format": "int32"
+          }
+        },
+        "description": "One page of a collection."
+      },
+      "OwnAlbumTracks": {
+        "required": [
+          "trackIds"
+        ],
+        "type": "object",
+        "properties": {
+          "trackIds": {
+            "maxItems": 1000,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Ids of the songs; at most 1000."
+          }
+        },
+        "description": "Songs for an own album, in this order. Duplicates are ignored."
+      },
+      "OwnAlbumTrackState": {
+        "enum": [
+          "Member",
+          "Removed"
+        ],
+        "type": "string",
+        "description": "Whether a song is a member of an own album, or was taken out after the album was applied (the next apply restores its original tags)."
       },
       "PinStatus": {
         "required": [
@@ -19622,7 +22150,18 @@
           "recap.share_not_found",
           "video.too_large",
           "video.unsupported_format",
-          "video.unreadable"
+          "video.unreadable",
+          "organize.own_album_not_found",
+          "organize.own_album_empty",
+          "organize.track_in_other_own_album",
+          "organize.own_album_too_many_tracks",
+          "organize.operation_not_found",
+          "organize.media_read_only",
+          "organize.template_invalid",
+          "organize.busy",
+          "organize.not_undoable",
+          "organize.already_undone",
+          "organize.not_preview"
         ],
         "type": "string",
         "description": "Machine-readable code of a problem, part of every Problem Details response. Clients translate it."
@@ -20914,6 +23453,37 @@
           "Desc"
         ],
         "type": "string"
+      },
+      "SourceAvailability": {
+        "required": [
+          "sourceId",
+          "name",
+          "status"
+        ],
+        "type": "object",
+        "properties": {
+          "sourceId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/SourceAvailabilityStatus"
+          }
+        },
+        "description": "Whether the files of a media source can be organized."
+      },
+      "SourceAvailabilityStatus": {
+        "enum": [
+          "Available",
+          "ReadOnly",
+          "Missing",
+          "Inactive"
+        ],
+        "type": "string",
+        "description": "Whether the files of a media source can be organized: Available, ReadOnly (the folder cannot be written, e.g. a read-only mount), Missing (the folder does not exist) or Inactive (the source is switched off)."
       },
       "StatisticsTotals": {
         "required": [
@@ -23022,6 +25592,51 @@
         },
         "description": "Changes the settings of the organization of the media files. Missing or null values stay unchanged."
       },
+      "UpdateOwnAlbum": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "maxLength": 512,
+            "minLength": 1,
+            "pattern": ".*\\S.*",
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "New title, 1 to 512 characters."
+          },
+          "albumArtist": {
+            "maxLength": 512,
+            "minLength": 1,
+            "pattern": ".*\\S.*",
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "New album artist, 1 to 512 characters."
+          },
+          "year": {
+            "maximum": 9999,
+            "minimum": 0,
+            "type": [
+              "null",
+              "integer"
+            ],
+            "description": "New year (1 to 9999); 0 removes it, so each song keeps its own year.",
+            "format": "int32"
+          },
+          "genre": {
+            "maxLength": 128,
+            "minLength": 0,
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "New genre, at most 128 characters; empty removes it, so each song keeps its own genre."
+          }
+        },
+        "description": "Changes an own album. Missing or null values stay unchanged; texts are trimmed. Changing an album moves no file."
+      },
       "UpdatePlaybackState": {
         "required": [
           "items",
@@ -24258,6 +26873,9 @@
     },
     {
       "name": "Organize"
+    },
+    {
+      "name": "OwnAlbums"
     },
     {
       "name": "PlaybackState"

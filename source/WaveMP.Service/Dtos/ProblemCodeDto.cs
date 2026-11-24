@@ -561,4 +561,70 @@ public enum ProblemCodeDto
     /// </summary>
     [JsonStringEnumMemberName("video.unreadable")]
     VideoUnreadable,
+
+    /// <summary>
+    /// The own album does not exist (404).
+    /// </summary>
+    [JsonStringEnumMemberName("organize.own_album_not_found")]
+    OwnAlbumNotFound,
+
+    /// <summary>
+    /// The own album has no songs, so there is nothing to apply (409).
+    /// </summary>
+    [JsonStringEnumMemberName("organize.own_album_empty")]
+    OwnAlbumEmpty,
+
+    /// <summary>
+    /// A song is already part of another own album; a song belongs to at most one (409).
+    /// </summary>
+    [JsonStringEnumMemberName("organize.track_in_other_own_album")]
+    OwnAlbumTrackInOtherAlbum,
+
+    /// <summary>
+    /// More songs than an own album may have (409).
+    /// </summary>
+    [JsonStringEnumMemberName("organize.own_album_too_many_tracks")]
+    OwnAlbumTooManyTracks,
+
+    /// <summary>
+    /// The organize operation does not exist (404).
+    /// </summary>
+    [JsonStringEnumMemberName("organize.operation_not_found")]
+    OrganizeOperationNotFound,
+
+    /// <summary>
+    /// A media folder of the operation cannot be written, e.g. a read-only mount; files cannot be moved (409).
+    /// </summary>
+    [JsonStringEnumMemberName("organize.media_read_only")]
+    OrganizeMediaReadOnly,
+
+    /// <summary>
+    /// The saved layout template cannot be used (409).
+    /// </summary>
+    [JsonStringEnumMemberName("organize.template_invalid")]
+    OrganizeTemplateInvalid,
+
+    /// <summary>
+    /// Another organize operation is queued or running (409).
+    /// </summary>
+    [JsonStringEnumMemberName("organize.busy")]
+    OrganizeBusy,
+
+    /// <summary>
+    /// The operation cannot be undone: it is an undo itself, did not run or changed nothing (409).
+    /// </summary>
+    [JsonStringEnumMemberName("organize.not_undoable")]
+    OrganizeNotUndoable,
+
+    /// <summary>
+    /// The operation was undone already (409).
+    /// </summary>
+    [JsonStringEnumMemberName("organize.already_undone")]
+    OrganizeAlreadyUndone,
+
+    /// <summary>
+    /// The operation is no preview any more; only previews can be discarded (409).
+    /// </summary>
+    [JsonStringEnumMemberName("organize.not_preview")]
+    OrganizeNotPreview,
 }

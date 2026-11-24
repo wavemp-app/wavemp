@@ -916,6 +916,24 @@ export function createCreateMediaSourceFromDiscriminatorValue(parseNode: ParseNo
 /**
  * Creates a new instance of the appropriate class based on discriminator value
  * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {CreateOrganizePreview}
+ */
+// @ts-ignore
+export function createCreateOrganizePreviewFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoCreateOrganizePreview;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {CreateOwnAlbum}
+ */
+// @ts-ignore
+export function createCreateOwnAlbumFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoCreateOwnAlbum;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
  * @returns {CreatePlayHistoryEntry}
  */
 // @ts-ignore
@@ -1468,11 +1486,157 @@ export function createOnlineTrackMatchFromDiscriminatorValue(parseNode: ParseNod
 /**
  * Creates a new instance of the appropriate class based on discriminator value
  * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {OrganizeAvailability}
+ */
+// @ts-ignore
+export function createOrganizeAvailabilityFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoOrganizeAvailability;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {OrganizeFileMove}
+ */
+// @ts-ignore
+export function createOrganizeFileMoveFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoOrganizeFileMove;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {OrganizeItem}
+ */
+// @ts-ignore
+export function createOrganizeItemFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoOrganizeItem;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {OrganizeItemPage}
+ */
+// @ts-ignore
+export function createOrganizeItemPageFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoOrganizeItemPage;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {OrganizeOperation}
+ */
+// @ts-ignore
+export function createOrganizeOperationFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoOrganizeOperation;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {OrganizeOperationPage}
+ */
+// @ts-ignore
+export function createOrganizeOperationPageFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoOrganizeOperationPage;
+}
+/**
+ * Asks for the preview of an organize operation.
+ */
+export interface CreateOrganizePreview extends AdditionalDataHolder, Parsable {
+    /**
+     * The kind property
+     */
+    kind?: OrganizePreviewKind | null;
+    /**
+     * The own album to apply; required for the kind OwnAlbum.
+     */
+    ownAlbumId?: Guid | null;
+    /**
+     * The media source to reorganize for the kind Library; all sources if missing.
+     */
+    sourceId?: Guid | null;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {OrganizeTagValues}
+ */
+// @ts-ignore
+export function createOrganizeTagValuesFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoOrganizeTagValues;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
  * @returns {OrganizingSettings}
  */
 // @ts-ignore
 export function createOrganizingSettingsFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
     return deserializeIntoOrganizingSettings;
+}
+/**
+ * Creates an own album without songs. Texts are trimmed.
+ */
+export interface CreateOwnAlbum extends AdditionalDataHolder, Parsable {
+    /**
+     * Album artist, 1 to 512 characters.
+     */
+    albumArtist?: string | null;
+    /**
+     * Genre written into the songs, at most 128 characters; missing or empty keeps the genre of each song.
+     */
+    genre?: string | null;
+    /**
+     * Title of the album, 1 to 512 characters.
+     */
+    title?: string | null;
+    /**
+     * Year written into the songs (1 to 9999); missing keeps the year of each song.
+     */
+    year?: number | null;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {OwnAlbum}
+ */
+// @ts-ignore
+export function createOwnAlbumFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoOwnAlbum;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {OwnAlbumPage}
+ */
+// @ts-ignore
+export function createOwnAlbumPageFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoOwnAlbumPage;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {OwnAlbumTrack}
+ */
+// @ts-ignore
+export function createOwnAlbumTrackFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoOwnAlbumTrack;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {OwnAlbumTrackPage}
+ */
+// @ts-ignore
+export function createOwnAlbumTrackPageFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoOwnAlbumTrackPage;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {OwnAlbumTracks}
+ */
+// @ts-ignore
+export function createOwnAlbumTracksFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoOwnAlbumTracks;
 }
 /**
  * Creates a new instance of the appropriate class based on discriminator value
@@ -1910,6 +2074,15 @@ export function createSmartPlaylistTemplatePageFromDiscriminatorValue(parseNode:
 /**
  * Creates a new instance of the appropriate class based on discriminator value
  * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {SourceAvailability}
+ */
+// @ts-ignore
+export function createSourceAvailabilityFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoSourceAvailability;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
  * @returns {StatisticsTotals}
  */
 // @ts-ignore
@@ -2329,6 +2502,15 @@ export function createUpdateOnlineMetadataSettingsFromDiscriminatorValue(parseNo
 // @ts-ignore
 export function createUpdateOrganizingSettingsFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
     return deserializeIntoUpdateOrganizingSettings;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {UpdateOwnAlbum}
+ */
+// @ts-ignore
+export function createUpdateOwnAlbumFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoUpdateOwnAlbum;
 }
 /**
  * Creates a new instance of the appropriate class based on discriminator value
@@ -3056,6 +3238,33 @@ export function deserializeIntoCreateMediaSource(createMediaSource: Partial<Crea
         "isActive": n => { createMediaSource.isActive = n.getBooleanValue(); },
         "name": n => { createMediaSource.name = n.getStringValue(); },
         "path": n => { createMediaSource.path = n.getStringValue(); },
+    }
+}
+/**
+ * The deserialization information for the current model
+ * @param CreateOrganizePreview The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoCreateOrganizePreview(createOrganizePreview: Partial<CreateOrganizePreview> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "kind": n => { createOrganizePreview.kind = n.getEnumValue<OrganizePreviewKind>(OrganizePreviewKindObject); },
+        "ownAlbumId": n => { createOrganizePreview.ownAlbumId = n.getGuidValue(); },
+        "sourceId": n => { createOrganizePreview.sourceId = n.getGuidValue(); },
+    }
+}
+/**
+ * The deserialization information for the current model
+ * @param CreateOwnAlbum The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoCreateOwnAlbum(createOwnAlbum: Partial<CreateOwnAlbum> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "albumArtist": n => { createOwnAlbum.albumArtist = n.getStringValue(); },
+        "genre": n => { createOwnAlbum.genre = n.getStringValue(); },
+        "title": n => { createOwnAlbum.title = n.getStringValue(); },
+        "year": n => { createOwnAlbum.year = n.getNumberValue(); },
     }
 }
 /**
@@ -3946,6 +4155,140 @@ export function deserializeIntoOnlineTrackMatches(onlineTrackMatches: Partial<On
 }
 /**
  * The deserialization information for the current model
+ * @param OrganizeAvailability The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoOrganizeAvailability(organizeAvailability: Partial<OrganizeAvailability> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "activeOperationId": n => { organizeAvailability.activeOperationId = n.getGuidValue(); },
+        "isAvailable": n => { organizeAvailability.isAvailable = n.getBooleanValue(); },
+        "sources": n => { organizeAvailability.sources = n.getCollectionOfObjectValues<SourceAvailability>(createSourceAvailabilityFromDiscriminatorValue); },
+    }
+}
+/**
+ * The deserialization information for the current model
+ * @param OrganizeFileMove The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoOrganizeFileMove(organizeFileMove: Partial<OrganizeFileMove> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "fileKind": n => { organizeFileMove.fileKind = n.getEnumValue<OrganizeFileKind>(OrganizeFileKindObject); },
+        "fromPath": n => { organizeFileMove.fromPath = n.getStringValue(); },
+        "id": n => { organizeFileMove.id = n.getGuidValue(); },
+        "status": n => { organizeFileMove.status = n.getEnumValue<OrganizeMoveStatus>(OrganizeMoveStatusObject); },
+        "toPath": n => { organizeFileMove.toPath = n.getStringValue(); },
+    }
+}
+/**
+ * The deserialization information for the current model
+ * @param OrganizeItem The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoOrganizeItem(organizeItem: Partial<OrganizeItem> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "conflict": n => { organizeItem.conflict = n.getEnumValue<OrganizeConflict>(OrganizeConflictObject); },
+        "displayArtist": n => { organizeItem.displayArtist = n.getStringValue(); },
+        "displayTitle": n => { organizeItem.displayTitle = n.getStringValue(); },
+        "fromBaseName": n => { organizeItem.fromBaseName = n.getStringValue(); },
+        "fromDirectoryPath": n => { organizeItem.fromDirectoryPath = n.getStringValue(); },
+        "id": n => { organizeItem.id = n.getGuidValue(); },
+        "kind": n => { organizeItem.kind = n.getEnumValue<OrganizeItemKind>(OrganizeItemKindObject); },
+        "moves": n => { organizeItem.moves = n.getCollectionOfObjectValues<OrganizeFileMove>(createOrganizeFileMoveFromDiscriminatorValue); },
+        "sequence": n => { organizeItem.sequence = n.getNumberValue(); },
+        "sourceId": n => { organizeItem.sourceId = n.getGuidValue(); },
+        "status": n => { organizeItem.status = n.getEnumValue<OrganizeItemStatus>(OrganizeItemStatusObject); },
+        "tagChanges": n => { organizeItem.tagChanges = n.getObjectValue<OrganizeTagValues>(createOrganizeTagValuesFromDiscriminatorValue); },
+        "tagsBefore": n => { organizeItem.tagsBefore = n.getObjectValue<OrganizeTagValues>(createOrganizeTagValuesFromDiscriminatorValue); },
+        "toBaseName": n => { organizeItem.toBaseName = n.getStringValue(); },
+        "toDirectoryPath": n => { organizeItem.toDirectoryPath = n.getStringValue(); },
+        "trackId": n => { organizeItem.trackId = n.getGuidValue(); },
+        "warnings": n => { organizeItem.warnings = n.getCollectionOfEnumValues<OrganizeWarning>(OrganizeWarningObject); },
+    }
+}
+/**
+ * The deserialization information for the current model
+ * @param OrganizeItemPage The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoOrganizeItemPage(organizeItemPage: Partial<OrganizeItemPage> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "items": n => { organizeItemPage.items = n.getCollectionOfObjectValues<OrganizeItem>(createOrganizeItemFromDiscriminatorValue); },
+        "limit": n => { organizeItemPage.limit = n.getNumberValue(); },
+        "offset": n => { organizeItemPage.offset = n.getNumberValue(); },
+        "total": n => { organizeItemPage.total = n.getNumberValue(); },
+    }
+}
+/**
+ * The deserialization information for the current model
+ * @param OrganizeOperation The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoOrganizeOperation(organizeOperation: Partial<OrganizeOperation> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "canUndo": n => { organizeOperation.canUndo = n.getBooleanValue(); },
+        "conflictItems": n => { organizeOperation.conflictItems = n.getNumberValue(); },
+        "createdAt": n => { organizeOperation.createdAt = n.getDateValue(); },
+        "displayTitle": n => { organizeOperation.displayTitle = n.getStringValue(); },
+        "doneItems": n => { organizeOperation.doneItems = n.getNumberValue(); },
+        "errorCode": n => { organizeOperation.errorCode = n.getEnumValue<OrganizeErrorCode>(OrganizeErrorCodeObject); },
+        "expiresAt": n => { organizeOperation.expiresAt = n.getDateValue(); },
+        "failedItems": n => { organizeOperation.failedItems = n.getNumberValue(); },
+        "finishedAt": n => { organizeOperation.finishedAt = n.getDateValue(); },
+        "id": n => { organizeOperation.id = n.getGuidValue(); },
+        "kind": n => { organizeOperation.kind = n.getEnumValue<OrganizeOperationKind>(OrganizeOperationKindObject); },
+        "ownAlbumId": n => { organizeOperation.ownAlbumId = n.getGuidValue(); },
+        "previewedAt": n => { organizeOperation.previewedAt = n.getDateValue(); },
+        "skipConflicts": n => { organizeOperation.skipConflicts = n.getBooleanValue(); },
+        "skippedItems": n => { organizeOperation.skippedItems = n.getNumberValue(); },
+        "sourceId": n => { organizeOperation.sourceId = n.getGuidValue(); },
+        "startedAt": n => { organizeOperation.startedAt = n.getDateValue(); },
+        "status": n => { organizeOperation.status = n.getEnumValue<OrganizeOperationStatus>(OrganizeOperationStatusObject); },
+        "template": n => { organizeOperation.template = n.getStringValue(); },
+        "totalItems": n => { organizeOperation.totalItems = n.getNumberValue(); },
+        "undoneById": n => { organizeOperation.undoneById = n.getGuidValue(); },
+        "undoOfId": n => { organizeOperation.undoOfId = n.getGuidValue(); },
+        "warningItems": n => { organizeOperation.warningItems = n.getNumberValue(); },
+    }
+}
+/**
+ * The deserialization information for the current model
+ * @param OrganizeOperationPage The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoOrganizeOperationPage(organizeOperationPage: Partial<OrganizeOperationPage> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "items": n => { organizeOperationPage.items = n.getCollectionOfObjectValues<OrganizeOperation>(createOrganizeOperationFromDiscriminatorValue); },
+        "limit": n => { organizeOperationPage.limit = n.getNumberValue(); },
+        "offset": n => { organizeOperationPage.offset = n.getNumberValue(); },
+        "total": n => { organizeOperationPage.total = n.getNumberValue(); },
+    }
+}
+/**
+ * The deserialization information for the current model
+ * @param OrganizeTagValues The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoOrganizeTagValues(organizeTagValues: Partial<OrganizeTagValues> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "album": n => { organizeTagValues.album = n.getStringValue(); },
+        "albumArtists": n => { organizeTagValues.albumArtists = n.getCollectionOfPrimitiveValues<string>("string"); },
+        "discNumber": n => { organizeTagValues.discNumber = n.getNumberValue(); },
+        "fields": n => { organizeTagValues.fields = n.getCollectionOfEnumValues<OrganizeTagField>(OrganizeTagFieldObject); },
+        "genres": n => { organizeTagValues.genres = n.getCollectionOfPrimitiveValues<string>("string"); },
+        "trackCount": n => { organizeTagValues.trackCount = n.getNumberValue(); },
+        "trackNumber": n => { organizeTagValues.trackNumber = n.getNumberValue(); },
+        "year": n => { organizeTagValues.year = n.getNumberValue(); },
+    }
+}
+/**
+ * The deserialization information for the current model
  * @param OrganizingSettings The instance to deserialize into.
  * @returns {Record<string, (node: ParseNode) => void>}
  */
@@ -3954,6 +4297,83 @@ export function deserializeIntoOrganizingSettings(organizingSettings: Partial<Or
     return {
         "isFolderBased": n => { organizingSettings.isFolderBased = n.getBooleanValue(); },
         "layoutTemplate": n => { organizingSettings.layoutTemplate = n.getStringValue(); },
+    }
+}
+/**
+ * The deserialization information for the current model
+ * @param OwnAlbum The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoOwnAlbum(ownAlbum: Partial<OwnAlbum> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "albumArtist": n => { ownAlbum.albumArtist = n.getStringValue(); },
+        "appliedAt": n => { ownAlbum.appliedAt = n.getDateValue(); },
+        "coverUpdatedAt": n => { ownAlbum.coverUpdatedAt = n.getDateValue(); },
+        "createdAt": n => { ownAlbum.createdAt = n.getDateValue(); },
+        "genre": n => { ownAlbum.genre = n.getStringValue(); },
+        "hasCover": n => { ownAlbum.hasCover = n.getBooleanValue(); },
+        "id": n => { ownAlbum.id = n.getGuidValue(); },
+        "libraryAlbumId": n => { ownAlbum.libraryAlbumId = n.getGuidValue(); },
+        "removedTrackCount": n => { ownAlbum.removedTrackCount = n.getNumberValue(); },
+        "status": n => { ownAlbum.status = n.getEnumValue<OwnAlbumStatus>(OwnAlbumStatusObject); },
+        "title": n => { ownAlbum.title = n.getStringValue(); },
+        "trackCount": n => { ownAlbum.trackCount = n.getNumberValue(); },
+        "updatedAt": n => { ownAlbum.updatedAt = n.getDateValue(); },
+        "year": n => { ownAlbum.year = n.getNumberValue(); },
+    }
+}
+/**
+ * The deserialization information for the current model
+ * @param OwnAlbumPage The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoOwnAlbumPage(ownAlbumPage: Partial<OwnAlbumPage> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "items": n => { ownAlbumPage.items = n.getCollectionOfObjectValues<OwnAlbum>(createOwnAlbumFromDiscriminatorValue); },
+        "limit": n => { ownAlbumPage.limit = n.getNumberValue(); },
+        "offset": n => { ownAlbumPage.offset = n.getNumberValue(); },
+        "total": n => { ownAlbumPage.total = n.getNumberValue(); },
+    }
+}
+/**
+ * The deserialization information for the current model
+ * @param OwnAlbumTrack The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoOwnAlbumTrack(ownAlbumTrack: Partial<OwnAlbumTrack> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "addedAt": n => { ownAlbumTrack.addedAt = n.getDateValue(); },
+        "position": n => { ownAlbumTrack.position = n.getNumberValue(); },
+        "state": n => { ownAlbumTrack.state = n.getEnumValue<OwnAlbumTrackState>(OwnAlbumTrackStateObject); },
+        "track": n => { ownAlbumTrack.track = n.getObjectValue<Track>(createTrackFromDiscriminatorValue); },
+    }
+}
+/**
+ * The deserialization information for the current model
+ * @param OwnAlbumTrackPage The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoOwnAlbumTrackPage(ownAlbumTrackPage: Partial<OwnAlbumTrackPage> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "items": n => { ownAlbumTrackPage.items = n.getCollectionOfObjectValues<OwnAlbumTrack>(createOwnAlbumTrackFromDiscriminatorValue); },
+        "limit": n => { ownAlbumTrackPage.limit = n.getNumberValue(); },
+        "offset": n => { ownAlbumTrackPage.offset = n.getNumberValue(); },
+        "total": n => { ownAlbumTrackPage.total = n.getNumberValue(); },
+    }
+}
+/**
+ * The deserialization information for the current model
+ * @param OwnAlbumTracks The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoOwnAlbumTracks(ownAlbumTracks: Partial<OwnAlbumTracks> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "trackIds": n => { ownAlbumTracks.trackIds = n.getCollectionOfPrimitiveValues<Guid>("string"); },
     }
 }
 /**
@@ -4560,6 +4980,19 @@ export function deserializeIntoSmartPlaylistTemplatePage(smartPlaylistTemplatePa
         "limit": n => { smartPlaylistTemplatePage.limit = n.getNumberValue(); },
         "offset": n => { smartPlaylistTemplatePage.offset = n.getNumberValue(); },
         "total": n => { smartPlaylistTemplatePage.total = n.getNumberValue(); },
+    }
+}
+/**
+ * The deserialization information for the current model
+ * @param SourceAvailability The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoSourceAvailability(sourceAvailability: Partial<SourceAvailability> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "name": n => { sourceAvailability.name = n.getStringValue(); },
+        "sourceId": n => { sourceAvailability.sourceId = n.getGuidValue(); },
+        "status": n => { sourceAvailability.status = n.getEnumValue<SourceAvailabilityStatus>(SourceAvailabilityStatusObject); },
     }
 }
 /**
@@ -5269,6 +5702,20 @@ export function deserializeIntoUpdateOnlineMetadataSettings(updateOnlineMetadata
 export function deserializeIntoUpdateOrganizingSettings(updateOrganizingSettings: Partial<UpdateOrganizingSettings> | undefined = {}) : Record<string, (node: ParseNode) => void> {
     return {
         "layoutTemplate": n => { updateOrganizingSettings.layoutTemplate = n.getStringValue(); },
+    }
+}
+/**
+ * The deserialization information for the current model
+ * @param UpdateOwnAlbum The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoUpdateOwnAlbum(updateOwnAlbum: Partial<UpdateOwnAlbum> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "albumArtist": n => { updateOwnAlbum.albumArtist = n.getStringValue(); },
+        "genre": n => { updateOwnAlbum.genre = n.getStringValue(); },
+        "title": n => { updateOwnAlbum.title = n.getStringValue(); },
+        "year": n => { updateOwnAlbum.year = n.getNumberValue(); },
     }
 }
 /**
@@ -7097,6 +7544,309 @@ export interface OnlineTrackMatches extends AdditionalDataHolder, Parsable {
     matches?: OnlineTrackMatch[] | null;
 }
 /**
+ * Whether files can be organized: per media source, and the operation that is queued or running.
+ */
+export interface OrganizeAvailability extends AdditionalDataHolder, Parsable {
+    /**
+     * The operation that is queued or running; previews and further runs wait for it.
+     */
+    activeOperationId?: Guid | null;
+    /**
+     * Whether at least one source can be organized.
+     */
+    isAvailable?: boolean | null;
+    /**
+     * The sources property
+     */
+    sources?: SourceAvailability[] | null;
+}
+export type OrganizeConflict = (typeof OrganizeConflictObject)[keyof typeof OrganizeConflictObject];
+export type OrganizeErrorCode = (typeof OrganizeErrorCodeObject)[keyof typeof OrganizeErrorCodeObject];
+export type OrganizeFileKind = (typeof OrganizeFileKindObject)[keyof typeof OrganizeFileKindObject];
+/**
+ * One file of an organize item. Without fromPath the cover of an own album is written from the server; without toPath a file the undone operation wrote is removed.
+ */
+export interface OrganizeFileMove extends AdditionalDataHolder, Parsable {
+    /**
+     * Kind of a file an organize operation moves; AlbumCover is the cover of an own album written from the server.
+     */
+    fileKind?: OrganizeFileKind | null;
+    /**
+     * Path before, relative to the folder of the source.
+     */
+    fromPath?: string | null;
+    /**
+     * The id property
+     */
+    id?: Guid | null;
+    /**
+     * State of one file move of an organize operation.
+     */
+    status?: OrganizeMoveStatus | null;
+    /**
+     * Path afterwards, relative to the folder of the source.
+     */
+    toPath?: string | null;
+}
+/**
+ * One change of an organize operation: the files of a song move together (all keep the same base name) and its tags may change, or a cover or the files of a folder without a song move. Paths are relative to the folder of the media source, with / as separator.
+ */
+export interface OrganizeItem extends AdditionalDataHolder, Parsable {
+    /**
+     * The conflict property
+     */
+    conflict?: OrganizeConflict | null;
+    /**
+     * The displayArtist property
+     */
+    displayArtist?: string | null;
+    /**
+     * Title of the song (or of the album or folder) at the time of the preview.
+     */
+    displayTitle?: string | null;
+    /**
+     * Base name of the files of the song before; empty for other kinds.
+     */
+    fromBaseName?: string | null;
+    /**
+     * Folder before; empty for the folder of the source.
+     */
+    fromDirectoryPath?: string | null;
+    /**
+     * The id property
+     */
+    id?: Guid | null;
+    /**
+     * What an item of an organize operation changes: the files and tags of a song, the cover of an own album in its album folder, or the files of a folder without a song (e.g. its cover) that follow its songs.
+     */
+    kind?: OrganizeItemKind | null;
+    /**
+     * The files that move, in their order.
+     */
+    moves?: OrganizeFileMove[] | null;
+    /**
+     * Order of the item in the run, starting at 0.
+     */
+    sequence?: number | null;
+    /**
+     * The sourceId property
+     */
+    sourceId?: Guid | null;
+    /**
+     * State of an item of an organize operation.
+     */
+    status?: OrganizeItemStatus | null;
+    /**
+     * The tagChanges property
+     */
+    tagChanges?: OrganizeTagValues | null;
+    /**
+     * The tagsBefore property
+     */
+    tagsBefore?: OrganizeTagValues | null;
+    /**
+     * Base name of the files of the song afterwards; empty for other kinds.
+     */
+    toBaseName?: string | null;
+    /**
+     * Folder afterwards; empty for the folder of the source.
+     */
+    toDirectoryPath?: string | null;
+    /**
+     * The song; null for other kinds and after the song left the library.
+     */
+    trackId?: Guid | null;
+    /**
+     * The warnings property
+     */
+    warnings?: OrganizeWarning[] | null;
+}
+export type OrganizeItemFilter = (typeof OrganizeItemFilterObject)[keyof typeof OrganizeItemFilterObject];
+export type OrganizeItemKind = (typeof OrganizeItemKindObject)[keyof typeof OrganizeItemKindObject];
+/**
+ * One page of a collection.
+ */
+export interface OrganizeItemPage extends AdditionalDataHolder, Parsable {
+    /**
+     * Items of the page, at most limit.
+     */
+    items?: OrganizeItem[] | null;
+    /**
+     * Maximum number of items of the page, as requested.
+     */
+    limit?: number | null;
+    /**
+     * Number of items skipped before this page.
+     */
+    offset?: number | null;
+    /**
+     * Number of items of the whole collection.
+     */
+    total?: number | null;
+}
+export type OrganizeItemStatus = (typeof OrganizeItemStatusObject)[keyof typeof OrganizeItemStatusObject];
+export type OrganizeMoveStatus = (typeof OrganizeMoveStatusObject)[keyof typeof OrganizeMoveStatusObject];
+/**
+ * An organize operation: a preview, a run or an entry of the log that can be undone.
+ */
+export interface OrganizeOperation extends AdditionalDataHolder, Parsable {
+    /**
+     * Whether the operation can be undone now (UndoOrganizeOperation).
+     */
+    canUndo?: boolean | null;
+    /**
+     * Number of items with a conflict.
+     */
+    conflictItems?: number | null;
+    /**
+     * The createdAt property
+     */
+    createdAt?: Date | null;
+    /**
+     * Name for the log, e.g. the title of the own album at the time of the preview.
+     */
+    displayTitle?: string | null;
+    /**
+     * The doneItems property
+     */
+    doneItems?: number | null;
+    /**
+     * The errorCode property
+     */
+    errorCode?: OrganizeErrorCode | null;
+    /**
+     * Until when the preview can be applied.
+     */
+    expiresAt?: Date | null;
+    /**
+     * The failedItems property
+     */
+    failedItems?: number | null;
+    /**
+     * The finishedAt property
+     */
+    finishedAt?: Date | null;
+    /**
+     * The id property
+     */
+    id?: Guid | null;
+    /**
+     * What an organize operation does.
+     */
+    kind?: OrganizeOperationKind | null;
+    /**
+     * The own album that is applied; null for other kinds and after the album was deleted.
+     */
+    ownAlbumId?: Guid | null;
+    /**
+     * When the preview was ready.
+     */
+    previewedAt?: Date | null;
+    /**
+     * Whether the run leaves out items with conflicts.
+     */
+    skipConflicts?: boolean | null;
+    /**
+     * The skippedItems property
+     */
+    skippedItems?: number | null;
+    /**
+     * The media source a library operation is limited to; null for all sources.
+     */
+    sourceId?: Guid | null;
+    /**
+     * The startedAt property
+     */
+    startedAt?: Date | null;
+    /**
+     * State of an organize operation: Planning while the preview is computed, Previewed until it is applied or expires, Queued and Running while files move, then Completed, Stopped (an item failed), Canceled, Failed (nothing changed), Interrupted (the server stopped; the interrupted item was put back) or Expired (the preview was not applied in time).
+     */
+    status?: OrganizeOperationStatus | null;
+    /**
+     * The layout template of the preview.
+     */
+    template?: string | null;
+    /**
+     * The totalItems property
+     */
+    totalItems?: number | null;
+    /**
+     * The undo operation that undid this operation.
+     */
+    undoneById?: Guid | null;
+    /**
+     * The operation an undo operation undoes.
+     */
+    undoOfId?: Guid | null;
+    /**
+     * Number of items with at least one warning.
+     */
+    warningItems?: number | null;
+}
+export type OrganizeOperationKind = (typeof OrganizeOperationKindObject)[keyof typeof OrganizeOperationKindObject];
+/**
+ * One page of a collection.
+ */
+export interface OrganizeOperationPage extends AdditionalDataHolder, Parsable {
+    /**
+     * Items of the page, at most limit.
+     */
+    items?: OrganizeOperation[] | null;
+    /**
+     * Maximum number of items of the page, as requested.
+     */
+    limit?: number | null;
+    /**
+     * Number of items skipped before this page.
+     */
+    offset?: number | null;
+    /**
+     * Number of items of the whole collection.
+     */
+    total?: number | null;
+}
+export type OrganizeOperationStatus = (typeof OrganizeOperationStatusObject)[keyof typeof OrganizeOperationStatusObject];
+export type OrganizePreviewKind = (typeof OrganizePreviewKindObject)[keyof typeof OrganizePreviewKindObject];
+export type OrganizeTagField = (typeof OrganizeTagFieldObject)[keyof typeof OrganizeTagFieldObject];
+/**
+ * Values of tags of an audio file. Only the fields named in fields count; a named field without value is removed.
+ */
+export interface OrganizeTagValues extends AdditionalDataHolder, Parsable {
+    /**
+     * The album property
+     */
+    album?: string | null;
+    /**
+     * The albumArtists property
+     */
+    albumArtists?: string[] | null;
+    /**
+     * The discNumber property
+     */
+    discNumber?: number | null;
+    /**
+     * The fields property
+     */
+    fields?: OrganizeTagField[] | null;
+    /**
+     * The genres property
+     */
+    genres?: string[] | null;
+    /**
+     * The trackCount property
+     */
+    trackCount?: number | null;
+    /**
+     * The trackNumber property
+     */
+    trackNumber?: number | null;
+    /**
+     * The year property
+     */
+    year?: number | null;
+}
+export type OrganizeWarning = (typeof OrganizeWarningObject)[keyof typeof OrganizeWarningObject];
+/**
  * Settings of the organization of the media files.
  */
 export interface OrganizingSettings extends AdditionalDataHolder, Parsable {
@@ -7109,6 +7859,142 @@ export interface OrganizingSettings extends AdditionalDataHolder, Parsable {
      */
     layoutTemplate?: string | null;
 }
+/**
+ * An own album: an album the admin puts together from songs of the library. Applying it (an organize preview of kind OwnAlbum, then apply) writes its values into the tags of the audio files and moves the files by the layout template.
+ */
+export interface OwnAlbum extends AdditionalDataHolder, Parsable {
+    /**
+     * The albumArtist property
+     */
+    albumArtist?: string | null;
+    /**
+     * When the album was applied for the last time.
+     */
+    appliedAt?: Date | null;
+    /**
+     * When the cover was uploaded; also its version for caches. Null without cover.
+     */
+    coverUpdatedAt?: Date | null;
+    /**
+     * The createdAt property
+     */
+    createdAt?: Date | null;
+    /**
+     * Genre written into the songs; null keeps the genre of each song.
+     */
+    genre?: string | null;
+    /**
+     * Whether a cover was uploaded (GetOwnAlbumCover); it is written as cover.{ext} into the album folder.
+     */
+    hasCover?: boolean | null;
+    /**
+     * The id property
+     */
+    id?: Guid | null;
+    /**
+     * The album of the library its first song belongs to, once the album was applied.
+     */
+    libraryAlbumId?: Guid | null;
+    /**
+     * Number of songs taken out since the last apply; the next apply restores their original tags.
+     */
+    removedTrackCount?: number | null;
+    /**
+     * Whether an own album was applied to the files: never (Draft), applied and unchanged since (Applied), or changed since it was applied (Changed).
+     */
+    status?: OwnAlbumStatus | null;
+    /**
+     * The title property
+     */
+    title?: string | null;
+    /**
+     * Number of songs that are members.
+     */
+    trackCount?: number | null;
+    /**
+     * The updatedAt property
+     */
+    updatedAt?: Date | null;
+    /**
+     * Year written into the songs; null keeps the year of each song.
+     */
+    year?: number | null;
+}
+/**
+ * One page of a collection.
+ */
+export interface OwnAlbumPage extends AdditionalDataHolder, Parsable {
+    /**
+     * Items of the page, at most limit.
+     */
+    items?: OwnAlbum[] | null;
+    /**
+     * Maximum number of items of the page, as requested.
+     */
+    limit?: number | null;
+    /**
+     * Number of items skipped before this page.
+     */
+    offset?: number | null;
+    /**
+     * Number of items of the whole collection.
+     */
+    total?: number | null;
+}
+export type OwnAlbumSort = (typeof OwnAlbumSortObject)[keyof typeof OwnAlbumSortObject];
+export type OwnAlbumStatus = (typeof OwnAlbumStatusObject)[keyof typeof OwnAlbumStatusObject];
+/**
+ * A song of an own album.
+ */
+export interface OwnAlbumTrack extends AdditionalDataHolder, Parsable {
+    /**
+     * When the song was added.
+     */
+    addedAt?: Date | null;
+    /**
+     * Index of the song in the album, starting at 0; its track number becomes position + 1.
+     */
+    position?: number | null;
+    /**
+     * Whether a song is a member of an own album, or was taken out after the album was applied (the next apply restores its original tags).
+     */
+    state?: OwnAlbumTrackState | null;
+    /**
+     * A track of the library: all media files with the same base name in one folder.
+     */
+    track?: Track | null;
+}
+/**
+ * One page of a collection.
+ */
+export interface OwnAlbumTrackPage extends AdditionalDataHolder, Parsable {
+    /**
+     * Items of the page, at most limit.
+     */
+    items?: OwnAlbumTrack[] | null;
+    /**
+     * Maximum number of items of the page, as requested.
+     */
+    limit?: number | null;
+    /**
+     * Number of items skipped before this page.
+     */
+    offset?: number | null;
+    /**
+     * Number of items of the whole collection.
+     */
+    total?: number | null;
+}
+/**
+ * Songs for an own album, in this order. Duplicates are ignored.
+ */
+export interface OwnAlbumTracks extends AdditionalDataHolder, Parsable {
+    /**
+     * Ids of the songs; at most 1000.
+     */
+    trackIds?: Guid[] | null;
+}
+export type OwnAlbumTrackState = (typeof OwnAlbumTrackStateObject)[keyof typeof OwnAlbumTrackStateObject];
 /**
  * Whether a profile is protected by a PIN. The PIN itself is never returned.
  */
@@ -8393,6 +9279,35 @@ export function serializeCreateMediaSource(writer: SerializationWriter, createMe
 }
 /**
  * Serializes information the current object
+ * @param CreateOrganizePreview The instance to serialize from.
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeCreateOrganizePreview(writer: SerializationWriter, createOrganizePreview: Partial<CreateOrganizePreview> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!createOrganizePreview || isSerializingDerivedType) { return; }
+    writer.writeEnumValue<OrganizePreviewKind>("kind", createOrganizePreview.kind);
+    writer.writeGuidValue("ownAlbumId", createOrganizePreview.ownAlbumId);
+    writer.writeGuidValue("sourceId", createOrganizePreview.sourceId);
+    writer.writeAdditionalData(createOrganizePreview.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param CreateOwnAlbum The instance to serialize from.
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeCreateOwnAlbum(writer: SerializationWriter, createOwnAlbum: Partial<CreateOwnAlbum> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!createOwnAlbum || isSerializingDerivedType) { return; }
+    writer.writeStringValue("albumArtist", createOwnAlbum.albumArtist);
+    writer.writeStringValue("genre", createOwnAlbum.genre);
+    writer.writeStringValue("title", createOwnAlbum.title);
+    writer.writeNumberValue("year", createOwnAlbum.year);
+    writer.writeAdditionalData(createOwnAlbum.additionalData);
+}
+/**
+ * Serializes information the current object
  * @param CreatePlayHistoryEntry The instance to serialize from.
  * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
  * @param writer Serialization writer to use to serialize this model
@@ -9339,6 +10254,149 @@ export function serializeOnlineTrackMatches(writer: SerializationWriter, onlineT
 /**
  * Serializes information the current object
  * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param OrganizeAvailability The instance to serialize from.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeOrganizeAvailability(writer: SerializationWriter, organizeAvailability: Partial<OrganizeAvailability> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!organizeAvailability || isSerializingDerivedType) { return; }
+    writer.writeGuidValue("activeOperationId", organizeAvailability.activeOperationId);
+    writer.writeBooleanValue("isAvailable", organizeAvailability.isAvailable);
+    writer.writeCollectionOfObjectValues<SourceAvailability>("sources", organizeAvailability.sources, serializeSourceAvailability);
+    writer.writeAdditionalData(organizeAvailability.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param OrganizeFileMove The instance to serialize from.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeOrganizeFileMove(writer: SerializationWriter, organizeFileMove: Partial<OrganizeFileMove> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!organizeFileMove || isSerializingDerivedType) { return; }
+    writer.writeEnumValue<OrganizeFileKind>("fileKind", organizeFileMove.fileKind);
+    writer.writeStringValue("fromPath", organizeFileMove.fromPath);
+    writer.writeGuidValue("id", organizeFileMove.id);
+    writer.writeEnumValue<OrganizeMoveStatus>("status", organizeFileMove.status);
+    writer.writeStringValue("toPath", organizeFileMove.toPath);
+    writer.writeAdditionalData(organizeFileMove.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param OrganizeItem The instance to serialize from.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeOrganizeItem(writer: SerializationWriter, organizeItem: Partial<OrganizeItem> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!organizeItem || isSerializingDerivedType) { return; }
+    writer.writeEnumValue<OrganizeConflict>("conflict", organizeItem.conflict);
+    writer.writeStringValue("displayArtist", organizeItem.displayArtist);
+    writer.writeStringValue("displayTitle", organizeItem.displayTitle);
+    writer.writeStringValue("fromBaseName", organizeItem.fromBaseName);
+    writer.writeStringValue("fromDirectoryPath", organizeItem.fromDirectoryPath);
+    writer.writeGuidValue("id", organizeItem.id);
+    writer.writeEnumValue<OrganizeItemKind>("kind", organizeItem.kind);
+    writer.writeCollectionOfObjectValues<OrganizeFileMove>("moves", organizeItem.moves, serializeOrganizeFileMove);
+    writer.writeNumberValue("sequence", organizeItem.sequence);
+    writer.writeGuidValue("sourceId", organizeItem.sourceId);
+    writer.writeEnumValue<OrganizeItemStatus>("status", organizeItem.status);
+    writer.writeObjectValue<OrganizeTagValues>("tagChanges", organizeItem.tagChanges, serializeOrganizeTagValues);
+    writer.writeObjectValue<OrganizeTagValues>("tagsBefore", organizeItem.tagsBefore, serializeOrganizeTagValues);
+    writer.writeStringValue("toBaseName", organizeItem.toBaseName);
+    writer.writeStringValue("toDirectoryPath", organizeItem.toDirectoryPath);
+    writer.writeGuidValue("trackId", organizeItem.trackId);
+    if(organizeItem.warnings)
+    writer.writeCollectionOfEnumValues<OrganizeWarning>("warnings", organizeItem.warnings);
+    writer.writeAdditionalData(organizeItem.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param OrganizeItemPage The instance to serialize from.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeOrganizeItemPage(writer: SerializationWriter, organizeItemPage: Partial<OrganizeItemPage> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!organizeItemPage || isSerializingDerivedType) { return; }
+    writer.writeCollectionOfObjectValues<OrganizeItem>("items", organizeItemPage.items, serializeOrganizeItem);
+    writer.writeNumberValue("limit", organizeItemPage.limit);
+    writer.writeNumberValue("offset", organizeItemPage.offset);
+    writer.writeNumberValue("total", organizeItemPage.total);
+    writer.writeAdditionalData(organizeItemPage.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param OrganizeOperation The instance to serialize from.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeOrganizeOperation(writer: SerializationWriter, organizeOperation: Partial<OrganizeOperation> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!organizeOperation || isSerializingDerivedType) { return; }
+    writer.writeBooleanValue("canUndo", organizeOperation.canUndo);
+    writer.writeNumberValue("conflictItems", organizeOperation.conflictItems);
+    writer.writeDateValue("createdAt", organizeOperation.createdAt);
+    writer.writeStringValue("displayTitle", organizeOperation.displayTitle);
+    writer.writeNumberValue("doneItems", organizeOperation.doneItems);
+    writer.writeEnumValue<OrganizeErrorCode>("errorCode", organizeOperation.errorCode);
+    writer.writeDateValue("expiresAt", organizeOperation.expiresAt);
+    writer.writeNumberValue("failedItems", organizeOperation.failedItems);
+    writer.writeDateValue("finishedAt", organizeOperation.finishedAt);
+    writer.writeGuidValue("id", organizeOperation.id);
+    writer.writeEnumValue<OrganizeOperationKind>("kind", organizeOperation.kind);
+    writer.writeGuidValue("ownAlbumId", organizeOperation.ownAlbumId);
+    writer.writeDateValue("previewedAt", organizeOperation.previewedAt);
+    writer.writeBooleanValue("skipConflicts", organizeOperation.skipConflicts);
+    writer.writeNumberValue("skippedItems", organizeOperation.skippedItems);
+    writer.writeGuidValue("sourceId", organizeOperation.sourceId);
+    writer.writeDateValue("startedAt", organizeOperation.startedAt);
+    writer.writeEnumValue<OrganizeOperationStatus>("status", organizeOperation.status);
+    writer.writeStringValue("template", organizeOperation.template);
+    writer.writeNumberValue("totalItems", organizeOperation.totalItems);
+    writer.writeGuidValue("undoneById", organizeOperation.undoneById);
+    writer.writeGuidValue("undoOfId", organizeOperation.undoOfId);
+    writer.writeNumberValue("warningItems", organizeOperation.warningItems);
+    writer.writeAdditionalData(organizeOperation.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param OrganizeOperationPage The instance to serialize from.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeOrganizeOperationPage(writer: SerializationWriter, organizeOperationPage: Partial<OrganizeOperationPage> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!organizeOperationPage || isSerializingDerivedType) { return; }
+    writer.writeCollectionOfObjectValues<OrganizeOperation>("items", organizeOperationPage.items, serializeOrganizeOperation);
+    writer.writeNumberValue("limit", organizeOperationPage.limit);
+    writer.writeNumberValue("offset", organizeOperationPage.offset);
+    writer.writeNumberValue("total", organizeOperationPage.total);
+    writer.writeAdditionalData(organizeOperationPage.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param OrganizeTagValues The instance to serialize from.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeOrganizeTagValues(writer: SerializationWriter, organizeTagValues: Partial<OrganizeTagValues> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!organizeTagValues || isSerializingDerivedType) { return; }
+    writer.writeStringValue("album", organizeTagValues.album);
+    writer.writeCollectionOfPrimitiveValues<string>("albumArtists", organizeTagValues.albumArtists);
+    writer.writeNumberValue("discNumber", organizeTagValues.discNumber);
+    if(organizeTagValues.fields)
+    writer.writeCollectionOfEnumValues<OrganizeTagField>("fields", organizeTagValues.fields);
+    writer.writeCollectionOfPrimitiveValues<string>("genres", organizeTagValues.genres);
+    writer.writeNumberValue("trackCount", organizeTagValues.trackCount);
+    writer.writeNumberValue("trackNumber", organizeTagValues.trackNumber);
+    writer.writeNumberValue("year", organizeTagValues.year);
+    writer.writeAdditionalData(organizeTagValues.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
  * @param OrganizingSettings The instance to serialize from.
  * @param writer Serialization writer to use to serialize this model
  */
@@ -9348,6 +10406,88 @@ export function serializeOrganizingSettings(writer: SerializationWriter, organiz
     writer.writeBooleanValue("isFolderBased", organizingSettings.isFolderBased);
     writer.writeStringValue("layoutTemplate", organizingSettings.layoutTemplate);
     writer.writeAdditionalData(organizingSettings.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param OwnAlbum The instance to serialize from.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeOwnAlbum(writer: SerializationWriter, ownAlbum: Partial<OwnAlbum> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!ownAlbum || isSerializingDerivedType) { return; }
+    writer.writeStringValue("albumArtist", ownAlbum.albumArtist);
+    writer.writeDateValue("appliedAt", ownAlbum.appliedAt);
+    writer.writeDateValue("coverUpdatedAt", ownAlbum.coverUpdatedAt);
+    writer.writeDateValue("createdAt", ownAlbum.createdAt);
+    writer.writeStringValue("genre", ownAlbum.genre);
+    writer.writeBooleanValue("hasCover", ownAlbum.hasCover);
+    writer.writeGuidValue("id", ownAlbum.id);
+    writer.writeGuidValue("libraryAlbumId", ownAlbum.libraryAlbumId);
+    writer.writeNumberValue("removedTrackCount", ownAlbum.removedTrackCount);
+    writer.writeEnumValue<OwnAlbumStatus>("status", ownAlbum.status);
+    writer.writeStringValue("title", ownAlbum.title);
+    writer.writeNumberValue("trackCount", ownAlbum.trackCount);
+    writer.writeDateValue("updatedAt", ownAlbum.updatedAt);
+    writer.writeNumberValue("year", ownAlbum.year);
+    writer.writeAdditionalData(ownAlbum.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param OwnAlbumPage The instance to serialize from.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeOwnAlbumPage(writer: SerializationWriter, ownAlbumPage: Partial<OwnAlbumPage> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!ownAlbumPage || isSerializingDerivedType) { return; }
+    writer.writeCollectionOfObjectValues<OwnAlbum>("items", ownAlbumPage.items, serializeOwnAlbum);
+    writer.writeNumberValue("limit", ownAlbumPage.limit);
+    writer.writeNumberValue("offset", ownAlbumPage.offset);
+    writer.writeNumberValue("total", ownAlbumPage.total);
+    writer.writeAdditionalData(ownAlbumPage.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param OwnAlbumTrack The instance to serialize from.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeOwnAlbumTrack(writer: SerializationWriter, ownAlbumTrack: Partial<OwnAlbumTrack> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!ownAlbumTrack || isSerializingDerivedType) { return; }
+    writer.writeDateValue("addedAt", ownAlbumTrack.addedAt);
+    writer.writeNumberValue("position", ownAlbumTrack.position);
+    writer.writeEnumValue<OwnAlbumTrackState>("state", ownAlbumTrack.state);
+    writer.writeObjectValue<Track>("track", ownAlbumTrack.track, serializeTrack);
+    writer.writeAdditionalData(ownAlbumTrack.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param OwnAlbumTrackPage The instance to serialize from.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeOwnAlbumTrackPage(writer: SerializationWriter, ownAlbumTrackPage: Partial<OwnAlbumTrackPage> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!ownAlbumTrackPage || isSerializingDerivedType) { return; }
+    writer.writeCollectionOfObjectValues<OwnAlbumTrack>("items", ownAlbumTrackPage.items, serializeOwnAlbumTrack);
+    writer.writeNumberValue("limit", ownAlbumTrackPage.limit);
+    writer.writeNumberValue("offset", ownAlbumTrackPage.offset);
+    writer.writeNumberValue("total", ownAlbumTrackPage.total);
+    writer.writeAdditionalData(ownAlbumTrackPage.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param OwnAlbumTracks The instance to serialize from.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeOwnAlbumTracks(writer: SerializationWriter, ownAlbumTracks: Partial<OwnAlbumTracks> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!ownAlbumTracks || isSerializingDerivedType) { return; }
+    writer.writeCollectionOfPrimitiveValues<Guid>("trackIds", ownAlbumTracks.trackIds);
+    writer.writeAdditionalData(ownAlbumTracks.additionalData);
 }
 /**
  * Serializes information the current object
@@ -9995,6 +11135,20 @@ export function serializeSmartPlaylistTemplatePage(writer: SerializationWriter, 
     writer.writeNumberValue("offset", smartPlaylistTemplatePage.offset);
     writer.writeNumberValue("total", smartPlaylistTemplatePage.total);
     writer.writeAdditionalData(smartPlaylistTemplatePage.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param SourceAvailability The instance to serialize from.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeSourceAvailability(writer: SerializationWriter, sourceAvailability: Partial<SourceAvailability> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!sourceAvailability || isSerializingDerivedType) { return; }
+    writer.writeStringValue("name", sourceAvailability.name);
+    writer.writeGuidValue("sourceId", sourceAvailability.sourceId);
+    writer.writeEnumValue<SourceAvailabilityStatus>("status", sourceAvailability.status);
+    writer.writeAdditionalData(sourceAvailability.additionalData);
 }
 /**
  * Serializes information the current object
@@ -10757,6 +11911,21 @@ export function serializeUpdateOrganizingSettings(writer: SerializationWriter, u
 /**
  * Serializes information the current object
  * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param UpdateOwnAlbum The instance to serialize from.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeUpdateOwnAlbum(writer: SerializationWriter, updateOwnAlbum: Partial<UpdateOwnAlbum> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!updateOwnAlbum || isSerializingDerivedType) { return; }
+    writer.writeStringValue("albumArtist", updateOwnAlbum.albumArtist);
+    writer.writeStringValue("genre", updateOwnAlbum.genre);
+    writer.writeStringValue("title", updateOwnAlbum.title);
+    writer.writeNumberValue("year", updateOwnAlbum.year);
+    writer.writeAdditionalData(updateOwnAlbum.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
  * @param UpdatePlaybackState The instance to serialize from.
  * @param writer Serialization writer to use to serialize this model
  */
@@ -11370,6 +12539,24 @@ export interface SmartPlaylistTemplatePage extends AdditionalDataHolder, Parsabl
 }
 export type SmartPlaylistTrackSort = (typeof SmartPlaylistTrackSortObject)[keyof typeof SmartPlaylistTrackSortObject];
 export type SortDirection = (typeof SortDirectionObject)[keyof typeof SortDirectionObject];
+/**
+ * Whether the files of a media source can be organized.
+ */
+export interface SourceAvailability extends AdditionalDataHolder, Parsable {
+    /**
+     * The name property
+     */
+    name?: string | null;
+    /**
+     * The sourceId property
+     */
+    sourceId?: Guid | null;
+    /**
+     * Whether the files of a media source can be organized: Available, ReadOnly (the folder cannot be written, e.g. a read-only mount), Missing (the folder does not exist) or Inactive (the source is switched off).
+     */
+    status?: SourceAvailabilityStatus | null;
+}
+export type SourceAvailabilityStatus = (typeof SourceAvailabilityStatusObject)[keyof typeof SourceAvailabilityStatusObject];
 /**
  * Numbers of a whole period of the statistics.
  */
@@ -12573,6 +13760,27 @@ export interface UpdateOrganizingSettings extends AdditionalDataHolder, Parsable
     layoutTemplate?: string | null;
 }
 /**
+ * Changes an own album. Missing or null values stay unchanged; texts are trimmed. Changing an album moves no file.
+ */
+export interface UpdateOwnAlbum extends AdditionalDataHolder, Parsable {
+    /**
+     * New album artist, 1 to 512 characters.
+     */
+    albumArtist?: string | null;
+    /**
+     * New genre, at most 128 characters; empty removes it, so each song keeps its own genre.
+     */
+    genre?: string | null;
+    /**
+     * New title, 1 to 512 characters.
+     */
+    title?: string | null;
+    /**
+     * New year (1 to 9999); 0 removes it, so each song keeps its own year.
+     */
+    year?: number | null;
+}
+/**
  * The playback state of a device to save for the current profile; it replaces the saved one.
  */
 export interface UpdatePlaybackState extends AdditionalDataHolder, Parsable {
@@ -13525,6 +14733,150 @@ export const OnlineCoverSizeObject = {
     Large: "Large",
 } as const;
 /**
+ * Why the item cannot run; null without conflict.
+ */
+export const OrganizeConflictObject = {
+    Target_exists: "target_exists",
+    Duplicate_target: "duplicate_target",
+    Path_too_long: "path_too_long",
+    Unsafe_path: "unsafe_path",
+    Source_missing: "source_missing",
+    Not_writable: "not_writable",
+    No_audio: "no_audio",
+    Source_inactive: "source_inactive",
+    Cover_exists: "cover_exists",
+    Changed_since: "changed_since",
+} as const;
+/**
+ * Why the operation failed or stopped.
+ */
+export const OrganizeErrorCodeObject = {
+    Unexpected: "unexpected",
+    Item_failed: "item_failed",
+    Interrupted: "interrupted",
+    Media_read_only: "media_read_only",
+} as const;
+/**
+ * Kind of a file an organize operation moves; AlbumCover is the cover of an own album written from the server.
+ */
+export const OrganizeFileKindObject = {
+    Audio: "Audio",
+    Video: "Video",
+    Image: "Image",
+    Lyrics: "Lyrics",
+    AlbumCover: "AlbumCover",
+} as const;
+/**
+ * Which items of an organize operation are listed: all, those with a conflict, or those with a warning.
+ */
+export const OrganizeItemFilterObject = {
+    All: "All",
+    Conflicts: "Conflicts",
+    Warnings: "Warnings",
+} as const;
+/**
+ * What an item of an organize operation changes: the files and tags of a song, the cover of an own album in its album folder, or the files of a folder without a song (e.g. its cover) that follow its songs.
+ */
+export const OrganizeItemKindObject = {
+    Track: "Track",
+    AlbumCover: "AlbumCover",
+    FolderFiles: "FolderFiles",
+} as const;
+/**
+ * State of an item of an organize operation.
+ */
+export const OrganizeItemStatusObject = {
+    Pending: "Pending",
+    Conflict: "Conflict",
+    Running: "Running",
+    Done: "Done",
+    Skipped: "Skipped",
+    Failed: "Failed",
+    RolledBack: "RolledBack",
+} as const;
+/**
+ * State of one file move of an organize operation.
+ */
+export const OrganizeMoveStatusObject = {
+    Pending: "Pending",
+    Moved: "Moved",
+    RolledBack: "RolledBack",
+} as const;
+/**
+ * What an organize operation does.
+ */
+export const OrganizeOperationKindObject = {
+    OwnAlbum: "OwnAlbum",
+    Library: "Library",
+    Undo: "Undo",
+} as const;
+/**
+ * State of an organize operation: Planning while the preview is computed, Previewed until it is applied or expires, Queued and Running while files move, then Completed, Stopped (an item failed), Canceled, Failed (nothing changed), Interrupted (the server stopped; the interrupted item was put back) or Expired (the preview was not applied in time).
+ */
+export const OrganizeOperationStatusObject = {
+    Planning: "Planning",
+    Previewed: "Previewed",
+    Queued: "Queued",
+    Running: "Running",
+    Completed: "Completed",
+    Stopped: "Stopped",
+    Canceled: "Canceled",
+    Failed: "Failed",
+    Interrupted: "Interrupted",
+    Expired: "Expired",
+} as const;
+/**
+ * What to organize.
+ */
+export const OrganizePreviewKindObject = {
+    OwnAlbum: "OwnAlbum",
+    Library: "Library",
+} as const;
+/**
+ * A tag an organize operation writes into an audio file.
+ */
+export const OrganizeTagFieldObject = {
+    Album: "Album",
+    AlbumArtist: "AlbumArtist",
+    TrackNumber: "TrackNumber",
+    TrackCount: "TrackCount",
+    DiscNumber: "DiscNumber",
+    Year: "Year",
+    Genre: "Genre",
+} as const;
+/**
+ * Something to check in an item of an organize operation; the item still runs. Clients translate it.
+ */
+export const OrganizeWarningObject = {
+    Metadata_changes: "metadata_changes",
+    Album_merges: "album_merges",
+    Cover_not_written: "cover_not_written",
+    Other_cover_exists: "other_cover_exists",
+    Tags_changed_since: "tags_changed_since",
+} as const;
+/**
+ * Sort key of the own albums; ties are sorted by id.
+ */
+export const OwnAlbumSortObject = {
+    Title: "Title",
+    UpdatedAt: "UpdatedAt",
+} as const;
+/**
+ * Whether an own album was applied to the files: never (Draft), applied and unchanged since (Applied), or changed since it was applied (Changed).
+ */
+export const OwnAlbumStatusObject = {
+    Draft: "Draft",
+    Applied: "Applied",
+    Changed: "Changed",
+} as const;
+/**
+ * Whether a song is a member of an own album, or was taken out after the album was applied (the next apply restores its original tags).
+ */
+export const OwnAlbumTrackStateObject = {
+    Member: "Member",
+    Removed: "Removed",
+} as const;
+/**
  * Direct play or transcoding.
  */
 export const PlaybackMethodObject = {
@@ -13663,6 +15015,17 @@ export const ProblemCodeObject = {
     VideoToo_large: "video.too_large",
     VideoUnsupported_format: "video.unsupported_format",
     VideoUnreadable: "video.unreadable",
+    OrganizeOwn_album_not_found: "organize.own_album_not_found",
+    OrganizeOwn_album_empty: "organize.own_album_empty",
+    OrganizeTrack_in_other_own_album: "organize.track_in_other_own_album",
+    OrganizeOwn_album_too_many_tracks: "organize.own_album_too_many_tracks",
+    OrganizeOperation_not_found: "organize.operation_not_found",
+    OrganizeMedia_read_only: "organize.media_read_only",
+    OrganizeTemplate_invalid: "organize.template_invalid",
+    OrganizeBusy: "organize.busy",
+    OrganizeNot_undoable: "organize.not_undoable",
+    OrganizeAlready_undone: "organize.already_undone",
+    OrganizeNot_preview: "organize.not_preview",
 } as const;
 /**
  * How the period of a recap was chosen. The days of a shared recap are fixed when it is shared.
@@ -13805,6 +15168,15 @@ export const SmartPlaylistTrackSortObject = {
 export const SortDirectionObject = {
     Asc: "Asc",
     Desc: "Desc",
+} as const;
+/**
+ * Whether the files of a media source can be organized: Available, ReadOnly (the folder cannot be written, e.g. a read-only mount), Missing (the folder does not exist) or Inactive (the source is switched off).
+ */
+export const SourceAvailabilityStatusObject = {
+    Available: "Available",
+    ReadOnly: "ReadOnly",
+    Missing: "Missing",
+    Inactive: "Inactive",
 } as const;
 /**
  * The file as it is (direct play) or an HLS stream of the sound (transcoding).

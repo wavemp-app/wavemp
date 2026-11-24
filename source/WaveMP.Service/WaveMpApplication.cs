@@ -152,6 +152,7 @@ public static class WaveMpApplication
         await app.Services.InitializeWaveMpSettingsAsync(cancellationToken);
         await app.Services.InitializeWaveMpCacheAsync(cancellationToken);
         await app.Services.InitializeWaveMpPlaylistsAsync(cancellationToken);
+        await app.Services.InitializeWaveMpOrganizingAsync(cancellationToken);
         await app.Services.InitializeWaveMpOnlineMetadataAsync(cancellationToken);
         await app.Services.InitializeWaveMpAvatarsAsync(cancellationToken);
         await app.Services.InitializeWaveMpArtistPicturesAsync(cancellationToken);

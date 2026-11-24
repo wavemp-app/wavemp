@@ -32,6 +32,8 @@ import { OnlineReleasesRequestBuilderNavigationMetadata, type OnlineReleasesRequ
 // @ts-ignore
 import { OrganizeRequestBuilderNavigationMetadata, type OrganizeRequestBuilder } from './organize/index.js';
 // @ts-ignore
+import { OwnAlbumsRequestBuilderNavigationMetadata, OwnAlbumsRequestBuilderRequestsMetadata, type OwnAlbumsRequestBuilder } from './ownAlbums/index.js';
+// @ts-ignore
 import { ProfilesRequestBuilderRequestsMetadata, type ProfilesRequestBuilder } from './profiles/index.js';
 // @ts-ignore
 import { RecapSharesRequestBuilderNavigationMetadata, RecapSharesRequestBuilderRequestsMetadata, type RecapSharesRequestBuilder } from './recapShares/index.js';
@@ -128,6 +130,10 @@ export interface V1RequestBuilder extends BaseRequestBuilder<V1RequestBuilder> {
      * The organize property
      */
     get organize(): OrganizeRequestBuilder;
+    /**
+     * The ownAlbums property
+     */
+    get ownAlbums(): OwnAlbumsRequestBuilder;
     /**
      * The profiles property
      */
@@ -247,6 +253,10 @@ export const V1RequestBuilderNavigationMetadata: Record<Exclude<keyof V1RequestB
     },
     organize: {
         navigationMetadata: OrganizeRequestBuilderNavigationMetadata,
+    },
+    ownAlbums: {
+        requestsMetadata: OwnAlbumsRequestBuilderRequestsMetadata,
+        navigationMetadata: OwnAlbumsRequestBuilderNavigationMetadata,
     },
     profiles: {
         requestsMetadata: ProfilesRequestBuilderRequestsMetadata,
