@@ -153,7 +153,10 @@ public static class FolderProcessor
         };
     }
 
-    internal static MediaTags ToMediaTags(MediaFileTags tags)
+    /// <summary>
+    /// The tags of a file as stored in the library, in the form the metadata resolver reads.
+    /// </summary>
+    public static MediaTags ToMediaTags(MediaFileTags tags)
     {
         return new MediaTags
         {

@@ -73,6 +73,16 @@ public class WaveMpDbContext(DbContextOptions<WaveMpDbContext> options) : DbCont
 
     public DbSet<RecapShare> RecapShares => Set<RecapShare>();
 
+    public DbSet<OwnAlbum> OwnAlbums => Set<OwnAlbum>();
+
+    public DbSet<OwnAlbumTrack> OwnAlbumTracks => Set<OwnAlbumTrack>();
+
+    public DbSet<OrganizeOperation> OrganizeOperations => Set<OrganizeOperation>();
+
+    public DbSet<OrganizeItem> OrganizeItems => Set<OrganizeItem>();
+
+    public DbSet<OrganizeFileMove> OrganizeFileMoves => Set<OrganizeFileMove>();
+
     /// <summary>
     /// PostgreSQL extension of the fault-tolerant library search (trigrams). It is part of the official image and
     /// trusted since PostgreSQL 13, so the owner of the database can create it.
@@ -118,5 +128,10 @@ public class WaveMpDbContext(DbContextOptions<WaveMpDbContext> options) : DbCont
         modelBuilder.ApplyConfiguration(new LibraryIssueConfiguration());
         modelBuilder.ApplyConfiguration(new LibraryCheckConfiguration());
         modelBuilder.ApplyConfiguration(new RecapShareConfiguration());
+        modelBuilder.ApplyConfiguration(new OwnAlbumConfiguration());
+        modelBuilder.ApplyConfiguration(new OwnAlbumTrackConfiguration());
+        modelBuilder.ApplyConfiguration(new OrganizeOperationConfiguration());
+        modelBuilder.ApplyConfiguration(new OrganizeItemConfiguration());
+        modelBuilder.ApplyConfiguration(new OrganizeFileMoveConfiguration());
     }
 }

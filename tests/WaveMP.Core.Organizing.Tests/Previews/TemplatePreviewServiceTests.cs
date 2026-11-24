@@ -1,5 +1,4 @@
 using AwesomeAssertions;
-using Microsoft.Extensions.Options;
 using NSubstitute;
 using WaveMP.Core.Organizing.Previews;
 using WaveMP.Core.Organizing.Templates;
@@ -38,7 +37,9 @@ public class TemplatePreviewServiceTests
         _repository.GetSampleTemplateSongsAsync(Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns([_song]);
         _repository.GetTemplateSongsAsync(Arg.Any<IReadOnlyList<Guid>>(), Arg.Any<CancellationToken>())
             .Returns([_song]);
-        _service = new TemplatePreviewService(_repository, Options.Create(new ScanOptions()));
+        _service = new TemplatePreviewService(
+            _repository,
+            Microsoft.Extensions.Options.Options.Create(new ScanOptions()));
     }
 
     [Test]

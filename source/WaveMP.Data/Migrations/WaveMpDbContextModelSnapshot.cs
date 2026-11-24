@@ -958,6 +958,453 @@ namespace WaveMP.Data.Migrations
                         });
                 });
 
+            modelBuilder.Entity("WaveMP.Data.Entities.OrganizeFileMove", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("FileKind")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("file_kind");
+
+                    b.Property<string>("FromPath")
+                        .HasColumnType("text")
+                        .HasColumnName("from_path");
+
+                    b.Property<Guid>("ItemId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("item_id");
+
+                    b.Property<Guid?>("MediaFileId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("media_file_id");
+
+                    b.Property<DateTimeOffset>("ModifiedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("modified_at");
+
+                    b.Property<int>("Sequence")
+                        .HasColumnType("integer")
+                        .HasColumnName("sequence");
+
+                    b.Property<long>("Size")
+                        .HasColumnType("bigint")
+                        .HasColumnName("size");
+
+                    b.Property<Guid>("SourceId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("source_id");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("status");
+
+                    b.Property<string>("TempPath")
+                        .HasColumnType("text")
+                        .HasColumnName("temp_path");
+
+                    b.Property<string>("ToPath")
+                        .HasColumnType("text")
+                        .HasColumnName("to_path");
+
+                    b.HasKey("Id")
+                        .HasName("pk_organize_file_moves");
+
+                    b.HasIndex("MediaFileId")
+                        .HasDatabaseName("ix_organize_file_moves_media_file_id");
+
+                    b.HasIndex("ItemId", "Sequence")
+                        .HasDatabaseName("ix_organize_file_moves_item_id_sequence");
+
+                    b.ToTable("organize_file_moves", (string)null);
+                });
+
+            modelBuilder.Entity("WaveMP.Data.Entities.OrganizeItem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Conflict")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("conflict");
+
+                    b.PrimitiveCollection<List<string>>("CreatedFolders")
+                        .IsRequired()
+                        .HasColumnType("text[]")
+                        .HasColumnName("created_folders");
+
+                    b.Property<string>("DisplayArtist")
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)")
+                        .HasColumnName("display_artist");
+
+                    b.Property<string>("DisplayTitle")
+                        .IsRequired()
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)")
+                        .HasColumnName("display_title");
+
+                    b.Property<DateTimeOffset?>("FinishedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("finished_at");
+
+                    b.Property<string>("FromBaseName")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("from_base_name");
+
+                    b.Property<string>("FromDirectoryPath")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("from_directory_path");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("kind");
+
+                    b.Property<Guid>("OperationId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("operation_id");
+
+                    b.PrimitiveCollection<List<string>>("RemovedFolders")
+                        .IsRequired()
+                        .HasColumnType("text[]")
+                        .HasColumnName("removed_folders");
+
+                    b.Property<int>("Sequence")
+                        .HasColumnType("integer")
+                        .HasColumnName("sequence");
+
+                    b.Property<Guid>("SourceId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("source_id");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("status");
+
+                    b.Property<Guid?>("TagBackupId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tag_backup_id");
+
+                    b.Property<string>("TagChanges")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("tag_changes");
+
+                    b.Property<string>("TagsBefore")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("tags_before");
+
+                    b.Property<string>("ToBaseName")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("to_base_name");
+
+                    b.Property<string>("ToDirectoryPath")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("to_directory_path");
+
+                    b.Property<Guid?>("TrackId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("track_id");
+
+                    b.Property<Guid?>("UndoOfItemId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("undo_of_item_id");
+
+                    b.PrimitiveCollection<string[]>("Warnings")
+                        .IsRequired()
+                        .HasColumnType("text[]")
+                        .HasColumnName("warnings");
+
+                    b.HasKey("Id")
+                        .HasName("pk_organize_items");
+
+                    b.HasIndex("TagBackupId")
+                        .HasDatabaseName("ix_organize_items_tag_backup_id");
+
+                    b.HasIndex("TrackId")
+                        .HasDatabaseName("ix_organize_items_track_id");
+
+                    b.HasIndex("UndoOfItemId")
+                        .HasDatabaseName("ix_organize_items_undo_of_item_id");
+
+                    b.HasIndex("OperationId", "Sequence")
+                        .HasDatabaseName("ix_organize_items_operation_id_sequence");
+
+                    b.HasIndex("OperationId", "Status")
+                        .HasDatabaseName("ix_organize_items_operation_id_status");
+
+                    b.ToTable("organize_items", (string)null);
+                });
+
+            modelBuilder.Entity("WaveMP.Data.Entities.OrganizeOperation", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset?>("CancelRequestedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("cancel_requested_at");
+
+                    b.Property<int>("ConflictItems")
+                        .HasColumnType("integer")
+                        .HasColumnName("conflict_items");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<string>("DisplayTitle")
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)")
+                        .HasColumnName("display_title");
+
+                    b.Property<int>("DoneItems")
+                        .HasColumnType("integer")
+                        .HasColumnName("done_items");
+
+                    b.Property<string>("ErrorCode")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("error_code");
+
+                    b.Property<DateTimeOffset?>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("expires_at");
+
+                    b.Property<int>("FailedItems")
+                        .HasColumnType("integer")
+                        .HasColumnName("failed_items");
+
+                    b.Property<DateTimeOffset?>("FinishedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("finished_at");
+
+                    b.Property<Guid?>("JobRunId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("job_run_id");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("kind");
+
+                    b.Property<Guid?>("OwnAlbumId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("own_album_id");
+
+                    b.Property<DateTimeOffset?>("PreviewedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("previewed_at");
+
+                    b.Property<bool>("SkipConflicts")
+                        .HasColumnType("boolean")
+                        .HasColumnName("skip_conflicts");
+
+                    b.Property<int>("SkippedItems")
+                        .HasColumnType("integer")
+                        .HasColumnName("skipped_items");
+
+                    b.Property<Guid?>("SourceId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("source_id");
+
+                    b.Property<DateTimeOffset?>("StartedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("started_at");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("status");
+
+                    b.Property<string>("Template")
+                        .IsRequired()
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)")
+                        .HasColumnName("template");
+
+                    b.Property<int>("TotalItems")
+                        .HasColumnType("integer")
+                        .HasColumnName("total_items");
+
+                    b.Property<Guid?>("UndoOfId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("undo_of_id");
+
+                    b.Property<Guid?>("UndoneById")
+                        .HasColumnType("uuid")
+                        .HasColumnName("undone_by_id");
+
+                    b.Property<int>("WarningItems")
+                        .HasColumnType("integer")
+                        .HasColumnName("warning_items");
+
+                    b.HasKey("Id")
+                        .HasName("pk_organize_operations");
+
+                    b.HasIndex("CreatedAt")
+                        .IsDescending()
+                        .HasDatabaseName("ix_organize_operations_created_at");
+
+                    b.HasIndex("CreatedByUserId")
+                        .HasDatabaseName("ix_organize_operations_created_by_user_id");
+
+                    b.HasIndex("OwnAlbumId")
+                        .HasDatabaseName("ix_organize_operations_own_album_id");
+
+                    b.HasIndex("SourceId")
+                        .HasDatabaseName("ix_organize_operations_source_id");
+
+                    b.HasIndex("Status")
+                        .HasDatabaseName("ix_organize_operations_status");
+
+                    b.HasIndex("UndoOfId")
+                        .HasDatabaseName("ix_organize_operations_undo_of_id");
+
+                    b.HasIndex("UndoneById")
+                        .HasDatabaseName("ix_organize_operations_undone_by_id");
+
+                    b.ToTable("organize_operations", (string)null);
+                });
+
+            modelBuilder.Entity("WaveMP.Data.Entities.OwnAlbum", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("AlbumArtist")
+                        .IsRequired()
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)")
+                        .HasColumnName("album_artist");
+
+                    b.Property<DateTimeOffset?>("AppliedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("applied_at");
+
+                    b.Property<string>("CoverContentType")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("cover_content_type");
+
+                    b.Property<string>("CoverFileName")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)")
+                        .HasColumnName("cover_file_name");
+
+                    b.Property<DateTimeOffset?>("CoverUpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("cover_updated_at");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<string>("Genre")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)")
+                        .HasColumnName("genre");
+
+                    b.Property<string>("NormalizedTitle")
+                        .IsRequired()
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)")
+                        .HasColumnName("normalized_title");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)")
+                        .HasColumnName("title");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<int?>("Year")
+                        .HasColumnType("integer")
+                        .HasColumnName("year");
+
+                    b.HasKey("Id")
+                        .HasName("pk_own_albums");
+
+                    b.HasIndex("CreatedByUserId")
+                        .HasDatabaseName("ix_own_albums_created_by_user_id");
+
+                    b.HasIndex("NormalizedTitle", "Id")
+                        .HasDatabaseName("ix_own_albums_normalized_title_id");
+
+                    b.ToTable("own_albums", (string)null);
+                });
+
+            modelBuilder.Entity("WaveMP.Data.Entities.OwnAlbumTrack", b =>
+                {
+                    b.Property<Guid>("OwnAlbumId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("own_album_id");
+
+                    b.Property<Guid>("TrackId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("track_id");
+
+                    b.Property<DateTimeOffset>("AddedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("added_at");
+
+                    b.Property<Guid?>("OriginalTagBackupId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("original_tag_backup_id");
+
+                    b.Property<int>("Position")
+                        .HasColumnType("integer")
+                        .HasColumnName("position");
+
+                    b.Property<string>("State")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("state");
+
+                    b.HasKey("OwnAlbumId", "TrackId")
+                        .HasName("pk_own_album_tracks");
+
+                    b.HasIndex("OriginalTagBackupId")
+                        .HasDatabaseName("ix_own_album_tracks_original_tag_backup_id");
+
+                    b.HasIndex("TrackId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_own_album_tracks_track_id")
+                        .HasFilter("state = 'Member'");
+
+                    b.ToTable("own_album_tracks", (string)null);
+                });
+
             modelBuilder.Entity("WaveMP.Data.Entities.PlayHistoryEntry", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2209,6 +2656,139 @@ namespace WaveMP.Data.Migrations
                     b.Navigation("Track");
                 });
 
+            modelBuilder.Entity("WaveMP.Data.Entities.OrganizeFileMove", b =>
+                {
+                    b.HasOne("WaveMP.Data.Entities.OrganizeItem", "Item")
+                        .WithMany("Moves")
+                        .HasForeignKey("ItemId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_organize_file_moves_organize_items_item_id");
+
+                    b.HasOne("WaveMP.Data.Entities.MediaFile", "MediaFile")
+                        .WithMany()
+                        .HasForeignKey("MediaFileId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_organize_file_moves_media_files_media_file_id");
+
+                    b.Navigation("Item");
+
+                    b.Navigation("MediaFile");
+                });
+
+            modelBuilder.Entity("WaveMP.Data.Entities.OrganizeItem", b =>
+                {
+                    b.HasOne("WaveMP.Data.Entities.OrganizeOperation", "Operation")
+                        .WithMany("Items")
+                        .HasForeignKey("OperationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_organize_items_organize_operations_operation_id");
+
+                    b.HasOne("WaveMP.Data.Entities.TagBackup", "TagBackup")
+                        .WithMany()
+                        .HasForeignKey("TagBackupId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_organize_items_tag_backups_tag_backup_id");
+
+                    b.HasOne("WaveMP.Data.Entities.Track", "Track")
+                        .WithMany()
+                        .HasForeignKey("TrackId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_organize_items_tracks_track_id");
+
+                    b.HasOne("WaveMP.Data.Entities.OrganizeItem", null)
+                        .WithMany()
+                        .HasForeignKey("UndoOfItemId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_organize_items_organize_items_undo_of_item_id");
+
+                    b.Navigation("Operation");
+
+                    b.Navigation("TagBackup");
+
+                    b.Navigation("Track");
+                });
+
+            modelBuilder.Entity("WaveMP.Data.Entities.OrganizeOperation", b =>
+                {
+                    b.HasOne("WaveMP.Data.Entities.User", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_organize_operations_users_created_by_user_id");
+
+                    b.HasOne("WaveMP.Data.Entities.OwnAlbum", "OwnAlbum")
+                        .WithMany()
+                        .HasForeignKey("OwnAlbumId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_organize_operations_own_albums_own_album_id");
+
+                    b.HasOne("WaveMP.Data.Entities.MediaSource", null)
+                        .WithMany()
+                        .HasForeignKey("SourceId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_organize_operations_media_sources_source_id");
+
+                    b.HasOne("WaveMP.Data.Entities.OrganizeOperation", "UndoOf")
+                        .WithMany()
+                        .HasForeignKey("UndoOfId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_organize_operations_organize_operations_undo_of_id");
+
+                    b.HasOne("WaveMP.Data.Entities.OrganizeOperation", null)
+                        .WithMany()
+                        .HasForeignKey("UndoneById")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_organize_operations_organize_operations_undone_by_id");
+
+                    b.Navigation("CreatedBy");
+
+                    b.Navigation("OwnAlbum");
+
+                    b.Navigation("UndoOf");
+                });
+
+            modelBuilder.Entity("WaveMP.Data.Entities.OwnAlbum", b =>
+                {
+                    b.HasOne("WaveMP.Data.Entities.User", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_own_albums_users_created_by_user_id");
+
+                    b.Navigation("CreatedBy");
+                });
+
+            modelBuilder.Entity("WaveMP.Data.Entities.OwnAlbumTrack", b =>
+                {
+                    b.HasOne("WaveMP.Data.Entities.TagBackup", "OriginalTagBackup")
+                        .WithMany()
+                        .HasForeignKey("OriginalTagBackupId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_own_album_tracks_tag_backups_original_tag_backup_id");
+
+                    b.HasOne("WaveMP.Data.Entities.OwnAlbum", "OwnAlbum")
+                        .WithMany("Tracks")
+                        .HasForeignKey("OwnAlbumId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_own_album_tracks_own_albums_own_album_id");
+
+                    b.HasOne("WaveMP.Data.Entities.Track", "Track")
+                        .WithMany()
+                        .HasForeignKey("TrackId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_own_album_tracks_tracks_track_id");
+
+                    b.Navigation("OriginalTagBackup");
+
+                    b.Navigation("OwnAlbum");
+
+                    b.Navigation("Track");
+                });
+
             modelBuilder.Entity("WaveMP.Data.Entities.PlayHistoryEntry", b =>
                 {
                     b.HasOne("WaveMP.Data.Entities.Track", "Track")
@@ -2449,6 +3029,21 @@ namespace WaveMP.Data.Migrations
             modelBuilder.Entity("WaveMP.Data.Entities.Artist", b =>
                 {
                     b.Navigation("Pictures");
+                });
+
+            modelBuilder.Entity("WaveMP.Data.Entities.OrganizeItem", b =>
+                {
+                    b.Navigation("Moves");
+                });
+
+            modelBuilder.Entity("WaveMP.Data.Entities.OrganizeOperation", b =>
+                {
+                    b.Navigation("Items");
+                });
+
+            modelBuilder.Entity("WaveMP.Data.Entities.OwnAlbum", b =>
+                {
+                    b.Navigation("Tracks");
                 });
 
             modelBuilder.Entity("WaveMP.Data.Entities.Playlist", b =>
