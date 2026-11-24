@@ -28,6 +28,7 @@ export interface ListGroup<Row extends ListRowBase> {
 
 <script setup lang="ts" generic="Row extends ListRowBase">
 import { computed, nextTick, useId, watch } from 'vue'
+import BaseIcon from './BaseIcon.vue'
 import { isMenuKey } from './menu'
 import {
     choose,
@@ -63,8 +64,25 @@ const props = withDefaults(
          * Shift with a click or an arrow key selects a range, Ctrl+A selects all rows.
          */
         multiSelect?: boolean
+        /**
+         * The headings of the groups are buttons (btn-group-jump) that open the overview of the
+         * groups (group-jump), for lists with at least two groups. The overview is open while
+         * groupJumpOpen is set (aria-expanded).
+         */
+        groupJump?: boolean
+        groupJumpOpen?: boolean
+        /** Tooltip of the headings that open the overview. */
+        groupJumpHint?: string
     }>(),
-    { state: undefined, rowMenu: false, activateOnTap: false, multiSelect: false },
+    {
+        state: undefined,
+        rowMenu: false,
+        activateOnTap: false,
+        multiSelect: false,
+        groupJump: false,
+        groupJumpOpen: false,
+        groupJumpHint: undefined,
+    },
 )
 
 const emit = defineEmits<{
@@ -72,6 +90,8 @@ const emit = defineEmits<{
     'row-menu': [rowId: string, x: number, y: number]
     /** Double click, Enter or (with activateOnTap) a tap on a touch screen. */
     'row-activate': [rowId: string]
+    /** The heading of a group was chosen: open the overview of the groups. */
+    'group-jump': [position: number | undefined, opener: HTMLElement]
 }>()
 
 defineSlots<{
@@ -180,6 +200,19 @@ function onClick(event: MouseEvent, rowId: string): void {
 function onMousedown(event: MouseEvent): void {
     if (props.multiSelect && selectionMode(event) !== 'only') {
         event.preventDefault()
+    }
+}
+
+function openGroupJump(event: MouseEvent, group: ListGroup<Row>): void {
+    emit('group-jump', group.position, event.currentTarget as HTMLElement)
+}
+
+/** The arrow down key moves from the heading of a group to its first row. */
+function onGroupJumpKeydown(event: KeyboardEvent, group: ListGroup<Row>): void {
+    const first = group.rows[0]
+    if (event.key === 'ArrowDown' && first) {
+        event.preventDefault()
+        select(first.id, 'only', true)
     }
 }
 
@@ -300,7 +333,21 @@ function onKeydown(event: KeyboardEvent, rowId: string): void {
                     role="rowheader"
                     :aria-colspan="columns.length"
                 >
-                    {{ group.title }}
+                    <button
+                        v-if="groupJump"
+                        type="button"
+                        data-part="btn-group-jump"
+                        tabindex="-1"
+                        aria-haspopup="dialog"
+                        :aria-expanded="groupJumpOpen ? 'true' : 'false'"
+                        :title="groupJumpHint"
+                        @click="openGroupJump($event, group)"
+                        @keydown="onGroupJumpKeydown($event, group)"
+                    >
+                        <span data-part="label">{{ group.title }}</span>
+                        <BaseIcon name="group-jump" />
+                    </button>
+                    <template v-else>{{ group.title }}</template>
                 </span>
             </div>
             <div v-if="$slots['group-info']" data-part="list-group-info" role="row">

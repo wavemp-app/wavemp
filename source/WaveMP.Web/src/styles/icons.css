@@ -187,6 +187,10 @@
         --_icon: var(--wmp-icon-has-video);
     }
 
+    [data-icon='group-jump'] {
+        --_icon: var(--wmp-icon-group-jump);
+    }
+
     [data-icon='info'] {
         --_icon: var(--wmp-icon-info);
     }

@@ -371,6 +371,45 @@ describe('AlbumView', () => {
         expect(usePageTitleStore().title).toBeNull()
     })
 
+    it('offers the jump between the discs of an album with several discs', async () => {
+        api.getAlbum.mockResolvedValue({ id: 'first', title: 'First Album', artist: alpha })
+        api.listAlbumTracks.mockResolvedValue({
+            items: [
+                track('One', { discNumber: 1 }),
+                track('Two', { discNumber: 1 }),
+                track('Three', { discNumber: 2 }),
+            ],
+            total: 3,
+        })
+
+        const { wrapper } = await mountView(AlbumView, '/library/albums/first', { id: 'first' })
+        const buttons = wrapper.findAll(
+            '[data-part="list-group-title"] [data-part="btn-group-jump"]',
+        )
+        expect(buttons.map((button) => button.text())).toEqual(['Disc 1', 'Disc 2'])
+
+        await buttons[1]!.trigger('click')
+        await flushPromises()
+        const tiles = wrapper.findAll('[data-part="group-overview"] [data-part="group-tile"]')
+        expect(tiles.map((tile) => tile.attributes('data-kind'))).toEqual(['disc', 'disc'])
+        expect(tiles.map((tile) => tile.get('[data-part="group-tile-count"]').text())).toEqual([
+            'Songs: 2',
+            'Songs: 1',
+        ])
+        expect(tiles[1]!.attributes('aria-current')).toBe('true')
+        wrapper.unmount()
+    })
+
+    it('keeps the heading of an album with one disc plain', async () => {
+        api.getAlbum.mockResolvedValue({ id: 'first', title: 'First Album', artist: alpha })
+        api.listAlbumTracks.mockResolvedValue({ items: [track('One'), track('Two')], total: 2 })
+
+        const { wrapper } = await mountView(AlbumView, '/library/albums/first', { id: 'first' })
+        expect(wrapper.find('[data-part="btn-group-jump"]').exists()).toBe(false)
+        expect(wrapper.find('[data-part="group-overview"]').exists()).toBe(false)
+        wrapper.unmount()
+    })
+
     it('leads from an album opened directly back to the albums', async () => {
         api.getAlbum.mockResolvedValue({ id: 'first', title: 'First Album', artist: alpha })
         api.listAlbumTracks.mockResolvedValue({ items: [track('One')], total: 1 })

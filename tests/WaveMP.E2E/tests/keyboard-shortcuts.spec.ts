@@ -138,7 +138,10 @@ test.describe('keyboard shortcuts', () => {
         await expect(overview.locator("[data-part='dialog-title']")).toHaveText(
             'Keyboard shortcuts',
         )
-        await expect(overview.locator("[data-part='shortcut-item']")).toHaveCount(13)
+        await expect(overview.locator("[data-part='shortcut-item']")).toHaveCount(14)
+        await expect(
+            overview.locator("[data-part='shortcut-item'][data-item='group-overview']"),
+        ).toContainText('Jump to a group')
         await expect(
             overview.locator("[data-part='shortcut-item'][data-item='mute'] [data-part='shortcut-key']"),
         ).toHaveText('M')

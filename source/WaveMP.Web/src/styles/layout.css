@@ -363,5 +363,44 @@
         [data-part='list'][data-state~='ungrouped'] [data-part='list-group-rows'] {
             grid-column: 1 / -1;
         }
+
+        /*
+         * The overview of the groups is a pane in the middle of the screen over the dimmed page,
+         * with the letters in one row under its header.
+         */
+        [data-part='group-overview'] {
+            inline-size: min(56rem, calc(100vw - 4rem));
+            block-size: min(44rem, calc(100dvh - 4rem));
+            margin: auto;
+            padding: 0;
+            border: 1px solid var(--wmp-color-border);
+            border-radius: var(--wmp-radius-l);
+            box-shadow: 0 1rem 3rem rgb(0 0 0 / 30%);
+        }
+
+        [data-part='group-overview'][open] {
+            grid-template-areas:
+                'header'
+                'letters'
+                'grid';
+            grid-template-columns: minmax(0, 1fr);
+            grid-template-rows: auto auto minmax(0, 1fr);
+        }
+
+        [data-part='letter-bar'] {
+            flex-direction: row;
+            gap: 0.125rem;
+            inline-size: auto;
+            overflow: visible;
+            padding: var(--wmp-space-xs) var(--wmp-space-l);
+            border-inline-start: 0;
+            border-block-end: 1px solid var(--wmp-color-border);
+        }
+
+        [data-part='letter'] {
+            flex: 1 1 0;
+            min-inline-size: 0;
+            block-size: var(--wmp-letter-bar-size);
+        }
     }
 }

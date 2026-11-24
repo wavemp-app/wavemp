@@ -108,6 +108,7 @@ export const parts = [
     'tile-group',
     'tile-group-header',
     'tile-group-title',
+    'btn-group-jump',
     'tile-list',
     'tile-item',
     'tile',
@@ -125,6 +126,18 @@ export const parts = [
     'file-item',
     'file-path',
     'file-meta',
+
+    // Overview of the groups of a list (quick jump)
+    'group-overview',
+    'group-overview-header',
+    'group-overview-title',
+    'letter-bar',
+    'letter',
+    'group-grid',
+    'group-item',
+    'group-tile',
+    'group-tile-detail',
+    'group-tile-count',
 
     // Artist pictures
     'artist-collage',

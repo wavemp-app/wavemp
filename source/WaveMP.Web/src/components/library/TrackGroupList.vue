@@ -47,9 +47,24 @@ const props = withDefaults(
         state?: string
         /** Where the tracks come from (the album of the page), saved with the queue. */
         source?: PlayerSource
+        /** The headings open the overview of the groups (lists with at least two groups). */
+        groupJump?: boolean
+        /** Whether the overview of the groups is open. */
+        groupJumpOpen?: boolean
     }>(),
-    { showGroupInfo: true, state: undefined, source: undefined },
+    {
+        showGroupInfo: true,
+        state: undefined,
+        source: undefined,
+        groupJump: false,
+        groupJumpOpen: false,
+    },
 )
+
+const emit = defineEmits<{
+    /** The heading of a group was chosen: open the overview of the groups. */
+    'group-jump': [position: number | undefined, opener: HTMLElement]
+}>()
 
 /** Id of the selected track. */
 const selected = defineModel<string | undefined>('selected', { default: undefined })
@@ -174,11 +189,15 @@ function activate(rowId: string): void {
         :groups="listGroups"
         :label="label"
         :state="listState"
+        :group-jump="groupJump && !ungrouped"
+        :group-jump-open="groupJumpOpen"
+        :group-jump-hint="t('list.groupJump')"
         row-menu
         activate-on-tap
         multi-select
         @row-menu="openMenu"
         @row-activate="activate"
+        @group-jump="(position, opener) => emit('group-jump', position, opener)"
     >
         <template v-if="showGroupInfo && !ungrouped" #group-info="{ group }">
             <template v-if="infoOf(group)">

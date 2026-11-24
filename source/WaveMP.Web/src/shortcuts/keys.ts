@@ -133,6 +133,7 @@ const labelKeys: Readonly<Record<string, string>> = {
     arrowdown: 'shortcuts.keys.down',
     escape: 'shortcuts.keys.escape',
     enter: 'shortcuts.keys.enter',
+    '-': 'shortcuts.keys.minus',
 }
 
 /** The keys of a combination for the overview, with the modifier of the platform. */

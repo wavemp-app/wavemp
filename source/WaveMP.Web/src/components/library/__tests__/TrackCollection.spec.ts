@@ -243,4 +243,101 @@ describe('TrackCollection', () => {
         expect(wrapper.vm.groups.groups.value).toEqual([])
         wrapper.unmount()
     })
+
+    it('offers the quick jump in the headings of a list with two groups or more', async () => {
+        stubDesktop(true)
+        const { wrapper } = await mountCollection('/library/songs')
+
+        const buttons = wrapper.findAll(
+            '[data-part="list-group-title"] [data-part="btn-group-jump"]',
+        )
+        expect(buttons).toHaveLength(10)
+        expect(buttons[0]!.attributes('aria-haspopup')).toBe('dialog')
+        expect(buttons[0]!.attributes('aria-expanded')).toBe('false')
+        expect(buttons[0]!.get('[data-part="label"]').text()).toBe('Album 0')
+        expect(buttons[0]!.find('[data-icon="group-jump"]').exists()).toBe(true)
+        wrapper.unmount()
+    })
+
+    it('keeps plain headings for one group and in a plain list', async () => {
+        stubDesktop(true)
+        api.listTracks.mockResolvedValue({ items: [song(0), song(1)], offset: 0, total: 2 })
+        const { wrapper } = await mountCollection('/library/songs')
+
+        expect(wrapper.findAll('[data-part="list-group-header"]')).toHaveLength(1)
+        expect(wrapper.find('[data-part="btn-group-jump"]').exists()).toBe(false)
+        expect(wrapper.get('[data-part="list-group-title"]').text()).toBe('Album 0')
+        wrapper.unmount()
+
+        serveLongList()
+        document.documentElement.style.setProperty('--wmp-layout-view-options', 'on')
+        const plain = await mountCollection('/library/songs?view=list')
+        expect(plain.wrapper.find('[data-part="btn-group-jump"]').exists()).toBe(false)
+        plain.wrapper.unmount()
+    })
+
+    it('jumps from the overview to a group far down without loading the list up to it', async () => {
+        stubDesktop(true)
+        // 6000 songs in 600 albums; the groups come from the group endpoint.
+        api.listTracks.mockImplementation(({ offset, limit }: { offset: number; limit: number }) =>
+            Promise.resolve({
+                items: Array.from({ length: Math.min(limit, 6000 - offset) }, (_, index) =>
+                    song(offset + index),
+                ),
+                offset,
+                limit,
+                total: 6000,
+            }),
+        )
+        api.listTrackGroups.mockImplementation(
+            ({ offset, limit }: { offset: number; limit: number }) =>
+                Promise.resolve({
+                    items: Array.from({ length: Math.min(limit, 600 - offset) }, (_, index) => ({
+                        kind: 'Album',
+                        position: (offset + index) * 10,
+                        count: 10,
+                        album: { id: `album-${offset + index}`, title: `Album ${offset + index}` },
+                    })),
+                    offset,
+                    limit,
+                    total: 600,
+                }),
+        )
+        const dialogPrototype = HTMLDialogElement.prototype as Partial<HTMLDialogElement>
+        dialogPrototype.showModal = function (this: HTMLDialogElement) {
+            this.setAttribute('open', '')
+        }
+        dialogPrototype.close = function (this: HTMLDialogElement) {
+            this.removeAttribute('open')
+        }
+        try {
+            const { wrapper } = await mountCollection('/library/songs')
+            await wrapper.findAll('[data-part="btn-group-jump"]')[2]!.trigger('click')
+            await flushPromises()
+
+            const overview = wrapper.get('[data-part="group-overview"]')
+            expect(overview.attributes('open')).toBeDefined()
+            expect(listState(wrapper)).toContain('zoomed-out')
+            expect(api.listTrackGroups).toHaveBeenCalledTimes(1)
+            const tiles = overview.findAll('[data-part="group-tile"]')
+            expect(tiles).toHaveLength(600)
+            expect(tiles[2]!.attributes('aria-current')).toBe('true')
+
+            await tiles[450]!.trigger('click')
+            await flushPromises()
+
+            expect(overview.attributes('open')).toBeUndefined()
+            expect(listState(wrapper)).not.toContain('zoomed-out')
+            const offsets = api.listTracks.mock.calls.map(([query]) => query.offset)
+            // The first page, the page of the group and at most the page before it.
+            expect(offsets).toContain(4500)
+            expect(offsets.every((offset) => [0, 4400, 4500].includes(offset))).toBe(true)
+            const group = wrapper.get('[data-part="list-group"][data-position="4500"]')
+            expect(document.activeElement).toBe(group.get('[data-part="btn-group-jump"]').element)
+            wrapper.unmount()
+        } finally {
+            delete dialogPrototype.showModal
+            delete dialogPrototype.close
+        }
+    })
 })

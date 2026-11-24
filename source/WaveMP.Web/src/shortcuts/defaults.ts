@@ -47,6 +47,15 @@ export const defaultShortcuts: readonly ShortcutDefinition[] = [
     },
     { id: 'mute', keys: ['m'], group: 'volume', label: 'shortcuts.actions.mute' },
     { id: 'fullscreen', keys: ['f'], group: 'view', label: 'shortcuts.actions.fullscreen' },
+    // Bound by the lists with groups while they are shown; elsewhere Ctrl+Minus zooms the page and
+    // Escape closes what is open, as before.
+    {
+        id: 'group-overview',
+        keys: ['mod+-', 'escape'],
+        group: 'view',
+        label: 'shortcuts.actions.groupOverview',
+        fallback: true,
+    },
     { id: 'search', keys: ['mod+f'], group: 'general', label: 'shortcuts.actions.search' },
     { id: 'shortcuts', keys: ['?'], group: 'general', label: 'shortcuts.actions.overview' },
 ]

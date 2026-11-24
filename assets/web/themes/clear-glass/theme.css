@@ -338,6 +338,7 @@
 [data-part='transport'],
 [data-part='bottom-nav'],
 [data-part='dialog'],
+[data-part='group-overview'],
 [data-part='context-menu'],
 [data-part='cast-hint'] {
     -webkit-backdrop-filter: var(--cg-blur);
@@ -2705,6 +2706,7 @@ a[data-part='breadcrumb-link']:hover {
     [data-part='transport'],
     [data-part='bottom-nav'],
     [data-part='dialog'],
+    [data-part='group-overview'],
     [data-part='context-menu'],
     [data-part='cast-hint'],
     [data-part='stage-actions'] > [data-part='segmented-control'],

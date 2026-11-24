@@ -92,6 +92,7 @@ import OnlineCompareTable from '@/components/library/OnlineCompareTable.vue'
 import OnlineMatchList from '@/components/library/OnlineMatchList.vue'
 import { compareRows, defaultSelection, onlineTrackFields } from '@/library/onlineMetadata'
 import TileGroupList from '@/components/library/TileGroupList.vue'
+import GroupOverview from '@/components/library/GroupOverview.vue'
 import TileList from '@/components/library/TileList.vue'
 import TrackFileList from '@/components/library/TrackFileList.vue'
 import TrackGroupList from '@/components/library/TrackGroupList.vue'
@@ -180,6 +181,8 @@ import {
     sampleLyricsPosition,
     sampleOnlineCurrent,
     sampleOnlineMatches,
+    sampleOverviewGroups,
+    sampleLetterGroups,
     sampleTileGroups,
     sampleTiles,
     sampleTrackReviews,
@@ -418,6 +421,11 @@ searchFilled.value = t('dev.samples.searchValue')
 // Dialog and context menu
 const dialogOpen = ref(false)
 const shortcutsOpen = ref(false)
+// The overview of the groups of a long list of songs and of artists by letter (quick jump).
+const groupOverviewOpen = ref(false)
+const letterOverviewOpen = ref(false)
+const overviewGroups = computed(() => sampleOverviewGroups(t))
+const letterGroups = sampleLetterGroups()
 const menu = ref<InstanceType<typeof BaseContextMenu> | null>(null)
 const menuItems = computed<MenuItem[]>(() => [
     { id: 'edit', label: t('actions.edit'), icon: 'edit' },
@@ -1180,6 +1188,8 @@ const sampleTranscodeJobs = computed<TranscodeJob[]>(() => {
                 :groups="sampleGroups"
                 :label="t('library.songs')"
                 state="placeholder"
+                group-jump
+                @group-jump="groupOverviewOpen = true"
             />
         </section>
 
@@ -1193,7 +1203,12 @@ const sampleTranscodeJobs = computed<TranscodeJob[]>(() => {
             <div data-part="view" data-view="library" data-section="artists">
                 <LoadPrevious :load="loadNothing" anchor="[data-part='tile-item']" />
                 <LoadPrevious :load="loadNothing" loading anchor="[data-part='tile-item']" />
-                <TileGroupList :groups="tileGroups" :label="t('library.artists')" />
+                <TileGroupList
+                    :groups="tileGroups"
+                    :label="t('library.artists')"
+                    group-jump
+                    @group-jump="letterOverviewOpen = true"
+                />
             </div>
             <div data-part="view" data-view="library-album">
                 <DetailHeader
@@ -1952,8 +1967,30 @@ const sampleTranscodeJobs = computed<TranscodeJob[]>(() => {
             <div data-part="dev-samples">
                 <BaseButton :label="t('dev.samples.openDialog')" @click="dialogOpen = true" />
                 <BaseButton :label="t('shortcuts.title')" @click="shortcutsOpen = true" />
+                <BaseButton
+                    :label="t('dev.samples.openGroupOverview')"
+                    @click="groupOverviewOpen = true"
+                />
+                <BaseButton
+                    :label="t('dev.samples.openLetterOverview')"
+                    @click="letterOverviewOpen = true"
+                />
             </div>
             <ShortcutOverview v-model:open="shortcutsOpen" :shortcuts="defaultShortcuts" />
+            <GroupOverview
+                v-model:open="groupOverviewOpen"
+                :groups="overviewGroups"
+                :current="25"
+                unit="songs"
+                @choose="groupOverviewOpen = false"
+            />
+            <GroupOverview
+                v-model:open="letterOverviewOpen"
+                :groups="letterGroups"
+                :current="30"
+                unit="artists"
+                @choose="letterOverviewOpen = false"
+            />
             <BaseDialog v-model:open="dialogOpen" :title="t('dev.samples.dialogTitle')">
                 <p>{{ t('dev.samples.dialogText') }}</p>
                 <template #footer>

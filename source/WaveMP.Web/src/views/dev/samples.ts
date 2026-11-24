@@ -12,6 +12,7 @@ import type {
     TrackReview,
 } from '@/api/generated/models'
 import type { Tile } from '@/components/library/TileList.vue'
+import type { OverviewGroup } from '@/library/groupOverview'
 import type { OnlineMatch, OnlineValues } from '@/library/onlineMetadata'
 import type { TileGroup } from '@/library/tileGrouping'
 import type { LyricsLineTiming, TrackLyrics } from '@/lyrics/timing'
@@ -169,6 +170,67 @@ export function sampleTileGroups(t: Translate): TileGroup<Tile>[] {
         { id: 'letter:Q', kind: 'letter', letter: 'Q', position: 122, items: [artist(3)] },
         { id: 'letter:#', kind: 'letter', letter: '#', position: 123, items: [artist(4)] },
     ]
+}
+
+/**
+ * The groups of a long list of songs for the overview of the groups: 40 albums of artists whose
+ * names start with 18 different letters (so the letter bar shows, with letters that have no
+ * group), then the songs without album of an artist and those without album and artist. The
+ * first groups are at the top of the list, the current one is the third.
+ */
+export function sampleOverviewGroups(t: Translate): OverviewGroup[] {
+    const letters = 'ABCDEFGHKLMNPRSTW#'
+    const albums = Array.from({ length: 40 }, (_, index): OverviewGroup => {
+        const number = index + 1
+        const artistNumber = Math.floor(index / 3) + 1
+        return {
+            id: `album-${number}`,
+            kind: 'album',
+            position: index * 10,
+            count: 10,
+            album: {
+                id: `sample-album-${number}`,
+                title: t('placeholders.album', { number }),
+                artist: {
+                    id: `sample-artist-${artistNumber}`,
+                    name: t('placeholders.artist', { number: artistNumber }),
+                },
+                isCompilation: false,
+            },
+            hasCover: false,
+            letter: letters[Math.floor((index * letters.length) / 40)],
+        }
+    })
+    return [
+        ...albums,
+        {
+            id: 'without-album',
+            kind: 'unknown',
+            unknown: 'album',
+            position: 400,
+            count: 3,
+            artist: { id: 'sample-artist-20', name: t('placeholders.artist', { number: 20 }) },
+            letter: 'W',
+        },
+        { id: 'unknown', kind: 'unknown', unknown: 'album', position: 403, count: 1, letter: '#' },
+    ]
+}
+
+/** The groups of the artists by letter for the overview: the letters as short tiles. */
+export function sampleLetterGroups(): OverviewGroup[] {
+    let position = 0
+    return [...'ABCDEFGHIJKLMNOPRSTUVWZ#'].map((letter, index) => {
+        const count = (index % 5) + 1
+        const group: OverviewGroup = {
+            id: `letter-${letter}`,
+            kind: 'letter',
+            position,
+            count,
+            letter,
+        }
+        position += count
+        return group
+    })
 }
 
 /** The files of a sample track: lossless audio, a lower quality copy, a video and a picture. */

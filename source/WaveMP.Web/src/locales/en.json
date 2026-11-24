@@ -79,6 +79,13 @@
     "sourceFilter": {
       "label": "Media folder",
       "all": "All media folders"
+    },
+    "groups": {
+      "title": "Jump to",
+      "label": "Groups",
+      "letters": "Initial letters",
+      "loadError": "The groups could not be loaded.",
+      "artistCount": "Artists: {count}"
     }
   },
   "list": {
@@ -103,7 +110,8 @@
     "albums": "Albums",
     "number": "Track",
     "disc": "Disc",
-    "media": "Available as"
+    "media": "Available as",
+    "groupJump": "Show all groups"
   },
   "placeholders": {
     "album": "Placeholder Album {number}",
@@ -624,7 +632,9 @@
       "optionTwo": "Second option",
       "hint": "Help text for the field.",
       "error": "This value is not valid.",
-      "colorLabel": "Color"
+      "colorLabel": "Color",
+      "openGroupOverview": "Open group overview",
+      "openLetterOverview": "Open letter overview"
     },
     "transportStates": {
       "idle": "Idle",
@@ -700,6 +710,7 @@
       "volumeDown": "Quieter",
       "mute": "Mute or unmute",
       "fullscreen": "Full screen on or off",
+      "groupOverview": "Jump to a group",
       "search": "Search the library",
       "overview": "Show the keyboard shortcuts"
     },
@@ -715,6 +726,7 @@
       "down": "↓",
       "escape": "Esc",
       "enter": "Enter",
+      "minus": "Minus",
       "separator": "+"
     }
   },

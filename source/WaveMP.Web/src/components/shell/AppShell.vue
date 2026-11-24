@@ -175,6 +175,13 @@ function closeCompact(): void {
     void focus('[data-part="btn-compact"]')
 }
 
+/**
+ * Escape closes the mini player in place of the app, the drawer and the full-screen player, unless
+ * something took it before. The keyboard shortcuts listen first (useKeyboardShortcuts adds its
+ * listener before this one); the shortcut of the overview of the groups of a list leaves Escape
+ * alone while one of these is open (src/library/groupJump.ts), so one Escape never does both. No
+ * preventDefault here: a dialog open at the same time still closes with the same Escape.
+ */
 function onKeydown(event: KeyboardEvent): void {
     if (event.key === 'Escape' && !event.defaultPrevented) {
         if (compactInline.value) {

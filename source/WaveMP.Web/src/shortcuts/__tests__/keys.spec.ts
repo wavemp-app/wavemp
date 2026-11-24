@@ -85,6 +85,15 @@ describe('comboKeys', () => {
         ])
         expect(comboKeys('home', false)).toEqual([{ key: 'home', text: 'Home' }])
     })
+
+    it('names the minus key of Ctrl+Minus', () => {
+        expect(comboOf(key('-', { ctrlKey: true }), false)).toBe('mod+-')
+        expect(comboOf(key('-', { metaKey: true }), true)).toBe('mod+-')
+        expect(comboKeys('mod+-', false)).toEqual([
+            { key: 'mod', labelKey: 'shortcuts.keys.ctrl' },
+            { key: '-', labelKey: 'shortcuts.keys.minus' },
+        ])
+    })
 })
 
 describe('isApplePlatform', () => {

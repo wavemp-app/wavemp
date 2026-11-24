@@ -65,6 +65,7 @@ export const iconSlots = {
 
     // Content
     'has-video': { file: regular('video-camera'), area: 'content' },
+    'group-jump': { file: regular('squares-four'), area: 'content' },
     info: { file: regular('info'), area: 'content' },
     'cover-placeholder': { file: fill('music-notes'), area: 'content' },
     'admin-library': { file: regular('folder-open'), area: 'content' },

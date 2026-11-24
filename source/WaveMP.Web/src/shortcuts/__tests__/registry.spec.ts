@@ -56,6 +56,7 @@ describe('the default shortcuts', () => {
             'volume-down': ['arrowdown'],
             mute: ['m'],
             fullscreen: ['f'],
+            'group-overview': ['mod+-', 'escape'],
             search: ['mod+f'],
             shortcuts: ['?'],
         })
@@ -81,6 +82,17 @@ describe('conflicts', () => {
         ])
         expect(findShortcutConflicts([shortcut('menu', ['shift+F10'])])).toEqual([
             { kind: 'reserved', combo: 'shift+f10', ids: ['menu'] },
+        ])
+    })
+
+    it('allow reserved keys for fallback shortcuts, but not twice', () => {
+        const fallback = (id: string) => ({ ...shortcut(id, ['Escape']), fallback: true })
+        expect(findShortcutConflicts([fallback('overview')])).toEqual([])
+        expect(
+            findShortcutConflicts([fallback('overview'), shortcut('close', ['escape'])]),
+        ).toEqual([{ kind: 'reserved', combo: 'escape', ids: ['close'] }])
+        expect(findShortcutConflicts([fallback('one'), fallback('two')])).toEqual([
+            { kind: 'combo', combo: 'escape', ids: ['one', 'two'] },
         ])
     })
 

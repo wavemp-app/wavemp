@@ -133,6 +133,7 @@ const icons: Record<IconStyle, string[]> = {
         'shuffle',
         'skip-forward',
         'sparkle',
+        'squares-four',
         'stack',
         'star',
         'stethoscope',

@@ -188,6 +188,92 @@ describe('TileCollection', () => {
     })
 })
 
+describe('quick jump of TileCollection', () => {
+    const dialogPrototype = HTMLDialogElement.prototype as Partial<HTMLDialogElement>
+
+    beforeEach(() => {
+        setActivePinia(createPinia())
+        dialogPrototype.showModal = function (this: HTMLDialogElement) {
+            this.setAttribute('open', '')
+        }
+        dialogPrototype.close = function (this: HTMLDialogElement) {
+            this.removeAttribute('open')
+        }
+    })
+
+    afterEach(() => {
+        delete dialogPrototype.showModal
+        delete dialogPrototype.close
+        document.body.innerHTML = ''
+    })
+
+    /** The 27 letter groups of the 702 artists: A to Z and #, 26 artists each. */
+    function letterGroups(offset: number, limit: number): Promise<ListGroupPage> {
+        const letters = [...'ABCDEFGHIJKLMNOPQRSTUVWXYZ#']
+        return Promise.resolve({
+            items: letters.slice(offset, offset + limit).map((letter, index) => ({
+                kind: 'Letter',
+                letter,
+                position: (offset + index) * 26,
+                count: 26,
+            })),
+            offset,
+            limit,
+            total: letters.length,
+        })
+    }
+
+    it('offers the jump in the headings and jumps to a letter that is not loaded', async () => {
+        const fetchPage = vi.fn(fetchArtists)
+        const wrapper = await mountCollection({
+            grouping: artistTileGrouping({}, false),
+            fetchGroups: vi.fn(letterGroups),
+            fetchPage,
+        })
+
+        const buttons = wrapper.findAll(
+            '[data-part="tile-group-title"] [data-part="btn-group-jump"]',
+        )
+        expect(buttons.length).toBeGreaterThanOrEqual(2)
+        expect(buttons[0]!.attributes('aria-haspopup')).toBe('dialog')
+
+        await buttons[1]!.trigger('click')
+        await flushPromises()
+        const overview = wrapper.get('[data-part="group-overview"]')
+        expect(overview.attributes('open')).toBeDefined()
+        expect(wrapper.get('[data-part="tile-groups"]').attributes('data-state')).toBe('zoomed-out')
+        const tiles = overview.findAll('[data-part="group-tile"]')
+        expect(tiles.map((tile) => tile.get('[data-part="label"]').text()).join('')).toBe(
+            'ABCDEFGHIJKLMNOPQRSTUVWXYZ#',
+        )
+        expect(tiles[1]!.attributes('aria-current')).toBe('true')
+        expect(tiles[0]!.text()).toContain('Artists: 26')
+
+        await tiles[25]!.trigger('click')
+        await flushPromises()
+
+        const offsets = fetchPage.mock.calls.map(([offset]) => offset)
+        expect(offsets).toContain(650)
+        expect(offsets.every((offset) => [0, 550, 650].includes(offset))).toBe(true)
+        const group = wrapper.get('[data-part="tile-group"][data-position="650"]')
+        expect(group.get('h2').text()).toBe('Z')
+        expect(document.activeElement).toBe(group.get('[data-part="btn-group-jump"]').element)
+        wrapper.unmount()
+    })
+
+    it('keeps plain headings for one group', async () => {
+        const wrapper = await mountCollection({
+            grouping: artistTileGrouping({}, false),
+            fetchGroups: vi.fn(letterGroups),
+            fetchPage: () => Promise.resolve({ items: [artistAt(0), artistAt(1)], total: 2 }),
+        })
+
+        expect(wrapper.findAll('[data-part="tile-group"]')).toHaveLength(1)
+        expect(wrapper.find('[data-part="btn-group-jump"]').exists()).toBe(false)
+        wrapper.unmount()
+    })
+})
+
 describe('TileGroupList', () => {
     beforeEach(() => {
         setActivePinia(createPinia())

@@ -1,18 +1,21 @@
 <script setup lang="ts">
-import { computed, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { SortDirection, Track, TrackSort } from '@/api/generated/models'
 import BaseButton from '@/components/base/BaseButton.vue'
+import GroupOverview from './GroupOverview.vue'
 import LibraryEmpty from './LibraryEmpty.vue'
 import LoadMore from './LoadMore.vue'
 import LoadPrevious from './LoadPrevious.vue'
 import TrackGroupList from './TrackGroupList.vue'
+import { useGroupJump } from '@/composables/useGroupJump'
 import { useLayoutOptions } from '@/composables/useLayoutOptions'
 import { useListGroups } from '@/composables/useListGroups'
 import { usePagedList, type PagedListStatus } from '@/composables/usePagedList'
 import { useViewRoute } from '@/composables/useViewRoute'
 import { listTrackGroups, listTracks, type TrackQuery } from '@/library/api'
 import { groupTracksAsList, groupTracksByAlbum } from '@/library/grouping'
+import { trackOverviewGroups } from '@/library/groupOverview'
 import { parseListView } from '@/library/listView'
 
 export interface TrackFilter {
@@ -32,7 +35,8 @@ export interface TrackFilter {
  * the view options (layout option --wmp-layout-view-options), the view of the route (?view=list)
  * shows them as a plain list instead; otherwise the query is ignored and the list stays grouped.
  * The list can start at any position (a jump to a group); the groups of the whole list come from
- * the group endpoint when they are needed.
+ * the group endpoint when they are needed: a click on a heading, Ctrl+Minus, Escape or pinching the
+ * list opens their overview, which jumps to any group without loading the list up to it.
  */
 const props = withDefaults(
     defineProps<{
@@ -85,6 +89,35 @@ const groups = computed(() =>
 )
 const filtered = computed(() => Object.values(props.filter).some((value) => value !== undefined))
 
+const trackList = ref<InstanceType<typeof TrackGroupList> | null>(null)
+const listElement = computed(() => {
+    const element: unknown = trackList.value?.$el
+    return element instanceof HTMLElement ? element : null
+})
+/**
+ * The quick jump needs two groups: in the loaded part, or in the whole list as long as only a
+ * part of it is loaded and its groups are not known yet.
+ */
+const jumpAvailable = computed(() => {
+    if (view.value !== 'grouped') {
+        return false
+    }
+
+    if (trackGroups.status.value === 'ready') {
+        return trackGroups.groups.value.length >= 2
+    }
+
+    return groups.value.length >= 2 || list.hasMore.value || list.hasPrevious.value
+})
+const jump = useGroupJump({
+    list: listElement,
+    available: jumpAvailable,
+    loadGroups: trackGroups.load,
+    jumpTo: list.jumpTo,
+})
+const overviewGroups = computed(() => trackOverviewGroups(trackGroups.groups.value))
+const listState = computed(() => (jump.open.value ? 'zoomed-out' : undefined))
+
 watch(
     () => JSON.stringify([props.filter, props.search, props.sort, props.direction]),
     () => {
@@ -96,7 +129,7 @@ watch(
 
 watch(list.status, (status) => emit('status', status), { immediate: true })
 
-defineExpose({ list, groups: trackGroups })
+defineExpose({ list, groups: trackGroups, jump })
 </script>
 
 <template>
@@ -116,11 +149,28 @@ defineExpose({ list, groups: trackGroups })
             :loading="list.loadingPrevious.value"
             anchor="[data-part='list-row']"
         />
-        <TrackGroupList :groups="groups" :label="label" />
+        <TrackGroupList
+            ref="trackList"
+            :groups="groups"
+            :label="label"
+            :state="listState"
+            :group-jump="jumpAvailable"
+            :group-jump-open="jump.open.value"
+            @group-jump="(position, opener) => jump.openOverview({ position, opener })"
+        />
         <LoadMore
             v-if="list.hasMore.value"
             :loading="list.loadingMore.value"
             @load="list.loadMore()"
+        />
+        <GroupOverview
+            v-model:open="jump.open.value"
+            :groups="overviewGroups"
+            :status="trackGroups.status.value"
+            :current="jump.current.value"
+            unit="songs"
+            @choose="(group) => jump.choose(group.position)"
+            @retry="trackGroups.load()"
         />
     </template>
 </template>

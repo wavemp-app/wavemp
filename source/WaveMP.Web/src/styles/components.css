@@ -1720,6 +1720,49 @@
         line-height: 1;
     }
 
+    /*
+     * Quick jump: in lists with two groups or more the heading of a group is a button that opens
+     * the overview of the groups. It keeps the look of the heading; a small grid icon after the
+     * name tells that it opens something.
+     */
+    [data-part='btn-group-jump'] {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--wmp-space-xs);
+        max-inline-size: 100%;
+        min-inline-size: 0;
+        padding: 0;
+        border: 0;
+        border-radius: var(--wmp-radius-s);
+        background: none;
+        color: inherit;
+        font: inherit;
+        line-height: inherit;
+        text-align: start;
+        cursor: pointer;
+    }
+
+    [data-part='btn-group-jump'] > [data-part='label'] {
+        min-inline-size: 0;
+        overflow-wrap: anywhere;
+    }
+
+    [data-part='btn-group-jump'] > [data-part='icon'] {
+        --wmp-icon-size: var(--wmp-icon-size-s);
+
+        color: var(--wmp-color-text-muted);
+    }
+
+    [data-part='btn-group-jump']:hover,
+    [data-part='btn-group-jump']:hover > [data-part='icon'] {
+        color: var(--wmp-color-accent);
+    }
+
+    /* A jump scrolls the group below the column headers of the list, which stay at the top. */
+    [data-part='list'] > [data-part='list-group'] {
+        scroll-margin-block-start: var(--wmp-list-row-height);
+    }
+
     [data-part='tile-list'] {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(min(var(--wmp-tile-width), 100%), 1fr));
@@ -4307,6 +4350,244 @@
         justify-content: flex-end;
         gap: var(--wmp-space-s);
         padding: var(--wmp-space-s) var(--wmp-space-l) var(--wmp-space-l);
+    }
+
+    /* --- Overview of the groups of a list (quick jump) --------------------------------- */
+
+    /*
+     * Mobile first a sheet over the whole screen: the header, then the grid of the groups with the
+     * letter bar as a rail at the right edge, where the thumb reaches it. From the desktop width on
+     * a pane in the middle with the letters in a row under the header (layout.css).
+     */
+    [data-part='group-overview'] {
+        inline-size: 100%;
+        max-inline-size: 100%;
+        block-size: 100%;
+        max-block-size: 100%;
+        margin: 0;
+        padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px)
+            env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
+        border: 0;
+        background: var(--wmp-dialog-background);
+        color: var(--wmp-dialog-color);
+    }
+
+    [data-part='group-overview']::backdrop {
+        background: var(--wmp-backdrop-color);
+    }
+
+    [data-part='group-overview'][open] {
+        display: grid;
+        grid-template-areas:
+            'header header'
+            'grid letters';
+        grid-template-columns: minmax(0, 1fr) auto;
+        grid-template-rows: auto minmax(0, 1fr);
+    }
+
+    [data-part='group-overview-header'] {
+        grid-area: header;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--wmp-space-s);
+        padding: var(--wmp-space-s) var(--wmp-space-s) var(--wmp-space-s) var(--wmp-space-l);
+        border-block-end: 1px solid var(--wmp-color-border);
+    }
+
+    [data-part='group-overview-title'] {
+        font-size: var(--wmp-font-size-l);
+        font-weight: var(--wmp-font-weight-bold);
+    }
+
+    /* The letters share the height of the rail; a short screen scrolls it. */
+    [data-part='letter-bar'] {
+        grid-area: letters;
+        display: flex;
+        flex-direction: column;
+        inline-size: var(--wmp-letter-bar-size);
+        min-block-size: 0;
+        overflow-y: auto;
+        padding-block: var(--wmp-space-xs);
+        border-inline-start: 1px solid var(--wmp-color-border);
+    }
+
+    [data-part='letter'] {
+        display: grid;
+        flex: 1 0 auto;
+        place-items: center;
+        min-block-size: 1.25rem;
+        padding: 0;
+        border: 0;
+        border-radius: var(--wmp-radius-s);
+        background: none;
+        color: inherit;
+        font: inherit;
+        font-size: var(--wmp-font-size-s);
+        font-weight: var(--wmp-font-weight-bold);
+        line-height: 1;
+        cursor: pointer;
+    }
+
+    [data-part='letter']:hover:not([aria-disabled='true']) {
+        background: var(--wmp-color-hover);
+    }
+
+    [data-part='letter'][aria-disabled='true'] {
+        color: var(--wmp-color-text-disabled);
+        cursor: default;
+    }
+
+    [data-part='letter'][data-state~='current'] {
+        background: var(--wmp-color-selection);
+        color: var(--wmp-color-selection-text);
+    }
+
+    [data-part='letter']:focus-visible {
+        outline-offset: -2px;
+    }
+
+    [data-part='group-overview'] > [data-part='empty-state'] {
+        grid-area: grid;
+        align-content: start;
+    }
+
+    [data-part='group-grid'] {
+        position: relative;
+        grid-area: grid;
+        display: grid;
+        grid-template-columns: repeat(
+            auto-fill,
+            minmax(min(var(--wmp-group-tile-min-width), 100%), 1fr)
+        );
+        align-content: start;
+        gap: var(--wmp-space-s);
+        min-block-size: 0;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        padding: var(--wmp-space-m) var(--wmp-space-l) var(--wmp-space-l);
+    }
+
+    /* Letters, years and discs are short: their tiles stand close like the keys of a keypad. */
+    [data-part='group-grid']:not(
+        :has(
+            [data-part='group-tile']:is(
+                [data-kind='album'],
+                [data-kind='artist'],
+                [data-kind='unknown']
+            )
+        )
+    ) {
+        grid-template-columns: repeat(
+            auto-fill,
+            minmax(min(var(--wmp-group-letter-tile-size), 100%), 1fr)
+        );
+    }
+
+    [data-part='group-grid'] > [data-part='indicator'] {
+        position: absolute;
+        inset-block-start: var(--wmp-indicator-y, 0);
+        left: var(--wmp-indicator-x, 0);
+        inline-size: var(--wmp-indicator-width, 0);
+        block-size: var(--wmp-indicator-height, 0);
+        pointer-events: none;
+    }
+
+    /* Thousands of groups: tiles out of view are not rendered until they scroll near. */
+    [data-part='group-item'] {
+        display: grid;
+        min-inline-size: 0;
+        content-visibility: auto;
+        contain-intrinsic-size: auto 3.75rem;
+    }
+
+    [data-part='group-tile'] {
+        position: relative;
+        display: grid;
+        grid-template-areas:
+            'cover label'
+            'cover detail'
+            'cover count';
+        grid-template-columns: auto minmax(0, 1fr);
+        align-content: center;
+        column-gap: var(--wmp-space-s);
+        min-inline-size: 0;
+        min-block-size: var(--wmp-touch-target-size);
+        padding: var(--wmp-space-s);
+        border: 1px solid var(--wmp-color-border);
+        border-radius: var(--wmp-radius-m);
+        background: var(--wmp-color-surface-raised);
+        color: inherit;
+        font: inherit;
+        text-align: start;
+        cursor: pointer;
+    }
+
+    [data-part='group-tile']:hover {
+        border-color: var(--wmp-color-accent);
+    }
+
+    [data-part='group-tile'][data-state~='current'] {
+        border-color: var(--wmp-color-accent);
+        background: var(--wmp-color-selection);
+        color: var(--wmp-color-selection-text);
+    }
+
+    [data-part='group-tile'] > [data-part='cover'] {
+        grid-area: cover;
+        align-self: center;
+        inline-size: var(--wmp-cover-size-mini);
+    }
+
+    [data-part='group-tile'] > [data-part='label'] {
+        grid-area: label;
+        min-inline-size: 0;
+        overflow: hidden;
+        font-weight: var(--wmp-font-weight-bold);
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    [data-part='group-tile-detail'],
+    [data-part='group-tile-count'] {
+        min-inline-size: 0;
+        overflow: hidden;
+        font-size: var(--wmp-font-size-s);
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    [data-part='group-tile-detail'] {
+        grid-area: detail;
+    }
+
+    [data-part='group-tile-count'] {
+        grid-area: count;
+        color: var(--wmp-color-text-muted);
+        font-variant-numeric: tabular-nums;
+    }
+
+    [data-part='group-tile'][data-state~='current'] > [data-part='group-tile-count'] {
+        color: inherit;
+    }
+
+    /* The letter or the year is the tile: set large over the number. */
+    [data-part='group-tile']:is([data-kind='letter'], [data-kind='year'], [data-kind='disc']) {
+        grid-template-areas:
+            'label'
+            'count';
+        grid-template-columns: minmax(0, 1fr);
+        justify-items: center;
+        text-align: center;
+    }
+
+    [data-part='group-tile'][data-kind='letter'] > [data-part='label'] {
+        font-size: var(--wmp-font-size-xl);
+        line-height: 1.1;
+    }
+
+    [data-part='group-tile']:is([data-kind='year'], [data-kind='disc']) > [data-part='label'] {
+        font-size: var(--wmp-font-size-l);
     }
 
     /* --- Overview of the keyboard shortcuts --------------------------------------------- */

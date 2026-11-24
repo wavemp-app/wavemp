@@ -143,6 +143,7 @@
         --wmp-icon-sidebar-collapse: url('/icons/phosphor/duotone/caret-double-left-duotone.svg');
         --wmp-icon-sidebar-expand: url('/icons/phosphor/duotone/caret-double-right-duotone.svg');
         --wmp-icon-has-video: url('/icons/phosphor/regular/video-camera.svg');
+        --wmp-icon-group-jump: url('/icons/phosphor/regular/squares-four.svg');
         --wmp-icon-info: url('/icons/phosphor/regular/info.svg');
         --wmp-icon-cover-placeholder: url('/icons/phosphor/fill/music-notes-fill.svg');
         --wmp-icon-admin-library: url('/icons/phosphor/regular/folder-open.svg');
@@ -330,6 +331,17 @@
         --wmp-lyrics-active-scale: 1.12;
         --wmp-lyrics-transition-duration: 0.35s;
         --wmp-tile-width: 9rem;
+        /*
+         * Overview of the groups of a list (quick jump): how far the content behind it recedes and
+         * fades, the smallest width of a group tile, the size of the short tiles of letters, years
+         * and discs, and the width of the letter rail on phones (the height of the letter row on
+         * the desktop).
+         */
+        --wmp-group-zoom-scale: 0.92;
+        --wmp-group-zoom-opacity: 0.55;
+        --wmp-group-tile-min-width: 13rem;
+        --wmp-group-letter-tile-size: 6rem;
+        --wmp-letter-bar-size: 2.75rem;
         --wmp-list-row-height: 2rem;
         --wmp-list-columns: 3rem minmax(0, 2fr) 4.5rem minmax(0, 1.5fr) 6.5rem minmax(2rem, auto);
         --wmp-list-columns-playlist: 2rem 3rem minmax(0, 2fr) 4.5rem minmax(0, 1.5fr)
@@ -403,6 +415,7 @@
         :root {
             --wmp-motion-scale: 1 !important;
             --wmp-motion-press-scale: 1 !important;
+            --wmp-group-zoom-scale: 1 !important;
         }
     }
 

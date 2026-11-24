@@ -186,7 +186,7 @@ The color changes with the song; a theme can let it fade with `transition` on th
 | `content-title` | `h1` | `content` | Title of the page |
 | `view` | `div` | `content` | Page, see `data-view` in [States](#states) |
 | `placeholder-notice` | `p` (`role="note"`) | `view` | Notice that the content is a placeholder; currently only shown in the component overview |
-| `empty-state` | `div` | `view`, `stage`, `profile-select`, `section`, `queue-pane` | Message for empty content, or that something could not be loaded |
+| `empty-state` | `div` | `view`, `stage`, `profile-select`, `section`, `queue-pane`, `group-overview` | Message for empty content, or that something could not be loaded |
 | `empty-state-title` | `p` | `empty-state` | Title of the message |
 | `empty-state-text` | `p` | `empty-state` | Text of the message |
 | `link` | `a` | `empty-state`, `view`, `section`, `meta-value`, `artist-credit-license`, `artist-credit-source` | Text link in the content, for example to an album, an artist, a genre or a year |
@@ -226,7 +226,7 @@ The color changes with the song; a theme can let it fade with `transition` on th
 | `list-column` | `span` (`role="columnheader"`) | `list-header` | Column header with `label` |
 | `list-group` | `div` (`role="rowgroup"`) | `list` | Group of rows, for example an album |
 | `list-group-header` | `div` (`role="row"`) | `list-group` | Heading row of the group; missing in the one group of a plain list (state `ungrouped` of `list`) |
-| `list-group-title` | `span` (`role="rowheader"`) | `list-group-header` | Title of the group |
+| `list-group-title` | `span` (`role="rowheader"`) | `list-group-header` | Title of the group; in a list with two groups or more the title is a `btn-group-jump` |
 | `list-group-info` | `div` (`role="row"`) | `list-group` | Cover and details of the group |
 | `list-group-meta` | `div` (`role="gridcell"`) | `list-group-info` | Details of the group |
 | `meta-item` | `span` | `list-group-meta`, `detail-info` | One detail with `label` and `meta-value`, see `data-field` in [States](#states) |
@@ -239,6 +239,7 @@ The color changes with the song; a theme can let it fade with `transition` on th
 | `tile-group` | `section` (`aria-labelledby`, `data-kind`, `data-position`) | `tile-groups` | One group: `tile-group-header` and the `tile-list` of its tiles; see `data-kind` and `data-position` in [Other attributes](#other-attributes) |
 | `tile-group-header` | `div` | `tile-group` | Heading of the group with `tile-group-title` |
 | `tile-group-title` | `h2` | `tile-group-header` | Name of the group: the album artist ("Unknown artist" for albums without one), the initial letter A to Z or `#` for digits, special characters and other scripts (read out as "Numbers and symbols"), or the year ("Unknown year"). The base sets initial letters larger than the other names |
+| `btn-group-jump` | `button` (`aria-haspopup="dialog"`, `aria-expanded`) | `list-group-title`, `tile-group-title` | Only in lists with two groups or more (also while only a part of a long list is loaded): the name of the group as `label` and the `icon` `group-jump`; opens the `group-overview` with this group as the current one. In `list-group-title` it is no tab stop of its own (the rows of the grid are; the arrow down key moves to the first row of the group), in `tile-group-title` it is. The base keeps the look of the heading |
 | `tile-list` | `ul` | `view`, `section`, `tile-group` | Albums, artists, genres or years as tiles |
 | `tile-item` | `li` | `tile-list` | One tile |
 | `tile` | `a` | `tile-item` | Link to the page of the entry with `cover`, `tile-title` and optionally `tile-subtitle`, see `data-kind` in [States](#states) |
@@ -252,6 +253,16 @@ The color changes with the song; a theme can let it fade with `transition` on th
 | `btn-detail-back` | `button` (`data-variant`) | `view` (directly before `detail-header`), `dialog-header` (before `dialog-title`, metadata editor) | Back to the previous page at its position, with the icon `detail-back` and a `label`; on a page that was opened directly it leads to the overview the page belongs to (for example the songs from the page of a song), in the metadata editor it closes the editor. On detail pages a `button` of `data-variant="default"`, in the metadata editor `data-variant="icon"` |
 | `load-more` | `button` | `view`, `section` | Loads the next page of a list; also loads by itself when it scrolls into view |
 | `load-previous` | `button` | `view` | Only while a long list of songs or tiles is shown from the middle (after a jump to a group): loads the page before the shown part, above the list; also loads by itself when it scrolls into view. The entry at the top of the content area stays in place while the page is inserted |
+| `group-overview` | `dialog` (modal, `aria-labelledby`, `aria-busy` while loading) | `view` | Overview of the groups of a list (quick jump): opens with a click or tap on a `btn-group-jump`, with Ctrl+Minus or Escape and by pinching a grouped list on touch screens; `group-overview-header`, optionally `letter-bar`, then `group-grid` (or an `empty-state` if the groups could not be loaded). The base shows it as a sheet over the whole screen on phones, with the letters as a rail at the right edge, and as a pane in the middle of the screen with the letters in a row under the header from the desktop width on |
+| `group-overview-header` | `div` | `group-overview` | `group-overview-title` and `btn-close` |
+| `group-overview-title` | `h2` | `group-overview-header` | Title of the overview ("Jump to") |
+| `letter-bar` | `nav` (`aria-label`) | `group-overview` | Only with 30 groups or more that carry at least two different initial letters (lists sorted by a text): one `letter` per letter A to Z and `#` |
+| `letter` | `button` (`data-item`) | `letter-bar` | One letter (`data-item` `A` to `Z` or `#`, read out as "Numbers and symbols") with a `label`; moves the focus and the grid to the first group of the letter without closing the overview; `aria-disabled="true"` for letters without a group |
+| `group-grid` | `div` (`role="list"`, `aria-label`) | `group-overview` | The groups in the order of the list: an `indicator` as first child and one `group-item` per group; tells the current group with the runtime variables of an active element, see [Active element of a group](#active-element-of-a-group). Scrolls by itself |
+| `group-item` | `div` (`role="listitem"`) | `group-grid` | Holds one `group-tile` |
+| `group-tile` | `button` (`data-kind`) | `group-item` | One group; choosing it closes the overview and jumps to the group. A `cover` (albums: the album cover; artists: the icon `artist`; songs without album: the placeholder), the name as `label`, optionally `group-tile-detail` and the `group-tile-count`; see `data-kind` in [Other attributes](#other-attributes). One tab stop for all tiles: the arrow keys move by rows and columns, Home, End, Page Up and Page Down further, typing moves to the next group whose name starts with the typed letters |
+| `group-tile-detail` | `span` | `group-tile` | The artist of an album, or of the songs without album |
+| `group-tile-count` | `span` | `group-tile` | Number of entries of the group, for example "Songs: 12" |
 | `file-list` | `ul` | `section` | Files of a song on its page, for admins |
 | `file-item` | `li` | `file-list` | One file with `file-path` and `file-meta` |
 | `file-path` | `span` | `file-item`, `file-selection-info`, `file-choice`, `review-info` | Path of the file relative to the media folder; in `file-selection-info` the folder and base name of the files of the song, in a `file-choice` the path of the file (or of a selected file that is gone) or, for the automatic choice, its name; in `review-info` the folder and base name of the files of the song |
@@ -550,7 +561,7 @@ The color changes with the song; a theme can let it fade with `transition` on th
 | `icon` | `span` (`aria-hidden`) | any | Icon wrapper with the slot in `data-icon`, see [Icons](#icons) |
 | `icon-glyph` | `span` | `icon` | Masked shape of the icon |
 | `label` | `span` | any | Text of a button, entry or area |
-| `indicator` | `span` (`aria-hidden`), in `tree` a `li` (`role="none"`, `aria-hidden`) | `tab`, `tabs`, `bottom-nav`, `admin-nav`, `tree`, `color-picker`, `segmented-control`, `file-choices`, `online-matches`, `artist-match-list`, `picture-candidate-list` | In a `tab` the small arrow of the active tab (with the icon `tab-indicator`). As first child of a group with one active element an empty decorative layer that the base hides and lays over the active element, for themes that show it, for example as a line or a highlight that slides between the entries; see [Active element of a group](#active-element-of-a-group) |
+| `indicator` | `span` (`aria-hidden`), in `tree` a `li` (`role="none"`, `aria-hidden`) | `tab`, `tabs`, `bottom-nav`, `admin-nav`, `tree`, `color-picker`, `segmented-control`, `file-choices`, `online-matches`, `artist-match-list`, `picture-candidate-list`, `group-grid` | In a `tab` the small arrow of the active tab (with the icon `tab-indicator`). As first child of a group with one active element an empty decorative layer that the base hides and lays over the active element, for themes that show it, for example as a line or a highlight that slides between the entries; see [Active element of a group](#active-element-of-a-group) |
 | `slider` | `div` | `seek`, `volume`, `equalizer-band`, any | Slider with `slider-track` and `slider-thumb`; horizontal, or vertical (`data-orientation="vertical"`, from the bottom to the top) in the equalizer |
 | `slider-track` | `div` | `slider` | Track of the slider |
 | `slider-fill` | `div` | `slider-track` | Filled part of the track |
@@ -568,7 +579,7 @@ The color changes with the song; a theme can let it fade with `transition` on th
 | `dialog` | `dialog` | any | Modal dialog |
 | `dialog-header` | `div` | `dialog` | Title bar of the dialog |
 | `dialog-title` | `h2` | `dialog-header` | Title of the dialog |
-| `btn-close` | `button` | `dialog-header` | Closes the dialog |
+| `btn-close` | `button` | `dialog-header`, `group-overview-header` | Closes the dialog |
 | `dialog-body` | `div` | `dialog` | Content of the dialog |
 | `dialog-footer` | `div` | `dialog` | Buttons of the dialog |
 | `shortcut-overview` | `div` | `dialog-body` of the `dialog` `shortcuts` | Overview of the keyboard shortcuts (key ? or the entry `shortcuts` of the profile menu): one `shortcut-group` per group. The base lays the groups out side by side where two of them fit and in one column on a phone; the `dialog` `shortcuts` is 46rem wide |
@@ -1090,6 +1101,9 @@ The graphic of each icon slot is a variable as well, see [Icons](#icons).
 | `--wmp-artist-picture-radius` | `50%` | Corner radius of the pictures of artists (`cover` with `data-kind="artist"`) and of `artist-collage`, round by default; `0` gives square portraits. Rules of a theme for covers (theme rules win over the base) reach these pictures as well, so a theme that shapes the covers of `tile` or `detail-header` sets the radius again for `[data-part='cover'][data-kind='artist']` and `artist-collage` and lets the covers in `artist-collage-tile` sit flush (see the template) |
 | `--wmp-artist-collage-gap` | `1px` | Space between the `artist-collage-tile`s, filled with `--wmp-color-surface` |
 | `--wmp-tile-width` | `9rem` | Smallest width of a column of tiles |
+| `--wmp-group-tile-min-width` | `13rem` | Smallest width of a column of `group-tile`s in `group-grid` |
+| `--wmp-group-letter-tile-size` | `6rem` | Smallest width of a column of the short `group-tile`s of letters, years and discs, which the base sets like the keys of a keypad |
+| `--wmp-letter-bar-size` | `2.75rem` | Width of the `letter-bar` rail on phones, height of its row on the desktop |
 | `--wmp-list-row-height` | `2rem` | Minimum height of `list-row` |
 | `--wmp-list-columns` | `3rem minmax(0, 2fr) 4.5rem minmax(0, 1.5fr) 6.5rem minmax(2rem, auto)` | Columns of the `list` that `list-header` and `list-row` share (number, title, duration, artist, rating, favorite). The favorite column grows with `minmax(…, auto)` where it also holds `btn-item-menu` (touch screens) |
 | `--wmp-list-columns-playlist` | `2rem 3rem minmax(0, 2fr) 4.5rem minmax(0, 1.5fr) minmax(0, 1.5fr) 6.5rem minmax(2rem, auto)` | `--wmp-list-columns` of the list in `data-view="playlist"` (handle, number, title, duration, artist, album, rating, favorite) |
@@ -1154,6 +1168,7 @@ The base animates the interface subtly and fast, with the durations and easings 
 | Segmented controls, tabs and the other groups of [Active element of a group](#active-element-of-a-group) | The `indicator` slides to the new active entry (`left`, `top`, `inline-size`, `block-size`, `opacity`) while the person works with the group (`:hover`, `:focus-within`, `:active`); the first measuring and changes of the layout put it in place at once. A theme only has to show the `indicator` | medium, standard |
 | Menus (`context-menu`, also submenus) | Grow out of their top left corner, the point they open at (a menu above its button out of its bottom left corner), from `--wmp-motion-scale` and fade in; a sheet slides up from the bottom edge instead (with reduced motion it only fades); they fade out faster and take no pointer while they do | in: medium, enter; out: fast, exit |
 | Dialogs (`dialog` and its `::backdrop`) | Grow out of the middle from `--wmp-motion-scale` and fade in, the backdrop fades; both fade out | in: slow, enter; out: medium, exit |
+| Quick jump (`group-overview`) | While the overview is open the `content` area shrinks around its middle to `--wmp-group-zoom-scale` and the grouped `list` or `tile-groups` (state `zoomed-out`) fades to `--wmp-group-zoom-opacity`; the overview fades in from a little closer (the inverse of `--wmp-motion-scale`) with its backdrop. After a choice the overview fades out, the content returns to its size and only then scrolls to the group (smoothly; at once after loading the part of a long list or with reduced motion, where only the fades stay) | content and list: medium, standard; overview in: slow, enter; out: fast, exit |
 | Side navigation | On phones the drawer (`sidebar`) slides in from its edge and the `sidebar-backdrop` fades; on the desktop the sidebar column narrows and widens when the person uses `btn-sidebar-toggle` (a collapsed state loaded at the start applies at once) | slow; drawer in: enter, out: exit |
 | Pages | The page (`[data-view]` in `content`) fades in when it opens, also when it comes back with back or forward | slow, standard |
 | Entries of lists | `list-row`, `tile`, `queue-item`, `tree-item` and `profile-tile` fade in when they appear: loaded, added, loaded more or in a group that opens | medium, standard |
@@ -1172,6 +1187,8 @@ The base animates the interface subtly and fast, with the durations and easings 
 | `--wmp-motion-easing-exit` | `cubic-bezier(0.3, 0, 1, 1)` | Something that closes |
 | `--wmp-motion-scale` | `0.96` | Scale a menu or dialog grows from and shrinks to |
 | `--wmp-motion-press-scale` | `0.97` | Scale of a pressed button, `tile` or `profile-tile` |
+| `--wmp-group-zoom-scale` | `0.92` | Scale the `content` area shrinks to while the `group-overview` is open (`1` with reduced motion) |
+| `--wmp-group-zoom-opacity` | `0.55` | Opacity of the grouped `list` or `tile-groups` while the `group-overview` is open |
 | `--wmp-playlist-cover-gap` | `0px` | Space between the tiles of a `playlist-cover` |
 | `--wmp-playlist-cover-slide-duration` | `1.2s` | How long a new song cover slides into its tile; calm on purpose, as nobody waits for it |
 | `--wmp-playlist-cover-slide-easing` | `cubic-bezier(0.33, 0, 0, 1)` | Easing of the slide: fast at the edge, settling softly |
@@ -1281,6 +1298,7 @@ The defaults are icons of [Phosphor Icons](https://phosphoricons.com) (MIT) unde
 | `sidebar-collapse` | `--wmp-icon-sidebar-collapse` | `/icons/phosphor/duotone/caret-double-left-duotone.svg` | Sidebar |
 | `sidebar-expand` | `--wmp-icon-sidebar-expand` | `/icons/phosphor/duotone/caret-double-right-duotone.svg` | Sidebar |
 | `has-video` | `--wmp-icon-has-video` | `/icons/phosphor/regular/video-camera.svg` | Content |
+| `group-jump` | `--wmp-icon-group-jump` | `/icons/phosphor/regular/squares-four.svg` | Content: after the name of a group in `btn-group-jump` |
 | `info` | `--wmp-icon-info` | `/icons/phosphor/regular/info.svg` | Content |
 | `cover-placeholder` | `--wmp-icon-cover-placeholder` | `/icons/phosphor/fill/music-notes-fill.svg` | Content |
 | `admin-library` | `--wmp-icon-admin-library` | `/icons/phosphor/regular/folder-open.svg` | Content (administration) |

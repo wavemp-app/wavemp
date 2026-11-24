@@ -67,9 +67,13 @@
             [data-part='dialog'],
             [data-part='app'] > [data-part='sidebar'],
             [data-part='app'] > [data-part='sidebar-backdrop'],
-            [data-part='content'] > [data-view]
+            [data-part='content'] > [data-view],
+            [data-part='group-overview'],
+            [data-part='list'],
+            [data-part='tile-groups']
         ),
-        [data-part='dialog']::backdrop {
+        [data-part='dialog']::backdrop,
+        [data-part='group-overview']::backdrop {
             animation-duration: var(--wmp-motion-duration-fade) !important;
             transition-duration: var(--wmp-motion-duration-fade) !important;
         }

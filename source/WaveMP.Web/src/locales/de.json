@@ -79,6 +79,13 @@
     "sourceFilter": {
       "label": "Medienordner",
       "all": "Alle Medienordner"
+    },
+    "groups": {
+      "title": "Springen zu",
+      "label": "Gruppen",
+      "letters": "Anfangsbuchstaben",
+      "loadError": "Die Gruppen konnten nicht geladen werden.",
+      "artistCount": "Künstler: {count}"
     }
   },
   "list": {
@@ -103,7 +110,8 @@
     "albums": "Alben",
     "number": "Nr.",
     "disc": "CD",
-    "media": "Verfügbar als"
+    "media": "Verfügbar als",
+    "groupJump": "Alle Gruppen anzeigen"
   },
   "placeholders": {
     "album": "Platzhalter-Album {number}",
@@ -624,7 +632,9 @@
       "optionTwo": "Zweite Option",
       "hint": "Hilfetext zum Feld.",
       "error": "Dieser Wert ist ungültig.",
-      "colorLabel": "Farbe"
+      "colorLabel": "Farbe",
+      "openGroupOverview": "Gruppenübersicht öffnen",
+      "openLetterOverview": "Buchstabenübersicht öffnen"
     },
     "transportStates": {
       "idle": "Leerlauf",
@@ -700,6 +710,7 @@
       "volumeDown": "Leiser",
       "mute": "Stumm schalten oder Ton an",
       "fullscreen": "Vollbild an oder aus",
+      "groupOverview": "Zu einer Gruppe springen",
       "search": "Bibliothek durchsuchen",
       "overview": "Tastenkürzel anzeigen"
     },
@@ -715,6 +726,7 @@
       "down": "↓",
       "escape": "Esc",
       "enter": "Eingabe",
+      "minus": "Minus",
       "separator": "+"
     }
   },

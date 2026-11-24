@@ -10,21 +10,26 @@ import BaseLink from '@/components/base/BaseLink.vue'
 import FavoriteButton from '@/components/collection/FavoriteButton.vue'
 import CoverRuleForm from '@/components/library/CoverRuleForm.vue'
 import DetailHeader from '@/components/library/DetailHeader.vue'
+import GroupOverview from '@/components/library/GroupOverview.vue'
 import LibraryCover from '@/components/library/LibraryCover.vue'
 import MetaItem from '@/components/library/MetaItem.vue'
 import OnlineMetadataDialog from '@/components/library/OnlineMetadataDialog.vue'
 import TrackGroupList from '@/components/library/TrackGroupList.vue'
 import { useDetailTitle } from '@/composables/useDetailTitle'
 import { useFormat } from '@/composables/useFormat'
+import { useGroupJump } from '@/composables/useGroupJump'
 import { getAlbum, listAlbumTracks } from '@/library/api'
 import { groupTracksByDisc } from '@/library/grouping'
+import { discOverviewGroups } from '@/library/groupOverview'
 import { artistLabelKey, durationSeconds } from '@/library/presentation'
 import { usePlayerStore } from '@/stores/player'
 import { useSessionStore } from '@/stores/session'
 
 /**
  * An album with its cover, details and all its tracks in the order of disc and track number, and the
- * heart that marks it as favorite. Admins also choose the cover rule of the album.
+ * heart that marks it as favorite. Admins also choose the cover rule of the album. An album with
+ * several discs offers the quick jump between them (a click on the heading of a disc, Ctrl+Minus,
+ * Escape or pinching the list).
  */
 const props = defineProps<{
     id: string
@@ -55,6 +60,14 @@ const playable = computed(() =>
     groups.value.flatMap((group) => group.tracks).filter((track) => track.hasAudio),
 )
 const hasAudio = computed(() => playable.value.length > 0)
+
+const trackList = ref<InstanceType<typeof TrackGroupList> | null>(null)
+const listElement = computed(() => {
+    const element: unknown = trackList.value?.$el
+    return element instanceof HTMLElement ? element : null
+})
+const discs = computed(() => discOverviewGroups(groups.value))
+const jump = useGroupJump({ list: listElement, available: () => discs.value.length >= 2 })
 
 function play(shuffle: boolean): void {
     player.playTracks(playable.value, shuffle ? -1 : 0, {
@@ -187,10 +200,23 @@ useDetailTitle(() => (status.value === 'ready' ? album.value?.title : null))
                 </template>
             </DetailHeader>
             <TrackGroupList
+                ref="trackList"
                 :groups="groups"
                 :label="album.title ?? ''"
                 :show-group-info="false"
                 :source="{ kind: 'album', id: props.id }"
+                :state="jump.open.value ? 'zoomed-out' : undefined"
+                :group-jump="discs.length >= 2"
+                :group-jump-open="jump.open.value"
+                @group-jump="(position, opener) => jump.openOverview({ position, opener })"
+            />
+            <GroupOverview
+                v-if="discs.length >= 2"
+                v-model:open="jump.open.value"
+                :groups="discs"
+                :current="jump.current.value"
+                unit="songs"
+                @choose="(group) => jump.choose(group.position)"
             />
             <section
                 v-if="session.isAdmin"

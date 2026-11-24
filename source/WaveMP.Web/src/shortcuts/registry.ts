@@ -23,6 +23,12 @@ export interface ShortcutDefinition {
     readonly label: string
     /** Whether holding the key repeats the shortcut (seeking, volume). Default: once per press. */
     readonly repeat?: boolean
+    /**
+     * The shortcut may also use keys the app reserves (Escape), as a fallback where nothing else
+     * takes them: its handlers must return false while something open uses the key itself (the
+     * drawer, the full-screen player ...). Open dialogs, menus and fields keep the key anyway.
+     */
+    readonly fallback?: boolean
 }
 
 /** Runs a shortcut; false if it does not apply right now, so the key does what it does otherwise. */
@@ -66,7 +72,7 @@ export class ShortcutConflictError extends Error {
 
 /**
  * The conflicts among shortcuts: keys used by more than one shortcut (also twice by the same one),
- * reserved keys and ids defined more than once.
+ * reserved keys (except for fallback shortcuts) and ids defined more than once.
  */
 export function findShortcutConflicts(
     definitions: readonly ShortcutDefinition[],
@@ -75,6 +81,9 @@ export function findShortcutConflicts(
     const ids = new Map<string, number>()
     const combos = new Map<string, string[]>()
     const reserved = new Set(reservedCombos.map(normalizeCombo))
+    const fallbacks = new Set(
+        definitions.filter((definition) => definition.fallback).map((definition) => definition.id),
+    )
 
     for (const definition of definitions) {
         ids.set(definition.id, (ids.get(definition.id) ?? 0) + 1)
@@ -91,8 +100,9 @@ export function findShortcutConflicts(
     }
 
     for (const [combo, users] of combos) {
-        if (reserved.has(combo)) {
-            conflicts.push({ kind: 'reserved', combo, ids: [...new Set(users)] })
+        const claiming = users.filter((id) => !fallbacks.has(id))
+        if (reserved.has(combo) && claiming.length > 0) {
+            conflicts.push({ kind: 'reserved', combo, ids: [...new Set(claiming)] })
         } else if (users.length > 1) {
             conflicts.push({ kind: 'combo', combo, ids: users })
         }
