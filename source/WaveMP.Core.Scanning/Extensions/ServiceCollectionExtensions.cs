@@ -40,6 +40,7 @@ public static class ServiceCollectionExtensions
         services.AddWaveMpJob<LibraryScanJob>(JobIds.LibraryScan);
         services.AddSingleton<IJobScheduleProvider, LibraryScanScheduleProvider>();
         services.AddSingleton<ISettingsChangeHandler<LibrarySettings>, LibraryScanRescheduler>();
+        services.AddScoped<ISettingsChangeHandler<OrganizingSettings>, TitleCleaningChangeHandler>();
 
         services.AddSingleton<MediaFolderWatcher>();
         services.AddHostedService(provider => provider.GetRequiredService<MediaFolderWatcher>());

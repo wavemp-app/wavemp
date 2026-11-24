@@ -47,4 +47,11 @@ public class MediaSource
     /// rules also applies to folders that did not change.
     /// </summary>
     public int AlbumGroupingVersion { get; set; }
+
+    /// <summary>
+    /// The title cleaning the tracks of this source were formed with. A scan forms the tracks of every folder of a
+    /// source with another mode than the current one (see <see cref="TitleCleaningMode"/>) again from the stored files,
+    /// like an older <see cref="AlbumGroupingVersion"/>.
+    /// </summary>
+    public TitleCleaningMode TitleCleaning { get; set; }
 }

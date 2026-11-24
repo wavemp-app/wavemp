@@ -22,5 +22,7 @@ public static class ServiceProviderExtensions
             .InitializeAsync(cancellationToken);
         await scope.ServiceProvider.GetRequiredService<IArtistPictureSettingsService>()
             .InitializeAsync(cancellationToken);
+        await scope.ServiceProvider.GetRequiredService<IOrganizingSettingsService>()
+            .InitializeAsync(cancellationToken);
     }
 }

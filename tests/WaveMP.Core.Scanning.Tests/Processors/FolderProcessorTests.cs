@@ -53,6 +53,23 @@ public class FolderProcessorTests
         track.Album!.Title.Should().Be("Album");
     }
 
+    [TestCase(TitleCleaningMode.None, "ALAN WALKER - Faded")]
+    [TestCase(TitleCleaningMode.ExactArtistTag, "ALAN WALKER - Faded")]
+    [TestCase(TitleCleaningMode.LooseArtist, "Faded")]
+    public void Process_TitleCleaning_RemovesTheArtistAsTheModeAsks(TitleCleaningMode mode, string title)
+    {
+        MediaFile tagged = Audio("Alan Walker/x.mp3", lossless: false, file => file.Tags = new MediaFileTags
+        {
+            Title = "ALAN WALKER - Faded",
+            Artist = "Alan Walker",
+        });
+
+        ProcessedTrack track = FolderProcessor.Process("Alan Walker", [tagged], titleCleaning: mode).Tracks.Single();
+
+        track.Metadata.Title.Should().Be(title);
+        tagged.Tags.Title.Should().Be("ALAN WALKER - Faded");
+    }
+
     [Test]
     public void Process_SeveralArtistsInOneFolder_MakesAnAlbumPerArtist()
     {

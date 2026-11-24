@@ -70,6 +70,7 @@ public static class LibrarySettingsMappingExtensions
             SettingsErrorReason.TooMany => ValidationErrorCodeDto.MaxItems,
             // Audio and video extensions must not both be empty.
             SettingsErrorReason.Empty => ValidationErrorCodeDto.Required,
+            SettingsErrorReason.TooLong => ValidationErrorCodeDto.MaxLength,
             _ => throw new ArgumentOutOfRangeException(nameof(reason), reason, "Unknown reason."),
         };
     }

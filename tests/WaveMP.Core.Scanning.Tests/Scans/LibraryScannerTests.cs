@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using NSubstitute;
 using WaveMP.Core.Jobs.Extensions;
 using WaveMP.Core.Jobs.Runs;
 using WaveMP.Core.Metadata.Extensions;
@@ -18,6 +19,7 @@ using WaveMP.Core.Scanning.Writers;
 using WaveMP.Core.Settings.Extensions;
 using WaveMP.Core.Settings.Groups;
 using WaveMP.Core.Settings.Services;
+using WaveMP.Core.Settings.Snapshots;
 using WaveMP.Data;
 using WaveMP.Data.Entities;
 using WaveMP.Data.Extensions;
@@ -554,6 +556,53 @@ public class LibraryScannerTests
         albums.Should().AllSatisfy(album => album.Covers.Should().ContainSingle());
         (await after.MediaSources.Select(source => source.AlbumGroupingVersion).Distinct().ToListAsync())
             .Should().Equal(ScannerVersions.AlbumGrouping);
+    }
+
+    [Test]
+    public async Task Scan_TemplateSwitchedToFileBased_CleansTheTitlesAgainWithoutReadingTheFiles()
+    {
+        await AudioAsync(
+            "Alan Walker/Faded.mp3",
+            tags: new TestTags { Title = "ALAN WALKER - Faded", Artist = "Alan Walker" });
+        await AudioAsync(
+            "Alan Walker/Exact.mp3",
+            tags: new TestTags { Title = "Alan Walker - Exact", Artist = "Alan Walker" });
+        OrganizingSettings current = new();
+        ISettingsSnapshot<OrganizingSettings> organizing = Substitute.For<ISettingsSnapshot<OrganizingSettings>>();
+        organizing.Current.Returns(_ => current);
+        await using ServiceProvider services = CreateServices(
+            _media.Path,
+            collection => collection.AddSingleton(organizing));
+
+        await ScanAsync(services: services);
+        Dictionary<string, (Guid Id, string Title)> folderBased = await TitlesAsync();
+        current = new OrganizingSettings { LayoutTemplate = "{Artist} - {Title}" };
+        ScanResult switched = await ScanAsync(services: services);
+        Dictionary<string, (Guid Id, string Title)> fileBased = await TitlesAsync();
+        ScanResult again = await ScanAsync(services: services);
+
+        folderBased.Values.Select(track => track.Title).Should().BeEquivalentTo("ALAN WALKER - Faded", "Exact");
+        switched.Statistics.FilesAdded.Should().Be(0);
+        switched.Statistics.FilesUpdated.Should().Be(0);
+        switched.Statistics.TracksUpdated.Should().Be(1);
+        fileBased.Should().BeEquivalentTo(new Dictionary<string, (Guid Id, string Title)>
+        {
+            ["FADED"] = (folderBased["FADED"].Id, "Faded"),
+            ["EXACT"] = (folderBased["EXACT"].Id, "Exact"),
+        });
+        again.Statistics.TracksUpdated.Should().Be(0);
+        await using WaveMpDbContext db = _database.CreateDbContext();
+        (await db.MediaSources.SingleAsync()).TitleCleaning.Should().Be(TitleCleaningMode.LooseArtist);
+        (await db.MediaFiles.SingleAsync(file => file.FileName == "Faded.mp3")).Tags.Title
+            .Should().Be("ALAN WALKER - Faded");
+
+        async Task<Dictionary<string, (Guid Id, string Title)>> TitlesAsync()
+        {
+            await using WaveMpDbContext tracks = _database.CreateDbContext();
+            return await tracks.Tracks.ToDictionaryAsync(
+                track => track.NormalizedBaseName,
+                track => (track.Id, track.Title));
+        }
     }
 
     [TestCase(AudioFormat.Mp3, "mp3")]

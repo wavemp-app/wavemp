@@ -6,14 +6,18 @@ namespace WaveMP.Core.Metadata.Resolutions;
 
 /// <summary>
 /// Combines the metadata of a track field by field: tags first, then the folder and file name, and the file name as
-/// title if nothing else is known.
+/// title if nothing else is known. A title from the tags loses a leading artist name as <see cref="TitleCleaner"/>
+/// describes, if <c>titleCleaning</c> asks for it.
 /// </summary>
 public static class TrackMetadataResolver
 {
-    public static ResolvedTrackMetadata Resolve(MediaTags tags, PathMetadata path)
+    public static ResolvedTrackMetadata Resolve(
+        MediaTags tags,
+        PathMetadata path,
+        TitleCleaningMode titleCleaning = TitleCleaningMode.None)
     {
         (string title, TrackMetadataSource source) = tags.Title is { } tagTitle
-            ? (tagTitle, TrackMetadataSource.Tags)
+            ? (TitleCleaner.Clean(tagTitle, tags.Artist, path.Artist, titleCleaning), TrackMetadataSource.Tags)
             : (path.Title, path.IsTitleFromPattern ? TrackMetadataSource.Path : TrackMetadataSource.FileName);
 
         // The artist of the folder becomes the album artist (e.g. a sampler named after its folder) only if the tags

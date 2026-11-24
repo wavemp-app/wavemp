@@ -50,10 +50,11 @@ internal sealed class LibraryScanRepository(WaveMpDbContext dbContext) : ILibrar
 
     public async Task<IReadOnlyList<Guid>> GetSourcesToRegroupAsync(
         int version,
+        TitleCleaningMode titleCleaning,
         CancellationToken cancellationToken = default)
     {
         return await dbContext.MediaSources.AsNoTracking()
-            .Where(source => source.AlbumGroupingVersion < version)
+            .Where(source => source.AlbumGroupingVersion < version || source.TitleCleaning != titleCleaning)
             .OrderBy(source => source.Id)
             .Select(source => source.Id)
             .ToListAsync(cancellationToken);
@@ -74,12 +75,15 @@ internal sealed class LibraryScanRepository(WaveMpDbContext dbContext) : ILibrar
     public async Task SetAlbumGroupingVersionAsync(
         Guid sourceId,
         int version,
+        TitleCleaningMode titleCleaning,
         CancellationToken cancellationToken = default)
     {
         await dbContext.MediaSources
             .Where(source => source.Id == sourceId)
             .ExecuteUpdateAsync(
-                setters => setters.SetProperty(source => source.AlbumGroupingVersion, version),
+                setters => setters
+                    .SetProperty(source => source.AlbumGroupingVersion, version)
+                    .SetProperty(source => source.TitleCleaning, titleCleaning),
                 cancellationToken);
     }
 

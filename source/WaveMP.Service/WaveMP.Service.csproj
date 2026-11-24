@@ -42,6 +42,7 @@
     <ProjectReference Include="..\WaveMP.Core.Lyrics\WaveMP.Core.Lyrics.csproj" />
     <ProjectReference Include="..\WaveMP.Core.Metadata\WaveMP.Core.Metadata.csproj" />
     <ProjectReference Include="..\WaveMP.Core.OnlineMetadata\WaveMP.Core.OnlineMetadata.csproj" />
+    <ProjectReference Include="..\WaveMP.Core.Organizing\WaveMP.Core.Organizing.csproj" />
     <ProjectReference Include="..\WaveMP.Core.Playlists\WaveMP.Core.Playlists.csproj" />
     <ProjectReference Include="..\WaveMP.Core.Recaps\WaveMP.Core.Recaps.csproj" />
     <ProjectReference Include="..\WaveMP.Core.Scanning\WaveMP.Core.Scanning.csproj" />

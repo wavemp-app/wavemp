@@ -42,6 +42,7 @@ COPY source/WaveMP.Core.Library/WaveMP.Core.Library.csproj source/WaveMP.Core.Li
 COPY source/WaveMP.Core.Lyrics/WaveMP.Core.Lyrics.csproj source/WaveMP.Core.Lyrics/
 COPY source/WaveMP.Core.Metadata/WaveMP.Core.Metadata.csproj source/WaveMP.Core.Metadata/
 COPY source/WaveMP.Core.OnlineMetadata/WaveMP.Core.OnlineMetadata.csproj source/WaveMP.Core.OnlineMetadata/
+COPY source/WaveMP.Core.Organizing/WaveMP.Core.Organizing.csproj source/WaveMP.Core.Organizing/
 COPY source/WaveMP.Core.Playlists/WaveMP.Core.Playlists.csproj source/WaveMP.Core.Playlists/
 COPY source/WaveMP.Core.Recaps/WaveMP.Core.Recaps.csproj source/WaveMP.Core.Recaps/
 COPY source/WaveMP.Core.Scanning/WaveMP.Core.Scanning.csproj source/WaveMP.Core.Scanning/
@@ -65,6 +66,7 @@ COPY source/WaveMP.Core.Library/ source/WaveMP.Core.Library/
 COPY source/WaveMP.Core.Lyrics/ source/WaveMP.Core.Lyrics/
 COPY source/WaveMP.Core.Metadata/ source/WaveMP.Core.Metadata/
 COPY source/WaveMP.Core.OnlineMetadata/ source/WaveMP.Core.OnlineMetadata/
+COPY source/WaveMP.Core.Organizing/ source/WaveMP.Core.Organizing/
 COPY source/WaveMP.Core.Playlists/ source/WaveMP.Core.Playlists/
 COPY source/WaveMP.Core.Recaps/ source/WaveMP.Core.Recaps/
 COPY source/WaveMP.Core.Scanning/ source/WaveMP.Core.Scanning/

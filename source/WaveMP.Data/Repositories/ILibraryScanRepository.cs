@@ -32,9 +32,13 @@ public interface ILibraryScanRepository
     Task<int> CountFilesAsync(Guid sourceId, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// The media sources whose albums were formed with an older version of the rules than <paramref name="version"/>.
+    /// The media sources whose albums were formed with an older version of the rules than <paramref name="version"/>
+    /// or whose titles were cleaned with another mode than <paramref name="titleCleaning"/>.
     /// </summary>
-    Task<IReadOnlyList<Guid>> GetSourcesToRegroupAsync(int version, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<Guid>> GetSourcesToRegroupAsync(
+        int version,
+        TitleCleaningMode titleCleaning,
+        CancellationToken cancellationToken = default);
 
     /// <summary>
     /// The folders of a source that contain tracks, in order.
@@ -42,9 +46,14 @@ public interface ILibraryScanRepository
     Task<IReadOnlyList<string>> GetTrackDirectoriesAsync(Guid sourceId, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Stores the version of the rules the albums of a source were formed with.
+    /// Stores the version of the rules the albums of a source were formed with and the mode its titles were cleaned
+    /// with.
     /// </summary>
-    Task SetAlbumGroupingVersionAsync(Guid sourceId, int version, CancellationToken cancellationToken = default);
+    Task SetAlbumGroupingVersionAsync(
+        Guid sourceId,
+        int version,
+        TitleCleaningMode titleCleaning,
+        CancellationToken cancellationToken = default);
 
     /// <summary>
     /// The files and tracks of one folder of a source (not its subfolders), tracked.

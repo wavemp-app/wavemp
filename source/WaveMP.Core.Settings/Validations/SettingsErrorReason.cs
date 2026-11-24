@@ -26,7 +26,12 @@ public enum SettingsErrorReason
     TooMany,
 
     /// <summary>
-    /// A list must not be empty (audio and video extensions together).
+    /// A list or text must not be empty (audio and video extensions together, the layout template).
     /// </summary>
     Empty,
+
+    /// <summary>
+    /// A text is longer than allowed.
+    /// </summary>
+    TooLong,
 }

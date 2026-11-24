@@ -24,7 +24,8 @@ public sealed class SettingsController(
     ITranscodingSettingsService transcodingSettings,
     IBackupSettingsService backupSettings,
     IOnlineMetadataSettingsService onlineMetadataSettings,
-    IArtistPictureSettingsService artistPictureSettings) : ControllerBase
+    IArtistPictureSettingsService artistPictureSettings,
+    IOrganizingSettingsService organizingSettings) : ControllerBase
 {
     /// <summary>
     /// Returns the settings of the media library.
@@ -311,6 +312,53 @@ public sealed class SettingsController(
         foreach (ArtistPictureSettingsValidationError error in result.Errors)
         {
             ModelState.AddValidationError(error.Field.ToJsonName(), error.Reason.ToCode());
+        }
+
+        return ValidationProblem();
+    }
+
+    /// <summary>
+    /// Returns the settings of the organization of the media files: the layout template.
+    /// </summary>
+    /// <param name="cancellationToken">Aborts the request.</param>
+    /// <response code="200">The settings of the organization.</response>
+    [HttpGet("organizing", Name = "GetOrganizingSettings")]
+    [ProducesResponseType<OrganizingSettingsDto>(StatusCodes.Status200OK, "application/json")]
+    public async Task<ActionResult<OrganizingSettingsDto>> GetOrganizingSettingsAsync(
+        CancellationToken cancellationToken)
+    {
+        OrganizingSettings settings = await organizingSettings.GetAsync(cancellationToken);
+        return Ok(settings.ToDto());
+    }
+
+    /// <summary>
+    /// Changes the settings of the organization of the media files. Missing or null values stay unchanged. Saving a
+    /// template moves no file. A switch between a folder-based and a file-based template starts a library scan, which
+    /// cleans the titles again from the stored tags.
+    /// </summary>
+    /// <param name="request">The changes.</param>
+    /// <param name="cancellationToken">Aborts the request.</param>
+    /// <response code="200">The changed settings, normalized (trimmed).</response>
+    /// <response code="400">The request is invalid (code <c>request.invalid</c>, errors by field: <c>required</c>,
+    /// <c>max_length</c>, <c>invalid_format</c> for a template that cannot be used; PreviewLayoutTemplate tells
+    /// why).</response>
+    [HttpPatch("organizing", Name = "UpdateOrganizingSettings")]
+    [Consumes("application/json")]
+    [ProducesResponseType<OrganizingSettingsDto>(StatusCodes.Status200OK, "application/json")]
+    [ProducesResponseType<ValidationProblemDto>(StatusCodes.Status400BadRequest, "application/problem+json")]
+    public async Task<ActionResult<OrganizingSettingsDto>> UpdateOrganizingSettingsAsync(
+        UpdateOrganizingSettingsDto request,
+        CancellationToken cancellationToken)
+    {
+        OrganizingSettingsResult result = await organizingSettings.UpdateAsync(request.ToCommand(), cancellationToken);
+        if (result.IsSuccess)
+        {
+            return Ok(result.Settings.ToDto());
+        }
+
+        foreach (OrganizingSettingsValidationError error in result.Errors)
+        {
+            ModelState.AddValidationError(error.Field.ToJsonName(), error.Reason.ToCode(), max: error.Maximum);
         }
 
         return ValidationProblem();

@@ -58,6 +58,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ILibraryIssueRepository, LibraryIssueRepository>();
         services.AddScoped<IScrobbleRepository, ScrobbleRepository>();
         services.AddScoped<ISubsonicRepository, SubsonicRepository>();
+        services.AddScoped<IOrganizeRepository, OrganizeRepository>();
 
         return services;
     }

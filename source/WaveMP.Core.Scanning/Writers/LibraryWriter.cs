@@ -8,6 +8,8 @@ using WaveMP.Core.Scanning.Moves;
 using WaveMP.Core.Scanning.Plans;
 using WaveMP.Core.Scanning.Processors;
 using WaveMP.Core.Scanning.Selections;
+using WaveMP.Core.Settings.Groups;
+using WaveMP.Core.Settings.Snapshots;
 using WaveMP.Data.Entities;
 using WaveMP.Data.Repositories;
 
@@ -23,9 +25,12 @@ namespace WaveMP.Core.Scanning.Writers;
 /// as the album artist of its album, and leaves an artist only when that artist has neither role on it any more; a
 /// song that loses its album or artist or gets its first one records nothing. A song whose folder was renamed or moved
 /// or whose files were renamed (see <see cref="TrackMovePlanner"/>) keeps its track, with its id and all its data, at
-/// the new place, and its album and artist moves are recorded like those of any other song.
+/// the new place, and its album and artist moves are recorded like those of any other song. Titles are cleaned as the
+/// current layout template asks for (see <see cref="TitleCleaningModes"/>).
 /// </summary>
-public sealed class LibraryWriter(ILibraryScanRepository library)
+public sealed class LibraryWriter(
+    ILibraryScanRepository library,
+    ISettingsSnapshot<OrganizingSettings> organizing)
 {
     private const int GenreMaxLength = 128;
 
@@ -114,7 +119,12 @@ public sealed class LibraryWriter(ILibraryScanRepository library)
         FolderWriteResult result = await WriteTracksAsync(
             sourceId,
             plan.RelativePath,
-            FolderProcessor.Process(plan.RelativePath, files, ChoicesOf(tracks, files), sourceId),
+            FolderProcessor.Process(
+                plan.RelativePath,
+                files,
+                ChoicesOf(tracks, files),
+                sourceId,
+                TitleCleaningModes.Of(organizing.Current)),
             tracks,
             adopted,
             track => IsDeferred(track.Id),
@@ -239,7 +249,8 @@ public sealed class LibraryWriter(ILibraryScanRepository library)
                 directoryPath,
                 stored.Files,
                 ChoicesOf(stored.Tracks, stored.Files),
-                sourceId),
+                sourceId,
+                TitleCleaningModes.Of(organizing.Current)),
             stored.Tracks,
             new HashSet<Guid>(),
             _ => false,

@@ -1136,6 +1136,42 @@ export function createJobRunPageFromDiscriminatorValue(parseNode: ParseNode | un
 /**
  * Creates a new instance of the appropriate class based on discriminator value
  * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {LayoutTemplateError}
+ */
+// @ts-ignore
+export function createLayoutTemplateErrorFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoLayoutTemplateError;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {LayoutTemplatePath}
+ */
+// @ts-ignore
+export function createLayoutTemplatePathFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoLayoutTemplatePath;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {LayoutTemplatePreview}
+ */
+// @ts-ignore
+export function createLayoutTemplatePreviewFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoLayoutTemplatePreview;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {LayoutTemplateSample}
+ */
+// @ts-ignore
+export function createLayoutTemplateSampleFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoLayoutTemplateSample;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
  * @returns {LibraryIssueCount}
  */
 // @ts-ignore
@@ -1432,6 +1468,15 @@ export function createOnlineTrackMatchFromDiscriminatorValue(parseNode: ParseNod
 /**
  * Creates a new instance of the appropriate class based on discriminator value
  * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {OrganizingSettings}
+ */
+// @ts-ignore
+export function createOrganizingSettingsFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoOrganizingSettings;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
  * @returns {PinStatus}
  */
 // @ts-ignore
@@ -1562,6 +1607,15 @@ export function createPlaylistFromDiscriminatorValue(parseNode: ParseNode | unde
 // @ts-ignore
 export function createPlaylistPageFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
     return deserializeIntoPlaylistPage;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {PreviewLayoutTemplate}
+ */
+// @ts-ignore
+export function createPreviewLayoutTemplateFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoPreviewLayoutTemplate;
 }
 /**
  * Creates a new instance of the appropriate class based on discriminator value
@@ -2266,6 +2320,15 @@ export function createUpdateNowPlayingFromDiscriminatorValue(parseNode: ParseNod
 // @ts-ignore
 export function createUpdateOnlineMetadataSettingsFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
     return deserializeIntoUpdateOnlineMetadataSettings;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {UpdateOrganizingSettings}
+ */
+// @ts-ignore
+export function createUpdateOrganizingSettingsFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoUpdateOrganizingSettings;
 }
 /**
  * Creates a new instance of the appropriate class based on discriminator value
@@ -3321,6 +3384,69 @@ export function deserializeIntoJobRunPage(jobRunPage: Partial<JobRunPage> | unde
 }
 /**
  * The deserialization information for the current model
+ * @param LayoutTemplateError The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoLayoutTemplateError(layoutTemplateError: Partial<LayoutTemplateError> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "code": n => { layoutTemplateError.code = n.getEnumValue<LayoutTemplateErrorCode>(LayoutTemplateErrorCodeObject); },
+        "max": n => { layoutTemplateError.max = n.getNumberValue(); },
+        "placeholder": n => { layoutTemplateError.placeholder = n.getStringValue(); },
+        "position": n => { layoutTemplateError.position = n.getNumberValue(); },
+    }
+}
+/**
+ * The deserialization information for the current model
+ * @param LayoutTemplatePath The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoLayoutTemplatePath(layoutTemplatePath: Partial<LayoutTemplatePath> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "baseName": n => { layoutTemplatePath.baseName = n.getStringValue(); },
+        "extension": n => { layoutTemplatePath.extension = n.getStringValue(); },
+        "folders": n => { layoutTemplatePath.folders = n.getCollectionOfPrimitiveValues<string>("string"); },
+        "isTooLong": n => { layoutTemplatePath.isTooLong = n.getBooleanValue(); },
+        "trackId": n => { layoutTemplatePath.trackId = n.getGuidValue(); },
+    }
+}
+/**
+ * The deserialization information for the current model
+ * @param LayoutTemplatePreview The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoLayoutTemplatePreview(layoutTemplatePreview: Partial<LayoutTemplatePreview> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "errors": n => { layoutTemplatePreview.errors = n.getCollectionOfObjectValues<LayoutTemplateError>(createLayoutTemplateErrorFromDiscriminatorValue); },
+        "isFolderBased": n => { layoutTemplatePreview.isFolderBased = n.getBooleanValue(); },
+        "isValid": n => { layoutTemplatePreview.isValid = n.getBooleanValue(); },
+        "paths": n => { layoutTemplatePreview.paths = n.getCollectionOfObjectValues<LayoutTemplatePath>(createLayoutTemplatePathFromDiscriminatorValue); },
+    }
+}
+/**
+ * The deserialization information for the current model
+ * @param LayoutTemplateSample The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoLayoutTemplateSample(layoutTemplateSample: Partial<LayoutTemplateSample> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "album": n => { layoutTemplateSample.album = n.getStringValue(); },
+        "albumArtist": n => { layoutTemplateSample.albumArtist = n.getStringValue(); },
+        "artist": n => { layoutTemplateSample.artist = n.getStringValue(); },
+        "discNumber": n => { layoutTemplateSample.discNumber = n.getNumberValue(); },
+        "extension": n => { layoutTemplateSample.extension = n.getStringValue(); },
+        "genre": n => { layoutTemplateSample.genre = n.getStringValue(); },
+        "isCompilation": n => { layoutTemplateSample.isCompilation = n.getBooleanValue(); },
+        "title": n => { layoutTemplateSample.title = n.getStringValue(); },
+        "trackNumber": n => { layoutTemplateSample.trackNumber = n.getNumberValue(); },
+        "year": n => { layoutTemplateSample.year = n.getNumberValue(); },
+    }
+}
+/**
+ * The deserialization information for the current model
  * @param LibraryIssue The instance to deserialize into.
  * @returns {Record<string, (node: ParseNode) => void>}
  */
@@ -3820,6 +3946,18 @@ export function deserializeIntoOnlineTrackMatches(onlineTrackMatches: Partial<On
 }
 /**
  * The deserialization information for the current model
+ * @param OrganizingSettings The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoOrganizingSettings(organizingSettings: Partial<OrganizingSettings> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "isFolderBased": n => { organizingSettings.isFolderBased = n.getBooleanValue(); },
+        "layoutTemplate": n => { organizingSettings.layoutTemplate = n.getStringValue(); },
+    }
+}
+/**
+ * The deserialization information for the current model
  * @param PinStatus The instance to deserialize into.
  * @returns {Record<string, (node: ParseNode) => void>}
  */
@@ -3982,6 +4120,19 @@ export function deserializeIntoPlaylistPage(playlistPage: Partial<PlaylistPage> 
         "limit": n => { playlistPage.limit = n.getNumberValue(); },
         "offset": n => { playlistPage.offset = n.getNumberValue(); },
         "total": n => { playlistPage.total = n.getNumberValue(); },
+    }
+}
+/**
+ * The deserialization information for the current model
+ * @param PreviewLayoutTemplate The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoPreviewLayoutTemplate(previewLayoutTemplate: Partial<PreviewLayoutTemplate> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "samples": n => { previewLayoutTemplate.samples = n.getCollectionOfObjectValues<LayoutTemplateSample>(createLayoutTemplateSampleFromDiscriminatorValue); },
+        "template": n => { previewLayoutTemplate.template = n.getStringValue(); },
+        "trackIds": n => { previewLayoutTemplate.trackIds = n.getCollectionOfPrimitiveValues<Guid>("string"); },
     }
 }
 /**
@@ -5111,6 +5262,17 @@ export function deserializeIntoUpdateOnlineMetadataSettings(updateOnlineMetadata
 }
 /**
  * The deserialization information for the current model
+ * @param UpdateOrganizingSettings The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoUpdateOrganizingSettings(updateOrganizingSettings: Partial<UpdateOrganizingSettings> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "layoutTemplate": n => { updateOrganizingSettings.layoutTemplate = n.getStringValue(); },
+    }
+}
+/**
+ * The deserialization information for the current model
  * @param UpdatePlaybackState The instance to deserialize into.
  * @returns {Record<string, (node: ParseNode) => void>}
  */
@@ -5898,6 +6060,119 @@ export interface JobRunPage extends AdditionalDataHolder, Parsable {
 export type JobRunStatus = (typeof JobRunStatusObject)[keyof typeof JobRunStatusObject];
 export type JobState = (typeof JobStateObject)[keyof typeof JobStateObject];
 export type JobTrigger = (typeof JobTriggerObject)[keyof typeof JobTriggerObject];
+/**
+ * A problem of a layout template.
+ */
+export interface LayoutTemplateError extends AdditionalDataHolder, Parsable {
+    /**
+     * Why a layout template cannot be used. Clients translate it.
+     */
+    code?: LayoutTemplateErrorCode | null;
+    /**
+     * The longest allowed template for `max_length`; missing for other codes.
+     */
+    max?: number | null;
+    /**
+     * The text of the placeholder for `unknown_placeholder` and its name for `invalid_number_format`, at most 64 characters; missing for other codes.
+     */
+    placeholder?: string | null;
+    /**
+     * Index of the character (UTF-16 code unit) of the trimmed template where the problem starts; 0 for problems of the whole template.
+     */
+    position?: number | null;
+}
+export type LayoutTemplateErrorCode = (typeof LayoutTemplateErrorCodeObject)[keyof typeof LayoutTemplateErrorCodeObject];
+/**
+ * Where a layout template puts one song, relative to the folder of its media source. Names are already cleaned of characters that file names cannot hold.
+ */
+export interface LayoutTemplatePath extends AdditionalDataHolder, Parsable {
+    /**
+     * The file name without extension; all files of the song get it.
+     */
+    baseName?: string | null;
+    /**
+     * Extension of the file the song plays, without dot, or `null`.
+     */
+    extension?: string | null;
+    /**
+     * The folder names, outermost first; empty for a file-based template.
+     */
+    folders?: string[] | null;
+    /**
+     * Whether the path is longer than the scan allows; such a song cannot be moved.
+     */
+    isTooLong?: boolean | null;
+    /**
+     * The track of the library, or `null` for an example song.
+     */
+    trackId?: Guid | null;
+}
+/**
+ * The preview of a layout template. Nothing on disk is touched.
+ */
+export interface LayoutTemplatePreview extends AdditionalDataHolder, Parsable {
+    /**
+     * The problems of an invalid template; empty for a valid one.
+     */
+    errors?: LayoutTemplateError[] | null;
+    /**
+     * Whether the valid template lays the songs out in folders; `false` for an invalid one.
+     */
+    isFolderBased?: boolean | null;
+    /**
+     * Whether the template can be saved.
+     */
+    isValid?: boolean | null;
+    /**
+     * Where the template puts the songs: first the tracks, then the example songs; empty for an invalid template.
+     */
+    paths?: LayoutTemplatePath[] | null;
+}
+/**
+ * An example song for the preview of a layout template, e.g. while the library is empty. Texts are at most 512 characters (the genre 128), numbers 1 to 9999.
+ */
+export interface LayoutTemplateSample extends AdditionalDataHolder, Parsable {
+    /**
+     * The album property
+     */
+    album?: string | null;
+    /**
+     * The albumArtist property
+     */
+    albumArtist?: string | null;
+    /**
+     * The artist property
+     */
+    artist?: string | null;
+    /**
+     * The discNumber property
+     */
+    discNumber?: number | null;
+    /**
+     * Extension of the file without dot, e.g. `flac`; letters and digits only, otherwise ignored.
+     */
+    extension?: string | null;
+    /**
+     * The genre property
+     */
+    genre?: string | null;
+    /**
+     * Whether the album is a compilation: without album artist, `{AlbumArtist}` becomes "Various Artists".
+     */
+    isCompilation?: boolean | null;
+    /**
+     * The title property
+     */
+    title?: string | null;
+    /**
+     * The trackNumber property
+     */
+    trackNumber?: number | null;
+    /**
+     * The year property
+     */
+    year?: number | null;
+}
 /**
  * A problem of the library found by the library check, with its track, file and details. Clients show their own text for the type and the codes of the details.
  */
@@ -6822,6 +7097,19 @@ export interface OnlineTrackMatches extends AdditionalDataHolder, Parsable {
     matches?: OnlineTrackMatch[] | null;
 }
 /**
+ * Settings of the organization of the media files.
+ */
+export interface OrganizingSettings extends AdditionalDataHolder, Parsable {
+    /**
+     * Whether the template lays the songs out in folders (it contains `/`). With a file-based template the scan removes a leading artist name followed by `" - "` from title tags without regard to case; with a folder-based one only if it equals the artist tag exactly.
+     */
+    isFolderBased?: boolean | null;
+    /**
+     * The layout template that names the folders and files of a song, e.g. `{AlbumArtist}/{Album}/{TrackNumber:00} {Title}` (the default) or `{Artist} - {Title}`. `/` separates folders; placeholders are `{Artist}`, `{AlbumArtist}`, `{Album}`, `{Year}`, `{TrackNumber}`, `{DiscNumber}`, `{Title}` and `{Genre}` (numbers take a format of 1 to 4 zeros, e.g. `{TrackNumber:00}`); `[...]` is a section that vanishes when one of its placeholders has no value; doubled brackets and braces stand for the character itself. The file name must contain `{Title}`.
+     */
+    layoutTemplate?: string | null;
+}
+/**
  * Whether a profile is protected by a PIN. The PIN itself is never returned.
  */
 export interface PinStatus extends AdditionalDataHolder, Parsable {
@@ -7071,6 +7359,23 @@ export interface PlaylistPage extends AdditionalDataHolder, Parsable {
     total?: number | null;
 }
 export type PlaylistSort = (typeof PlaylistSortObject)[keyof typeof PlaylistSortObject];
+/**
+ * Asks where a layout template would put songs. Without IReadOnlyList&lt;Guid&gt;? PreviewLayoutTemplateDto.TrackIds and IReadOnlyList&lt;LayoutTemplateSampleDto&gt;? PreviewLayoutTemplateDto.Samples the preview shows the first 3 songs of the library (by album artist, album, disc and track number).
+ */
+export interface PreviewLayoutTemplate extends AdditionalDataHolder, Parsable {
+    /**
+     * Example songs to show after the tracks, at most 10.
+     */
+    samples?: LayoutTemplateSample[] | null;
+    /**
+     * The layout template to try (see string OrganizingSettingsDto.LayoutTemplate). An empty or invalid template is answered with its problems, not with 400.
+     */
+    template?: string | null;
+    /**
+     * Tracks of the library to show, at most 10; unknown ids are left out.
+     */
+    trackIds?: Guid[] | null;
+}
 export type ProblemCode = (typeof ProblemCodeObject)[keyof typeof ProblemCodeObject];
 export interface ProblemDetails extends AdditionalDataHolder, ApiError, Parsable {
     /**
@@ -8436,6 +8741,73 @@ export function serializeJobRunPage(writer: SerializationWriter, jobRunPage: Par
 /**
  * Serializes information the current object
  * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param LayoutTemplateError The instance to serialize from.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeLayoutTemplateError(writer: SerializationWriter, layoutTemplateError: Partial<LayoutTemplateError> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!layoutTemplateError || isSerializingDerivedType) { return; }
+    writer.writeEnumValue<LayoutTemplateErrorCode>("code", layoutTemplateError.code);
+    writer.writeNumberValue("max", layoutTemplateError.max);
+    writer.writeStringValue("placeholder", layoutTemplateError.placeholder);
+    writer.writeNumberValue("position", layoutTemplateError.position);
+    writer.writeAdditionalData(layoutTemplateError.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param LayoutTemplatePath The instance to serialize from.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeLayoutTemplatePath(writer: SerializationWriter, layoutTemplatePath: Partial<LayoutTemplatePath> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!layoutTemplatePath || isSerializingDerivedType) { return; }
+    writer.writeStringValue("baseName", layoutTemplatePath.baseName);
+    writer.writeStringValue("extension", layoutTemplatePath.extension);
+    writer.writeCollectionOfPrimitiveValues<string>("folders", layoutTemplatePath.folders);
+    writer.writeBooleanValue("isTooLong", layoutTemplatePath.isTooLong);
+    writer.writeGuidValue("trackId", layoutTemplatePath.trackId);
+    writer.writeAdditionalData(layoutTemplatePath.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param LayoutTemplatePreview The instance to serialize from.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeLayoutTemplatePreview(writer: SerializationWriter, layoutTemplatePreview: Partial<LayoutTemplatePreview> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!layoutTemplatePreview || isSerializingDerivedType) { return; }
+    writer.writeCollectionOfObjectValues<LayoutTemplateError>("errors", layoutTemplatePreview.errors, serializeLayoutTemplateError);
+    writer.writeBooleanValue("isFolderBased", layoutTemplatePreview.isFolderBased);
+    writer.writeBooleanValue("isValid", layoutTemplatePreview.isValid);
+    writer.writeCollectionOfObjectValues<LayoutTemplatePath>("paths", layoutTemplatePreview.paths, serializeLayoutTemplatePath);
+    writer.writeAdditionalData(layoutTemplatePreview.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param LayoutTemplateSample The instance to serialize from.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeLayoutTemplateSample(writer: SerializationWriter, layoutTemplateSample: Partial<LayoutTemplateSample> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!layoutTemplateSample || isSerializingDerivedType) { return; }
+    writer.writeStringValue("album", layoutTemplateSample.album);
+    writer.writeStringValue("albumArtist", layoutTemplateSample.albumArtist);
+    writer.writeStringValue("artist", layoutTemplateSample.artist);
+    writer.writeNumberValue("discNumber", layoutTemplateSample.discNumber);
+    writer.writeStringValue("extension", layoutTemplateSample.extension);
+    writer.writeStringValue("genre", layoutTemplateSample.genre);
+    writer.writeBooleanValue("isCompilation", layoutTemplateSample.isCompilation);
+    writer.writeStringValue("title", layoutTemplateSample.title);
+    writer.writeNumberValue("trackNumber", layoutTemplateSample.trackNumber);
+    writer.writeNumberValue("year", layoutTemplateSample.year);
+    writer.writeAdditionalData(layoutTemplateSample.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
  * @param LibraryIssue The instance to serialize from.
  * @param writer Serialization writer to use to serialize this model
  */
@@ -8967,6 +9339,19 @@ export function serializeOnlineTrackMatches(writer: SerializationWriter, onlineT
 /**
  * Serializes information the current object
  * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param OrganizingSettings The instance to serialize from.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeOrganizingSettings(writer: SerializationWriter, organizingSettings: Partial<OrganizingSettings> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!organizingSettings || isSerializingDerivedType) { return; }
+    writer.writeBooleanValue("isFolderBased", organizingSettings.isFolderBased);
+    writer.writeStringValue("layoutTemplate", organizingSettings.layoutTemplate);
+    writer.writeAdditionalData(organizingSettings.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
  * @param PinStatus The instance to serialize from.
  * @param writer Serialization writer to use to serialize this model
  */
@@ -9141,6 +9526,20 @@ export function serializePlaylistPage(writer: SerializationWriter, playlistPage:
     writer.writeNumberValue("offset", playlistPage.offset);
     writer.writeNumberValue("total", playlistPage.total);
     writer.writeAdditionalData(playlistPage.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param PreviewLayoutTemplate The instance to serialize from.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializePreviewLayoutTemplate(writer: SerializationWriter, previewLayoutTemplate: Partial<PreviewLayoutTemplate> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!previewLayoutTemplate || isSerializingDerivedType) { return; }
+    writer.writeCollectionOfObjectValues<LayoutTemplateSample>("samples", previewLayoutTemplate.samples, serializeLayoutTemplateSample);
+    writer.writeStringValue("template", previewLayoutTemplate.template);
+    writer.writeCollectionOfPrimitiveValues<Guid>("trackIds", previewLayoutTemplate.trackIds);
+    writer.writeAdditionalData(previewLayoutTemplate.additionalData);
 }
 /**
  * Serializes information the current object
@@ -10342,6 +10741,18 @@ export function serializeUpdateOnlineMetadataSettings(writer: SerializationWrite
     writer.writeNumberValue("musicBrainzRequestIntervalMilliseconds", updateOnlineMetadataSettings.musicBrainzRequestIntervalMilliseconds);
     writer.writeStringValue("musicBrainzUrl", updateOnlineMetadataSettings.musicBrainzUrl);
     writer.writeAdditionalData(updateOnlineMetadataSettings.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param UpdateOrganizingSettings The instance to serialize from.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeUpdateOrganizingSettings(writer: SerializationWriter, updateOrganizingSettings: Partial<UpdateOrganizingSettings> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!updateOrganizingSettings || isSerializingDerivedType) { return; }
+    writer.writeStringValue("layoutTemplate", updateOrganizingSettings.layoutTemplate);
+    writer.writeAdditionalData(updateOrganizingSettings.additionalData);
 }
 /**
  * Serializes information the current object
@@ -12153,6 +12564,15 @@ export interface UpdateOnlineMetadataSettings extends AdditionalDataHolder, Pars
     musicBrainzUrl?: string | null;
 }
 /**
+ * Changes the settings of the organization of the media files. Missing or null values stay unchanged.
+ */
+export interface UpdateOrganizingSettings extends AdditionalDataHolder, Parsable {
+    /**
+     * The layout template (see string OrganizingSettingsDto.LayoutTemplate), at most 512 characters; surrounding white space is removed. PreviewLayoutTemplate returns the detailed problems of an invalid template.
+     */
+    layoutTemplate?: string | null;
+}
+/**
  * The playback state of a device to save for the current profile; it replaces the saved one.
  */
 export interface UpdatePlaybackState extends AdditionalDataHolder, Parsable {
@@ -12984,6 +13404,23 @@ export const JobTriggerObject = {
     LibraryScan: "LibraryScan",
     CoverRule: "CoverRule",
     Settings: "Settings",
+} as const;
+/**
+ * Why a layout template cannot be used. Clients translate it.
+ */
+export const LayoutTemplateErrorCodeObject = {
+    Required: "required",
+    Max_length: "max_length",
+    Unknown_placeholder: "unknown_placeholder",
+    Unbalanced_brace: "unbalanced_brace",
+    Unbalanced_section: "unbalanced_section",
+    Nested_section: "nested_section",
+    Invalid_number_format: "invalid_number_format",
+    Missing_title: "missing_title",
+    Rooted: "rooted",
+    Empty_folder: "empty_folder",
+    Parent_folder: "parent_folder",
+    Folder_in_section: "folder_in_section",
 } as const;
 /**
  * How much a problem of the library matters: Problem should be fixed, Hint is only a hint (videos without audio, songs without video).

@@ -882,6 +882,13 @@ namespace WaveMP.Data.Migrations
                         .HasColumnType("character varying(1000)")
                         .HasColumnName("path");
 
+                    b.Property<string>("TitleCleaning")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasDefaultValue("None")
+                        .HasColumnName("title_cleaning");
+
                     b.Property<DateTimeOffset>("UpdatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at");

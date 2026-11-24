@@ -22,11 +22,14 @@ public static class FolderProcessor
     /// that is not part of the track (or not of the category) is ignored, and the quality rule chooses.</param>
     /// <param name="sourceId">The media source of the folder; keeps albums without artist, also those of
     /// compilations, apart from those of other sources.</param>
+    /// <param name="titleCleaning">How a leading artist is removed from title tags (see <see cref="TitleCleaner"/>).
+    /// </param>
     public static ProcessedFolder Process(
         string directoryPath,
         IReadOnlyList<MediaFile> files,
         IReadOnlyDictionary<string, FileChoices>? choices = null,
-        Guid? sourceId = null)
+        Guid? sourceId = null,
+        TitleCleaningMode titleCleaning = TitleCleaningMode.None)
     {
         IReadOnlyList<FileGroup> groups = FileGrouper.Group(files);
         FileGroup[] trackGroups = [.. groups.Where(group => group.IsTrack)];
@@ -42,7 +45,7 @@ public static class FolderProcessor
             MediaFile? video = ChooseVideo(group, choice.Video);
             MediaFile source = audio ?? video!;
             PathMetadata path = PathMetadataParser.Parse(segments, group.BaseName, pattern);
-            tracks.Add((group, choice, audio, video, TrackMetadataResolver.Resolve(ToMediaTags(source.Tags), path)));
+            tracks.Add((group, choice, audio, video, TrackMetadataResolver.Resolve(ToMediaTags(source.Tags), path, titleCleaning)));
         }
 
         IReadOnlyList<AlbumAssignment?> albums = AlbumResolver.Resolve(

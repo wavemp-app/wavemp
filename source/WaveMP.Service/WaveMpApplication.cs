@@ -9,6 +9,7 @@ using WaveMP.Core.Library.Extensions;
 using WaveMP.Core.Lyrics.Extensions;
 using WaveMP.Core.Metadata.Extensions;
 using WaveMP.Core.OnlineMetadata.Extensions;
+using WaveMP.Core.Organizing.Extensions;
 using WaveMP.Core.Playlists.Extensions;
 using WaveMP.Core.Recaps.Extensions;
 using WaveMP.Core.Scanning.Extensions;
@@ -65,6 +66,7 @@ public static class WaveMpApplication
         builder.Services.AddWaveMpCaching();
         builder.Services.AddWaveMpPlaylists();
         builder.Services.AddWaveMpArtistPictures();
+        builder.Services.AddWaveMpOrganizing();
         builder.Services.AddWaveMpCollection();
         builder.Services.AddWaveMpAutoplay();
         builder.Services.AddWaveMpStreaming();

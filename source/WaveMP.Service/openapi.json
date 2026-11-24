@@ -6436,6 +6436,78 @@
         ]
       }
     },
+    "/api/v1/organize/template-preview": {
+      "post": {
+        "tags": [
+          "Organize"
+        ],
+        "summary": "Shows where a layout template would put songs of the library or example songs, without saving the template and without touching any file. An invalid template is answered with its problems (codes with their position).",
+        "operationId": "PreviewLayoutTemplate",
+        "requestBody": {
+          "description": "The template and the songs to show.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PreviewLayoutTemplate"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/PreviewLayoutTemplate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "The preview: whether the template is valid, its problems and the paths of the songs.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LayoutTemplatePreview"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is invalid (code `request.invalid`, errors by field).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblem"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
     "/api/v1/me/playback-state": {
       "get": {
         "tags": [
@@ -9698,6 +9770,122 @@
           },
           "400": {
             "description": "The request is invalid (code `request.invalid`, errors by field: `invalid_format` for an API key that is not 1 to 64 letters or digits).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblem"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/api/v1/settings/organizing": {
+      "get": {
+        "tags": [
+          "Settings"
+        ],
+        "summary": "Returns the settings of the organization of the media files: the layout template.",
+        "operationId": "GetOrganizingSettings",
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "The settings of the organization.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganizingSettings"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      },
+      "patch": {
+        "tags": [
+          "Settings"
+        ],
+        "summary": "Changes the settings of the organization of the media files. Missing or null values stay unchanged. Saving a template moves no file. A switch between a folder-based and a file-based template starts a library scan, which cleans the titles again from the stored tags.",
+        "operationId": "UpdateOrganizingSettings",
+        "requestBody": {
+          "description": "The changes.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateOrganizingSettings"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateOrganizingSettings"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "The changed settings, normalized (trimmed).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganizingSettings"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is invalid (code `request.invalid`, errors by field: `required`, `max_length`, `invalid_format` for a template that cannot be used; PreviewLayoutTemplate tells why).",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -17077,6 +17265,220 @@
         "type": "string",
         "description": "What started a job run."
       },
+      "LayoutTemplateError": {
+        "required": [
+          "code",
+          "position"
+        ],
+        "type": "object",
+        "properties": {
+          "code": {
+            "$ref": "#/components/schemas/LayoutTemplateErrorCode"
+          },
+          "position": {
+            "type": "integer",
+            "description": "Index of the character (UTF-16 code unit) of the trimmed template where the problem starts; 0 for problems of the whole template.",
+            "format": "int32"
+          },
+          "placeholder": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The text of the placeholder for `unknown_placeholder` and its name for `invalid_number_format`, at most 64 characters; missing for other codes."
+          },
+          "max": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "description": "The longest allowed template for `max_length`; missing for other codes.",
+            "format": "int32"
+          }
+        },
+        "description": "A problem of a layout template."
+      },
+      "LayoutTemplateErrorCode": {
+        "enum": [
+          "required",
+          "max_length",
+          "unknown_placeholder",
+          "unbalanced_brace",
+          "unbalanced_section",
+          "nested_section",
+          "invalid_number_format",
+          "missing_title",
+          "rooted",
+          "empty_folder",
+          "parent_folder",
+          "folder_in_section"
+        ],
+        "type": "string",
+        "description": "Why a layout template cannot be used. Clients translate it."
+      },
+      "LayoutTemplatePath": {
+        "required": [
+          "trackId",
+          "folders",
+          "baseName",
+          "extension",
+          "isTooLong"
+        ],
+        "type": "object",
+        "properties": {
+          "trackId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The track of the library, or `null` for an example song.",
+            "format": "uuid"
+          },
+          "folders": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "The folder names, outermost first; empty for a file-based template."
+          },
+          "baseName": {
+            "type": "string",
+            "description": "The file name without extension; all files of the song get it."
+          },
+          "extension": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Extension of the file the song plays, without dot, or `null`."
+          },
+          "isTooLong": {
+            "type": "boolean",
+            "description": "Whether the path is longer than the scan allows; such a song cannot be moved."
+          }
+        },
+        "description": "Where a layout template puts one song, relative to the folder of its media source. Names are already cleaned of characters that file names cannot hold."
+      },
+      "LayoutTemplatePreview": {
+        "required": [
+          "isValid",
+          "isFolderBased",
+          "errors",
+          "paths"
+        ],
+        "type": "object",
+        "properties": {
+          "isValid": {
+            "type": "boolean",
+            "description": "Whether the template can be saved."
+          },
+          "isFolderBased": {
+            "type": "boolean",
+            "description": "Whether the valid template lays the songs out in folders; `false` for an invalid one."
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LayoutTemplateError"
+            },
+            "description": "The problems of an invalid template; empty for a valid one."
+          },
+          "paths": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LayoutTemplatePath"
+            },
+            "description": "Where the template puts the songs: first the tracks, then the example songs; empty for an invalid template."
+          }
+        },
+        "description": "The preview of a layout template. Nothing on disk is touched."
+      },
+      "LayoutTemplateSample": {
+        "required": [
+          "title"
+        ],
+        "type": "object",
+        "properties": {
+          "title": {
+            "maxLength": 512,
+            "minLength": 0,
+            "type": "string"
+          },
+          "artist": {
+            "maxLength": 512,
+            "minLength": 0,
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "albumArtist": {
+            "maxLength": 512,
+            "minLength": 0,
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "album": {
+            "maxLength": 512,
+            "minLength": 0,
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "year": {
+            "maximum": 9999,
+            "minimum": 1,
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "trackNumber": {
+            "maximum": 9999,
+            "minimum": 1,
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "discNumber": {
+            "maximum": 9999,
+            "minimum": 1,
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "genre": {
+            "maxLength": 128,
+            "minLength": 0,
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "isCompilation": {
+            "type": "boolean",
+            "description": "Whether the album is a compilation: without album artist, `{AlbumArtist}` becomes \"Various Artists\"."
+          },
+          "extension": {
+            "maxLength": 10,
+            "minLength": 0,
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Extension of the file without dot, e.g. `flac`; letters and digits only, otherwise ignored."
+          }
+        },
+        "description": "An example song for the preview of a layout template, e.g. while the library is empty. Texts are at most 512 characters (the genre 128), numbers 1 to 9999."
+      },
       "LibraryIssue": {
         "required": [
           "id",
@@ -18641,6 +19043,24 @@
         },
         "description": "The matches of a song in MusicBrainz, the best first, next to its current tags."
       },
+      "OrganizingSettings": {
+        "required": [
+          "layoutTemplate",
+          "isFolderBased"
+        ],
+        "type": "object",
+        "properties": {
+          "layoutTemplate": {
+            "type": "string",
+            "description": "The layout template that names the folders and files of a song, e.g. `{AlbumArtist}/{Album}/{TrackNumber:00} {Title}` (the default) or `{Artist} - {Title}`. `/` separates folders; placeholders are `{Artist}`, `{AlbumArtist}`, `{Album}`, `{Year}`, `{TrackNumber}`, `{DiscNumber}`, `{Title}` and `{Genre}` (numbers take a format of 1 to 4 zeros, e.g. `{TrackNumber:00}`); `[...]` is a section that vanishes when one of its placeholders has no value; doubled brackets and braces stand for the character itself. The file name must contain `{Title}`."
+          },
+          "isFolderBased": {
+            "type": "boolean",
+            "description": "Whether the template lays the songs out in folders (it contains `/`). With a file-based template the scan removes a leading artist name followed by `\" - \"` from title tags without regard to case; with a folder-based one only if it equals the artist tag exactly."
+          }
+        },
+        "description": "Settings of the organization of the media files."
+      },
       "PinStatus": {
         "required": [
           "isSet",
@@ -19072,6 +19492,44 @@
         ],
         "type": "string",
         "description": "Sort key of the playlist list; ties are sorted by id."
+      },
+      "PreviewLayoutTemplate": {
+        "required": [
+          "template"
+        ],
+        "type": "object",
+        "properties": {
+          "template": {
+            "maxLength": 4096,
+            "minLength": 0,
+            "type": "string",
+            "description": "The layout template to try (see string OrganizingSettingsDto.LayoutTemplate). An empty or invalid template is answered with its problems, not with 400."
+          },
+          "trackIds": {
+            "maxItems": 10,
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Tracks of the library to show, at most 10; unknown ids are left out."
+          },
+          "samples": {
+            "maxItems": 10,
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/LayoutTemplateSample"
+            },
+            "description": "Example songs to show after the tracks, at most 10."
+          }
+        },
+        "description": "Asks where a layout template would put songs. Without IReadOnlyList&lt;Guid&gt;? PreviewLayoutTemplateDto.TrackIds and IReadOnlyList&lt;LayoutTemplateSampleDto&gt;? PreviewLayoutTemplateDto.Samples the preview shows the first 3 songs of the library (by album artist, album, disc and track number)."
       },
       "ProblemCode": {
         "enum": [
@@ -22551,6 +23009,19 @@
         },
         "description": "Changes the settings of the online search for album info. Missing or null values stay unchanged."
       },
+      "UpdateOrganizingSettings": {
+        "type": "object",
+        "properties": {
+          "layoutTemplate": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The layout template (see string OrganizingSettingsDto.LayoutTemplate), at most 512 characters; surrounding white space is removed. PreviewLayoutTemplate returns the detailed problems of an invalid template."
+          }
+        },
+        "description": "Changes the settings of the organization of the media files. Missing or null values stay unchanged."
+      },
       "UpdatePlaybackState": {
         "required": [
           "items",
@@ -23784,6 +24255,9 @@
     },
     {
       "name": "OnlineMetadata"
+    },
+    {
+      "name": "Organize"
     },
     {
       "name": "PlaybackState"

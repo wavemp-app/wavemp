@@ -12,6 +12,8 @@ import { LibraryRequestBuilderRequestsMetadata, type LibraryRequestBuilder } fro
 // @ts-ignore
 import { OnlineMetadataRequestBuilderRequestsMetadata, type OnlineMetadataRequestBuilder } from './onlineMetadata/index.js';
 // @ts-ignore
+import { OrganizingRequestBuilderRequestsMetadata, type OrganizingRequestBuilder } from './organizing/index.js';
+// @ts-ignore
 import { TranscodingRequestBuilderRequestsMetadata, type TranscodingRequestBuilder } from './transcoding/index.js';
 // @ts-ignore
 import { type BaseRequestBuilder, type KeysToExcludeForNavigationMetadata, type NavigationMetadata } from '@microsoft/kiota-abstractions';
@@ -41,6 +43,10 @@ export interface SettingsRequestBuilder extends BaseRequestBuilder<SettingsReque
      */
     get onlineMetadata(): OnlineMetadataRequestBuilder;
     /**
+     * The organizing property
+     */
+    get organizing(): OrganizingRequestBuilder;
+    /**
      * The transcoding property
      */
     get transcoding(): TranscodingRequestBuilder;
@@ -67,6 +73,9 @@ export const SettingsRequestBuilderNavigationMetadata: Record<Exclude<keyof Sett
     },
     onlineMetadata: {
         requestsMetadata: OnlineMetadataRequestBuilderRequestsMetadata,
+    },
+    organizing: {
+        requestsMetadata: OrganizingRequestBuilderRequestsMetadata,
     },
     transcoding: {
         requestsMetadata: TranscodingRequestBuilderRequestsMetadata,

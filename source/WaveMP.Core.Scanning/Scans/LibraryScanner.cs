@@ -19,7 +19,8 @@ namespace WaveMP.Core.Scanning.Scans;
 
 /// <summary>
 /// Scans the media sources: forms the albums of sources again whose albums follow older rules (see
-/// <see cref="ScannerVersions.AlbumGrouping"/>) and cleans up after that, checks ffprobe and the folder of every source
+/// <see cref="ScannerVersions.AlbumGrouping"/>) or whose titles were cleaned in another way than the layout template
+/// asks for now (see <see cref="TitleCleaningModes"/>) and cleans up after that, checks ffprobe and the folder of every source
 /// of the scope, walks the folders of the scope, compares them with the library, finds the songs whose folder was
 /// renamed or moved or whose files were renamed within the scan (see <see cref="TrackMovePlanner"/>), reads new and
 /// changed files in parallel, writes every changed folder at once (keeping those songs with their id and all their
@@ -37,6 +38,7 @@ internal sealed class LibraryScanner(
     IMediaMetadataReader reader,
     IMediaProber prober,
     ISettingsSnapshot<LibrarySettings> settings,
+    ISettingsSnapshot<OrganizingSettings> organizing,
     IScanProgressTracker progress,
     IMediaSourceCatalog sources,
     IOptions<ScanOptions> options,
@@ -378,16 +380,20 @@ internal sealed class LibraryScanner(
     /// <summary>
     /// Forms the albums of every folder with tracks again from the stored files, without reading a file, for all
     /// sources (also deactivated ones) whose albums were formed with an older version of the rules
-    /// (<see cref="ScannerVersions.AlbumGrouping"/>). Every folder is written on its own while holding the
+    /// (<see cref="ScannerVersions.AlbumGrouping"/>) or whose titles were cleaned with another mode than the current
+    /// one (<see cref="TitleCleaningModes"/>). Every folder is written on its own while holding the
     /// <see cref="LibraryWriteLock"/>. Then removes albums and artists without tracks, updates album covers and
     /// compilations and only then stores the version: the rest of the scan may fail (e.g. a folder that is not
-    /// mounted), and an interrupted run is repeated as a whole by the next scan. Returns the number of tracks that
+    /// mounted), and an interrupted run is repeated as a whole by the next scan. The mode is taken once; a change of
+    /// the template during the run leaves the old mode stored, so the next scan forms the folders again. Returns the number of tracks that
     /// changed.
     /// </summary>
     private async Task<int> RegroupAsync(LibrarySettings librarySettings, CancellationToken cancellationToken)
     {
+        TitleCleaningMode titleCleaning = TitleCleaningModes.Of(organizing.Current);
         IReadOnlyList<Guid> sourceIds = await library.GetSourcesToRegroupAsync(
             ScannerVersions.AlbumGrouping,
+            titleCleaning,
             cancellationToken);
         if (sourceIds.Count == 0)
         {
@@ -413,10 +419,11 @@ internal sealed class LibraryScanner(
 
             logger.LogInformation(
                 "Albums of the media source {SourceId} formed again in {Folders} folders with the rules of version "
-                + "{Version}",
+                + "{Version} and the title cleaning {TitleCleaning}",
                 sourceId,
                 directories.Count,
-                ScannerVersions.AlbumGrouping);
+                ScannerVersions.AlbumGrouping,
+                titleCleaning);
         }
 
         using (await writeLock.AcquireAsync(cancellationToken))
@@ -427,7 +434,11 @@ internal sealed class LibraryScanner(
             await writer.UpdateAlbumCompilationsAsync(timeProvider.GetUtcNow(), cancellationToken);
             foreach (Guid sourceId in sourceIds)
             {
-                await library.SetAlbumGroupingVersionAsync(sourceId, ScannerVersions.AlbumGrouping, cancellationToken);
+                await library.SetAlbumGroupingVersionAsync(
+                    sourceId,
+                    ScannerVersions.AlbumGrouping,
+                    titleCleaning,
+                    cancellationToken);
             }
         }
 

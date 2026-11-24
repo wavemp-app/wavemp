@@ -24,6 +24,14 @@ internal sealed class MediaSourceConfiguration : IEntityTypeConfiguration<MediaS
         builder.Property(source => source.NormalizedName).HasMaxLength(NameMaxLength);
         builder.Property(source => source.Path).HasMaxLength(PathMaxLength);
 
+        // The column default gives existing sources "None", so the next scan cleans their titles once by the current
+        // layout template. The entity always writes its value (ValueGeneratedNever).
+        builder.Property(source => source.TitleCleaning)
+            .HasConversion<string>()
+            .HasMaxLength(LibraryColumns.EnumMaxLength)
+            .HasDefaultValue(TitleCleaningMode.None)
+            .ValueGeneratedNever();
+
         builder.HasIndex(source => source.NormalizedName)
             .IsUnique()
             .HasDatabaseName(NormalizedNameIndex);
