@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using WaveMP.Core.Caching.Covers;
 using WaveMP.Core.Library.Albums;
 using WaveMP.Core.Library.Covers;
+using WaveMP.Core.Library.Groups;
 using WaveMP.Core.Library.Tracks;
 using WaveMP.Data.Projections;
 using WaveMP.Data.Queries;
@@ -21,7 +22,10 @@ namespace WaveMP.Service.Controllers;
 [Authorize]
 [Route("api/v1/albums")]
 [ProducesResponseType<ProblemDetails>(StatusCodes.Status401Unauthorized, "application/problem+json")]
-public sealed class AlbumsController(IAlbumService albums, ICoverCacheService covers) : ControllerBase
+public sealed class AlbumsController(
+    IAlbumService albums,
+    ICoverCacheService covers,
+    IListGroupService groups) : ControllerBase
 {
     /// <summary>
     /// Lists the albums, sorted and optionally searched and filtered.
@@ -81,6 +85,66 @@ public sealed class AlbumsController(IAlbumService albums, ICoverCacheService co
                 sourceId),
             cancellationToken);
         return Ok(page.ToDto(album => album.ToDto()));
+    }
+
+    /// <summary>
+    /// Lists the groups of the album list (ListAlbums) with the same sort order, search and filters: sorted by Artist,
+    /// runs of albums of the same album artist (kind Artist, albums without album artist as kind Unknown); sorted by
+    /// Title, runs of the same index letter of the title (kind Letter); sorted by Year, runs of the same year (kind
+    /// Year, albums without year as kind Unknown). FirstSeenAt and Relevance have no groups (an empty page). The
+    /// position of a group is the offset of ListAlbums at which it starts. Offset and limit page the groups.
+    /// </summary>
+    /// <param name="offset">Number of groups to skip.</param>
+    /// <param name="limit">Maximum number of groups of the page.</param>
+    /// <param name="sort">Sort key of the album list; Artist by default, Relevance with q.</param>
+    /// <param name="direction">Sort direction of the album list, defaults as in ListAlbums.</param>
+    /// <param name="q">Search text of the album list.</param>
+    /// <param name="artistId">Only albums with this album artist or with tracks of this artist.</param>
+    /// <param name="genre">Only albums with tracks of this genre, without regard to case.</param>
+    /// <param name="year">Only albums of this year.</param>
+    /// <param name="myMusic">Only albums with tracks of the "my music" of the current profile.</param>
+    /// <param name="sourceId">Only albums with tracks of this media source.</param>
+    /// <param name="cancellationToken">Aborts the request.</param>
+    /// <response code="200">One page of groups.</response>
+    /// <response code="400">Invalid query parameters (code <c>request.invalid</c>).</response>
+    [HttpGet("groups", Name = "ListAlbumGroups")]
+    [ProducesResponseType<PageDto<ListGroupDto>>(StatusCodes.Status200OK, "application/json")]
+    [ProducesResponseType<ValidationProblemDto>(StatusCodes.Status400BadRequest, "application/problem+json")]
+    public async Task<ActionResult<PageDto<ListGroupDto>>> ListAlbumGroupsAsync(
+        [FromQuery, Range(0, int.MaxValue)] int offset = 0,
+        [FromQuery, Range(1, PageLimits.GroupMaxLimit)] int limit = PageLimits.GroupMaxLimit,
+        [FromQuery] AlbumSortDto? sort = null,
+        [FromQuery] SortDirectionDto? direction = null,
+        [FromQuery, StringLength(LibraryLimits.TextMaxLength)] string? q = null,
+        [FromQuery] Guid? artistId = null,
+        [FromQuery, StringLength(LibraryLimits.GenreMaxLength)] string? genre = null,
+        [FromQuery, Range(LibraryLimits.MinYear, LibraryLimits.MaxYear)] int? year = null,
+        [FromQuery] bool myMusic = false,
+        [FromQuery] Guid? sourceId = null,
+        CancellationToken cancellationToken = default)
+    {
+        this.ValidateEnum(sort, nameof(sort));
+        this.ValidateEnum(direction, nameof(direction));
+        if (!ModelState.IsValid)
+        {
+            return ValidationProblem();
+        }
+
+        Page<ListGroup> page = await groups.ListAlbumGroupsAsync(
+            new AlbumListRequest(
+                offset,
+                limit,
+                sort?.ToEntity(),
+                direction?.ToEntity(),
+                q,
+                artistId,
+                genre,
+                year,
+                User.GetUserId(),
+                myMusic,
+                sourceId),
+            cancellationToken);
+        return Ok(page.ToDto(group => group.ToDto()));
     }
 
     /// <summary>

@@ -4,6 +4,8 @@
 // @ts-ignore
 import { createAlbumPageFromDiscriminatorValue, createProblemDetailsFromDiscriminatorValue, createValidationProblemFromDiscriminatorValue, type AlbumPage, type AlbumSort, type ProblemDetails, type SortDirection, type ValidationProblem } from '../../../models/index.js';
 // @ts-ignore
+import { GroupsRequestBuilderRequestsMetadata, type GroupsRequestBuilder } from './groups/index.js';
+// @ts-ignore
 import { AlbumsItemRequestBuilderNavigationMetadata, AlbumsItemRequestBuilderRequestsMetadata, type AlbumsItemRequestBuilder } from './item/index.js';
 // @ts-ignore
 import { type BaseRequestBuilder, type Guid, type KeysToExcludeForNavigationMetadata, type NavigationMetadata, type Parsable, type ParsableFactory, type RequestConfiguration, type RequestInformation, type RequestsMetadata } from '@microsoft/kiota-abstractions';
@@ -12,6 +14,10 @@ import { type BaseRequestBuilder, type Guid, type KeysToExcludeForNavigationMeta
  * Builds and executes requests for operations under /api/v1/albums
  */
 export interface AlbumsRequestBuilder extends BaseRequestBuilder<AlbumsRequestBuilder> {
+    /**
+     * The groups property
+     */
+    get groups(): GroupsRequestBuilder;
     /**
      * Gets an item from the ApiSdk.api.v1.albums.item collection
      * @param id Id of the album.
@@ -90,6 +96,9 @@ export const AlbumsRequestBuilderNavigationMetadata: Record<Exclude<keyof Albums
         requestsMetadata: AlbumsItemRequestBuilderRequestsMetadata,
         navigationMetadata: AlbumsItemRequestBuilderNavigationMetadata,
         pathParametersMappings: ["id"],
+    },
+    groups: {
+        requestsMetadata: GroupsRequestBuilderRequestsMetadata,
     },
 };
 /**

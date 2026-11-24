@@ -18,4 +18,10 @@ public static class PageLimits
     /// Maximum number of results of each group of the search.
     /// </summary>
     public const int SearchMaxLimit = 50;
+
+    /// <summary>
+    /// Maximum and default number of groups of a page of the groups of a list. Groups are small and a client loads all
+    /// of them to show the overview, so few requests suffice even for long lists.
+    /// </summary>
+    public const int GroupMaxLimit = 1000;
 }

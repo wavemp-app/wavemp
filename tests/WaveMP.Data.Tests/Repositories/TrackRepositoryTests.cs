@@ -449,6 +449,126 @@ public class TrackRepositoryTests : LibraryDatabaseTests
         rows.Should().BeEmpty();
     }
 
+    [Test]
+    public async Task ListGroupKeysAsync_ByAlbumArtist_ReturnsAlbumArtistYearAndInitialOfTheSortTextInListOrder()
+    {
+        StandardLibrary library = await SeedStandardLibraryAsync();
+
+        IReadOnlyList<GroupKeyRow> keys = await GroupKeysAsync(
+            new TrackListQuery(0, 2, TrackSortField.AlbumArtist, SortDirection.Asc));
+
+        // Without album the artist of the track counts; the compilation has no album artist.
+        keys.Should().Equal(
+            new GroupKeyRow(library.FirstAlbum.Id, library.Alpha.Id, 2001, "A"),
+            new GroupKeyRow(library.FirstAlbum.Id, library.Alpha.Id, 2001, "A"),
+            new GroupKeyRow(library.FirstAlbum.Id, library.Guest.Id, 2001, "A"),
+            new GroupKeyRow(library.SecondAlbum.Id, library.Beta.Id, 2010, "B"),
+            new GroupKeyRow(null, library.Beta.Id, null, "B"),
+            new GroupKeyRow(null, library.Guest.Id, null, "G"),
+            new GroupKeyRow(library.Hits.Id, library.Alpha.Id, 2005, null),
+            new GroupKeyRow(library.Hits.Id, library.Beta.Id, 2005, null));
+    }
+
+    [TestCase(TrackSortField.Album, SortDirection.Asc, new[] { "F", "F", "F", "H", "H", "S", null, null })]
+    [TestCase(TrackSortField.Title, SortDirection.Desc, new[] { "O", "L", "H", "H", "D", "C", "C", "B" })]
+    [TestCase(TrackSortField.Artist, SortDirection.Asc, new[] { "A", "A", "A", "B", "B", "B", "G", "G" })]
+    [TestCase(TrackSortField.Genre, SortDirection.Asc, new[] { "P", "P", "P", "R", "R", "R", null, null })]
+    [TestCase(TrackSortField.Year, SortDirection.Asc, new string?[] { null, null, null, null, null, null, null, null })]
+    [TestCase(
+        TrackSortField.Duration,
+        SortDirection.Desc,
+        new string?[] { null, null, null, null, null, null, null, null })]
+    public async Task ListGroupKeysAsync_BySortKey_TakesTheInitialOfItsText(
+        TrackSortField sort,
+        SortDirection direction,
+        string?[] initials)
+    {
+        await SeedStandardLibraryAsync();
+
+        IReadOnlyList<GroupKeyRow> keys = await GroupKeysAsync(new TrackListQuery(0, 100, sort, direction));
+
+        // The genres "Rock" and "rock" are one key whose order of spellings depends on the collation.
+        keys.Select(key => key.Initial?.ToUpperInvariant()).Should().Equal(initials);
+    }
+
+    private static IEnumerable<TestCaseData> GroupKeyQueries()
+    {
+        foreach (TrackSortField sort in Enum.GetValues<TrackSortField>().Where(sort => sort != TrackSortField.Rating))
+        {
+            foreach (SortDirection direction in Enum.GetValues<SortDirection>())
+            {
+                yield return new TestCaseData(sort, direction, null, null).SetArgDisplayNames(
+                    sort.ToString(),
+                    direction.ToString());
+            }
+        }
+
+        yield return new TestCaseData(TrackSortField.Relevance, SortDirection.Desc, "hit", null)
+            .SetArgDisplayNames("Relevance", "search");
+        yield return new TestCaseData(TrackSortField.AlbumArtist, SortDirection.Asc, null, "rock")
+            .SetArgDisplayNames("AlbumArtist", "genre");
+    }
+
+    [TestCaseSource(nameof(GroupKeyQueries))]
+    public async Task ListGroupKeysAsync_AnySortAndFilter_FollowsTheOrderOfTheList(
+        TrackSortField sort,
+        SortDirection direction,
+        string? search,
+        string? genre)
+    {
+        await SeedStandardLibraryAsync();
+        TrackListQuery query = new(0, 100, sort, direction, search, Genre: genre);
+
+        IReadOnlyList<GroupKeyRow> keys = await GroupKeysAsync(query);
+        Page<TrackRow> list = await ListAsync(query);
+
+        keys.Select(key => (key.AlbumId, key.ArtistId, key.Year)).Should().Equal(
+            list.Items.Select(track => (track.AlbumId, track.ArtistId, track.Year)));
+        keys.Should().HaveCount(list.Total);
+    }
+
+    [Test]
+    public async Task ListGroupKeysAsync_MyMusicSortedByRating_FollowsTheOrderOfTheList()
+    {
+        StandardLibrary library = await SeedStandardLibraryAsync();
+        LibrarySeed seed = new();
+        User user = seed.User();
+        seed.Rating(user, library.Ballad, 5);
+        seed.Rating(user, library.Opening, 3);
+        seed.Favorite(user, library.Hits);
+        await SaveAsync(seed);
+        TrackListQuery query = new(
+            0,
+            100,
+            TrackSortField.Rating,
+            SortDirection.Desc,
+            UserId: user.Id,
+            MyMusic: true);
+
+        IReadOnlyList<GroupKeyRow> keys = await GroupKeysAsync(query);
+
+        keys.Select(key => key.AlbumId).Should().Equal(
+            library.SecondAlbum.Id,
+            library.FirstAlbum.Id,
+            library.Hits.Id,
+            library.Hits.Id);
+    }
+
+    [Test]
+    public async Task ListGroupKeysAsync_WithArtistAndPaging_IgnoresThePagingButNotTheFilter()
+    {
+        StandardLibrary library = await SeedStandardLibraryAsync();
+
+        IReadOnlyList<GroupKeyRow> keys = await GroupKeysAsync(
+            new TrackListQuery(2, 1, TrackSortField.AlbumArtist, SortDirection.Asc, ArtistId: library.Alpha.Id));
+
+        keys.Select(key => key.AlbumId).Should().Equal(
+            library.FirstAlbum.Id,
+            library.FirstAlbum.Id,
+            library.FirstAlbum.Id,
+            library.Hits.Id);
+    }
+
     private static TrackListQuery Query(
         string? search = null,
         Guid? artistId = null,
@@ -475,6 +595,11 @@ public class TrackRepositoryTests : LibraryDatabaseTests
     private async Task<Page<TrackRow>> ListAsync(TrackListQuery query)
     {
         return await new TrackRepository(CreateDbContext()).ListAsync(query);
+    }
+
+    private async Task<IReadOnlyList<GroupKeyRow>> GroupKeysAsync(TrackListQuery query)
+    {
+        return await new TrackRepository(CreateDbContext()).ListGroupKeysAsync(query);
     }
 
     private async Task<IReadOnlyList<string>> TitlesAsync(TrackListQuery query)

@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using WaveMP.Core.Library.Albums;
 using WaveMP.Core.Library.Artists;
+using WaveMP.Core.Library.Groups;
 using WaveMP.Data.Projections;
 using WaveMP.Data.Queries;
 using WaveMP.Service.Dtos;
@@ -19,7 +20,7 @@ namespace WaveMP.Service.Controllers;
 [Authorize]
 [Route("api/v1/artists")]
 [ProducesResponseType<ProblemDetails>(StatusCodes.Status401Unauthorized, "application/problem+json")]
-public sealed class ArtistsController(IArtistService artists) : ControllerBase
+public sealed class ArtistsController(IArtistService artists, IListGroupService groups) : ControllerBase
 {
     /// <summary>
     /// Lists the artists, sorted and optionally searched.
@@ -68,6 +69,56 @@ public sealed class ArtistsController(IArtistService artists) : ControllerBase
                 sourceId),
             cancellationToken);
         return Ok(page.ToDto(artist => artist.ToDto()));
+    }
+
+    /// <summary>
+    /// Lists the groups of the artist list (ListArtists) with the same sort order, search and filters: sorted by Name,
+    /// runs of the same index letter of the name (kind Letter). FirstSeenAt and Relevance have no groups (an empty
+    /// page). The position of a group is the offset of ListArtists at which it starts. Offset and limit page the
+    /// groups.
+    /// </summary>
+    /// <param name="offset">Number of groups to skip.</param>
+    /// <param name="limit">Maximum number of groups of the page.</param>
+    /// <param name="sort">Sort key of the artist list; Name by default, Relevance with q.</param>
+    /// <param name="direction">Sort direction of the artist list, defaults as in ListArtists.</param>
+    /// <param name="q">Search text of the artist list.</param>
+    /// <param name="myMusic">Only artists of the "my music" of the current profile, as track or album artist.</param>
+    /// <param name="sourceId">Only artists with tracks of this media source, as track or album artist.</param>
+    /// <param name="cancellationToken">Aborts the request.</param>
+    /// <response code="200">One page of groups.</response>
+    /// <response code="400">Invalid query parameters (code <c>request.invalid</c>).</response>
+    [HttpGet("groups", Name = "ListArtistGroups")]
+    [ProducesResponseType<PageDto<ListGroupDto>>(StatusCodes.Status200OK, "application/json")]
+    [ProducesResponseType<ValidationProblemDto>(StatusCodes.Status400BadRequest, "application/problem+json")]
+    public async Task<ActionResult<PageDto<ListGroupDto>>> ListArtistGroupsAsync(
+        [FromQuery, Range(0, int.MaxValue)] int offset = 0,
+        [FromQuery, Range(1, PageLimits.GroupMaxLimit)] int limit = PageLimits.GroupMaxLimit,
+        [FromQuery] ArtistSortDto? sort = null,
+        [FromQuery] SortDirectionDto? direction = null,
+        [FromQuery, StringLength(LibraryLimits.TextMaxLength)] string? q = null,
+        [FromQuery] bool myMusic = false,
+        [FromQuery] Guid? sourceId = null,
+        CancellationToken cancellationToken = default)
+    {
+        this.ValidateEnum(sort, nameof(sort));
+        this.ValidateEnum(direction, nameof(direction));
+        if (!ModelState.IsValid)
+        {
+            return ValidationProblem();
+        }
+
+        Page<ListGroup> page = await groups.ListArtistGroupsAsync(
+            new ArtistListRequest(
+                offset,
+                limit,
+                sort?.ToEntity(),
+                direction?.ToEntity(),
+                q,
+                User.GetUserId(),
+                myMusic,
+                sourceId),
+            cancellationToken);
+        return Ok(page.ToDto(group => group.ToDto()));
     }
 
     /// <summary>

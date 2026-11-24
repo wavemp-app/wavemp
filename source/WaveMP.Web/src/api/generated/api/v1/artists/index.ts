@@ -4,6 +4,8 @@
 // @ts-ignore
 import { createArtistPageFromDiscriminatorValue, createProblemDetailsFromDiscriminatorValue, createValidationProblemFromDiscriminatorValue, type ArtistPage, type ArtistSort, type ProblemDetails, type SortDirection, type ValidationProblem } from '../../../models/index.js';
 // @ts-ignore
+import { GroupsRequestBuilderRequestsMetadata, type GroupsRequestBuilder } from './groups/index.js';
+// @ts-ignore
 import { ArtistsItemRequestBuilderNavigationMetadata, ArtistsItemRequestBuilderRequestsMetadata, type ArtistsItemRequestBuilder } from './item/index.js';
 // @ts-ignore
 import { type BaseRequestBuilder, type Guid, type KeysToExcludeForNavigationMetadata, type NavigationMetadata, type Parsable, type ParsableFactory, type RequestConfiguration, type RequestInformation, type RequestsMetadata } from '@microsoft/kiota-abstractions';
@@ -12,6 +14,10 @@ import { type BaseRequestBuilder, type Guid, type KeysToExcludeForNavigationMeta
  * Builds and executes requests for operations under /api/v1/artists
  */
 export interface ArtistsRequestBuilder extends BaseRequestBuilder<ArtistsRequestBuilder> {
+    /**
+     * The groups property
+     */
+    get groups(): GroupsRequestBuilder;
     /**
      * Gets an item from the ApiSdk.api.v1.artists.item collection
      * @param id Id of the artist.
@@ -78,6 +84,9 @@ export const ArtistsRequestBuilderNavigationMetadata: Record<Exclude<keyof Artis
         requestsMetadata: ArtistsItemRequestBuilderRequestsMetadata,
         navigationMetadata: ArtistsItemRequestBuilderNavigationMetadata,
         pathParametersMappings: ["id"],
+    },
+    groups: {
+        requestsMetadata: GroupsRequestBuilderRequestsMetadata,
     },
 };
 /**

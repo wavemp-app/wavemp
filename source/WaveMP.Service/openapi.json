@@ -152,6 +152,152 @@
         ]
       }
     },
+    "/api/v1/albums/groups": {
+      "get": {
+        "tags": [
+          "Albums"
+        ],
+        "summary": "Lists the groups of the album list (ListAlbums) with the same sort order, search and filters: sorted by Artist, runs of albums of the same album artist (kind Artist, albums without album artist as kind Unknown); sorted by Title, runs of the same index letter of the title (kind Letter); sorted by Year, runs of the same year (kind Year, albums without year as kind Unknown). FirstSeenAt and Relevance have no groups (an empty page). The position of a group is the offset of ListAlbums at which it starts. Offset and limit page the groups.",
+        "operationId": "ListAlbumGroups",
+        "parameters": [
+          {
+            "name": "offset",
+            "in": "query",
+            "description": "Number of groups to skip.",
+            "schema": {
+              "maximum": 2147483647,
+              "minimum": 0,
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Maximum number of groups of the page.",
+            "schema": {
+              "maximum": 1000,
+              "minimum": 1,
+              "type": "integer",
+              "format": "int32",
+              "default": 1000
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "description": "Sort key of the album list; Artist by default, Relevance with q.",
+            "schema": {
+              "$ref": "#/components/schemas/AlbumSort"
+            }
+          },
+          {
+            "name": "direction",
+            "in": "query",
+            "description": "Sort direction of the album list, defaults as in ListAlbums.",
+            "schema": {
+              "$ref": "#/components/schemas/SortDirection"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "description": "Search text of the album list.",
+            "schema": {
+              "maxLength": 200,
+              "minLength": 0,
+              "type": "string"
+            }
+          },
+          {
+            "name": "artistId",
+            "in": "query",
+            "description": "Only albums with this album artist or with tracks of this artist.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "genre",
+            "in": "query",
+            "description": "Only albums with tracks of this genre, without regard to case.",
+            "schema": {
+              "maxLength": 128,
+              "minLength": 0,
+              "type": "string"
+            }
+          },
+          {
+            "name": "year",
+            "in": "query",
+            "description": "Only albums of this year.",
+            "schema": {
+              "maximum": 9999,
+              "minimum": 1,
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "myMusic",
+            "in": "query",
+            "description": "Only albums with tracks of the \"my music\" of the current profile.",
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          },
+          {
+            "name": "sourceId",
+            "in": "query",
+            "description": "Only albums with tracks of this media source.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "One page of groups.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListGroupPage"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid query parameters (code `request.invalid`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblem"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
     "/api/v1/albums/{id}": {
       "get": {
         "tags": [
@@ -1591,6 +1737,122 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ArtistPage"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid query parameters (code `request.invalid`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblem"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/api/v1/artists/groups": {
+      "get": {
+        "tags": [
+          "Artists"
+        ],
+        "summary": "Lists the groups of the artist list (ListArtists) with the same sort order, search and filters: sorted by Name, runs of the same index letter of the name (kind Letter). FirstSeenAt and Relevance have no groups (an empty page). The position of a group is the offset of ListArtists at which it starts. Offset and limit page the groups.",
+        "operationId": "ListArtistGroups",
+        "parameters": [
+          {
+            "name": "offset",
+            "in": "query",
+            "description": "Number of groups to skip.",
+            "schema": {
+              "maximum": 2147483647,
+              "minimum": 0,
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Maximum number of groups of the page.",
+            "schema": {
+              "maximum": 1000,
+              "minimum": 1,
+              "type": "integer",
+              "format": "int32",
+              "default": 1000
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "description": "Sort key of the artist list; Name by default, Relevance with q.",
+            "schema": {
+              "$ref": "#/components/schemas/ArtistSort"
+            }
+          },
+          {
+            "name": "direction",
+            "in": "query",
+            "description": "Sort direction of the artist list, defaults as in ListArtists.",
+            "schema": {
+              "$ref": "#/components/schemas/SortDirection"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "description": "Search text of the artist list.",
+            "schema": {
+              "maxLength": 200,
+              "minLength": 0,
+              "type": "string"
+            }
+          },
+          {
+            "name": "myMusic",
+            "in": "query",
+            "description": "Only artists of the \"my music\" of the current profile, as track or album artist.",
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          },
+          {
+            "name": "sourceId",
+            "in": "query",
+            "description": "Only artists with tracks of this media source, as track or album artist.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "One page of groups.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListGroupPage"
                 }
               }
             }
@@ -12095,6 +12357,177 @@
         ]
       }
     },
+    "/api/v1/tracks/groups": {
+      "get": {
+        "tags": [
+          "Tracks"
+        ],
+        "summary": "Lists the groups of the track list (ListTracks) with the same sort order, search and filters: runs of consecutive tracks of the same album (kind Album), tracks without album by their artist (kind Artist), tracks without both as kind Unknown. The position of a group is the offset of ListTracks at which it starts, so a client can jump to a group without loading the tracks before it. Offset and limit page the groups.",
+        "operationId": "ListTrackGroups",
+        "parameters": [
+          {
+            "name": "offset",
+            "in": "query",
+            "description": "Number of groups to skip.",
+            "schema": {
+              "maximum": 2147483647,
+              "minimum": 0,
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Maximum number of groups of the page.",
+            "schema": {
+              "maximum": 1000,
+              "minimum": 1,
+              "type": "integer",
+              "format": "int32",
+              "default": 1000
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "description": "Sort key of the track list; AlbumArtist by default, Relevance with q.",
+            "schema": {
+              "$ref": "#/components/schemas/TrackSort"
+            }
+          },
+          {
+            "name": "direction",
+            "in": "query",
+            "description": "Sort direction of the track list, defaults as in ListTracks.",
+            "schema": {
+              "$ref": "#/components/schemas/SortDirection"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "description": "Search text of the track list.",
+            "schema": {
+              "maxLength": 200,
+              "minLength": 0,
+              "type": "string"
+            }
+          },
+          {
+            "name": "artistId",
+            "in": "query",
+            "description": "Only tracks of this artist or on albums of this album artist.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "albumId",
+            "in": "query",
+            "description": "Only tracks of this album.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "genre",
+            "in": "query",
+            "description": "Only tracks of this genre, without regard to case.",
+            "schema": {
+              "maxLength": 128,
+              "minLength": 0,
+              "type": "string"
+            }
+          },
+          {
+            "name": "year",
+            "in": "query",
+            "description": "Only tracks of this year.",
+            "schema": {
+              "maximum": 9999,
+              "minimum": 1,
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "hasAudio",
+            "in": "query",
+            "description": "Only tracks with (true) or without (false) an audio file.",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "hasVideo",
+            "in": "query",
+            "description": "Only tracks with (true) or without (false) a video file.",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "myMusic",
+            "in": "query",
+            "description": "Only tracks of the \"my music\" of the current profile.",
+            "schema": {
+              "type": "boolean",
+              "default": false
+            }
+          },
+          {
+            "name": "sourceId",
+            "in": "query",
+            "description": "Only tracks of this media source.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "One page of groups.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListGroupPage"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid query parameters (code `request.invalid`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblem"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
     "/api/v1/tracks/{id}": {
       "get": {
         "tags": [
@@ -17114,6 +17547,117 @@
           }
         },
         "description": "The statistics of the plays of a profile in a period: rankings, listening time and the plays over time. Every play counts with the whole duration of its track. Rankings put the most plays first, then the longest listening time."
+      },
+      "ListGroup": {
+        "required": [
+          "kind",
+          "position",
+          "count",
+          "hasCover"
+        ],
+        "type": "object",
+        "properties": {
+          "kind": {
+            "$ref": "#/components/schemas/ListGroupKind"
+          },
+          "position": {
+            "type": "integer",
+            "description": "Index of the first entry of the group in the list, starting at 0: the offset of the list at which the group starts.",
+            "format": "int32"
+          },
+          "count": {
+            "type": "integer",
+            "description": "Number of entries of the group.",
+            "format": "int32"
+          },
+          "album": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "The album of a group of the kind Album; null otherwise.",
+                "$ref": "#/components/schemas/AlbumReference"
+              }
+            ]
+          },
+          "artist": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "The artist of a group of the kind Artist; null otherwise.",
+                "$ref": "#/components/schemas/ArtistReference"
+              }
+            ]
+          },
+          "letter": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "Index letter of the text the list is sorted by, taken from the first entry of the group: \"A\" to \"Z\" (the first character without accents), \"#\" for digits, special characters and other scripts. Null if the list is not sorted by a text or the first entry has none."
+          },
+          "year": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "description": "The year of a group of the kind Year; in the track list sorted by Year the year of the first track of the group. Null otherwise.",
+            "format": "int32"
+          },
+          "hasCover": {
+            "type": "boolean",
+            "description": "Whether the album of the group has a cover (GetAlbumCover); false for groups without album."
+          }
+        },
+        "description": "A group of a list: a run of consecutive entries with the same album, artist, index letter or year, in the order of the list. Contains no display texts; clients name the group from its kind and data."
+      },
+      "ListGroupKind": {
+        "enum": [
+          "Album",
+          "Artist",
+          "Letter",
+          "Year",
+          "Unknown"
+        ],
+        "type": "string",
+        "description": "What the entries of a group of a list have in common: Album (tracks of one album, with album), Artist (tracks without album of one artist, or albums of one album artist, with artist), Letter (the index letter of the text the list is sorted by, with letter), Year (albums of one year, with year) or Unknown (tracks without album and artist, albums without album artist or without year). Clients show their own texts for each kind."
+      },
+      "ListGroupPage": {
+        "required": [
+          "items",
+          "offset",
+          "limit",
+          "total"
+        ],
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ListGroup"
+            },
+            "description": "Items of the page, at most limit."
+          },
+          "offset": {
+            "type": "integer",
+            "description": "Number of items skipped before this page.",
+            "format": "int32"
+          },
+          "limit": {
+            "type": "integer",
+            "description": "Maximum number of items of the page, as requested.",
+            "format": "int32"
+          },
+          "total": {
+            "type": "integer",
+            "description": "Number of items of the whole collection.",
+            "format": "int32"
+          }
+        },
+        "description": "One page of a collection."
       },
       "Lyrics": {
         "required": [

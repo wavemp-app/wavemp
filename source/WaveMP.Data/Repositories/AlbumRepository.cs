@@ -14,9 +14,91 @@ internal sealed class AlbumRepository(WaveMpDbContext dbContext) : IAlbumReposit
 
     public Task<Page<AlbumRow>> ListAsync(AlbumListQuery query, CancellationToken cancellationToken = default)
     {
-        IQueryable<Album> albums = dbContext.Albums.AsNoTracking();
-        string? search = query.Search;
-        if (search is not null)
+        IQueryable<Album> albums = Filter(dbContext.Albums.AsNoTracking(), query);
+        return Project(Sort(albums, query).ThenBy(album => album.Id), query.UserId)
+            .ToPageAsync(query.Offset, query.Limit, cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<GroupKeyRow>> ListGroupKeysAsync(
+        AlbumListQuery query,
+        CancellationToken cancellationToken = default)
+    {
+        IQueryable<Album> albums = Filter(dbContext.Albums.AsNoTracking(), query);
+        IOrderedQueryable<Album> sorted = Sort(albums, query).ThenBy(album => album.Id);
+
+        // Only the first character of the text of the sort key, so the rows of long lists stay small.
+        IQueryable<GroupKeyRow> keys = query.Sort switch
+        {
+            AlbumSortField.Title => sorted.Select(album => new GroupKeyRow(
+                album.Id,
+                album.AlbumArtistId,
+                album.Year,
+                album.Title.Substring(0, 1))),
+            AlbumSortField.Artist => sorted.Select(album => new GroupKeyRow(
+                album.Id,
+                album.AlbumArtistId,
+                album.Year,
+                album.AlbumArtist!.Name.Substring(0, 1))),
+            _ => sorted.Select(album => new GroupKeyRow(album.Id, album.AlbumArtistId, album.Year, null)),
+        };
+
+        return await keys.ToListAsync(cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<GroupAlbumRow>> ListGroupAlbumsAsync(
+        IReadOnlyCollection<Guid> ids,
+        CancellationToken cancellationToken = default)
+    {
+        if (ids.Count == 0)
+        {
+            return [];
+        }
+
+        Guid[] distinct = [.. ids.Distinct()];
+        return await dbContext.Albums.AsNoTracking()
+            .Where(album => distinct.Contains(album.Id))
+            .Select(album => new GroupAlbumRow(
+                album.Id,
+                album.Title,
+                album.AlbumArtistId,
+                album.AlbumArtist != null ? album.AlbumArtist.Name : null,
+                album.IsCompilation,
+                dbContext.Covers.Any(cover =>
+                    cover.AlbumId == album.Id || (cover.Track != null && cover.Track.AlbumId == album.Id))
+                    || dbContext.OnlineCovers.Any(cover =>
+                        cover.AlbumId == album.Id || (cover.Track != null && cover.Track.AlbumId == album.Id))))
+            .ToListAsync(cancellationToken);
+    }
+
+    public Task<AlbumRow?> FindAsync(Guid id, Guid? userId = null, CancellationToken cancellationToken = default)
+    {
+        return Project(dbContext.Albums.AsNoTracking().Where(album => album.Id == id), userId)
+            .FirstOrDefaultAsync(cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<AlbumRow>> ListByIdsAsync(
+        IReadOnlyCollection<Guid> ids,
+        Guid? userId = null,
+        CancellationToken cancellationToken = default)
+    {
+        if (ids.Count == 0)
+        {
+            return [];
+        }
+
+        Guid[] distinct = [.. ids.Distinct()];
+        return await Project(dbContext.Albums.AsNoTracking().Where(album => distinct.Contains(album.Id)), userId)
+            .ToListAsync(cancellationToken);
+    }
+
+    public Task<bool> ExistsAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        return dbContext.Albums.AnyAsync(album => album.Id == id, cancellationToken);
+    }
+
+    private IQueryable<Album> Filter(IQueryable<Album> albums, AlbumListQuery query)
+    {
+        if (query.Search is { } search)
         {
             string pattern = LikePatterns.Contains(search);
             albums = albums.Where(album =>
@@ -58,8 +140,17 @@ internal sealed class AlbumRepository(WaveMpDbContext dbContext) : IAlbumReposit
             albums = albums.Where(album => myTracks.Any(track => track.AlbumId == album.Id));
         }
 
+        return albums;
+    }
+
+    /// <summary>
+    /// Sorts by the key in the direction; ties by title (ascending). The caller adds the id as last key.
+    /// </summary>
+    private static IOrderedQueryable<Album> Sort(IQueryable<Album> albums, AlbumListQuery query)
+    {
         SortDirection direction = query.Direction;
-        IOrderedQueryable<Album> sorted = query.Sort switch
+        string? search = query.Search;
+        return query.Sort switch
         {
             AlbumSortField.Title => albums.OrderBy(album => album.NormalizedTitle, direction),
             AlbumSortField.Year => albums
@@ -79,35 +170,6 @@ internal sealed class AlbumRepository(WaveMpDbContext dbContext) : IAlbumReposit
                 .OrderBy(album => album.AlbumArtist!.NormalizedName, direction)
                 .ThenBy(album => album.NormalizedTitle),
         };
-
-        return Project(sorted.ThenBy(album => album.Id), query.UserId)
-            .ToPageAsync(query.Offset, query.Limit, cancellationToken);
-    }
-
-    public Task<AlbumRow?> FindAsync(Guid id, Guid? userId = null, CancellationToken cancellationToken = default)
-    {
-        return Project(dbContext.Albums.AsNoTracking().Where(album => album.Id == id), userId)
-            .FirstOrDefaultAsync(cancellationToken);
-    }
-
-    public async Task<IReadOnlyList<AlbumRow>> ListByIdsAsync(
-        IReadOnlyCollection<Guid> ids,
-        Guid? userId = null,
-        CancellationToken cancellationToken = default)
-    {
-        if (ids.Count == 0)
-        {
-            return [];
-        }
-
-        Guid[] distinct = [.. ids.Distinct()];
-        return await Project(dbContext.Albums.AsNoTracking().Where(album => distinct.Contains(album.Id)), userId)
-            .ToListAsync(cancellationToken);
-    }
-
-    public Task<bool> ExistsAsync(Guid id, CancellationToken cancellationToken = default)
-    {
-        return dbContext.Albums.AnyAsync(album => album.Id == id, cancellationToken);
     }
 
     /// <summary>

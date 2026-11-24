@@ -16,46 +16,40 @@ internal sealed class ArtistRepository(WaveMpDbContext dbContext) : IArtistRepos
         ArtistListQuery query,
         CancellationToken cancellationToken = default)
     {
-        IQueryable<Artist> artists = dbContext.Artists.AsNoTracking();
-        string? search = query.Search;
-        if (search is not null)
-        {
-            string pattern = LikePatterns.Contains(search);
-            artists = artists.Where(artist =>
-                EF.Functions.ILike(artist.Name, pattern, LikePatterns.EscapeCharacter)
-                || EF.Functions.TrigramsAreWordSimilar(search, artist.Name));
-        }
-
-        if (query.SourceId is { } sourceId)
-        {
-            artists = artists.Where(artist => dbContext.Tracks.Any(track => track.SourceId == sourceId
-                && (track.ArtistId == artist.Id || (track.Album != null && track.Album.AlbumArtistId == artist.Id))));
-        }
-
-        if (query.MyMusic)
-        {
-            // Like the artist filter of the track list: as artist of the track or of its album.
-            IQueryable<Track> myTracks = MyMusicQueries.Tracks(
-                dbContext,
-                MyMusicQueries.RequireUser(query.UserId, "My music"));
-            artists = artists.Where(artist => myTracks.Any(track =>
-                track.ArtistId == artist.Id || (track.Album != null && track.Album.AlbumArtistId == artist.Id)));
-        }
-
-        IOrderedQueryable<Artist> sorted = query.Sort switch
-        {
-            ArtistSortField.FirstSeenAt => artists
-                .OrderBy(artist => artist.FirstSeenAt, query.Direction)
-                .ThenBy(artist => artist.NormalizedName),
-            ArtistSortField.Relevance when search is not null => artists
-                .OrderBy(artist => EF.Functions.TrigramsWordSimilarity(search, artist.Name), query.Direction)
-                .ThenBy(artist => artist.NormalizedName),
-            _ => artists.OrderBy(artist => artist.NormalizedName, query.Direction),
-        };
-
-        Page<ArtistRow> page = await Project(sorted.ThenBy(artist => artist.Id), query.UserId)
+        IQueryable<Artist> artists = Filter(dbContext.Artists.AsNoTracking(), query);
+        Page<ArtistRow> page = await Project(Sort(artists, query).ThenBy(artist => artist.Id), query.UserId)
             .ToPageAsync(query.Offset, query.Limit, cancellationToken);
         return page with { Items = await WithCollagesAsync(page.Items, cancellationToken) };
+    }
+
+    public async Task<IReadOnlyList<GroupKeyRow>> ListGroupKeysAsync(
+        ArtistListQuery query,
+        CancellationToken cancellationToken = default)
+    {
+        IQueryable<Artist> artists = Filter(dbContext.Artists.AsNoTracking(), query);
+        IOrderedQueryable<Artist> sorted = Sort(artists, query).ThenBy(artist => artist.Id);
+
+        // Only the first character of the name, so the rows of long lists stay small.
+        IQueryable<GroupKeyRow> keys = query.Sort == ArtistSortField.Name
+            ? sorted.Select(artist => new GroupKeyRow(null, artist.Id, null, artist.Name.Substring(0, 1)))
+            : sorted.Select(artist => new GroupKeyRow(null, artist.Id, null, null));
+        return await keys.ToListAsync(cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<GroupArtistRow>> ListGroupArtistsAsync(
+        IReadOnlyCollection<Guid> ids,
+        CancellationToken cancellationToken = default)
+    {
+        if (ids.Count == 0)
+        {
+            return [];
+        }
+
+        Guid[] distinct = [.. ids.Distinct()];
+        return await dbContext.Artists.AsNoTracking()
+            .Where(artist => distinct.Contains(artist.Id))
+            .Select(artist => new GroupArtistRow(artist.Id, artist.Name))
+            .ToListAsync(cancellationToken);
     }
 
     public async Task<ArtistRow?> FindAsync(
@@ -89,6 +83,53 @@ internal sealed class ArtistRepository(WaveMpDbContext dbContext) : IArtistRepos
     public Task<bool> ExistsAsync(Guid id, CancellationToken cancellationToken = default)
     {
         return dbContext.Artists.AnyAsync(artist => artist.Id == id, cancellationToken);
+    }
+
+    private IQueryable<Artist> Filter(IQueryable<Artist> artists, ArtistListQuery query)
+    {
+        if (query.Search is { } search)
+        {
+            string pattern = LikePatterns.Contains(search);
+            artists = artists.Where(artist =>
+                EF.Functions.ILike(artist.Name, pattern, LikePatterns.EscapeCharacter)
+                || EF.Functions.TrigramsAreWordSimilar(search, artist.Name));
+        }
+
+        if (query.SourceId is { } sourceId)
+        {
+            artists = artists.Where(artist => dbContext.Tracks.Any(track => track.SourceId == sourceId
+                && (track.ArtistId == artist.Id || (track.Album != null && track.Album.AlbumArtistId == artist.Id))));
+        }
+
+        if (query.MyMusic)
+        {
+            // Like the artist filter of the track list: as artist of the track or of its album.
+            IQueryable<Track> myTracks = MyMusicQueries.Tracks(
+                dbContext,
+                MyMusicQueries.RequireUser(query.UserId, "My music"));
+            artists = artists.Where(artist => myTracks.Any(track =>
+                track.ArtistId == artist.Id || (track.Album != null && track.Album.AlbumArtistId == artist.Id)));
+        }
+
+        return artists;
+    }
+
+    /// <summary>
+    /// Sorts by the key in the direction; ties by name (ascending). The caller adds the id as last key.
+    /// </summary>
+    private static IOrderedQueryable<Artist> Sort(IQueryable<Artist> artists, ArtistListQuery query)
+    {
+        string? search = query.Search;
+        return query.Sort switch
+        {
+            ArtistSortField.FirstSeenAt => artists
+                .OrderBy(artist => artist.FirstSeenAt, query.Direction)
+                .ThenBy(artist => artist.NormalizedName),
+            ArtistSortField.Relevance when search is not null => artists
+                .OrderBy(artist => EF.Functions.TrigramsWordSimilarity(search, artist.Name), query.Direction)
+                .ThenBy(artist => artist.NormalizedName),
+            _ => artists.OrderBy(artist => artist.NormalizedName, query.Direction),
+        };
     }
 
     /// <summary>

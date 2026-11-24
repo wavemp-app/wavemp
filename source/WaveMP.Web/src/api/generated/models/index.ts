@@ -1208,6 +1208,24 @@ export function createListeningStatisticsFromDiscriminatorValue(parseNode: Parse
 /**
  * Creates a new instance of the appropriate class based on discriminator value
  * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {ListGroup}
+ */
+// @ts-ignore
+export function createListGroupFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoListGroup;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {ListGroupPage}
+ */
+// @ts-ignore
+export function createListGroupPageFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoListGroupPage;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
  * @returns {Lyrics}
  */
 // @ts-ignore
@@ -3437,6 +3455,38 @@ export function deserializeIntoListeningStatistics(listeningStatistics: Partial<
         "topGenres": n => { listeningStatistics.topGenres = n.getCollectionOfObjectValues<TopGenre>(createTopGenreFromDiscriminatorValue); },
         "topTracks": n => { listeningStatistics.topTracks = n.getCollectionOfObjectValues<TopTrack>(createTopTrackFromDiscriminatorValue); },
         "totals": n => { listeningStatistics.totals = n.getObjectValue<StatisticsTotals>(createStatisticsTotalsFromDiscriminatorValue); },
+    }
+}
+/**
+ * The deserialization information for the current model
+ * @param ListGroup The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoListGroup(listGroup: Partial<ListGroup> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "album": n => { listGroup.album = n.getObjectValue<AlbumReference>(createAlbumReferenceFromDiscriminatorValue); },
+        "artist": n => { listGroup.artist = n.getObjectValue<ArtistReference>(createArtistReferenceFromDiscriminatorValue); },
+        "count": n => { listGroup.count = n.getNumberValue(); },
+        "hasCover": n => { listGroup.hasCover = n.getBooleanValue(); },
+        "kind": n => { listGroup.kind = n.getEnumValue<ListGroupKind>(ListGroupKindObject); },
+        "letter": n => { listGroup.letter = n.getStringValue(); },
+        "position": n => { listGroup.position = n.getNumberValue(); },
+        "year": n => { listGroup.year = n.getNumberValue(); },
+    }
+}
+/**
+ * The deserialization information for the current model
+ * @param ListGroupPage The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoListGroupPage(listGroupPage: Partial<ListGroupPage> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "items": n => { listGroupPage.items = n.getCollectionOfObjectValues<ListGroup>(createListGroupFromDiscriminatorValue); },
+        "limit": n => { listGroupPage.limit = n.getNumberValue(); },
+        "offset": n => { listGroupPage.offset = n.getNumberValue(); },
+        "total": n => { listGroupPage.total = n.getNumberValue(); },
     }
 }
 /**
@@ -6124,6 +6174,65 @@ export interface ListeningStatistics extends AdditionalDataHolder, Parsable {
     totals?: StatisticsTotals | null;
 }
 /**
+ * A group of a list: a run of consecutive entries with the same album, artist, index letter or year, in the order of the list. Contains no display texts; clients name the group from its kind and data.
+ */
+export interface ListGroup extends AdditionalDataHolder, Parsable {
+    /**
+     * The album property
+     */
+    album?: AlbumReference | null;
+    /**
+     * The artist property
+     */
+    artist?: ArtistReference | null;
+    /**
+     * Number of entries of the group.
+     */
+    count?: number | null;
+    /**
+     * Whether the album of the group has a cover (GetAlbumCover); false for groups without album.
+     */
+    hasCover?: boolean | null;
+    /**
+     * What the entries of a group of a list have in common: Album (tracks of one album, with album), Artist (tracks without album of one artist, or albums of one album artist, with artist), Letter (the index letter of the text the list is sorted by, with letter), Year (albums of one year, with year) or Unknown (tracks without album and artist, albums without album artist or without year). Clients show their own texts for each kind.
+     */
+    kind?: ListGroupKind | null;
+    /**
+     * Index letter of the text the list is sorted by, taken from the first entry of the group: "A" to "Z" (the first character without accents), "#" for digits, special characters and other scripts. Null if the list is not sorted by a text or the first entry has none.
+     */
+    letter?: string | null;
+    /**
+     * Index of the first entry of the group in the list, starting at 0: the offset of the list at which the group starts.
+     */
+    position?: number | null;
+    /**
+     * The year of a group of the kind Year; in the track list sorted by Year the year of the first track of the group. Null otherwise.
+     */
+    year?: number | null;
+}
+export type ListGroupKind = (typeof ListGroupKindObject)[keyof typeof ListGroupKindObject];
+/**
+ * One page of a collection.
+ */
+export interface ListGroupPage extends AdditionalDataHolder, Parsable {
+    /**
+     * Items of the page, at most limit.
+     */
+    items?: ListGroup[] | null;
+    /**
+     * Maximum number of items of the page, as requested.
+     */
+    limit?: number | null;
+    /**
+     * Number of items skipped before this page.
+     */
+    offset?: number | null;
+    /**
+     * Number of items of the whole collection.
+     */
+    total?: number | null;
+}
+/**
  * The lyrics of a track.
  */
 export interface Lyrics extends AdditionalDataHolder, Parsable {
@@ -8470,6 +8579,40 @@ export function serializeListeningStatistics(writer: SerializationWriter, listen
     writer.writeCollectionOfObjectValues<TopTrack>("topTracks", listeningStatistics.topTracks, serializeTopTrack);
     writer.writeObjectValue<StatisticsTotals>("totals", listeningStatistics.totals, serializeStatisticsTotals);
     writer.writeAdditionalData(listeningStatistics.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param ListGroup The instance to serialize from.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeListGroup(writer: SerializationWriter, listGroup: Partial<ListGroup> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!listGroup || isSerializingDerivedType) { return; }
+    writer.writeObjectValue<AlbumReference>("album", listGroup.album, serializeAlbumReference);
+    writer.writeObjectValue<ArtistReference>("artist", listGroup.artist, serializeArtistReference);
+    writer.writeNumberValue("count", listGroup.count);
+    writer.writeBooleanValue("hasCover", listGroup.hasCover);
+    writer.writeEnumValue<ListGroupKind>("kind", listGroup.kind);
+    writer.writeStringValue("letter", listGroup.letter);
+    writer.writeNumberValue("position", listGroup.position);
+    writer.writeNumberValue("year", listGroup.year);
+    writer.writeAdditionalData(listGroup.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param ListGroupPage The instance to serialize from.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeListGroupPage(writer: SerializationWriter, listGroupPage: Partial<ListGroupPage> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!listGroupPage || isSerializingDerivedType) { return; }
+    writer.writeCollectionOfObjectValues<ListGroup>("items", listGroupPage.items, serializeListGroup);
+    writer.writeNumberValue("limit", listGroupPage.limit);
+    writer.writeNumberValue("offset", listGroupPage.offset);
+    writer.writeNumberValue("total", listGroupPage.total);
+    writer.writeAdditionalData(listGroupPage.additionalData);
 }
 /**
  * Serializes information the current object
@@ -12686,7 +12829,7 @@ export const EqualizerFilterTypeObject = {
     HighShelf: "HighShelf",
 } as const;
 /**
- * The preset.
+ * The selected curve; Flat by default.
  */
 export const EqualizerPresetObject = {
     Flat: "Flat",
@@ -12866,6 +13009,16 @@ export const LibraryIssueTypeObject = {
     PossibleDuplicate: "PossibleDuplicate",
     VideoWithoutAudio: "VideoWithoutAudio",
     AudioWithoutVideo: "AudioWithoutVideo",
+} as const;
+/**
+ * What the entries of a group of a list have in common: Album (tracks of one album, with album), Artist (tracks without album of one artist, or albums of one album artist, with artist), Letter (the index letter of the text the list is sorted by, with letter), Year (albums of one year, with year) or Unknown (tracks without album and artist, albums without album artist or without year). Clients show their own texts for each kind.
+ */
+export const ListGroupKindObject = {
+    Album: "Album",
+    Artist: "Artist",
+    Letter: "Letter",
+    Year: "Year",
+    Unknown: "Unknown",
 } as const;
 /**
  * What the lookup found.

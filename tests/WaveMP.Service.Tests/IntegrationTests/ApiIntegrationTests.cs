@@ -471,7 +471,7 @@ public class ApiIntegrationTests
 
         List<JsonNode> library = [.. FindOperations(document)
             .Where(operation => libraryTags.Contains(operation["tags"]![0]!.GetValue<string>()))];
-        library.Should().HaveCount(17);
+        library.Should().HaveCount(20);
         library.Should().AllSatisfy(operation => operation["responses"]!["401"].Should().NotBeNull());
         library.Where(operation => operation["responses"]!["403"] is not null)
             .Select(operation => operation["operationId"]!.GetValue<string>())

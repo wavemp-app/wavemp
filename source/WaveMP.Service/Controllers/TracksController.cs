@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using WaveMP.Core.Caching.Covers;
 using WaveMP.Core.Collection.Ratings;
 using WaveMP.Core.Library.Covers;
+using WaveMP.Core.Library.Groups;
 using WaveMP.Core.Library.Tracks;
 using WaveMP.Core.Scanning.Edits;
 using WaveMP.Core.Streaming.Signatures;
@@ -30,7 +31,8 @@ public sealed class TracksController(
     ITrackService tracks,
     ICoverCacheService covers,
     ITrackMetadataEditor editor,
-    IRatingService ratings) : ControllerBase
+    IRatingService ratings,
+    IListGroupService groups) : ControllerBase
 {
     /// <summary>
     /// Lists the tracks, sorted and optionally searched and filtered.
@@ -98,6 +100,73 @@ public sealed class TracksController(
             sourceId);
         Page<TrackRow> page = await tracks.ListAsync(request, cancellationToken);
         return Ok(page.ToDto(track => track.ToDto()));
+    }
+
+    /// <summary>
+    /// Lists the groups of the track list (ListTracks) with the same sort order, search and filters: runs of
+    /// consecutive tracks of the same album (kind Album), tracks without album by their artist (kind Artist), tracks
+    /// without both as kind Unknown. The position of a group is the offset of ListTracks at which it starts, so a
+    /// client can jump to a group without loading the tracks before it. Offset and limit page the groups.
+    /// </summary>
+    /// <param name="offset">Number of groups to skip.</param>
+    /// <param name="limit">Maximum number of groups of the page.</param>
+    /// <param name="sort">Sort key of the track list; AlbumArtist by default, Relevance with q.</param>
+    /// <param name="direction">Sort direction of the track list, defaults as in ListTracks.</param>
+    /// <param name="q">Search text of the track list.</param>
+    /// <param name="artistId">Only tracks of this artist or on albums of this album artist.</param>
+    /// <param name="albumId">Only tracks of this album.</param>
+    /// <param name="genre">Only tracks of this genre, without regard to case.</param>
+    /// <param name="year">Only tracks of this year.</param>
+    /// <param name="hasAudio">Only tracks with (true) or without (false) an audio file.</param>
+    /// <param name="hasVideo">Only tracks with (true) or without (false) a video file.</param>
+    /// <param name="myMusic">Only tracks of the "my music" of the current profile.</param>
+    /// <param name="sourceId">Only tracks of this media source.</param>
+    /// <param name="cancellationToken">Aborts the request.</param>
+    /// <response code="200">One page of groups.</response>
+    /// <response code="400">Invalid query parameters (code <c>request.invalid</c>).</response>
+    [HttpGet("groups", Name = "ListTrackGroups")]
+    [ProducesResponseType<PageDto<ListGroupDto>>(StatusCodes.Status200OK, "application/json")]
+    [ProducesResponseType<ValidationProblemDto>(StatusCodes.Status400BadRequest, "application/problem+json")]
+    public async Task<ActionResult<PageDto<ListGroupDto>>> ListTrackGroupsAsync(
+        [FromQuery, Range(0, int.MaxValue)] int offset = 0,
+        [FromQuery, Range(1, PageLimits.GroupMaxLimit)] int limit = PageLimits.GroupMaxLimit,
+        [FromQuery] TrackSortDto? sort = null,
+        [FromQuery] SortDirectionDto? direction = null,
+        [FromQuery, StringLength(LibraryLimits.TextMaxLength)] string? q = null,
+        [FromQuery] Guid? artistId = null,
+        [FromQuery] Guid? albumId = null,
+        [FromQuery, StringLength(LibraryLimits.GenreMaxLength)] string? genre = null,
+        [FromQuery, Range(LibraryLimits.MinYear, LibraryLimits.MaxYear)] int? year = null,
+        [FromQuery] bool? hasAudio = null,
+        [FromQuery] bool? hasVideo = null,
+        [FromQuery] bool myMusic = false,
+        [FromQuery] Guid? sourceId = null,
+        CancellationToken cancellationToken = default)
+    {
+        this.ValidateEnum(sort, nameof(sort));
+        this.ValidateEnum(direction, nameof(direction));
+        if (!ModelState.IsValid)
+        {
+            return ValidationProblem();
+        }
+
+        TrackListRequest request = new(
+            offset,
+            limit,
+            sort?.ToEntity(),
+            direction?.ToEntity(),
+            q,
+            artistId,
+            albumId,
+            genre,
+            year,
+            hasAudio,
+            hasVideo,
+            User.GetUserId(),
+            myMusic,
+            sourceId);
+        Page<ListGroup> page = await groups.ListTrackGroupsAsync(request, cancellationToken);
+        return Ok(page.ToDto(group => group.ToDto()));
     }
 
     /// <summary>

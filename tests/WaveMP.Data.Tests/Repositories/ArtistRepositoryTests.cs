@@ -179,6 +179,82 @@ public class ArtistRepositoryTests : LibraryDatabaseTests
         artist.Picture.CollageAlbumIds.Should().BeEmpty();
     }
 
+    [TestCase(SortDirection.Asc, new[] { "A", "B", "G" })]
+    [TestCase(SortDirection.Desc, new[] { "G", "B", "A" })]
+    public async Task ListGroupKeysAsync_ByName_ReturnsTheArtistsWithTheInitialOfTheirNameInListOrder(
+        SortDirection direction,
+        string[] initials)
+    {
+        await SeedStandardLibraryAsync();
+        ArtistListQuery query = new(1, 1, ArtistSortField.Name, direction);
+
+        IReadOnlyList<GroupKeyRow> keys = await GroupKeysAsync(query);
+        Page<ArtistRow> list = await ListAsync(query with { Offset = 0, Limit = 100 });
+
+        keys.Select(key => key.Initial).Should().Equal(initials);
+        keys.Select(key => key.ArtistId).Should().Equal(list.Items.Select(artist => (Guid?)artist.Id));
+        keys.Should().OnlyContain(key => key.AlbumId == null && key.Year == null);
+    }
+
+    [TestCase(ArtistSortField.FirstSeenAt, SortDirection.Desc, null)]
+    [TestCase(ArtistSortField.FirstSeenAt, SortDirection.Asc, null)]
+    [TestCase(ArtistSortField.Relevance, SortDirection.Desc, "band")]
+    public async Task ListGroupKeysAsync_OtherSort_FollowsTheOrderOfTheListWithoutInitials(
+        ArtistSortField sort,
+        SortDirection direction,
+        string? search)
+    {
+        await SeedStandardLibraryAsync();
+        ArtistListQuery query = new(0, 100, sort, direction, search);
+
+        IReadOnlyList<GroupKeyRow> keys = await GroupKeysAsync(query);
+        Page<ArtistRow> list = await ListAsync(query);
+
+        keys.Select(key => key.ArtistId).Should().Equal(list.Items.Select(artist => (Guid?)artist.Id));
+        keys.Should().OnlyContain(key => key.Initial == null);
+    }
+
+    [Test]
+    public async Task ListGroupKeysAsync_MyMusicAndSource_FilterLikeTheList()
+    {
+        StandardLibrary library = await SeedStandardLibraryAsync();
+        LibrarySeed seed = new();
+        User user = seed.User();
+        seed.Favorite(user, library.Duet);
+        MediaSource source = seed.Source();
+        Artist other = seed.Artist("Other Source Artist");
+        seed.Track("Elsewhere", other, source: source);
+        await SaveAsync(seed);
+
+        IReadOnlyList<GroupKeyRow> mine = await GroupKeysAsync(
+            new ArtistListQuery(0, 100, ArtistSortField.Name, SortDirection.Asc, UserId: user.Id, MyMusic: true));
+        IReadOnlyList<GroupKeyRow> ofSource = await GroupKeysAsync(
+            new ArtistListQuery(0, 100, ArtistSortField.Name, SortDirection.Asc, SourceId: source.Id));
+
+        // The duet is by the guest on an album of the band.
+        mine.Select(key => key.ArtistId).Should().Equal(library.Alpha.Id, library.Guest.Id);
+        ofSource.Should().Equal(new GroupKeyRow(null, other.Id, null, "O"));
+    }
+
+    [Test]
+    public async Task ListGroupArtistsAsync_Always_ReturnsTheNamesOfTheExistingArtists()
+    {
+        StandardLibrary library = await SeedStandardLibraryAsync();
+
+        IReadOnlyList<GroupArtistRow> rows = await new ArtistRepository(CreateDbContext()).ListGroupArtistsAsync(
+            [library.Alpha.Id, library.Guest.Id, library.Alpha.Id, Guid.NewGuid()]);
+        IReadOnlyList<GroupArtistRow> none = await new ArtistRepository(CreateDbContext()).ListGroupArtistsAsync([]);
+
+        rows.Should().BeEquivalentTo(
+            [new GroupArtistRow(library.Alpha.Id, "Alpha Band"), new GroupArtistRow(library.Guest.Id, "Guest Star")]);
+        none.Should().BeEmpty();
+    }
+
+    private async Task<IReadOnlyList<GroupKeyRow>> GroupKeysAsync(ArtistListQuery query)
+    {
+        return await new ArtistRepository(CreateDbContext()).ListGroupKeysAsync(query);
+    }
+
     private static Album AlbumWithCover(LibrarySeed seed, string title, Artist artist, int? year)
     {
         Album album = seed.Album(title, artist, year: year);

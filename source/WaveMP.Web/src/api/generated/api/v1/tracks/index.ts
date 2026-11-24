@@ -4,6 +4,8 @@
 // @ts-ignore
 import { createProblemDetailsFromDiscriminatorValue, createTrackPageFromDiscriminatorValue, createValidationProblemFromDiscriminatorValue, type ProblemDetails, type SortDirection, type TrackPage, type TrackSort, type ValidationProblem } from '../../../models/index.js';
 // @ts-ignore
+import { GroupsRequestBuilderRequestsMetadata, type GroupsRequestBuilder } from './groups/index.js';
+// @ts-ignore
 import { TracksItemRequestBuilderNavigationMetadata, TracksItemRequestBuilderRequestsMetadata, type TracksItemRequestBuilder } from './item/index.js';
 // @ts-ignore
 import { type BaseRequestBuilder, type Guid, type KeysToExcludeForNavigationMetadata, type NavigationMetadata, type Parsable, type ParsableFactory, type RequestConfiguration, type RequestInformation, type RequestsMetadata } from '@microsoft/kiota-abstractions';
@@ -12,6 +14,10 @@ import { type BaseRequestBuilder, type Guid, type KeysToExcludeForNavigationMeta
  * Builds and executes requests for operations under /api/v1/tracks
  */
 export interface TracksRequestBuilder extends BaseRequestBuilder<TracksRequestBuilder> {
+    /**
+     * The groups property
+     */
+    get groups(): GroupsRequestBuilder;
     /**
      * Gets an item from the ApiSdk.api.v1.tracks.item collection
      * @param id Id of the track.
@@ -102,6 +108,9 @@ export const TracksRequestBuilderNavigationMetadata: Record<Exclude<keyof Tracks
         requestsMetadata: TracksItemRequestBuilderRequestsMetadata,
         navigationMetadata: TracksItemRequestBuilderNavigationMetadata,
         pathParametersMappings: ["id"],
+    },
+    groups: {
+        requestsMetadata: GroupsRequestBuilderRequestsMetadata,
     },
 };
 /**

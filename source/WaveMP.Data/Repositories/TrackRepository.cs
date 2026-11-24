@@ -22,6 +22,49 @@ internal sealed class TrackRepository(WaveMpDbContext dbContext) : ITrackReposit
             .ToPageAsync(query.Offset, query.Limit, cancellationToken);
     }
 
+    public async Task<IReadOnlyList<GroupKeyRow>> ListGroupKeysAsync(
+        TrackListQuery query,
+        CancellationToken cancellationToken = default)
+    {
+        IQueryable<Track> tracks = Filter(dbContext.Tracks.AsNoTracking(), query);
+        IOrderedQueryable<Track> sorted = Sort(tracks, query).ThenBy(track => track.Id);
+
+        // Only the first character of the text of the sort key, so the rows of long lists stay small.
+        IQueryable<GroupKeyRow> keys = query.Sort switch
+        {
+            TrackSortField.AlbumArtist => sorted.Select(track => new GroupKeyRow(
+                track.AlbumId,
+                track.ArtistId,
+                track.Year,
+                track.Album != null
+                    ? track.Album.AlbumArtist!.Name.Substring(0, 1)
+                    : track.Artist!.Name.Substring(0, 1))),
+            TrackSortField.Album => sorted.Select(track => new GroupKeyRow(
+                track.AlbumId,
+                track.ArtistId,
+                track.Year,
+                track.Album!.Title.Substring(0, 1))),
+            TrackSortField.Artist => sorted.Select(track => new GroupKeyRow(
+                track.AlbumId,
+                track.ArtistId,
+                track.Year,
+                track.Artist!.Name.Substring(0, 1))),
+            TrackSortField.Genre => sorted.Select(track => new GroupKeyRow(
+                track.AlbumId,
+                track.ArtistId,
+                track.Year,
+                track.Genre!.Substring(0, 1))),
+            TrackSortField.Title => sorted.Select(track => new GroupKeyRow(
+                track.AlbumId,
+                track.ArtistId,
+                track.Year,
+                track.Title.Substring(0, 1))),
+            _ => sorted.Select(track => new GroupKeyRow(track.AlbumId, track.ArtistId, track.Year, null)),
+        };
+
+        return await keys.ToListAsync(cancellationToken);
+    }
+
     public Task<TrackRow?> FindAsync(Guid id, Guid? userId = null, CancellationToken cancellationToken = default)
     {
         return Project(dbContext.Tracks.AsNoTracking().Where(track => track.Id == id), userId)

@@ -16,6 +16,18 @@ public interface ITrackRepository
     Task<Page<TrackRow>> ListAsync(TrackListQuery query, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// What the groups of the track list need of every track of <see cref="ListAsync"/> with the same filters and
+    /// sort order, without paging (offset and limit of the query do not apply): album, artist and year of the track
+    /// and the first character of the text of the sort key (album artist, for tracks without album the artist of the
+    /// track, for <see cref="TrackSortField.AlbumArtist"/>; album title, artist name, genre or title for
+    /// <see cref="TrackSortField.Album"/>, <see cref="TrackSortField.Artist"/>, <see cref="TrackSortField.Genre"/> and
+    /// <see cref="TrackSortField.Title"/>; none for the other keys).
+    /// </summary>
+    Task<IReadOnlyList<GroupKeyRow>> ListGroupKeysAsync(
+        TrackListQuery query,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// The track with the favorite and rating of <paramref name="userId"/>.
     /// </summary>
     Task<TrackRow?> FindAsync(Guid id, Guid? userId = null, CancellationToken cancellationToken = default);
