@@ -13,6 +13,7 @@ import {
     track,
 } from '@/devices/__tests__/fakes'
 import type { DeviceCommand, DeviceSessionSnapshot, LivePlayback } from '@/devices/protocol'
+import type { PlaybackPath } from '@/player/backgroundAudio'
 import type { EngineEvents } from '@/player/engine'
 import { getLyrics } from '@/lyrics/api'
 import {
@@ -23,7 +24,12 @@ import {
     savePlaybackState,
 } from '@/player/api'
 import { devicesDependencies, useDevicesStore } from '../devices'
-import { playerDependencies, usePlayerStore, type PlayerEngine } from '../player'
+import {
+    playerDependencies,
+    usePlayerStore,
+    type PlayerEngine,
+    type PlayerEngineHooks,
+} from '../player'
 import { resumeDependencies, useResumeStore } from '../resume'
 import { useSessionStore } from '../session'
 
@@ -484,6 +490,90 @@ describe('player with devices', () => {
 
             expect(player.remote).toBe(true)
             expect(player.state.title).toBe(idB.toUpperCase())
+        })
+    })
+
+    describe('with the plain path in the background of an iPhone or iPad', () => {
+        /** The engine of an iPhone or iPad: the plain path plays while the page is hidden. */
+        class FakePathEngine extends FakeEngine {
+            path: PlaybackPath = 'effects'
+            readonly setPageHidden = vi.fn((hidden: boolean) => {
+                this.path = hidden ? 'plain' : 'effects'
+                this.hooks?.onPathChange?.(this.path)
+            })
+
+            constructor(
+                events: EngineEvents,
+                readonly hooks?: PlayerEngineHooks,
+            ) {
+                super(events)
+            }
+        }
+
+        beforeEach(() => {
+            playerDependencies.backgroundAudio = () => true
+            playerDependencies.createEngine = (events, hooks) =>
+                (engine = new FakePathEngine(events, hooks))
+        })
+
+        afterEach(() => {
+            usePlayerStore().$dispose()
+            Reflect.deleteProperty(document, 'visibilityState')
+        })
+
+        async function setHidden(hidden: boolean): Promise<void> {
+            Object.defineProperty(document, 'visibilityState', {
+                value: hidden ? 'hidden' : 'visible',
+                configurable: true,
+            })
+            document.dispatchEvent(new Event('visibilitychange'))
+            await flushPromises()
+        }
+
+        it('publishes the same playback and runs the commands of remotes as the active device', async () => {
+            registerAnswer = { ...registerAnswer, playback: live({ activeDeviceId: 'me' }) }
+            const { player } = await start()
+            player.playTracks(abc, 0)
+            await flushPromises()
+            timers.runTimeouts()
+            await flushPromises()
+            const count = publications().length
+
+            await setHidden(true)
+            timers.runTimeouts()
+            await flushPromises()
+
+            expect(player.state.audioPath).toBe('plain')
+            expect(publications()).toHaveLength(count)
+
+            hub.emit('CommandReceived', received({ type: 'Pause' }))
+            await flushPromises()
+            expect(engine!.pause).toHaveBeenCalled()
+            expect(player.playback).toBe('paused')
+            expect(publications()).toHaveLength(count + 1)
+            expect(publications().at(-1)?.playback.status).toBe('Paused')
+            // The path is local: other devices never get it.
+            expect(publications().some((publication) => 'audioPath' in publication.playback)).toBe(
+                false,
+            )
+        })
+
+        it('stays a remote of the active device while the page is hidden', async () => {
+            registerAnswer = { ...registerAnswer, playback: tvPlaying() }
+            const { player } = await start()
+            await flushPromises()
+
+            await setHidden(true)
+            player.pause()
+            await flushPromises()
+            await setHidden(false)
+
+            expect(player.remote).toBe(true)
+            expect(commands().map((command) => command.type)).toEqual(['Pause'])
+            expect(player.state.audioPath).toBe('effects')
+            expect(getPlayback).not.toHaveBeenCalled()
+            // The local engine rests: nothing was ever created to play here.
+            expect(engine).toBeUndefined()
         })
     })
 

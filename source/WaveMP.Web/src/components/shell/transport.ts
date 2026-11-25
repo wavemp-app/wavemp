@@ -6,6 +6,7 @@ import type { ConnectionStatus } from '@/devices/connection'
 import type { DeviceEntry } from '@/devices/presentation'
 import type { CommandStatus } from '@/devices/protocol'
 import type { DeviceRole } from '@/devices/roles'
+import type { PlaybackPath } from '@/player/backgroundAudio'
 import type { SleepTimerMode } from '@/player/sleepTimer'
 import { PlayerViewModeObject, type PlayerViewMode } from '@/api/generated/models'
 import type { StageView } from '@/player/videoSync'
@@ -63,6 +64,12 @@ export interface TransportState {
      * when not given.
      */
     effects?: boolean
+    /**
+     * The playback path of this browser: effects (through Web Audio) or plain (audio elements in
+     * the background on iPhone and iPad, without equalizer, crossfade and visualization). Effects
+     * when not given; only for the local playback, never published to other devices.
+     */
+    audioPath?: PlaybackPath
     /** Casting of this browser; hidden when not given. */
     cast?: TransportCast
 }

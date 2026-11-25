@@ -1,5 +1,6 @@
 // Media Session API: shows the current track on the lock screen, in notifications and on media
-// keys, and passes their buttons to the player. Browsers without the API are left alone.
+// keys, and passes their buttons to the player. Browsers without the API are left alone. The store
+// owns the session, so it works the same on both playback paths (see pathEngine.ts).
 
 export interface MediaSessionHandlers {
     play(): void
@@ -10,13 +11,20 @@ export interface MediaSessionHandlers {
     seekTo(position: number): void
 }
 
+/** A picture of the cover in one size, e.g. { src: 'blob:...', sizes: '300x300' }. */
+export interface MediaSessionArtwork {
+    readonly src: string
+    readonly sizes?: string
+    readonly type?: string
+}
+
 export interface MediaSessionState {
     readonly playback: 'idle' | 'playing' | 'paused'
     readonly title?: string
     readonly artist?: string
     readonly album?: string
-    /** URL of the cover (an object URL), if loaded. */
-    readonly artwork?: string | null
+    /** The cover in several sizes (object URLs), once loaded; the system picks the one that fits. */
+    readonly artwork?: readonly MediaSessionArtwork[]
     /** Position and duration in seconds. */
     readonly position: number
     readonly duration: number
@@ -31,7 +39,11 @@ function defaultSession(): MediaSession | null {
         : null
 }
 
-/** Registers the buttons; returns the function that removes them again. */
+/**
+ * Registers the buttons; returns the function that removes them again. No buttons to skip back or
+ * forward by a few seconds: on iPhone and iPad they would replace previous and next on the lock
+ * screen.
+ */
 export function connectMediaSession(
     handlers: MediaSessionHandlers,
     session: MediaSession | null = defaultSession(),
@@ -92,13 +104,18 @@ export function updateMediaSession(
         return
     }
 
-    const key = JSON.stringify([state.title, state.artist, state.album, state.artwork])
+    const artwork = (state.artwork ?? []).map(({ src, sizes, type }) => ({
+        src,
+        ...(sizes ? { sizes } : {}),
+        ...(type ? { type } : {}),
+    }))
+    const key = JSON.stringify([state.title, state.artist, state.album, artwork])
     if (typeof MediaMetadata !== 'undefined' && shown.get(session) !== key) {
         session.metadata = new MediaMetadata({
             title: state.title,
             artist: state.artist ?? '',
             album: state.album ?? '',
-            artwork: state.artwork ? [{ src: state.artwork }] : [],
+            artwork,
         })
         shown.set(session, key)
     }

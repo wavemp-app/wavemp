@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { computed, ref, shallowRef, watch } from 'vue'
+import { computed, onScopeDispose, ref, shallowRef, watch } from 'vue'
 import {
     PlaybackMethodObject,
     PlaybackTargetObject,
@@ -49,6 +49,12 @@ import {
     withoutUpcomingAutoplay,
     type AutoplayEntry,
 } from '@/player/autoplay'
+import {
+    applyAudioSession,
+    backgroundPathSupported,
+    pageLifecycle,
+    type PlaybackPath,
+} from '@/player/backgroundAudio'
 import { crossfadeDuration } from '@/player/crossfade'
 import {
     AudioEngine,
@@ -58,7 +64,12 @@ import {
 } from '@/player/engine'
 import { browserAudioFormats } from '@/player/formats'
 import { PlayHistoryTracker } from '@/player/history'
-import { connectMediaSession, updateMediaSession } from '@/player/mediaSession'
+import {
+    connectMediaSession,
+    updateMediaSession,
+    type MediaSessionArtwork,
+} from '@/player/mediaSession'
+import { PlaybackPathEngine, type PathEngineOptions } from '@/player/pathEngine'
 import {
     append,
     clearUpcoming,
@@ -104,7 +115,11 @@ import { devicesDependencies, useDevicesStore } from './devices'
 import { useEqualizerStore } from './equalizer'
 import { useSessionStore } from './session'
 
-/** What the store needs from the engine; tests replace the engine. */
+/**
+ * What the store needs from the engine; tests replace the engine. The optional members are those
+ * of the engine of the browser with its two playback paths (see PlaybackPathEngine); the engine of
+ * a casting device has none of them.
+ */
 export type PlayerEngine = Pick<
     AudioEngine,
     | 'load'
@@ -122,6 +137,23 @@ export type PlayerEngine = Pick<
     | 'hasPrepared'
     | 'position'
     | 'analyser'
+> & {
+    /** The playback path that plays now. */
+    readonly path?: PlaybackPath
+    /** Whether the current track does not play (the browser may have stopped it). */
+    readonly paused?: boolean
+    /** The page went to the background or came back. */
+    setPageHidden?(hidden: boolean): void
+    /** Resumes the effects path within a gesture of the user (see PlaybackPathEngine). */
+    resumeEffects?(): void
+    /** Unlocks playback within a gesture of the user without playing anything. */
+    unlock?(): void
+}
+
+/** What the store tells the engine of the browser about its playback paths. */
+export type PlayerEngineHooks = Pick<
+    PathEngineOptions,
+    'supported' | 'onPathChange' | 'onEffectsPending'
 >
 
 /** What the store needs from the video follower; tests replace it. */
@@ -132,7 +164,10 @@ export type PlayerVideoFollower = Pick<
 
 /** Parts of the browser the player uses; tests replace them. */
 export const playerDependencies = {
-    createEngine: (events: EngineEvents): PlayerEngine => new AudioEngine(events),
+    createEngine: (
+        events: EngineEvents,
+        hooks: PlayerEngineHooks = { supported: false },
+    ): PlayerEngine => new PlaybackPathEngine(events, hooks),
     /** The engine while a casting device plays. */
     createCastEngine: (layer: CastLayer, events: EngineEvents): PlayerEngine =>
         new CastEngine(layer, events),
@@ -150,11 +185,19 @@ export const playerDependencies = {
     mediaSession: true,
     /** Whether the browser has Web Audio, which the equalizer and the crossfade need. */
     webAudio: (): boolean => browserAudioEnvironment.webAudio !== false,
+    /**
+     * Whether the browser stops the audio graph in the background (iPhone and iPad), so the music
+     * plays on there through the plain path, without equalizer, crossfade and visualization.
+     */
+    backgroundAudio: (): boolean => backgroundPathSupported(),
     sleepClock: browserSleepTimerClock as SleepTimerClock,
 }
 
-/** Size of the cover shown by the media session (lock screen, notifications). */
-const artworkSize = 300
+/**
+ * Sizes of the cover shown by the media session (lock screen, notifications, car displays); the
+ * system picks the one that fits.
+ */
+const artworkSizes = [96, 192, 300, 600] as const
 
 interface Loaded {
     readonly key: string
@@ -206,6 +249,12 @@ function artistOf(track: Track | undefined): string | undefined {
  * the queue and the controls stay here, the device gets one track after the other (its video while
  * the video view is chosen), and equalizer, crossfade, ReplayGain and the visualization rest.
  *
+ * On iPhone and iPad the browser stops the audio graph in the background: there the engine plays
+ * on through plain audio elements while the page is hidden (see src/player/pathEngine.ts), and
+ * equalizer, crossfade and visualization pause until it returns. Back in the foreground, a playback
+ * the browser stopped meanwhile shows paused, and a paused track whose stream URL expired loads
+ * again; play also loads such a track again instead of resuming the expired URL.
+ *
  * With the devices of the profile (see src/stores/devices.ts), this player is either the one that
  * plays (local) or a remote of the active device. As the active device it publishes its state:
  * at once for play, pause, stop, a new song, a seek and the switches, shortly after changes of the
@@ -234,7 +283,8 @@ export const usePlayerStore = defineStore('player', () => {
     const storedVolume = loadVolume()
     const volume = ref(storedVolume.volume)
     const muted = ref(storedVolume.muted)
-    const artwork = ref<string | null>(null)
+    /** The cover of the current track in the sizes of the media session, once loaded. */
+    const artwork = shallowRef<readonly MediaSessionArtwork[]>([])
     /** The video element of the Now Playing stage, while the stage is open. */
     const videoElement = shallowRef<HTMLVideoElement | null>(null)
     /** State of the video of the current track. */
@@ -243,6 +293,15 @@ export const usePlayerStore = defineStore('player', () => {
     const pageVisible = ref(
         typeof document === 'undefined' || document.visibilityState !== 'hidden',
     )
+    /** Whether the page is in the background, as the playback paths of the engine know it. */
+    let pageHidden = !pageVisible.value
+    /**
+     * Whether the browser stops the audio graph in the background (iPhone and iPad): the music then
+     * plays on there through the plain path, without equalizer, crossfade and visualization.
+     */
+    const backgroundAudio = playerDependencies.backgroundAudio()
+    /** The playback path of the browser: effects (through Web Audio) or plain (audio elements). */
+    const audioPath = ref<PlaybackPath>('effects')
     /** Whether the equalizer can shape the sound in this browser. */
     const localEqualizer = ref(playerDependencies.webAudio())
     /** Whether a casting device plays the music. */
@@ -444,8 +503,20 @@ export const usePlayerStore = defineStore('player', () => {
 
     function getEngine(): PlayerEngine {
         if (!engine) {
-            engine = playerDependencies.createEngine(eventsOf('local'))
-            engine.setEqualizer(equalizer.output, equalizer.layout)
+            const created = playerDependencies.createEngine(eventsOf('local'), {
+                supported: backgroundAudio,
+                onPathChange: (path) => {
+                    audioPath.value = path
+                },
+                onEffectsPending: awaitGesture,
+            })
+            engine = created
+            created.setEqualizer(equalizer.output, equalizer.layout)
+            if (pageHidden) {
+                created.setPageHidden?.(true)
+            }
+
+            audioPath.value = created.path ?? 'effects'
         }
 
         engine.setVolume(outputGain())
@@ -465,6 +536,69 @@ export const usePlayerStore = defineStore('player', () => {
     /** The engine of the current output, if it was created. */
     function runningEngine(): PlayerEngine | null {
         return output === 'cast' ? castEngine : engine
+    }
+
+    /** Events of a gesture of the user that allow the browser to resume the audio graph. */
+    const gestureEvents = ['touchend', 'click', 'keydown'] as const
+    let awaitingGesture = false
+
+    /**
+     * The effects path waits for a gesture of the user (true; the browser kept its audio graph
+     * suspended on the return to the foreground) or no longer (false): the next tap, click or key
+     * press anywhere on the page resumes it.
+     */
+    function awaitGesture(pending: boolean): void {
+        if (typeof document === 'undefined' || pending === awaitingGesture) {
+            return
+        }
+
+        awaitingGesture = pending
+        for (const name of gestureEvents) {
+            if (pending) {
+                document.addEventListener(name, onGesture, { capture: true, passive: true })
+            } else {
+                document.removeEventListener(name, onGesture, { capture: true })
+            }
+        }
+    }
+
+    function onGesture(): void {
+        awaitGesture(false)
+        engine?.resumeEffects?.()
+    }
+
+    /**
+     * Whether the signed stream URL of the loaded track expired (or is about to): the browser can no
+     * longer load from it, so the track is requested again before it plays on.
+     */
+    function loadedExpired(): boolean {
+        const value = loaded?.playback
+        return (
+            output === 'local' &&
+            !!value?.expiresAt &&
+            !isPlaybackFresh(value as TrackPlayback, playerDependencies.now())
+        )
+    }
+
+    /**
+     * The page came back to the foreground. The browser may have stopped the playback in the
+     * background (iPhone and iPad after a long interruption, or a play on the lock screen that never
+     * started): the player then pauses at its position. A paused track whose stream URL expired
+     * meanwhile loads again, paused at its position, so the next tap plays it at once.
+     */
+    function reconcileAfterReturn(): void {
+        if (output !== 'local' || remote.value || !loaded || !engine) {
+            return
+        }
+
+        if (playback.value === 'playing' && !loading.value && engine.paused === true) {
+            pauseHere()
+        }
+
+        if (playback.value === 'paused' && loadedExpired()) {
+            engine.stop()
+            void startCurrent(false, position.value)
+        }
     }
 
     /** Starts the engine and notes whether its equalizer works (only the browser has one). */
@@ -964,7 +1098,8 @@ export const usePlayerStore = defineStore('player', () => {
         }
 
         restoredKey = null
-        if (!loaded) {
+        // A track paused for long (e.g. on the lock screen) loads again with a fresh stream URL.
+        if (!loaded || (playback.value !== 'playing' && loadedExpired())) {
             void startCurrent(true, position.value)
             return
         }
@@ -1679,10 +1814,29 @@ export const usePlayerStore = defineStore('player', () => {
         (trackId) => void loadLyrics(trackId),
     )
 
-    if (typeof document !== 'undefined') {
-        document.addEventListener('visibilitychange', () => {
-            pageVisible.value = document.visibilityState !== 'hidden'
+    // The page goes to the background or comes back: a hidden page shows no video, and the engine
+    // moves the playback to the path for it (the plain one in the background on iPhone and iPad).
+    if (typeof document !== 'undefined' && typeof window !== 'undefined') {
+        const stopFollowing = pageLifecycle(document, window, (hidden) => {
+            pageVisible.value = !hidden
+            if (!hidden) {
+                // First, so a playback the browser stopped does not start again on the way back.
+                reconcileAfterReturn()
+            }
+
+            pageHidden = hidden
+            engine?.setPageHidden?.(hidden)
         })
+        onScopeDispose(() => {
+            stopFollowing()
+            awaitGesture(false)
+        })
+    }
+
+    // Music keeps playing in the background and with the ringer switched off where the browser
+    // knows audio sessions (WebKit on iPhone and iPad).
+    if (backgroundAudio) {
+        applyAudioSession()
     }
 
     // A casting device connects or goes: the playback moves to it or back to the browser.
@@ -1710,17 +1864,25 @@ export const usePlayerStore = defineStore('player', () => {
             ] as const,
         async ([id, version]) => {
             if (artworkHeld) {
-                covers.release('track', artworkHeld.id, artworkSize, artworkHeld.version)
+                for (const size of artworkSizes) {
+                    covers.release('track', artworkHeld.id, size, artworkHeld.version)
+                }
+
                 artworkHeld = null
             }
 
-            artwork.value = null
+            artwork.value = []
             if (id && playerDependencies.mediaSession) {
                 const held = { id, version }
                 artworkHeld = held
-                const url = await covers.acquire('track', id, artworkSize, version)
+                const urls = await Promise.all(
+                    artworkSizes.map((size) => covers.acquire('track', id, size, version)),
+                )
                 if (artworkHeld === held) {
-                    artwork.value = url
+                    artwork.value = artworkSizes.flatMap((size, index) => {
+                        const src = urls[index]
+                        return src ? [{ src, sizes: `${size}x${size}` }] : []
+                    })
                 }
             }
         },
@@ -1835,8 +1997,7 @@ export const usePlayerStore = defineStore('player', () => {
      * playback here later: browsers block playback that no gesture of the user started.
      */
     function unlockAudio(): void {
-        const local = getEngine() as PlayerEngine & { unlock?: () => void }
-        local.unlock?.()
+        getEngine().unlock?.()
     }
 
     /** This device became a remote: the local playback rests and the queue shows the live one. */
@@ -1986,6 +2147,9 @@ export const usePlayerStore = defineStore('player', () => {
                 fading: sleepTimer.value.fading,
             },
             effects: !casting.value && !remoteState,
+            // The path of this browser only; a casting device and the active device of a remote
+            // play on their own.
+            audioPath: casting.value || remoteState ? 'effects' : audioPath.value,
             cast: {
                 availability: cast.availability,
                 connection: cast.connection,
@@ -2051,6 +2215,8 @@ export const usePlayerStore = defineStore('player', () => {
         casting,
         remote,
         analyser,
+        audioPath,
+        backgroundAudio,
         sleepTimer,
         sleepRemaining,
         autoplay,
