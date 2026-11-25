@@ -37,6 +37,7 @@ COPY source/WaveMP.Core.Autoplay/WaveMP.Core.Autoplay.csproj source/WaveMP.Core.
 COPY source/WaveMP.Core.Backups/WaveMP.Core.Backups.csproj source/WaveMP.Core.Backups/
 COPY source/WaveMP.Core.Caching/WaveMP.Core.Caching.csproj source/WaveMP.Core.Caching/
 COPY source/WaveMP.Core.Collection/WaveMP.Core.Collection.csproj source/WaveMP.Core.Collection/
+COPY source/WaveMP.Core.Devices/WaveMP.Core.Devices.csproj source/WaveMP.Core.Devices/
 COPY source/WaveMP.Core.Jobs/WaveMP.Core.Jobs.csproj source/WaveMP.Core.Jobs/
 COPY source/WaveMP.Core.Library/WaveMP.Core.Library.csproj source/WaveMP.Core.Library/
 COPY source/WaveMP.Core.Lyrics/WaveMP.Core.Lyrics.csproj source/WaveMP.Core.Lyrics/
@@ -61,6 +62,7 @@ COPY source/WaveMP.Core.Autoplay/ source/WaveMP.Core.Autoplay/
 COPY source/WaveMP.Core.Backups/ source/WaveMP.Core.Backups/
 COPY source/WaveMP.Core.Caching/ source/WaveMP.Core.Caching/
 COPY source/WaveMP.Core.Collection/ source/WaveMP.Core.Collection/
+COPY source/WaveMP.Core.Devices/ source/WaveMP.Core.Devices/
 COPY source/WaveMP.Core.Jobs/ source/WaveMP.Core.Jobs/
 COPY source/WaveMP.Core.Library/ source/WaveMP.Core.Library/
 COPY source/WaveMP.Core.Lyrics/ source/WaveMP.Core.Lyrics/
