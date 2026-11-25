@@ -2,6 +2,7 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } 
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
 import { defineComponent, h } from 'vue'
 import { createPinia, setActivePinia } from 'pinia'
+import Sortable from 'sortablejs'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import type { Playlist, Track } from '@/api/generated/models'
 import { createWaveMpI18n } from '@/i18n'
@@ -412,6 +413,25 @@ describe('PlaylistTrackList', () => {
         ])
         sortable.unmount()
         fixed.unmount()
+    })
+
+    it('lets the rows be dragged only while no change of the playlist runs', async () => {
+        const wrapper = await mountWith(PlaylistTrackList, {
+            rows,
+            label: 'Road Trip',
+            sortable: true,
+        })
+        const sortable = Sortable.get(
+            wrapper.get<HTMLElement>('[data-part="list-group-rows"]').element,
+        )!
+        expect(sortable.option('disabled')).toBe(false)
+
+        await wrapper.setProps({ state: 'busy' })
+        expect(sortable.option('disabled')).toBe(true)
+
+        await wrapper.setProps({ state: undefined })
+        expect(sortable.option('disabled')).toBe(false)
+        wrapper.unmount()
     })
 
     it('shows the entries in their order with album and duplicates', async () => {

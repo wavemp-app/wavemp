@@ -36,7 +36,8 @@ import { usePlayerStore } from '@/stores/player'
  * A double click, Enter or a tap plays the list from the row on. The context menu applies to all
  * selected rows (Ctrl and Shift with a click choose several). With sortable, the rows are entries
  * of a playlist: each row has a handle to drag it to another place (event move), and the context
- * menu also moves a row with the keyboard and removes the chosen rows (event remove). The columns
+ * menu also moves a row with the keyboard and removes the chosen rows (event remove). While the
+ * state is "busy", rows are neither dragged nor moved or removed with the menu. The columns
  * rating and favorite show the stars and the heart of the profile; a click changes them.
  */
 interface Row extends ListRowBase {
@@ -128,7 +129,8 @@ const rowsElement = computed(() => {
 useSortableList(rowsElement, {
     draggable: '[data-part="list-row"]',
     handle: '[data-part="drag-handle"]',
-    disabled: computed(() => !props.sortable),
+    // Like the menu, dragging waits while a change of the playlist runs.
+    disabled: computed(() => !props.sortable || busy.value),
     onMove: (from, to) => emit('move', from, to),
 })
 

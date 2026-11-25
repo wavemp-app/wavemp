@@ -2098,6 +2098,11 @@
         touch-action: none;
     }
 
+    /* While a change of the playlist is saved, the rows wait and cannot be dragged. */
+    [data-part='list'][data-state~='busy'] [data-part='drag-handle'] {
+        cursor: progress;
+    }
+
     /* SortableJS marks the place where a dragged row lands with this class. */
     [data-part='list-row'].sortable-ghost {
         opacity: 0.4;
