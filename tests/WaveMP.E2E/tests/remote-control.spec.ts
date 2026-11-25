@@ -83,7 +83,8 @@ async function volume(page: Page): Promise<number> {
 }
 
 test.describe('remote control', () => {
-    let user: TestUser
+    // No profile in the projects the spec skips: the hooks run there as well.
+    let user: TestUser | undefined
     const contexts: BrowserContext[] = []
 
     test.beforeEach(async ({ request }) => {
@@ -92,7 +93,10 @@ test.describe('remote control', () => {
 
     test.afterEach(async ({ request }) => {
         await Promise.all(contexts.splice(0).map((context) => context.close()))
-        await deleteUser(request, user.id)
+        if (user) {
+            await deleteUser(request, user.id)
+            user = undefined
+        }
     })
 
     test('controls a device that allows it and hands playback over and back', async ({
@@ -100,6 +104,9 @@ test.describe('remote control', () => {
         request,
     }) => {
         test.slow()
+        if (!user) {
+            throw new Error('The profile of the test was not created.')
+        }
         const looseSong = await findTrackId(request, 'Loose Song')
 
         const a = await newDevice(browser, user)
