@@ -2,7 +2,7 @@ name: wavemp
 services:
   wavemp:
     container_name: wavemp
-    image: wavemp/wavemp:1.0.106
+    image: wavemp/wavemp:1.0.143
     # CasaOS creates the folders of the bind mounts as root. WaveMP starts as root, hands its data
     # folder to the user PUID and the group PGID (set by CasaOS and ZimaOS) and runs as them.
     restart: unless-stopped
@@ -159,11 +159,11 @@ x-casaos:
   architectures:
     - amd64
     - arm64
-  version: "1.0.106"
-  update_at: "2026-11-20"
+  version: "1.0.143"
+  update_at: "2026-11-25"
   release_notes:
-    en_US: "Recaps of your listening as a story in three designs that you can save and share, statistics with charts and tables, and ambient light around music videos. All changes: https://github.com/wavemp-app/wavemp/releases/tag/v1.0.106"
-    de_DE: "Rückblicke auf dein Hören als Story in drei Designs zum Speichern und Teilen, Statistiken mit Diagrammen und Tabellen und Umgebungslicht um Musikvideos. Alle Änderungen: https://github.com/wavemp-app/wavemp/releases/tag/v1.0.106"
+    en_US: "Remote control between your devices, background playback on iPhone and iPad, quick jump in long lists, own albums and library organizing, artist pictures, livelier visualizations and the new themes Classic 9x and Skinned. All changes: https://github.com/wavemp-app/wavemp/releases/tag/v1.0.143"
+    de_DE: "Fernsteuerung zwischen deinen Geräten, Wiedergabe im Hintergrund auf iPhone und iPad, Schnellsprung in langen Listen, eigene Alben und Ordnen der Bibliothek, Künstlerbilder, lebendigere Visualisierungen und die neuen Themes Classic 9x und Skinned. Alle Änderungen: https://github.com/wavemp-app/wavemp/releases/tag/v1.0.143"
   website: https://wavemp-app.github.io
   repo: https://github.com/wavemp-app/wavemp
   support: https://github.com/wavemp-app/wavemp/issues
