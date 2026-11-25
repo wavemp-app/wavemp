@@ -72,12 +72,13 @@ Neue Projekte und Ordner fügen sich in diese Struktur ein. Abweichungen nur, we
 - Im Repo-Root liegt eine `.editorconfig` des Maintainers. Sie ist verbindlich für allen Code (C#, TypeScript, Vue, JSON, YAML …).
 - Die `.editorconfig` wird **nicht verändert**. Ist eine Regel im Weg oder fehlt eine, wird das in der Abschlussmeldung als Vorschlag genannt. Generierter Code (z. B. EF-Core-Migrationen) wird über `<Compile>`-Einstellungen oder `[GeneratedCode]`-Kennzeichnung von den Stilregeln ausgenommen, nicht über Änderungen an der `.editorconfig`.
 - Vor jedem Commit `dotnet format` ausführen; im Frontend die Formatierung an der `.editorconfig` ausrichten.
+- **Zeilenlänge:** `max_line_length = 120` aus der `.editorconfig` gilt strikt für allen Code (C#, TypeScript, Vue, Skripte). Längere Zeilen werden umgebrochen, bei Methodenaufrufen und Signaturen ein Argument bzw. Parameter pro Zeile. Ausnahmen nur, wo ein Umbruch nicht möglich ist (z. B. lange URLs in Kommentaren, generierter Code). Die CI meldet Verstöße als Fehler.
 
 ### .NET
 - Projekt-Suffixe: `.Service` für den REST-Host, `.Data` für EF Core und Datenzugriff, `.Core.<Bereich>` für Geschäftslogik, aufgeteilt nach Aufgaben. Kein `.Application`.
 - Klassen, die nur Extension-Methoden enthalten, heißen `*Extensions.cs` (Plural), z. B. `ServiceCollectionExtensions.cs`.
 - Ordnernamen immer im Plural, außer Ordner, die Projektnamen abbilden. Die Regel gilt für die .NET-Projekte; im Frontend gelten die üblichen Vue-Konventionen.
-- Tests: NUnit, AwesomeAssertions und NSubstitute. Dazu erlaubt ist die nötige Infrastruktur: `Microsoft.NET.Test.Sdk`, `NUnit3TestAdapter`, `NUnit.Analyzers` und `Microsoft.AspNetCore.Mvc.Testing` (`WebApplicationFactory` für API-Integrationstests, der offizielle Weg). Keine weiteren Test-Frameworks, Assertion- oder Mocking-Bibliotheken (z. B. kein Testcontainers, kein xUnit, kein Moq, kein FluentAssertions).
+- Tests: NUnit, AwesomeAssertions und NSubstitute. Dazu erlaubt ist die nötige Infrastruktur: `Microsoft.NET.Test.Sdk`, `NUnit3TestAdapter`, `NUnit.Analyzers`, `Microsoft.AspNetCore.Mvc.Testing` (`WebApplicationFactory` für API-Integrationstests, der offizielle Weg), `Microsoft.AspNetCore.SignalR.Client` (Tests des SignalR-Hubs) und `YamlDotNet` (Prüfung von `asyncapi.yaml` und anderen YAML-Verträgen). Keine weiteren Test-Frameworks, Assertion- oder Mocking-Bibliotheken (z. B. kein Testcontainers, kein xUnit, kein Moq, kein FluentAssertions).
 - API-Integrationstests laufen gegen eine echte PostgreSQL-Instanz, die lokal per docker compose und in der CI als Service-Container bereitgestellt wird.
 - Frontend-Unit-Tests mit Vitest, abgelegt neben dem Code unter `source/WaveMP.Web/src/**/__tests__` (Vite-Standard). E2E-Tests der Web-App mit Playwright (npm) unter `/tests/WaveMP.E2E`.
 - Etablierte, verbreitete NuGet-Pakete mit permissiver Lizenz sind Eigenbauten vorzuziehen.
@@ -93,6 +94,7 @@ Neue Projekte und Ordner fügen sich in diese Struktur ein. Abweichungen nur, we
 - Mobil zuerst: Jede Ansicht funktioniert auf dem Smartphone. Die Web-App ist als PWA installierbar.
 - **Themes:** Der DOM ist generisch und wird über stabile `data-part`-Attribute beschrieben (Theme-API, dokumentiert in `THEMING.md`). Ein Theme ist genau eine CSS-Datei plus Grafiken und darf das Layout komplett umgestalten. Komponenten enthalten keine theme-spezifischen Styles. Icons und Beschriftungen stecken immer in eigenen Kind-Elementen (`data-part="icon"`, `data-part="label"`), damit `::before` und `::after` der Bereiche und Buttons frei für Theme-Effekte wie Glanz und Leuchten bleiben. Neue Bereiche bekommen eigene Parts; Änderungen an bestehenden Parts erhöhen die Version der Theme-API.
 - Mitgelieferte Themes tragen eigene Namen (z. B. "Midnight"), keine Marken von Microsoft oder Apple, und nutzen nur eigene Grafiken.
+- **Schriften in Themes:** Jedes Theme nutzt eine Schrift, die der Schrift seines Vorbilds möglichst nahe kommt, aber nur mit einer zum Projekt passenden Lizenz (SIL OFL 1.1, Apache-2.0, MIT, CC0). Keine proprietären Schriften, keine Schriften von Herstellern, die nur auf deren Plattformen genutzt werden dürfen, keine Umwandlungen oder Nachbauten von Originalschriften. Die Schriftdateien liegen mit ihrer Lizenzdatei im Theme-Ordner und stehen in `/assets/LICENSES.md`. Deutsche Umlaute, ß und erweitertes Latein sind Pflicht.
 - **Icons:** SVG-Icons aus Phosphor Icons (MIT). Der Stil richtet sich nach dem Bereich: "fill" in dunklen Bereichen und Toolbars, "duotone" in der Sidebar, "regular" für kleine Hinweise im Inhaltsbereich. Icons werden als `mask-image` eingebunden, damit das Theme sie per `background` beliebig füllen kann, auch mit Farbverläufen, dazu Glanz und Leuchten per `filter: drop-shadow()`. Die Farbe kommt nie aus der SVG-Datei. Welche Icons ein Theme nutzt, steuern CSS-Variablen. Jede Fremdquelle wird mit Lizenz in `/assets/LICENSES.md` eingetragen.
 - **Logo:** Alle Logo-Dateien liegen unter `/assets/logo`. Das Fluent-Logo ist das Standardlogo für alle Plattformen, auch für die späteren nativen Apps, mit einer hellen, einer dunklen und einer eingefärbten (tinted) Variante. Verwendet wird überall `wavemp-logo-default.svg`, wo die Plattform einen Dunkelmodus kennt, zusätzlich `wavemp-logo-default-dark.svg`; alle abgeleiteten Formate werden daraus erzeugt, Favicon (das SVG-Favicon wechselt per `prefers-color-scheme` zur dunklen Variante), PWA-Icons (auch maskable) und Apple-Touch-Icon beim Build der Web-App (`source/WaveMP.Web/scripts/vite-plugin-app-icons.ts`). In der Web-App zeigt die dunkle Variante eines Themes das dunkle Logo. `npm run logo:export` in `source/WaveMP.Web` erzeugt die optimierten Kopien und die PNG-Exporte neu und überschreibt vorhandene Dateien nur mit `-- --force`.
 
@@ -120,6 +122,7 @@ Neue Projekte und Ordner fügen sich in diese Struktur ein. Abweichungen nur, we
 - Clients (Web-App und die nativen Apps) erhalten **keine Shared Libraries** aus diesem Projekt. Sie generieren ihre API-Schnittstellen aus dem OpenAPI-Dokument mit Microsoft Kiota. Ausnahmen, weil Kiota die Sprache nicht (stabil) unterstützt: die Apple-Apps mit Apples `swift-openapi-generator` und die Linux-App (Rust) mit `progenitor`.
 - Das OpenAPI-Dokument muss deshalb vollständig und generatorfreundlich sein: eindeutige `operationId`s, benannte Schemas, korrekt beschriebene Response-Typen und Statuscodes, Enums als benannte Typen.
 - DTOs liegen im `.Service`-Projekt und werden nicht mit den Entities aus `.Data` vermischt.
+- **Verweise immer über IDs:** Beziehungen zwischen Einträgen (z. B. Song zu Interpret, Album zu Album-Interpret, Regeln smarter Playlists, Favoriten, Statistiken) werden in der Datenbank immer über IDs gespeichert, nie über Namen. Beim Scan und Import werden Namen nur zum Finden normalisiert (Kleinschreibung, Akzente entfernt, alles außer Buchstaben und Ziffern entfernt, z. B. "K.Flay" -> "kflay", "K/DA" -> "kda"); wird über den normalisierten Namen ein Eintrag gefunden, wird dessen ID gespeichert. Angezeigt wird immer der Originalname. Eine MusicBrainz-ID hat Vorrang vor dem Namen.
 - Medien-Streaming unterstützt HTTP-Range-Requests; transcodierte Inhalte laufen über HLS.
 - Medien-URLs (Audio, Video, HLS, Cover, falls geschützt) werden als kurzlebige, signierte URLs ausgegeben (Ablaufzeit + Signatur, an Titel und Benutzer gebunden), da `<audio>`, `<video>`, Casting-Geräte und Player keinen Token-Header mitsenden.
 - Authentifizierung ist von Anfang an tokenbasiert, obwohl es keinen Login gibt: Die Auswahl eines Profils erzeugt ein Token. Native Clients nutzen das später genauso.
@@ -145,7 +148,7 @@ Neue Projekte und Ordner fügen sich in diese Struktur ein. Abweichungen nur, we
 ## Lizenzen
 
 - Das Projekt steht unter der MIT-Lizenz.
-- Nur Abhängigkeiten mit MIT-kompatiblen Lizenzen (MIT, BSD, Apache-2.0, ISC, MPL-2.0, LGPL bei dynamischer Einbindung). **Keine GPL- oder AGPL-Abhängigkeiten** in NuGet oder npm.
+- Nur Abhängigkeiten mit MIT-kompatiblen Lizenzen (MIT, BSD, 0BSD, Apache-2.0, ISC, Unlicense, MPL-2.0, LGPL bei dynamischer Einbindung). **Keine GPL- oder AGPL-Abhängigkeiten** in NuGet oder npm.
 - Offizielle SDKs und Frameworks der Plattform-Hersteller (Apple, Google, Microsoft) sind in den nativen Apps erlaubt, auch wenn sie nicht Open Source sind, z. B. das Google Cast SDK oder Apple-Frameworks wie CarPlay. Inoffizielle Nachbauten oder Wrapper solcher SDKs sind nicht erlaubt. Für alle anderen Abhängigkeiten gilt die Regel oben.
 - Vor dem Hinzufügen eines Pakets die Lizenz prüfen und in der Commit-Beschreibung nennen.
 - ffmpeg wird als externer Prozess aufgerufen, nie gelinkt. Der Lizenzhinweis wird mit dem Image ausgeliefert.
@@ -157,6 +160,7 @@ Neue Projekte und Ordner fügen sich in diese Struktur ein. Abweichungen nur, we
 - Es gibt keine Feature-Branches. Gearbeitet, committet und gepusht wird direkt auf `main`.
 - Commit-Nachrichten auf Englisch im Format `WMP-{N}: M{Meilenstein} {Nachricht}`, z. B. `WMP-17: M2 add spectrum visualizer`. N ist die WMP-Nummer des Issues, an dem gerade gearbeitet wird; M ist dessen Meilenstein. Der letzte Commit eines Issues enthält im Body `Closes #<Issue-Nummer>`. Bis WMP-14 galt das Format `WMP-{N}: {Nachricht}`.
 - Gepusht wird einmal pro abgeschlossenem Issue, und nur wenn Build und alle Tests lokal grün sind. Schlagen Tests fehl, wird nicht gepusht und das Issue gilt als nicht abgeschlossen.
+- Ausnahme: Blockiert ein anderes Issue den Push (z. B. ein instabiler Test, der übernommen und zuerst behoben wird), bleiben die fertigen Commits lokal liegen. Die Commits des blockierenden Issues kommen darauf, danach wird alles zusammen gepusht, sobald Build und alle Tests grün sind. Bereits committete Arbeit wird dafür nicht zurückgesetzt. Die Abweichung steht in der Abschlussmeldung.
 - Nach dem Push auf das Ergebnis der CI warten (`gh run watch`). Schlägt die CI fehl, den Fehler beheben, als neuen Commit pushen und erst danach mit dem nächsten Issue weitermachen.
 - Niemals `push --force`, niemals die Historie von `main` umschreiben (kein `rebase`, kein `reset` auf bereits gepushte Commits).
 - Am Ende eines Issues eine Abschlussmeldung mit: Liste der Commits, kurze Zusammenfassung der Änderungen, wie man das Ergebnis testet, und offene Punkte.
@@ -185,7 +189,7 @@ Neue Projekte und Ordner fügen sich in diese Struktur ein. Abweichungen nur, we
 - **Status im Projekt:**
   - Beim Start eines Issues: In Progress.
   - Nach dem Push: In Review, bis die CI durchgelaufen ist.
-  - Nach grüner CI: Done; das Issue wird über `Closes #` geschlossen.
+  - Nach grüner CI: Done; das Issue wird per `gh issue close` geschlossen. `Closes #` im Commit-Body bleibt Pflicht, schließt in diesem Repository aber keine Issues automatisch; das ist bekannt und wird nicht als Auffälligkeit gemeldet.
   - Kann ein Issue nicht abgeschlossen werden, bleibt es In Progress und bekommt einen Kommentar mit dem Stand.
 - **Abschlusskommentar:** Jedes Issue bekommt zum Schluss einen kurzen englischen Kommentar mit den Änderungen und den getroffenen Annahmen ("Assumptions").
 - **Neue Funde:** Fehler oder Folgearbeiten, die nicht zum aktuellen Issue gehören, werden als neues Issue mit dem Label `triage` angelegt und nicht umgesetzt.
