@@ -10,15 +10,21 @@ using Microsoft.AspNetCore.DataProtection.XmlEncryption;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding.Metadata;
 using Microsoft.AspNetCore.OpenApi;
+using Microsoft.AspNetCore.SignalR;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.Net.Http.Headers;
 using Microsoft.OpenApi;
+using WaveMP.Core.Devices.Coordination;
 using WaveMP.Core.Subsonic.Extensions;
 using WaveMP.Data.Entities;
 using WaveMP.Service.Areas.Subsonic;
 using WaveMP.Service.Dtos;
 using WaveMP.Service.Filters;
+using WaveMP.Service.Hubs;
 using WaveMP.Service.Keys;
+using WaveMP.Service.Logs;
 using WaveMP.Service.OpenApiTransformers;
 using WaveMP.Service.Problems;
 using WaveMP.Service.Signatures;
@@ -122,31 +128,29 @@ public static class ServiceCollectionExtensions
 
         services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             .AddJwtBearer()
+            .AddJwtBearer(DeviceHubDefaults.AuthenticationScheme)
             .AddScheme<AuthenticationSchemeOptions, MediaSignatureAuthenticationHandler>(
                 MediaSignatureDefaults.AuthenticationScheme,
                 configureOptions: null);
+        // Session tokens are only read from the header Authorization, never from a query string.
         services.AddOptions<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme)
+            .Configure<SigningKeyStore>((options, keys) => ConfigureJwtBearer(
+                options,
+                keys,
+                TokenDefaults.Audience,
+                TimeSpan.FromMinutes(1)));
+        // Tickets of the real-time connection of the devices: only on its path, from the query parameter (browsers
+        // cannot send headers on WebSockets and Server-Sent Events) or the header. Their own audience keeps them out
+        // of every other endpoint, and the audience of the session tokens keeps those out of the query string.
+        services.AddOptions<JwtBearerOptions>(DeviceHubDefaults.AuthenticationScheme)
             .Configure<SigningKeyStore>((options, keys) =>
             {
-                // Keeps the claim names of the token (sub, sid) instead of mapping them to long URIs.
-                options.MapInboundClaims = false;
-                options.IncludeErrorDetails = false;
-                options.TokenValidationParameters = new TokenValidationParameters
-                {
-                    ValidIssuer = TokenDefaults.Issuer,
-                    ValidAudience = TokenDefaults.Audience,
-                    ValidAlgorithms = [TokenDefaults.Algorithm],
-                    IssuerSigningKeyResolver = (_, _, _, _) => [keys.Key],
-                    NameClaimType = WaveMpClaimTypes.Subject,
-                    RoleClaimType = WaveMpClaimTypes.Role,
-                    ClockSkew = TimeSpan.FromMinutes(1),
-                };
-                options.Events = new JwtBearerEvents
-                {
-                    OnTokenValidated = context => context.HttpContext.RequestServices
-                        .GetRequiredService<SessionPrincipalValidator>()
-                        .ValidateAsync(context),
-                };
+                ConfigureJwtBearer(
+                    options,
+                    keys,
+                    TokenDefaults.DeviceHubAudience,
+                    TokenDefaults.DeviceHubTicketClockSkew);
+                options.Events.OnMessageReceived = ReadDeviceHubTicket;
             });
 
         services.AddAuthorizationBuilder()
@@ -157,6 +161,11 @@ public static class ServiceCollectionExtensions
                 .AddAuthenticationSchemes(
                     JwtBearerDefaults.AuthenticationScheme,
                     MediaSignatureDefaults.AuthenticationScheme)
+                .RequireAuthenticatedUser())
+            .AddPolicy(AuthorizationPolicies.DeviceHub, policy => policy
+                .AddAuthenticationSchemes(
+                    JwtBearerDefaults.AuthenticationScheme,
+                    DeviceHubDefaults.AuthenticationScheme)
                 .RequireAuthenticatedUser());
 
         // Casting devices load HLS streams and covers from the origin of their receiver (see SignedMediaAttribute).
@@ -169,6 +178,39 @@ public static class ServiceCollectionExtensions
                 HeaderNames.ContentLength,
                 HeaderNames.ContentRange,
                 HeaderNames.ContentType)));
+
+        return services;
+    }
+
+    /// <summary>
+    /// Registers the real-time connection of the devices (<see cref="DeviceHub"/>, asyncapi.yaml): ASP.NET Core
+    /// SignalR with the JSON protocol and the same strict JSON as the API (numbers only as JSON numbers, enums only as
+    /// strings), messages of clients up to <see cref="DeviceHubDefaults.MaximumReceiveMessageSize"/>, one call of a
+    /// connection at a time, no details of errors for clients, the check of the session before every call
+    /// (<see cref="DeviceHubSessionFilter"/>), the notifier of the coordinator of the devices and the sweep that
+    /// closes the connections of ended sessions (<see cref="DeviceHubSweeper"/>). Needs <c>AddWaveMpDevices</c>.
+    /// The request log of the host never logs the query strings that carry the tickets (see
+    /// <see cref="RequestUrlLogFilter"/>).
+    /// </summary>
+    public static IServiceCollection AddWaveMpDeviceHub(this IServiceCollection services)
+    {
+        services.AddSignalR(options =>
+            {
+                options.MaximumReceiveMessageSize = DeviceHubDefaults.MaximumReceiveMessageSize;
+                options.MaximumParallelInvocationsPerClient = 1;
+                options.EnableDetailedErrors = false;
+                options.KeepAliveInterval = DeviceHubDefaults.KeepAliveInterval;
+                options.ClientTimeoutInterval = DeviceHubDefaults.ClientTimeoutInterval;
+            })
+            .AddJsonProtocol(options => ConfigureSerializer(options.PayloadSerializerOptions))
+            .AddHubOptions<DeviceHub>(options => options.AddFilter<DeviceHubSessionFilter>());
+        services.AddSingleton<DeviceHubSessionFilter>();
+        services.AddSingleton<DeviceHubConnections>();
+        services.AddSingleton<DeviceHubSessionCloser>();
+        services.Replace(ServiceDescriptor.Singleton<IDeviceNotifier, DeviceHubNotifier>());
+        services.AddHostedService<DeviceHubSweeper>();
+        services.TryAddEnumerable(
+            ServiceDescriptor.Singleton<IPostConfigureOptions<LoggerFilterOptions>, RequestUrlLogFilter>());
 
         return services;
     }
@@ -264,6 +306,52 @@ public static class ServiceCollectionExtensions
         });
 
         return services;
+    }
+
+    private static void ConfigureJwtBearer(
+        JwtBearerOptions options,
+        SigningKeyStore keys,
+        string audience,
+        TimeSpan clockSkew)
+    {
+        // Keeps the claim names of the token (sub, sid) instead of mapping them to long URIs.
+        options.MapInboundClaims = false;
+        options.IncludeErrorDetails = false;
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidIssuer = TokenDefaults.Issuer,
+            ValidAudience = audience,
+            ValidAlgorithms = [TokenDefaults.Algorithm],
+            IssuerSigningKeyResolver = (_, _, _, _) => [keys.Key],
+            NameClaimType = WaveMpClaimTypes.Subject,
+            RoleClaimType = WaveMpClaimTypes.Role,
+            ClockSkew = clockSkew,
+        };
+        options.Events = new JwtBearerEvents
+        {
+            OnTokenValidated = context => context.HttpContext.RequestServices
+                .GetRequiredService<SessionPrincipalValidator>()
+                .ValidateAsync(context),
+        };
+    }
+
+    /// <summary>
+    /// Takes a ticket of the real-time connection of the devices from the query parameter <c>access_token</c>; without
+    /// it, the handler reads the header Authorization. Requests to other paths are not authenticated by this scheme.
+    /// </summary>
+    private static Task ReadDeviceHubTicket(MessageReceivedContext context)
+    {
+        HttpRequest request = context.HttpContext.Request;
+        if (!request.Path.StartsWithSegments(DeviceHubDefaults.Path, StringComparison.OrdinalIgnoreCase))
+        {
+            context.NoResult();
+        }
+        else if (request.Query[DeviceHubDefaults.AccessTokenQueryParameter] is [{ Length: > 0 } ticket])
+        {
+            context.Token = ticket;
+        }
+
+        return Task.CompletedTask;
     }
 
     private static void ConfigureSerializer(JsonSerializerOptions options)

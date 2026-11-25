@@ -11,7 +11,7 @@ import { type BaseRequestBuilder, type Parsable, type ParsableFactory, type Requ
  */
 export interface CurrentRequestBuilder extends BaseRequestBuilder<CurrentRequestBuilder> {
     /**
-     * Ends the session of the token (switching the profile); the token is no longer accepted.
+     * Ends the session of the token (switching the profile); the token is no longer accepted and the real-time connections of the devices opened with it are closed.
      * @param requestConfiguration Configuration for the request such as headers, query parameters, and middleware options.
      * @throws {ProblemDetails} error when the service returns a 401 status code
      */
@@ -24,7 +24,7 @@ export interface CurrentRequestBuilder extends BaseRequestBuilder<CurrentRequest
      */
      get(requestConfiguration?: RequestConfiguration<object> | undefined) : Promise<Session | undefined>;
     /**
-     * Ends the session of the token (switching the profile); the token is no longer accepted.
+     * Ends the session of the token (switching the profile); the token is no longer accepted and the real-time connections of the devices opened with it are closed.
      * @param requestConfiguration Configuration for the request such as headers, query parameters, and middleware options.
      * @returns {RequestInformation}
      */

@@ -23,7 +23,7 @@ export interface UsersItemRequestBuilder extends BaseRequestBuilder<UsersItemReq
      */
     get pin(): PinRequestBuilder;
     /**
-     * Deletes a user with its settings and sessions.
+     * Deletes a user with its settings and sessions; the real-time connections of its devices are closed.
      * @param requestConfiguration Configuration for the request such as headers, query parameters, and middleware options.
      * @throws {ProblemDetails} error when the service returns a 401 status code
      * @throws {ProblemDetails} error when the service returns a 403 status code
@@ -53,7 +53,7 @@ export interface UsersItemRequestBuilder extends BaseRequestBuilder<UsersItemReq
      */
      patch(body: UpdateUser, requestConfiguration?: RequestConfiguration<object> | undefined) : Promise<User | undefined>;
     /**
-     * Deletes a user with its settings and sessions.
+     * Deletes a user with its settings and sessions; the real-time connections of its devices are closed.
      * @param requestConfiguration Configuration for the request such as headers, query parameters, and middleware options.
      * @returns {RequestInformation}
      */

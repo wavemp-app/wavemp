@@ -11131,7 +11131,7 @@
         "tags": [
           "Sessions"
         ],
-        "summary": "Ends the session of the token (switching the profile); the token is no longer accepted.",
+        "summary": "Ends the session of the token (switching the profile); the token is no longer accepted and the real-time connections of the devices opened with it are closed.",
         "operationId": "DeleteCurrentSession",
         "responses": {
           "204": {
@@ -16963,7 +16963,7 @@
         "tags": [
           "Users"
         ],
-        "summary": "Deletes a user with its settings and sessions.",
+        "summary": "Deletes a user with its settings and sessions; the real-time connections of its devices are closed.",
         "operationId": "DeleteUser",
         "parameters": [
           {

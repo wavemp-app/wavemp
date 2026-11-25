@@ -14752,7 +14752,7 @@ export const EqualizerFilterTypeObject = {
     HighShelf: "HighShelf",
 } as const;
 /**
- * The preset.
+ * The selected curve; Flat by default.
  */
 export const EqualizerPresetObject = {
     Flat: "Flat",

@@ -1,0 +1,929 @@
+# Contract of the real-time connection of the devices of WaveMP, for the web app and the native apps.
+# The REST API is described in source/WaveMP.Service/openapi.json; schemas shared with it are referenced
+# from there. AsyncApiContractTests (tests/WaveMP.Service.Tests) checks this file against the code:
+# every operation against the methods of the hub and of its clients, every schema against its DTO.
+asyncapi: 3.0.0
+id: urn:wavemp:device-hub
+info:
+  title: WaveMP device hub
+  version: '1'
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  description: |
+    Real-time connection of the devices of a profile. Every open instance of WaveMP (a browser tab, an app)
+    registers as a **device**. Exactly one device of a profile is the **active device**: it plays and publishes
+    the state of its player. The other devices are **remotes**: they show that state live and send commands to
+    the active device or move playback to another device. A device can only be controlled by another one after
+    the user allowed remote control on it; the permission lasts as long as the page (or app) runs and is never
+    stored. A connection only sees and controls the devices of the profile of its session.
+
+    ## Transport
+
+    The connection is an ASP.NET Core SignalR hub with the **JSON hub protocol, version 1**. The official
+    SignalR clients (JavaScript, .NET, Java, Swift) implement everything below; other clients follow the
+    [SignalR hub protocol](https://github.com/dotnet/aspnetcore/blob/main/src/SignalR/docs/specs/HubProtocol.md)
+    and the [transport protocols](https://github.com/dotnet/aspnetcore/blob/main/src/SignalR/docs/specs/TransportProtocols.md).
+    The transports are WebSockets, Server-Sent Events and long polling, in this order of preference; a client
+    falls back to the next one when a proxy blocks one.
+
+    1. **Credentials.** Clients that can send headers on every request (native apps) use their session token in
+       the header `Authorization: Bearer <token>`. Browsers cannot send headers when they open a WebSocket or an
+       event stream, so they fetch a **ticket** with `POST /api/v1/me/device-hub-tickets` (REST, with the session
+       token) for every connection attempt and pass it as the query parameter `access_token` (or in the header
+       where they can). A ticket is valid for 60 seconds and accepted by nothing but this connection. A session
+       token is never accepted in a query string.
+    2. **Negotiate.** `POST /api/v1/hubs/devices/negotiate?negotiateVersion=1` with the credentials answers the
+       `connectionToken` and the available transports.
+    3. **Connect.** For example `GET wss://<host>/api/v1/hubs/devices?id=<connectionToken>&access_token=<ticket>`
+       as a WebSocket.
+    4. **Handshake.** The client sends `{"protocol":"json","version":1}` and the server answers `{}`.
+
+    ## Framing
+
+    Every message is a JSON object followed by the record separator `0x1E` (shown as `␞` below). The `type`
+    says what it is: `1` invocation, `3` completion, `6` ping, `7` close.
+
+    - A **call of the client** (operations with the action `receive`) is an invocation with an `invocationId`;
+      its only argument is the payload of the message, calls without a payload have no arguments:
+      `{"type":1,"invocationId":"7","target":"SendCommand","arguments":[{"targetDeviceId":"living-room","type":"Pause"}]}␞`
+    - The server answers it with a completion whose `result` is the payload of the reply:
+      `{"type":3,"invocationId":"7","result":{"status":"Accepted","version":1764034567890,"queueVersion":1764034567012,"errors":[]}}␞`
+    - A **message of the server** (operations with the action `send`) is an invocation without an
+      `invocationId`; its only argument is the payload:
+      `{"type":1,"target":"DevicesChanged","arguments":[{"devices":[...]}]}␞`
+
+    Members are written in camelCase, enums as their names (strings), numbers as JSON numbers. The server writes
+    every member of its messages, `null` where there is no value. Clients may leave out the members of their
+    messages that are not required; unknown members are ignored.
+
+    ## Rules
+
+    - `Register` is the first call of every connection; every other call answers `NotRegistered` before it. A
+      newer connection with the same device id (another tab of the same browser) replaces the older one, which
+      gets `DeviceReplaced`. After a reconnect, a client registers again with the permission it still knows.
+    - The server runs one call of a connection at a time; further calls wait.
+    - Every accepted change of the live state raises its `version`. Clients ignore a `PlaybackChanged` with a
+      lower version than the one they have. The queue itself is not part of `PlaybackChanged`: when its
+      `queueVersion` changes, remotes read it with `GetQueue`. Commands on entries of the queue name the
+      `queueVersion` the remote saw; a queue that changed since then answers `Conflict`. A hand-over may name
+      the `version` the remote saw; two hand-overs at once answer `Conflict` to the second one. After a conflict,
+      a client reads the state again and lets the user decide anew; it does not retry on its own.
+    - Commands go to the active device only, and only while it is open and allows remote control. The server
+      checks this; a remote that ignores it gets `RemoteControlNotAllowed` or `NotActive`, and the device gets
+      nothing.
+    - A device that starts playback because its user did so publishes with `claim: true` and becomes the active
+      device. A device that played before and allows remote control then pauses and becomes a remote; a device
+      without the permission is never changed by another device.
+    - **Hand-over.** `TransferPlayback` saves the live state as the playback state of the profile with the
+      position of the moment and makes the target the active device. Every device gets `PlaybackChanged` with
+      `handover`. The new active device loads `GET /api/v1/me/playback-state` and plays if `handover.play` is
+      true; the previous one stops.
+    - The active device publishes after every change of its player and every 10 seconds while it plays, so
+      remotes can show the position.
+
+    ## Errors
+
+    Results carry a status and, for invalid messages, validation errors with the codes of the REST API
+    (`ValidationErrorCode`, e.g. `required`, `out_of_range`, `max_items`) and their limits. No error has a text
+    for users. Arguments that do not fit the schemas (a missing required member, a wrong JSON type, an unknown
+    enum name or a number for an enum) end the call with a completion that has an `error` instead of a
+    `result`; nothing changes. A message larger than 256 KiB closes the connection.
+
+    ## Lifetime and limits
+
+    - The server pings every 15 seconds and closes the connection when the client sent nothing for 30 seconds
+      (the official clients ping every 15 seconds).
+    - The connection stays open while its session is active. Ending the session (switching the profile) or
+      deleting the profile closes it at once; a session that ended otherwise (expired, or a PIN was set on the
+      profile) is closed with the next call, at the latest after 60 seconds. A call of an ended session answers
+      with the error `auth.unauthorized`.
+    - The live state is kept in the memory of the server; WaveMP runs as a single instance. After a restart,
+      clients reconnect and register again, and the active device publishes its state at once.
+    - Mobile systems close the connections of apps and pages in the background (iOS and iPadOS reliably, Android
+      to save energy). Remote control of such a device works while it is in the foreground; when it comes back,
+      the client reconnects, registers again and, as the active device, publishes at once.
+    - Lists of songs (queues and commands) hold at most 2000 entries, a profile keeps at most 50 devices.
+defaultContentType: application/json
+
+servers:
+  secure:
+    host: '{host}'
+    protocol: wss
+    pathname: /api/v1/hubs/devices
+    title: WaveMP over HTTPS
+    description: The host of the web app. Server-Sent Events and long polling use https on the same path.
+    variables:
+      host:
+        description: Host name and port of WaveMP, the same as of the web app.
+        default: localhost:8080
+    security:
+      - $ref: '#/components/securitySchemes/hubTicket'
+      - $ref: '#/components/securitySchemes/sessionToken'
+  plain:
+    host: '{host}'
+    protocol: ws
+    pathname: /api/v1/hubs/devices
+    title: WaveMP over HTTP
+    description: The host of the web app without HTTPS, e.g. in the home network. Server-Sent Events and long polling use http on the same path.
+    variables:
+      host:
+        description: Host name and port of WaveMP, the same as of the web app.
+        default: localhost:8080
+    security:
+      - $ref: '#/components/securitySchemes/hubTicket'
+      - $ref: '#/components/securitySchemes/sessionToken'
+
+channels:
+  devices:
+    address: /api/v1/hubs/devices
+    title: Devices of a profile
+    description: The hub. All messages of a connection flow over it; the server sends a message only to the devices of the profile of the connection.
+    servers:
+      - $ref: '#/servers/secure'
+      - $ref: '#/servers/plain'
+    messages:
+      Register:
+        $ref: '#/components/messages/Register'
+      RegisterResult:
+        $ref: '#/components/messages/RegisterResult'
+      SetRemoteControl:
+        $ref: '#/components/messages/SetRemoteControl'
+      SetRemoteControlResult:
+        $ref: '#/components/messages/SetRemoteControlResult'
+      PublishPlayback:
+        $ref: '#/components/messages/PublishPlayback'
+      PublishPlaybackResult:
+        $ref: '#/components/messages/PublishPlaybackResult'
+      SendCommand:
+        $ref: '#/components/messages/SendCommand'
+      SendCommandResult:
+        $ref: '#/components/messages/SendCommandResult'
+      TransferPlayback:
+        $ref: '#/components/messages/TransferPlayback'
+      TransferPlaybackResult:
+        $ref: '#/components/messages/TransferPlaybackResult'
+      GetQueue:
+        $ref: '#/components/messages/GetQueue'
+      GetQueueResult:
+        $ref: '#/components/messages/GetQueueResult'
+      DevicesChanged:
+        $ref: '#/components/messages/DevicesChanged'
+      PlaybackChanged:
+        $ref: '#/components/messages/PlaybackChanged'
+      CommandReceived:
+        $ref: '#/components/messages/CommandReceived'
+      DeviceReplaced:
+        $ref: '#/components/messages/DeviceReplaced'
+
+operations:
+  Register:
+    action: receive
+    channel:
+      $ref: '#/channels/devices'
+    title: Register the device
+    summary: Registers the device the connection runs on; the first call of every connection.
+    description: The other devices of the profile get `DevicesChanged`. The result holds all devices and the live playback of the profile.
+    messages:
+      - $ref: '#/channels/devices/messages/Register'
+    reply:
+      channel:
+        $ref: '#/channels/devices'
+      messages:
+        - $ref: '#/channels/devices/messages/RegisterResult'
+  SetRemoteControl:
+    action: receive
+    channel:
+      $ref: '#/channels/devices'
+    title: Allow or forbid remote control
+    summary: The device of the connection allows or forbids remote control, for the running page (or app) only.
+    description: |
+      The devices of the profile get `DevicesChanged`. Clients turn it on only after an action of the user on
+      this device; in browsers, that action is also the moment to unlock audio playback, so the device can be
+      started remotely later.
+    messages:
+      - $ref: '#/channels/devices/messages/SetRemoteControl'
+    reply:
+      channel:
+        $ref: '#/channels/devices'
+      messages:
+        - $ref: '#/channels/devices/messages/SetRemoteControlResult'
+  PublishPlayback:
+    action: receive
+    channel:
+      $ref: '#/channels/devices'
+    title: Publish the state of the player
+    summary: The active device publishes the state of its player; another device claims playback with it.
+    description: |
+      Accepted from the active device, and from another device with `claim: true`, which then becomes the
+      active device (the devices get `DevicesChanged`). The other devices get `PlaybackChanged`.
+    messages:
+      - $ref: '#/channels/devices/messages/PublishPlayback'
+    reply:
+      channel:
+        $ref: '#/channels/devices'
+      messages:
+        - $ref: '#/channels/devices/messages/PublishPlaybackResult'
+  SendCommand:
+    action: receive
+    channel:
+      $ref: '#/channels/devices'
+    title: Send a command
+    summary: Passes a command on to the active device of the profile.
+    description: |
+      The target must be open, the active device and allow remote control. Commands that play or queue songs
+      name their ids; the server passes the songs on (unknown songs are left out). The target gets
+      `CommandReceived`; its next publication shows the effect.
+    messages:
+      - $ref: '#/channels/devices/messages/SendCommand'
+    reply:
+      channel:
+        $ref: '#/channels/devices'
+      messages:
+        - $ref: '#/channels/devices/messages/SendCommandResult'
+  TransferPlayback:
+    action: receive
+    channel:
+      $ref: '#/channels/devices'
+    title: Hand playback over
+    summary: Moves playback to another open device of the profile, or to the device of the connection, at the same position.
+    description: |
+      Another target must allow remote control; taking playback away from another open device needs its
+      permission too. The live state is saved as the playback state of the profile. Every device gets
+      `PlaybackChanged` with `handover` and `DevicesChanged`.
+    messages:
+      - $ref: '#/channels/devices/messages/TransferPlayback'
+    reply:
+      channel:
+        $ref: '#/channels/devices'
+      messages:
+        - $ref: '#/channels/devices/messages/TransferPlaybackResult'
+  GetQueue:
+    action: receive
+    channel:
+      $ref: '#/channels/devices'
+    title: Read the live queue
+    summary: The live queue of the profile with its songs; remotes read it when the queue version changes.
+    messages:
+      - $ref: '#/channels/devices/messages/GetQueue'
+    reply:
+      channel:
+        $ref: '#/channels/devices'
+      messages:
+        - $ref: '#/channels/devices/messages/GetQueueResult'
+  DevicesChanged:
+    action: send
+    channel:
+      $ref: '#/channels/devices'
+    title: Devices changed
+    summary: The devices of the profile changed, sent to its registered devices.
+    description: A device opened or closed, was renamed or forgotten (also through the REST API), allowed or forbade remote control, or the active device changed.
+    messages:
+      - $ref: '#/channels/devices/messages/DevicesChanged'
+  PlaybackChanged:
+    action: send
+    channel:
+      $ref: '#/channels/devices'
+    title: Playback changed
+    summary: The live playback of the profile changed.
+    description: Sent to the registered devices of the profile except the one that published the change; a hand-over goes to all of them.
+    messages:
+      - $ref: '#/channels/devices/messages/PlaybackChanged'
+  CommandReceived:
+    action: send
+    channel:
+      $ref: '#/channels/devices'
+    title: Command received
+    summary: A remote sent a command to this device; only the target gets it.
+    description: The device runs the command like the same action of its own user and publishes the new state.
+    messages:
+      - $ref: '#/channels/devices/messages/CommandReceived'
+  DeviceReplaced:
+    action: send
+    channel:
+      $ref: '#/channels/devices'
+    title: Device replaced
+    summary: A newer connection registered the device of this connection.
+    description: This connection gets nothing more of the profile and its calls answer `NotRegistered`; the client goes on without sync (or registers again to take part once more).
+    messages:
+      - $ref: '#/channels/devices/messages/DeviceReplaced'
+
+components:
+  securitySchemes:
+    hubTicket:
+      type: httpApiKey
+      name: access_token
+      in: query
+      description: |
+        A ticket of `POST /api/v1/me/device-hub-tickets`, valid for 60 seconds, for browsers. Fetch a new one for
+        every connection attempt. It may also be sent as `Authorization: Bearer <ticket>`.
+    sessionToken:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: The session token of the profile (`POST /api/v1/sessions`) in the header Authorization, for clients that can send headers. Never in the query string.
+
+  messages:
+    Register:
+      name: Register
+      title: Register a device
+      payload:
+        $ref: '#/components/schemas/RegisterDevice'
+      examples:
+        - name: Browser
+          payload:
+            deviceId: 3f0c9d1e-5b7a-4c2e-9f61-0a8b7c6d5e4f
+            name: Firefox · Windows
+            type: Desktop
+            remoteControl: false
+    RegisterResult:
+      name: RegisterResult
+      title: Result of the registration
+      payload:
+        $ref: '#/components/schemas/RegisterResult'
+    SetRemoteControl:
+      name: SetRemoteControl
+      title: Allow or forbid remote control
+      payload:
+        $ref: '#/components/schemas/SetRemoteControl'
+    SetRemoteControlResult:
+      name: SetRemoteControlResult
+      title: Result of the change of the permission
+      payload:
+        $ref: '#/components/schemas/CommandResult'
+    PublishPlayback:
+      name: PublishPlayback
+      title: State of the player
+      payload:
+        $ref: '#/components/schemas/PublishPlayback'
+    PublishPlaybackResult:
+      name: PublishPlaybackResult
+      title: Result of the publication
+      payload:
+        $ref: '#/components/schemas/PublishResult'
+    SendCommand:
+      name: SendCommand
+      title: Command for the active device
+      payload:
+        $ref: '#/components/schemas/DeviceCommand'
+      examples:
+        - name: Seek
+          payload:
+            targetDeviceId: living-room
+            type: Seek
+            positionMilliseconds: 61000
+        - name: Remove an entry of the queue
+          payload:
+            targetDeviceId: living-room
+            type: RemoveQueueEntry
+            index: 4
+            expectedQueueVersion: 1764034567012
+    SendCommandResult:
+      name: SendCommandResult
+      title: Result of the command
+      payload:
+        $ref: '#/components/schemas/CommandResult'
+    TransferPlayback:
+      name: TransferPlayback
+      title: Hand-over of playback
+      payload:
+        $ref: '#/components/schemas/TransferPlayback'
+    TransferPlaybackResult:
+      name: TransferPlaybackResult
+      title: Result of the hand-over
+      payload:
+        $ref: '#/components/schemas/CommandResult'
+    GetQueue:
+      name: GetQueue
+      title: Read the live queue
+      summary: The call has no arguments.
+    GetQueueResult:
+      name: GetQueueResult
+      title: The live queue
+      payload:
+        $ref: '#/components/schemas/DeviceQueueResult'
+    DevicesChanged:
+      name: DevicesChanged
+      title: The devices of the profile
+      payload:
+        $ref: '#/components/schemas/DeviceList'
+    PlaybackChanged:
+      name: PlaybackChanged
+      title: The live playback of the profile
+      payload:
+        $ref: '#/components/schemas/LivePlayback'
+    CommandReceived:
+      name: CommandReceived
+      title: A command for this device
+      payload:
+        $ref: '#/components/schemas/ReceivedCommand'
+    DeviceReplaced:
+      name: DeviceReplaced
+      title: This connection was replaced
+      payload:
+        $ref: '#/components/schemas/DeviceReplaced'
+
+  schemas:
+    # Schemas of the REST API (openapi.json).
+    Device:
+      $ref: './source/WaveMP.Service/openapi.json#/components/schemas/Device'
+    DeviceType:
+      $ref: './source/WaveMP.Service/openapi.json#/components/schemas/DeviceType'
+    PlaybackSource:
+      $ref: './source/WaveMP.Service/openapi.json#/components/schemas/PlaybackSource'
+    RepeatMode:
+      $ref: './source/WaveMP.Service/openapi.json#/components/schemas/RepeatMode'
+    Track:
+      $ref: './source/WaveMP.Service/openapi.json#/components/schemas/Track'
+    ValidationError:
+      $ref: './source/WaveMP.Service/openapi.json#/components/schemas/ValidationError'
+
+    # Schemas of this connection.
+    RegisterDevice:
+      type: object
+      description: Registers the device the connection runs on.
+      required: [deviceId, name, type, remoteControl]
+      properties:
+        deviceId:
+          type: string
+          pattern: '^[A-Za-z0-9._:-]{1,64}$'
+          description: Id the device chose for itself and keeps (a UUID fits). A newer connection with the same id replaces the older one.
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+          description: Name the device reports for itself, without control characters; spaces at the ends are removed.
+        type:
+          $ref: '#/components/schemas/DeviceType'
+        remoteControl:
+          type: boolean
+          description: Whether the user allowed remote control on the running page (or app). Never stored; false after a reload.
+    RegisterStatus:
+      type: string
+      description: Outcome of registering a device.
+      enum: [Registered, Invalid]
+    RegisterResult:
+      type: object
+      description: Result of registering a device.
+      required: [status, snapshot, errors]
+      properties:
+        status:
+          $ref: '#/components/schemas/RegisterStatus'
+        snapshot:
+          description: The devices and the live playback of the profile; null unless registered.
+          oneOf:
+            - type: 'null'
+            - $ref: '#/components/schemas/DeviceSessionSnapshot'
+        errors:
+          type: array
+          description: The rejected fields of an invalid registration; empty otherwise.
+          items:
+            $ref: '#/components/schemas/ValidationError'
+    DeviceSessionSnapshot:
+      type: object
+      description: All devices of the profile and the live playback, for a device that registered.
+      required: [deviceId, devices, playback]
+      properties:
+        deviceId:
+          type: string
+          description: The id the device registered with.
+        devices:
+          type: array
+          description: All devices of the profile, open ones first, then the most recently active.
+          items:
+            $ref: '#/components/schemas/Device'
+        playback:
+          $ref: '#/components/schemas/LivePlayback'
+    SetRemoteControl:
+      type: object
+      description: Allows or forbids remote control of the device of the connection.
+      required: [allowed]
+      properties:
+        allowed:
+          type: boolean
+          description: Whether other devices of the profile may control this device and take its playback over.
+    PublishPlayback:
+      type: object
+      description: The state of the player of the device of the connection.
+      required: [claim, playback]
+      properties:
+        claim:
+          type: boolean
+          description: Whether the device takes playback over because the user started it there. A claim must contain the queue.
+        playback:
+          $ref: '#/components/schemas/LivePlaybackInput'
+    LivePlaybackInput:
+      type: object
+      description: The state of the player of a device as it publishes it.
+      required: [status, currentIndex, positionMilliseconds, durationMilliseconds, repeat, volume, muted, crossfade, autoplay]
+      properties:
+        status:
+          $ref: '#/components/schemas/LivePlaybackStatus'
+        queue:
+          description: The queue; null or missing if it did not change since the last publication of the device.
+          oneOf:
+            - type: 'null'
+            - $ref: '#/components/schemas/LiveQueueInput'
+        currentIndex:
+          type: integer
+          format: int32
+          minimum: -1
+          description: Position of the current entry in the queue; -1 without one.
+        positionMilliseconds:
+          type: integer
+          format: int32
+          minimum: 0
+          maximum: 86400000
+          description: Position within the current song when the device published it.
+        durationMilliseconds:
+          type: integer
+          format: int32
+          minimum: 0
+          maximum: 86400000
+          description: Duration of the current song; 0 if unknown.
+        repeat:
+          $ref: '#/components/schemas/RepeatMode'
+        volume:
+          type: number
+          format: double
+          minimum: 0
+          maximum: 1
+        muted:
+          type: boolean
+        crossfade:
+          type: boolean
+          description: Whether songs crossfade.
+        autoplay:
+          type: boolean
+          description: Whether similar songs follow when the queue ends.
+    LiveQueueInput:
+      type: object
+      description: The queue of a device as it publishes it.
+      required: [items, shuffle]
+      properties:
+        items:
+          type: array
+          maxItems: 2000
+          description: The queue in the order it plays (the entries around the current one of a longer queue).
+          items:
+            $ref: '#/components/schemas/LiveQueueItem'
+        shuffle:
+          type: boolean
+        originalOrder:
+          type: ['null', array]
+          description: While shuffled, the positions in items in the order before shuffling, each position once; may be empty or missing. Ignored while not shuffled.
+          items:
+            type: integer
+            format: int32
+        source:
+          description: What the list was started from; null or missing for single songs.
+          oneOf:
+            - type: 'null'
+            - $ref: '#/components/schemas/PlaybackSource'
+    LiveQueueItem:
+      type: object
+      description: An entry of the queue a device publishes.
+      required: [trackId, autoplay]
+      properties:
+        trackId:
+          type: string
+          format: uuid
+        autoplay:
+          type: boolean
+          description: Whether autoplay added the entry after the list had ended.
+    LivePlaybackStatus:
+      type: string
+      description: What the player of the active device does.
+      enum: [Idle, Loading, Playing, Paused]
+    PublishStatus:
+      type: string
+      description: |
+        Outcome of a publication. `Accepted`: the state is the live state now. `NotRegistered`: the connection has
+        no registered device. `NotActive`: another device is active and the publication did not claim playback.
+        `Invalid`: see the errors.
+      enum: [Accepted, NotRegistered, NotActive, Invalid]
+    PublishResult:
+      type: object
+      description: Result of a publication.
+      required: [status, version, queueVersion, errors]
+      properties:
+        status:
+          $ref: '#/components/schemas/PublishStatus'
+        version:
+          type: integer
+          format: int64
+          description: The version of the live state afterwards (unchanged unless accepted); 0 for NotRegistered.
+        queueVersion:
+          type: integer
+          format: int64
+          description: The version at which the live queue changed last.
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ValidationError'
+    DeviceCommandType:
+      type: string
+      description: |
+        What a remote asks the active device to do, and the members of `DeviceCommand` it needs:
+        `Play`, `Pause`, `Stop`, `Next`, `Previous` (none); `Seek` (positionMilliseconds); `SetVolume` (volume,
+        optionally muted); `SetShuffle`, `SetCrossfade`, `SetAutoplay` (enabled); `SetRepeat` (repeat);
+        `PlayTracks` (trackIds, optionally startIndex, source and shuffle; replaces the queue, e.g. a song, an
+        album or a playlist); `AddToQueue` (trackIds, at the end); `PlayNext` (trackIds, after the current entry);
+        `PlayQueueEntry`, `RemoveQueueEntry` (index, expectedQueueVersion); `MoveQueueEntry` (index, toIndex,
+        expectedQueueVersion); `ClearQueue` (expectedQueueVersion; keeps the current entry).
+      enum: [Play, Pause, Stop, Next, Previous, Seek, SetVolume, SetShuffle, SetRepeat, SetCrossfade, SetAutoplay, PlayTracks, AddToQueue, PlayNext, PlayQueueEntry, RemoveQueueEntry, MoveQueueEntry, ClearQueue]
+    DeviceCommand:
+      type: object
+      description: A command for the active device of the profile. Only the members its type uses are read.
+      required: [targetDeviceId, type]
+      properties:
+        targetDeviceId:
+          type: string
+          description: The device that should act, the active device; it must allow remote control.
+        type:
+          $ref: '#/components/schemas/DeviceCommandType'
+        expectedQueueVersion:
+          type: ['null', integer]
+          format: int64
+          description: The queueVersion the remote saw; required for commands on entries of the queue.
+        positionMilliseconds:
+          type: ['null', integer]
+          format: int32
+          minimum: 0
+          maximum: 86400000
+        volume:
+          type: ['null', number]
+          format: double
+          minimum: 0
+          maximum: 1
+        muted:
+          type: ['null', boolean]
+          description: Mutes or unmutes; null keeps it.
+        enabled:
+          type: ['null', boolean]
+        repeat:
+          oneOf:
+            - type: 'null'
+            - $ref: '#/components/schemas/RepeatMode'
+        trackIds:
+          type: ['null', array]
+          minItems: 1
+          maxItems: 2000
+          description: The songs. Songs that are not in the library are left out; if none is left, the command is invalid.
+          items:
+            type: string
+            format: uuid
+        startIndex:
+          type: ['null', integer]
+          format: int32
+          description: The position in trackIds to start at; 0 if missing.
+        source:
+          oneOf:
+            - type: 'null'
+            - $ref: '#/components/schemas/PlaybackSource'
+        shuffle:
+          type: ['null', boolean]
+          description: Shuffles the list; null keeps the shuffle mode of the player.
+        index:
+          type: ['null', integer]
+          format: int32
+          minimum: 0
+          description: The position of the entry in the live queue.
+        toIndex:
+          type: ['null', integer]
+          format: int32
+          minimum: 0
+          description: The new position of the entry.
+    CommandStatus:
+      type: string
+      description: |
+        Outcome of a call. `Accepted`: accepted and passed on. `NotRegistered`: the connection has no registered
+        device. `DeviceNotFound`: the profile has no open device with this id. `RemoteControlNotAllowed`: the
+        device does not allow remote control; nothing was passed on. `NotActive`: the target is not the active
+        device. `Conflict`: the state changed since the version the device saw. `Invalid`: see the errors.
+      enum: [Accepted, NotRegistered, DeviceNotFound, RemoteControlNotAllowed, NotActive, Conflict, Invalid]
+    CommandResult:
+      type: object
+      description: Result of a command, a hand-over or a change of the permission.
+      required: [status, version, queueVersion, errors]
+      properties:
+        status:
+          $ref: '#/components/schemas/CommandStatus'
+        version:
+          type: integer
+          format: int64
+          description: The version of the live state afterwards; 0 for NotRegistered and for commands rejected before the server looked at the devices.
+        queueVersion:
+          type: integer
+          format: int64
+          description: The version at which the live queue changed last; 0 where version is 0.
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ValidationError'
+    TransferPlayback:
+      type: object
+      description: Moves playback to another device, or to the device of the connection.
+      required: [targetDeviceId, play]
+      properties:
+        targetDeviceId:
+          type: string
+          description: The device that plays afterwards.
+        play:
+          type: boolean
+          description: Whether it starts playing at once; otherwise it loads the state paused.
+        expectedVersion:
+          type: ['null', integer]
+          format: int64
+          description: The version the device saw; a state that changed since then answers Conflict. Null or missing skips the check.
+    DeviceQueueResult:
+      type: object
+      description: Result of reading the live queue.
+      required: [status, queue]
+      properties:
+        status:
+          $ref: '#/components/schemas/CommandStatus'
+        queue:
+          description: The live queue; null for NotRegistered.
+          oneOf:
+            - type: 'null'
+            - $ref: '#/components/schemas/DeviceQueue'
+    DeviceQueue:
+      type: object
+      description: The live queue of the profile with its songs.
+      required: [version, queueVersion, currentIndex, shuffle, source, items]
+      properties:
+        version:
+          type: integer
+          format: int64
+        queueVersion:
+          type: integer
+          format: int64
+          description: The version at which the queue changed last; commands on entries name it.
+        currentIndex:
+          type: integer
+          format: int32
+          description: Position of the current entry; -1 without one.
+        shuffle:
+          type: boolean
+        source:
+          oneOf:
+            - type: 'null'
+            - $ref: '#/components/schemas/PlaybackSource'
+        items:
+          type: array
+          maxItems: 2000
+          items:
+            $ref: '#/components/schemas/DeviceQueueEntry'
+    DeviceQueueEntry:
+      type: object
+      description: An entry of the live queue.
+      required: [position, trackId, autoplay, track]
+      properties:
+        position:
+          type: integer
+          format: int32
+          description: Its position in the live queue; commands name entries by it.
+        trackId:
+          type: string
+          format: uuid
+        autoplay:
+          type: boolean
+        track:
+          description: The song with the favorite and rating of the profile; null if it left the library.
+          oneOf:
+            - type: 'null'
+            - $ref: '#/components/schemas/Track'
+    DeviceList:
+      type: object
+      description: The devices of the profile.
+      required: [devices]
+      properties:
+        devices:
+          type: array
+          description: All devices of the profile, open ones first, then the most recently active.
+          items:
+            $ref: '#/components/schemas/Device'
+    LivePlayback:
+      type: object
+      description: The live playback of the profile as the remotes show it.
+      required: [version, queueVersion, activeDeviceId, status, currentIndex, currentTrackId, queueLength, positionMilliseconds, durationMilliseconds, shuffle, repeat, source, volume, muted, crossfade, autoplay, handover]
+      properties:
+        version:
+          type: integer
+          format: int64
+          description: Increases with every change; ignore states with a lower version than the one you have.
+        queueVersion:
+          type: integer
+          format: int64
+          description: The version at which the queue (entries, order, shuffle or source) changed last; read the queue with GetQueue when it changes.
+        activeDeviceId:
+          type: ['null', string]
+          description: The device that plays; null if none was chosen yet. It may be closed and continues when it comes back.
+        status:
+          $ref: '#/components/schemas/LivePlaybackStatus'
+        currentIndex:
+          type: integer
+          format: int32
+        currentTrackId:
+          type: ['null', string]
+          format: uuid
+        queueLength:
+          type: integer
+          format: int32
+        positionMilliseconds:
+          type: integer
+          format: int32
+          description: Position within the current song when the server sent the state (while playing, the time since the publication is added).
+        durationMilliseconds:
+          type: integer
+          format: int32
+        shuffle:
+          type: boolean
+        repeat:
+          $ref: '#/components/schemas/RepeatMode'
+        source:
+          oneOf:
+            - type: 'null'
+            - $ref: '#/components/schemas/PlaybackSource'
+        volume:
+          type: number
+          format: double
+        muted:
+          type: boolean
+        crossfade:
+          type: boolean
+        autoplay:
+          type: boolean
+        handover:
+          description: Set when this change moved playback to another device; null otherwise.
+          oneOf:
+            - type: 'null'
+            - $ref: '#/components/schemas/PlaybackHandover'
+    PlaybackHandover:
+      type: object
+      description: Playback moved to another device. The new active device loads GET /api/v1/me/playback-state, which the server wrote with the position of the hand-over.
+      required: [fromDeviceId, play]
+      properties:
+        fromDeviceId:
+          type: ['null', string]
+          description: The device that was active before; null if none was.
+        play:
+          type: boolean
+          description: Whether the new active device starts playing at once.
+    ReceivedCommand:
+      type: object
+      description: A command for this device, checked by the server. Only the members its type uses are set; the others are null.
+      required: [fromDeviceId, type, version, expectedQueueVersion, positionMilliseconds, volume, muted, enabled, repeat, tracks, startIndex, source, shuffle, index, toIndex]
+      properties:
+        fromDeviceId:
+          type: string
+          description: The remote that sent it.
+        type:
+          $ref: '#/components/schemas/DeviceCommandType'
+        version:
+          type: integer
+          format: int64
+          description: The version of the live state when the server passed the command on.
+        expectedQueueVersion:
+          type: ['null', integer]
+          format: int64
+        positionMilliseconds:
+          type: ['null', integer]
+          format: int32
+        volume:
+          type: ['null', number]
+          format: double
+        muted:
+          type: ['null', boolean]
+        enabled:
+          type: ['null', boolean]
+        repeat:
+          oneOf:
+            - type: 'null'
+            - $ref: '#/components/schemas/RepeatMode'
+        tracks:
+          type: ['null', array]
+          description: The songs in order, with the favorite and rating of the profile; songs that are not in the library were left out.
+          items:
+            $ref: '#/components/schemas/Track'
+        startIndex:
+          type: ['null', integer]
+          format: int32
+          description: The position in tracks to start at.
+        source:
+          oneOf:
+            - type: 'null'
+            - $ref: '#/components/schemas/PlaybackSource'
+        shuffle:
+          type: ['null', boolean]
+        index:
+          type: ['null', integer]
+          format: int32
+        toIndex:
+          type: ['null', integer]
+          format: int32
+    DeviceReplaced:
+      type: object
+      description: No members.
+      properties: {}

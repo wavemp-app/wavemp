@@ -8,11 +8,15 @@
     <PackageReference Include="AwesomeAssertions" />
     <!-- WebApplicationFactory for the integration tests; also brings the ASP.NET Core framework reference. -->
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
+    <!-- The official SignalR client for the integration tests of the real-time connection of the devices. -->
+    <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
     <PackageReference Include="NSubstitute" />
     <PackageReference Include="NUnit" />
     <PackageReference Include="NUnit.Analyzers" />
     <PackageReference Include="NUnit3TestAdapter" />
+    <!-- Reads asyncapi.yaml for the check of the contract of the real-time connection against the code. -->
+    <PackageReference Include="YamlDotNet" />
   </ItemGroup>
 
   <ItemGroup>

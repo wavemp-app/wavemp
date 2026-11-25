@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using WaveMP.Core.Users.Sessions;
 using WaveMP.Service.Dtos;
 using WaveMP.Service.Extensions;
+using WaveMP.Service.Hubs;
 using WaveMP.Service.Mappings;
 using WaveMP.Service.Tokens;
 
@@ -17,6 +18,7 @@ namespace WaveMP.Service.Controllers;
 public sealed class SessionsController(
     ISessionService sessions,
     ITokenIssuer tokenIssuer,
+    DeviceHubSessionCloser deviceHub,
     TimeProvider timeProvider) : ControllerBase
 {
     private const string CurrentSessionRoute = "GetCurrentSession";
@@ -81,7 +83,8 @@ public sealed class SessionsController(
     }
 
     /// <summary>
-    /// Ends the session of the token (switching the profile); the token is no longer accepted.
+    /// Ends the session of the token (switching the profile); the token is no longer accepted and the real-time
+    /// connections of the devices opened with it are closed.
     /// </summary>
     /// <param name="cancellationToken">Aborts the request.</param>
     /// <response code="204">The session has ended.</response>
@@ -92,7 +95,9 @@ public sealed class SessionsController(
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status401Unauthorized, "application/problem+json")]
     public async Task<IActionResult> DeleteCurrentSessionAsync(CancellationToken cancellationToken)
     {
-        await sessions.DeleteAsync(User.GetSessionId(), cancellationToken);
+        Guid sessionId = User.GetSessionId();
+        await sessions.DeleteAsync(sessionId, cancellationToken);
+        await deviceHub.CloseSessionAsync(sessionId, cancellationToken);
         return NoContent();
     }
 

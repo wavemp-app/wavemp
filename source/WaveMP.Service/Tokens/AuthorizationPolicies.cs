@@ -15,4 +15,11 @@ public static class AuthorizationPolicies
     /// <see cref="Signatures.SignedMediaAttribute"/>).
     /// </summary>
     public const string Media = "Media";
+
+    /// <summary>
+    /// The real-time connection of the devices: a session token in the header Authorization or a ticket of the
+    /// connection (in the query parameter <c>access_token</c> or the header), see
+    /// <see cref="Hubs.DeviceHubDefaults"/>.
+    /// </summary>
+    public const string DeviceHub = "DeviceHub";
 }

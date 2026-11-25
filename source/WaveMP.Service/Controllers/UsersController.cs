@@ -8,6 +8,7 @@ using WaveMP.Data.Queries;
 using WaveMP.Data.Repositories;
 using WaveMP.Service.Dtos;
 using WaveMP.Service.Extensions;
+using WaveMP.Service.Hubs;
 using WaveMP.Service.Mappings;
 using WaveMP.Service.Queries;
 using WaveMP.Service.Tokens;
@@ -22,7 +23,8 @@ namespace WaveMP.Service.Controllers;
 [Route("api/v1/users")]
 [ProducesResponseType<ProblemDetails>(StatusCodes.Status401Unauthorized, "application/problem+json")]
 [ProducesResponseType<ProblemDetails>(StatusCodes.Status403Forbidden, "application/problem+json")]
-public sealed class UsersController(IUserService users, IPinService pins) : ControllerBase
+public sealed class UsersController(IUserService users, IPinService pins, DeviceHubSessionCloser deviceHub)
+    : ControllerBase
 {
     private const string GetUserRoute = "GetUser";
 
@@ -146,7 +148,7 @@ public sealed class UsersController(IUserService users, IPinService pins) : Cont
     }
 
     /// <summary>
-    /// Deletes a user with its settings and sessions.
+    /// Deletes a user with its settings and sessions; the real-time connections of its devices are closed.
     /// </summary>
     /// <param name="id">Id of the user.</param>
     /// <param name="cancellationToken">Aborts the request.</param>
@@ -160,7 +162,13 @@ public sealed class UsersController(IUserService users, IPinService pins) : Cont
     public async Task<IActionResult> DeleteUserAsync(Guid id, CancellationToken cancellationToken)
     {
         UserError? error = await users.DeleteAsync(id, cancellationToken);
-        return error is { } value ? Failure(value) : NoContent();
+        if (error is { } value)
+        {
+            return Failure(value);
+        }
+
+        await deviceHub.CloseUserAsync(id, cancellationToken);
+        return NoContent();
     }
 
     /// <summary>

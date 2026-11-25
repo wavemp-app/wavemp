@@ -25,6 +25,7 @@ using WaveMP.Data;
 using WaveMP.Data.Extensions;
 using WaveMP.Data.Options;
 using WaveMP.Service.Extensions;
+using WaveMP.Service.Hubs;
 using WaveMP.Service.Keys;
 using WaveMP.Service.Tokens;
 
@@ -72,6 +73,7 @@ public static class WaveMpApplication
         builder.Services.AddWaveMpAutoplay();
         builder.Services.AddWaveMpStreaming();
         builder.Services.AddWaveMpDevices();
+        builder.Services.AddWaveMpDeviceHub();
         builder.Services.AddWaveMpScrobbling();
         builder.Services.AddWaveMpTranscoding();
         builder.Services.AddWaveMpRecaps();
@@ -102,6 +104,8 @@ public static class WaveMpApplication
         // Every action declares [Authorize] or [AllowAnonymous] itself; this is the safety net for a forgotten one.
         // No fallback policy: it would also apply to unknown API routes (404), 405 responses and the web app.
         app.MapControllers().RequireAuthorization();
+        // WebSockets, Server-Sent Events and long polling; the client falls back on its own when a proxy blocks one.
+        app.MapHub<DeviceHub>(DeviceHubDefaults.Path).RequireAuthorization(AuthorizationPolicies.DeviceHub);
 
         // Unknown API routes (404) and unsupported methods on API routes (405) are written as Problem Details by the
         // status code pages; all other routes return the web app.

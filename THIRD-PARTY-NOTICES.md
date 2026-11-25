@@ -115,12 +115,14 @@ Packages and tools for tests, code generation and the license check (not shipped
 |---|---|---|
 | `AwesomeAssertions` | Apache-2.0 | Assertions of the .NET tests |
 | `Microsoft.AspNetCore.Mvc.Testing` | MIT | API integration tests (`WebApplicationFactory`) |
+| `Microsoft.AspNetCore.SignalR.Client` | MIT | Integration tests of the real-time connection of the devices |
 | `Microsoft.Extensions.Hosting` | MIT | Host of the .NET tests |
 | `Microsoft.NET.Test.Sdk` | MIT | Runs the .NET tests |
 | `NSubstitute` | BSD-3-Clause | Test doubles of the .NET tests |
 | `NUnit` | MIT | .NET test framework |
 | `NUnit.Analyzers` | MIT | Analyzers for NUnit tests |
 | `NUnit3TestAdapter` | MIT | Runs NUnit tests with `dotnet test` |
+| `YamlDotNet` | MIT | Reads `asyncapi.yaml` for the contract test of the real-time connection |
 | `@playwright/test` | Apache-2.0 | End-to-end tests and the screenshots of the README |
 | `dotnet-ef` | MIT | .NET tool: creates database migrations |
 | `microsoft.openapi.kiota` | MIT | .NET tool: generates the API client of the web app |
