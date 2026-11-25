@@ -12,7 +12,8 @@ public sealed class BackupSettings
     public const string Key = "backup";
 
     /// <summary>
-    /// Time of day of the daily backup in the time zone of the server (<c>TZ</c>, by default UTC), in hours and minutes.
+    /// Time of day of the daily backup in the time zone of the server (<c>TZ</c>, by default UTC), in hours and
+    /// minutes.
     /// </summary>
     public TimeOnly ScheduleTime { get; init; } = new(3, 0);
 

@@ -8,7 +8,11 @@ public class CssTokenizerTests
 {
     private static IReadOnlyList<CssToken> Tokens(string css)
     {
-        return [.. CssTokenizer.Tokenize(CssTokenizer.Preprocess(css)).Where(token => token.Type != CssTokenType.Whitespace)];
+        return
+        [
+            .. CssTokenizer.Tokenize(CssTokenizer.Preprocess(css))
+                .Where(token => token.Type != CssTokenType.Whitespace),
+        ];
     }
 
     [TestCase("url(a.svg)", "a.svg")]

@@ -163,7 +163,8 @@ describe('findXmlProblem', () => {
     test('accepts a well-formed template', () => {
         assert.equal(
             findXmlProblem(
-                '<?xml version="1.0"?>\n<!-- c -->\n<Container version="2"><A>x &amp; y&#xD;</A><B/><C a=\'1\' b="2"/></Container>\n',
+                '<?xml version="1.0"?>\n<!-- c -->\n' +
+                    '<Container version="2"><A>x &amp; y&#xD;</A><B/><C a=\'1\' b="2"/></Container>\n',
             ),
             null,
         )
@@ -273,7 +274,8 @@ describe('findDeployProblems', () => {
 
     test('reports a pinned digest that is not the one of the published image', () => {
         assert.deepEqual(findDeployProblems(fixture, { release: '1.0.7', digest: otherDigest }), [
-            `deploy/truenas/wavemp/ix_values.yaml:3: wavemp/wavemp:1.0.7 pins ${digest}, but the published image is ${otherDigest}`,
+            `deploy/truenas/wavemp/ix_values.yaml:3: wavemp/wavemp:1.0.7 pins ${digest}, ` +
+                `but the published image is ${otherDigest}`,
         ])
     })
 
@@ -302,7 +304,8 @@ describe('findDeployProblems', () => {
         )
 
         assert.deepEqual(findDeployProblems(fixture), [
-            'deploy/README.md: https://raw.githubusercontent.com/wavemp-app/wavemp/main/assets/missing.png points to a file that does not exist',
+            'deploy/README.md: https://raw.githubusercontent.com/wavemp-app/wavemp/main/assets/missing.png ' +
+                'points to a file that does not exist',
         ])
     })
 

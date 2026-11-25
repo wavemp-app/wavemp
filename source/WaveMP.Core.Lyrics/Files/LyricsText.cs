@@ -8,7 +8,9 @@ namespace WaveMP.Core.Lyrics.Files;
 /// </summary>
 public static class LyricsText
 {
-    private static readonly UTF8Encoding _strictUtf8 = new(encoderShouldEmitUTF8Identifier: false, throwOnInvalidBytes: true);
+    private static readonly UTF8Encoding _strictUtf8 = new(
+        encoderShouldEmitUTF8Identifier: false,
+        throwOnInvalidBytes: true);
 
     public static string Decode(ReadOnlySpan<byte> bytes)
     {

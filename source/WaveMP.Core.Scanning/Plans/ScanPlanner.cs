@@ -13,7 +13,8 @@ public static class ScanPlanner
 {
     /// <param name="discovered">The folders found on disk.</param>
     /// <param name="stored">The stored files of these folders (and of folders that may be gone).</param>
-    /// <param name="metadataVersion">The current version of the metadata reader, the same for every kind of file.</param>
+    /// <param name="metadataVersion">The current version of the metadata reader, the same for every kind of
+    /// file.</param>
     /// <param name="changedFiles">Relative paths of stored files that are read again even with the same size and
     /// change time, e.g. after WaveMP wrote their tags in place (file systems with a coarse change time, padding of
     /// the tags).</param>
@@ -79,7 +80,8 @@ public static class ScanPlanner
             int removed = storedFiles.Count;
             if (added + updated + removed > 0)
             {
-                changed.Add(new DirectoryPlan(directory.RelativePath, directory.Files, toRead, added, updated, removed));
+                changed.Add(
+                    new DirectoryPlan(directory.RelativePath, directory.Files, toRead, added, updated, removed));
             }
         }
 

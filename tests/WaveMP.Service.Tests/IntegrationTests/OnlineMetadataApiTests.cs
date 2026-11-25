@@ -246,7 +246,8 @@ public class OnlineMetadataApiTests
             .Should().Be(("Song", "Band", "Album", 1999, 1, "Rock"));
         match.Agreement.Should().BeInRange(0, 100);
         await _musicBrainz.Received().SearchRecordingsAsync(
-            Arg.Is<string>(query => query.StartsWith("recording:\"Other\" AND artist:\"Band\"", StringComparison.Ordinal)),
+            Arg.Is<string>(
+                query => query.StartsWith("recording:\"Other\" AND artist:\"Band\"", StringComparison.Ordinal)),
             Arg.Any<CancellationToken>());
     }
 

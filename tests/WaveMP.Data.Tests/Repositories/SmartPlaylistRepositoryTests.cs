@@ -39,7 +39,9 @@ public class SmartPlaylistRepositoryTests : LibraryDatabaseTests
         StandardLibrary library = await SeedStandardLibraryAsync();
         User user = await AddUserAsync();
 
-        IReadOnlyList<Guid> ids = await MatchAsync(user, Text(SmartPlaylistField.Artist, SmartPlaylistOperator.Is, "alpha BAND"));
+        IReadOnlyList<Guid> ids = await MatchAsync(
+            user,
+            Text(SmartPlaylistField.Artist, SmartPlaylistOperator.Is, "alpha BAND"));
 
         // Duet is by Guest Star on First Album, whose album artist is Alpha Band.
         ids.Should().BeEquivalentTo([library.Opening.Id, library.Closing.Id, library.Duet.Id, library.HitOne.Id]);
@@ -51,7 +53,9 @@ public class SmartPlaylistRepositoryTests : LibraryDatabaseTests
         StandardLibrary library = await SeedStandardLibraryAsync();
         User user = await AddUserAsync();
 
-        IReadOnlyList<Guid> ids = await MatchAsync(user, Text(SmartPlaylistField.Artist, SmartPlaylistOperator.IsNot, "Alpha Band"));
+        IReadOnlyList<Guid> ids = await MatchAsync(
+            user,
+            Text(SmartPlaylistField.Artist, SmartPlaylistOperator.IsNot, "Alpha Band"));
 
         ids.Should().BeEquivalentTo([library.Ballad.Id, library.HitTwo.Id, library.Clip.Id, library.LooseSong.Id]);
     }
@@ -62,7 +66,9 @@ public class SmartPlaylistRepositoryTests : LibraryDatabaseTests
         StandardLibrary library = await SeedStandardLibraryAsync();
         User user = await AddUserAsync();
 
-        IReadOnlyList<Guid> ids = await MatchAsync(user, Text(SmartPlaylistField.Artist, SmartPlaylistOperator.Contains, "sing"));
+        IReadOnlyList<Guid> ids = await MatchAsync(
+            user,
+            Text(SmartPlaylistField.Artist, SmartPlaylistOperator.Contains, "sing"));
 
         ids.Should().BeEquivalentTo([library.Ballad.Id, library.HitTwo.Id, library.Clip.Id]);
     }
@@ -73,7 +79,9 @@ public class SmartPlaylistRepositoryTests : LibraryDatabaseTests
         StandardLibrary library = await SeedStandardLibraryAsync();
         User user = await AddUserAsync();
 
-        IReadOnlyList<Guid> ids = await MatchAsync(user, Text(SmartPlaylistField.Album, SmartPlaylistOperator.Is, "first album"));
+        IReadOnlyList<Guid> ids = await MatchAsync(
+            user,
+            Text(SmartPlaylistField.Album, SmartPlaylistOperator.Is, "first album"));
 
         ids.Should().BeEquivalentTo([library.Opening.Id, library.Closing.Id, library.Duet.Id]);
     }
@@ -97,8 +105,12 @@ public class SmartPlaylistRepositoryTests : LibraryDatabaseTests
         StandardLibrary library = await SeedStandardLibraryAsync();
         User user = await AddUserAsync();
 
-        IReadOnlyList<Guid> rock = await MatchAsync(user, Text(SmartPlaylistField.Genre, SmartPlaylistOperator.Is, "ROCK"));
-        IReadOnlyList<Guid> other = await MatchAsync(user, Text(SmartPlaylistField.Genre, SmartPlaylistOperator.IsNot, "rock"));
+        IReadOnlyList<Guid> rock = await MatchAsync(
+            user,
+            Text(SmartPlaylistField.Genre, SmartPlaylistOperator.Is, "ROCK"));
+        IReadOnlyList<Guid> other = await MatchAsync(
+            user,
+            Text(SmartPlaylistField.Genre, SmartPlaylistOperator.IsNot, "rock"));
 
         rock.Should().BeEquivalentTo([library.Opening.Id, library.Closing.Id, library.Duet.Id]);
         other.Should().BeEquivalentTo(
@@ -112,7 +124,9 @@ public class SmartPlaylistRepositoryTests : LibraryDatabaseTests
         await SeedStandardLibraryAsync();
         User user = await AddUserAsync();
 
-        IReadOnlyList<Guid> ids = await MatchAsync(user, Text(SmartPlaylistField.Genre, SmartPlaylistOperator.Contains, text));
+        IReadOnlyList<Guid> ids = await MatchAsync(
+            user,
+            Text(SmartPlaylistField.Genre, SmartPlaylistOperator.Contains, text));
 
         ids.Should().BeEmpty();
     }
@@ -123,10 +137,18 @@ public class SmartPlaylistRepositoryTests : LibraryDatabaseTests
         StandardLibrary library = await SeedStandardLibraryAsync();
         User user = await AddUserAsync();
 
-        IReadOnlyList<Guid> between = await MatchAsync(user, Number(SmartPlaylistField.Year, SmartPlaylistOperator.Between, 2001, 2005));
-        IReadOnlyList<Guid> atLeast = await MatchAsync(user, Number(SmartPlaylistField.Year, SmartPlaylistOperator.AtLeast, 2005));
-        IReadOnlyList<Guid> atMost = await MatchAsync(user, Number(SmartPlaylistField.Year, SmartPlaylistOperator.AtMost, 2001));
-        IReadOnlyList<Guid> isNot = await MatchAsync(user, Number(SmartPlaylistField.Year, SmartPlaylistOperator.IsNot, 2001));
+        IReadOnlyList<Guid> between = await MatchAsync(
+            user,
+            Number(SmartPlaylistField.Year, SmartPlaylistOperator.Between, 2001, 2005));
+        IReadOnlyList<Guid> atLeast = await MatchAsync(
+            user,
+            Number(SmartPlaylistField.Year, SmartPlaylistOperator.AtLeast, 2005));
+        IReadOnlyList<Guid> atMost = await MatchAsync(
+            user,
+            Number(SmartPlaylistField.Year, SmartPlaylistOperator.AtMost, 2001));
+        IReadOnlyList<Guid> isNot = await MatchAsync(
+            user,
+            Number(SmartPlaylistField.Year, SmartPlaylistOperator.IsNot, 2001));
 
         between.Should().BeEquivalentTo(
             [library.Opening.Id, library.Closing.Id, library.Duet.Id, library.HitOne.Id, library.HitTwo.Id]);
@@ -149,8 +171,12 @@ public class SmartPlaylistRepositoryTests : LibraryDatabaseTests
         seed.Rating(other, library.Closing, 5);
         await SaveAsync(seed);
 
-        IReadOnlyList<Guid> good = await MatchAsync(user, Number(SmartPlaylistField.Rating, SmartPlaylistOperator.AtLeast, 4));
-        IReadOnlyList<Guid> unrated = await MatchAsync(user, Number(SmartPlaylistField.Rating, SmartPlaylistOperator.Is, 0));
+        IReadOnlyList<Guid> good = await MatchAsync(
+            user,
+            Number(SmartPlaylistField.Rating, SmartPlaylistOperator.AtLeast, 4));
+        IReadOnlyList<Guid> unrated = await MatchAsync(
+            user,
+            Number(SmartPlaylistField.Rating, SmartPlaylistOperator.Is, 0));
 
         good.Should().BeEquivalentTo([library.Opening.Id, library.Ballad.Id]);
         unrated.Should().BeEquivalentTo(
@@ -168,8 +194,12 @@ public class SmartPlaylistRepositoryTests : LibraryDatabaseTests
         seed.Favorite(other, library.Duet);
         await SaveAsync(seed);
 
-        IReadOnlyList<Guid> favorites = await MatchAsync(user, Flag(SmartPlaylistField.Favorite, SmartPlaylistOperator.IsTrue));
-        IReadOnlyList<Guid> others = await MatchAsync(user, Flag(SmartPlaylistField.Favorite, SmartPlaylistOperator.IsFalse));
+        IReadOnlyList<Guid> favorites = await MatchAsync(
+            user,
+            Flag(SmartPlaylistField.Favorite, SmartPlaylistOperator.IsTrue));
+        IReadOnlyList<Guid> others = await MatchAsync(
+            user,
+            Flag(SmartPlaylistField.Favorite, SmartPlaylistOperator.IsFalse));
 
         favorites.Should().Equal(library.Closing.Id);
         others.Should().HaveCount(7).And.NotContain(library.Closing.Id);
@@ -189,10 +219,18 @@ public class SmartPlaylistRepositoryTests : LibraryDatabaseTests
         seed.Play(other, library.Duet, _now.AddDays(-1));
         await SaveAsync(seed);
 
-        IReadOnlyList<Guid> never = await MatchAsync(user, Number(SmartPlaylistField.PlayCount, SmartPlaylistOperator.Is, 0));
-        IReadOnlyList<Guid> often = await MatchAsync(user, Number(SmartPlaylistField.PlayCount, SmartPlaylistOperator.AtLeast, 2));
-        IReadOnlyList<Guid> lately = await MatchAsync(user, Days(SmartPlaylistField.LastPlayed, SmartPlaylistOperator.InLast, 7));
-        IReadOnlyList<Guid> notLately = await MatchAsync(user, Days(SmartPlaylistField.LastPlayed, SmartPlaylistOperator.NotInLast, 7));
+        IReadOnlyList<Guid> never = await MatchAsync(
+            user,
+            Number(SmartPlaylistField.PlayCount, SmartPlaylistOperator.Is, 0));
+        IReadOnlyList<Guid> often = await MatchAsync(
+            user,
+            Number(SmartPlaylistField.PlayCount, SmartPlaylistOperator.AtLeast, 2));
+        IReadOnlyList<Guid> lately = await MatchAsync(
+            user,
+            Days(SmartPlaylistField.LastPlayed, SmartPlaylistOperator.InLast, 7));
+        IReadOnlyList<Guid> notLately = await MatchAsync(
+            user,
+            Days(SmartPlaylistField.LastPlayed, SmartPlaylistOperator.NotInLast, 7));
 
         never.Should().HaveCount(6).And.NotContain([library.Opening.Id, library.Ballad.Id]);
         often.Should().Equal(library.Opening.Id);
@@ -207,8 +245,12 @@ public class SmartPlaylistRepositoryTests : LibraryDatabaseTests
         StandardLibrary library = await SeedStandardLibraryAsync();
         User user = await AddUserAsync();
 
-        IReadOnlyList<Guid> recent = await MatchAsync(user, Days(SmartPlaylistField.DateAdded, SmartPlaylistOperator.InLast, 8));
-        IReadOnlyList<Guid> older = await MatchAsync(user, Days(SmartPlaylistField.DateAdded, SmartPlaylistOperator.NotInLast, 8));
+        IReadOnlyList<Guid> recent = await MatchAsync(
+            user,
+            Days(SmartPlaylistField.DateAdded, SmartPlaylistOperator.InLast, 8));
+        IReadOnlyList<Guid> older = await MatchAsync(
+            user,
+            Days(SmartPlaylistField.DateAdded, SmartPlaylistOperator.NotInLast, 8));
 
         // Found on the first day of the library (ten days ago), the second and the third day (eight days ago).
         recent.Should().BeEquivalentTo([library.HitOne.Id, library.HitTwo.Id, library.Clip.Id, library.LooseSong.Id]);
@@ -221,10 +263,18 @@ public class SmartPlaylistRepositoryTests : LibraryDatabaseTests
         StandardLibrary library = await SeedStandardLibraryAsync();
         User user = await AddUserAsync();
 
-        IReadOnlyList<Guid> three = await MatchAsync(user, Number(SmartPlaylistField.Duration, SmartPlaylistOperator.Is, 180));
-        IReadOnlyList<Guid> shorter = await MatchAsync(user, Number(SmartPlaylistField.Duration, SmartPlaylistOperator.AtMost, 120));
-        IReadOnlyList<Guid> between = await MatchAsync(user, Number(SmartPlaylistField.Duration, SmartPlaylistOperator.Between, 181, 300));
-        IReadOnlyList<Guid> notThree = await MatchAsync(user, Number(SmartPlaylistField.Duration, SmartPlaylistOperator.IsNot, 180));
+        IReadOnlyList<Guid> three = await MatchAsync(
+            user,
+            Number(SmartPlaylistField.Duration, SmartPlaylistOperator.Is, 180));
+        IReadOnlyList<Guid> shorter = await MatchAsync(
+            user,
+            Number(SmartPlaylistField.Duration, SmartPlaylistOperator.AtMost, 120));
+        IReadOnlyList<Guid> between = await MatchAsync(
+            user,
+            Number(SmartPlaylistField.Duration, SmartPlaylistOperator.Between, 181, 300));
+        IReadOnlyList<Guid> notThree = await MatchAsync(
+            user,
+            Number(SmartPlaylistField.Duration, SmartPlaylistOperator.IsNot, 180));
 
         three.Should().BeEquivalentTo([library.Opening.Id, library.HitOne.Id, library.HitTwo.Id]);
         shorter.Should().BeEquivalentTo([library.Duet.Id, library.LooseSong.Id]);
@@ -240,8 +290,12 @@ public class SmartPlaylistRepositoryTests : LibraryDatabaseTests
         StandardLibrary library = await SeedStandardLibraryAsync();
         User user = await AddUserAsync();
 
-        IReadOnlyList<Guid> withoutAudio = await MatchAsync(user, Flag(SmartPlaylistField.HasAudio, SmartPlaylistOperator.IsFalse));
-        IReadOnlyList<Guid> withVideo = await MatchAsync(user, Flag(SmartPlaylistField.HasVideo, SmartPlaylistOperator.IsTrue));
+        IReadOnlyList<Guid> withoutAudio = await MatchAsync(
+            user,
+            Flag(SmartPlaylistField.HasAudio, SmartPlaylistOperator.IsFalse));
+        IReadOnlyList<Guid> withVideo = await MatchAsync(
+            user,
+            Flag(SmartPlaylistField.HasVideo, SmartPlaylistOperator.IsTrue));
 
         withoutAudio.Should().Equal(library.Clip.Id);
         withVideo.Should().BeEquivalentTo([library.Closing.Id, library.Clip.Id]);
@@ -319,19 +373,31 @@ public class SmartPlaylistRepositoryTests : LibraryDatabaseTests
 
         Page<Guid> byPlays = await repository.ListTrackIdsAsync(
             user.Id,
-            new SmartPlaylistCriteria(SmartPlaylistMatch.All, [played], SmartPlaylistSortField.PlayCount, SortDirection.Desc),
+            new SmartPlaylistCriteria(
+                SmartPlaylistMatch.All,
+                [played],
+                SmartPlaylistSortField.PlayCount,
+                SortDirection.Desc),
             _now,
             0,
             100);
         Page<Guid> byLastPlayed = await repository.ListTrackIdsAsync(
             user.Id,
-            new SmartPlaylistCriteria(SmartPlaylistMatch.All, [played], SmartPlaylistSortField.LastPlayed, SortDirection.Desc),
+            new SmartPlaylistCriteria(
+                SmartPlaylistMatch.All,
+                [played],
+                SmartPlaylistSortField.LastPlayed,
+                SortDirection.Desc),
             _now,
             0,
             100);
         Page<Guid> byRating = await repository.ListTrackIdsAsync(
             user.Id,
-            new SmartPlaylistCriteria(SmartPlaylistMatch.All, [rated], SmartPlaylistSortField.Rating, SortDirection.Asc),
+            new SmartPlaylistCriteria(
+                SmartPlaylistMatch.All,
+                [rated],
+                SmartPlaylistSortField.Rating,
+                SortDirection.Asc),
             _now,
             0,
             100);
@@ -375,7 +441,11 @@ public class SmartPlaylistRepositoryTests : LibraryDatabaseTests
 
         SmartPlaylistSummary all = await repository.SummarizeAsync(
             user.Id,
-            new SmartPlaylistCriteria(SmartPlaylistMatch.All, [rock], SmartPlaylistSortField.Duration, SortDirection.Desc),
+            new SmartPlaylistCriteria(
+                SmartPlaylistMatch.All,
+                [rock],
+                SmartPlaylistSortField.Duration,
+                SortDirection.Desc),
             _now);
         SmartPlaylistSummary longest = await repository.SummarizeAsync(
             user.Id,
@@ -457,9 +527,15 @@ public class SmartPlaylistRepositoryTests : LibraryDatabaseTests
     {
         User user = await AddUserAsync();
         User other = await AddUserAsync();
-        SmartPlaylist playlist = NewPlaylist(user, "Before", Flag(SmartPlaylistField.Favorite, SmartPlaylistOperator.IsTrue));
+        SmartPlaylist playlist = NewPlaylist(
+            user,
+            "Before",
+            Flag(SmartPlaylistField.Favorite, SmartPlaylistOperator.IsTrue));
         await CreateRepository().CreateAsync(playlist);
-        SmartPlaylist changed = NewPlaylist(user, "After", Days(SmartPlaylistField.LastPlayed, SmartPlaylistOperator.InLast, 7));
+        SmartPlaylist changed = NewPlaylist(
+            user,
+            "After",
+            Days(SmartPlaylistField.LastPlayed, SmartPlaylistOperator.InLast, 7));
         changed.Id = playlist.Id;
         changed.Match = SmartPlaylistMatch.Any;
         changed.Sort = SmartPlaylistSortField.LastPlayed;

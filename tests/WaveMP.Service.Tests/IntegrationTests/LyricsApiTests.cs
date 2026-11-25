@@ -263,7 +263,9 @@ public class LyricsApiTests
 
         await (await _admin.PostAsync($"/api/v1/tracks/{Track("Tagged").Id}/lyrics/download", null))
             .ShouldBeProblemAsync(HttpStatusCode.ServiceUnavailable, "lyrics.service_unavailable");
-        HttpResponseMessage busy = await _admin.PostAsync($"/api/v1/tracks/{Track("Tagged Busy").Id}/lyrics/download", null);
+        HttpResponseMessage busy = await _admin.PostAsync(
+            $"/api/v1/tracks/{Track("Tagged Busy").Id}/lyrics/download",
+            null);
         busy.Headers.RetryAfter!.Delta.Should().Be(TimeSpan.FromSeconds(30));
         await busy.ShouldBeProblemAsync(HttpStatusCode.ServiceUnavailable, "lyrics.rate_limited");
     }

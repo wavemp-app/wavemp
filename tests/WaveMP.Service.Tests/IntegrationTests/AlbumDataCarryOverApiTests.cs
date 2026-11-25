@@ -68,7 +68,7 @@ public class AlbumDataCarryOverApiTests
     }
 
     [Test]
-    public async Task UpdateTrackMetadata_AlbumNameOfEverySongOneByOne_FavoritesAndCoverRuleFollowOnceTheOldAlbumIsEmpty()
+    public async Task UpdateTrackMetadata_AlbumNameOfEverySongOneByOne_FavoritesAndCoverRuleFollowOnceOldAlbumIsEmpty()
     {
         TrackDto first = await TrackAsync("Song One");
         AlbumDto old = await _admin.GetJsonAsync<AlbumDto>($"/api/v1/albums/{first.Album!.Id}");

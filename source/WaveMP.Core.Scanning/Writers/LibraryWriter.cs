@@ -603,10 +603,17 @@ public sealed class LibraryWriter(
     /// </summary>
     private void SyncCovers(
         List<Cover> existing,
-        IReadOnlyList<(Guid MediaFileId, CoverSource Source, int? Width, int? Height, string? MimeType, bool IsPrimary)> wanted,
+        IReadOnlyList<(
+            Guid MediaFileId,
+            CoverSource Source,
+            int? Width,
+            int? Height,
+            string? MimeType,
+            bool IsPrimary)> wanted,
         Action<Cover> assignOwner)
     {
-        foreach ((Guid mediaFileId, CoverSource source, int? width, int? height, string? mimeType, bool isPrimary) in wanted)
+        foreach ((Guid mediaFileId, CoverSource source, int? width, int? height, string? mimeType, bool isPrimary)
+            in wanted)
         {
             Cover? cover = existing.Find(item => item.MediaFileId == mediaFileId && item.Source == source);
             if (cover is null)

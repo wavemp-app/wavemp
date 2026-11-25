@@ -4,9 +4,9 @@ using System.Globalization;
 namespace WaveMP.Testing.Media;
 
 /// <summary>
-/// Creates synthetic test media with ffmpeg at test runtime: a sine tone (one second by default), a test picture and tags
-/// written with <c>-metadata</c>, as CLAUDE.md asks. Encoded files are cached per process and only remuxed
-/// (<c>-c copy</c>) for other tags, which keeps the tests fast.
+/// Creates synthetic test media with ffmpeg at test runtime: a sine tone (one second by default), a test picture and
+/// tags written with <c>-metadata</c>, as CLAUDE.md asks. Encoded files are cached per process and only remuxed (<c>-c
+/// copy</c>) for other tags, which keeps the tests fast.
 /// </summary>
 public static class TestMediaGenerator
 {
@@ -173,7 +173,17 @@ public static class TestMediaGenerator
         {
             TestVideoCodec.Mpeg4 => ["-c:v", "mpeg4", "-q:v", "5", "-pix_fmt", "yuv420p"],
             TestVideoCodec.H264 => ["-c:v", "libx264", "-preset", "ultrafast", "-pix_fmt", "yuv420p"],
-            TestVideoCodec.Vp9 => ["-c:v", "libvpx-vp9", "-deadline", "realtime", "-b:v", "200k", "-pix_fmt", "yuv420p"],
+            TestVideoCodec.Vp9 =>
+            [
+                "-c:v",
+                "libvpx-vp9",
+                "-deadline",
+                "realtime",
+                "-b:v",
+                "200k",
+                "-pix_fmt",
+                "yuv420p",
+            ],
             _ => throw new ArgumentOutOfRangeException(nameof(codec), codec, "Unknown video codec."),
         };
     }

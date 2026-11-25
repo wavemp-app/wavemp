@@ -127,7 +127,8 @@ test.describe('a long list of songs', () => {
     // fetches.
     test.use({ serviceWorkers: 'block' })
 
-    test('shows the same song at the same place after the page of a song, with the back button and with browser back', async ({
+    test('shows the same song at the same place after the page of a song, ' +
+        'with the back button and with browser back', async ({
         page,
     }) => {
         const offsets = await mockLongList(page)

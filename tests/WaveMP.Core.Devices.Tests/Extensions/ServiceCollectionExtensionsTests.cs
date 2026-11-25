@@ -24,7 +24,8 @@ public class ServiceCollectionExtensionsTests
         using IServiceScope scope = provider.CreateScope();
 
         scope.ServiceProvider.GetRequiredService<IDeviceService>().Should().NotBeNull();
-        provider.GetRequiredService<IDeviceCoordinator>().Should().BeSameAs(provider.GetRequiredService<DeviceCoordinator>());
+        provider.GetRequiredService<IDeviceCoordinator>().Should().BeSameAs(
+            provider.GetRequiredService<DeviceCoordinator>());
         provider.GetRequiredService<IDeviceNotifier>().Should().BeOfType<NullDeviceNotifier>();
     }
 

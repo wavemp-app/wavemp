@@ -40,5 +40,7 @@ public sealed record LrclibRecord
     /// <summary>
     /// The lyrics to keep: the synchronized ones if there are any, otherwise the plain ones.
     /// </summary>
-    public string? Lyrics => HasSyncedLyrics ? SyncedLyrics : string.IsNullOrWhiteSpace(PlainLyrics) ? null : PlainLyrics;
+    public string? Lyrics => HasSyncedLyrics
+        ? SyncedLyrics
+        : string.IsNullOrWhiteSpace(PlainLyrics) ? null : PlainLyrics;
 }

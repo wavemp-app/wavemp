@@ -36,7 +36,9 @@ internal sealed class ArtistAutoplaySelector : IAutoplaySelector
             return [];
         }
 
-        IReadOnlyList<AutoplaySeedRow> seeds = await _repository.ListSeedsAsync(request.ListTrackIds, cancellationToken);
+        IReadOnlyList<AutoplaySeedRow> seeds = await _repository.ListSeedsAsync(
+            request.ListTrackIds,
+            cancellationToken);
         if (seeds.Count == 0)
         {
             return [];

@@ -137,7 +137,10 @@ public class MeSettingsApiTests
         (Guid _, HttpClient client) = await CreateProfileAsync();
         using (client)
         {
-            await client.PatchAsJsonAsync("/api/v1/me/settings", new { language = "de" }, HttpClientExtensions.JsonOptions);
+            await client.PatchAsJsonAsync(
+                "/api/v1/me/settings",
+                new { language = "de" },
+                HttpClientExtensions.JsonOptions);
 
             HttpResponseMessage response = await client.PatchAsJsonAsync(
                 "/api/v1/me/settings",
@@ -198,7 +201,10 @@ public class MeSettingsApiTests
         (Guid _, HttpClient client) = await CreateProfileAsync();
         using (client)
         {
-            await client.PatchAsJsonAsync("/api/v1/me/settings", new { language = "de" }, HttpClientExtensions.JsonOptions);
+            await client.PatchAsJsonAsync(
+                "/api/v1/me/settings",
+                new { language = "de" },
+                HttpClientExtensions.JsonOptions);
 
             HttpResponseMessage response = await client.PatchAsJsonAsync(
                 "/api/v1/me/settings",
@@ -450,7 +456,8 @@ public class MeSettingsApiTests
             UserSettingsDto settings = await client.GetJsonAsync<UserSettingsDto>("/api/v1/me/settings");
 
             (await response.Content.ReadAsStringAsync()).Should().Contain(
-                "\"visualization\":{\"module\":\"Milkdrop\",\"preset\":null,\"autoChange\":true,\"autoChangeSeconds\":30," +
+                "\"visualization\":{\"module\":\"Milkdrop\",\"preset\":null,\"autoChange\":true," +
+                "\"autoChangeSeconds\":30," +
                 "\"quality\":\"Auto\",\"colorScheme\":null,\"intensity\":\"Normal\",\"milkdropSpeed\":50}");
             settings.Visualization.Should().BeEquivalentTo(new
             {
@@ -545,7 +552,8 @@ public class MeSettingsApiTests
             UserSettingsDto switched = await client.GetJsonAsync<UserSettingsDto>("/api/v1/me/settings");
 
             response.StatusCode.Should().Be(HttpStatusCode.OK);
-            (await response.Content.ReadAsStringAsync()).Should().Contain("\"module\":\"BlackCap\",\"preset\":\"lumen\"");
+            (await response.Content.ReadAsStringAsync()).Should().Contain(
+                "\"module\":\"BlackCap\",\"preset\":\"lumen\"");
             read.Visualization.Module.Should().Be(VisualizationModuleDto.BlackCap);
             read.Visualization.Preset.Should().Be("lumen");
             switched.Visualization.Module.Should().Be(VisualizationModuleDto.Milkdrop);
@@ -565,7 +573,13 @@ public class MeSettingsApiTests
                 client,
                 new
                 {
-                    visualization = new { module = "AForce", preset = "Waves", autoChangeSeconds = 120, quality = "Low" },
+                    visualization = new
+                    {
+                        module = "AForce",
+                        preset = "Waves",
+                        autoChangeSeconds = 120,
+                        quality = "Low",
+                    },
                 });
             await PatchAsync(client, new { visualization = new { autoChange = false } });
             using HttpClient otherSession = _factory.CreateAuthorizedClient(

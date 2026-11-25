@@ -50,7 +50,8 @@ public class LrclibClientTests
         LrclibResponse response = await _client.GetAsync(_query);
 
         _handler.Requests.Should().ContainSingle().Which.Should().Be(
-            "https://lyrics.test/api/get?track_name=S%C3%B6n%20g&artist_name=Band%20%26%20Co&album_name=Album&duration=200");
+            "https://lyrics.test/api/get?track_name=S%C3%B6n%20g&artist_name=Band%20%26%20Co"
+                + "&album_name=Album&duration=200");
         response.Status.Should().Be(LrclibStatus.Found);
         response.Records.Should().ContainSingle().Which.Should().BeEquivalentTo(new LrclibRecord
         {

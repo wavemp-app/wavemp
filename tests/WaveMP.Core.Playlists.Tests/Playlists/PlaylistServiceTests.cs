@@ -152,7 +152,8 @@ public class PlaylistServiceTests
         PlaylistRow empty = Row(Guid.NewGuid(), "Empty");
         var track = Guid.NewGuid();
         PlaylistListQuery query = new(_userId, 0, 10);
-        _playlists.ListAsync(query, Arg.Any<CancellationToken>()).Returns(new Page<PlaylistRow>([mix, empty], 0, 10, 2));
+        _playlists.ListAsync(query, Arg.Any<CancellationToken>()).Returns(
+            new Page<PlaylistRow>([mix, empty], 0, 10, 2));
         _playlists.ListCoverCandidatesAsync(
                 Arg.Any<IReadOnlyCollection<Guid>>(),
                 _options.CoverScanEntries,
@@ -265,7 +266,9 @@ public class PlaylistServiceTests
     [TestCase(PlaylistEntryChangeStatus.Done, PlaylistStatus.Ok)]
     [TestCase(PlaylistEntryChangeStatus.EntryNotFound, PlaylistStatus.EntryNotFound)]
     [TestCase(PlaylistEntryChangeStatus.PlaylistNotFound, PlaylistStatus.NotFound)]
-    public async Task RemoveEntryAsync_Always_ReturnsTheStatus(PlaylistEntryChangeStatus change, PlaylistStatus expected)
+    public async Task RemoveEntryAsync_Always_ReturnsTheStatus(
+        PlaylistEntryChangeStatus change,
+        PlaylistStatus expected)
     {
         _playlists.RemoveEntryAsync(default, default, default, default, default)
             .ReturnsForAnyArgs(PlaylistEntryChange.Of(change));

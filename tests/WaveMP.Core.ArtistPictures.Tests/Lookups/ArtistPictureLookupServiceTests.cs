@@ -67,7 +67,18 @@ public class ArtistPictureLookupServiceTests
         _musicBrainz.SearchAsync(default!, default, default, default)
             .ReturnsForAnyArgs(OnlineResponse<MusicBrainzArtistPage>.Found(new MusicBrainzArtistPage(
                 1,
-                [new MusicBrainzArtistMatch(_musicBrainzId, "Band", null, "rock band", "Group", "GB", "1990", null, 98)])));
+                [
+                    new MusicBrainzArtistMatch(
+                        _musicBrainzId,
+                        "Band",
+                        null,
+                        "rock band",
+                        "Group",
+                        "GB",
+                        "1990",
+                        null,
+                        98),
+                ])));
         _musicBrainz.GetWikidataItemAsync(_musicBrainzId, Arg.Any<CancellationToken>())
             .Returns(OnlineResponse<string>.Found(ItemId));
         _wikidata = Substitute.For<IWikidataClient>();
@@ -169,7 +180,11 @@ public class ArtistPictureLookupServiceTests
         first.RememberedId.Should().Be(_musicBrainzId);
         first.Matches.Should().ContainSingle().Which.Id.Should().Be(_musicBrainzId);
         cached.Should().BeEquivalentTo(first);
-        await _musicBrainz.Received(2).SearchAsync("Band", 5, IArtistPictureLookupService.MaxMatchLimit, Arg.Any<CancellationToken>());
+        await _musicBrainz.Received(2).SearchAsync(
+            "Band",
+            5,
+            IArtistPictureLookupService.MaxMatchLimit,
+            Arg.Any<CancellationToken>());
     }
 
     [Test]

@@ -31,9 +31,9 @@ public interface IArtistPictureRepository
 
     /// <summary>
     /// Stores the picture as the picture of its kind of its artist and removes the earlier one of that kind. If another
-    /// picture of the kind was stored at the same moment, the later one wins. <see cref="ArtistPictureReplacement.Saved"/>
-    /// is <c>false</c> if the artist does not exist (any more); the ids of the replaced pictures are returned either
-    /// way, so their files can be removed.
+    /// picture of the kind was stored at the same moment, the later one wins.
+    /// <see cref="ArtistPictureReplacement.Saved"/> is <c>false</c> if the artist does not exist (any more); the ids of
+    /// the replaced pictures are returned either way, so their files can be removed.
     /// </summary>
     Task<ArtistPictureReplacement> ReplaceAsync(
         ArtistPicture picture,

@@ -51,7 +51,11 @@ public class DeviceCoordinatorPlaybackTests
         DeviceConnection phone = await _context.RegisterAsync(_userId, "phone");
         _context.Notifier.Clear();
 
-        PublishResult result = await _context.PlayAsync(laptop, [_first, _second], currentIndex: 1, positionMilliseconds: 5_000);
+        PublishResult result = await _context.PlayAsync(
+            laptop,
+            [_first, _second],
+            currentIndex: 1,
+            positionMilliseconds: 5_000);
 
         result.Status.Should().Be(PublishStatus.Accepted);
         result.Version.Should().Be(DeviceTestContext.InitialVersion + 1);
@@ -148,11 +152,14 @@ public class DeviceCoordinatorPlaybackTests
         DeviceConnection laptop = await _context.RegisterAsync(_userId, "laptop");
         LivePlaybackInput invalid = DeviceTestContext.Playback([_first], currentIndex: 3) with { Volume = 1.5 };
 
-        PublishResult result = await _context.Coordinator.PublishAsync(laptop, new PublishPlaybackCommand(true, invalid));
+        PublishResult result = await _context.Coordinator.PublishAsync(
+            laptop,
+            new PublishPlaybackCommand(true, invalid));
 
         result.Status.Should().Be(PublishStatus.Invalid);
         result.Version.Should().Be(DeviceTestContext.InitialVersion);
-        result.Errors.Select(error => error.Field).Should().BeEquivalentTo(["playback.currentIndex", "playback.volume"]);
+        result.Errors.Select(error => error.Field).Should().BeEquivalentTo(
+            ["playback.currentIndex", "playback.volume"]);
     }
 
     [Test]
@@ -160,7 +167,9 @@ public class DeviceCoordinatorPlaybackTests
     {
         await _context.RegisterAsync(_userId, "laptop");
 
-        PublishResult result = await _context.PlayAsync(new DeviceConnection(_userId, Guid.NewGuid(), "unknown"), [_first]);
+        PublishResult result = await _context.PlayAsync(
+            new DeviceConnection(_userId, Guid.NewGuid(), "unknown"),
+            [_first]);
 
         result.Status.Should().Be(PublishStatus.NotRegistered);
     }
@@ -223,7 +232,8 @@ public class DeviceCoordinatorPlaybackTests
     [Test]
     public async Task GetQueueAsync_NotRegistered_ReturnsNotRegistered()
     {
-        DeviceQueueResult result = await _context.Coordinator.GetQueueAsync(new DeviceConnection(_userId, Guid.NewGuid(), "c1"));
+        DeviceQueueResult result = await _context.Coordinator.GetQueueAsync(
+            new DeviceConnection(_userId, Guid.NewGuid(), "c1"));
 
         result.Status.Should().Be(CommandStatus.NotRegistered);
         result.Queue.Should().BeNull();
@@ -235,7 +245,11 @@ public class DeviceCoordinatorPlaybackTests
         DeviceConnection laptop = await _context.RegisterAsync(_userId, "laptop", remoteControl: true);
         DeviceConnection phone = await _context.RegisterAsync(_userId, "phone", remoteControl: true);
         DeviceConnection tablet = await _context.RegisterAsync(_userId, "tablet");
-        PublishResult played = await _context.PlayAsync(laptop, [_first, _second], currentIndex: 1, positionMilliseconds: 30_000);
+        PublishResult played = await _context.PlayAsync(
+            laptop,
+            [_first, _second],
+            currentIndex: 1,
+            positionMilliseconds: 30_000);
         _context.Clock.Advance(TimeSpan.FromSeconds(12));
         _context.Notifier.Clear();
 
@@ -273,7 +287,9 @@ public class DeviceCoordinatorPlaybackTests
         PublishResult played = await _context.PlayAsync(laptop, [_first]);
         _context.Notifier.Clear();
 
-        CommandResult result = await _context.Coordinator.TransferAsync(laptop, new TransferPlaybackCommand("phone", true));
+        CommandResult result = await _context.Coordinator.TransferAsync(
+            laptop,
+            new TransferPlaybackCommand("phone", true));
 
         result.Status.Should().Be(CommandStatus.RemoteControlNotAllowed);
         result.Version.Should().Be(played.Version);
@@ -288,7 +304,9 @@ public class DeviceCoordinatorPlaybackTests
         DeviceConnection phone = await _context.RegisterAsync(_userId, "phone", remoteControl: true);
         await _context.PlayAsync(laptop, [_first]);
 
-        CommandResult toPhone = await _context.Coordinator.TransferAsync(phone, new TransferPlaybackCommand("phone", true));
+        CommandResult toPhone = await _context.Coordinator.TransferAsync(
+            phone,
+            new TransferPlaybackCommand("phone", true));
 
         toPhone.Status.Should().Be(CommandStatus.RemoteControlNotAllowed);
     }
@@ -301,7 +319,9 @@ public class DeviceCoordinatorPlaybackTests
         await _context.PlayAsync(laptop, [_first]);
         await _context.Coordinator.DisconnectAsync(laptop);
 
-        CommandResult result = await _context.Coordinator.TransferAsync(phone, new TransferPlaybackCommand("phone", false));
+        CommandResult result = await _context.Coordinator.TransferAsync(
+            phone,
+            new TransferPlaybackCommand("phone", false));
 
         result.Status.Should().Be(CommandStatus.Accepted);
         _context.Notifier.Of<LivePlaybackView>(phone.ConnectionId).Last().Should().BeEquivalentTo(new
@@ -336,10 +356,17 @@ public class DeviceCoordinatorPlaybackTests
         PublishResult played = await _context.PlayAsync(laptop, [_first]);
 
         CommandResult[] results = await Task.WhenAll(
-            Task.Run(() => _context.Coordinator.TransferAsync(phone, new TransferPlaybackCommand("phone", true, played.Version))),
-            Task.Run(() => _context.Coordinator.TransferAsync(tablet, new TransferPlaybackCommand("tablet", true, played.Version))));
+            Task.Run(
+                () => _context.Coordinator.TransferAsync(
+                    phone,
+                    new TransferPlaybackCommand("phone", true, played.Version))),
+            Task.Run(
+                () => _context.Coordinator.TransferAsync(
+                    tablet,
+                    new TransferPlaybackCommand("tablet", true, played.Version))));
 
-        results.Select(result => result.Status).Should().BeEquivalentTo([CommandStatus.Accepted, CommandStatus.Conflict]);
+        results.Select(result => result.Status).Should().BeEquivalentTo(
+            [CommandStatus.Accepted, CommandStatus.Conflict]);
     }
 
     [Test]
@@ -348,7 +375,9 @@ public class DeviceCoordinatorPlaybackTests
         DeviceConnection laptop = await _context.RegisterAsync(_userId, "laptop", remoteControl: true);
         PublishResult played = await _context.PlayAsync(laptop, [_first]);
 
-        CommandResult result = await _context.Coordinator.TransferAsync(laptop, new TransferPlaybackCommand("laptop", true));
+        CommandResult result = await _context.Coordinator.TransferAsync(
+            laptop,
+            new TransferPlaybackCommand("laptop", true));
 
         result.Status.Should().Be(CommandStatus.Accepted);
         result.Version.Should().Be(played.Version);
@@ -360,7 +389,9 @@ public class DeviceCoordinatorPlaybackTests
         DeviceConnection laptop = await _context.RegisterAsync(_userId, "laptop", remoteControl: true);
         await _context.RegisterAsync(Guid.NewGuid(), "foreign", remoteControl: true);
 
-        CommandResult result = await _context.Coordinator.TransferAsync(laptop, new TransferPlaybackCommand("foreign", true));
+        CommandResult result = await _context.Coordinator.TransferAsync(
+            laptop,
+            new TransferPlaybackCommand("foreign", true));
 
         result.Status.Should().Be(CommandStatus.DeviceNotFound);
     }
@@ -370,7 +401,9 @@ public class DeviceCoordinatorPlaybackTests
     {
         DeviceConnection laptop = await _context.RegisterAsync(_userId, "laptop");
 
-        CommandResult result = await _context.Coordinator.TransferAsync(laptop, new TransferPlaybackCommand("not valid", true));
+        CommandResult result = await _context.Coordinator.TransferAsync(
+            laptop,
+            new TransferPlaybackCommand("not valid", true));
 
         result.Status.Should().Be(CommandStatus.Invalid);
         result.Errors.Should().ContainSingle().Which.Code.Should().Be(DeviceValidationCode.InvalidFormat);

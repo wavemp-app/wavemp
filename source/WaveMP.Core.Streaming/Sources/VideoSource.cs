@@ -10,7 +10,8 @@ namespace WaveMP.Core.Streaming.Sources;
 /// <param name="FullPath">Absolute path of the file; always inside the media folder.</param>
 /// <param name="Container">Container of the file; <c>null</c> if clients cannot play it directly.</param>
 /// <param name="VideoCodec">Codec of the picture; <c>null</c> if clients cannot play it directly.</param>
-/// <param name="AudioCodec">Codec of the sound; <c>null</c> without sound or if clients cannot play it directly.</param>
+/// <param name="AudioCodec">Codec of the sound; <c>null</c> without sound or if clients cannot play it
+/// directly.</param>
 /// <param name="HasAudio">Whether the video has sound.</param>
 /// <param name="PixelFormat">Pixel format of the picture, e.g. <c>yuv420p</c>.</param>
 /// <param name="Width">Width of the picture, if known.</param>

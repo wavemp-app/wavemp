@@ -129,7 +129,9 @@ public class UserSettingsServiceTests
         User user = Given("de");
         user.Settings!.PlayerViewMode = PlayerViewMode.Cover;
 
-        UserSettings? result = await _service.UpdateAsync(user.Id, new UpdateUserSettingsCommand(SidebarCollapsed: true));
+        UserSettings? result = await _service.UpdateAsync(
+            user.Id,
+            new UpdateUserSettingsCommand(SidebarCollapsed: true));
         UserSettings? unchanged = await _service.UpdateAsync(user.Id, new UpdateUserSettingsCommand("en"));
 
         result!.SidebarCollapsed.Should().BeTrue();
@@ -442,7 +444,9 @@ public class UserSettingsServiceTests
         user.Settings!.ThemeId = "accent";
         user.Settings.ThemeAppearance = ThemeAppearance.Dark;
 
-        UserSettings? result = await _service.UpdateAsync(user.Id, new UpdateUserSettingsCommand(SidebarCollapsed: true));
+        UserSettings? result = await _service.UpdateAsync(
+            user.Id,
+            new UpdateUserSettingsCommand(SidebarCollapsed: true));
 
         result!.ThemeId.Should().Be("accent");
         result.ThemeAppearance.Should().Be(ThemeAppearance.Dark);
@@ -453,7 +457,9 @@ public class UserSettingsServiceTests
     {
         User user = Given("en");
 
-        UserSettings? result = await _service.UpdateAsync(user.Id, new UpdateUserSettingsCommand(ThemeId: "uploaded-1"));
+        UserSettings? result = await _service.UpdateAsync(
+            user.Id,
+            new UpdateUserSettingsCommand(ThemeId: "uploaded-1"));
 
         result!.ThemeId.Should().Be("uploaded-1");
     }
@@ -602,7 +608,9 @@ public class UserSettingsServiceTests
 
         UserSettings? result = await _service.UpdateAsync(
             user.Id,
-            new UpdateUserSettingsCommand(VisualizationModule: VisualizationModule.BlackCap, VisualizationPreset: "lumen"));
+            new UpdateUserSettingsCommand(
+                VisualizationModule: VisualizationModule.BlackCap,
+                VisualizationPreset: "lumen"));
 
         result!.VisualizationModule.Should().Be(VisualizationModule.BlackCap);
         result.VisualizationPreset.Should().Be("lumen");
@@ -616,7 +624,9 @@ public class UserSettingsServiceTests
 
         UserSettings? result = await _service.UpdateAsync(
             user.Id,
-            new UpdateUserSettingsCommand(VisualizationModule: VisualizationModule.AForce, VisualizationPreset: "aurora"));
+            new UpdateUserSettingsCommand(
+                VisualizationModule: VisualizationModule.AForce,
+                VisualizationPreset: "aurora"));
 
         result!.VisualizationModule.Should().Be(VisualizationModule.AForce);
         result.VisualizationPreset.Should().Be("aurora");

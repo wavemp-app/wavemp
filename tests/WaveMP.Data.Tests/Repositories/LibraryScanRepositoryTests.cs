@@ -19,7 +19,9 @@ public class LibraryScanRepositoryTests : LibraryDatabaseTests
     {
         await SeedFilesAsync();
 
-        IReadOnlyList<MediaFileSnapshot> snapshots = await CreateRepository().GetFolderSnapshotsAsync(MediaSource.DefaultId, "Band/Album");
+        IReadOnlyList<MediaFileSnapshot> snapshots = await CreateRepository().GetFolderSnapshotsAsync(
+            MediaSource.DefaultId,
+            "Band/Album");
 
         snapshots.Select(snapshot => snapshot.RelativePath)
             .Should().BeEquivalentTo("Band/Album/01 - One.mp3", "Band/Album/cover.jpg");
@@ -31,7 +33,9 @@ public class LibraryScanRepositoryTests : LibraryDatabaseTests
     {
         await SeedFilesAsync();
 
-        IReadOnlyList<MediaFileSnapshot> snapshots = await CreateRepository().GetFolderSnapshotsAsync(MediaSource.DefaultId, string.Empty);
+        IReadOnlyList<MediaFileSnapshot> snapshots = await CreateRepository().GetFolderSnapshotsAsync(
+            MediaSource.DefaultId,
+            string.Empty);
 
         snapshots.Select(snapshot => snapshot.RelativePath).Should().Equal("Loose.mp3");
     }
@@ -41,7 +45,9 @@ public class LibraryScanRepositoryTests : LibraryDatabaseTests
     {
         await SeedFilesAsync();
 
-        IReadOnlyList<MediaFileSnapshot> snapshots = await CreateRepository().GetFolderSnapshotsAsync(MediaSource.DefaultId, "Band/Alb");
+        IReadOnlyList<MediaFileSnapshot> snapshots = await CreateRepository().GetFolderSnapshotsAsync(
+            MediaSource.DefaultId,
+            "Band/Alb");
 
         snapshots.Should().BeEmpty();
     }

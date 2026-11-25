@@ -274,7 +274,8 @@ internal sealed class ArtistPictureLookupService(
     /// </summary>
     internal static bool IsCandidateId(string? id)
     {
-        return id is { Length: 32 } && id.All(character => char.IsAsciiDigit(character) || character is >= 'a' and <= 'f');
+        return id is { Length: 32 } && id.All(
+            character => char.IsAsciiDigit(character) || character is >= 'a' and <= 'f');
     }
 
     private bool IsEnabled => settings.Current.OnlineLookupEnabled;
@@ -328,7 +329,8 @@ internal sealed class ArtistPictureLookupService(
         CancellationToken cancellationToken)
     {
         string linkName = "musicbrainz/wikidata-"
-            + ArtistLookupCache.Hash(onlineSettings.Current.MusicBrainzUrl, musicBrainzArtistId.ToString("N")) + ".json";
+            + ArtistLookupCache.Hash(onlineSettings.Current.MusicBrainzUrl, musicBrainzArtistId.ToString("N"))
+            + ".json";
         WikidataLink? link = await cache.ReadAsync<WikidataLink>(linkName, cancellationToken);
         if (link is null)
         {
@@ -536,7 +538,8 @@ internal sealed class ArtistPictureLookupService(
         byte[] picture,
         CancellationToken cancellationToken)
     {
-        string? contentType = ImageFormats.Detect(picture.AsSpan(0, Math.Min(picture.Length, ImageFormats.HeaderLength)));
+        string? contentType = ImageFormats.Detect(
+            picture.AsSpan(0, Math.Min(picture.Length, ImageFormats.HeaderLength)));
         if (contentType is null || !_pictureFormats.Contains(contentType))
         {
             logger.LogWarning("A picture of the artist lookup is no JPEG, PNG or WebP picture");

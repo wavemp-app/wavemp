@@ -150,7 +150,11 @@ internal sealed class NoReplaceFileMover : INoReplaceFileMover
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
         {
             // Both names point to the same file; the new name is ours, so removing it leaves the source as it was.
-            _logger.LogWarning(exception, "Cannot remove {Source} after linking it to {Target}", sourcePath, targetPath);
+            _logger.LogWarning(
+                exception,
+                "Cannot remove {Source} after linking it to {Target}",
+                sourcePath,
+                targetPath);
             TryDelete(targetPath);
             return new FileMoveResult(FileMoveStatus.Failed, exception.HResult);
         }
@@ -170,7 +174,13 @@ internal sealed class NoReplaceFileMover : INoReplaceFileMover
         FileStream source;
         try
         {
-            source = new FileStream(sourcePath, FileMode.Open, FileAccess.Read, FileShare.Read, 1, FileOptions.SequentialScan);
+            source = new FileStream(
+                sourcePath,
+                FileMode.Open,
+                FileAccess.Read,
+                FileShare.Read,
+                1,
+                FileOptions.SequentialScan);
         }
         catch (Exception exception) when (exception is FileNotFoundException or DirectoryNotFoundException)
         {
@@ -240,7 +250,11 @@ internal sealed class NoReplaceFileMover : INoReplaceFileMover
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
         {
-            _logger.LogWarning(exception, "Cannot remove {Source} after copying it to {Target}", sourcePath, targetPath);
+            _logger.LogWarning(
+                exception,
+                "Cannot remove {Source} after copying it to {Target}",
+                sourcePath,
+                targetPath);
             TryDelete(targetPath);
             return new FileMoveResult(FileMoveStatus.Failed, exception.HResult);
         }

@@ -14,8 +14,8 @@ import { artistLabelKey } from '@/library/presentation'
 
 /**
  * Tiles of the library lists: albums with cover and album artist, artists with their picture,
- * songs with cover and artist, genres, years, playlists and smart playlists. Albums, artists, songs and playlists bring their context
- * menu.
+ * songs with cover and artist, genres, years, playlists and smart playlists. Albums, artists, songs and playlists bring
+ * their context menu.
  */
 export function useLibraryTiles() {
     const { t } = useI18n()

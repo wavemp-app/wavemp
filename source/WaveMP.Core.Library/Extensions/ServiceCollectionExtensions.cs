@@ -22,10 +22,10 @@ public static class ServiceCollectionExtensions
     /// <summary>
     /// Registers the library: artists, albums, tracks, genres, years, the groups of their lists, the search, the
     /// covers and their rules (with the online covers in the folder <c>online-covers</c> of the data folder,
-    /// <c>DATA_PATH</c>, default <c>/data</c>), the review status of the tracks and the library check with its job <c>library-check</c> (settings from the
-    /// section <c>LibraryCheck</c>), which the scan starts after every run. Needs the repositories of
-    /// <c>AddWaveMpData</c>, the library settings of <c>AddWaveMpSettings</c>, the media folder of
-    /// <c>AddWaveMpMetadata</c> and the jobs of <c>AddWaveMpJobs</c>.
+    /// <c>DATA_PATH</c>, default <c>/data</c>), the review status of the tracks and the library check with its job
+    /// <c>library-check</c> (settings from the section <c>LibraryCheck</c>), which the scan starts after every run.
+    /// Needs the repositories of <c>AddWaveMpData</c>, the library settings of <c>AddWaveMpSettings</c>, the media
+    /// folder of <c>AddWaveMpMetadata</c> and the jobs of <c>AddWaveMpJobs</c>.
     /// </summary>
     public static IServiceCollection AddWaveMpLibrary(this IServiceCollection services)
     {

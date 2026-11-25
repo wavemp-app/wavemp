@@ -92,7 +92,11 @@ public class PlaylistsApiTests
 
         HttpResponseMessage response = await client.PostAsJsonAsync(
             Path,
-            new { name = "  Road   Trip ", trackIds = new[] { Track("Second"), Track("First"), Track("Fourth"), Track("Third") } });
+            new
+            {
+                name = "  Road   Trip ",
+                trackIds = new[] { Track("Second"), Track("First"), Track("Fourth"), Track("Third") },
+            });
 
         response.StatusCode.Should().Be(HttpStatusCode.Created, await response.Content.ReadAsStringAsync());
         PlaylistDto playlist =
@@ -124,7 +128,10 @@ public class PlaylistsApiTests
     [TestCase("{\"name\":\"Bell\\u0007\"}", "name", ValidationErrorCodeDto.InvalidValue)]
     [TestCase("{\"name\":\"   \"}", "name", ValidationErrorCodeDto.Required)]
     [TestCase("{}", "name", ValidationErrorCodeDto.Required)]
-    public async Task CreateMyPlaylist_InvalidName_ReturnsTheField(string body, string field, ValidationErrorCodeDto code)
+    public async Task CreateMyPlaylist_InvalidName_ReturnsTheField(
+        string body,
+        string field,
+        ValidationErrorCodeDto code)
     {
         using HttpClient client = await CreateProfileAsync();
 
@@ -214,7 +221,9 @@ public class PlaylistsApiTests
         HttpResponseMessage renamed = await client.PatchAsJsonAsync(path, new { name = "Mine" });
         HttpResponseMessage deleted = await client.DeleteAsync(path);
         HttpResponseMessage entries = await client.GetAsync($"{path}/tracks");
-        HttpResponseMessage added = await client.PostAsJsonAsync($"{path}/tracks", new { trackIds = new[] { Track("First") } });
+        HttpResponseMessage added = await client.PostAsJsonAsync(
+            $"{path}/tracks",
+            new { trackIds = new[] { Track("First") } });
         HttpResponseMessage cover = await client.PutAsync($"{path}/cover", Picture(_picture));
 
         await read.ShouldBeProblemAsync(HttpStatusCode.NotFound, "playlist.not_found");
@@ -236,7 +245,8 @@ public class PlaylistsApiTests
         HttpResponseMessage unchanged = await client.PatchAsJsonAsync($"{Path}/{playlist.Id}", new { });
 
         response.StatusCode.Should().Be(HttpStatusCode.OK, await response.Content.ReadAsStringAsync());
-        PlaylistDto renamed = (await response.Content.ReadFromJsonAsync<PlaylistDto>(HttpClientExtensions.JsonOptions))!;
+        PlaylistDto renamed =
+            (await response.Content.ReadFromJsonAsync<PlaylistDto>(HttpClientExtensions.JsonOptions))!;
         renamed.Name.Should().Be("New");
         renamed.UpdatedAt.Should().BeOnOrAfter(playlist.UpdatedAt);
         unchanged.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -403,7 +413,8 @@ public class PlaylistsApiTests
         HttpResponseMessage response = await client.PutAsync(path, Picture(_picture));
 
         response.StatusCode.Should().Be(HttpStatusCode.OK, await response.Content.ReadAsStringAsync());
-        PlaylistDto covered = (await response.Content.ReadFromJsonAsync<PlaylistDto>(HttpClientExtensions.JsonOptions))!;
+        PlaylistDto covered =
+            (await response.Content.ReadFromJsonAsync<PlaylistDto>(HttpClientExtensions.JsonOptions))!;
         covered.Cover.Kind.Should().Be(PlaylistCoverKindDto.Custom);
         covered.Cover.Version.Should().NotBeNullOrEmpty();
         covered.Cover.TrackIds.Should().BeEmpty();

@@ -173,7 +173,8 @@ public class VideoStreamingApiTests
             .And.Contain("CODECS=\"avc1.64002a,mp4a.40.2\",RESOLUTION=320x240");
 
         string mediaPath = Resolve(playback.StreamUrl!, UriLines(masterText).Single());
-        mediaPath.Should().MatchRegex($"^/api/v1/tracks/{Track("Clip").Id}/hls/Video/[0-9a-f]{{32}}/main\\.m3u8\\?uid=");
+        mediaPath.Should().MatchRegex(
+            $"^/api/v1/tracks/{Track("Clip").Id}/hls/Video/[0-9a-f]{{32}}/main\\.m3u8\\?uid=");
         HttpResponseMessage media = await _anonymous.GetAsync(mediaPath);
         string mediaText = await media.Content.ReadAsStringAsync();
         media.StatusCode.Should().Be(HttpStatusCode.OK, mediaText);
@@ -305,7 +306,9 @@ public class VideoStreamingApiTests
         status.FfmpegAvailable.Should().BeTrue();
         status.CacheAvailable.Should().BeTrue();
         status.MaxParallelJobs.Should().Be(2);
-        status.Hardware.State.Should().NotBe(HardwareAccelerationStateDto.Active, "the test machine has no render device");
+        status.Hardware.State.Should().NotBe(
+            HardwareAccelerationStateDto.Active,
+            "the test machine has no render device");
     }
 
     [Test]
@@ -350,7 +353,10 @@ public class VideoStreamingApiTests
         string path = OffsetPath("Webm Clip");
         try
         {
-            HttpResponseMessage response = await _admin.SendJsonAsync("PUT", path, """{ "offsetMilliseconds": 1500 }""");
+            HttpResponseMessage response = await _admin.SendJsonAsync(
+                "PUT",
+                path,
+                """{ "offsetMilliseconds": 1500 }""");
             TrackVideoOffsetDto read = await _admin.GetJsonAsync<TrackVideoOffsetDto>(path);
             TrackVideoPlaybackDto playback = await VideoPlaybackAsync("Webm Clip", BrowserCapabilities);
 

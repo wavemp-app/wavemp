@@ -123,7 +123,8 @@ public class AutoplayRepositoryTests : LibraryDatabaseTests
             new AutoplayCandidateQuery(user.Id, 2, true, [], ArtistIds: [library.Alpha.Id, library.Beta.Id]));
 
         candidates.Should().HaveCount(2);
-        candidates.Select(row => row.ArtistId).Should().OnlyContain(id => id == library.Alpha.Id || id == library.Beta.Id);
+        candidates.Select(row => row.ArtistId).Should().OnlyContain(
+            id => id == library.Alpha.Id || id == library.Beta.Id);
     }
 
     [Test]
@@ -142,7 +143,8 @@ public class AutoplayRepositoryTests : LibraryDatabaseTests
         IReadOnlyDictionary<Guid, DateTimeOffset> plays = await CreateRepository()
             .ListRecentPlaysAsync(user.Id, _now.AddHours(-24));
 
-        plays.Should().BeEquivalentTo(new Dictionary<Guid, DateTimeOffset> { [library.Opening.Id] = _now.AddHours(-1) });
+        plays.Should().BeEquivalentTo(
+            new Dictionary<Guid, DateTimeOffset> { [library.Opening.Id] = _now.AddHours(-1) });
     }
 
     private IAutoplayRepository CreateRepository()

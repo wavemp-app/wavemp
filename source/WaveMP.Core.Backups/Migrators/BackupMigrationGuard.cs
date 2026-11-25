@@ -35,7 +35,8 @@ public sealed class BackupMigrationGuard(
         else if (!options.Value.BeforeMigrations)
         {
             logger.LogWarning(
-                "The backup before database migrations is switched off (Backups:BeforeMigrations); migrating without one");
+                "The backup before database migrations is switched off (Backups:BeforeMigrations); "
+                    + "migrating without one");
         }
         else
         {

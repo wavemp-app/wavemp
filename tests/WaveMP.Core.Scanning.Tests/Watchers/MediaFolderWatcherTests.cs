@@ -109,7 +109,8 @@ public class MediaFolderWatcherTests
         await File.WriteAllTextAsync(_media.Combine("Other/notes.txt"), "ignored");
         JobRunRequest request = await WaitForStartAsync();
 
-        Folders(request).Should().BeEquivalentTo([new SourceFolder(_music, "Artist/Album"), new SourceFolder(_music, "Other")]);
+        Folders(request).Should().BeEquivalentTo(
+            [new SourceFolder(_music, "Artist/Album"), new SourceFolder(_music, "Other")]);
         StartedRequests().Should().ContainSingle();
     }
 
@@ -184,7 +185,8 @@ public class MediaFolderWatcherTests
         JobRunRequest request = await WaitForStartAsync();
 
         _watcher.IsWatchingSource(_videos).Should().BeTrue();
-        Folders(request).Should().BeEquivalentTo([new SourceFolder(_music, "Other"), new SourceFolder(_videos, "Live")]);
+        Folders(request).Should().BeEquivalentTo(
+            [new SourceFolder(_music, "Other"), new SourceFolder(_videos, "Live")]);
     }
 
     [Test]

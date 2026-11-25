@@ -28,9 +28,10 @@ public sealed class RequestUrlLogFilter : IPostConfigureOptions<LoggerFilterOpti
         foreach (LoggerFilterRule rule in rules)
         {
             // Rules for the category itself (or a part of it) may not lower its level.
-            options.Rules.Add(rule.CategoryName is { } category && category.StartsWith(Category, StringComparison.Ordinal)
-                ? new LoggerFilterRule(rule.ProviderName, category, Raise(rule.LogLevel), rule.Filter)
-                : rule);
+            options.Rules.Add(
+                rule.CategoryName is { } category && category.StartsWith(Category, StringComparison.Ordinal)
+                    ? new LoggerFilterRule(rule.ProviderName, category, Raise(rule.LogLevel), rule.Filter)
+                    : rule);
         }
 
         // One rule for every provider that has rules of its own (they take precedence over the rules for all

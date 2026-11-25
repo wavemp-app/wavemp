@@ -100,7 +100,10 @@ internal static partial class ThemeManifestReader
 
         int? themeApi = ReadThemeApi(root, errors);
         IReadOnlyList<ThemeVariant>? variants = ReadVariants(root, errors);
-        IReadOnlyDictionary<ThemeVariant, string>? previews = variants is null ? null : ReadPreviews(root, variants, errors);
+        IReadOnlyDictionary<ThemeVariant, string>? previews = variants is null ? null : ReadPreviews(
+            root,
+            variants,
+            errors);
 
         if (errors.Count > before || id is null || name is null || author is null || version is null ||
             themeApi is null || variants is null || previews is null)

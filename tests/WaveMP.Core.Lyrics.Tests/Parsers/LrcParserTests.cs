@@ -218,7 +218,9 @@ public class LrcParserTests
     [Test]
     public void Parse_HugeFile_KeepsAtMostTheLimitOfLines()
     {
-        string text = string.Join('\n', Enumerable.Range(0, 6000).Select(index => $"[{index / 60:00}:{index % 60:00}.00]L"));
+        string text = string.Join(
+            '\n',
+            Enumerable.Range(0, 6000).Select(index => $"[{index / 60:00}:{index % 60:00}.00]L"));
 
         LrcParser.Parse(text).Lines.Should().HaveCount(5000);
     }

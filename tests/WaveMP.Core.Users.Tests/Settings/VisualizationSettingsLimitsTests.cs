@@ -38,7 +38,8 @@ public class VisualizationSettingsLimitsTests
     public void IsValidColorScheme_UpToTheLongestLength_ReturnsTrue()
     {
         VisualizationSettingsLimits.IsValidColorScheme(string.Empty).Should().BeTrue();
-        VisualizationSettingsLimits.IsValidColorScheme(new string('a', VisualizationSettingsLimits.ColorSchemeMaxLength))
+        VisualizationSettingsLimits.IsValidColorScheme(
+            new string('a', VisualizationSettingsLimits.ColorSchemeMaxLength))
             .Should().BeTrue();
         VisualizationSettingsLimits
             .IsValidColorScheme(new string('a', VisualizationSettingsLimits.ColorSchemeMaxLength + 1))

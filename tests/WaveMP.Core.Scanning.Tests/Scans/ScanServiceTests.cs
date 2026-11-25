@@ -65,7 +65,12 @@ public class ScanServiceTests
     {
         JobRun run = Run(
             JobRunStatus.Succeeded,
-            """{"statistics":{"filesAdded":2,"tracksTotal":2,"isPartial":false},"issues":[{"path":"a.mp3","code":"ProbeFailed"}]}""");
+            """
+            {
+              "statistics": { "filesAdded": 2, "tracksTotal": 2, "isPartial": false },
+              "issues": [{ "path": "a.mp3", "code": "ProbeFailed" }]
+            }
+            """);
         _jobs.ListRunsAsync(Arg.Any<JobRunListQuery>(), Arg.Any<CancellationToken>())
             .Returns(new Page<JobRun>([run, Run(JobRunStatus.Failed, "{broken")], 0, 10, 2));
 

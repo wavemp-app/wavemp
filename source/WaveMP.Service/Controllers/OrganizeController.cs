@@ -174,7 +174,9 @@ public sealed class OrganizeController(
             OrganizeApplyStatus.PreviewExpired => this.Problem(
                 ProblemCodeDto.OrganizePreviewExpired,
                 StatusCodes.Status409Conflict),
-            OrganizeApplyStatus.Conflicts => this.Problem(ProblemCodeDto.OrganizeConflicts, StatusCodes.Status409Conflict),
+            OrganizeApplyStatus.Conflicts => this.Problem(
+                ProblemCodeDto.OrganizeConflicts,
+                StatusCodes.Status409Conflict),
             OrganizeApplyStatus.PreviewOutdated => this.Problem(
                 ProblemCodeDto.OrganizePreviewOutdated,
                 StatusCodes.Status409Conflict),
@@ -347,7 +349,9 @@ public sealed class OrganizeController(
             OrganizePreviewStatus.SourceNotFound => this.Problem(
                 ProblemCodeDto.SourceNotFound,
                 StatusCodes.Status404NotFound),
-            OrganizePreviewStatus.AlbumEmpty => this.Problem(ProblemCodeDto.OwnAlbumEmpty, StatusCodes.Status409Conflict),
+            OrganizePreviewStatus.AlbumEmpty => this.Problem(
+                ProblemCodeDto.OwnAlbumEmpty,
+                StatusCodes.Status409Conflict),
             OrganizePreviewStatus.MediaReadOnly => this.Problem(
                 ProblemCodeDto.OrganizeMediaReadOnly,
                 StatusCodes.Status409Conflict),

@@ -27,7 +27,8 @@ public class BackupServiceTests
         _store = Substitute.For<IBackupStore>();
         _store.Prepare(Arg.Any<DateTimeOffset>(), Arg.Any<BackupTrigger>())
             .Returns(call => BackupFileNames.CreateId(call.Arg<DateTimeOffset>(), call.Arg<BackupTrigger>()));
-        _store.PartialPathOf(Arg.Any<string>()).Returns(call => "/data/backups/" + call.Arg<string>() + ".dump.partial");
+        _store.PartialPathOf(Arg.Any<string>()).Returns(
+            call => "/data/backups/" + call.Arg<string>() + ".dump.partial");
         _store.Complete(Arg.Any<string>()).Returns(call => FileOf(call.Arg<string>()));
         _store.ApplyRetention(Arg.Any<int>()).Returns([]);
         _exporter = Substitute.For<IDatabaseExporter>();

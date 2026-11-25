@@ -130,9 +130,12 @@ public class OwnAlbumsApiTests
         OwnAlbumDto other = await CreateAsync("Other");
         string tracks = $"{AlbumsPath}/{album.Id}/tracks";
 
-        HttpResponseMessage added = await _admin.PostAsJsonAsync(tracks, new { trackIds = new[] { _second.Id, _first.Id } });
+        HttpResponseMessage added = await _admin.PostAsJsonAsync(
+            tracks,
+            new { trackIds = new[] { _second.Id, _first.Id } });
         added.StatusCode.Should().Be(HttpStatusCode.OK);
-        (await added.Content.ReadFromJsonAsync<OwnAlbumDto>(HttpClientExtensions.JsonOptions))!.TrackCount.Should().Be(2);
+        (await added.Content.ReadFromJsonAsync<OwnAlbumDto>(HttpClientExtensions.JsonOptions))!.TrackCount.Should().Be(
+            2);
 
         (await _admin.PutAsJsonAsync(tracks, new { trackIds = new[] { _first.Id, _second.Id } }))
             .StatusCode.Should().Be(HttpStatusCode.OK);
@@ -147,7 +150,9 @@ public class OwnAlbumsApiTests
             .ShouldBeProblemAsync(HttpStatusCode.NotFound, "track.not_found");
         await (await _admin.PostAsJsonAsync($"{AlbumsPath}/{other.Id}/tracks", new { trackIds = new[] { _first.Id } }))
             .ShouldBeProblemAsync(HttpStatusCode.Conflict, "organize.track_in_other_own_album");
-        await (await _admin.PostAsJsonAsync($"{AlbumsPath}/{Guid.NewGuid()}/tracks", new { trackIds = new[] { _first.Id } }))
+        await (await _admin.PostAsJsonAsync(
+                $"{AlbumsPath}/{Guid.NewGuid()}/tracks",
+                new { trackIds = new[] { _first.Id } }))
             .ShouldBeProblemAsync(HttpStatusCode.NotFound, "organize.own_album_not_found");
 
         (await _admin.DeleteAsync($"{tracks}/{_first.Id}")).StatusCode.Should().Be(HttpStatusCode.OK);
@@ -166,7 +171,8 @@ public class OwnAlbumsApiTests
 
         HttpResponseMessage saved = await _admin.PutAsync(path, Body(_png, "image/png"));
         saved.StatusCode.Should().Be(HttpStatusCode.OK);
-        (await saved.Content.ReadFromJsonAsync<OwnAlbumDto>(HttpClientExtensions.JsonOptions))!.HasCover.Should().BeTrue();
+        (await saved.Content.ReadFromJsonAsync<OwnAlbumDto>(HttpClientExtensions.JsonOptions))!
+            .HasCover.Should().BeTrue();
 
         HttpResponseMessage cover = await _admin.GetAsync(path);
         cover.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -193,16 +199,23 @@ public class OwnAlbumsApiTests
             "POST",
             $"{OrganizePath}/preview",
             """{ "kind": "OwnAlbum" }""")).ShouldBeValidationProblemAsync();
-        errors.Select(error => (error.Field, error.Code)).Should().Equal(("ownAlbumId", ValidationErrorCodeDto.Required));
+        errors.Select(error => (error.Field, error.Code)).Should().Equal(
+            ("ownAlbumId", ValidationErrorCodeDto.Required));
         (await (await _admin.SendJsonAsync("POST", $"{OrganizePath}/preview", "{}")).ShouldBeValidationProblemAsync())
             .Select(error => error.Field).Should().Contain("kind");
 
-        await (await _admin.PostAsJsonAsync($"{OrganizePath}/preview", new { kind = "OwnAlbum", ownAlbumId = Guid.NewGuid() }))
+        await (await _admin.PostAsJsonAsync(
+                $"{OrganizePath}/preview",
+                new { kind = "OwnAlbum", ownAlbumId = Guid.NewGuid() }))
             .ShouldBeProblemAsync(HttpStatusCode.NotFound, "organize.own_album_not_found");
         OwnAlbumDto empty = await CreateAsync("Empty");
-        await (await _admin.PostAsJsonAsync($"{OrganizePath}/preview", new { kind = "OwnAlbum", ownAlbumId = empty.Id }))
+        await (await _admin.PostAsJsonAsync(
+                $"{OrganizePath}/preview",
+                new { kind = "OwnAlbum", ownAlbumId = empty.Id }))
             .ShouldBeProblemAsync(HttpStatusCode.Conflict, "organize.own_album_empty");
-        await (await _admin.PostAsJsonAsync($"{OrganizePath}/preview", new { kind = "Library", sourceId = Guid.NewGuid() }))
+        await (await _admin.PostAsJsonAsync(
+                $"{OrganizePath}/preview",
+                new { kind = "Library", sourceId = Guid.NewGuid() }))
             .ShouldBeProblemAsync(HttpStatusCode.NotFound, "source.not_found");
         await _admin.DeleteAsync($"{AlbumsPath}/{empty.Id}");
     }
@@ -270,7 +283,8 @@ public class OwnAlbumsApiTests
             .Content.ReadFromJsonAsync<OrganizeOperationDto>(HttpClientExtensions.JsonOptions))!;
 
         (await (await _admin.SendJsonAsync("POST", $"{OrganizePath}/apply", "{}")).ShouldBeValidationProblemAsync())
-            .Select(error => (error.Field, error.Code)).Should().Equal(("operationId", ValidationErrorCodeDto.Required));
+            .Select(error => (error.Field, error.Code)).Should().Equal(
+                ("operationId", ValidationErrorCodeDto.Required));
         await (await _admin.PostAsJsonAsync($"{OrganizePath}/apply", new { operationId = Guid.NewGuid() }))
             .ShouldBeProblemAsync(HttpStatusCode.NotFound, "organize.operation_not_found");
         await (await _admin.PostAsJsonAsync($"{OrganizePath}/apply", new { operationId = preview.Id }))

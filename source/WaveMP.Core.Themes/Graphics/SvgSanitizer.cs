@@ -197,7 +197,10 @@ internal static partial class SvgSanitizer
                     }
 
                     break;
-                case XmlNodeType.Text or XmlNodeType.CDATA or XmlNodeType.Whitespace or XmlNodeType.SignificantWhitespace:
+                case XmlNodeType.Text
+                    or XmlNodeType.CDATA
+                    or XmlNodeType.Whitespace
+                    or XmlNodeType.SignificantWhitespace:
                     if (styleText is not null)
                     {
                         styleText.Append(reader.Value);

@@ -24,7 +24,8 @@ public class FfmpegHlsArgumentsTests
         text.Should().Contain(
             "-map 0:v:0 -map 0:a:0? -vf scale=1920:1080:force_original_aspect_ratio=decrease:force_divisible_by=2"
             + ",format=yuv420p");
-        text.Should().Contain("-c:v libx264 -preset veryfast -profile:v high -b:v 6000k -maxrate 9000k -bufsize 12000k");
+        text.Should().Contain(
+            "-c:v libx264 -preset veryfast -profile:v high -b:v 6000k -maxrate 9000k -bufsize 12000k");
         text.Should().Contain("-force_key_frames expr:gte(t,n_forced*2)");
         text.Should().Contain("-c:a aac -b:a 192k -ac 2 -ar 48000");
         text.Should().Contain("-f hls -hls_time 2 -hls_list_size 0 -hls_segment_type mpegts");
@@ -125,7 +126,8 @@ public class FfmpegHlsArgumentsTests
 
         text.Should().Be(
             "-hide_banner -nostdin -loglevel error -init_hw_device vaapi=va:/dev/dri/renderD128 -filter_hw_device va "
-            + "-f lavfi -i testsrc2=size=320x240:rate=25:duration=1 -vf format=nv12,hwupload -c:v h264_vaapi -f null -");
+            + "-f lavfi -i testsrc2=size=320x240:rate=25:duration=1 "
+            + "-vf format=nv12,hwupload -c:v h264_vaapi -f null -");
     }
 
     private static IReadOnlyList<string> Build(

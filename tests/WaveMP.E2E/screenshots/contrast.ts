@@ -108,7 +108,8 @@ function collectAndHide(): { targets: Target[]; skipped: string[] } {
 
     const exempt = (element: Element): boolean =>
         !!element.closest(
-            ":disabled, [aria-disabled='true'], [data-part='logo'], [data-part='avatar'], [hidden], [inert], [data-part^='dev-'], option",
+            ":disabled, [aria-disabled='true'], [data-part='logo'], [data-part='avatar'], [hidden], [inert], " +
+                "[data-part^='dev-'], option",
         )
 
     const visibleBox = (rects: DOMRect[]): Target['rect'] | null => {
@@ -276,7 +277,8 @@ function collectAndHide(): { targets: Target[]; skipped: string[] } {
     const pseudo = document.createElement('style')
     pseudo.id = 'wmp-contrast-check'
     pseudo.textContent =
-        '*::before, *::after { color: transparent !important; -webkit-text-fill-color: transparent !important; text-shadow: none !important; }'
+        '*::before, *::after { color: transparent !important; ' +
+        '-webkit-text-fill-color: transparent !important; text-shadow: none !important; }'
     document.head.append(pseudo)
     ;(window as unknown as { __wmpContrastRestore?: () => void }).__wmpContrastRestore = () => {
         for (const [element, cssText] of hidden.reverse()) {
@@ -428,7 +430,8 @@ export function formatContrastFailures(failures: readonly ContrastFinding[]): st
     return failures
         .map(
             (failure) =>
-                `${failure.ratio.toFixed(2)}:1 < ${failure.required}:1  ${failure.kind} "${failure.sample}"  ${failure.path}  (${failure.color})`,
+                `${failure.ratio.toFixed(2)}:1 < ${failure.required}:1  ${failure.kind} "${failure.sample}"  ` +
+                `${failure.path}  (${failure.color})`,
         )
         .join('\n')
 }

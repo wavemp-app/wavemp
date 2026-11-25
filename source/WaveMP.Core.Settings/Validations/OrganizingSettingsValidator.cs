@@ -35,7 +35,10 @@ public static class OrganizingSettingsValidator
                 OrganizingSettingsField.LayoutTemplate,
                 SettingsErrorReason.TooLong,
                 Maximum: LayoutTemplateSyntax.MaxLength),
-            _ => new(OrganizingSettingsField.LayoutTemplate, SettingsErrorReason.Invalid, TemplateErrors: parsed.Errors),
+            _ => new(
+                OrganizingSettingsField.LayoutTemplate,
+                SettingsErrorReason.Invalid,
+                TemplateErrors: parsed.Errors),
         };
         return [error];
     }

@@ -153,7 +153,10 @@ public class ThemeManifestReaderTests
     }
 
     [TestCase("{ \"light\": \"preview-light.png\" }", "previews.dark", ThemeErrorCode.ManifestMissingField)]
-    [TestCase("{ \"light\": \"../x.png\", \"dark\": \"preview-dark.png\" }", "previews.light", ThemeErrorCode.ManifestInvalidField)]
+    [TestCase(
+        "{ \"light\": \"../x.png\", \"dark\": \"preview-dark.png\" }",
+        "previews.light",
+        ThemeErrorCode.ManifestInvalidField)]
     public void Read_PreviewOfAVariant_IsChecked(string previews, string field, ThemeErrorCode code)
     {
         (_, List<ThemeError> errors) = Read(Replace("previews", previews));

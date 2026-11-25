@@ -22,8 +22,8 @@ public interface ILibraryIssueRepository
     /// <summary>
     /// Replaces the stored problems with <paramref name="issues"/> in one transaction and stores the time of the run:
     /// problems that are gone are removed, problems found again keep their id and the time they were found first (their
-    /// details are updated), new problems are added with <paramref name="checkedAt"/>. Problems of tracks and files that
-    /// were removed meanwhile are skipped.
+    /// details are updated), new problems are added with <paramref name="checkedAt"/>. Problems of tracks and files
+    /// that were removed meanwhile are skipped.
     /// </summary>
     Task<LibraryIssueChanges> ReplaceAsync(
         IReadOnlyCollection<DetectedLibraryIssue> issues,

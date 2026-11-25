@@ -13,9 +13,9 @@ public interface IPlaybackStateRepository
     Task<PlaybackState?> FindAsync(Guid userId, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Saves the playback state of its user, unless the saved one changed later (<see cref="PlaybackState.ChangedAt"/>):
-    /// the most recently changed state wins, also when two devices save at the same time. Returns <c>false</c> (and
-    /// saves nothing) if the saved state is newer.
+    /// Saves the playback state of its user, unless the saved one changed later
+    /// (<see cref="PlaybackState.ChangedAt"/>): the most recently changed state wins, also when two devices save at the
+    /// same time. Returns <c>false</c> (and saves nothing) if the saved state is newer.
     /// </summary>
     /// <exception cref="UserNotFoundException">The user of the state does not exist.</exception>
     Task<bool> SaveAsync(PlaybackState state, CancellationToken cancellationToken = default);

@@ -45,7 +45,9 @@ internal static class CssTokenizer
                     result.Append(ReplacementCharacter);
                     break;
                 default:
-                    if (char.IsHighSurrogate(current) && index + 1 < text.Length && char.IsLowSurrogate(text[index + 1]))
+                    if (char.IsHighSurrogate(current)
+                        && index + 1 < text.Length
+                        && char.IsLowSurrogate(text[index + 1]))
                     {
                         result.Append(current).Append(text[index + 1]);
                         index++;

@@ -59,7 +59,8 @@ public class LyricsServiceTests
     public async Task GetAsync_LyricsFile_WinsOverAllOtherSources()
     {
         Track(Row(lyricsFile: "Band/Song.lrc", download: Stored("[00:01.00]Downloaded")));
-        _files.ReadAsync(MediaSource.DefaultId, "Band/Song.lrc", Arg.Any<CancellationToken>()).Returns("[00:01.00]From file");
+        _files.ReadAsync(MediaSource.DefaultId, "Band/Song.lrc", Arg.Any<CancellationToken>()).Returns(
+            "[00:01.00]From file");
         _tags.Read(Arg.Any<string>()).Returns(new TagLyrics([], "From tags"));
 
         LyricsResult result = await _service.GetAsync(_trackId);

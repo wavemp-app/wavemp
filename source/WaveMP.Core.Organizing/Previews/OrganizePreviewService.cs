@@ -150,7 +150,11 @@ internal sealed class OrganizePreviewService(
             items.AddRange(await PlanFolderFilesAsync(planner, cancellationToken));
         }
 
-        OrganizeOperation operation = NewOperation(OrganizeOperationKind.OwnAlbum, operationId, settings.LayoutTemplate, userId);
+        OrganizeOperation operation = NewOperation(
+            OrganizeOperationKind.OwnAlbum,
+            operationId,
+            settings.LayoutTemplate,
+            userId);
         operation.OwnAlbumId = album.Id;
         operation.DisplayTitle = album.Title;
         return await SaveAsync(operation, items, cancellationToken);
@@ -325,8 +329,11 @@ internal sealed class OrganizePreviewService(
             return OrganizePreviewResult.Failed(OrganizePreviewStatus.AlreadyUndone);
         }
 
-        if (original.Kind == OrganizeOperationKind.Undo || original.Status is not (OrganizeOperationStatus.Completed
-            or OrganizeOperationStatus.Stopped or OrganizeOperationStatus.Canceled or OrganizeOperationStatus.Interrupted))
+        if (original.Kind == OrganizeOperationKind.Undo
+            || original.Status is not (OrganizeOperationStatus.Completed
+                or OrganizeOperationStatus.Stopped
+                or OrganizeOperationStatus.Canceled
+                or OrganizeOperationStatus.Interrupted))
         {
             return OrganizePreviewResult.Failed(OrganizePreviewStatus.NotUndoable);
         }

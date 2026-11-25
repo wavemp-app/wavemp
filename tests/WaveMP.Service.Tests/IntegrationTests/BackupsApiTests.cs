@@ -51,7 +51,10 @@ public class BackupsApiTests
     [SetUp]
     public async Task SetUp()
     {
-        await _admin.SendJsonAsync("PATCH", "/api/v1/settings/backup", """{"scheduleTime":"03:00","retentionCount":7}""");
+        await _admin.SendJsonAsync(
+            "PATCH",
+            "/api/v1/settings/backup",
+            """{"scheduleTime":"03:00","retentionCount":7}""");
         if (Directory.Exists(BackupFolder))
         {
             Directory.Delete(BackupFolder, recursive: true);

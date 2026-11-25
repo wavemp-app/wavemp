@@ -1380,7 +1380,12 @@ a[data-part='breadcrumb-link']:hover {
     background: linear-gradient(#ffffff, #f2f4f6);
 }
 
-:is([data-part='cache-usage'], [data-part='transcoding-status'], [data-part='backup-status'], [data-part='library-check-status'])
+:is(
+        [data-part='cache-usage'],
+        [data-part='transcoding-status'],
+        [data-part='backup-status'],
+        [data-part='library-check-status']
+    )
     [data-part='stat-item'] {
     box-shadow: none;
 }

@@ -96,8 +96,14 @@ public class FfprobeOutputParserTests
         const string Json = """
             {
                 "streams": [
-                    { "codec_name": "h264", "codec_type": "video", "width": 1920, "height": 1080, "bit_rate": "4000000", "pix_fmt": "yuv420p10le" },
-                    { "codec_name": "aac", "codec_type": "audio", "sample_rate": "48000", "channels": 6, "bit_rate": "256000" }
+                    {
+                        "codec_name": "h264", "codec_type": "video", "width": 1920, "height": 1080,
+                        "bit_rate": "4000000", "pix_fmt": "yuv420p10le"
+                    },
+                    {
+                        "codec_name": "aac", "codec_type": "audio", "sample_rate": "48000", "channels": 6,
+                        "bit_rate": "256000"
+                    }
                 ],
                 "format": { "format_name": "matroska,webm", "duration": "N/A" }
             }

@@ -133,7 +133,8 @@ public class ArtistPictureRepositoryTests : LibraryDatabaseTests
 
         removal.Should().Be(new ArtistPictureRemoval(online.Id));
         (await StoredAsync()).Should().Equal((uploaded.Id, artist.Id, ArtistPictureKind.Uploaded));
-        (await Repository().RemoveAsync(artist.Id, ArtistPictureKind.Online)).Should().Be(new ArtistPictureRemoval(null));
+        (await Repository().RemoveAsync(artist.Id, ArtistPictureKind.Online)).Should().Be(
+            new ArtistPictureRemoval(null));
         (await Repository().RemoveAsync(Guid.NewGuid(), ArtistPictureKind.Online)).Should().BeNull();
     }
 

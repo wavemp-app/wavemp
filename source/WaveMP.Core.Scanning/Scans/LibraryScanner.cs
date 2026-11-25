@@ -20,18 +20,17 @@ namespace WaveMP.Core.Scanning.Scans;
 /// <summary>
 /// Scans the media sources: forms the albums of sources again whose albums follow older rules (see
 /// <see cref="ScannerVersions.AlbumGrouping"/>) or whose titles were cleaned in another way than the layout template
-/// asks for now (see <see cref="TitleCleaningModes"/>) and cleans up after that, checks ffprobe and the folder of every source
-/// of the scope, walks the folders of the scope, compares them with the library, finds the songs whose folder was
-/// renamed or moved or whose files were renamed within the scan (see <see cref="TrackMovePlanner"/>), reads new and
-/// changed files in parallel, writes every changed folder at once (keeping those songs with their id and all their
-/// data at their new place), removes the vanished songs no folder kept and the folders that are gone and finally
-/// updates album covers, removes artists and albums without tracks and counts the library. A source whose folder is
-/// missing or unreadable, or whose full scan finds no files at all while the library has files of it, is skipped with
-/// an issue and its library stays unchanged, so an unmounted folder never empties the library; if every source of the
-/// scan is skipped, the scan fails. Reading and writing a folder and the clean-up hold the
-/// <see cref="LibraryWriteLock"/>, so other writers wait at most for one folder. The whole run holds the
-/// <see cref="LibraryMaintenanceLock"/>, so it waits for a running organization of the media files and such a run waits
-/// for the scan.
+/// asks for now (see <see cref="TitleCleaningModes"/>) and cleans up after that, checks ffprobe and the folder of every
+/// source of the scope, walks the folders of the scope, compares them with the library, finds the songs whose folder
+/// was renamed or moved or whose files were renamed within the scan (see <see cref="TrackMovePlanner"/>), reads new and
+/// changed files in parallel, writes every changed folder at once (keeping those songs with their id and all their data
+/// at their new place), removes the vanished songs no folder kept and the folders that are gone and finally updates
+/// album covers, removes artists and albums without tracks and counts the library. A source whose folder is missing or
+/// unreadable, or whose full scan finds no files at all while the library has files of it, is skipped with an issue and
+/// its library stays unchanged, so an unmounted folder never empties the library; if every source of the scan is
+/// skipped, the scan fails. Reading and writing a folder and the clean-up hold the <see cref="LibraryWriteLock"/>, so
+/// other writers wait at most for one folder. The whole run holds the <see cref="LibraryMaintenanceLock"/>, so it waits
+/// for a running organization of the media files and such a run waits for the scan.
 /// </summary>
 internal sealed class LibraryScanner(
     ILibraryScanRepository library,
@@ -489,8 +488,8 @@ internal sealed class LibraryScanner(
     /// <see cref="LibraryWriteLock"/>. Then removes albums and artists without tracks, updates album covers and
     /// compilations and only then stores the version: the rest of the scan may fail (e.g. a folder that is not
     /// mounted), and an interrupted run is repeated as a whole by the next scan. The mode is taken once; a change of
-    /// the template during the run leaves the old mode stored, so the next scan forms the folders again. Returns the number of tracks that
-    /// changed.
+    /// the template during the run leaves the old mode stored, so the next scan forms the folders again. Returns the
+    /// number of tracks that changed.
     /// </summary>
     private async Task<int> RegroupAsync(LibrarySettings librarySettings, CancellationToken cancellationToken)
     {

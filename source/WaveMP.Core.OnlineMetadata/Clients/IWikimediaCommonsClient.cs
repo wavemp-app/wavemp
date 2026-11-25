@@ -18,8 +18,8 @@ public interface IWikimediaCommonsClient
 
     /// <summary>
     /// The pictures of files with their thumbnail of the width (smaller originals are not enlarged), size, type and
-    /// license metadata (<c>GET w/api.php?action=query&amp;prop=imageinfo</c>), in the order of the names. Files Commons
-    /// does not know are left out.
+    /// license metadata (<c>GET w/api.php?action=query&amp;prop=imageinfo</c>), in the order of the names. Files
+    /// Commons does not know are left out.
     /// </summary>
     /// <param name="fileNames">Names of the files without <c>File:</c>, at most 50.</param>
     /// <param name="thumbnailWidth"><see cref="PreviewWidth"/> or <see cref="FullWidth"/>.</param>

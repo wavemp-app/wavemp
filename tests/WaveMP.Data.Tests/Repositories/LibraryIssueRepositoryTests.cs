@@ -212,7 +212,11 @@ public class LibraryIssueRepositoryTests : LibraryDatabaseTests
         LibraryIssueChanges changes = await repository.ReplaceAsync(
             [
                 new DetectedLibraryIssue(LibraryIssueType.MissingCover, Guid.NewGuid()),
-                new DetectedLibraryIssue(LibraryIssueType.UnreadableFile, null, Guid.NewGuid(), MediaFileIssue.Unreadable),
+                new DetectedLibraryIssue(
+                    LibraryIssueType.UnreadableFile,
+                    null,
+                    Guid.NewGuid(),
+                    MediaFileIssue.Unreadable),
                 new DetectedLibraryIssue(LibraryIssueType.PossibleDuplicate, track.Id, RelatedTrackId: Guid.NewGuid()),
             ],
             1,

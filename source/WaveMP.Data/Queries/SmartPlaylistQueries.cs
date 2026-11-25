@@ -127,7 +127,8 @@ internal static class SmartPlaylistQueries
                     .FirstOrDefault() ?? 0),
                 rule),
             SmartPlaylistField.PlayCount => Range(
-                track => (int?)dbContext.PlayHistory.Count(entry => entry.UserId == userId && entry.TrackId == track.Id),
+                track => (int?)dbContext.PlayHistory.Count(
+                    entry => entry.UserId == userId && entry.TrackId == track.Id),
                 rule),
             SmartPlaylistField.Duration => Duration(rule),
             SmartPlaylistField.LastPlayed => Within(
@@ -293,7 +294,9 @@ internal static class SmartPlaylistQueries
 
     private static ArgumentException UnsupportedOperator(SmartPlaylistRule rule)
     {
-        return new ArgumentException($"The operator {rule.Operator} does not fit the field {rule.Field}.", nameof(rule));
+        return new ArgumentException(
+            $"The operator {rule.Operator} does not fit the field {rule.Field}.",
+            nameof(rule));
     }
 
     /// <summary>

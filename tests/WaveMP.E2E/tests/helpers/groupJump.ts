@@ -17,7 +17,8 @@ export function openOverview(page: Page): Locator {
 /** The heading button of the group that starts at the position (list-group or tile-group). */
 export function groupHeading(page: Page, position: number): Locator {
     return page.locator(
-        `[data-part='app'] :is([data-part='list-group'], [data-part='tile-group'])[data-position='${position}'] [data-part='btn-group-jump']`,
+        `[data-part='app'] :is([data-part='list-group'], [data-part='tile-group'])[data-position='${position}'] ` +
+            `[data-part='btn-group-jump']`,
     )
 }
 

@@ -246,7 +246,9 @@ public sealed class OnlineMetadataController(
             OnlineApplyError.Disabled => this.Problem(ProblemCodeDto.LookupDisabled, StatusCodes.Status409Conflict),
             OnlineApplyError.AlbumNotFound => this.Problem(ProblemCodeDto.AlbumNotFound, StatusCodes.Status404NotFound),
             OnlineApplyError.NoAudio => this.Problem(ProblemCodeDto.TrackNoAudio, StatusCodes.Status409Conflict),
-            OnlineApplyError.NotWritable => this.Problem(ProblemCodeDto.TrackNotWritable, StatusCodes.Status409Conflict),
+            OnlineApplyError.NotWritable => this.Problem(
+                ProblemCodeDto.TrackNotWritable,
+                StatusCodes.Status409Conflict),
             OnlineApplyError.CoverNotFound =>
                 this.Problem(ProblemCodeDto.LookupCoverNotFound, StatusCodes.Status404NotFound),
             OnlineApplyError.Unavailable =>

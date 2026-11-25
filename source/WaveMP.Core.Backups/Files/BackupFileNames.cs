@@ -108,7 +108,8 @@ public static partial class BackupFileNames
     }
 
     [GeneratedRegex(
-        "^wavemp-(?<time>[0-9]{8}T[0-9]{6}Z)-(?<trigger>schedule|manual|migration)(?:-(?<sequence>[2-9]|[1-9][0-9]{1,2}))?$",
+        "^wavemp-(?<time>[0-9]{8}T[0-9]{6}Z)-(?<trigger>schedule|manual|migration)"
+            + "(?:-(?<sequence>[2-9]|[1-9][0-9]{1,2}))?$",
         RegexOptions.CultureInvariant)]
     private static partial Regex IdPattern();
 }

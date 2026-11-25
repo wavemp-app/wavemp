@@ -6,11 +6,11 @@ namespace WaveMP.Core.Themes.Stylesheets;
 /// <summary>
 /// Checks the CSS file of an uploaded theme and rewrites its addresses. A theme only uses its own files: every
 /// address is a path relative to the CSS file that names a picture or a font of the package (in any spelling a browser
-/// accepts: <c>url(a.svg)</c>, <c>url("a.svg")</c>, escapes, <c>src()</c>, <c>image-set()</c>). External addresses (any scheme,
-/// including <c>data:</c>, and <c>//</c>), root-absolute paths, <c>@import</c>, <c>@layer</c> and at-rules outside the
-/// list below are rejected. Each address is replaced by <c>url("...")</c> with the root-absolute address of the
-/// installed file, so it also works where the theme puts it into a CSS variable that the base styles use (a relative
-/// address there would be resolved against the base styles).
+/// accepts: <c>url(a.svg)</c>, <c>url("a.svg")</c>, escapes, <c>src()</c>, <c>image-set()</c>). External addresses (any
+/// scheme, including <c>data:</c>, and <c>//</c>), root-absolute paths, <c>@import</c>, <c>@layer</c> and at-rules
+/// outside the list below are rejected. Each address is replaced by <c>url("...")</c> with the root-absolute address of
+/// the installed file, so it also works where the theme puts it into a CSS variable that the base styles use (a
+/// relative address there would be resolved against the base styles).
 /// </summary>
 internal static class ThemeStylesheet
 {
@@ -47,7 +47,9 @@ internal static class ThemeStylesheet
         "historical-forms",
     };
 
-    private static readonly UTF8Encoding _strictUtf8 = new(encoderShouldEmitUTF8Identifier: false, throwOnInvalidBytes: true);
+    private static readonly UTF8Encoding _strictUtf8 = new(
+        encoderShouldEmitUTF8Identifier: false,
+        throwOnInvalidBytes: true);
 
     /// <summary>
     /// Checks the CSS file at <paramref name="path"/> and returns it with rewritten addresses, or <c>null</c> with the

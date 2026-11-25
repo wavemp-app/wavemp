@@ -270,7 +270,14 @@ public class LibraryScannerTests
         await using WaveMpDbContext db = _database.CreateDbContext();
         Track embedded = await LoadTrackAsync(db, "EMBEDDED");
         embedded.Covers.Should().ContainSingle().Which.Should().BeEquivalentTo(
-            new { Source = CoverSource.Embedded, Width = 120, Height = 120, MimeType = "image/jpeg", IsPrimary = true });
+            new
+            {
+                Source = CoverSource.Embedded,
+                Width = 120,
+                Height = 120,
+                MimeType = "image/jpeg",
+                IsPrimary = true,
+            });
         Track both = await LoadTrackAsync(db, "BOTH");
         both.Covers.OrderByDescending(cover => cover.IsPrimary).Select(cover => cover.Source)
             .Should().Equal(CoverSource.File, CoverSource.Embedded);
@@ -2028,7 +2035,9 @@ public class LibraryScannerTests
     public async Task Scan_SourceWithAMissingFolder_IsSkippedWithAnIssueAndTheOthersAreScanned()
     {
         await AudioAsync("Song.mp3");
-        MediaSource missing = await AddSourceAsync("Gone", _media.Combine("../missing-" + Guid.NewGuid().ToString("N")));
+        MediaSource missing = await AddSourceAsync(
+            "Gone",
+            _media.Combine("../missing-" + Guid.NewGuid().ToString("N")));
 
         ScanResult result = await ScanAsync();
 
@@ -2303,7 +2312,8 @@ public class LibraryScannerTests
             newId = renamed.Id;
             (renamed.Tracks.Count, renamed.CoverPriority).Should().Be((1, (CoverPriority?)null));
             Album old = await LoadAlbumAsync(db, "Old Name");
-            (old.Id, old.Tracks.Count, old.CoverPriority).Should().Be((oldId, 1, (CoverPriority?)CoverPriority.TrackFirst));
+            (old.Id, old.Tracks.Count, old.CoverPriority).Should().Be(
+                (oldId, 1, (CoverPriority?)CoverPriority.TrackFirst));
             (await FavoritesAsync(db, data)).Select(favorite => favorite.AlbumId).Should().Equal(oldId, oldId);
             (await db.OnlineCovers.Select(cover => cover.AlbumId).ToListAsync()).Should().Equal(oldId);
             (await db.AlbumMoves.Select(move => new { move.FromAlbumId, move.ToAlbumId, move.TrackCount })
@@ -2826,8 +2836,8 @@ public class LibraryScannerTests
     }
 
     /// <summary>
-    /// Expects all data of <see cref="GiveSongDataAsync"/> on the song, which lies in <paramref name="folder"/> with the
-    /// base name <paramref name="baseName"/> now, every song with its id, no file left at its old place, and a scan
+    /// Expects all data of <see cref="GiveSongDataAsync"/> on the song, which lies in <paramref name="folder"/> with
+    /// the base name <paramref name="baseName"/> now, every song with its id, no file left at its old place, and a scan
     /// that neither added nor removed a song. The song <c>Other</c> lies in <paramref name="otherFolder"/>, if given.
     /// </summary>
     private async Task ExpectSongDataAsync(
@@ -2855,7 +2865,8 @@ public class LibraryScannerTests
             (song.DirectoryPath, song.BaseName).Should().Be((folder, baseName));
             song.FirstSeenAt.Should().Be(_day.AddDays(-10));
             (song.ReviewedAt, song.ReviewedByUserId).Should().Be(((DateTimeOffset?)_day, (Guid?)data.First.Id));
-            (song.CoverPriority, song.VideoOffsetMilliseconds).Should().Be(((CoverPriority?)CoverPriority.TrackFirst, 250));
+            (song.CoverPriority, song.VideoOffsetMilliseconds).Should().Be(
+                ((CoverPriority?)CoverPriority.TrackFirst, 250));
             song.Files.Select(file => (file.RelativePath, file.IsPrimary)).Should().BeEquivalentTo([
                 ($"{folder}/{baseName}.mp3", true),
                 ($"{folder}/{baseName}.flac", false),
@@ -2865,7 +2876,12 @@ public class LibraryScannerTests
             MediaFile? picture = song.Files.SingleOrDefault(file => file.Extension == "jpg");
             mp3?.Id.Should().Be(data.Mp3FileId);
             song.FileSelections
-                .Select(selection => (selection.Category, selection.MediaFileId, selection.RelativePath, selection.IsMissing))
+                .Select(
+                    selection => (
+                        selection.Category,
+                        selection.MediaFileId,
+                        selection.RelativePath,
+                        selection.IsMissing))
                 .Should().BeEquivalentTo([
                     (FileSelectionCategory.Audio, mp3?.Id ?? Guid.Empty, mp3?.RelativePath, false),
                     (FileSelectionCategory.Cover, picture?.Id ?? Guid.Empty, picture?.RelativePath, false),
@@ -3239,7 +3255,9 @@ public class LibraryScannerTests
 
     private Task VideoAsync(string relativePath, int width, int height)
     {
-        VideoFormat format = relativePath.EndsWith(".mkv", StringComparison.Ordinal) ? VideoFormat.Mkv : VideoFormat.Mp4;
+        VideoFormat format = relativePath.EndsWith(".mkv", StringComparison.Ordinal)
+            ? VideoFormat.Mkv
+            : VideoFormat.Mp4;
         return TestMediaGenerator.CreateVideoAsync(_media.Combine(relativePath), format, width, height);
     }
 

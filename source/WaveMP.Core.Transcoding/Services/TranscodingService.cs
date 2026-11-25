@@ -117,7 +117,10 @@ internal sealed class TranscodingService(
             ? []
             : await tracks.ListByIdsAsync(trackIds, userId, cancellationToken);
         var byId = rows.ToDictionary(row => row.Id);
-        List<TranscodeJobItem> items = [.. page.Select(job => new TranscodeJobItem(job, byId.GetValueOrDefault(job.TrackId)))];
+        List<TranscodeJobItem> items =
+        [
+            .. page.Select(job => new TranscodeJobItem(job, byId.GetValueOrDefault(job.TrackId))),
+        ];
         return new Page<TranscodeJobItem>(items, offset, limit, jobs.Count);
     }
 

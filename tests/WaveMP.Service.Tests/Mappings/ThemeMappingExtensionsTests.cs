@@ -82,7 +82,12 @@ public partial class ThemeMappingExtensionsTests
             InstalledAt = DateTimeOffset.UnixEpoch,
             Problems =
             [
-                new ThemeError(ThemeErrorCode.UnsupportedApiVersion, "manifest.json", Field: "themeApi", Min: 5, Max: 5),
+                new ThemeError(
+                    ThemeErrorCode.UnsupportedApiVersion,
+                    "manifest.json",
+                    Field: "themeApi",
+                    Min: 5,
+                    Max: 5),
                 new ThemeError(ThemeErrorCode.StylesheetLayer, "theme.css", Line: 3),
             ],
         };
@@ -113,7 +118,12 @@ public partial class ThemeMappingExtensionsTests
             InstalledAt = DateTimeOffset.UnixEpoch,
             Problems =
             [
-                new ThemeError(ThemeErrorCode.UnsupportedApiVersion, "manifest.json", Field: "themeApi", Min: 5, Max: 5),
+                new ThemeError(
+                    ThemeErrorCode.UnsupportedApiVersion,
+                    "manifest.json",
+                    Field: "themeApi",
+                    Min: 5,
+                    Max: 5),
                 new ThemeError(ThemeErrorCode.SvgNotCleaned, "images/glass.svg"),
             ],
         };
@@ -149,7 +159,8 @@ public partial class ThemeMappingExtensionsTests
         ThemeError error = new(ThemeErrorCode.UnsupportedApiVersion, "manifest.json", 3, "themeApi", null, 5, 6);
 
         JsonSerializer.Serialize(error.ToDto()).Should().Be(
-            """{"Code":"manifest.unsupported_api_version","Path":"manifest.json","Line":3,"Field":"themeApi","Min":5,"Max":6}""");
+            """{"Code":"manifest.unsupported_api_version","Path":"manifest.json","Line":"""
+                + """3,"Field":"themeApi","Min":5,"Max":6}""");
     }
 
     [GeneratedRegex(@"\A[a-z]+\.[a-z_]+\z")]

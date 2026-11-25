@@ -62,7 +62,9 @@ public class SmartPlaylistsApiTests
     public async Task SmartPlaylists_WithoutToken_ReturnUnauthorized()
     {
         HttpResponseMessage listed = await _anonymous.GetAsync(Path);
-        HttpResponseMessage created = await _anonymous.PostAsJsonAsync(Path, new { name = "Mix", rules = Array.Empty<object>() });
+        HttpResponseMessage created = await _anonymous.PostAsJsonAsync(
+            Path,
+            new { name = "Mix", rules = Array.Empty<object>() });
         HttpResponseMessage tracks = await _anonymous.GetAsync($"{Path}/{Guid.NewGuid()}/tracks");
         HttpResponseMessage converted = await _anonymous.PostAsync($"{Path}/{Guid.NewGuid()}/conversions", null);
         HttpResponseMessage templates = await _anonymous.GetAsync("/api/v1/smart-playlist-templates");
@@ -82,7 +84,8 @@ public class SmartPlaylistsApiTests
         PageDto<SmartPlaylistTemplateDto> page =
             await client.GetJsonAsync<PageDto<SmartPlaylistTemplateDto>>("/api/v1/smart-playlist-templates");
         PageDto<SmartPlaylistTemplateDto> second =
-            await client.GetJsonAsync<PageDto<SmartPlaylistTemplateDto>>("/api/v1/smart-playlist-templates?offset=1&limit=1");
+            await client.GetJsonAsync<PageDto<SmartPlaylistTemplateDto>>(
+                "/api/v1/smart-playlist-templates?offset=1&limit=1");
 
         page.Total.Should().Be(5);
         page.Items.Select(template => template.Id).Should().Equal(
@@ -141,7 +144,9 @@ public class SmartPlaylistsApiTests
     {
         using HttpClient client = await CreateProfileAsync();
 
-        SmartPlaylistDto playlist = await CreateAsync(client, new { name = "Everything", rules = Array.Empty<object>() });
+        SmartPlaylistDto playlist = await CreateAsync(
+            client,
+            new { name = "Everything", rules = Array.Empty<object>() });
 
         playlist.Match.Should().Be(SmartPlaylistMatchDto.All);
         playlist.Sort.Should().Be(SmartPlaylistTrackSortDto.Artist);
@@ -235,7 +240,10 @@ public class SmartPlaylistsApiTests
     [TestCase("{\"name\":\"   \",\"rules\":[]}", "name", ValidationErrorCodeDto.Required)]
     [TestCase("{\"name\":\"Mix\"}", "rules", ValidationErrorCodeDto.Required)]
     [TestCase("{\"name\":\"Mix\",\"rules\":[],\"limit\":0}", "limit", ValidationErrorCodeDto.OutOfRange)]
-    [TestCase("{\"name\":\"Mix\",\"rules\":[{\"operator\":\"IsTrue\"}]}", "rules[0].field", ValidationErrorCodeDto.Required)]
+    [TestCase(
+        "{\"name\":\"Mix\",\"rules\":[{\"operator\":\"IsTrue\"}]}",
+        "rules[0].field",
+        ValidationErrorCodeDto.Required)]
     public async Task CreateMySmartPlaylist_InvalidRequest_ReturnsTheField(
         string body,
         string field,
@@ -367,7 +375,8 @@ public class SmartPlaylistsApiTests
         HttpResponseMessage response = await client.PostAsync($"{Path}/{smart.Id}/conversions", null);
 
         response.StatusCode.Should().Be(HttpStatusCode.Created, await response.Content.ReadAsStringAsync());
-        PlaylistDto playlist = (await response.Content.ReadFromJsonAsync<PlaylistDto>(HttpClientExtensions.JsonOptions))!;
+        PlaylistDto playlist =
+            (await response.Content.ReadFromJsonAsync<PlaylistDto>(HttpClientExtensions.JsonOptions))!;
         response.Headers.Location!.AbsolutePath.Should().Be($"/api/v1/me/playlists/{playlist.Id}");
         playlist.Name.Should().Be("Pop Picks");
         playlist.TrackCount.Should().Be(2);

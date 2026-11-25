@@ -105,8 +105,14 @@ public static class OrganizeTags
                 {
                     AlbumArtists = new TagChange<IReadOnlyList<string>>([.. values.AlbumArtists]),
                 },
-                OrganizeTagField.TrackNumber => changes with { TrackNumber = new TagChange<int?>(Positive(values.TrackNumber)) },
-                OrganizeTagField.TrackCount => changes with { TrackCount = new TagChange<int?>(Positive(values.TrackCount)) },
+                OrganizeTagField.TrackNumber => changes with
+                {
+                    TrackNumber = new TagChange<int?>(Positive(values.TrackNumber)),
+                },
+                OrganizeTagField.TrackCount => changes with
+                {
+                    TrackCount = new TagChange<int?>(Positive(values.TrackCount)),
+                },
                 OrganizeTagField.DiscNumber => changes with
                 {
                     DiscNumber = new TagChange<int?>(Positive(values.DiscNumber)),
@@ -148,7 +154,10 @@ public static class OrganizeTags
                 OrganizeTagField.TrackCount => result with { TrackCount = Positive(changes.TrackCount) },
                 OrganizeTagField.DiscNumber => result with { DiscNumber = Positive(changes.DiscNumber) },
                 OrganizeTagField.Year => result with { Year = Positive(changes.Year) },
-                OrganizeTagField.Genre => result with { Genre = MetadataText.Normalize(changes.Genres.FirstOrDefault()) },
+                OrganizeTagField.Genre => result with
+                {
+                    Genre = MetadataText.Normalize(changes.Genres.FirstOrDefault()),
+                },
                 _ => result,
             };
         }

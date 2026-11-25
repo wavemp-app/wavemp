@@ -135,7 +135,8 @@ internal sealed class CssScan
             int end = SkipWhitespace(tokens, index + 1);
             if (end < tokens.Count && tokens[end].Type == CssTokenType.CloseParenthesis)
             {
-                References.Add(new CssReference(value.Value, function.Start, tokens[end].End, function.Line, IsString: false));
+                References.Add(
+                    new CssReference(value.Value, function.Start, tokens[end].End, function.Line, IsString: false));
                 return end;
             }
         }
@@ -180,7 +181,8 @@ internal sealed class CssScan
 /// An address in a style sheet.
 /// </summary>
 /// <param name="Value">The address with all escapes resolved.</param>
-/// <param name="Start">Start of the text that stands for the address (the whole <c>url(...)</c>, or the string).</param>
+/// <param name="Start">Start of the text that stands for the address (the whole <c>url(...)</c>, or the
+/// string).</param>
 /// <param name="End">End of that text.</param>
 /// <param name="Line">Line of the address.</param>
 /// <param name="IsString">Whether the text is a string (in <c>image-set()</c>), not a <c>url(...)</c>.</param>

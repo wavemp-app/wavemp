@@ -916,7 +916,10 @@ a[data-part='breadcrumb-link']:hover {
     color: #ffffff;
 }
 
-:is([data-part='btn-preset-picker'], [data-part='btn-color-scheme-picker']):is(:hover, [aria-expanded='true']):not(:disabled) {
+:is(
+        [data-part='btn-preset-picker'],
+        [data-part='btn-color-scheme-picker']
+    ):is(:hover, [aria-expanded='true']):not(:disabled) {
     background: rgb(0 18 70 / 65%);
 }
 

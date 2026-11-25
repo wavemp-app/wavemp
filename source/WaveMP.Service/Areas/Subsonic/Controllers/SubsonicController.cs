@@ -70,7 +70,9 @@ public sealed class SubsonicController(
         if (authentication.User is not { } user)
         {
             logger.LogDebug("Subsonic sign-in failed with error {Code}", authentication.Error);
-            return Answer(SubsonicResponse.Failed(authentication.Error ?? SubsonicErrorCode.WrongCredentials), parameters);
+            return Answer(
+                SubsonicResponse.Failed(authentication.Error ?? SubsonicErrorCode.WrongCredentials),
+                parameters);
         }
 
         switch (name.ToLowerInvariant())

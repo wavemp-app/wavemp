@@ -161,7 +161,12 @@ public static class SmartPlaylistRules
         return new SmartPlaylistValidation(
             errors,
             name,
-            new SmartPlaylistCriteria(definition.Match, rules, definition.Sort, definition.Direction, definition.Limit));
+            new SmartPlaylistCriteria(
+                definition.Match,
+                rules,
+                definition.Sort,
+                definition.Direction,
+                definition.Limit));
     }
 
     private static SmartPlaylistRule? Normalize(SmartPlaylistRule? rule, string path, List<SmartPlaylistError> errors)

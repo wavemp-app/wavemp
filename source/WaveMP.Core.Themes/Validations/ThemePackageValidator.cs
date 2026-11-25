@@ -92,7 +92,12 @@ public static class ThemePackageValidator
         string themeId = (installed ? expectedId : manifest?.Id) ?? PlaceholderId;
         Dictionary<string, ValidatedThemeFile> files = CheckFiles(package, installed, errors);
         CheckPreviews(manifest, package, errors);
-        (string Path, ValidatedThemeFile File)? stylesheet = CheckStylesheet(package, themeId, installed, files, errors);
+        (string Path, ValidatedThemeFile File)? stylesheet = CheckStylesheet(
+            package,
+            themeId,
+            installed,
+            files,
+            errors);
 
         if (errors.Count > 0 || manifest is null || stylesheet is not { } css)
         {

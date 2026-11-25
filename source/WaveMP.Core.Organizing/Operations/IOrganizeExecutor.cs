@@ -7,7 +7,8 @@ namespace WaveMP.Core.Organizing.Operations;
 /// checks the item against disk and library again, writes its journal, writes the tags into the audio file (after a
 /// backup), moves the files without ever replacing one and records the new place, so the songs keep their ids. A
 /// failing item is put back and stops the run; a cancel request stops it between two items. The whole run holds the
-/// <see cref="Scanning.Writers.LibraryMaintenanceLock"/>, each item the <see cref="Scanning.Writers.LibraryWriteLock"/>.
+/// <see cref="Scanning.Writers.LibraryMaintenanceLock"/>, each item the
+/// <see cref="Scanning.Writers.LibraryWriteLock"/>.
 /// </summary>
 public interface IOrganizeExecutor
 {

@@ -62,8 +62,8 @@ public sealed class TrackVideoPlaybackDto
 
     /// <summary>
     /// Signed, short-lived URL of the stream (path with query, relative to the server), for players that cannot send
-    /// the session token: the file for direct play, the HLS master playlist for transcoding. Null if the video has to be
-    /// transcoded and transcoding is unavailable. It stays valid until expiresAt and while the session is active.
+    /// the session token: the file for direct play, the HLS master playlist for transcoding. Null if the video has to
+    /// be transcoded and transcoding is unavailable. It stays valid until expiresAt and while the session is active.
     /// </summary>
     public string? StreamUrl { get; init; }
 

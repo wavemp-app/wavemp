@@ -54,8 +54,8 @@ public static class ServiceCollectionExtensions
     /// </summary>
     /// <remarks>
     /// Request bodies of the controllers ignore the C# keyword <c>required</c>: a missing member stays at its default
-    /// and its data annotation (<c>[Required]</c>) reports it as <c>required</c> under its own field. The serializer would
-    /// only reject the body as a whole. The OpenAPI document still describes these members as required.
+    /// and its data annotation (<c>[Required]</c>) reports it as <c>required</c> under its own field. The serializer
+    /// would only reject the body as a whole. The OpenAPI document still describes these members as required.
     /// </remarks>
     public static IServiceCollection AddWaveMpJson(this IServiceCollection services)
     {
@@ -116,8 +116,8 @@ public static class ServiceCollectionExtensions
     /// <see cref="JwtTokenIssuer"/>) is authenticated while its session is active, the policy
     /// <see cref="AuthorizationPolicies.Admin"/> for admin endpoints and the policy
     /// <see cref="AuthorizationPolicies.Media"/> for media endpoints, which also accept signed media URLs (see
-    /// <see cref="MediaSignatureAuthenticationHandler"/>), together with the CORS policy of these endpoints. The signing
-    /// key is loaded on start by <see cref="SigningKeyStore.InitializeAsync"/>.
+    /// <see cref="MediaSignatureAuthenticationHandler"/>), together with the CORS policy of these endpoints. The
+    /// signing key is loaded on start by <see cref="SigningKeyStore.InitializeAsync"/>.
     /// </summary>
     public static IServiceCollection AddWaveMpAuthentication(this IServiceCollection services)
     {

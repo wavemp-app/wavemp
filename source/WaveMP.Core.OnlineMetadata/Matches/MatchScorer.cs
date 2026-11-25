@@ -121,7 +121,9 @@ public static class MatchScorer
 
         StringBuilder builder = new(text.Length);
         bool space = false;
-        foreach (char character in text.Replace("&", " and ", StringComparison.Ordinal).Normalize(NormalizationForm.FormD))
+        foreach (char character in text
+            .Replace("&", " and ", StringComparison.Ordinal)
+            .Normalize(NormalizationForm.FormD))
         {
             if (CharUnicodeInfo.GetUnicodeCategory(character) == UnicodeCategory.NonSpacingMark)
             {
@@ -157,7 +159,9 @@ public static class MatchScorer
         double weights = parts.Sum(part => part.Weight);
         return weights <= 0
             ? 0
-            : (int)Math.Round(100 * parts.Sum(part => part.Weight * part.Value) / weights, MidpointRounding.AwayFromZero);
+            : (int)Math.Round(
+                100 * parts.Sum(part => part.Weight * part.Value) / weights,
+                MidpointRounding.AwayFromZero);
     }
 
     /// <summary>

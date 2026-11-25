@@ -276,7 +276,8 @@ public class CastingApiTests
 
         // The browser blocks the request, because the answer does not allow the Authorization header.
         response.Headers.TryGetValues("Access-Control-Allow-Headers", out IEnumerable<string>? allowed);
-        (allowed ?? []).Should().NotContain(value => value.Contains("authorization", StringComparison.OrdinalIgnoreCase));
+        (allowed ?? []).Should().NotContain(
+            value => value.Contains("authorization", StringComparison.OrdinalIgnoreCase));
     }
 
     [Test]

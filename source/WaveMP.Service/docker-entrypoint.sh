@@ -100,5 +100,6 @@ if (
     exec su-exec wavemp "$@"
 fi
 
-log "Could not write /etc/passwd and /etc/group; WaveMP runs as user $uid and group $gid without the supplementary groups $groups."
+log "Could not write /etc/passwd and /etc/group; WaveMP runs as user $uid and group $gid" \
+    "without the supplementary groups $groups."
 exec su-exec "$uid:$gid" "$@"

@@ -1,5 +1,6 @@
 // The camera of A-Force. The camera slowly orbits the scene, sways with the mids and jumps towards
-// the scene on a beat; the mode sets how far it looks down. The matrices to draw with it are the shared ones of the visualizations. Pure.
+// the scene on a beat; the mode sets how far it looks down. The matrices to draw with it are the shared ones of the
+// visualizations. Pure.
 
 import type { Vec3 } from '../../matrices'
 

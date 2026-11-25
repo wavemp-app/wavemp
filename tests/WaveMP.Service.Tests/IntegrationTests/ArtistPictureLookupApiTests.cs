@@ -24,7 +24,8 @@ public class ArtistPictureLookupApiTests
     private const string MusicBrainz = "https://musicbrainz.org/ws/2/artist";
     private const string Wikidata = "https://www.wikidata.org/w/api.php?action=wbgetentities&ids=Q4242";
     private const string Commons = "https://commons.wikimedia.org/w/api.php?";
-    private const string PreviewUrl = "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ab/Band.png/500px-Band.png";
+    private const string PreviewUrl =
+        "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ab/Band.png/500px-Band.png";
     private const string FullUrl = "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ab/Band.png/1280px-Band.png";
     private const string FullTarget = "https://upload.wikimedia.org/wikipedia/commons/a/ab/Band.png";
     private const string FanartThumb = "https://assets.fanart.tv/fanart/music/x/artistthumb/band.png";
@@ -102,7 +103,8 @@ public class ArtistPictureLookupApiTests
             .SetArgDisplayNames("ListArtistPictureCandidates");
         yield return new TestCaseData("GET", $"{path}/online-picture-candidates/{candidate}/preview")
             .SetArgDisplayNames("GetArtistPictureCandidatePreview");
-        yield return new TestCaseData("PUT", $"{path}/online-picture").SetArgDisplayNames("TakeOverArtistOnlinePicture");
+        yield return new TestCaseData("PUT", $"{path}/online-picture").SetArgDisplayNames(
+            "TakeOverArtistOnlinePicture");
     }
 
     [TestCaseSource(nameof(LookupEndpoints))]
@@ -136,7 +138,10 @@ public class ArtistPictureLookupApiTests
             await _admin.GetAsync($"{path}/musicbrainz-matches"),
             await _admin.GetAsync($"{path}/online-picture-candidates?musicBrainzArtistId={_musicBrainzId}"),
             await _admin.GetAsync($"{path}/online-picture-candidates/{new string('a', 32)}/preview"),
-            await _admin.SendJsonAsync("PUT", $"{path}/online-picture", $$"""{ "candidateId": "{{new string('a', 32)}}" }"""),
+            await _admin.SendJsonAsync(
+                "PUT",
+                $"{path}/online-picture",
+                $$"""{ "candidateId": "{{new string('a', 32)}}" }"""),
         ];
 
         foreach (HttpResponseMessage response in responses)
@@ -178,7 +183,8 @@ public class ArtistPictureLookupApiTests
             Total = 1,
         });
         SimulatedRequest request = Web.Requests.Should().ContainSingle().Subject;
-        request.Url.AbsoluteUri.Should().StartWith(MusicBrainz + "?query=artist%3A%22Lookup%20Band%22&fmt=json&limit=5");
+        request.Url.AbsoluteUri.Should().StartWith(
+            MusicBrainz + "?query=artist%3A%22Lookup%20Band%22&fmt=json&limit=5");
         request.Headers["User-Agent"].Should().MatchRegex(@"^WaveMP/\S+ \( https://github\.com/wavemp-app/wavemp \)$");
         request.Headers["User-Agent"].Should().NotContain("@");
     }
@@ -350,8 +356,12 @@ public class ArtistPictureLookupApiTests
 
     [TestCase("""{ "candidateId": "../../etc/passwd" }""", "candidateId")]
     [TestCase("""{ }""", "candidateId")]
-    [TestCase("""{ "candidateId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "crop": { "x": 1.5, "y": 0, "size": 1 } }""", "crop.x")]
-    [TestCase("""{ "candidateId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "crop": { "x": 0, "y": 0, "size": 0 } }""", "crop.size")]
+    [TestCase(
+        """{ "candidateId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "crop": { "x": 1.5, "y": 0, "size": 1 } }""",
+        "crop.x")]
+    [TestCase(
+        """{ "candidateId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "crop": { "x": 0, "y": 0, "size": 0 } }""",
+        "crop.size")]
     public async Task TakeOverArtistOnlinePicture_InvalidRequest_IsValidationProblemWithoutRequest(
         string body,
         string field)
@@ -385,11 +395,13 @@ public class ArtistPictureLookupApiTests
                     && url.AbsoluteUri.Contains("Silent", StringComparison.Ordinal),
                 _ => new HttpResponseMessage(HttpStatusCode.InternalServerError))
             .OnJson($"{MusicBrainz}/{_musicBrainzId}?inc=url-rels", """
-                { "relations": [ { "type": "wikidata", "url": { "resource": "https://www.wikidata.org/wiki/Q4242" } } ] }
+                { "relations": [
+                  { "type": "wikidata", "url": { "resource": "https://www.wikidata.org/wiki/Q4242" } } ] }
                 """)
             .OnJson(Wikidata, """
                 { "entities": { "Q4242": { "claims": { "P18": [ { "rank": "normal",
-                  "mainsnak": { "snaktype": "value", "datavalue": { "value": "Band.png", "type": "string" } } } ] } } } }
+                  "mainsnak": { "snaktype": "value",
+                    "datavalue": { "value": "Band.png", "type": "string" } } } ] } } } }
                 """)
             .OnJson(Commons, ImageInfo(PreviewUrl))
             .On(
@@ -418,7 +430,10 @@ public class ArtistPictureLookupApiTests
                 "descriptionurl": "https://commons.wikimedia.org/wiki/File:Band.png",
                 "width": 600, "height": 400, "mime": "image/png",
                 "extmetadata": {
-                  "Artist": { "value": "<a href=\"//commons.wikimedia.org/wiki/User:Jane\">Jane <b>Doe</b></a><script>alert(1)</script>" },
+                  "Artist": {
+                    "value":
+                      "<a href=\"//commons.wikimedia.org/wiki/User:Jane\">Jane <b>Doe</b></a><script>alert(1)</script>"
+                  },
                   "LicenseShortName": { "value": "CC BY-SA 4.0" },
                   "LicenseUrl": { "value": "javascript:alert(document.cookie)" }
                 } } ] } ] }

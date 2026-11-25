@@ -38,12 +38,28 @@ public class SubsonicApiTests
         await TestMediaGenerator.CreateAudioAsync(
             _media.Combine("Alpha/One/First.mp3"),
             AudioFormat.Mp3,
-            new TestTags { Title = "First", Artist = "Alpha", Album = "One", Genre = "Rock", Date = "2001", Track = "1" },
+            new TestTags
+            {
+                Title = "First",
+                Artist = "Alpha",
+                Album = "One",
+                Genre = "Rock",
+                Date = "2001",
+                Track = "1",
+            },
             durationSeconds: 3);
         await TestMediaGenerator.CreateAudioAsync(
             _media.Combine("Alpha/One/Second.flac"),
             AudioFormat.Flac,
-            new TestTags { Title = "Second", Artist = "Alpha", Album = "One", Genre = "Rock", Date = "2001", Track = "2" },
+            new TestTags
+            {
+                Title = "Second",
+                Artist = "Alpha",
+                Album = "One",
+                Genre = "Rock",
+                Date = "2001",
+                Track = "2",
+            },
             durationSeconds: 3);
         await TestMediaGenerator.CreateImageAsync(_media.Combine("Alpha/One/cover.jpg"), 64, 64);
         await TestMediaGenerator.CreateAudioAsync(
@@ -558,7 +574,9 @@ public class SubsonicApiTests
     public async Task SmartPlaylists_AreListedAsReadOnlyPlaylistsWithTheirSongsOfRightNow()
     {
         SubsonicProfile profile = await CreateProfileAsync();
-        string normal = (await JsonAsync("createPlaylist", $"{profile.PasswordAuth}&name=Road&songId={Track("Third").Id}"))
+        string normal = (await JsonAsync(
+                "createPlaylist",
+                $"{profile.PasswordAuth}&name=Road&songId={Track("Third").Id}"))
             .GetProperty("playlist").GetProperty("id").GetString()!;
         HttpResponseMessage response = await profile.Client.PostAsJsonAsync("/api/v1/me/smart-playlists", new
         {
@@ -583,7 +601,8 @@ public class SubsonicApiTests
         playlists.Elements(_ns + "playlist").First().Attribute("readonly")!.Value.Should().Be("false");
 
         // The songs are those of the smart playlist in the REST API, in its order.
-        JsonElement playlist = (await JsonAsync("getPlaylist", $"{profile.PasswordAuth}&id={id}")).GetProperty("playlist");
+        JsonElement playlist = (await JsonAsync("getPlaylist", $"{profile.PasswordAuth}&id={id}")).GetProperty(
+            "playlist");
         PageDto<TrackDto> tracks =
             await profile.Client.GetJsonAsync<PageDto<TrackDto>>($"/api/v1/me/smart-playlists/{smart.Id}/tracks");
         playlist.GetProperty("id").GetString().Should().Be(id);

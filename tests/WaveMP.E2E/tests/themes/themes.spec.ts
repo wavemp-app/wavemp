@@ -55,7 +55,8 @@ for (const target of shippedThemeTargets()) {
                     expect
                         .soft(
                             contrast.failures,
-                            `Contrast of ${targetKey(target)} on ${view.name}:\n${formatContrastFailures(contrast.failures)}`,
+                            `Contrast of ${targetKey(target)} on ${view.name}:\n` +
+                                formatContrastFailures(contrast.failures),
                         )
                         .toEqual([])
 

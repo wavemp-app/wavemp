@@ -118,7 +118,10 @@ public class LyricsDownloadRunnerTests
         LyricsDownloadJobResult result = await _runner.RunAsync();
 
         result.Should().Be(new LyricsDownloadJobResult(1, 0, 1, 0, true));
-        await _downloader.DidNotReceive().DownloadAsync(second, Arg.Any<LyricsDownloadMode>(), Arg.Any<CancellationToken>());
+        await _downloader.DidNotReceive().DownloadAsync(
+            second,
+            Arg.Any<LyricsDownloadMode>(),
+            Arg.Any<CancellationToken>());
     }
 
     [Test]
@@ -141,7 +144,9 @@ public class LyricsDownloadRunnerTests
     [Test]
     public async Task RunAsync_LookUpAgainSwitchedOff_AsksForNewTracksOnly()
     {
-        LyricsDownloadRunner runner = Runner(new LyricsOptions { LookUpAgainAfter = TimeSpan.Zero }, TimeProvider.System);
+        LyricsDownloadRunner runner = Runner(
+            new LyricsOptions { LookUpAgainAfter = TimeSpan.Zero },
+            TimeProvider.System);
 
         await runner.RunAsync();
 
@@ -218,7 +223,10 @@ public class LyricsDownloadRunnerTests
 
     private void Batches(params Guid[][] batches)
     {
-        IReadOnlyList<LyricsTrackRow>[] rows = [.. batches.Select(batch => (IReadOnlyList<LyricsTrackRow>)[.. batch.Select(Row)])];
+        IReadOnlyList<LyricsTrackRow>[] rows =
+        [
+            .. batches.Select(batch => (IReadOnlyList<LyricsTrackRow>)[.. batch.Select(Row)]),
+        ];
         _repository.ListTracksToLookUpAsync(
                 Arg.Any<int>(),
                 Arg.Any<IReadOnlyCollection<Guid>>(),
@@ -246,6 +254,18 @@ public class LyricsDownloadRunnerTests
 
     private static LyricsTrackRow Row(Guid id)
     {
-        return new LyricsTrackRow(id, MediaSource.DefaultId, "Band", "Song", "Song", "Band", "Album", null, null, "Band/Song.mp3", null, null);
+        return new LyricsTrackRow(
+            id,
+            MediaSource.DefaultId,
+            "Band",
+            "Song",
+            "Song",
+            "Band",
+            "Album",
+            null,
+            null,
+            "Band/Song.mp3",
+            null,
+            null);
     }
 }

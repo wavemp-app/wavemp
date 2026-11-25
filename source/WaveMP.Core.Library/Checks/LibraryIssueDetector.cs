@@ -83,8 +83,8 @@ internal static class LibraryIssueDetector
 
     /// <summary>
     /// For every track that is a possible duplicate, the first other track of its group. Tracks of the same artist and
-    /// title are sorted by duration; a group goes on as long as the next duration differs from the one before by at most
-    /// the tolerance.
+    /// title are sorted by duration; a group goes on as long as the next duration differs from the one before by at
+    /// most the tolerance.
     /// </summary>
     internal static Dictionary<Guid, Guid> FindDuplicates(
         IReadOnlyList<LibraryCheckTrackRow> tracks,

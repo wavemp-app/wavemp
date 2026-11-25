@@ -76,7 +76,10 @@ public class ValidationProblemApiTests
     {
         UserDto user = await _admin.CreateUserAsync(new { name = $"Short {HttpClientExtensions.Unique()}" });
 
-        HttpResponseMessage response = await _admin.SendJsonAsync("PATCH", $"/api/v1/users/{user.Id}", """{"name":""}""");
+        HttpResponseMessage response = await _admin.SendJsonAsync(
+            "PATCH",
+            $"/api/v1/users/{user.Id}",
+            """{"name":""}""");
 
         (await response.ShouldBeValidationProblemAsync()).Should().BeEquivalentTo(
             [Error("name", ValidationErrorCodeDto.MinLength, min: 1)]);

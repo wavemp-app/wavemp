@@ -93,7 +93,11 @@ public class AutoplayPickerTests
     {
         AutoplaySeedRow[] seeds = [Seed(_alpha, "Rock", 2001), Seed(_alpha, "Rock", 2003)];
         AutoplayCandidateRow[] artistSongs = Songs(_alpha, 2);
-        AutoplayCandidateRow[] fallback = [Song(_beta, genre: "rock", year: 1998), Song(_gamma, genre: "Rock", year: 2012)];
+        AutoplayCandidateRow[] fallback =
+        [
+            Song(_beta, genre: "rock", year: 1998),
+            Song(_gamma, genre: "Rock", year: 2012),
+        ];
 
         IReadOnlyList<Guid> picked = AutoplayPicker.Pick(seeds, artistSongs, fallback, _noPlays, 10, new Random(6));
 

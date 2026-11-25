@@ -4,10 +4,10 @@
 import { apiClient } from '@/api/client'
 import type { AlbumsRequestBuilderGetQueryParameters } from '@/api/generated/api/v1/albums'
 import type { GroupsRequestBuilderGetQueryParameters as AlbumGroupQuery } from '@/api/generated/api/v1/albums/groups'
-import type { TracksRequestBuilderGetQueryParameters as AlbumTrackQuery } from '@/api/generated/api/v1/albums/item/tracks'
+import type * as albumTracks from '@/api/generated/api/v1/albums/item/tracks'
 import type { ArtistsRequestBuilderGetQueryParameters } from '@/api/generated/api/v1/artists'
 import type { GroupsRequestBuilderGetQueryParameters as ArtistGroupQuery } from '@/api/generated/api/v1/artists/groups'
-import type { AlbumsRequestBuilderGetQueryParameters as ArtistAlbumQuery } from '@/api/generated/api/v1/artists/item/albums'
+import type * as artistAlbums from '@/api/generated/api/v1/artists/item/albums'
 import type { GenresRequestBuilderGetQueryParameters } from '@/api/generated/api/v1/genres'
 import type { TracksRequestBuilderGetQueryParameters } from '@/api/generated/api/v1/tracks'
 import type { GroupsRequestBuilderGetQueryParameters as TrackGroupQuery } from '@/api/generated/api/v1/tracks/groups'
@@ -38,6 +38,8 @@ export type AlbumQuery = AlbumsRequestBuilderGetQueryParameters
 export type ArtistQuery = ArtistsRequestBuilderGetQueryParameters
 export type GenreQuery = GenresRequestBuilderGetQueryParameters
 export type YearQuery = YearsRequestBuilderGetQueryParameters
+type AlbumTrackQuery = albumTracks.TracksRequestBuilderGetQueryParameters
+type ArtistAlbumQuery = artistAlbums.AlbumsRequestBuilderGetQueryParameters
 export type TrackFileQuery = FilesRequestBuilderGetQueryParameters
 export type { AlbumGroupQuery, ArtistGroupQuery, TrackGroupQuery }
 

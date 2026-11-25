@@ -37,9 +37,11 @@ internal static class FfprobeOutputParser
             JsonElement? audio = streams.Cast<JsonElement?>()
                 .FirstOrDefault(stream => ReadString(stream!.Value, "codec_type") == "audio");
             JsonElement? video = streams.Cast<JsonElement?>()
-                .FirstOrDefault(stream => ReadString(stream!.Value, "codec_type") == "video" && !IsAttachedPicture(stream.Value));
+                .FirstOrDefault(
+                    stream => ReadString(stream!.Value, "codec_type") == "video" && !IsAttachedPicture(stream.Value));
             JsonElement? picture = streams.Cast<JsonElement?>()
-                .FirstOrDefault(stream => ReadString(stream!.Value, "codec_type") == "video" && IsAttachedPicture(stream.Value));
+                .FirstOrDefault(
+                    stream => ReadString(stream!.Value, "codec_type") == "video" && IsAttachedPicture(stream.Value));
 
             Dictionary<string, string> tags = new(StringComparer.Ordinal);
             AddTags(tags, format);

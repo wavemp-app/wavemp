@@ -40,7 +40,8 @@ describe('createReleaseNotes', () => {
             `![Aurora](${raw}/v1.0.80/assets/screenshots/themes/aurora.png)`,
             `See [THEMING.md](${github}/blob/v1.0.80/THEMING.md) and [the templates](${github}/tree/v1.0.80/deploy/).`,
             `<img src="${raw}/v1.0.80/assets/logo/wavemp-logo.svg" alt="">`,
-            `[Older notes](${github}/blob/v1.0.80/docs/releases/release-m4.md#casting), [this section](${github}/blob/v1.0.80/docs/releases/release-m5.md#themes), [web](https://example.com)`,
+            `[Older notes](${github}/blob/v1.0.80/docs/releases/release-m4.md#casting), ` +
+                `[this section](${github}/blob/v1.0.80/docs/releases/release-m5.md#themes), [web](https://example.com)`,
             '`../../THEMING.md` stays code.',
         ])
     })
@@ -174,7 +175,8 @@ describe('pinReleaseNotes', () => {
         assert.deepEqual(pinned.split('\n'), [
             `![Home](${raw}/v1.0.72/assets/screenshots/home.png)`,
             `<img src="${raw}/v1.0.72/assets/screenshots/phone.png" alt="">`,
-            `[THEMING.md](${github}/blob/v1.0.72/THEMING.md), [this section](#themes), [M4](${github}/blob/v1.0.72/docs/releases/release-m4.md#casting)`,
+            `[THEMING.md](${github}/blob/v1.0.72/THEMING.md), [this section](#themes), ` +
+                `[M4](${github}/blob/v1.0.72/docs/releases/release-m4.md#casting)`,
             `[Guide](${github}/blob/v1.0.72/THEMING.md#uploaded-themes)`,
             '`../../THEMING.md` stays code.',
         ])

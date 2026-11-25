@@ -319,7 +319,9 @@ describe('SettingsView playback', () => {
 
             const note = wrapper.get('[data-part="form-note"][data-item="background-effects"]')
             expect(note.text()).toBe(
-                'On this iPhone or iPad, the music keeps playing when WaveMP is in the background. The equalizer, crossfade and visualization rest there and come back as soon as you return to WaveMP.',
+                'On this iPhone or iPad, the music keeps playing when WaveMP is in the ' +
+                    'background. The equalizer, crossfade and visualization rest there and come back ' +
+                    'as soon as you return to WaveMP.',
             )
 
             layer.connect()

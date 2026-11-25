@@ -83,7 +83,9 @@ public class SubsonicResponseWriterTests
         SubsonicElement content = new SubsonicElement("searchResult3")
             .AddList("artist", [new SubsonicElement("artist").Set("id", "a").Set("name", "Band")])
             .AddList("album", [])
-            .AddList("song", [new SubsonicElement("song").Set("id", "s1"), new SubsonicElement("song").Set("id", "s2")]);
+            .AddList(
+                "song",
+                [new SubsonicElement("song").Set("id", "s1"), new SubsonicElement("song").Set("id", "s2")]);
 
         JsonElement result = WriteJson(SubsonicResponse.Ok(content)).GetProperty("searchResult3");
 
@@ -115,7 +117,9 @@ public class SubsonicResponseWriterTests
     {
         SubsonicElement content = new SubsonicElement("album")
             .Set("id", "a")
-            .AddList("song", [new SubsonicElement("song").Set("id", "s1"), new SubsonicElement("song").Set("id", "s2")]);
+            .AddList(
+                "song",
+                [new SubsonicElement("song").Set("id", "s1"), new SubsonicElement("song").Set("id", "s2")]);
 
         (byte[] body, _) = SubsonicResponseWriter.Write(SubsonicResponse.Ok(content), SubsonicFormat.Xml, "1");
 

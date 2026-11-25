@@ -96,7 +96,10 @@ public class AdminPinApiTests
             admin.HasPin.Should().BeFalse();
         }
 
-        await using WaveMpWebApplicationFactory second = CreateFactory("1357", freshDatabase: false, RestartDatabaseName);
+        await using WaveMpWebApplicationFactory second = CreateFactory(
+            "1357",
+            freshDatabase: false,
+            RestartDatabaseName);
         try
         {
             using HttpClient anonymous = second.CreateClient();

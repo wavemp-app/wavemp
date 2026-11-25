@@ -70,8 +70,8 @@ public static class TestDatabaseSettings
         {
             connection.Open();
             using NpgsqlCommand command = connection.CreateCommand();
-            command.CommandText = $"DROP DATABASE IF EXISTS \"{databaseName.Replace("\"", "\"\"", StringComparison.Ordinal)}\" "
-                + "WITH (FORCE)";
+            string quotedName = databaseName.Replace("\"", "\"\"", StringComparison.Ordinal);
+            command.CommandText = $"DROP DATABASE IF EXISTS \"{quotedName}\" WITH (FORCE)";
             command.ExecuteNonQuery();
         }
 

@@ -128,7 +128,9 @@ public class InstalledThemeCheckTests
         });
     }
 
-    [TestCase("/api/v1/themes/borealis/files/00000000000000000000000000000000.svg", ThemeErrorCode.StylesheetAbsoluteUrl)]
+    [TestCase(
+        "/api/v1/themes/borealis/files/00000000000000000000000000000000.svg",
+        ThemeErrorCode.StylesheetAbsoluteUrl)]
     [TestCase("/images/glass.svg", ThemeErrorCode.StylesheetAbsoluteUrl)]
     [TestCase("images/glass.svg", ThemeErrorCode.StylesheetMissingFile)]
     [TestCase("/api/v1/themes/aurora/files/00000000000000000000000000000000.svg", ThemeErrorCode.StylesheetMissingFile)]

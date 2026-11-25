@@ -264,7 +264,8 @@ public class DeviceCoordinatorRegistrationTests
         await _context.Coordinator.AbortSessionAsync(ended);
 
         _context.Notifier.Aborted.Should().Equal(laptop.ConnectionId);
-        (await _context.Coordinator.SetRemoteControlAsync(laptop, true)).Status.Should().Be(CommandStatus.NotRegistered);
+        (await _context.Coordinator.SetRemoteControlAsync(laptop, true)).Status.Should().Be(
+            CommandStatus.NotRegistered);
         (await _context.Coordinator.SetRemoteControlAsync(phone, true)).Status.Should().Be(CommandStatus.Accepted);
         (await _context.Coordinator.SetRemoteControlAsync(other, true)).Status.Should().Be(CommandStatus.Accepted);
         (await _context.Service.ListAsync(_userId, 0, 10)).Items.Single(device => device.Id == "laptop")

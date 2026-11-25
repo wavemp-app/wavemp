@@ -56,7 +56,9 @@ public class PlaylistCoverServiceTests
     [TestCase(CoverSaveStatus.UnsupportedFormat, PlaylistCoverStatus.UnsupportedFormat)]
     [TestCase(CoverSaveStatus.Unreadable, PlaylistCoverStatus.Unreadable)]
     [TestCase(CoverSaveStatus.Unavailable, PlaylistCoverStatus.Unavailable)]
-    public async Task SetAsync_NotSaved_ReturnsWhyAndKeepsThePlaylist(CoverSaveStatus saved, PlaylistCoverStatus expected)
+    public async Task SetAsync_NotSaved_ReturnsWhyAndKeepsThePlaylist(
+        CoverSaveStatus saved,
+        PlaylistCoverStatus expected)
     {
         GivenPlaylist();
         _store.SaveAsync(_playlistId, Arg.Any<Stream>(), Arg.Any<CancellationToken>()).Returns(saved);

@@ -121,7 +121,10 @@ internal static class AutoplayPicker
             .Where(candidate => relevance(candidate) * SongWeight(candidate) > 0)];
         while (picked.Count < count && remaining.Count > 0)
         {
-            AutoplayCandidateRow song = Draw(remaining, candidate => relevance(candidate) * SongWeight(candidate), random);
+            AutoplayCandidateRow song = Draw(
+                remaining,
+                candidate => relevance(candidate) * SongWeight(candidate),
+                random);
             remaining.Remove(song);
             picked.Add(song.TrackId);
         }

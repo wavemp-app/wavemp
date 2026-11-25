@@ -14,12 +14,12 @@ namespace WaveMP.Core.Scanning.Jobs;
 
 /// <summary>
 /// The library scan as background job: scans all active media sources, or the folders named in the payload (a JSON
-/// list of folders of sources, sent by the file watcher and after the admin added or changed a source). Never runs in parallel to itself; every run is built in a
-/// dependency injection scope of its own. The result becomes part of the run history. After a full scan, and after a
-/// partial scan that changed files, it starts the job <see cref="JobIds.CoverCache"/>, which prepares the covers of
-/// the changed library, and, if the download of lyrics is switched on, the job <see cref="JobIds.LyricsDownload"/>,
-/// which looks up the lyrics of new tracks. After every scan it starts the job <see cref="JobIds.LibraryCheck"/>,
-/// which looks for problems in the library.
+/// list of folders of sources, sent by the file watcher and after the admin added or changed a source). Never runs in
+/// parallel to itself; every run is built in a dependency injection scope of its own. The result becomes part of the
+/// run history. After a full scan, and after a partial scan that changed files, it starts the job
+/// <see cref="JobIds.CoverCache"/>, which prepares the covers of the changed library, and, if the download of lyrics is
+/// switched on, the job <see cref="JobIds.LyricsDownload"/>, which looks up the lyrics of new tracks. After every scan
+/// it starts the job <see cref="JobIds.LibraryCheck"/>, which looks for problems in the library.
 /// </summary>
 [DisallowConcurrentExecution]
 public sealed class LibraryScanJob(

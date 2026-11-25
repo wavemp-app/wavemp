@@ -139,7 +139,12 @@ internal sealed class DeviceHubClient : IAsyncDisposable
     {
         return Connection.InvokeAsync<CommandResultDto>(
             "TransferPlayback",
-            new TransferPlaybackDto { TargetDeviceId = targetDeviceId, Play = play, ExpectedVersion = expectedVersion });
+            new TransferPlaybackDto
+            {
+                TargetDeviceId = targetDeviceId,
+                Play = play,
+                ExpectedVersion = expectedVersion,
+            });
     }
 
     public Task<DeviceQueueResultDto> GetQueueAsync()

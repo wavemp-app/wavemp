@@ -162,7 +162,8 @@ public sealed class MusicBrainzTrack
 }
 
 /// <summary>
-/// One artist of the artists of a recording or release, with the phrase that joins it to the next (e.g. <c> &amp; </c>).
+/// One artist of the artists of a recording or release, with the phrase that joins it to the next
+/// (e.g. <c> &amp; </c>).
 /// </summary>
 public sealed class MusicBrainzArtistCredit
 {

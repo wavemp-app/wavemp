@@ -128,11 +128,17 @@ const editableInputTypes = new Set([
 
 /** Roles of controls that act on Space themselves. */
 const spaceRoles =
-    'button, input, a[href], summary, [role="button"], [role="link"], [role="checkbox"], [role="switch"], [role="radio"], [role="tab"], [role="option"], [role="menuitem"], [role="menuitemradio"], [role="menuitemcheckbox"], [role="treeitem"], [role="row"], [role="gridcell"], [role="slider"]'
+    'button, input, a[href], summary, [role="button"], [role="link"], [role="checkbox"], ' +
+    '[role="switch"], [role="radio"], [role="tab"], [role="option"], [role="menuitem"], ' +
+    '[role="menuitemradio"], [role="menuitemcheckbox"], [role="treeitem"], [role="row"], ' +
+    '[role="gridcell"], [role="slider"]'
 
 /** Roles of widgets that move or change with the arrow keys. */
 const arrowRoles =
-    'input[type="range"], input[type="radio"], [role="slider"], [role="radiogroup"], [role="radio"], [role="tablist"], [role="tab"], [role="listbox"], [role="option"], [role="tree"], [role="treeitem"], [role="grid"], [role="row"], [role="gridcell"], [role="menu"], [role="menubar"], [role="spinbutton"], [role="scrollbar"]'
+    'input[type="range"], input[type="radio"], [role="slider"], [role="radiogroup"], ' +
+    '[role="radio"], [role="tablist"], [role="tab"], [role="listbox"], [role="option"], ' +
+    '[role="tree"], [role="treeitem"], [role="grid"], [role="row"], [role="gridcell"], ' +
+    '[role="menu"], [role="menubar"], [role="spinbutton"], [role="scrollbar"]'
 
 /** The element of an event target, also for targets in the floating mini player window. */
 function elementOf(target: EventTarget | null): Element | null {

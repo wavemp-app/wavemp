@@ -150,7 +150,8 @@ public static class CommandValidator
         }
         else if (!PlaybackValidator.IsMilliseconds(milliseconds))
         {
-            errors.Add(new DeviceValidationError(field, DeviceValidationCode.OutOfRange, 0, DeviceLimits.MaxMilliseconds));
+            errors.Add(
+                new DeviceValidationError(field, DeviceValidationCode.OutOfRange, 0, DeviceLimits.MaxMilliseconds));
         }
     }
 

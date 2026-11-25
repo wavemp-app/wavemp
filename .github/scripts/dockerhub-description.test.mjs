@@ -220,7 +220,8 @@ describe('createDockerHubDescription', () => {
                 '',
                 '---',
                 '',
-                `This description is a part of the [README on GitHub](${github}#readme), which also covers [Usage](${github}#usage).`,
+                `This description is a part of the [README on GitHub](${github}#readme), ` +
+                    `which also covers [Usage](${github}#usage).`,
                 '',
             ].join('\n'),
         )

@@ -25,7 +25,9 @@ internal sealed class OrganizeItemRollback(INoReplaceFileMover mover, ITagWriter
         string? extension = FolderNames.ExtensionOf(FolderNames.FileNameOf(from));
         return FolderNames.Combine(
             FolderNames.DirectoryOf(from),
-            OrganizePlanner.TemporaryPrefix + move.Id.ToString("N") + (extension is null ? string.Empty : "." + extension));
+            OrganizePlanner.TemporaryPrefix
+                + move.Id.ToString("N")
+                + (extension is null ? string.Empty : "." + extension));
     }
 
     /// <summary>

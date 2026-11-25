@@ -26,20 +26,24 @@ public class SvgSanitizerTests
 
     private static string Svg(string content)
     {
-        return $"""<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 10 10">{content}</svg>""";
+        return """<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" """
+            + $"""viewBox="0 0 10 10">{content}</svg>""";
     }
 
     [Test]
     public void Sanitize_PlainDrawing_KeepsIt()
     {
         string svg = Svg(
-            """<defs><linearGradient id="g"><stop offset="0" stop-color="#fff"/></linearGradient></defs><rect width="10" height="10" fill="url(#g)" style="opacity: 0.5"/><use href="#g"/>""");
+            """<defs><linearGradient id="g"><stop offset="0" stop-color="#fff"/></linearGradient></defs>"""
+                + """<rect width="10" height="10" fill="url(#g)" style="opacity: 0.5"/><use href="#g"/>""");
 
         (string? result, List<ThemeError> errors) = Sanitize(svg);
 
         errors.Should().BeEmpty();
         result.Should().Be(
-            """<svg viewBox="0 0 10 10" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="g"><stop offset="0" stop-color="#fff" /></linearGradient></defs><rect width="10" height="10" fill="url(#g)" style="opacity: 0.5" /><use href="#g" /></svg>""");
+            """<svg viewBox="0 0 10 10" xmlns="http://www.w3.org/2000/svg">"""
+                + """<defs><linearGradient id="g"><stop offset="0" stop-color="#fff" /></linearGradient></defs>"""
+                + """<rect width="10" height="10" fill="url(#g)" style="opacity: 0.5" /><use href="#g" /></svg>""");
     }
 
     [Test]
@@ -80,7 +84,8 @@ public class SvgSanitizerTests
     [Test]
     public void Sanitize_EmbeddedRasterPicture_IsKept()
     {
-        (string? result, List<ThemeError> errors) = Sanitize(Svg("""<image href="data:image/png;base64,iVBORw0KGgo=" width="1" height="1"/>"""));
+        (string? result, List<ThemeError> errors) = Sanitize(
+            Svg("""<image href="data:image/png;base64,iVBORw0KGgo=" width="1" height="1"/>"""));
 
         errors.Should().BeEmpty();
         result.Should().Contain("data:image/png;base64,iVBORw0KGgo=");
@@ -159,7 +164,9 @@ public class SvgSanitizerTests
     }
 
     [TestCase("<!DOCTYPE svg [<!ENTITY a \"b\">]><svg xmlns=\"http://www.w3.org/2000/svg\">&a;</svg>")]
-    [TestCase("<!DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 1.1//EN\" \"http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd\"><svg xmlns=\"http://www.w3.org/2000/svg\"/>")]
+    [TestCase(
+        "<!DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 1.1//EN\" \"http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd\">"
+            + "<svg xmlns=\"http://www.w3.org/2000/svg\"/>")]
     [TestCase("<!doctype svg SYSTEM \"file:///etc/passwd\"><svg xmlns=\"http://www.w3.org/2000/svg\"/>")]
     public void Sanitize_DocumentTypeOrEntities_AreRejected(string svg)
     {

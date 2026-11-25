@@ -83,7 +83,8 @@ internal sealed class MusicBrainzArtistClient(
     }
 
     /// <summary>
-    /// The address of an artist search: <c>{base}/ws/2/artist?query=artist:"…"&amp;fmt=json&amp;limit=…&amp;offset=…</c>.
+    /// The address of an artist search:
+    /// <c>{base}/ws/2/artist?query=artist:"…"&amp;fmt=json&amp;limit=…&amp;offset=…</c>.
     /// </summary>
     internal static Uri SearchUrl(string baseUrl, string name, int offset, int limit)
     {

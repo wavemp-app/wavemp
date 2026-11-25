@@ -15,10 +15,10 @@ public static class ServiceCollectionExtensions
 {
     /// <summary>
     /// Registers the Subsonic API: the Subsonic access and app passwords of the profiles (encrypted with Data
-    /// Protection), the sign-in of the apps, browsing, playlists, favorites, ratings, plays, "Now Playing", streams with
-    /// their transcodes and covers. Needs <c>AddWaveMpData</c>, <c>AddWaveMpLibrary</c>, <c>AddWaveMpCollection</c>,
-    /// <c>AddWaveMpPlaylists</c>, <c>AddWaveMpCaching</c>, <c>AddWaveMpStreaming</c>, <c>AddWaveMpScrobbling</c>,
-    /// <c>AddWaveMpTranscoding</c>, <c>AddWaveMpSettings</c> and Data Protection.
+    /// Protection), the sign-in of the apps, browsing, playlists, favorites, ratings, plays, "Now Playing", streams
+    /// with their transcodes and covers. Needs <c>AddWaveMpData</c>, <c>AddWaveMpLibrary</c>,
+    /// <c>AddWaveMpCollection</c>, <c>AddWaveMpPlaylists</c>, <c>AddWaveMpCaching</c>, <c>AddWaveMpStreaming</c>,
+    /// <c>AddWaveMpScrobbling</c>, <c>AddWaveMpTranscoding</c>, <c>AddWaveMpSettings</c> and Data Protection.
     /// </summary>
     public static IServiceCollection AddWaveMpSubsonic(this IServiceCollection services)
     {

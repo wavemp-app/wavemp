@@ -139,7 +139,11 @@ public class LyricsDownloaderTests
             new LrclibQuery("Song", "Band", "Album", TimeSpan.FromSeconds(180)),
             Arg.Any<CancellationToken>());
         await _lrclib.DidNotReceiveWithAnyArgs().SearchAsync(default!, default);
-        await _files.Received(1).CreateAsync(MediaSource.DefaultId, "Band/Song.lrc", "[00:01.00]Synced", Arg.Any<CancellationToken>());
+        await _files.Received(1).CreateAsync(
+            MediaSource.DefaultId,
+            "Band/Song.lrc",
+            "[00:01.00]Synced",
+            Arg.Any<CancellationToken>());
         await _repository.Received(1).SaveDownloadAsync(
             Arg.Is<LyricsDownload>(download =>
                 download.TrackId == _trackId
@@ -166,7 +170,11 @@ public class LyricsDownloaderTests
         LyricsDownloadResult result = await _downloader.DownloadAsync(_trackId, LyricsDownloadMode.Automatic);
 
         result.Outcome.Should().Be(LyricsDownloadOutcome.SavedToFile);
-        await _files.Received(1).CreateAsync(MediaSource.DefaultId, "Band/Song.lrc", "[00:01.00]Synced", Arg.Any<CancellationToken>());
+        await _files.Received(1).CreateAsync(
+            MediaSource.DefaultId,
+            "Band/Song.lrc",
+            "[00:01.00]Synced",
+            Arg.Any<CancellationToken>());
         await _repository.Received(1).SaveDownloadAsync(
             Arg.Is<LyricsDownload>(download => download.Status == LyricsDownloadStatus.SavedToFile),
             Arg.Any<CancellationToken>());
@@ -182,7 +190,11 @@ public class LyricsDownloaderTests
         LyricsDownloadResult result = await _downloader.DownloadAsync(_trackId, LyricsDownloadMode.Manual);
 
         result.Outcome.Should().Be(LyricsDownloadOutcome.SavedToFile);
-        await _files.Received(1).CreateAsync(MediaSource.DefaultId, "Band/Song.lrc", "Plain", Arg.Any<CancellationToken>());
+        await _files.Received(1).CreateAsync(
+            MediaSource.DefaultId,
+            "Band/Song.lrc",
+            "Plain",
+            Arg.Any<CancellationToken>());
     }
 
     [Test]
@@ -207,7 +219,11 @@ public class LyricsDownloaderTests
 
         await _downloader.DownloadAsync(_trackId, LyricsDownloadMode.Manual);
 
-        await _files.Received(1).CreateAsync(MediaSource.DefaultId, "Song.lrc", Arg.Any<string>(), Arg.Any<CancellationToken>());
+        await _files.Received(1).CreateAsync(
+            MediaSource.DefaultId,
+            "Song.lrc",
+            Arg.Any<string>(),
+            Arg.Any<CancellationToken>());
     }
 
     [Test]
@@ -275,7 +291,8 @@ public class LyricsDownloaderTests
     public async Task DownloadAsync_InstrumentalTrack_RecordsIt()
     {
         _lrclib.GetAsync(Arg.Any<LrclibQuery>(), Arg.Any<CancellationToken>())
-            .Returns(LrclibResponse.Found([_synced with { Instrumental = true, SyncedLyrics = null, PlainLyrics = null }]));
+            .Returns(
+                LrclibResponse.Found([_synced with { Instrumental = true, SyncedLyrics = null, PlainLyrics = null }]));
 
         LyricsDownloadResult result = await _downloader.DownloadAsync(_trackId, LyricsDownloadMode.Automatic);
 

@@ -25,7 +25,9 @@ public sealed class OrganizePreviewServiceDatabaseTests : OrganizingDatabaseTest
     [Test]
     public async Task The_preview_of_an_own_album_plans_tags_and_moves_without_touching_a_file()
     {
-        await AudioAsync("Incoming/b.mp3", new TestTags { Title = "Beta", Artist = "Band", Album = "Old", Track = "7" });
+        await AudioAsync(
+            "Incoming/b.mp3",
+            new TestTags { Title = "Beta", Artist = "Band", Album = "Old", Track = "7" });
         await AudioAsync("Incoming/a.flac", new TestTags { Title = "Alpha", Artist = "Solo" }, AudioFormat.Flac);
         await ScanAsync();
         Guid alpha = await TrackIdAsync("Alpha");
@@ -88,13 +90,15 @@ public sealed class OrganizePreviewServiceDatabaseTests : OrganizingDatabaseTest
         await TestMediaGenerator.CreateImageAsync(picture, 32, 32);
         await using (FileStream upload = File.OpenRead(picture))
         {
-            await InScopeAsync(services => services.GetRequiredService<IOwnAlbumService>().SetCoverAsync(album, upload));
+            await InScopeAsync(
+                services => services.GetRequiredService<IOwnAlbumService>().SetCoverAsync(album, upload));
         }
 
         File.Delete(picture);
         OrganizePreviewResult result = await PreviewAsync(service => service.PreviewOwnAlbumAsync(album, null));
 
-        OrganizeItem cover = (await ItemsAsync(result.Operation!.Id)).Single(item => item.Kind == OrganizeItemKind.AlbumCover);
+        OrganizeItem cover = (await ItemsAsync(result.Operation!.Id)).Single(
+            item => item.Kind == OrganizeItemKind.AlbumCover);
         cover.Moves.Single().ToPath.Should().Be("Various/Mix/cover.jpg");
         cover.Moves.Single().FromPath.Should().BeNull();
     }
@@ -155,7 +159,9 @@ public sealed class OrganizePreviewServiceDatabaseTests : OrganizingDatabaseTest
     [Test]
     public async Task A_relocated_song_keeps_its_id_and_its_undo_moves_it_back()
     {
-        await AudioAsync("Messy/one.mp3", new TestTags { Title = "One", Artist = "Band", Album = "Record", Track = "1" });
+        await AudioAsync(
+            "Messy/one.mp3",
+            new TestTags { Title = "One", Artist = "Band", Album = "Record", Track = "1" });
         await ScanAsync();
         Guid trackId = await TrackIdAsync("One");
         OrganizeOperation operation = await LibraryPreviewAsync();
@@ -219,7 +225,9 @@ public sealed class OrganizePreviewServiceDatabaseTests : OrganizingDatabaseTest
     [Test]
     public async Task Only_operations_that_changed_files_can_be_undone()
     {
-        await AudioAsync("Messy/one.mp3", new TestTags { Title = "One", Artist = "Band", Album = "Record", Track = "1" });
+        await AudioAsync(
+            "Messy/one.mp3",
+            new TestTags { Title = "One", Artist = "Band", Album = "Record", Track = "1" });
         await ScanAsync();
         OrganizeOperation preview = await LibraryPreviewAsync();
 
@@ -235,7 +243,9 @@ public sealed class OrganizePreviewServiceDatabaseTests : OrganizingDatabaseTest
     [Test]
     public async Task Previews_expire_and_can_be_discarded_but_runs_stay_in_the_log()
     {
-        await AudioAsync("Messy/one.mp3", new TestTags { Title = "One", Artist = "Band", Album = "Record", Track = "1" });
+        await AudioAsync(
+            "Messy/one.mp3",
+            new TestTags { Title = "One", Artist = "Band", Album = "Record", Track = "1" });
         await ScanAsync();
         OrganizeOperation first = await LibraryPreviewAsync();
         OrganizeOperation second = await LibraryPreviewAsync();
@@ -277,7 +287,9 @@ public sealed class OrganizePreviewServiceDatabaseTests : OrganizingDatabaseTest
         return await InScopeAsync(async services =>
         {
             IOwnAlbumService service = services.GetRequiredService<IOwnAlbumService>();
-            OwnAlbumResult created = await service.CreateAsync(new OwnAlbumValues(title, albumArtist, null, null), null);
+            OwnAlbumResult created = await service.CreateAsync(
+                new OwnAlbumValues(title, albumArtist, null, null),
+                null);
             if (trackIds.Count > 0)
             {
                 (await service.ReplaceTracksAsync(created.Item!.Album.Id, trackIds)).IsOk.Should().BeTrue();

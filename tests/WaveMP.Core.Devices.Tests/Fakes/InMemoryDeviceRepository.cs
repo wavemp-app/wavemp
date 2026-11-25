@@ -99,7 +99,8 @@ internal sealed class InMemoryDeviceRepository : IDeviceRepository
     {
         lock (_lock)
         {
-            return Task.FromResult(_devices.RemoveAll(device => device.UserId == userId && device.DeviceId == deviceId) > 0);
+            return Task.FromResult(
+                _devices.RemoveAll(device => device.UserId == userId && device.DeviceId == deviceId) > 0);
         }
     }
 

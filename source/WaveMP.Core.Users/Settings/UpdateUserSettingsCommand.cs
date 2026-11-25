@@ -6,7 +6,8 @@ namespace WaveMP.Core.Users.Settings;
 /// Changes the settings of a user. Every <c>null</c> value keeps the current value.
 /// </summary>
 /// <param name="Language">
-/// Language of the user interface as BCP 47 language tag, see <see cref="LanguageTags"/>; it is saved in the usual case.
+/// Language of the user interface as BCP 47 language tag, see <see cref="LanguageTags"/>; it is saved in the usual
+/// case.
 /// </param>
 /// <param name="ReplayGain">Volume normalization of the player.</param>
 /// <param name="PlayerViewMode">What the Now Playing stage shows.</param>

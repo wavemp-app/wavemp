@@ -130,7 +130,9 @@ public class TrackMetadataEditorDatabaseTests
     [Test]
     public async Task UpdateAsync_OnlyTrackOfAnAlbum_RemovesTheOldAlbumAndArtist()
     {
-        await AudioAsync("Solo/Record/01 - Only.mp3", new TestTags { Title = "Only", Artist = "Solo", Album = "Record" });
+        await AudioAsync(
+            "Solo/Record/01 - Only.mp3",
+            new TestTags { Title = "Only", Artist = "Solo", Album = "Record" });
         await ScanAsync();
         Guid trackId = await TrackIdAsync("Only");
 
@@ -288,7 +290,9 @@ public class TrackMetadataEditorDatabaseTests
         await ScanAsync();
         Guid trackId = await TrackIdAsync("Tagged");
 
-        TrackMetadataResult result = await UpdateAsync(trackId, new TagChanges { Title = new TagChange<string?>(null) });
+        TrackMetadataResult result = await UpdateAsync(
+            trackId,
+            new TagChanges { Title = new TagChange<string?>(null) });
 
         result.Metadata!.Title.Should().Be("Named");
         await using WaveMpDbContext db = _database.CreateDbContext();

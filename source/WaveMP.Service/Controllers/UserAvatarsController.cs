@@ -24,8 +24,8 @@ public sealed class UserAvatarsController(IAvatarService avatars, IOptions<Avata
     /// <summary>
     /// Returns the avatar of a profile as square WebP picture of 96, 300 or 1000 pixels (the requested size rounded
     /// up, at most 1000; an uploaded picture is never enlarged). Every picture carries a strong ETag of its version and
-    /// size and Cache-Control: private, no-cache; a request with a matching If-None-Match returns 304. Available without
-    /// a session, like the profile selection.
+    /// size and Cache-Control: private, no-cache; a request with a matching If-None-Match returns 304. Available
+    /// without a session, like the profile selection.
     /// </summary>
     /// <param name="id">Id of the profile.</param>
     /// <param name="size">Largest width and height in pixels the client shows the picture with (1 to 4096); the

@@ -408,7 +408,13 @@
 }
 
 /* Horizontal groups: a short line centered below the active entry. */
-:is([data-part='tabs'], [data-part='admin-nav'], [data-part='recap-nav'], [data-part='bottom-nav'], [data-part='segmented-control'])
+:is(
+        [data-part='tabs'],
+        [data-part='admin-nav'],
+        [data-part='recap-nav'],
+        [data-part='bottom-nav'],
+        [data-part='segmented-control']
+    )
     > [data-part='indicator']::after {
     inset-block-end: 0.3125rem;
     inset-inline-start: 50%;
@@ -857,7 +863,11 @@ a[data-part='breadcrumb-link']:hover {
     color: var(--wmp-color-text);
 }
 
-:root[data-theme-variant='dark'] :is([data-part='search'] > [data-part='input'], [data-part='field'] > [data-part='input'], [data-part='select']) {
+:root[data-theme-variant='dark'] :is(
+        [data-part='search'] > [data-part='input'],
+        [data-part='field'] > [data-part='input'],
+        [data-part='select']
+    ) {
     border-block-end-color: rgb(255 255 255 / 36%);
 }
 
@@ -1336,7 +1346,10 @@ a[data-part='breadcrumb-link']:hover {
     color: #f1f3f5;
 }
 
-:is([data-part='btn-preset-picker'], [data-part='btn-color-scheme-picker']):is(:hover, [aria-expanded='true']):not(:disabled) {
+:is(
+        [data-part='btn-preset-picker'],
+        [data-part='btn-color-scheme-picker']
+    ):is(:hover, [aria-expanded='true']):not(:disabled) {
     background: rgb(255 255 255 / 12%);
 }
 
@@ -1678,7 +1691,12 @@ a[data-part='breadcrumb-link']:hover {
     background: var(--acc-card);
 }
 
-:is([data-part='cache-usage'], [data-part='transcoding-status'], [data-part='backup-status'], [data-part='library-check-status'])
+:is(
+        [data-part='cache-usage'],
+        [data-part='transcoding-status'],
+        [data-part='backup-status'],
+        [data-part='library-check-status']
+    )
     [data-part='stat-item'] {
     background: var(--wmp-color-surface);
 }
@@ -1691,7 +1709,16 @@ a[data-part='breadcrumb-link']:hover {
     font-weight: 600;
 }
 
-:is([data-part='run-item'], [data-part='job-item'], [data-part='transcode-item'], [data-part='user-item'], [data-part='source-item'], [data-part='review-item'], [data-part='file-selection-item'], [data-part='library-issue-item']):hover {
+:is(
+        [data-part='run-item'],
+        [data-part='job-item'],
+        [data-part='transcode-item'],
+        [data-part='user-item'],
+        [data-part='source-item'],
+        [data-part='review-item'],
+        [data-part='file-selection-item'],
+        [data-part='library-issue-item']
+    ):hover {
     background: var(--wmp-image-default-button-hover);
 }
 
@@ -1711,7 +1738,14 @@ a[data-part='breadcrumb-link']:hover {
     color: var(--wmp-color-success);
 }
 
-[data-part='badge']:is([data-state~='failed'], [data-state~='blocked'], [data-state~='interrupted'], [data-state~='issue'], [data-state~='missing'], [data-state~='authorization-failed']) {
+[data-part='badge']:is(
+        [data-state~='failed'],
+        [data-state~='blocked'],
+        [data-state~='interrupted'],
+        [data-state~='issue'],
+        [data-state~='missing'],
+        [data-state~='authorization-failed']
+    ) {
     border-color: color-mix(in srgb, var(--wmp-color-danger), transparent 50%);
     color: var(--wmp-color-danger);
 }
@@ -1721,7 +1755,13 @@ a[data-part='breadcrumb-link']:hover {
     color: var(--wmp-color-warning);
 }
 
-[data-part='badge']:is([data-state~='admin'], [data-state~='primary'], [data-state~='selected'], [data-state~='best'], [data-state~='unreviewed']) {
+[data-part='badge']:is(
+        [data-state~='admin'],
+        [data-state~='primary'],
+        [data-state~='selected'],
+        [data-state~='best'],
+        [data-state~='unreviewed']
+    ) {
     border-color: var(--wmp-color-text-muted);
     color: var(--wmp-color-text);
 }

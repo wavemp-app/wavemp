@@ -12,7 +12,8 @@ public class MusicBrainzQueryTests
         string query = MusicBrainzQuery.Recording("Song", "Band", "Album", TimeSpan.FromSeconds(200));
 
         query.Should().Be(
-            "recording:\"Song\" AND artist:\"Band\" AND (release:\"Album\" OR dur:[195000 TO 205000] OR recording:\"Song\")");
+            "recording:\"Song\" AND artist:\"Band\" "
+                + "AND (release:\"Album\" OR dur:[195000 TO 205000] OR recording:\"Song\")");
     }
 
     [Test]

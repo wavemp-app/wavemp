@@ -129,7 +129,8 @@ internal sealed class OrganizeRepository(WaveMpDbContext dbContext) : IOrganizeR
             tracks = tracks.Where(track => track.Id.CompareTo(after) > 0);
         }
 
-        return await tracks.OrderBy(track => track.Id).Select(track => track.Id).Take(count).ToListAsync(cancellationToken);
+        return await tracks.OrderBy(track => track.Id).Select(track => track.Id).Take(count).ToListAsync(
+            cancellationToken);
     }
 
     public async Task<IReadOnlyList<OrganizeFolderRow>> GetFoldersAsync(
@@ -610,7 +611,9 @@ internal sealed class OrganizeRepository(WaveMpDbContext dbContext) : IOrganizeR
         List<string> folders = [.. removedFolders];
         await dbContext.OrganizeItems
             .Where(item => item.Id == itemId)
-            .ExecuteUpdateAsync(setters => setters.SetProperty(item => item.RemovedFolders, folders), cancellationToken);
+            .ExecuteUpdateAsync(
+                setters => setters.SetProperty(item => item.RemovedFolders, folders),
+                cancellationToken);
     }
 
     public async Task<IReadOnlyList<OrganizeItem>> ListRunningItemsAsync(CancellationToken cancellationToken = default)
@@ -651,7 +654,9 @@ internal sealed class OrganizeRepository(WaveMpDbContext dbContext) : IOrganizeR
     {
         return dbContext.OrganizeOperations
             .Where(operation => operation.Id == id)
-            .ExecuteUpdateAsync(setters => setters.SetProperty(operation => operation.UndoneById, undoId), cancellationToken);
+            .ExecuteUpdateAsync(
+                setters => setters.SetProperty(operation => operation.UndoneById, undoId),
+                cancellationToken);
     }
 
     public async Task UpdateOwnAlbumAppliedAtAsync(Guid ownAlbumId, CancellationToken cancellationToken = default)

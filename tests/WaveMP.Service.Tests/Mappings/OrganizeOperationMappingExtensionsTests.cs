@@ -51,7 +51,12 @@ public class OrganizeOperationMappingExtensionsTests
         OrganizeOperationDto dto = operation.ToDto();
 
         (dto.Kind, dto.Status, dto.ErrorCode, dto.CanUndo)
-            .Should().Be((OrganizeOperationKindDto.Library, OrganizeOperationStatusDto.Stopped, OrganizeErrorCodeDto.ItemFailed, true));
+            .Should().Be(
+                (
+                    OrganizeOperationKindDto.Library,
+                    OrganizeOperationStatusDto.Stopped,
+                    OrganizeErrorCodeDto.ItemFailed,
+                    true));
         operation.UndoneById = Guid.NewGuid();
         operation.ToDto().CanUndo.Should().BeFalse();
         operation.UndoneById = null;

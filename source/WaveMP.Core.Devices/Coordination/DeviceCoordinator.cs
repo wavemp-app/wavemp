@@ -230,7 +230,8 @@ internal sealed class DeviceCoordinator(
                 cancellationToken);
             if (tracks.Count == 0)
             {
-                return CommandResult.Invalid([new DeviceValidationError("trackIds", DeviceValidationCode.InvalidValue)]);
+                return CommandResult.Invalid(
+                    [new DeviceValidationError("trackIds", DeviceValidationCode.InvalidValue)]);
             }
 
             startIndex = command.Type == DeviceCommandType.PlayTracks ? start : null;
@@ -397,14 +398,15 @@ internal sealed class DeviceCoordinator(
         DeviceConnection connection,
         CancellationToken cancellationToken = default)
     {
-        (LivePlayback Playback, long Version, long QueueVersion)? copy = await WithExistingSessionAsync<(LivePlayback, long, long)?>(
-            connection.UserId,
-            session => Task.FromResult<(LivePlayback, long, long)?>(
-                session.DeviceOf(connection.ConnectionId) is null
-                    ? null
-                    : (session.Playback, session.Version, session.QueueVersion)),
-            null,
-            cancellationToken);
+        (LivePlayback Playback, long Version, long QueueVersion)? copy
+            = await WithExistingSessionAsync<(LivePlayback, long, long)?>(
+                connection.UserId,
+                session => Task.FromResult<(LivePlayback, long, long)?>(
+                    session.DeviceOf(connection.ConnectionId) is null
+                        ? null
+                        : (session.Playback, session.Version, session.QueueVersion)),
+                null,
+                cancellationToken);
         if (copy is not { } live)
         {
             return new DeviceQueueResult(CommandStatus.NotRegistered, null);
@@ -413,7 +415,10 @@ internal sealed class DeviceCoordinator(
         IReadOnlyList<PlaybackStateItem> items = live.Playback.Items;
         Dictionary<Guid, TrackRow> tracks = items.Count == 0
             ? []
-            : (await ListTracksAsync(connection.UserId, [.. items.Select(item => item.TrackId).Distinct()], cancellationToken))
+            : (await ListTracksAsync(
+                    connection.UserId,
+                    [.. items.Select(item => item.TrackId).Distinct()],
+                    cancellationToken))
                 .ToDictionary(track => track.Id);
         DeviceQueueView queue = new(
             live.Version,
@@ -614,7 +619,9 @@ internal sealed class DeviceCoordinator(
             errors.Add(new DeviceValidationError("index", DeviceValidationCode.OutOfRange, 0, queueLength - 1));
         }
 
-        if (command.Type == DeviceCommandType.MoveQueueEntry && command.ToIndex is { } toIndex && toIndex >= queueLength)
+        if (command.Type == DeviceCommandType.MoveQueueEntry
+            && command.ToIndex is { } toIndex
+            && toIndex >= queueLength)
         {
             errors.Add(new DeviceValidationError("toIndex", DeviceValidationCode.OutOfRange, 0, queueLength - 1));
         }
@@ -808,7 +815,10 @@ internal sealed class DeviceCoordinator(
                 cancellationToken);
         if (status != PlaybackStateSaveStatus.Saved)
         {
-            logger.LogWarning("The playback state of profile {UserId} was not saved on hand-over: {Status}", userId, status);
+            logger.LogWarning(
+                "The playback state of profile {UserId} was not saved on hand-over: {Status}",
+                userId,
+                status);
         }
     }
 
@@ -826,7 +836,9 @@ internal sealed class DeviceCoordinator(
             [],
             [],
             position => found.ContainsKey(trackIds[position]));
-        return ([.. remaining.Positions.Select(position => found[trackIds[position]])], Math.Max(remaining.CurrentIndex, 0));
+        return (
+            [.. remaining.Positions.Select(position => found[trackIds[position]])],
+            Math.Max(remaining.CurrentIndex, 0));
     }
 
     private async Task<IReadOnlyList<TrackRow>> ListTracksAsync(

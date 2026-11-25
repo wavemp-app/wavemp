@@ -35,10 +35,10 @@ type Field =
 
 /**
  * Settings of the library: scan interval, file watcher, extension lists, album cover names, names
- * of the pictures in artist folders, the global cover rule, the download of lyrics (off by default, because it sends the titles of the
- * library to an online service) and whether Subsonic apps may download the original files. A
- * changed cover rule loads the covers of albums and songs again. Saving sends only the changed
- * values, so settings changed elsewhere since the page was loaded stay as they are.
+ * of the pictures in artist folders, the global cover rule, the download of lyrics (off by default, because it sends
+ * the titles of the library to an online service) and whether Subsonic apps may download the original files. A changed
+ * cover rule loads the covers of albums and songs again. Saving sends only the changed values, so settings changed
+ * elsewhere since the page was loaded stay as they are.
  */
 const { t } = useI18n()
 const format = useFormat()

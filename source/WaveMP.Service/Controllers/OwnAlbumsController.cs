@@ -173,11 +173,10 @@ public sealed class OwnAlbumsController(IOwnAlbumService ownAlbums, IOptions<Org
     /// <param name="cancellationToken">Aborts the request.</param>
     /// <response code="200">The changed own album.</response>
     /// <response code="400">The request is invalid (code <c>request.invalid</c>).</response>
-    /// <response code="404">The own album (code <c>organize.own_album_not_found</c>) or a song (code <c>track.not_found</c>)
-    /// does not exist.</response>
-    /// <response code="409">A song has no audio file (code <c>track.no_audio</c>), belongs to another own album (code
-    /// <c>organize.track_in_other_own_album</c>), or the album would get too many songs (code
-    /// <c>organize.own_album_too_many_tracks</c>).</response>
+    /// <response code="404">The own album (code <c>organize.own_album_not_found</c>) or a song (code
+    /// <c>track.not_found</c>) does not exist.</response> <response code="409">A song has no audio file (code
+    /// <c>track.no_audio</c>), belongs to another own album (code <c>organize.track_in_other_own_album</c>), or the
+    /// album would get too many songs (code <c>organize.own_album_too_many_tracks</c>).</response>
     [HttpPut("{id:guid}/tracks", Name = "SetOwnAlbumTracks")]
     [Consumes("application/json")]
     [ProducesResponseType<OwnAlbumDto>(StatusCodes.Status200OK, "application/json")]
@@ -201,11 +200,10 @@ public sealed class OwnAlbumsController(IOwnAlbumService ownAlbums, IOptions<Org
     /// <param name="cancellationToken">Aborts the request.</param>
     /// <response code="200">The changed own album.</response>
     /// <response code="400">The request is invalid (code <c>request.invalid</c>).</response>
-    /// <response code="404">The own album (code <c>organize.own_album_not_found</c>) or a song (code <c>track.not_found</c>)
-    /// does not exist.</response>
-    /// <response code="409">A song has no audio file (code <c>track.no_audio</c>), belongs to another own album (code
-    /// <c>organize.track_in_other_own_album</c>), or the album would get too many songs (code
-    /// <c>organize.own_album_too_many_tracks</c>).</response>
+    /// <response code="404">The own album (code <c>organize.own_album_not_found</c>) or a song (code
+    /// <c>track.not_found</c>) does not exist.</response> <response code="409">A song has no audio file (code
+    /// <c>track.no_audio</c>), belongs to another own album (code <c>organize.track_in_other_own_album</c>), or the
+    /// album would get too many songs (code <c>organize.own_album_too_many_tracks</c>).</response>
     [HttpPost("{id:guid}/tracks", Name = "AddOwnAlbumTracks")]
     [Consumes("application/json")]
     [ProducesResponseType<OwnAlbumDto>(StatusCodes.Status200OK, "application/json")]
@@ -228,8 +226,8 @@ public sealed class OwnAlbumsController(IOwnAlbumService ownAlbums, IOptions<Org
     /// <param name="trackId">Id of the song.</param>
     /// <param name="cancellationToken">Aborts the request.</param>
     /// <response code="200">The changed own album.</response>
-    /// <response code="404">The own album (code <c>organize.own_album_not_found</c>) does not exist or the song is not part of
-    /// it (code <c>track.not_found</c>).</response>
+    /// <response code="404">The own album (code <c>organize.own_album_not_found</c>) does not exist or the song is not
+    /// part of it (code <c>track.not_found</c>).</response>
     [HttpDelete("{id:guid}/tracks/{trackId:guid}", Name = "RemoveOwnAlbumTrack")]
     [ProducesResponseType<OwnAlbumDto>(StatusCodes.Status200OK, "application/json")]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound, "application/problem+json")]
@@ -249,8 +247,8 @@ public sealed class OwnAlbumsController(IOwnAlbumService ownAlbums, IOptions<Org
     /// <param name="id">Id of the own album.</param>
     /// <param name="cancellationToken">Aborts the request.</param>
     /// <response code="200">The picture.</response>
-    /// <response code="404">The own album does not exist (code <c>organize.own_album_not_found</c>) or has no cover (code
-    /// <c>cover.not_found</c>).</response>
+    /// <response code="404">The own album does not exist (code <c>organize.own_album_not_found</c>) or has no cover
+    /// (code <c>cover.not_found</c>).</response>
     [HttpGet("{id:guid}/cover", Name = "GetOwnAlbumCover")]
     [ProducesResponseType<Stream>(StatusCodes.Status200OK, ImageFormats.Jpeg, ImageFormats.Png, ImageFormats.WebP)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound, "application/problem+json")]

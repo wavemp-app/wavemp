@@ -116,7 +116,8 @@ public abstract class OrganizingDatabaseTestBase
             });
         });
         WriteProbe.Probe(Arg.Any<string>())
-            .Returns(call => Directory.Exists(call.Arg<string>()) ? MediaFolderState.Writable : MediaFolderState.Missing);
+            .Returns(
+                call => Directory.Exists(call.Arg<string>()) ? MediaFolderState.Writable : MediaFolderState.Missing);
         Services = CreateServices();
         await using (AsyncServiceScope scope = Services.CreateAsyncScope())
         {
@@ -228,7 +229,10 @@ public abstract class OrganizingDatabaseTestBase
         [
             .. Directory.EnumerateFileSystemEntries(Media.Path, "*", SearchOption.AllDirectories)
                 .Select(path => Path.GetRelativePath(Media.Path, path).Replace('\\', '/')
-                    + "|" + (File.Exists(path) ? new FileInfo(path).Length + "|" + File.GetLastWriteTimeUtc(path).Ticks : "dir"))
+                    + "|"
+                    + (File.Exists(path)
+                        ? new FileInfo(path).Length + "|" + File.GetLastWriteTimeUtc(path).Ticks
+                        : "dir"))
                 .Order(StringComparer.Ordinal),
         ];
     }

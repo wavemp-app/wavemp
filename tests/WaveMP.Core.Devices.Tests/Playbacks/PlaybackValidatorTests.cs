@@ -42,7 +42,8 @@ public class PlaybackValidatorTests
         LivePlaybackInput playback = DeviceTestContext.Playback(_tracks, 2) with { Queue = null };
 
         PlaybackValidator.Validate(new PublishPlaybackCommand(false, playback), 2).Should().ContainSingle()
-            .Which.Should().Be(new DeviceValidationError("playback.currentIndex", DeviceValidationCode.OutOfRange, -1, 1));
+            .Which.Should().Be(
+                new DeviceValidationError("playback.currentIndex", DeviceValidationCode.OutOfRange, -1, 1));
     }
 
     [Test]
@@ -52,7 +53,8 @@ public class PlaybackValidatorTests
 
         PlaybackValidator.Validate(new PublishPlaybackCommand(true, DeviceTestContext.Playback(many)), 0)
             .Should().ContainSingle()
-            .Which.Should().Be(new DeviceValidationError("playback.queue.items", DeviceValidationCode.MaxItems, Max: 2000));
+            .Which.Should().Be(
+                new DeviceValidationError("playback.queue.items", DeviceValidationCode.MaxItems, Max: 2000));
     }
 
     [Test]
@@ -60,11 +62,16 @@ public class PlaybackValidatorTests
     {
         LivePlaybackInput playback = DeviceTestContext.Playback(_tracks) with
         {
-            Queue = new LiveQueueInput([.. _tracks.Select(id => new PlaybackStateItem(id, false))], true, [0, 0, 1], null),
+            Queue = new LiveQueueInput(
+                [.. _tracks.Select(id => new PlaybackStateItem(id, false))],
+                true,
+                [0, 0, 1],
+                null),
         };
 
         PlaybackValidator.Validate(new PublishPlaybackCommand(true, playback), 0).Should().ContainSingle()
-            .Which.Should().Be(new DeviceValidationError("playback.queue.originalOrder", DeviceValidationCode.InvalidValue));
+            .Which.Should().Be(
+                new DeviceValidationError("playback.queue.originalOrder", DeviceValidationCode.InvalidValue));
     }
 
     [Test]

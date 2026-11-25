@@ -225,9 +225,9 @@ public sealed class TracksController(
     /// size, the picture is scaled to fit into a square of 96, 192, 300, 600, 1000 or 2000 pixels (the requested size
     /// rounded up, at most 2000; never enlarged) and delivered as WebP from the cache; without size, as stored (JPEG,
     /// PNG, WebP, GIF or BMP). Every picture carries a strong ETag of its version and size, Last-Modified and
-    /// Cache-Control: private, no-cache; a request with a matching If-None-Match returns 304. Besides the session token, it
-    /// accepts the signed cover URL of the playback endpoints for casting devices (query uid, sid, exp and sig), because
-    /// they cannot send a token header.
+    /// Cache-Control: private, no-cache; a request with a matching If-None-Match returns 304. Besides the session
+    /// token, it accepts the signed cover URL of the playback endpoints for casting devices (query uid, sid, exp and
+    /// sig), because they cannot send a token header.
     /// </summary>
     /// <param name="id">Id of the track.</param>
     /// <param name="size">Largest width and height in pixels the client shows the picture with (1 to 4096), its width

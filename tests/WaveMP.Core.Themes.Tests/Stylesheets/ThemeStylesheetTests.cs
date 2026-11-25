@@ -96,10 +96,13 @@ public class ThemeStylesheetTests
     [Test]
     public void Check_PathInAVariable_IsRewrittenToo()
     {
-        (string? result, _) = Check(":root { --wmp-image-play-button: url('images/glass.svg') center / 100% no-repeat; }");
+        (string? result, _) = Check(
+            ":root { --wmp-image-play-button: url('images/glass.svg') center / 100% no-repeat; }");
 
         result.Should().Be(
-            ":root { --wmp-image-play-button: url(\"/api/v1/themes/aurora/files/0123456789abcdef0123456789abcdef.svg\") center / 100% no-repeat; }");
+            ":root { --wmp-image-play-button: "
+                + "url(\"/api/v1/themes/aurora/files/0123456789abcdef0123456789abcdef.svg\") "
+                + "center / 100% no-repeat; }");
     }
 
     [Test]
@@ -131,7 +134,8 @@ public class ThemeStylesheetTests
     [Test]
     public void Check_ImageSetStrings_AreAddresses()
     {
-        (string? result, List<ThemeError> errors) = Check("a { b: image-set('images/glass.svg' 1x, url(images/deep/orb.png) 2x); }");
+        (string? result, List<ThemeError> errors) = Check(
+            "a { b: image-set('images/glass.svg' 1x, url(images/deep/orb.png) 2x); }");
 
         errors.Should().BeEmpty();
         result.Should().Be(

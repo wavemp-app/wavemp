@@ -33,7 +33,9 @@ public class PlaybackDeciderTests
     [Test]
     public void Decide_UnknownFormat_NeedsTranscodingWhateverTheClientSupports()
     {
-        PlaybackDecision decision = PlaybackDecider.Decide(null, new HashSet<AudioFormat>(Enum.GetValues<AudioFormat>()));
+        PlaybackDecision decision = PlaybackDecider.Decide(
+            null,
+            new HashSet<AudioFormat>(Enum.GetValues<AudioFormat>()));
 
         decision.Should().Be(new PlaybackDecision(PlaybackMethod.Transcode, null, TranscodeReason.FormatUnknown));
     }

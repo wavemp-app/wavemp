@@ -132,7 +132,11 @@ public class QuartzHostTests
     [Test]
     public async Task ScheduledRun_DueWhileAnotherRunHoldsTheJob_IsSkipped()
     {
-        TestScheduleProvider provider = new() { Interval = TimeSpan.FromHours(1), StartupDelay = TimeSpan.FromSeconds(3) };
+        TestScheduleProvider provider = new()
+        {
+            Interval = TimeSpan.FromHours(1),
+            StartupDelay = TimeSpan.FromSeconds(3),
+        };
         await using TestHost host = await TestHost.StartAsync(provider);
         IJobScheduler scheduler = host.Services.GetRequiredService<IJobScheduler>();
         DateTimeOffset due = (await scheduler.GetNextRunAsync(GatedJobId))!.Value;

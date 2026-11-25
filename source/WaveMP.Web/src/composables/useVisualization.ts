@@ -27,9 +27,9 @@ export interface VisualizationInput {
  * The drawing of a visualization into a canvas inside a container: the module of the profile draws
  * the output of the player in sync with the music, at the quality, in the color scheme, at the
  * intensity and at the speed of the profile, in the size of the container. The intensity is reduced
- * while the device asks for reduced motion, whatever the profile says. The module loads when the container is mounted; nothing is drawn while the view
- * is hidden, the page is in the background or the container is out of the viewport. Used by the
- * stage of Now Playing (with its controls) and by the full-screen player (the picture only).
+ * while the device asks for reduced motion, whatever the profile says. The module loads when the container is mounted;
+ * nothing is drawn while the view is hidden, the page is in the background or the container is out of the viewport.
+ * Used by the stage of Now Playing (with its controls) and by the full-screen player (the picture only).
  */
 export function useVisualization(
     container: Ref<HTMLElement | null>,

@@ -67,7 +67,12 @@ public class MyDevicesApiTests
     {
         Profile profile = await CreateProfileAsync();
         Profile other = await CreateProfileAsync();
-        DeviceConnection laptop = await RegisterAsync(profile, "laptop", "Firefox · Windows", DeviceType.Desktop, true);
+        DeviceConnection laptop = await RegisterAsync(
+            profile,
+            "laptop",
+            "Firefox · Windows",
+            DeviceType.Desktop,
+            true);
         DeviceConnection phone = await RegisterAsync(profile, "phone", "Safari · iPhone", DeviceType.Phone, false);
         await RegisterAsync(other, "laptop", "Edge · Windows", DeviceType.Desktop, true);
         await _coordinator.PublishAsync(laptop, new PublishPlaybackCommand(true, Playback()));
@@ -136,7 +141,9 @@ public class MyDevicesApiTests
         Profile profile = await CreateProfileAsync();
         await RegisterAsync(profile, "phone", "Safari · iPhone", DeviceType.Phone, true);
 
-        HttpResponseMessage response = await profile.Client.PatchAsJsonAsync($"{Path}/phone", new { name = "  Kitchen  " });
+        HttpResponseMessage response = await profile.Client.PatchAsJsonAsync(
+            $"{Path}/phone",
+            new { name = "  Kitchen  " });
 
         response.StatusCode.Should().Be(HttpStatusCode.OK, await response.Content.ReadAsStringAsync());
         DeviceDto device = (await response.Content.ReadFromJsonAsync<DeviceDto>(HttpClientExtensions.JsonOptions))!;

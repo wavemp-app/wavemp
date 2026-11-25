@@ -62,7 +62,10 @@ internal sealed class TranscodeManager(
                 return SegmentResult.Of(status);
             }
 
-            SegmentWait wait = await job.WaitForSegmentAsync(index, options.Value.SegmentWaitTimeout, cancellationToken);
+            SegmentWait wait = await job.WaitForSegmentAsync(
+                index,
+                options.Value.SegmentWaitTimeout,
+                cancellationToken);
             if (cache.TryOpen(CacheArea.Transcodes, name) is { } produced)
             {
                 return SegmentResult.Ready(produced);

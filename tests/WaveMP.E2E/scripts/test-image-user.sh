@@ -82,10 +82,11 @@ expect "group_add is kept for the default user" \
     --group-add 993 "${rootdata[@]}" "${entrypoint[@]}" "$image" sh -c "$probe"
 
 # A render device with group 44 (video on Debian and Ubuntu), created before the entrypoint runs.
+render_device='mkdir -p /dev/dri && mknod /dev/dri/renderD128 c 1 3 && chgrp 44 /dev/dri/renderD128'
+render_device+=' && exec wavemp-entrypoint sh -c "$0"'
 expect "the group of a render device is added" \
     "uid=99 gid=100 groups=100,44 home=/ data=99:100 backups=none write=yes" \
-    -e PUID=99 -e PGID=100 "${rootdata[@]}" --entrypoint sh "$image" -c \
-    'mkdir -p /dev/dri && mknod /dev/dri/renderD128 c 1 3 && chgrp 44 /dev/dri/renderD128 && exec wavemp-entrypoint sh -c "$0"' "$probe"
+    -e PUID=99 -e PGID=100 "${rootdata[@]}" --entrypoint sh "$image" -c "$render_device" "$probe"
 
 # Only the top level of /data changes owner: a folder that root created inside stays root's.
 docker volume create "$prefix-data" >/dev/null
@@ -95,7 +96,8 @@ expect "only the top level of /data changes owner" \
     -e PUID=99 -e PGID=100 -v "$prefix-data:/data" "${entrypoint[@]}" "$image" sh -c "$probe"
 
 # A restarted container keeps its files, including the user entry of the first start.
-restart_probe='echo "$(id -u) $(id -G | tr " " ",") $(grep -c "^wavemp:" /etc/passwd) $(grep -c "^wavemp-993:" /etc/group)"'
+restart_probe='echo "$(id -u) $(id -G | tr " " ",")'
+restart_probe+=' $(grep -c "^wavemp:" /etc/passwd) $(grep -c "^wavemp-993:" /etc/group)"'
 docker create --name "$prefix-restart" --group-add 993 -e PUID=99 -e PGID=100 \
     "${entrypoint[@]}" "$image" sh -c "$restart_probe" >/dev/null
 first=$(docker start --attach "$prefix-restart" 2>/dev/null)

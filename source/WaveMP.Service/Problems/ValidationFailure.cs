@@ -62,7 +62,8 @@ public readonly record struct ValidationFailure(ValidationErrorCodeDto Code, int
         int? max = null;
         foreach (string part in parts.Skip(1))
         {
-            if (part.StartsWith(MinKey, StringComparison.Ordinal) && TryParseNumber(part[MinKey.Length..], out int value))
+            if (part.StartsWith(MinKey, StringComparison.Ordinal)
+                && TryParseNumber(part[MinKey.Length..], out int value))
             {
                 min = value;
             }

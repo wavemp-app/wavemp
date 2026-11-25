@@ -295,7 +295,8 @@ export function findDeployProblems(root = repositoryRoot, options = {}) {
                 pinnedWavempDigests += 1
                 if (digest && image.digest !== digest) {
                     problems.push(
-                        `${where}: ${image.repository}:${image.tag} pins ${image.digest}, but the published image is ${digest}`,
+                        `${where}: ${image.repository}:${image.tag} pins ${image.digest}, ` +
+                            `but the published image is ${digest}`,
                     )
                 }
             }

@@ -75,7 +75,10 @@ internal sealed class HardwareAccelerationDetector(
     private async Task<HardwareAccelerationStatus> RunAsync(CancellationToken cancellationToken)
     {
         TimeSpan timeout = options.Value.DetectionTimeout;
-        FfmpegCommandResult version = await runner.RunAsync(FfmpegHardwareArguments.Version, timeout, cancellationToken);
+        FfmpegCommandResult version = await runner.RunAsync(
+            FfmpegHardwareArguments.Version,
+            timeout,
+            cancellationToken);
         if (!version.Succeeded)
         {
             return Finished(
@@ -134,7 +137,13 @@ internal sealed class HardwareAccelerationDetector(
         HardwareUnavailableReason? reason,
         bool ffmpegAvailable = true)
     {
-        return new HardwareAccelerationStatus(state, accelerator, device, reason, ffmpegAvailable, timeProvider.GetUtcNow());
+        return new HardwareAccelerationStatus(
+            state,
+            accelerator,
+            device,
+            reason,
+            ffmpegAvailable,
+            timeProvider.GetUtcNow());
     }
 
     private void Log(HardwareAccelerationStatus status)

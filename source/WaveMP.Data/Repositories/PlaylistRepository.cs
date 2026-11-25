@@ -247,7 +247,9 @@ internal sealed class PlaylistRepository(WaveMpDbContext dbContext) : IPlaylistR
 
                 await dbContext.PlaylistEntries
                     .Where(candidate => candidate.Id == entryId)
-                    .ExecuteUpdateAsync(setters => setters.SetProperty(candidate => candidate.Position, position), token);
+                    .ExecuteUpdateAsync(
+                        setters => setters.SetProperty(candidate => candidate.Position, position),
+                        token);
                 return new PlaylistEntryChange(
                     PlaylistEntryChangeStatus.Done,
                     [new PlaylistEntryRow(entry.Id, entry.TrackId, position, entry.AddedAt)]);

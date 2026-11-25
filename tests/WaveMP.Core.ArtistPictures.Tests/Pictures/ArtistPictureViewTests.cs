@@ -55,7 +55,8 @@ public class ArtistPictureViewTests
     {
         Guid[] albums = [Guid.NewGuid(), Guid.NewGuid()];
 
-        var view = ArtistPictureView.Of(new ArtistPictureRow(null, null, null, null, null) { CollageAlbumIds = albums });
+        var view = ArtistPictureView.Of(
+            new ArtistPictureRow(null, null, null, null, null) { CollageAlbumIds = albums });
 
         view.Should().BeEquivalentTo(new ArtistPictureView(ArtistPictureShownKind.Albums, null, albums));
     }

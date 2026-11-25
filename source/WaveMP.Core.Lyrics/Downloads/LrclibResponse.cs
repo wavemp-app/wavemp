@@ -6,7 +6,10 @@ namespace WaveMP.Core.Lyrics.Downloads;
 /// <param name="Status">The kind of answer.</param>
 /// <param name="Records">The tracks; empty unless <see cref="LrclibStatus.Found"/>.</param>
 /// <param name="RetryAfter">How long LRCLIB asks to wait before the next request, if it says so.</param>
-public sealed record LrclibResponse(LrclibStatus Status, IReadOnlyList<LrclibRecord> Records, TimeSpan? RetryAfter = null)
+public sealed record LrclibResponse(
+    LrclibStatus Status,
+    IReadOnlyList<LrclibRecord> Records,
+    TimeSpan? RetryAfter = null)
 {
     public static LrclibResponse NotFound { get; } = new(LrclibStatus.NotFound, []);
 

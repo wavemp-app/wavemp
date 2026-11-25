@@ -84,7 +84,10 @@
         0 2px 5px -1px rgb(12 22 36 / 22%),
         0 8px 18px -10px color-mix(in srgb, var(--cg-tint) 70%, transparent);
     --cg-groove: rgb(12 22 36 / 6%);
-    --cg-groove-shadow: inset 0 1px 2px rgb(12 22 36 / 14%), inset 0 0 0 1px rgb(12 22 36 / 5%), 0 1px 0 rgb(255 255 255 / 80%);
+    --cg-groove-shadow:
+        inset 0 1px 2px rgb(12 22 36 / 14%),
+        inset 0 0 0 1px rgb(12 22 36 / 5%),
+        0 1px 0 rgb(255 255 255 / 80%);
     --cg-hover: rgb(255 255 255 / 60%);
     --cg-hover-rim: inset 0 1px 0 rgb(255 255 255 / 90%), 0 0 0 1px rgb(12 22 36 / 7%);
     --cg-row-selected: color-mix(in srgb, #b8e0de 55%, rgb(255 255 255 / 60%));
@@ -165,7 +168,11 @@
     --wmp-image-round-button-hover:
         radial-gradient(70% 45% at 50% 12%, #ffffff, rgb(255 255 255 / 0%)),
         radial-gradient(circle at 50% 50%, rgb(255 255 255 / 80%) 55%, rgb(196 222 226 / 85%) 100%);
-    --wmp-image-round-button-active: radial-gradient(circle at 50% 60%, rgb(214 236 235 / 95%) 50%, rgb(170 206 210 / 90%) 100%);
+    --wmp-image-round-button-active: radial-gradient(
+        circle at 50% 60%,
+        rgb(214 236 235 / 95%) 50%,
+        rgb(170 206 210 / 90%) 100%
+    );
     --wmp-image-round-button-disabled: rgb(255 255 255 / 30%);
     --wmp-image-play-button:
         radial-gradient(62% 34% at 50% 15%, rgb(255 255 255 / 78%), rgb(255 255 255 / 0%)),
@@ -256,7 +263,10 @@
         0 3px 10px -2px rgb(0 0 0 / 55%),
         0 8px 22px -10px color-mix(in srgb, var(--cg-tint) 80%, transparent);
     --cg-groove: rgb(0 0 0 / 28%);
-    --cg-groove-shadow: inset 0 1px 3px rgb(0 0 0 / 50%), inset 0 0 0 1px rgb(0 0 0 / 25%), 0 1px 0 rgb(255 255 255 / 7%);
+    --cg-groove-shadow:
+        inset 0 1px 3px rgb(0 0 0 / 50%),
+        inset 0 0 0 1px rgb(0 0 0 / 25%),
+        0 1px 0 rgb(255 255 255 / 7%);
     --cg-hover: rgb(255 255 255 / 9%);
     --cg-hover-rim: inset 0 1px 0 rgb(255 255 255 / 16%), 0 0 0 1px rgb(0 0 0 / 30%);
     --cg-row-selected: rgb(111 227 214 / 16%);
@@ -304,7 +314,11 @@
     --wmp-image-round-button-hover:
         radial-gradient(70% 45% at 50% 12%, rgb(255 255 255 / 42%), rgb(255 255 255 / 0%)),
         radial-gradient(circle at 50% 50%, rgb(255 255 255 / 12%) 55%, rgb(255 255 255 / 26%) 100%);
-    --wmp-image-round-button-active: radial-gradient(circle at 50% 60%, rgb(111 227 214 / 28%) 50%, rgb(111 227 214 / 14%) 100%);
+    --wmp-image-round-button-active: radial-gradient(
+        circle at 50% 60%,
+        rgb(111 227 214 / 28%) 50%,
+        rgb(111 227 214 / 14%) 100%
+    );
     --wmp-image-round-button-disabled: rgb(255 255 255 / 4%);
     --wmp-image-slider-thumb:
         radial-gradient(60% 40% at 50% 22%, #ffffff, rgb(255 255 255 / 0%)),
@@ -325,7 +339,11 @@
     background:
         var(--cg-caustics) center / cover no-repeat,
         radial-gradient(70% 60% at 10% 0%, var(--cg-wash), transparent 72%),
-        radial-gradient(55% 65% at 100% 100%, color-mix(in oklab, var(--cg-wash) 55%, var(--cg-field-second)), transparent 72%),
+        radial-gradient(
+            55% 65% at 100% 100%,
+            color-mix(in oklab, var(--cg-wash) 55%, var(--cg-field-second)),
+            transparent 72%
+        ),
         linear-gradient(165deg, var(--cg-field-top), var(--cg-field-bottom));
 }
 
@@ -565,7 +583,13 @@
 }
 
 :root[data-theme-variant='dark']
-    :is([data-part='tabs'], [data-part='bottom-nav'], [data-part='admin-nav'], [data-part='recap-nav'], [data-part='segmented-control'])
+    :is(
+            [data-part='tabs'],
+            [data-part='bottom-nav'],
+            [data-part='admin-nav'],
+            [data-part='recap-nav'],
+            [data-part='segmented-control']
+        )
     > [data-part='indicator']::after {
     opacity: 0.25;
 }
@@ -808,7 +832,10 @@ a[data-part='breadcrumb-link']:hover {
         0 2px 10px -2px rgb(111 227 214 / 40%);
 }
 
-:is([data-variant='default']:not([data-part='segment']), [data-variant='primary']):active:not(:disabled, [aria-disabled='true']) {
+:is(
+        [data-variant='default']:not([data-part='segment']),
+        [data-variant='primary']
+    ):active:not(:disabled, [aria-disabled='true']) {
     transform: translateY(1px);
 }
 
@@ -1573,7 +1600,10 @@ a[data-part='breadcrumb-link']:hover {
     color: var(--wmp-color-danger);
 }
 
-:is([data-part='organize-entry-meta'] > [data-part='badge'][data-state~='previewed'], [data-part='own-album-meta'] > [data-part='badge'][data-state~='changed']) {
+:is(
+        [data-part='organize-entry-meta'] > [data-part='badge'][data-state~='previewed'],
+        [data-part='own-album-meta'] > [data-part='badge'][data-state~='changed']
+    ) {
     box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--wmp-color-accent), transparent 55%);
     color: var(--wmp-color-accent);
 }
@@ -2049,7 +2079,10 @@ a[data-part='breadcrumb-link']:hover {
     color: #ffffff;
 }
 
-:is([data-part='btn-preset-picker'], [data-part='btn-color-scheme-picker']):is(:hover, [aria-expanded='true']):not(:disabled) {
+:is(
+        [data-part='btn-preset-picker'],
+        [data-part='btn-color-scheme-picker']
+    ):is(:hover, [aria-expanded='true']):not(:disabled) {
     background: rgb(255 255 255 / 12%);
 }
 
@@ -2536,7 +2569,12 @@ a[data-part='breadcrumb-link']:hover {
 }
 
 /* Statistics inside a panel are clear cells without a frame of their own. */
-:is([data-part='transcoding-status'], [data-part='cache-usage'], [data-part='backup-status'], [data-part='library-check-status'])
+:is(
+        [data-part='transcoding-status'],
+        [data-part='cache-usage'],
+        [data-part='backup-status'],
+        [data-part='library-check-status']
+    )
     [data-part='stat-item'] {
     background: var(--cg-groove);
     box-shadow: none;

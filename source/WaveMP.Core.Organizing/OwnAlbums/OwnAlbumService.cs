@@ -114,7 +114,10 @@ internal sealed class OwnAlbumService(
 
         IReadOnlyList<OwnAlbumMemberRow> members = await albums.ListMembersAsync(id, cancellationToken);
         OwnAlbumMemberRow[] page = [.. members.Skip(offset).Take(limit)];
-        IReadOnlyList<TrackRow> rows = await tracks.ListByIdsAsync([.. page.Select(member => member.TrackId)], null, cancellationToken);
+        IReadOnlyList<TrackRow> rows = await tracks.ListByIdsAsync(
+            [.. page.Select(member => member.TrackId)],
+            null,
+            cancellationToken);
         var byId = rows.ToDictionary(row => row.Id);
         return new Page<OwnAlbumTrackItem>(
             [.. page.Where(member => byId.ContainsKey(member.TrackId))
@@ -280,7 +283,8 @@ internal sealed class OwnAlbumService(
 
         var existing = current.ToDictionary(member => member.TrackId);
         Guid[] added = [.. trackIds.Where(trackId =>
-            !existing.TryGetValue(trackId, out OwnAlbumMemberRow? member) || member.State != OwnAlbumTrackState.Member)];
+            !existing.TryGetValue(trackId, out OwnAlbumMemberRow? member)
+            || member.State != OwnAlbumTrackState.Member)];
         if (added.Length > 0)
         {
             IReadOnlyList<OwnAlbumCandidateRow> candidates = await albums.ListCandidatesAsync(added, cancellationToken);
@@ -297,7 +301,10 @@ internal sealed class OwnAlbumService(
                 return OwnAlbumResult.Failed(OwnAlbumResultStatus.TrackNoAudio, videoOnly);
             }
 
-            Guid[] taken = [.. added.Where(trackId => found[trackId].MemberOfOwnAlbumId is { } other && other != album.Id)];
+            Guid[] taken =
+            [
+                .. added.Where(trackId => found[trackId].MemberOfOwnAlbumId is { } other && other != album.Id),
+            ];
             if (taken.Length > 0)
             {
                 return OwnAlbumResult.Failed(OwnAlbumResultStatus.TrackInOtherAlbum, taken);
@@ -305,9 +312,12 @@ internal sealed class OwnAlbumService(
         }
 
         DateTimeOffset now = Now();
-        List<OwnAlbumMemberRow> rows = [.. trackIds.Select((trackId, index) => existing.TryGetValue(trackId, out OwnAlbumMemberRow? member)
-            ? member with { Position = index, State = OwnAlbumTrackState.Member }
-            : new OwnAlbumMemberRow(trackId, index, OwnAlbumTrackState.Member, null, now))];
+        List<OwnAlbumMemberRow> rows =
+        [
+            .. trackIds.Select((trackId, index) => existing.TryGetValue(trackId, out OwnAlbumMemberRow? member)
+                ? member with { Position = index, State = OwnAlbumTrackState.Member }
+                : new OwnAlbumMemberRow(trackId, index, OwnAlbumTrackState.Member, null, now)),
+        ];
         HashSet<Guid> kept = [.. trackIds];
         foreach (OwnAlbumMemberRow member in current.Where(member => !kept.Contains(member.TrackId)))
         {

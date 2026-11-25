@@ -9,7 +9,8 @@ import { emptyStorageState } from './helpers/storage'
 
 /** A second device of the profile: Safari on an iPhone, so its name is known. */
 const phoneUserAgent =
-    'Mozilla/5.0 (iPhone; CPU iPhone OS 18_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.1 Mobile/15E148 Safari/604.1'
+    'Mozilla/5.0 (iPhone; CPU iPhone OS 18_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) ' +
+    'Version/18.1 Mobile/15E148 Safari/604.1'
 
 function part(page: Page, name: string): Locator {
     return page.locator(`[data-part='app'] [data-part='${name}']`)

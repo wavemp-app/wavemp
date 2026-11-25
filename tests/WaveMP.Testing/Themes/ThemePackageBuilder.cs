@@ -27,7 +27,8 @@ public sealed class ThemePackageBuilder
     public const int Woff2HeaderLength = 48;
 
     public const string GlassSvg =
-        """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><rect width="10" height="10" fill="#7fb2e5"/></svg>""";
+        """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10">"""
+            + """<rect width="10" height="10" fill="#7fb2e5"/></svg>""";
 
     public const string Stylesheet =
         """

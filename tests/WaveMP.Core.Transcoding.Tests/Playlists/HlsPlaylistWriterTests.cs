@@ -84,7 +84,9 @@ public class HlsPlaylistWriterTests
         {
             TranscodeVariant variant = TestVariants.Video(TestVariants.Input(TimeSpan.FromSeconds(5.25)));
 
-            string playlist = HlsPlaylistWriter.WriteMedia(variant, index => index.ToString(CultureInfo.InvariantCulture));
+            string playlist = HlsPlaylistWriter.WriteMedia(
+                variant,
+                index => index.ToString(CultureInfo.InvariantCulture));
 
             playlist.Should().Contain("#EXTINF:1.250,").And.NotContain("1,250");
         }

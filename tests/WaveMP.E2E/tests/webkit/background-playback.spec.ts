@@ -85,7 +85,8 @@ test.beforeEach(async ({ page }) => {
     if (!process.env.CI) {
         test.skip(
             !capable,
-            'This WebKit has no Web Audio or Media Session (WebKit of Windows); npm run test:webkit runs the tests in the Playwright image',
+            'This WebKit has no Web Audio or Media Session (WebKit of Windows); ' +
+                'npm run test:webkit runs the tests in the Playwright image',
         )
     }
     expect(capable, 'WebKit with Web Audio and the Media Session API').toBe(true)

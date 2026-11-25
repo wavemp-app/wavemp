@@ -45,7 +45,12 @@ public static class FolderProcessor
             MediaFile? video = ChooseVideo(group, choice.Video);
             MediaFile source = audio ?? video!;
             PathMetadata path = PathMetadataParser.Parse(segments, group.BaseName, pattern);
-            tracks.Add((group, choice, audio, video, TrackMetadataResolver.Resolve(ToMediaTags(source.Tags), path, titleCleaning)));
+            tracks.Add((
+                group,
+                choice,
+                audio,
+                video,
+                TrackMetadataResolver.Resolve(ToMediaTags(source.Tags), path, titleCleaning)));
         }
 
         IReadOnlyList<AlbumAssignment?> albums = AlbumResolver.Resolve(

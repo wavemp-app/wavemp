@@ -55,7 +55,9 @@ internal sealed class LyricsDownloader(
         }
 
         LrclibQuery query = new(track.Title, track.ArtistName, track.AlbumTitle, track.Duration);
-        (LrclibResponse response, LrclibRecord? record, bool instrumental) = await LookUpAsync(query, cancellationToken);
+        (LrclibResponse response, LrclibRecord? record, bool instrumental) = await LookUpAsync(
+            query,
+            cancellationToken);
         if (response.Status is LrclibStatus.RateLimited)
         {
             return new LyricsDownloadResult(LyricsDownloadOutcome.RateLimited, response.RetryAfter);
@@ -68,7 +70,9 @@ internal sealed class LyricsDownloader(
 
         if (record?.Lyrics is not { } text)
         {
-            LyricsDownloadStatus status = instrumental ? LyricsDownloadStatus.Instrumental : LyricsDownloadStatus.NotFound;
+            LyricsDownloadStatus status = instrumental
+                ? LyricsDownloadStatus.Instrumental
+                : LyricsDownloadStatus.NotFound;
             return await SaveResultAsync(track, status, null, cancellationToken)
                 ?? new LyricsDownloadResult(instrumental
                     ? LyricsDownloadOutcome.Instrumental

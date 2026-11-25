@@ -16,8 +16,9 @@ public static class ServiceCollectionExtensions
     /// <summary>
     /// Registers the playlists of the users with their uploaded covers in the folder <c>playlists</c> of the data
     /// folder (<c>DATA_PATH</c>, default <c>/data</c>), the recently played list and the smart playlists, with
-    /// settings from the section <c>Playlists</c>. Needs <c>AddWaveMpData</c> and <c>AddWaveMpCaching</c> (ffmpeg converts the covers). The
-    /// folder is prepared on start by <see cref="ServiceProviderExtensions.InitializeWaveMpPlaylistsAsync"/>.
+    /// settings from the section <c>Playlists</c>. Needs <c>AddWaveMpData</c> and <c>AddWaveMpCaching</c> (ffmpeg
+    /// converts the covers). The folder is prepared on start by
+    /// <see cref="ServiceProviderExtensions.InitializeWaveMpPlaylistsAsync"/>.
     /// </summary>
     public static IServiceCollection AddWaveMpPlaylists(this IServiceCollection services)
     {

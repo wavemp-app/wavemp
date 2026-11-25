@@ -188,8 +188,10 @@ public class PlayHistoryRepositoryTests : LibraryDatabaseTests
 
         IPlayHistoryRepository repository = CreateRepository();
         Page<RecentTrackRow> first = await repository.ListRecentTracksAsync(new RecentTrackListQuery(user.Id, 0, 1, 2));
-        Page<RecentTrackRow> second = await repository.ListRecentTracksAsync(new RecentTrackListQuery(user.Id, 1, 5, 2));
-        Page<RecentTrackRow> beyond = await repository.ListRecentTracksAsync(new RecentTrackListQuery(user.Id, 2, 5, 2));
+        Page<RecentTrackRow> second = await repository.ListRecentTracksAsync(
+            new RecentTrackListQuery(user.Id, 1, 5, 2));
+        Page<RecentTrackRow> beyond = await repository.ListRecentTracksAsync(
+            new RecentTrackListQuery(user.Id, 2, 5, 2));
 
         first.Items.Select(row => row.TrackId).Should().Equal(library.Duet.Id);
         second.Items.Select(row => row.TrackId).Should().Equal(library.Ballad.Id);

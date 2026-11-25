@@ -29,11 +29,26 @@ public class DeviceServiceTests
     [Test]
     public async Task ListAsync_Always_ListsOpenDevicesFirstThenTheMostRecentlyActive()
     {
-        await _context.Repository.RegisterAsync(_userId, "old", "Old", DeviceType.Tv, DeviceTestContext.Start.AddDays(-2));
-        await _context.Repository.RegisterAsync(_userId, "recent", "Recent", DeviceType.Tablet, DeviceTestContext.Start.AddDays(-1));
+        await _context.Repository.RegisterAsync(
+            _userId,
+            "old",
+            "Old",
+            DeviceType.Tv,
+            DeviceTestContext.Start.AddDays(-2));
+        await _context.Repository.RegisterAsync(
+            _userId,
+            "recent",
+            "Recent",
+            DeviceType.Tablet,
+            DeviceTestContext.Start.AddDays(-1));
         DeviceConnection laptop = await _context.RegisterAsync(_userId, "laptop", remoteControl: true);
         await _context.PlayAsync(laptop, [_context.AddTrack("Song")]);
-        await _context.Repository.RegisterAsync(Guid.NewGuid(), "foreign", "Foreign", DeviceType.Phone, DeviceTestContext.Start);
+        await _context.Repository.RegisterAsync(
+            Guid.NewGuid(),
+            "foreign",
+            "Foreign",
+            DeviceType.Phone,
+            DeviceTestContext.Start);
 
         Page<DeviceView> page = await _context.Service.ListAsync(_userId, 0, 10);
 
@@ -130,7 +145,12 @@ public class DeviceServiceTests
     [Test]
     public async Task RenameAsync_ClosedDevice_RenamesIt()
     {
-        await _context.Repository.RegisterAsync(_userId, "phone", "Safari · iPhone", DeviceType.Phone, DeviceTestContext.Start);
+        await _context.Repository.RegisterAsync(
+            _userId,
+            "phone",
+            "Safari · iPhone",
+            DeviceType.Phone,
+            DeviceTestContext.Start);
 
         DeviceRenameResult result = await _context.Service.RenameAsync(_userId, "phone", "Kitchen");
 
@@ -140,7 +160,12 @@ public class DeviceServiceTests
     [Test]
     public async Task RenameAsync_DeviceOfAnotherProfile_ReturnsNotFound()
     {
-        await _context.Repository.RegisterAsync(Guid.NewGuid(), "phone", "Phone", DeviceType.Phone, DeviceTestContext.Start);
+        await _context.Repository.RegisterAsync(
+            Guid.NewGuid(),
+            "phone",
+            "Phone",
+            DeviceType.Phone,
+            DeviceTestContext.Start);
 
         DeviceRenameResult result = await _context.Service.RenameAsync(_userId, "phone", "Mine");
 

@@ -209,7 +209,9 @@ public class ThemePackageReaderTests
     [Test]
     public void Read_EntryThatClaimsASmallerSize_IsMeasuredWhileUnpacking()
     {
-        byte[] zip = new ThemePackageBuilder().With("images/big.png", [.. ThemePackageBuilder.Png, .. new byte[4096]]).Build();
+        byte[] zip = new ThemePackageBuilder()
+            .With("images/big.png", [.. ThemePackageBuilder.Png, .. new byte[4096]])
+            .Build();
         PatchUncompressedSize(zip, "images/big.png", 16);
 
         ThemePackage package = Read(zip, new ThemeOptions { MaxFileBytes = 1024 });

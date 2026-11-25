@@ -79,7 +79,8 @@ public sealed class OrganizeExecutorDatabaseTests : OrganizingDatabaseTestBase
                 .Should().BeEquivalentTo((OrganizeItemStatus.Done, new[] { "Band", "Band/Record" }, new[] { "Messy" }));
         }
 
-        (await UserDataAsync(trackId)).Should().BeEquivalentTo(before with { SelectionPath = "Band/Record/01 One.mkv" });
+        (await UserDataAsync(trackId)).Should().BeEquivalentTo(
+            before with { SelectionPath = "Band/Record/01 One.mkv" });
         JobRequests.Should().Contain(request => request.JobId == JobIds.CoverCache);
 
         OrganizeOperation undo = await UndoPreviewAsync(preview.Id);
@@ -97,9 +98,11 @@ public sealed class OrganizeExecutorDatabaseTests : OrganizingDatabaseTestBase
     }
 
     [Test]
-    public async Task An_own_album_writes_its_tags_only_into_the_audio_file_after_a_backup_and_its_cover_and_undo_restores_all()
+    public async Task Own_album_writes_audio_tags_after_a_backup_and_its_cover_and_undo_restores_all()
     {
-        await AudioAsync("Incoming/b.mp3", new TestTags { Title = "Beta", Artist = "Band", Album = "Old", Track = "7" });
+        await AudioAsync(
+            "Incoming/b.mp3",
+            new TestTags { Title = "Beta", Artist = "Band", Album = "Old", Track = "7" });
         await VideoAsync("Incoming/b.mkv", new TestTags { Title = "Beta", Album = "Video album" });
         await ScanAsync();
         Guid trackId = await TrackIdAsync("Beta");
@@ -107,12 +110,15 @@ public sealed class OrganizeExecutorDatabaseTests : OrganizingDatabaseTestBase
         Guid album = await OwnAlbumAsync("Mix", "Various", [trackId]);
         byte[] cover = await UploadCoverAsync(album);
 
-        OrganizeOperation preview = (await PreviewAsync(service => service.PreviewOwnAlbumAsync(album, null))).Operation!;
+        OrganizeOperation preview =
+            (await PreviewAsync(service => service.PreviewOwnAlbumAsync(album, null))).Operation!;
         (await ApplyAsync(preview.Id)).Status.Should().Be(OrganizeApplyStatus.Queued);
         (await RunOrganizeJobAsync()).Single().Status.Should().Be(OrganizeOperationStatus.Completed);
 
         AlbumOf("Various/Mix/01 Beta.mp3").Should().Be(("Mix", "Various", 1u));
-        (await File.ReadAllBytesAsync(Media.Combine("Various/Mix/01 Beta.mkv"))).Should().Equal(video, "videos keep their tags");
+        (await File.ReadAllBytesAsync(Media.Combine("Various/Mix/01 Beta.mkv"))).Should().Equal(
+            video,
+            "videos keep their tags");
         (await File.ReadAllBytesAsync(Media.Combine("Various/Mix/cover.jpg"))).Should().Equal(cover);
         Directory.Exists(Media.Combine("Incoming")).Should().BeFalse();
         await using (WaveMpDbContext db = CreateDbContext())
@@ -217,7 +223,8 @@ public sealed class OrganizeExecutorDatabaseTests : OrganizingDatabaseTestBase
         await AudioAsync("Incoming/b.mp3", new TestTags { Title = "Beta", Artist = "Band", Album = "Old" });
         await ScanAsync();
         Guid album = await OwnAlbumAsync("Mix", "Various", [await TrackIdAsync("Beta")]);
-        OrganizeOperation preview = (await PreviewAsync(service => service.PreviewOwnAlbumAsync(album, null))).Operation!;
+        OrganizeOperation preview =
+            (await PreviewAsync(service => service.PreviewOwnAlbumAsync(album, null))).Operation!;
         IReadOnlyList<string> before = Snapshot();
         _isWritable = _ => false;
 
@@ -315,7 +322,8 @@ public sealed class OrganizeExecutorDatabaseTests : OrganizingDatabaseTestBase
         await AudioAsync("In/b.mp3", new TestTags { Title = "Beta", Artist = "Y" });
         await ScanAsync();
         Guid album = await OwnAlbumAsync("Mix", "Various", [await TrackIdAsync("Alpha"), await TrackIdAsync("Beta")]);
-        OrganizeOperation preview = (await PreviewAsync(service => service.PreviewOwnAlbumAsync(album, null))).Operation!;
+        OrganizeOperation preview =
+            (await PreviewAsync(service => service.PreviewOwnAlbumAsync(album, null))).Operation!;
         OrganizeRunRegistry registry = Services.GetRequiredService<OrganizeRunRegistry>();
         _isWritable = _ =>
         {
@@ -379,13 +387,16 @@ public sealed class OrganizeExecutorDatabaseTests : OrganizingDatabaseTestBase
     [Test]
     public async Task A_start_after_a_crash_puts_back_the_half_done_song_from_the_journal()
     {
-        await AudioAsync("Incoming/b.mp3", new TestTags { Title = "Beta", Artist = "Band", Album = "Old", Track = "7" });
+        await AudioAsync(
+            "Incoming/b.mp3",
+            new TestTags { Title = "Beta", Artist = "Band", Album = "Old", Track = "7" });
         await VideoAsync("Incoming/b.mkv");
         await ScanAsync();
         Guid trackId = await TrackIdAsync("Beta");
         Dictionary<string, byte[]> contents = Contents("Incoming/b.mp3", "Incoming/b.mkv");
         Guid album = await OwnAlbumAsync("Mix", "Various", [trackId]);
-        OrganizeOperation preview = (await PreviewAsync(service => service.PreviewOwnAlbumAsync(album, null))).Operation!;
+        OrganizeOperation preview =
+            (await PreviewAsync(service => service.PreviewOwnAlbumAsync(album, null))).Operation!;
         await ApplyAsync(preview.Id);
         JobRequests.Clear();
 
@@ -457,8 +468,12 @@ public sealed class OrganizeExecutorDatabaseTests : OrganizingDatabaseTestBase
     public async Task The_picture_in_the_artist_folder_stays_the_picture_of_the_artist()
     {
         // WMP-128: songs of two albums leave the artist folder, its picture stays there.
-        await AudioAsync("Band/a.mp3", new TestTags { Title = "A", Artist = "Band", AlbumArtist = "Band", Album = "One" });
-        await AudioAsync("Band/b.mp3", new TestTags { Title = "B", Artist = "Band", AlbumArtist = "Band", Album = "Two" });
+        await AudioAsync(
+            "Band/a.mp3",
+            new TestTags { Title = "A", Artist = "Band", AlbumArtist = "Band", Album = "One" });
+        await AudioAsync(
+            "Band/b.mp3",
+            new TestTags { Title = "B", Artist = "Band", AlbumArtist = "Band", Album = "Two" });
         await TestMediaGenerator.CreateImageAsync(Media.Combine("Band/artist.jpg"), 32, 32);
         await ScanAsync();
 
@@ -514,7 +529,9 @@ public sealed class OrganizeExecutorDatabaseTests : OrganizingDatabaseTestBase
         return await InScopeAsync(async services =>
         {
             IOwnAlbumService service = services.GetRequiredService<IOwnAlbumService>();
-            OwnAlbumResult created = await service.CreateAsync(new OwnAlbumValues(title, albumArtist, null, null), null);
+            OwnAlbumResult created = await service.CreateAsync(
+                new OwnAlbumValues(title, albumArtist, null, null),
+                null);
             (await service.ReplaceTracksAsync(created.Item!.Album.Id, trackIds)).IsOk.Should().BeTrue();
             return created.Item!.Album.Id;
         });
@@ -527,7 +544,8 @@ public sealed class OrganizeExecutorDatabaseTests : OrganizingDatabaseTestBase
         byte[] content = await File.ReadAllBytesAsync(picture);
         await using (FileStream upload = File.OpenRead(picture))
         {
-            await InScopeAsync(services => services.GetRequiredService<IOwnAlbumService>().SetCoverAsync(album, upload));
+            await InScopeAsync(
+                services => services.GetRequiredService<IOwnAlbumService>().SetCoverAsync(album, upload));
         }
 
         File.Delete(picture);
@@ -585,7 +603,8 @@ public sealed class OrganizeExecutorDatabaseTests : OrganizingDatabaseTestBase
             CreatedAt = Now,
             UpdatedAt = Now,
         };
-        MediaFile video = await db.MediaFiles.SingleAsync(file => file.TrackId == trackId && file.Kind == MediaFileKind.Video);
+        MediaFile video = await db.MediaFiles.SingleAsync(
+            file => file.TrackId == trackId && file.Kind == MediaFileKind.Video);
         db.Users.Add(user);
         db.Playlists.Add(playlist);
         db.PlaylistEntries.Add(new PlaylistEntry
@@ -596,9 +615,18 @@ public sealed class OrganizeExecutorDatabaseTests : OrganizingDatabaseTestBase
             Position = 0,
             AddedAt = Now,
         });
-        db.Favorites.Add(new Favorite { Id = Guid.CreateVersion7(), UserId = user.Id, Type = FavoriteType.Track, TrackId = trackId, CreatedAt = Now });
+        db.Favorites.Add(
+            new Favorite
+            {
+                Id = Guid.CreateVersion7(),
+                UserId = user.Id,
+                Type = FavoriteType.Track,
+                TrackId = trackId,
+                CreatedAt = Now,
+            });
         db.TrackRatings.Add(new TrackRating { UserId = user.Id, TrackId = trackId, Rating = 4, UpdatedAt = Now });
-        db.PlayHistory.Add(new PlayHistoryEntry { Id = Guid.CreateVersion7(), UserId = user.Id, TrackId = trackId, PlayedAt = Now });
+        db.PlayHistory.Add(
+            new PlayHistoryEntry { Id = Guid.CreateVersion7(), UserId = user.Id, TrackId = trackId, PlayedAt = Now });
         db.TrackFileSelections.Add(new TrackFileSelection
         {
             TrackId = trackId,

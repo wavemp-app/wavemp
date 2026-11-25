@@ -93,7 +93,8 @@ internal sealed class FileSelectionRepository(WaveMpDbContext dbContext) : IFile
                 .ThenBy(track => track.BaseName),
             FileSelectionSortField.FileCount => tracks
                 .OrderBy(
-                    track => track.Files.Count(file => file.Kind == MediaFileKind.Audio || file.Kind == MediaFileKind.Video)
+                    track => track.Files.Count(
+                        file => file.Kind == MediaFileKind.Audio || file.Kind == MediaFileKind.Video)
                         + track.Covers.Count,
                     query.Direction)
                 .ThenBy(track => track.DirectoryPath)

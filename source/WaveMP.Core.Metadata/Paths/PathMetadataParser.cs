@@ -10,7 +10,8 @@ namespace WaveMP.Core.Metadata.Paths;
 /// <item><description><c>Artist/Album/01 - Title</c>, also with disc folders such as <c>CD2</c>;</description></item>
 /// <item><description><c>Artist - Album/02. Title</c> and <c>Artist/Title</c>;</description></item>
 /// <item><description><c>Artist - Title</c> and <c>Artist - Album - Title</c> as file names;</description></item>
-/// <item><description>a pattern shared by the names of a folder (<see cref="FileNamePatternDetector"/>).</description></item>
+/// <item><description>a pattern shared by the names of a folder
+/// (<see cref="FileNamePatternDetector"/>).</description></item>
 /// </list>
 /// A leading number is only a track number in an album folder or with a leading zero, so <c>50 Cent - Song</c> stays
 /// an artist.
@@ -143,7 +144,11 @@ public static partial class PathMetadataParser
         {
             Match match = pattern.Match(album);
             if (match.Success
-                && int.TryParse(match.Groups["year"].Value, NumberStyles.None, CultureInfo.InvariantCulture, out int year)
+                && int.TryParse(
+                    match.Groups["year"].Value,
+                    NumberStyles.None,
+                    CultureInfo.InvariantCulture,
+                    out int year)
                 && year is >= MinYear and <= MaxYear
                 && MetadataText.Normalize(match.Groups["album"].Value) is { } name)
             {

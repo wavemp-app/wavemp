@@ -89,7 +89,9 @@ public class LyricsFileStoreTests
     [Test]
     public async Task CreateAsync_MissingFolderOrPathOutsideTheMediaFolder_IsNotWritable()
     {
-        (await _store.CreateAsync(MediaSource.DefaultId, "Gone/Song.lrc", "Lyrics")).Should().Be(LyricsFileWriteStatus.NotWritable);
-        (await _store.CreateAsync(MediaSource.DefaultId, "../Song.lrc", "Lyrics")).Should().Be(LyricsFileWriteStatus.NotWritable);
+        (await _store.CreateAsync(MediaSource.DefaultId, "Gone/Song.lrc", "Lyrics")).Should().Be(
+            LyricsFileWriteStatus.NotWritable);
+        (await _store.CreateAsync(MediaSource.DefaultId, "../Song.lrc", "Lyrics")).Should().Be(
+            LyricsFileWriteStatus.NotWritable);
     }
 }

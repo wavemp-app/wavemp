@@ -65,15 +65,15 @@ public sealed class LibrarySettings
     public CoverPriority CoverPriority { get; init; } = CoverPriority.AlbumFirst;
 
     /// <summary>
-    /// Downloads the lyrics of tracks without lyrics from the online lyrics database LRCLIB (lrclib.net): for new tracks
-    /// after scans and when an admin asks for a track. Off by default, because it sends the titles, artists and albums
-    /// of the library to the service.
+    /// Downloads the lyrics of tracks without lyrics from the online lyrics database LRCLIB (lrclib.net): for new
+    /// tracks after scans and when an admin asks for a track. Off by default, because it sends the titles, artists and
+    /// albums of the library to the service.
     /// </summary>
     public bool DownloadLyrics { get; init; }
 
     /// <summary>
-    /// Whether Subsonic apps may download the original files of the tracks (the endpoint <c>download</c> of the Subsonic
-    /// API, e.g. to keep them on the device). Off by default; streaming is always allowed.
+    /// Whether Subsonic apps may download the original files of the tracks (the endpoint <c>download</c> of the
+    /// Subsonic API, e.g. to keep them on the device). Off by default; streaming is always allowed.
     /// </summary>
     public bool SubsonicDownloads { get; init; }
 }

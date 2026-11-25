@@ -87,7 +87,9 @@ internal sealed class SubsonicBrowsingService(
             new AlbumListRequest(0, SubsonicLimits.Unlimited, AlbumSortField.Year, SortDirection.Asc, UserId: user.Id),
             cancellationToken);
         SubsonicElement element = artistElements[0];
-        element.AddList("album", await loader.AlbumsAsync(user.Id, page?.Items ?? [], cancellationToken: cancellationToken));
+        element.AddList(
+            "album",
+            await loader.AlbumsAsync(user.Id, page?.Items ?? [], cancellationToken: cancellationToken));
         return SubsonicResponse.Ok(element);
     }
 
@@ -116,7 +118,9 @@ internal sealed class SubsonicBrowsingService(
             new TrackListRequest(0, SubsonicLimits.Unlimited, UserId: user.Id),
             cancellationToken);
         SubsonicElement element = albumElements[0];
-        element.AddList("song", await loader.SongsAsync(user.Id, songs?.Items ?? [], cancellationToken: cancellationToken));
+        element.AddList(
+            "song",
+            await loader.SongsAsync(user.Id, songs?.Items ?? [], cancellationToken: cancellationToken));
         return SubsonicResponse.Ok(element);
     }
 
@@ -197,7 +201,9 @@ internal sealed class SubsonicBrowsingService(
         switch (type)
         {
             case "random":
-                items = await ByOrderAsync(user, new SubsonicAlbumListQuery(SubsonicAlbumOrder.Random, user.Id, 0, size));
+                items = await ByOrderAsync(
+                    user,
+                    new SubsonicAlbumListQuery(SubsonicAlbumOrder.Random, user.Id, 0, size));
                 break;
             case "frequent":
                 items = await ByOrderAsync(
@@ -295,7 +301,10 @@ internal sealed class SubsonicBrowsingService(
             return await loader.AlbumsAsync(listUser.Id, page.Items, cancellationToken: cancellationToken);
         }
 
-        async Task<IReadOnlyList<SubsonicElement>> StarredAlbumsAsync(SubsonicUser listUser, int listOffset, int listSize)
+        async Task<IReadOnlyList<SubsonicElement>> StarredAlbumsAsync(
+            SubsonicUser listUser,
+            int listOffset,
+            int listSize)
         {
             if (listSize == 0)
             {

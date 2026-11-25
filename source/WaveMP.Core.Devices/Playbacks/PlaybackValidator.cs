@@ -121,7 +121,8 @@ public static class PlaybackValidator
     {
         if (!IsMilliseconds(value))
         {
-            errors.Add(new DeviceValidationError(field, DeviceValidationCode.OutOfRange, 0, DeviceLimits.MaxMilliseconds));
+            errors.Add(
+                new DeviceValidationError(field, DeviceValidationCode.OutOfRange, 0, DeviceLimits.MaxMilliseconds));
         }
     }
 }

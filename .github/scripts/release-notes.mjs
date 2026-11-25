@@ -47,7 +47,8 @@ const releaseNotesPattern = /^release-m([1-9]\d*)\.md$/
 const escapedRepository = githubRepository.replace(/[.]/g, '\\.')
 /** Addresses of files of this repository: prefix, ref (branch, tag or commit), path and suffix. */
 const repositoryUrlPattern = new RegExp(
-    `^(https://raw\\.githubusercontent\\.com/${escapedRepository}/|https://github\\.com/${escapedRepository}/(?:blob|tree|raw)/)([^/?#]+)/([^?#]*)(.*)$`,
+    `^(https://raw\\.githubusercontent\\.com/${escapedRepository}/` +
+        `|https://github\\.com/${escapedRepository}/(?:blob|tree|raw)/)([^/?#]+)/([^?#]*)(.*)$`,
 )
 
 /** The path of the release notes of a milestone, relative to the repository root. */

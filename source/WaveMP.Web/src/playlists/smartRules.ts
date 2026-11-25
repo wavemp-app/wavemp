@@ -437,9 +437,10 @@ export function summaryOf(rule: SmartPlaylistRule): RuleSummary | undefined {
 
     const kind = kindOf(rule.field)
     const show = (value: number | null | undefined) => showValue(rule.field!, value)
+    const flagKey = kind === 'flag' ? `${messageKey(rule.field)}.` : ''
     return {
         fieldKey: `smartPlaylists.fields.${messageKey(rule.field)}`,
-        operatorKey: `smartPlaylists.summary.${kind === 'flag' ? `${messageKey(rule.field)}.` : ''}${messageKey(rule.operator)}`,
+        operatorKey: `smartPlaylists.summary.${flagKey}${messageKey(rule.operator)}`,
         value: kind === 'text' ? (rule.text ?? '') : show(rule.number),
         to: show(rule.numberTo),
     }

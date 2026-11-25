@@ -120,7 +120,9 @@ public class ArtistAutoplaySelectorTests
         IReadOnlyList<Guid> picked = await _selector.SelectAsync(Request([Guid.NewGuid()], count: 2));
 
         picked.Should().HaveCount(2);
-        await _repository.Received(1).ListCandidatesAsync(Arg.Any<AutoplayCandidateQuery>(), Arg.Any<CancellationToken>());
+        await _repository.Received(1).ListCandidatesAsync(
+            Arg.Any<AutoplayCandidateQuery>(),
+            Arg.Any<CancellationToken>());
     }
 
     [Test]

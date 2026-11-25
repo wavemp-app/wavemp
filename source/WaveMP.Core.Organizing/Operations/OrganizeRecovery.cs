@@ -55,7 +55,9 @@ internal sealed class OrganizeRecovery(
                 : null;
             string? coverSource = await CoverSourceAsync(item, cancellationToken);
             bool putBack = rollback.PutBack(source.RootPath, item, item.Moves, backup, coverSource);
-            foreach (string path in item.Moves.SelectMany(move => new[] { move.FromPath, move.ToPath }).OfType<string>())
+            foreach (string path in item.Moves
+                .SelectMany(move => new[] { move.FromPath, move.ToPath })
+                .OfType<string>())
             {
                 Touch(touched, item.SourceId, FolderNames.DirectoryOf(path));
             }
@@ -98,7 +100,9 @@ internal sealed class OrganizeRecovery(
                 await repository.UpdateOwnAlbumAppliedAtAsync(ownAlbumId, cancellationToken);
             }
 
-            logger.LogWarning("The organize operation {OperationId} was interrupted by a stop of the server", operationId);
+            logger.LogWarning(
+                "The organize operation {OperationId} was interrupted by a stop of the server",
+                operationId);
         }
 
         if (touched.Count > 0)
@@ -106,7 +110,12 @@ internal sealed class OrganizeRecovery(
             try
             {
                 await scanner.RefreshFoldersAsync(
-                    [.. touched.Select(folder => new FolderRefresh(folder.Key.SourceId, folder.Key.DirectoryPath, [.. folder.Value]))],
+                    [
+                        .. touched.Select(folder => new FolderRefresh(
+                            folder.Key.SourceId,
+                            folder.Key.DirectoryPath,
+                            [.. folder.Value])),
+                    ],
                     cancellationToken);
             }
             catch (Exception exception) when (exception is not OperationCanceledException)
@@ -135,7 +144,8 @@ internal sealed class OrganizeRecovery(
                 continue;
             }
 
-            foreach (OrganizeFileMove move in item.Moves.Where(move => move.FromPath is not null && move.ToPath is null))
+            foreach (OrganizeFileMove move in item.Moves
+                .Where(move => move.FromPath is not null && move.ToPath is null))
             {
                 if (MediaPathGuard.TryResolve(
                         source.RootPath,
@@ -153,7 +163,8 @@ internal sealed class OrganizeRecovery(
     private async Task<string?> CoverSourceAsync(OrganizeItem item, CancellationToken cancellationToken)
     {
         if (item.Kind != OrganizeItemKind.AlbumCover
-            || await repository.FindOperationAsync(item.OperationId, cancellationToken) is not { OwnAlbumId: { } albumId }
+            || await repository.FindOperationAsync(item.OperationId, cancellationToken)
+                is not { OwnAlbumId: { } albumId }
             || await ownAlbums.FindAsync(albumId, cancellationToken) is not { CoverFileName: { } fileName })
         {
             return null;

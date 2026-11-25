@@ -260,7 +260,8 @@ export function findShortDescription(markdown) {
     const description = match[1].trim()
     if (byteLength(description) > shortDescriptionLimit) {
         throw new Error(
-            `The tagline of the README has ${byteLength(description)} bytes, Docker Hub allows ${shortDescriptionLimit}.`,
+            `The tagline of the README has ${byteLength(description)} bytes, ` +
+                `Docker Hub allows ${shortDescriptionLimit}.`,
         )
     }
     return description

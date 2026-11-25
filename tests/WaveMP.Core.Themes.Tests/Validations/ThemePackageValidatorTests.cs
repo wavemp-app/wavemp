@@ -80,9 +80,11 @@ public class ThemePackageValidatorTests
     {
         ValidatedTheme theme = Validate(new ThemePackageBuilder().With(
             "images/glass.svg",
-            """<svg xmlns="http://www.w3.org/2000/svg"><!-- note --><metadata>m</metadata><rect width="1"/></svg>""")).Theme!;
+            """<svg xmlns="http://www.w3.org/2000/svg"><!-- note --><metadata>m</metadata>"""
+                + """<rect width="1"/></svg>""")).Theme!;
 
-        string svg = Encoding.UTF8.GetString(theme.Files.Single(file => file.Name.EndsWith(".svg", StringComparison.Ordinal)).Content);
+        string svg = Encoding.UTF8.GetString(
+            theme.Files.Single(file => file.Name.EndsWith(".svg", StringComparison.Ordinal)).Content);
         svg.Should().Be("""<svg xmlns="http://www.w3.org/2000/svg"><rect width="1" /></svg>""");
     }
 
@@ -238,7 +240,8 @@ public class ThemePackageValidatorTests
     {
         ThemePackageBuilder builder = new ThemePackageBuilder().With(
             "images/glass.svg",
-            """<svg xmlns="http://www.w3.org/2000/svg"><style>@imp<![CDATA[ort "https://example.com/a.css";]]></style></svg>""");
+            """<svg xmlns="http://www.w3.org/2000/svg">"""
+                + """<style>@imp<![CDATA[ort "https://example.com/a.css";]]></style></svg>""");
 
         ThemeValidationResult result = Validate(builder);
 

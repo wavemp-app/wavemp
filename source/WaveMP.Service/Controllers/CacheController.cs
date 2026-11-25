@@ -8,8 +8,8 @@ using WaveMP.Service.Tokens;
 namespace WaveMP.Service.Controllers;
 
 /// <summary>
-/// The cache of scaled covers and transcoded media (HLS segments), for admins only. Its size limit is part of the settings
-/// (<c>/api/v1/settings/cache</c>).
+/// The cache of scaled covers and transcoded media (HLS segments), for admins only. Its size limit is part of the
+/// settings (<c>/api/v1/settings/cache</c>).
 /// </summary>
 [ApiController]
 [Authorize(Policy = AuthorizationPolicies.Admin)]

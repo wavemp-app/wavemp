@@ -13,7 +13,9 @@ public interface IMediaSourceService
 
     Task<MediaSourceOverview?> GetAsync(Guid id, CancellationToken cancellationToken = default);
 
-    Task<MediaSourceResult> CreateAsync(CreateMediaSourceCommand command, CancellationToken cancellationToken = default);
+    Task<MediaSourceResult> CreateAsync(
+        CreateMediaSourceCommand command,
+        CancellationToken cancellationToken = default);
 
     Task<MediaSourceResult> UpdateAsync(
         Guid id,

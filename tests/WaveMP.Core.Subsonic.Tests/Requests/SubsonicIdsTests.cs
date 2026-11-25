@@ -104,7 +104,10 @@ public class SubsonicIdsTests
     [Test]
     public void MusicFolder_OtherSources_GetDifferentPositiveIdsAboveTheFirstFolder()
     {
-        Guid[] ids = [.. Enumerable.Range(2, 1000).Select(number => Guid.Parse($"019a0000-0000-7000-8000-{number:D12}"))];
+        Guid[] ids =
+        [
+            .. Enumerable.Range(2, 1000).Select(number => Guid.Parse($"019a0000-0000-7000-8000-{number:D12}")),
+        ];
 
         int[] folders = [.. ids.Select(SubsonicIds.MusicFolder)];
 

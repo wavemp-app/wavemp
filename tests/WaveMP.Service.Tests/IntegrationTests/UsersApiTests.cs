@@ -50,7 +50,8 @@ public class UsersApiTests
         string id = Guid.NewGuid().ToString();
         yield return new TestCaseData("GET", "/api/v1/users", null).SetArgDisplayNames("ListUsers");
         yield return new TestCaseData("GET", $"/api/v1/users/{id}", null).SetArgDisplayNames("GetUser");
-        yield return new TestCaseData("POST", "/api/v1/users", "{\"name\":\"Nobody\"}").SetArgDisplayNames("CreateUser");
+        yield return new TestCaseData("POST", "/api/v1/users", "{\"name\":\"Nobody\"}").SetArgDisplayNames(
+            "CreateUser");
         yield return new TestCaseData("PATCH", $"/api/v1/users/{id}", "{}").SetArgDisplayNames("UpdateUser");
         yield return new TestCaseData("DELETE", $"/api/v1/users/{id}", null).SetArgDisplayNames("DeleteUser");
         yield return new TestCaseData("DELETE", $"/api/v1/users/{id}/pin", null).SetArgDisplayNames("ResetUserPin");
@@ -226,7 +227,8 @@ public class UsersApiTests
 
         List<string> names = [.. page.Items.Select(user => user.Name).Where(name => name.Contains(unique))];
         names.Should().Equal($"Sort {unique} c", $"Sort {unique} b", $"Sort {unique} A");
-        // The database sorts with its collation, e.g. "Á" next to "A"; an ordinal comparison matches it for ASCII only.
+        // The database sorts with its collation, e.g. "Á" next to "A"; an ordinal comparison matches it for ASCII
+        // only.
         page.Items
             .Select(user => user.Name.ToUpperInvariant())
             .Where(name => name.All(char.IsAscii))

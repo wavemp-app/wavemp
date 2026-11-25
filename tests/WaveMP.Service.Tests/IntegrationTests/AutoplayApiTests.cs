@@ -184,7 +184,10 @@ public class AutoplayApiTests
 
     private static IEnumerable<TestCaseData> InvalidRequests()
     {
-        yield return new TestCaseData("{\"trackIds\":[],\"audioFormats\":[\"Mp3\"]}", "trackIds", ValidationErrorCodeDto.MinItems)
+        yield return new TestCaseData(
+            "{\"trackIds\":[],\"audioFormats\":[\"Mp3\"]}",
+            "trackIds",
+            ValidationErrorCodeDto.MinItems)
             .SetArgDisplayNames("NoTracks");
         yield return new TestCaseData("{\"audioFormats\":[\"Mp3\"]}", "trackIds", ValidationErrorCodeDto.Required)
             .SetArgDisplayNames("MissingTracks");
@@ -199,7 +202,8 @@ public class AutoplayApiTests
                 ValidationErrorCodeDto.OutOfRange)
             .SetArgDisplayNames("CountTooHigh");
         yield return new TestCaseData(
-                $"{{\"trackIds\":[{string.Join(',', Enumerable.Repeat($"\"{Guid.Empty}\"", 501))}],\"audioFormats\":[\"Mp3\"]}}",
+                $"{{\"trackIds\":[{string.Join(',', Enumerable.Repeat($"\"{Guid.Empty}\"", 501))}],"
+                    + "\"audioFormats\":[\"Mp3\"]}",
                 "trackIds",
                 ValidationErrorCodeDto.MaxItems)
             .SetArgDisplayNames("TooManyTracks");

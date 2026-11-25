@@ -10,6 +10,7 @@ namespace WaveMP.Service.Tests.OpenApiTransformers;
 public class XmlDocumentationTests
 {
     private const string Type = "WaveMP.Service.Tests.OpenApiTransformers.XmlDocumentationTests.Sample";
+    private const string Changes = "System.Collections.Generic.Dictionary{System.String,System.Int32}";
 
     private static readonly XmlDocumentation _documentation = new(XDocument.Parse($$"""
         <doc>
@@ -19,7 +20,7 @@ public class XmlDocumentationTests
                 with a name.</param>
               <param name="cancellationToken">Aborts the request.</param>
             </member>
-            <member name="M:{{Type}}.Update(System.Guid,System.Collections.Generic.Dictionary{System.String,System.Int32},System.Threading.CancellationToken)">
+            <member name="M:{{Type}}.Update(System.Guid,{{Changes}},System.Threading.CancellationToken)">
               <param name="changes">The changes.</param>
             </member>
             <member name="M:{{Type}}.Update(System.Guid,System.Threading.CancellationToken)">

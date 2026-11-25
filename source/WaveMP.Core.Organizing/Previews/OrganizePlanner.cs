@@ -130,7 +130,8 @@ public sealed class OrganizePlanner(
             OrganizeItem item = NewItem(OrganizeItemKind.AlbumCover, sourceId, cover.DisplayTitle, conflict, warnings);
             item.ToDirectoryPath = directory;
             item.ToBaseName = CoverBaseName;
-            item.Moves.Add(NewMove(item, 0, null, OrganizeFileKind.AlbumCover, null, target, null, cover.Size, cover.ModifiedAt));
+            item.Moves.Add(
+                NewMove(item, 0, null, OrganizeFileKind.AlbumCover, null, target, null, cover.Size, cover.ModifiedAt));
             if (conflict is null)
             {
                 _plannedNames.Add(NameKey(sourceId, target));
@@ -218,7 +219,12 @@ public sealed class OrganizePlanner(
             .Select(file => FolderNames.ExtensionOf(file.FileName))
             .OfType<string>()
             .MaxBy(PathNameSanitizer.ByteCountOf);
-        RenderedPath rendered = LayoutTemplateRenderer.Render(template, planned.Values, maxPathBytes, longest, song.BaseName);
+        RenderedPath rendered = LayoutTemplateRenderer.Render(
+            template,
+            planned.Values,
+            maxPathBytes,
+            longest,
+            song.BaseName);
         (string toDirectory, bool folderBlocked) = ResolveFolders(sourceId, rendered.Folders);
         string toBase = rendered.BaseName;
 
@@ -242,7 +248,9 @@ public sealed class OrganizePlanner(
             string? temporary = FolderNames.AreSame(target, file.RelativePath)
                 ? FolderNames.Combine(
                     toDirectory,
-                    TemporaryPrefix + file.MediaFileId.ToString("N") + (extension is null ? string.Empty : "." + extension))
+                    TemporaryPrefix
+                        + file.MediaFileId.ToString("N")
+                        + (extension is null ? string.Empty : "." + extension))
                 : null;
             item.Moves.Add(NewMove(
                 item,
@@ -533,7 +541,8 @@ public sealed class OrganizePlanner(
                 continue;
             }
 
-            bool unchanged = disk.Fingerprint(sourceId, current) is { } found && found.Matches(move.Size, move.ModifiedAt)
+            bool unchanged = disk.Fingerprint(sourceId, current) is { } found
+                && found.Matches(move.Size, move.ModifiedAt)
                 && (move.MediaFileId is not { } fileId || !currentFiles.TryGetValue(fileId, out OrganizeFileRow? file)
                     || string.Equals(file.RelativePath, current, StringComparison.Ordinal));
             if (!unchanged)

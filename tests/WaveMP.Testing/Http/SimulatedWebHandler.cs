@@ -12,7 +12,8 @@ namespace WaveMP.Testing.Http;
 public sealed class SimulatedWebHandler : HttpMessageHandler
 {
     private readonly Lock _lock = new();
-    private readonly List<(Func<Uri, bool> Matches, Func<HttpRequestMessage, HttpResponseMessage> Respond)> _routes = [];
+    private readonly List<(Func<Uri, bool> Matches, Func<HttpRequestMessage, HttpResponseMessage> Respond)> _routes
+        = [];
     private readonly ConcurrentQueue<SimulatedRequest> _requests = new();
 
     /// <summary>

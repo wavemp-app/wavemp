@@ -277,7 +277,8 @@ public class ThemesApiTests
         JsonArray errors = await ShouldBeInvalidThemeAsync(await InstallAsync(new ThemePackageBuilder(themeApi: 99)));
 
         errors.Should().ContainSingle().Which!.ToJsonString().Should().Be(
-            """{"code":"manifest.unsupported_api_version","path":"manifest.json","field":"themeApi","min":5,"max":8}""");
+            """{"code":"manifest.unsupported_api_version","path":"manifest.json","field":"themeApi","min":"""
+                + """5,"max":8}""");
     }
 
     [Test]
@@ -323,7 +324,9 @@ public class ThemesApiTests
         await using (WaveMpWebApplicationFactory first = new(settings: settings))
         {
             using HttpClient admin = await first.CreateAdminClientAsync();
-            HttpResponseMessage installed = await admin.PostAsync("/api/v1/themes", Zip(new ThemePackageBuilder().Build()));
+            HttpResponseMessage installed = await admin.PostAsync(
+                "/api/v1/themes",
+                Zip(new ThemePackageBuilder().Build()));
             installed.StatusCode.Should().Be(HttpStatusCode.Created, await installed.Content.ReadAsStringAsync());
             (await admin.PatchAsJsonAsync("/api/v1/me/settings", new { theme = new { id = "aurora" } }))
                 .StatusCode.Should().Be(HttpStatusCode.OK);
@@ -331,7 +334,9 @@ public class ThemesApiTests
 
         // As if the version that installed the theme had let the script through.
         string svg = Directory.GetFiles(Path.Combine(data.Path, "themes", "aurora", "files"), "*.svg").Single();
-        await File.WriteAllTextAsync(svg, """<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>""");
+        await File.WriteAllTextAsync(
+            svg,
+            """<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>""");
 
         await using WaveMpWebApplicationFactory second = new(settings: settings);
         using HttpClient restarted = await second.CreateAdminClientAsync();
@@ -370,7 +375,9 @@ public class ThemesApiTests
         await using (WaveMpWebApplicationFactory first = new(settings: settings))
         {
             using HttpClient admin = await first.CreateAdminClientAsync();
-            HttpResponseMessage installed = await admin.PostAsync("/api/v1/themes", Zip(new ThemePackageBuilder().Build()));
+            HttpResponseMessage installed = await admin.PostAsync(
+                "/api/v1/themes",
+                Zip(new ThemePackageBuilder().Build()));
             installed.StatusCode.Should().Be(HttpStatusCode.Created, await installed.Content.ReadAsStringAsync());
         }
 

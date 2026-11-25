@@ -33,8 +33,8 @@ public enum OnlineSearchStatus
 /// The matches of a song, the best first, next to its current tags.
 /// </summary>
 /// <param name="Status">The outcome.</param>
-/// <param name="Current">The current tags and whether they can be written; with <see cref="OnlineSearchStatus.Searched"/>
-/// only.</param>
+/// <param name="Current">The current tags and whether they can be written; with
+/// <see cref="OnlineSearchStatus.Searched"/> only.</param>
 /// <param name="Matches">The matches, the best first.</param>
 public sealed record TrackSearchResult(
     OnlineSearchStatus Status,

@@ -51,7 +51,9 @@ public class SmartPlaylistServiceTests
     public async Task CreateAsync_ValidDefinition_StoresTheNormalizedSmartPlaylistOfTheUser()
     {
         SmartPlaylist? created = null;
-        await _smartPlaylists.CreateAsync(Arg.Do<SmartPlaylist>(playlist => created = playlist), Arg.Any<CancellationToken>());
+        await _smartPlaylists.CreateAsync(
+            Arg.Do<SmartPlaylist>(playlist => created = playlist),
+            Arg.Any<CancellationToken>());
         _smartPlaylists.FindAsync(_userId, Arg.Any<Guid>(), Arg.Any<CancellationToken>()).Returns(_ => created);
 
         SmartPlaylistResult result = await _service.CreateAsync(_userId, new SmartPlaylistDefinition(
@@ -156,7 +158,13 @@ public class SmartPlaylistServiceTests
         TrackRow first = Track("First");
         TrackRow second = Track("Second");
         var vanished = Guid.NewGuid();
-        _smartPlaylists.ListTrackIdsAsync(_userId, Arg.Any<SmartPlaylistCriteria>(), _now, 10, 3, Arg.Any<CancellationToken>())
+        _smartPlaylists.ListTrackIdsAsync(
+            _userId,
+            Arg.Any<SmartPlaylistCriteria>(),
+            _now,
+            10,
+            3,
+            Arg.Any<CancellationToken>())
             .Returns(new Page<Guid>([second.Id, vanished, first.Id], 10, 3, 13));
         _tracks.ListByIdsAsync(Arg.Any<IReadOnlyCollection<Guid>>(), _userId, Arg.Any<CancellationToken>())
             .Returns([first, second]);
@@ -212,7 +220,13 @@ public class SmartPlaylistServiceTests
         _options.MaxEntries = 2;
         SmartPlaylist playlist = Playlist("Huge");
         _smartPlaylists.FindAsync(_userId, playlist.Id, Arg.Any<CancellationToken>()).Returns(playlist);
-        _smartPlaylists.ListTrackIdsAsync(_userId, Arg.Any<SmartPlaylistCriteria>(), _now, 0, 3, Arg.Any<CancellationToken>())
+        _smartPlaylists.ListTrackIdsAsync(
+            _userId,
+            Arg.Any<SmartPlaylistCriteria>(),
+            _now,
+            0,
+            3,
+            Arg.Any<CancellationToken>())
             .Returns(new Page<Guid>([Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid()], 0, 3, 7));
 
         SmartPlaylistConversion conversion = await _service.ConvertAsync(_userId, playlist.Id);

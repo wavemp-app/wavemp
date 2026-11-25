@@ -6,8 +6,8 @@ namespace WaveMP.Core.Caching.Images;
 
 /// <summary>
 /// The arguments of ffmpeg that scale a picture read from standard input to WebP pictures: the input is split once
-/// per target, optionally cropped to a square around its center or to a chosen square section, and scaled to fit into a square of the target size,
-/// keeping the aspect ratio and never enlarging it. Metadata (e.g. EXIF) is not copied.
+/// per target, optionally cropped to a square around its center or to a chosen square section, and scaled to fit into a
+/// square of the target size, keeping the aspect ratio and never enlarging it. Metadata (e.g. EXIF) is not copied.
 /// </summary>
 internal static class FfmpegCoverArguments
 {

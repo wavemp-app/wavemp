@@ -70,7 +70,8 @@ public static partial class LibrarySettingsValidator
             }
             else if (values.Any(earlierExtensions.Contains) || values.Contains(LibrarySettings.LyricsExtension))
             {
-                // An extension of an earlier list, or the extension of lyrics files, which is always part of the library.
+                // An extension of an earlier list, or the extension of lyrics files, which is always part of the
+                // library.
                 errors.Add(new(field, SettingsErrorReason.Overlap));
             }
 

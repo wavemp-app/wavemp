@@ -112,7 +112,10 @@ public class DeviceHubTests
         await withSessionToken.Should().ThrowAsync<Exception>();
         // The same WebSocket request with a ticket opens.
         using System.Net.WebSockets.WebSocket socket = await _factory.Server.CreateWebSocketClient().ConnectAsync(
-            DeviceHubClient.WithQuery(webSocket, DeviceHubDefaults.AccessTokenQueryParameter, await TicketAsync(profile)),
+            DeviceHubClient.WithQuery(
+                webSocket,
+                DeviceHubDefaults.AccessTokenQueryParameter,
+                await TicketAsync(profile)),
             CancellationToken.None);
         socket.State.Should().Be(System.Net.WebSockets.WebSocketState.Open);
     }
@@ -233,7 +236,8 @@ public class DeviceHubTests
 
         await phone.DisposeAsync();
         (await laptop.NextAsync<DeviceListDto>(DeviceHubClient.DevicesChanged)).Devices
-            .Single(device => device.Id == "phone").Should().BeEquivalentTo(new { Online = false, RemoteControl = false });
+            .Single(device => device.Id == "phone").Should().BeEquivalentTo(
+                new { Online = false, RemoteControl = false });
     }
 
     [Test]
@@ -318,7 +322,13 @@ public class DeviceHubTests
             claim: true);
 
         CommandResultDto result = await remote.SendAsync(
-            new DeviceCommandDto { TargetDeviceId = "speaker", Type = DeviceCommandTypeDto.SetVolume, Volume = 0.25, Muted = false });
+            new DeviceCommandDto
+            {
+                TargetDeviceId = "speaker",
+                Type = DeviceCommandTypeDto.SetVolume,
+                Volume = 0.25,
+                Muted = false,
+            });
 
         result.Should().BeEquivalentTo(new
         {
@@ -447,7 +457,8 @@ public class DeviceHubTests
         });
 
         changed.QueueVersion.Should().BeGreaterThan(first.QueueVersion);
-        stale.Should().BeEquivalentTo(new { Status = CommandStatusDto.Conflict, changed.Version, changed.QueueVersion });
+        stale.Should().BeEquivalentTo(
+            new { Status = CommandStatusDto.Conflict, changed.Version, changed.QueueVersion });
         current.Status.Should().Be(CommandStatusDto.Accepted);
         outside.Status.Should().Be(CommandStatusDto.Invalid);
         outside.Errors.Should().ContainSingle().Which.Should().BeEquivalentTo(
@@ -493,7 +504,9 @@ public class DeviceHubTests
         await speaker.RegisterAsync("speaker", remoteControl: true);
         await phone.RegisterAsync("phone", name: "Phone of the test");
         var elapsed = Stopwatch.StartNew();
-        await speaker.PublishAsync(Playback(LivePlaybackStatusDto.Playing, [_first.Id, _second.Id], 1, 10_000), claim: true);
+        await speaker.PublishAsync(
+            Playback(LivePlaybackStatusDto.Playing, [_first.Id, _second.Id], 1, 10_000),
+            claim: true);
         await Task.Delay(TimeSpan.FromMilliseconds(1200));
 
         CommandResultDto result = await phone.TransferAsync("phone", play: true);
@@ -566,7 +579,8 @@ public class DeviceHubTests
                 0,
                 source: new PlaybackSourceDto { Kind = null, Id = Guid.NewGuid() }));
 
-        songs.Errors.Should().BeEquivalentTo([new { Field = "trackIds", Code = ValidationErrorCodeDto.MaxItems, Max = 2000 }]);
+        songs.Errors.Should().BeEquivalentTo(
+            [new { Field = "trackIds", Code = ValidationErrorCodeDto.MaxItems, Max = 2000 }]);
         volume.Errors.Should().BeEquivalentTo(
             [new { Field = "volume", Code = ValidationErrorCodeDto.OutOfRange, Min = 0, Max = 1 }]);
         queue.Errors.Should().BeEquivalentTo(
@@ -608,7 +622,8 @@ public class DeviceHubTests
         await stringForNumber.Should().ThrowAsync<HubException>();
         await missingMember.Should().ThrowAsync<HubException>();
         // The connection stays usable, and only the valid command arrives.
-        (await remote.SendAsync(Command("speaker", DeviceCommandTypeDto.Stop))).Status.Should().Be(CommandStatusDto.Accepted);
+        (await remote.SendAsync(Command("speaker", DeviceCommandTypeDto.Stop))).Status.Should().Be(
+            CommandStatusDto.Accepted);
         (await speaker.NextAsync<ReceivedCommandDto>(DeviceHubClient.CommandReceived)).Type
             .Should().Be(DeviceCommandTypeDto.Stop);
     }
@@ -753,7 +768,10 @@ public class DeviceHubTests
         HttpTransportType transport = HttpTransportType.WebSockets)
     {
         // Like the web app: a new ticket for every request that needs one.
-        var client = DeviceHubClient.Create(_factory.Server, async () => (string?)await TicketAsync(profile), transport);
+        var client = DeviceHubClient.Create(
+            _factory.Server,
+            async () => (string?)await TicketAsync(profile),
+            transport);
         await client.StartAsync();
         return client;
     }

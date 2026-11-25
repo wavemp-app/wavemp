@@ -135,7 +135,8 @@ describe('ScrobblingServices', () => {
             await wrapper.get('[data-item="last-fm"] [data-item="connect"]').trigger('click')
 
             expect(assign).toHaveBeenCalledExactlyOnceWith(
-                'https://www.last.fm/api/auth/?api_key=key&cb=https%3A%2F%2Fmusic.example%2Fsettings%2Fscrobbling%2Flast-fm',
+                'https://www.last.fm/api/auth/?api_key=key' +
+                    '&cb=https%3A%2F%2Fmusic.example%2Fsettings%2Fscrobbling%2Flast-fm',
             )
             wrapper.unmount()
         } finally {

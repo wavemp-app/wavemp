@@ -35,7 +35,10 @@ internal static class ThemePackageReader
                 return Result(files, errors);
             }
 
-            List<ZipArchiveEntry> entries = [.. archive.Entries.Where(entry => !PackagePaths.IsIgnored(entry.FullName))];
+            List<ZipArchiveEntry> entries =
+            [
+                .. archive.Entries.Where(entry => !PackagePaths.IsIgnored(entry.FullName)),
+            ];
             string prefix = CommonRootFolder(entries);
             long unpacked = 0;
             HashSet<string> seen = new(StringComparer.OrdinalIgnoreCase);

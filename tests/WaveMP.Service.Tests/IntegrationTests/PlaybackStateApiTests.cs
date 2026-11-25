@@ -130,7 +130,8 @@ public class PlaybackStateApiTests
     {
         Profile profile = await CreateProfileAsync();
         using HttpClient phone = profile.Client;
-        using HttpClient laptop = _factory.CreateAuthorizedClient((await _anonymous.CreateSessionAsync(profile.Id)).Token);
+        using HttpClient laptop = _factory.CreateAuthorizedClient(
+            (await _anonymous.CreateSessionAsync(profile.Id)).Token);
         using HttpClient other = (await CreateProfileAsync()).Client;
         await SaveAsync(phone, State("phone", [Track("First"), Track("Second")], 1));
 
@@ -148,7 +149,8 @@ public class PlaybackStateApiTests
     {
         Profile profile = await CreateProfileAsync();
         using HttpClient phone = profile.Client;
-        using HttpClient laptop = _factory.CreateAuthorizedClient((await _anonymous.CreateSessionAsync(profile.Id)).Token);
+        using HttpClient laptop = _factory.CreateAuthorizedClient(
+            (await _anonymous.CreateSessionAsync(profile.Id)).Token);
         using HttpClient other = (await CreateProfileAsync()).Client;
         await SaveAsync(phone, State("phone", [Track("First")], 0));
         await SaveAsync(other, State("tablet", [Track("Second")], 0));

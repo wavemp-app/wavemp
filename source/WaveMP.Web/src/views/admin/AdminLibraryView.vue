@@ -18,8 +18,8 @@ import { useScansStore } from '@/stores/scans'
 
 /**
  * Admin page of the library: the media folders, start a scan, follow it, see its result, the
- * history, settings, the layout template of the files, the results of the lyrics lookup, the online search for album info and the
- * online lookup of artist pictures.
+ * history, settings, the layout template of the files, the results of the lyrics lookup, the online search for album
+ * info and the online lookup of artist pictures.
  */
 const { t } = useI18n()
 const scans = useScansStore()

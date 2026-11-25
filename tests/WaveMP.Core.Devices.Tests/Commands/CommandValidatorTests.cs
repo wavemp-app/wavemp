@@ -42,7 +42,8 @@ public class CommandValidatorTests
         IReadOnlyList<DeviceValidationError> errors = CommandValidator.Validate(
             new DeviceCommand(Target, DeviceCommandType.Seek, PositionMilliseconds: position));
 
-        errors.Should().ContainSingle().Which.Should().BeEquivalentTo(new { Field = "positionMilliseconds", Code = code });
+        errors.Should().ContainSingle().Which.Should().BeEquivalentTo(
+            new { Field = "positionMilliseconds", Code = code });
     }
 
     [Test]
@@ -94,9 +95,11 @@ public class CommandValidatorTests
             .Should().Be(new DeviceValidationError("trackIds", DeviceValidationCode.Required));
         CommandValidator.Validate(new DeviceCommand(Target, type, TrackIds: [])).Single()
             .Should().Be(new DeviceValidationError("trackIds", DeviceValidationCode.MinItems, Min: 1));
-        CommandValidator.Validate(new DeviceCommand(Target, type, TrackIds: [.. Enumerable.Range(0, 2001).Select(_ => Guid.NewGuid())]))
+        CommandValidator.Validate(
+            new DeviceCommand(Target, type, TrackIds: [.. Enumerable.Range(0, 2001).Select(_ => Guid.NewGuid())]))
             .Single().Should().Be(new DeviceValidationError("trackIds", DeviceValidationCode.MaxItems, Max: 2000));
-        CommandValidator.Validate(new DeviceCommand(Target, type, TrackIds: [.. Enumerable.Range(0, 2000).Select(_ => Guid.NewGuid())]))
+        CommandValidator.Validate(
+            new DeviceCommand(Target, type, TrackIds: [.. Enumerable.Range(0, 2000).Select(_ => Guid.NewGuid())]))
             .Should().BeEmpty();
     }
 
@@ -132,7 +135,8 @@ public class CommandValidatorTests
     [Test]
     public void Validate_MoveQueueEntry_NeedsBothPositions()
     {
-        CommandValidator.Validate(new DeviceCommand(Target, DeviceCommandType.MoveQueueEntry, ExpectedQueueVersion: 1, Index: 0))
+        CommandValidator.Validate(
+            new DeviceCommand(Target, DeviceCommandType.MoveQueueEntry, ExpectedQueueVersion: 1, Index: 0))
             .Single().Should().Be(new DeviceValidationError("toIndex", DeviceValidationCode.Required));
     }
 

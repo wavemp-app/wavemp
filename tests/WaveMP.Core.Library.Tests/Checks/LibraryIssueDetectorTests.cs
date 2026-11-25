@@ -39,7 +39,8 @@ public class LibraryIssueDetectorTests
             hasVideo: true,
             missingTags: [MetadataTag.Artist, MetadataTag.Album]);
 
-        DetectedLibraryIssue issue = LibraryIssueDetector.Detect([track], [], _tolerance).Should().ContainSingle().Which;
+        DetectedLibraryIssue issue = LibraryIssueDetector.Detect([track], [], _tolerance)
+            .Should().ContainSingle().Which;
 
         issue.Type.Should().Be(LibraryIssueType.MissingTags);
         issue.TrackId.Should().Be(track.TrackId);
@@ -100,7 +101,10 @@ public class LibraryIssueDetectorTests
         LibraryCheckTrackRow second = Track("  song ", seconds: 203, hasVideo: true);
         LibraryCheckTrackRow third = Track("SONG", seconds: 198, hasVideo: true);
 
-        IReadOnlyList<DetectedLibraryIssue> issues = LibraryIssueDetector.Detect([first, second, third], [], _tolerance);
+        IReadOnlyList<DetectedLibraryIssue> issues = LibraryIssueDetector.Detect(
+            [first, second, third],
+            [],
+            _tolerance);
 
         issues.Should().Equal(
             new DetectedLibraryIssue(LibraryIssueType.PossibleDuplicate, first.TrackId, RelatedTrackId: second.TrackId),

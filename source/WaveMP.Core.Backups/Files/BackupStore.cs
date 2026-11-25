@@ -156,7 +156,11 @@ internal sealed class BackupStore(IOptions<BackupOptions> options, ILogger<Backu
     {
         string fileName = Path.GetFileName(path);
         if (BackupFileNames.IdOfFileName(fileName) is not { } id
-            || !BackupFileNames.TryParseId(id, out DateTimeOffset createdAt, out BackupTrigger trigger, out int sequence))
+            || !BackupFileNames.TryParseId(
+                id,
+                out DateTimeOffset createdAt,
+                out BackupTrigger trigger,
+                out int sequence))
         {
             return null;
         }

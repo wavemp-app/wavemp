@@ -118,7 +118,8 @@ public class ArtistLookupClientsTests
 
     [TestCase("""{ "relations": [] }""")]
     [TestCase("""{ "relations": [ { "type": "wikidata", "url": { "resource": "https://evil.example/wiki/Q1" } } ] }""")]
-    [TestCase("""{ "relations": [ { "type": "wikidata", "url": { "resource": "https://www.wikidata.org/wiki/Q1&x" } } ] }""")]
+    [TestCase(
+        """{ "relations": [ { "type": "wikidata", "url": { "resource": "https://www.wikidata.org/wiki/Q1&x" } } ] }""")]
     public async Task GetWikidataItemAsync_WithoutValidLink_IsNotFound(string answer)
     {
         _clients.Handler.Respond(HttpStatusCode.OK, answer);
@@ -193,18 +194,27 @@ public class ArtistLookupClientsTests
             {
               "batchcomplete": true,
               "query": {
-                "normalized": [ { "fromencoded": false, "from": "File:second_picture.jpg", "to": "File:Second picture.jpg" } ],
+                "normalized": [
+                  { "fromencoded": false, "from": "File:second_picture.jpg", "to": "File:Second picture.jpg" }
+                ],
                 "pages": [
                   { "ns": 6, "title": "File:Second picture.jpg", "imageinfo": [ {
-                      "thumburl": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b2/Second.jpg/500px-Second.jpg",
+                      "thumburl":
+                        "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b2/Second.jpg/500px-Second.jpg",
                       "thumbwidth": 500, "thumbheight": 400,
                       "url": "https://upload.wikimedia.org/wikipedia/commons/b/b2/Second.jpg",
                       "descriptionurl": "https://commons.wikimedia.org/wiki/File:Second_picture.jpg",
                       "width": 2000, "height": 1600, "mime": "image/jpeg",
                       "extmetadata": {
-                        "Artist": { "value": "<a href=\"//commons.wikimedia.org/wiki/User:Jane\">Jane Doe</a>", "source": "commons-desc-page" },
+                        "Artist": {
+                          "value": "<a href=\"//commons.wikimedia.org/wiki/User:Jane\">Jane Doe</a>",
+                          "source": "commons-desc-page"
+                        },
                         "LicenseShortName": { "value": "CC BY-SA 4.0", "source": "commons-desc-page" },
-                        "LicenseUrl": { "value": "https://creativecommons.org/licenses/by-sa/4.0", "source": "commons-desc-page" },
+                        "LicenseUrl": {
+                          "value": "https://creativecommons.org/licenses/by-sa/4.0",
+                          "source": "commons-desc-page"
+                        },
                         "AttributionRequired": { "value": "true", "source": "commons-desc-page" }
                       } } ] },
                   { "ns": 6, "title": "File:First.png", "imageinfo": [ {

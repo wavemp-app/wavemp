@@ -10,8 +10,8 @@ namespace WaveMP.Service.Signatures;
 
 /// <summary>
 /// Builds the signed media URLs of the API for the user and session of a request: the audio stream, the video stream,
-/// the HLS master playlist and, for casting devices, the cover. An HLS playlist appends the same signed query to each of its URIs, because the
-/// signature covers the kind of media and the track, not the path.
+/// the HLS master playlist and, for casting devices, the cover. An HLS playlist appends the same signed query to each
+/// of its URIs, because the signature covers the kind of media and the track, not the path.
 /// </summary>
 public sealed class MediaUrlFactory(IMediaUrlIssuer issuer, LinkGenerator links)
 {

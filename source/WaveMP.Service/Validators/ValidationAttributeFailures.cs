@@ -12,8 +12,8 @@ namespace WaveMP.Service.Validators;
 public static class ValidationAttributeFailures
 {
     /// <summary>
-    /// The failure of <paramref name="value"/> for <paramref name="attribute"/>. Attributes without a more specific code
-    /// become <see cref="ValidationErrorCodeDto.InvalidValue"/>.
+    /// The failure of <paramref name="value"/> for <paramref name="attribute"/>. Attributes without a more specific
+    /// code become <see cref="ValidationErrorCodeDto.InvalidValue"/>.
     /// </summary>
     public static ValidationFailure For(ValidationAttribute attribute, object? value)
     {

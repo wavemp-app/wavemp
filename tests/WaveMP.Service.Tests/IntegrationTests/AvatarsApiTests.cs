@@ -63,7 +63,8 @@ public class AvatarsApiTests
         yield return new TestCaseData("PUT", MyAvatarPath).SetArgDisplayNames("SetMyAvatar");
         yield return new TestCaseData("DELETE", MyAvatarPath).SetArgDisplayNames("DeleteMyAvatar");
         yield return new TestCaseData("GET", PresetsPath).SetArgDisplayNames("ListAvatarPresets");
-        yield return new TestCaseData("GET", $"{PresetsPath}/leaf/picture").SetArgDisplayNames("GetAvatarPresetPicture");
+        yield return new TestCaseData("GET", $"{PresetsPath}/leaf/picture").SetArgDisplayNames(
+            "GetAvatarPresetPicture");
     }
 
     private static IEnumerable<TestCaseData> AdminEndpoints()

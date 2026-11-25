@@ -18,7 +18,12 @@ public class DeviceRepositoryTests : LibraryDatabaseTests
     {
         User user = await AddUserAsync();
 
-        Device device = await CreateRepository().RegisterAsync(user.Id, "phone", "Safari · iPhone", DeviceType.Phone, _start);
+        Device device = await CreateRepository().RegisterAsync(
+            user.Id,
+            "phone",
+            "Safari · iPhone",
+            DeviceType.Phone,
+            _start);
 
         device.UserId.Should().Be(user.Id);
         device.DeviceId.Should().Be("phone");
@@ -69,7 +74,12 @@ public class DeviceRepositoryTests : LibraryDatabaseTests
     {
         var userId = Guid.NewGuid();
 
-        Func<Task> register = () => CreateRepository().RegisterAsync(userId, "phone", "Phone", DeviceType.Phone, _start);
+        Func<Task> register = () => CreateRepository().RegisterAsync(
+            userId,
+            "phone",
+            "Phone",
+            DeviceType.Phone,
+            _start);
 
         (await register.Should().ThrowAsync<UserNotFoundException>()).Which.UserId.Should().Be(userId);
     }

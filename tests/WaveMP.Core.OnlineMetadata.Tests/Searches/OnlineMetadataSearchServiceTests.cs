@@ -280,7 +280,14 @@ public class OnlineMetadataSearchServiceTests
                 {
                     Id = Guid.NewGuid(),
                     Title = "Album",
-                    Media = [new MusicBrainzMedium { Position = 1, Tracks = [new MusicBrainzTrack { Title = title, Number = "1" }] }],
+                    Media =
+                    [
+                        new MusicBrainzMedium
+                        {
+                            Position = 1,
+                            Tracks = [new MusicBrainzTrack { Title = title, Number = "1" }],
+                        },
+                    ],
                 },
             ],
         };

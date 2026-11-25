@@ -112,7 +112,10 @@ public class SmartPlaylistRulesTests
             new SmartPlaylistRule(SmartPlaylistField.Genre, SmartPlaylistOperator.Is, "\ud800")));
 
         validation.Errors.Should().Equal(
-            new SmartPlaylistError("rules[0].text", SmartPlaylistErrorCode.MaxLength, Max: SmartPlaylistRules.TextMaxLength),
+            new SmartPlaylistError(
+                "rules[0].text",
+                SmartPlaylistErrorCode.MaxLength,
+                Max: SmartPlaylistRules.TextMaxLength),
             new SmartPlaylistError("rules[1].text", SmartPlaylistErrorCode.InvalidValue),
             new SmartPlaylistError("rules[2].text", SmartPlaylistErrorCode.InvalidValue));
     }

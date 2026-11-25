@@ -11,9 +11,9 @@ namespace WaveMP.Core.Caching.Covers;
 /// <summary>
 /// Names and ETags of scaled covers. They belong to the version of the picture, not to an album or track: the prefix
 /// <c>{file id}-{f|e|o}-{stamp}</c> names the file the picture comes from, whether it is a picture file (<c>f</c>),
-/// embedded (<c>e</c>) or an online cover in the data folder (<c>o</c>, the id of the online cover), and a stamp of the size and the time of the last change of the file and of
-/// <see cref="FormatVersion"/>. A changed file therefore gets new names and ETags at once, and albums and tracks that
-/// show the same picture share its files.
+/// embedded (<c>e</c>) or an online cover in the data folder (<c>o</c>, the id of the online cover), and a stamp of the
+/// size and the time of the last change of the file and of <see cref="FormatVersion"/>. A changed file therefore gets
+/// new names and ETags at once, and albums and tracks that show the same picture share its files.
 /// </summary>
 public static partial class CoverCacheKey
 {

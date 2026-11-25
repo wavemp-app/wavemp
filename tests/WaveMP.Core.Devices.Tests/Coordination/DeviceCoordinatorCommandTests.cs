@@ -254,7 +254,11 @@ public class DeviceCoordinatorCommandTests
 
         await _context.Coordinator.SendCommandAsync(
             _phone,
-            new DeviceCommand("laptop", DeviceCommandType.PlayTracks, TrackIds: [_first, unknown, _second], StartIndex: 1));
+            new DeviceCommand(
+                "laptop",
+                DeviceCommandType.PlayTracks,
+                TrackIds: [_first, unknown, _second],
+                StartIndex: 1));
 
         _context.Notifier.Of<ReceivedCommand>(_laptop.ConnectionId).Single().StartIndex.Should().Be(1);
     }

@@ -41,7 +41,12 @@ internal static partial class UnixFileCalls
     }
 
     [LibraryImport(Library, EntryPoint = "renameat2", SetLastError = true, StringMarshalling = StringMarshalling.Utf8)]
-    private static partial int RenameAt2(int oldDirectory, string oldPath, int newDirectory, string newPath, uint flags);
+    private static partial int RenameAt2(
+        int oldDirectory,
+        string oldPath,
+        int newDirectory,
+        string newPath,
+        uint flags);
 
     [LibraryImport(Library, EntryPoint = "link", SetLastError = true, StringMarshalling = StringMarshalling.Utf8)]
     private static partial int LinkFile(string oldPath, string newPath);

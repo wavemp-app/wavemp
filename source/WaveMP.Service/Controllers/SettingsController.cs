@@ -240,8 +240,8 @@ public sealed class SettingsController(
     /// <param name="request">The changes.</param>
     /// <param name="cancellationToken">Aborts the request.</param>
     /// <response code="200">The changed settings.</response>
-    /// <response code="400">The request is invalid (code <c>request.invalid</c>, errors by field: <c>invalid_format</c> for
-    /// an address that is not an absolute http or https address without query, <c>out_of_range</c>).</response>
+    /// <response code="400">The request is invalid (code <c>request.invalid</c>, errors by field: <c>invalid_format</c>
+    /// for an address that is not an absolute http or https address without query, <c>out_of_range</c>).</response>
     [HttpPatch("online-metadata", Name = "UpdateOnlineMetadataSettings")]
     [Consumes("application/json")]
     [ProducesResponseType<OnlineMetadataSettingsDto>(StatusCodes.Status200OK, "application/json")]

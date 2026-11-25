@@ -105,7 +105,10 @@ internal sealed class DeviceTestContext : IDisposable
         string? connectionId = null,
         Guid? sessionId = null)
     {
-        DeviceConnection connection = new(userId, sessionId ?? Guid.NewGuid(), connectionId ?? $"connection-{deviceId}-{Guid.NewGuid():N}");
+        DeviceConnection connection = new(
+            userId,
+            sessionId ?? Guid.NewGuid(),
+            connectionId ?? $"connection-{deviceId}-{Guid.NewGuid():N}");
         RegisterResult result = await Coordinator.RegisterAsync(
             connection,
             new RegisterDeviceCommand(deviceId, $"Device {deviceId}", DeviceType.Desktop, remoteControl));

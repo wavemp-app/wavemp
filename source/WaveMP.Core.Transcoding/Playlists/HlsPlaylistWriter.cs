@@ -43,8 +43,8 @@ public static class HlsPlaylistWriter
     }
 
     /// <summary>
-    /// The VOD media playlist with all segments; <paramref name="segmentUriOf"/> gives the URI of a segment, relative to
-    /// the playlist.
+    /// The VOD media playlist with all segments; <paramref name="segmentUriOf"/> gives the URI of a segment, relative
+    /// to the playlist.
     /// </summary>
     public static string WriteMedia(TranscodeVariant variant, Func<int, string> segmentUriOf)
     {

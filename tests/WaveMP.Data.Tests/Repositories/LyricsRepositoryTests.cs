@@ -102,7 +102,7 @@ public class LyricsRepositoryTests : LibraryDatabaseTests
     }
 
     [Test]
-    public async Task ListTracksToLookUpAsync_LookUpAgainBefore_AddsTracksWhoseLookupFoundNothingOrLyricsBeforeAfterTheNewOnes()
+    public async Task ListTracksToLookUpAsync_LookUpAgainBefore_AddsNotFoundAndLyricsBeforeTracksAfterTheNewOnes()
     {
         DateTimeOffset now = LibrarySeed.DefaultTime.AddDays(100);
         DateTimeOffset longAgo = now.AddDays(-40);

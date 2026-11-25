@@ -95,6 +95,8 @@ internal sealed class OrganizeDisk(IMediaSourceCatalog sources, IFileWriteAccess
             return source.RootPath;
         }
 
-        return MediaPathGuard.TryResolve(source.RootPath, relativePath, isTarget, out string fullPath) ? fullPath : null;
+        return MediaPathGuard.TryResolve(source.RootPath, relativePath, isTarget, out string fullPath)
+            ? fullPath
+            : null;
     }
 }

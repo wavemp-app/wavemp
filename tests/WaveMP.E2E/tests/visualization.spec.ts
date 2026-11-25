@@ -228,7 +228,8 @@ async function chooseColorScheme(page: Page, id: string): Promise<void> {
 
 function moduleSegment(page: Page, item: string): Locator {
     return page.locator(
-        `[data-part='app'] [data-part='visualization-controls'] [data-item='visualization-module'] [data-part='segment'][data-item='${item}']`,
+        `[data-part='app'] [data-part='visualization-controls'] [data-item='visualization-module'] ` +
+            `[data-part='segment'][data-item='${item}']`,
     )
 }
 

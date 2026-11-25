@@ -208,13 +208,19 @@ internal sealed class OrganizeExecutor(
                     context.CoverSourcePath);
                 if (putBack)
                 {
-                    await repository.EndItemAsync(item.Id, OrganizeItemStatus.RolledBack, code, Now(), CancellationToken.None);
+                    await repository.EndItemAsync(
+                        item.Id,
+                        OrganizeItemStatus.RolledBack,
+                        code,
+                        Now(),
+                        CancellationToken.None);
                 }
                 else
                 {
                     // Stays running: the next start tries to put it back again.
                     logger.LogCritical(
-                        "The organize item {ItemId} ({Title}) could not be put back completely; the next start tries again",
+                        "The organize item {ItemId} ({Title}) could not be put back completely; "
+                            + "the next start tries again",
                         item.Id,
                         item.DisplayTitle);
                 }
@@ -269,9 +275,14 @@ internal sealed class OrganizeExecutor(
         {
             if ((move.FromPath is { } from && !MediaPathGuard.TryResolve(root, from, isTarget: false, out _))
                 || (move.ToPath is { } to && !MediaPathGuard.TryResolve(root, to, isTarget: true, out _))
-                || (move.TempPath is { } temporary && !MediaPathGuard.TryResolve(root, temporary, isTarget: false, out _))
+                || (move.TempPath is { } temporary
+                    && !MediaPathGuard.TryResolve(root, temporary, isTarget: false, out _))
                 || (move.FromPath is not null && move.ToPath is null
-                    && !MediaPathGuard.TryResolve(root, OrganizeItemRollback.RemovalTempPath(move), isTarget: false, out _)))
+                    && !MediaPathGuard.TryResolve(
+                        root,
+                        OrganizeItemRollback.RemovalTempPath(move),
+                        isTarget: false,
+                        out _)))
             {
                 return (null, OrganizeConflict.UnsafePath);
             }
@@ -348,7 +359,10 @@ internal sealed class OrganizeExecutor(
     /// </summary>
     private static OrganizeConflict? TargetConflict(string root, OrganizeItem item, OrganizeSongRow? song)
     {
-        HashSet<string> ownPaths = [.. item.Moves.Select(move => move.FromPath).OfType<string>().Select(FolderNames.Key)];
+        HashSet<string> ownPaths =
+        [
+            .. item.Moves.Select(move => move.FromPath).OfType<string>().Select(FolderNames.Key),
+        ];
         if (song is not null)
         {
             ownPaths.UnionWith(song.Files.Select(file => FolderNames.Key(file.RelativePath)));
@@ -358,7 +372,8 @@ internal sealed class OrganizeExecutor(
             .Where(move => move.ToPath is not null)
             .GroupBy(move => FolderNames.DirectoryOf(move.ToPath!), StringComparer.Ordinal))
         {
-            if (!MediaPathGuard.TryResolve(root, folder.Key, isTarget: false, out string fullPath) && folder.Key.Length > 0)
+            if (!MediaPathGuard.TryResolve(root, folder.Key, isTarget: false, out string fullPath)
+                && folder.Key.Length > 0)
             {
                 return OrganizeConflict.UnsafePath;
             }
@@ -404,7 +419,8 @@ internal sealed class OrganizeExecutor(
         foreach (string target in item.Moves.Select(move => move.ToPath).OfType<string>())
         {
             string current = string.Empty;
-            foreach (string segment in FolderNames.DirectoryOf(target).Split('/', StringSplitOptions.RemoveEmptyEntries))
+            foreach (string segment in FolderNames.DirectoryOf(target)
+                .Split('/', StringSplitOptions.RemoveEmptyEntries))
             {
                 string parent = current;
                 current = FolderNames.Combine(current, segment);
@@ -458,7 +474,9 @@ internal sealed class OrganizeExecutor(
             TagSnapshotResult snapshot = tagWriter.ReadSnapshot(audioFull);
             if (!snapshot.IsRead)
             {
-                throw new ItemFailedException(OrganizeConflict.NotWritable, $"The tags cannot be read: {snapshot.Status}");
+                throw new ItemFailedException(
+                    OrganizeConflict.NotWritable,
+                    $"The tags cannot be read: {snapshot.Status}");
             }
 
             TagBackup backup = TagBackups.Create(snapshot.Snapshot, audio.MediaFileId, audio.RelativePath, Now());
@@ -526,7 +544,11 @@ internal sealed class OrganizeExecutor(
         if (move.ToPath is null)
         {
             // Removed by an undo: first to a hidden name, deleted once the item is recorded.
-            MediaPathGuard.TryResolve(root, OrganizeItemRollback.RemovalTempPath(move), isTarget: false, out string hidden);
+            MediaPathGuard.TryResolve(
+                root,
+                OrganizeItemRollback.RemovalTempPath(move),
+                isTarget: false,
+                out string hidden);
             Check(mover.Move(fromFull, hidden), OrganizeConflict.TargetExists, move);
             progress.Moves.Add(move);
             return;
@@ -574,7 +596,11 @@ internal sealed class OrganizeExecutor(
     {
         foreach (OrganizeFileMove move in item.Moves.Where(move => move.FromPath is not null && move.ToPath is null))
         {
-            if (MediaPathGuard.TryResolve(root, OrganizeItemRollback.RemovalTempPath(move), isTarget: false, out string hidden))
+            if (MediaPathGuard.TryResolve(
+                    root,
+                    OrganizeItemRollback.RemovalTempPath(move),
+                    isTarget: false,
+                    out string hidden))
             {
                 TryDelete(hidden);
             }
@@ -594,7 +620,10 @@ internal sealed class OrganizeExecutor(
 
         if (removed.Count > 0)
         {
-            await repository.SetRemovedFoldersAsync(item.Id, [.. removed.Distinct(StringComparer.Ordinal)], CancellationToken.None);
+            await repository.SetRemovedFoldersAsync(
+                item.Id,
+                [.. removed.Distinct(StringComparer.Ordinal)],
+                CancellationToken.None);
         }
     }
 
@@ -734,7 +763,10 @@ internal sealed class OrganizeExecutor(
     /// <param name="FoldersToCreate">Folders to create, outermost first.</param>
     /// <param name="Audio">The audio file whose tags are written.</param>
     /// <param name="AudioPath">Its path after the item.</param>
-    private sealed record PreparedItem(IReadOnlyList<string> FoldersToCreate, OrganizeFileRow? Audio, string? AudioPath);
+    private sealed record PreparedItem(
+        IReadOnlyList<string> FoldersToCreate,
+        OrganizeFileRow? Audio,
+        string? AudioPath);
 
     /// <summary>
     /// What an item changed so far.
@@ -781,7 +813,9 @@ internal sealed class OrganizeExecutor(
         /// </summary>
         public void Touch(OrganizeItem item, string? audioPath)
         {
-            foreach (string path in item.Moves.SelectMany(move => new[] { move.FromPath, move.ToPath }).OfType<string>())
+            foreach (string path in item.Moves
+                .SelectMany(move => new[] { move.FromPath, move.ToPath })
+                .OfType<string>())
             {
                 Folder(item.SourceId, FolderNames.DirectoryOf(path));
             }

@@ -22,7 +22,10 @@ internal sealed class RecordingNotifier : IDeviceNotifier
     /// </summary>
     public IReadOnlyList<T> Of<T>(string connectionId)
     {
-        return [.. Messages.Where(entry => entry.ConnectionId == connectionId).Select(entry => entry.Message).OfType<T>()];
+        return
+        [
+            .. Messages.Where(entry => entry.ConnectionId == connectionId).Select(entry => entry.Message).OfType<T>(),
+        ];
     }
 
     public void Clear()

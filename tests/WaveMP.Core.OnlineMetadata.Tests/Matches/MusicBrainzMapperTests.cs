@@ -37,7 +37,10 @@ public class MusicBrainzMapperTests
                             Position = 2,
                             Format = "CD",
                             TrackOffset = 4,
-                            Tracks = [new MusicBrainzTrack { Number = "5", Title = "Song (Album Version)", Length = 200500 }],
+                            Tracks =
+                            [
+                                new MusicBrainzTrack { Number = "5", Title = "Song (Album Version)", Length = 200500 },
+                            ],
                         },
                     ],
                 },

@@ -122,7 +122,9 @@ public class SubsonicAnnotationServiceTests
         _favorites.AddAsync(_user.Id, FavoriteType.Album, albumId, Arg.Any<CancellationToken>())
             .Returns(FavoriteStatus.Done);
 
-        SubsonicResponse response = await _service.StarAsync(_user, TestParameters.Of(("id", SubsonicIds.Format(albumId))));
+        SubsonicResponse response = await _service.StarAsync(
+            _user,
+            TestParameters.Of(("id", SubsonicIds.Format(albumId))));
 
         response.IsOk.Should().BeTrue();
         await _favorites.Received(1).AddAsync(_user.Id, FavoriteType.Album, albumId, Arg.Any<CancellationToken>());
