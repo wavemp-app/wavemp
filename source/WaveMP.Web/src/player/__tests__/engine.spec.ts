@@ -20,6 +20,7 @@ class FakeAudio extends EventTarget {
     paused = true
     ended = false
     volume = 1
+    muted = false
     preload = ''
     error: MediaError | null = null
     readonly play = vi.fn(() => {
@@ -128,7 +129,7 @@ class FakeFilter {
     readonly connect = vi.fn()
 }
 
-class FakeContext {
+class FakeContext extends EventTarget {
     state = 'suspended'
     currentTime = 100
     readonly destination = {}
@@ -206,6 +207,7 @@ function setup(withContext = false): Setup {
         ended: vi.fn(),
         advanced: vi.fn(),
         error: vi.fn(),
+        interrupted: vi.fn(),
     }
     return {
         engine: new AudioEngine(events, environment),
@@ -821,6 +823,152 @@ describe('AudioEngine', () => {
 
         s.engine.restoreOutput()
         expect(s.decks[0]!.volume).toBe(1)
+    })
+
+    it('mutes an element at no volume without Web Audio', async () => {
+        s.engine.load({ url: '/a', gain: 1 })
+        await s.engine.play()
+
+        s.engine.setVolume(0)
+        expect(s.decks[0]!.muted).toBe(true)
+        s.engine.setVolume(0.5)
+        expect(s.decks[0]!.muted).toBe(false)
+
+        s.engine.fadeOut(0.1)
+        s.timers.at(-1)!()
+        expect(s.decks[0]!.volume).toBe(0)
+        expect(s.decks[0]!.muted).toBe(true)
+    })
+
+    it('keeps the elements unmuted with Web Audio', async () => {
+        s = setup(true)
+        s.engine.setVolume(0)
+        s.engine.load({ url: '/a', gain: 1 })
+        await s.engine.play()
+
+        expect(s.decks.every((deck) => deck.muted === false)).toBe(true)
+        expect(graphOf(s.context!).master.gain.value).toBe(0)
+    })
+
+    it('tells the prepared track', () => {
+        s = setup(true)
+        s.engine.load({ url: '/a', gain: 1 })
+        expect(s.engine.preparedSource).toBeNull()
+        s.engine.prepare({ url: '/b', gain: 1 })
+        expect(s.engine.preparedSource).toEqual({ url: '/b', gain: 1 })
+
+        s.engine.load({ url: '/c', gain: 1 })
+        expect(s.engine.preparedSource).toBeNull()
+    })
+
+    describe('whenReady', () => {
+        it('is ready at once when the element has data', async () => {
+            s.engine.load({ url: '/a', gain: 1 })
+
+            await expect(s.engine.whenReady(1000)).resolves.toBe(true)
+        })
+
+        it('is not ready without a track', async () => {
+            await expect(s.engine.whenReady(1000)).resolves.toBe(false)
+        })
+
+        it('waits for data and the end of a seek', async () => {
+            s.engine.load({ url: '/a', gain: 1 })
+            const audio = s.decks[0]!
+            audio.readyState = 1
+            const ready = s.engine.whenReady(1000)
+
+            audio.readyState = 3
+            audio.seeking = true
+            audio.dispatchEvent(new Event('canplay'))
+            audio.seeking = false
+            audio.dispatchEvent(new Event('seeked'))
+
+            await expect(ready).resolves.toBe(true)
+        })
+
+        it('is not ready after an error, a new track, a stop or the time', async () => {
+            s.engine.load({ url: '/a', gain: 1 })
+            const audio = s.decks[0]!
+            audio.readyState = 1
+
+            const failed = s.engine.whenReady(1000)
+            audio.dispatchEvent(new Event('error'))
+            await expect(failed).resolves.toBe(false)
+
+            const replaced = s.engine.whenReady(1000)
+            s.engine.load({ url: '/b', gain: 1 })
+            await expect(replaced).resolves.toBe(false)
+
+            audio.readyState = 1
+            const stopped = s.engine.whenReady(1000)
+            s.engine.stop()
+            await expect(stopped).resolves.toBe(false)
+
+            s.engine.load({ url: '/c', gain: 1 })
+            audio.readyState = 1
+            const late = s.engine.whenReady(1000)
+            expect(s.delays.at(-1)).toBe(1000)
+            s.timers.at(-1)!()
+            await expect(late).resolves.toBe(false)
+        })
+    })
+
+    describe('resumeOutput', () => {
+        it('builds and resumes the audio graph', async () => {
+            s = setup(true)
+
+            await expect(s.engine.resumeOutput()).resolves.toBe(true)
+            expect(s.context!.resume).toHaveBeenCalledOnce()
+            expect(s.context!.sources).toHaveLength(2)
+        })
+
+        it('tells when the browser keeps the graph suspended', async () => {
+            s = setup(true)
+            s.context!.resume.mockImplementation(() => new Promise<void>(() => undefined))
+
+            const resumed = s.engine.resumeOutput(500)
+            expect(s.delays.at(-1)).toBe(500)
+            s.timers.at(-1)!()
+
+            await expect(resumed).resolves.toBe(false)
+        })
+
+        it('runs without Web Audio', async () => {
+            await expect(s.engine.resumeOutput()).resolves.toBe(true)
+        })
+    })
+
+    describe('interruption of the audio graph', () => {
+        async function playing(): Promise<FakeContext> {
+            s = setup(true)
+            s.engine.load({ url: '/a', gain: 1 })
+            await s.engine.play()
+            return s.context!
+        }
+
+        function changeState(context: FakeContext, state: string): void {
+            context.state = state
+            context.dispatchEvent(new Event('statechange'))
+        }
+
+        it('reports an interruption while a track should play', async () => {
+            const context = await playing()
+
+            changeState(context, 'interrupted')
+            expect(s.events.interrupted).toHaveBeenCalledOnce()
+            changeState(context, 'running')
+            changeState(context, 'suspended')
+            expect(s.events.interrupted).toHaveBeenCalledTimes(2)
+        })
+
+        it('does not report a graph that stops after a pause', async () => {
+            const context = await playing()
+            s.engine.pause()
+
+            changeState(context, 'interrupted')
+            expect(s.events.interrupted).not.toHaveBeenCalled()
+        })
     })
 })
 

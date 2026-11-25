@@ -43,6 +43,11 @@ export interface EngineEvents {
     advanced?(): void
     /** The current track failed to load or play. */
     error?(error: unknown): void
+    /**
+     * The browser interrupted or suspended the audio graph while a track should play (e.g. WebKit
+     * when the page goes to the background): the elements may run on but are not heard.
+     */
+    interrupted?(): void
 }
 
 /** What the engine needs from the browser; tests replace it. */
@@ -148,6 +153,9 @@ export function finiteOrZero(value: number): number {
 /** The ready state from which a media element knows its duration and can seek (HAVE_METADATA). */
 const haveMetadata = 1
 
+/** The ready state from which a media element can play on for a while (HAVE_FUTURE_DATA). */
+const haveFutureData = 3
+
 /** What deckPosition needs of a media element. */
 export interface SeekableElement {
     readonly currentTime: number
@@ -196,6 +204,8 @@ export class AudioEngine {
     /** Factor of the output without Web Audio while the sleep timer fades it out. */
     private elementFade = 1
     private elementFadeTimer: number | null = null
+    /** Waits of whenReady; a new track or a stop ends them as not ready. */
+    private readonly readyWaits = new Set<() => void>()
 
     constructor(
         private readonly events: EngineEvents = {},
@@ -212,6 +222,11 @@ export class AudioEngine {
     /** Whether the equalizer (and the crossfade) can work: Web Audio exists and its graph was built. */
     get equalizerAvailable(): boolean {
         return this.environment.webAudio !== false && !this.graphFailed
+    }
+
+    /** Whether the audio graph exists but does not run (suspended or interrupted by the browser). */
+    get outputSuspended(): boolean {
+        return this.context !== null && !outputRunning(this.context)
     }
 
     /** The source of the current deck. */
@@ -236,6 +251,11 @@ export class AudioEngine {
         return this.prepared !== null || this.deferredPrepare !== null
     }
 
+    /** The next track that is loaded (or waits for the end of a crossfade to be loaded). */
+    get preparedSource(): DeckSource | null {
+        return this.deferredPrepare ?? this.prepared
+    }
+
     /** Whether the previous track still fades out. */
     get crossfading(): boolean {
         return this.crossfade !== null
@@ -246,6 +266,7 @@ export class AudioEngine {
      * element moves to the position once it knows the metadata; a seek before that replaces it.
      */
     load(source: DeckSource, position = 0): void {
+        this.endReadyWaits()
         this.cancelHandover()
         this.finishCrossfade()
         this.prepare(null)
@@ -282,7 +303,7 @@ export class AudioEngine {
     async play(): Promise<void> {
         this.wantsPlay = true
         this.ensureGraph()
-        if (this.context?.state === 'suspended') {
+        if (this.context && !outputRunning(this.context)) {
             await this.context.resume().catch(() => undefined)
             // Paused or stopped while the context resumed: stay paused.
             if (!this.wantsPlay) {
@@ -307,7 +328,7 @@ export class AudioEngine {
      */
     unlock(): void {
         this.ensureGraph()
-        if (this.context?.state === 'suspended') {
+        if (this.context && !outputRunning(this.context)) {
             void this.context.resume().catch(() => undefined)
         }
 
@@ -325,8 +346,73 @@ export class AudioEngine {
         this.deck.audio.pause()
     }
 
+    /**
+     * Waits until the current track can play on (its element has data beyond the position): true
+     * then, false when it fails, another track is loaded, the engine stops or the time runs out.
+     */
+    whenReady(timeoutMs: number): Promise<boolean> {
+        const deck = this.deck
+        const audio = deck.audio
+        const ready = (): boolean => audio.readyState >= haveFutureData && !audio.seeking
+        if (!deck.source) {
+            return Promise.resolve(false)
+        }
+
+        if (ready()) {
+            return Promise.resolve(true)
+        }
+
+        return new Promise((resolve) => {
+            const readyEvents = ['canplay', 'canplaythrough', 'seeked', 'playing']
+            const check = (): void => {
+                if (ready()) {
+                    finish(true)
+                }
+            }
+            const fail = (): void => finish(false)
+            const finish = (result: boolean): void => {
+                this.readyWaits.delete(fail)
+                this.environment.clearTimeout(timer)
+                readyEvents.forEach((name) => audio.removeEventListener(name, check))
+                audio.removeEventListener('error', fail)
+                resolve(result)
+            }
+            const timer = this.environment.setTimeout(fail, timeoutMs)
+            this.readyWaits.add(fail)
+            readyEvents.forEach((name) => audio.addEventListener(name, check))
+            audio.addEventListener('error', fail)
+        })
+    }
+
+    /**
+     * Builds and resumes the audio graph (some browsers allow that only within a gesture of the
+     * user): true once it runs, or without Web Audio; false when the browser keeps it suspended or
+     * interrupted, or it does not run within the time.
+     */
+    async resumeOutput(timeoutMs = 3000): Promise<boolean> {
+        this.ensureGraph()
+        const context = this.context
+        if (!context || outputRunning(context)) {
+            return true
+        }
+
+        let timer: number | null = null
+        await Promise.race([
+            context.resume().catch(() => undefined),
+            new Promise<void>((resolve) => {
+                timer = this.environment.setTimeout(resolve, timeoutMs)
+            }),
+        ])
+        if (timer !== null) {
+            this.environment.clearTimeout(timer)
+        }
+
+        return outputRunning(context)
+    }
+
     /** Stops and unloads both decks. */
     stop(): void {
+        this.endReadyWaits()
         this.wantsPlay = false
         this.cancelHandover()
         this.finishCrossfade()
@@ -540,6 +626,7 @@ export class AudioEngine {
 
             master.gain.value = this.volume
             outputFade.gain.value = this.elementFade
+            context.addEventListener('statechange', () => this.onContextState(context))
             this.cancelElementFade()
             this.elementFade = 1
             this.context = context
@@ -561,13 +648,32 @@ export class AudioEngine {
         this.decks.forEach((deck) => this.applyGain(deck))
     }
 
+    /** The graph stopped running while a track should play, not through a pause of the engine. */
+    private onContextState(context: AudioContext): void {
+        if (this.context === context && this.wantsPlay && !outputRunning(context)) {
+            this.events.interrupted?.()
+        }
+    }
+
+    /** Ends all waits of whenReady as not ready. */
+    private endReadyWaits(): void {
+        // Each wait removes itself; a Set iterates on safely.
+        for (const end of this.readyWaits) {
+            end()
+        }
+    }
+
     private applyGain(deck: Deck): void {
         const trackGain = deck.source?.gain ?? 1
         if (deck.gain && this.master) {
             deck.gain.gain.value = trackGain
             deck.audio.volume = 1
+            deck.audio.muted = false
         } else {
-            deck.audio.volume = Math.min(1, Math.max(0, this.volume * trackGain * this.elementFade))
+            const volume = Math.min(1, Math.max(0, this.volume * trackGain * this.elementFade))
+            deck.audio.volume = volume
+            // WebKit on iOS ignores the volume of an element, but silences it when muted.
+            deck.audio.muted = volume === 0
         }
     }
 
@@ -735,6 +841,11 @@ export class AudioEngine {
         deck.target = null
         deck.slot.clear()
     }
+}
+
+/** Whether the audio graph runs: not suspended, closed or interrupted (WebKit). */
+function outputRunning(context: AudioContext): boolean {
+    return (context.state as string) === 'running'
 }
 
 function sameSource(source: DeckSource, other: DeckSource | null): boolean {

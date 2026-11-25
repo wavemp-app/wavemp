@@ -49,7 +49,7 @@ class FakeNode {
     readonly connect = vi.fn()
 }
 
-class FakeContext {
+class FakeContext extends EventTarget {
     state = 'suspended'
     currentTime = 0
     readonly destination = {}
