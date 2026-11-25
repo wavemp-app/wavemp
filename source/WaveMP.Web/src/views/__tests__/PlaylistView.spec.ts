@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
 import { defineComponent, h } from 'vue'
 import { createPinia, setActivePinia } from 'pinia'
+import Sortable from 'sortablejs'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import type { Playlist, PlaylistEntry } from '@/api/generated/models'
 import { createWaveMpI18n } from '@/i18n'
@@ -33,6 +34,7 @@ vi.mock('@/player/api', () => ({
 
 const PlaylistView = (await import('../playlists/PlaylistView.vue')).default
 const ContextMenuHost = (await import('@/components/menus/ContextMenuHost.vue')).default
+const PlaylistTrackList = (await import('@/components/playlists/PlaylistTrackList.vue')).default
 
 /** The page of a playlist together with the context menu of the app, as in the shell. */
 const PlaylistViewWithMenu = defineComponent({
@@ -100,6 +102,21 @@ async function choose(id: string) {
 
 function menuState(wrapper: VueWrapper) {
     return wrapper.get('[data-part="context-menu"]').attributes('data-state')
+}
+
+/** A row dropped at another place, as the list reports it at the end of a drag. */
+function dropRow(wrapper: VueWrapper, from: number, to: number) {
+    wrapper.getComponent(PlaylistTrackList).vm.$emit('move', from, to)
+}
+
+function titles(wrapper: VueWrapper): string[] {
+    return wrapper
+        .findAll('[data-part="list-row"] [data-column="title"] > [data-part="label"]')
+        .map((cell) => cell.text())
+}
+
+function busy(wrapper: VueWrapper): boolean {
+    return wrapper.get('[data-part="view"]').attributes('aria-busy') === 'true'
 }
 
 beforeEach(() => {
@@ -178,6 +195,73 @@ describe('PlaylistView', () => {
         await choose('play')
 
         expect(playTracks.mock.calls[0]![1]).toBe(1)
+        wrapper.unmount()
+    })
+
+    it('saves changes one after the other and stays busy until the last one is done', async () => {
+        const wrapper = await mountView()
+        const first = deferred<undefined>()
+        const second = deferred<undefined>()
+        api.movePlaylistEntry.mockReturnValueOnce(first.promise).mockReturnValueOnce(second.promise)
+
+        // A second drop while the first move is saved, e.g. of a drag started before it.
+        dropRow(wrapper, 0, 2)
+        dropRow(wrapper, 0, 1)
+        await flushPromises()
+        expect(titles(wrapper)).toEqual(['third', 'second', 'first'])
+        expect(api.movePlaylistEntry.mock.calls).toEqual([['road', 'entry-first', 2]])
+
+        first.resolve(undefined)
+        await flushPromises()
+        expect(api.movePlaylistEntry.mock.calls).toEqual([
+            ['road', 'entry-first', 2],
+            ['road', 'entry-second', 1],
+        ])
+        expect(busy(wrapper)).toBe(true)
+
+        second.resolve(undefined)
+        await flushPromises()
+        expect(busy(wrapper)).toBe(false)
+        wrapper.unmount()
+    })
+
+    it('leaves out the changes queued before a failure and shows the playlist again', async () => {
+        const wrapper = await mountView()
+        const first = deferred<undefined>()
+        api.movePlaylistEntry.mockReturnValueOnce(first.promise)
+        dropRow(wrapper, 0, 2)
+        dropRow(wrapper, 0, 1)
+        await flushPromises()
+
+        first.reject(new Error('offline'))
+        await flushPromises()
+
+        expect(api.movePlaylistEntry).toHaveBeenCalledTimes(1)
+        expect(titles(wrapper)).toEqual(['first', 'second', 'third'])
+        expect(wrapper.get('[data-part="alert"]').text()).toBe('The song could not be moved.')
+        expect(busy(wrapper)).toBe(false)
+
+        // Changes made after the failure are saved again.
+        dropRow(wrapper, 2, 0)
+        await flushPromises()
+        expect(api.movePlaylistEntry).toHaveBeenLastCalledWith('road', 'entry-third', 0)
+        wrapper.unmount()
+    })
+
+    it('does not let the rows be dragged while a change is saved', async () => {
+        const wrapper = await mountView()
+        const move = deferred<undefined>()
+        api.movePlaylistEntry.mockReturnValueOnce(move.promise)
+        const rows = wrapper.get<HTMLElement>('[data-part="list-group-rows"]').element
+        expect(Sortable.get(rows)!.option('disabled')).toBe(false)
+
+        dropRow(wrapper, 0, 1)
+        await flushPromises()
+        expect(Sortable.get(rows)!.option('disabled')).toBe(true)
+
+        move.resolve(undefined)
+        await flushPromises()
+        expect(Sortable.get(rows)!.option('disabled')).toBe(false)
         wrapper.unmount()
     })
 

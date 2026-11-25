@@ -10,6 +10,7 @@ import {
 } from '@/api/generated/models'
 import { fetchAllPages } from '@/api/paging'
 import { problemCodeOf, statusOf } from '@/api/problems'
+import { createRequestQueue } from '@/api/requestQueue'
 import BaseAlert from '@/components/base/BaseAlert.vue'
 import BaseButton from '@/components/base/BaseButton.vue'
 import BaseLink from '@/components/base/BaseLink.vue'
@@ -45,8 +46,8 @@ import { usePlaylistsStore } from '@/stores/playlists'
 /**
  * A playlist of the current profile: its cover, details and entries. Entries are moved by drag and
  * drop (or with the context menu) and removed; the playlist is played, renamed, gets its own cover
- * or is deleted. Changes are shown at once and sent to the API; if that fails, the page loads
- * the playlist again.
+ * or is deleted. Changes are shown at once and sent to the API one after the other; the page is busy
+ * until the last one is done. If one fails, the page loads the playlist again.
  */
 const props = defineProps<{
     id: string
@@ -62,7 +63,13 @@ const playlist = ref<Playlist | null>(null)
 const entries = ref<PlaylistEntry[]>([])
 const status = ref<'loading' | 'ready' | 'notFound' | 'error'>('loading')
 const error = ref<string | null>(null)
-const busy = ref(false)
+/** Changes of the playlist, one after the other: changes sent at the same time race on the server. */
+const changes = createRequestQueue()
+/** Number of changes that are queued or running; the page is busy until the last one is done. */
+const pending = ref(0)
+const busy = computed(() => pending.value > 0)
+/** Number of changes that failed; a change queued before a failure is left out. */
+let failures = 0
 const renaming = ref(false)
 const deleting = ref(false)
 const deleteError = ref<string | null>(null)
@@ -123,22 +130,43 @@ async function refresh(): Promise<void> {
     }
 }
 
-/** Runs a change; on failure the page shows why and loads the playlist again. */
-async function change(action: () => Promise<unknown>, failureKey: string): Promise<void> {
-    busy.value = true
-    error.value = null
+/** Runs the task after the tasks queued before it; the page stays busy until the last is done. */
+async function queue(task: () => Promise<void>): Promise<void> {
+    pending.value++
     try {
-        await action()
-        await refresh()
-    } catch (failure) {
-        error.value =
-            problemCodeOf(failure) === ProblemCodeObject.PlaylistNot_found
-                ? t('playlists.errors.notFound')
-                : t(failureKey)
-        await load()
+        await changes.run(task)
     } finally {
-        busy.value = false
+        pending.value--
     }
+}
+
+/**
+ * Runs a change after the changes before it; on failure the page shows why and loads the playlist
+ * again. A change queued before a failure was made on the entries as they were shown then, so it is
+ * left out: the page shows the playlist as it was loaded again.
+ */
+function change(action: () => Promise<unknown>, failureKey: string): Promise<void> {
+    const failuresBefore = failures
+    return queue(async () => {
+        if (failures !== failuresBefore) {
+            return
+        }
+
+        error.value = null
+        try {
+            await action()
+            await refresh()
+        } catch (failure) {
+            failures++
+            const message =
+                problemCodeOf(failure) === ProblemCodeObject.PlaylistNot_found
+                    ? t('playlists.errors.notFound')
+                    : t(failureKey)
+            // Loading again clears the error of the page, so the reason is shown afterwards.
+            await load()
+            error.value = message
+        }
+    })
 }
 
 function move(from: number, to: number): void {
@@ -198,15 +226,14 @@ async function uploadCover(event: Event): Promise<void> {
         return
     }
 
-    busy.value = true
-    error.value = null
-    try {
-        setPlaylist(await uploadPlaylistCover(props.id, await file.arrayBuffer(), file.type))
-    } catch (failure) {
-        error.value = t(coverFailureKey(problemCodeOf(failure)))
-    } finally {
-        busy.value = false
-    }
+    await queue(async () => {
+        error.value = null
+        try {
+            setPlaylist(await uploadPlaylistCover(props.id, await file.arrayBuffer(), file.type))
+        } catch (failure) {
+            error.value = t(coverFailureKey(problemCodeOf(failure)))
+        }
+    })
 }
 
 function removeCover(): void {
@@ -218,23 +245,22 @@ function renamed(value: Playlist): void {
 }
 
 async function confirmDelete(): Promise<void> {
-    busy.value = true
-    deleteError.value = null
-    try {
-        await playlists.remove(props.id)
-        deleting.value = false
-        void router.push({ name: 'playlists' })
-    } catch (failure) {
-        if (statusOf(failure) === 404) {
-            playlists.forget(props.id)
+    await queue(async () => {
+        deleteError.value = null
+        try {
+            await playlists.remove(props.id)
             deleting.value = false
             void router.push({ name: 'playlists' })
-        } else {
-            deleteError.value = t('playlists.errors.deleteFailed')
+        } catch (failure) {
+            if (statusOf(failure) === 404) {
+                playlists.forget(props.id)
+                deleting.value = false
+                void router.push({ name: 'playlists' })
+            } else {
+                deleteError.value = t('playlists.errors.deleteFailed')
+            }
         }
-    } finally {
-        busy.value = false
-    }
+    })
 }
 
 watch(() => props.id, load, { immediate: true })
