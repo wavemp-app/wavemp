@@ -129,6 +129,7 @@ import AvatarPresetPicker from '@/components/profiles/AvatarPresetPicker.vue'
 import ProfileAvatar from '@/components/profiles/ProfileAvatar.vue'
 import ProfileSelect from '@/components/profiles/ProfileSelect.vue'
 import ProfileSummary from '@/components/profiles/ProfileSummary.vue'
+import KnownDeviceList from '@/components/profiles/KnownDeviceList.vue'
 import ScrobbleList from '@/components/profiles/ScrobbleList.vue'
 import RecapExport from '@/components/recaps/RecapExport.vue'
 import RecapNav from '@/components/recaps/RecapNav.vue'
@@ -151,7 +152,8 @@ import AppHeader from '@/components/shell/AppHeader.vue'
 import AppSidebar from '@/components/shell/AppSidebar.vue'
 import AppToolbar from '@/components/shell/AppToolbar.vue'
 import AppTransport from '@/components/shell/AppTransport.vue'
-import type { TransportState } from '@/components/shell/transport'
+import type { TransportDevices, TransportState } from '@/components/shell/transport'
+import type { DeviceEntry } from '@/devices/presentation'
 import { useFormat } from '@/composables/useFormat'
 import { setLocale } from '@/i18n'
 import { languageName, supportedLocales } from '@/i18n/locales'
@@ -609,6 +611,12 @@ const transports = computed(() => [
         expanded: false,
     },
     {
+        id: 'remote',
+        label: t('dev.transportStates.remote'),
+        state: { ...idle, ...track.value, playback: 'playing' as const, effects: false },
+        expanded: false,
+    },
+    {
         id: 'cast-insecure',
         label: t('dev.transportStates.castInsecure'),
         state: {
@@ -660,6 +668,111 @@ const transports = computed(() => [
             hasVideo: false,
             casting: false,
         },
+    },
+])
+
+/** The devices of the profile in the transport samples: this phone plays, or the desktop does. */
+function sampleDeviceEntries(remote: boolean): DeviceEntry[] {
+    return [
+        {
+            id: 'living-room',
+            name: t('dev.deviceSamples.desktop'),
+            icon: 'device-desktop',
+            tokens: remote ? 'active allowed online playing' : 'allowed online',
+            status: remote ? 'playing' : 'available',
+            selectable: true,
+            active: remote,
+            current: false,
+        },
+        {
+            id: 'this',
+            name: t('dev.deviceSamples.phone'),
+            icon: 'device-phone',
+            tokens: remote ? 'current allowed online' : 'active current allowed online playing',
+            status: remote ? 'this-device' : 'playing',
+            selectable: true,
+            active: !remote,
+            current: true,
+        },
+        {
+            id: 'tablet',
+            name: t('dev.deviceSamples.tablet'),
+            icon: 'device-tablet',
+            tokens: 'blocked online',
+            status: 'remote-control-off',
+            selectable: false,
+            active: false,
+            current: false,
+        },
+        {
+            id: 'tv',
+            name: t('dev.deviceSamples.tv'),
+            icon: 'device-tv',
+            tokens: 'allowed online',
+            status: 'available',
+            selectable: true,
+            active: false,
+            current: false,
+        },
+    ]
+}
+
+const localDevices = computed<TransportDevices>(() => ({
+    role: 'local',
+    connection: 'connected',
+    entries: sampleDeviceEntries(false),
+    playingOn: null,
+    remoteControl: true,
+    appleMobile: false,
+    status: null,
+    replaced: false,
+}))
+
+const remoteDevices = computed<TransportDevices>(() => ({
+    role: 'remote',
+    connection: 'connected',
+    entries: sampleDeviceEntries(true),
+    playingOn: t('dev.deviceSamples.desktop'),
+    remoteControl: false,
+    appleMobile: true,
+    status: 'RemoteControlNotAllowed',
+    replaced: false,
+}))
+
+/** The devices of the profile as the settings page lists them. */
+const sampleKnownDevices = computed(() => [
+    {
+        id: 'this',
+        name: t('dev.deviceSamples.phone'),
+        reportedName: t('dev.deviceSamples.phone'),
+        customName: null,
+        type: 'Phone' as const,
+        online: true,
+        remoteControl: false,
+        active: false,
+        lastActiveAt: sampleTime,
+    },
+    {
+        id: 'living-room',
+        name: t('dev.deviceSamples.desktop'),
+        reportedName: t('dev.resumeDevice'),
+        customName: t('dev.deviceSamples.desktop'),
+        type: 'Desktop' as const,
+        online: true,
+        remoteControl: true,
+        active: true,
+        lastActiveAt: sampleTime,
+    },
+    {
+        id: 'tv',
+        name: t('dev.deviceSamples.tv'),
+        reportedName: t('dev.deviceSamples.tv'),
+        customName: null,
+        type: 'Tv' as const,
+        online: false,
+        remoteControl: false,
+        active: false,
+        lastActiveAt: sampleTime,
     },
 ])
 
@@ -1784,6 +1897,16 @@ const sampleTranscodeJobs = computed<TranscodeJob[]>(() => {
                     <ScrobbleList :services="sampleScrobbleServices" busy="LastFm" />
                     <ScrobbleList :services="[]" />
                 </section>
+                <section data-part="section" data-item="devices">
+                    <h2 data-part="section-title">{{ t('devices.settings.title') }}</h2>
+                    <KnownDeviceList
+                        :devices="sampleKnownDevices"
+                        current-id="this"
+                        busy="living-room"
+                        :errors="{ tv: t('validation.required') }"
+                    />
+                    <KnownDeviceList :devices="[]" current-id="this" />
+                </section>
             </div>
             <div data-part="view" data-view="admin-files">
                 <section data-part="section" data-item="songs">
@@ -2198,6 +2321,7 @@ const sampleTranscodeJobs = computed<TranscodeJob[]>(() => {
                     :expanded="transport.expanded"
                     :resume="transport.resume"
                     :stage="transport.stage"
+                    :devices="transport.id === 'remote' ? remoteDevices : localDevices"
                 />
             </div>
         </section>

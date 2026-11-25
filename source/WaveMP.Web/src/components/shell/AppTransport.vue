@@ -11,6 +11,7 @@ import BaseSegmentedControl, {
 import BaseSlider from '@/components/base/BaseSlider.vue'
 import FavoriteButton from '@/components/collection/FavoriteButton.vue'
 import CastButton from '@/components/player/CastButton.vue'
+import DevicesControl from '@/components/player/DevicesControl.vue'
 import PlayerVisualization from '@/components/player/PlayerVisualization.vue'
 import RatingStars from '@/components/collection/RatingStars.vue'
 import SleepTimerControl from '@/components/player/SleepTimerControl.vue'
@@ -32,6 +33,7 @@ import {
     type TransportStage,
     type PlayerMessage,
     type SleepTimerChoice,
+    type TransportDevices,
     type TransportResume,
     type TransportState,
 } from './transport'
@@ -41,6 +43,9 @@ import {
  * events only; on mobile, the same DOM becomes the mini player and the full-screen player. The heart
  * and the stars of the current track save the favorite and the rating of the profile themselves.
  * While a casting device plays, the bar names it and greys out the crossfade and the equalizer.
+ * The devices button shows the devices of the profile; while another device plays, the bar names
+ * it, its controls act on that device, and the equalizer, the sleep timer and the visualization
+ * (which belong to the device that plays) are greyed out.
  * The compact mode button opens and closes the mini player (desktop only).
  *
  * The full-screen player (mobile) closes with its button or by swiping it down (useSwipeDismiss).
@@ -64,6 +69,8 @@ const props = withDefaults(
         audio?: AnalyserNode | null
         /** The visualization settings of the profile. */
         visualization?: VisualizationSettings
+        /** The devices of the profile; without it, the devices button is hidden. */
+        devices?: TransportDevices | null
     }>(),
     {
         expanded: false,
@@ -72,6 +79,7 @@ const props = withDefaults(
         stage: null,
         audio: null,
         visualization: undefined,
+        devices: null,
     },
 )
 
@@ -93,6 +101,12 @@ const emit = defineEmits<{
     sleepTimer: [choice: SleepTimerChoice]
     /** Opens the device selection for casting. */
     cast: []
+    /** Hands playback over to a device of the profile. */
+    transfer: [deviceId: string]
+    /** Allows or forbids remote control of this device (within the click). */
+    remoteControl: [allowed: boolean]
+    /** The notice of a command of this device that was not accepted was read. */
+    dismissDeviceStatus: []
     showNowPlaying: []
     expand: []
     collapse: []
@@ -121,6 +135,9 @@ const videoElement = ref<HTMLVideoElement | null>(null)
 const viewSwitchOpen = ref(false)
 const viewSwitchId = useId()
 
+/** Whether another device of the profile plays and this one controls it. */
+const remote = computed(() => props.devices?.role === 'remote')
+
 const swipe = useSwipeDismiss(root, {
     enabled: () => props.expanded && !isDesktop.value,
     onDismiss: () => emit('collapse'),
@@ -134,6 +151,7 @@ const tokens = computed(() =>
     transportStateTokens(props.state.playback, props.expanded, props.state.loading ?? false, {
         swipe: swipePhase.value,
         viewSwitch: viewSwitchOpen.value,
+        remote: remote.value,
     }),
 )
 
@@ -169,10 +187,11 @@ const viewOptions = computed<SegmentOption[]>(() => [
         value: PlayerViewModeObject.Visualization,
         item: 'visualization',
         icon: 'view-visualization',
-        label: props.stage?.casting
-            ? t('cast.unavailableWhileCasting', { name: t('nowPlaying.viewVisualization') })
-            : t('nowPlaying.viewVisualization'),
-        disabled: !!props.stage?.casting,
+        label: restingLabel(t('nowPlaying.viewVisualization'), {
+            casting: !!props.stage?.casting,
+            remote: !!props.stage?.remote,
+        }),
+        disabled: !!props.stage?.casting || !!props.stage?.remote,
     },
 ])
 
@@ -244,13 +263,37 @@ const messageText = computed(() => {
     return props.state.message ? messages[props.state.message] : ''
 })
 
-/** Whether equalizer and crossfade apply; not while a casting device plays. */
+/** Whether equalizer and crossfade apply; not while a casting device or another device plays. */
 const effects = computed(() => props.state.effects !== false)
+/** The crossfade of the profile can be switched from a remote, but not while casting. */
+const crossfadeAvailable = computed(() => effects.value || remote.value)
+/** The sleep timer belongs to the device that plays; one that runs here can still be stopped. */
+const sleepTimerAvailable = computed(
+    () => !remote.value || (props.state.sleepTimer?.mode ?? 'off') !== 'off',
+)
 
-/** The label of a button that rests while casting. */
-function effectLabel(name: string): string {
-    return effects.value ? name : t('cast.unavailableWhileCasting', { name })
+/** The label of a control that rests while the music plays elsewhere. */
+function restingLabel(name: string, elsewhere: { casting: boolean; remote: boolean }): string {
+    if (elsewhere.remote) {
+        return t('devices.unavailableWhileRemote', { name })
+    }
+
+    return elsewhere.casting ? t('cast.unavailableWhileCasting', { name }) : name
 }
+
+/** The label of a button that rests while casting or while another device plays. */
+function effectLabel(name: string): string {
+    return effects.value
+        ? name
+        : restingLabel(name, { casting: !remote.value, remote: remote.value })
+}
+
+/** "Playing on ..." while another device of the profile plays. */
+const remoteStatus = computed(() =>
+    remote.value && props.devices?.playingOn
+        ? t('devices.playingOn', { device: props.devices.playingOn })
+        : '',
+)
 
 /** "Playing on ..." while a casting device connects or plays. */
 const castStatus = computed(() => {
@@ -362,6 +405,7 @@ function onMiniPlayer(): void {
                 />
                 <BaseMarquee part="now-playing-artist" :text="state.artist ?? ''" />
                 <span v-if="castStatus" data-part="cast-status">{{ castStatus }}</span>
+                <span v-if="remoteStatus" data-part="remote-status">{{ remoteStatus }}</span>
             </span>
             <span data-part="label">{{ miniPlayerLabel }}</span>
         </button>
@@ -443,10 +487,12 @@ function onMiniPlayer(): void {
                 part="btn-crossfade"
                 variant="icon"
                 icon="crossfade"
-                :label="effectLabel(t('player.crossfade'))"
+                :label="
+                    crossfadeAvailable ? t('player.crossfade') : effectLabel(t('player.crossfade'))
+                "
                 :pressed="state.crossfade ?? false"
                 :state="state.crossfade ? 'on' : 'off'"
-                :disabled="!effects"
+                :disabled="!crossfadeAvailable"
                 @click="emit('toggleCrossfade')"
             />
             <BaseButton
@@ -530,8 +576,19 @@ function onMiniPlayer(): void {
                 :disabled="!effects"
                 @click="emit('openEqualizer')"
             />
-            <SleepTimerControl :timer="state.sleepTimer" @choose="emit('sleepTimer', $event)" />
+            <SleepTimerControl
+                :timer="state.sleepTimer"
+                :disabled="!sleepTimerAvailable"
+                :disabled-label="restingLabel(t('player.sleepTimer'), { casting: false, remote })"
+                @choose="emit('sleepTimer', $event)"
+            />
             <CastButton :cast="state.cast" @cast="emit('cast')" />
+            <DevicesControl
+                :devices="devices ?? undefined"
+                @transfer="emit('transfer', $event)"
+                @remote-control="emit('remoteControl', $event)"
+                @dismiss-status="emit('dismissDeviceStatus')"
+            />
         </div>
         <BaseButton
             part="btn-collapse"

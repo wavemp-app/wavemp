@@ -287,6 +287,59 @@
     "effectsUnavailable": "While casting, the device plays the music as it is: equalizer, crossfade, volume leveling and the visualization rest until playback is back on this device.",
     "unavailableWhileCasting": "{name} (not available while casting)"
   },
+  "devices": {
+    "button": "Devices",
+    "buttonRemote": "Playing on {device}. Choose a device",
+    "title": "Play on",
+    "playingOn": "Playing on {device}",
+    "status": {
+      "thisDevice": "This device",
+      "playing": "Playing",
+      "paused": "Paused",
+      "remoteControlOff": "Remote control off",
+      "available": "Ready to play",
+      "offline": "Not open"
+    },
+    "remoteControl": "Allow remote control",
+    "remoteControlHint": "Other devices of your profile can play here and control this device until you reload this page.",
+    "remoteControlApple": "On iPhone and iPad, keep WaveMP open in the foreground to control it from other devices.",
+    "offline": "Not connected to the server. Your other devices show up again once the connection is back.",
+    "replaced": "WaveMP is open in another tab of this browser, which shows your devices now.",
+    "unavailableWhileRemote": "{name} (not available while another device plays)",
+    "errors": {
+      "notRegistered": "This device is not connected yet. Try again in a moment.",
+      "deviceNotFound": "This device is no longer open.",
+      "remoteControlNotAllowed": "Remote control is off on that device. Turn on \"Allow remote control\" there first.",
+      "notActive": "Another device took over playback in the meantime.",
+      "conflict": "Playback changed in the meantime. Try again.",
+      "invalid": "The device could not do that."
+    },
+    "settings": {
+      "title": "Devices",
+      "hint": "The browsers and apps that opened WaveMP with your profile. Give them names you recognize and forget the ones you no longer use.",
+      "name": "Name",
+      "online": "Open now",
+      "current": "This device, open now",
+      "lastActive": "Last active {date}",
+      "forget": "Forget device",
+      "empty": "No devices yet.",
+      "loading": "Loading the devices",
+      "loadError": "The devices could not be loaded.",
+      "renamed": "The name is saved.",
+      "forgotten": "{device} is forgotten.",
+      "forgetDialog": {
+        "title": "Forget device",
+        "text": "Remove {device} from your devices? It shows up again the next time WaveMP opens there.",
+        "confirm": "Forget"
+      },
+      "errors": {
+        "notFound": "This device is gone already.",
+        "online": "This device is open right now. Close WaveMP there to forget it.",
+        "renameFailed": "The name could not be saved. Try again.",
+        "forgetFailed": "The device could not be forgotten. Try again."
+      }
+    }
+  },
   "equalizer": {
     "title": "Equalizer",
     "power": "Equalizer on",
@@ -654,10 +707,17 @@
       "crossfade": "Crossfade on",
       "autoplay": "Autoplay on",
       "casting": "Casting to a device",
-      "castInsecure": "Casting without HTTPS"
+      "castInsecure": "Casting without HTTPS",
+      "remote": "Controlling another device"
     },
     "castDevice": "Living room",
     "resumeDevice": "Safari · iPhone",
+    "deviceSamples": {
+      "desktop": "Living room PC",
+      "phone": "Firefox · Android",
+      "tablet": "Safari · iPad",
+      "tv": "Kitchen TV"
+    },
     "table": {
       "part": "Part",
       "slot": "Slot",

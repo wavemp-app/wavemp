@@ -13,10 +13,15 @@ import { sleepTimerDurations } from '@/player/sleepTimer'
 
 /**
  * Button of the sleep timer with its menu: off, a duration or the end of the track or the queue.
- * Shows the remaining time while a timer runs. Controlled through props and events only.
+ * Shows the remaining time while a timer runs. Disabled while another device plays (the timer
+ * belongs to the device that plays). Controlled through props and events only.
  */
 const props = defineProps<{
     timer?: TransportSleepTimer
+    /** Whether the timer cannot be set right now. */
+    disabled?: boolean
+    /** The label while it is disabled, e.g. why. */
+    disabledLabel?: string
 }>()
 
 const emit = defineEmits<{
@@ -69,11 +74,13 @@ const remainingText = computed(() => {
 })
 
 const label = computed(() =>
-    mode.value === 'duration'
-        ? `${t('player.sleepTimer')}: ${t('player.sleepTimerRemaining', { time: remainingText.value })}`
-        : active.value
-          ? `${t('player.sleepTimer')}: ${remainingText.value}`
-          : t('player.sleepTimer'),
+    props.disabled && props.disabledLabel
+        ? props.disabledLabel
+        : mode.value === 'duration'
+          ? `${t('player.sleepTimer')}: ${t('player.sleepTimerRemaining', { time: remainingText.value })}`
+          : active.value
+            ? `${t('player.sleepTimer')}: ${remainingText.value}`
+            : t('player.sleepTimer'),
 )
 
 function toggle(event: MouseEvent): void {
@@ -115,6 +122,7 @@ function choose(id: string): void {
             :state="active ? 'on' : 'off'"
             aria-haspopup="menu"
             :aria-expanded="open ? 'true' : 'false'"
+            :disabled="disabled"
             @click="toggle"
         />
         <span v-if="active" data-part="sleep-timer-remaining" aria-hidden="true">{{

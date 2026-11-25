@@ -193,6 +193,7 @@
         --wmp-icon-sleep-timer: url('/icons/phosphor/fill/moon-fill.svg');
         --wmp-icon-cast: url('/icons/phosphor/fill/screencast-fill.svg');
         --wmp-icon-resume-device: url('/icons/phosphor/fill/devices-fill.svg');
+        --wmp-icon-devices: url('/icons/phosphor/fill/devices-fill.svg');
         --wmp-icon-fullscreen: url('/icons/phosphor/fill/corners-out-fill.svg');
         --wmp-icon-exit-fullscreen: url('/icons/phosphor/fill/corners-in-fill.svg');
         --wmp-icon-preset-previous: url('/icons/phosphor/fill/caret-left-fill.svg');
@@ -265,6 +266,13 @@
         --wmp-icon-organize-apply: url('/icons/phosphor/regular/folders.svg');
         --wmp-icon-organize-undo: url('/icons/phosphor/regular/arrow-u-up-left.svg');
         --wmp-icon-organize-stop: url('/icons/phosphor/regular/stop-circle.svg');
+        --wmp-icon-device-desktop: url('/icons/phosphor/regular/desktop.svg');
+        --wmp-icon-device-phone: url('/icons/phosphor/regular/device-mobile.svg');
+        --wmp-icon-device-tablet: url('/icons/phosphor/regular/device-tablet.svg');
+        --wmp-icon-device-tv: url('/icons/phosphor/regular/television-simple.svg');
+        --wmp-icon-device-watch: url('/icons/phosphor/regular/watch.svg');
+        --wmp-icon-device-other: url('/icons/phosphor/regular/speaker-hifi.svg');
+        --wmp-icon-remote-control: url('/icons/phosphor/regular/broadcast.svg');
         --wmp-icon-profile-lock: url('/icons/phosphor/fill/lock-fill.svg');
         --wmp-icon-pin-delete: url('/icons/phosphor/fill/backspace-fill.svg');
         --wmp-icon-pin-submit: url('/icons/phosphor/fill/arrow-right-fill.svg');
@@ -318,6 +326,7 @@
         --wmp-menu-list-max-width: 24rem;
         --wmp-menu-list-max-height: 26rem;
         --wmp-sheet-max-height: 60dvh;
+        --wmp-device-picker-width: 22rem;
         --wmp-play-button-size: 3rem;
         --wmp-slider-thumb-size: 0.875rem;
         --wmp-equalizer-slider-height: 10rem;

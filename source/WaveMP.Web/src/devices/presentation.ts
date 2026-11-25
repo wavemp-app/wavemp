@@ -2,7 +2,7 @@
 // functions for the components of the device picker and the settings.
 
 import { DeviceTypeObject, type Device, type DeviceType } from '@/api/generated/models'
-import { LivePlaybackStatusObject, type LivePlayback } from './protocol'
+import { LivePlaybackStatusObject, type CommandStatus, type LivePlayback } from './protocol'
 
 /** Icon slots of the kinds of devices (see THEMING.md). */
 export type DeviceIconSlot =
@@ -106,4 +106,98 @@ export function deviceStatusOf(
     }
 
     return device.remoteControl === true ? 'available' : 'remote-control-off'
+}
+
+/** i18n key of what the line of a device says. */
+export const deviceStatusKeys: Readonly<Record<DeviceStatus, string>> = {
+    'this-device': 'devices.status.thisDevice',
+    playing: 'devices.status.playing',
+    paused: 'devices.status.paused',
+    'remote-control-off': 'devices.status.remoteControlOff',
+    available: 'devices.status.available',
+    offline: 'devices.status.offline',
+}
+
+/** A device as the device picker shows it. */
+export interface DeviceEntry {
+    readonly id: string
+    readonly name: string
+    readonly icon: DeviceIconSlot
+    /** data-state tokens (deviceStateTokens). */
+    readonly tokens: string
+    readonly status: DeviceStatus
+    /** Whether playback can move there (aria-disabled otherwise). */
+    readonly selectable: boolean
+    /** Whether it is the device that plays (aria-checked). */
+    readonly active: boolean
+    /** Whether it is this device. */
+    readonly current: boolean
+}
+
+/** This device as the picker knows it before the server lists it (e.g. without a connection). */
+export interface OwnDevice {
+    readonly id: string
+    readonly name: string
+    readonly type: DeviceType
+}
+
+/**
+ * The entries of the device picker: the open devices of the profile and always this device (also
+ * before the server lists it), in the order of the server.
+ */
+export function deviceEntries(
+    devices: readonly Device[],
+    self: OwnDevice,
+    playback: LivePlayback | null,
+): DeviceEntry[] {
+    const shown = pickerDevices(devices, self.id)
+    const list: Device[] = shown.some((device) => device.id === self.id)
+        ? shown
+        : [
+              ...shown,
+              {
+                  id: self.id,
+                  name: self.name,
+                  reportedName: self.name,
+                  customName: null,
+                  type: self.type,
+                  online: true,
+                  remoteControl: false,
+                  active: false,
+              },
+          ]
+    return list.map((device) => ({
+        id: device.id ?? '',
+        name: device.name ?? '',
+        icon: deviceIconSlot(device.type),
+        tokens: deviceStateTokens(device, self.id, playback),
+        status: deviceStatusOf(device, self.id, playback),
+        selectable: deviceSelectable(device, self.id),
+        active: isActive(device, playback),
+        current: device.id === self.id,
+    }))
+}
+
+/**
+ * data-state tokens of the devices control in the transport bar, e.g. "remote connected" or
+ * "local connecting open": the role of this device, the connection to the server and whether the
+ * picker is open.
+ */
+export function devicesControlTokens(
+    role: 'local' | 'remote',
+    connection: 'offline' | 'connecting' | 'connected',
+    open: boolean,
+): string {
+    return [role, connection, ...(open ? ['open'] : [])].join(' ')
+}
+
+/** i18n key of the notice of a command or hand-over that was not accepted. */
+export const commandStatusKeys: Readonly<Record<CommandStatus, string>> = {
+    Accepted: 'devices.errors.invalid',
+    NotRegistered: 'devices.errors.notRegistered',
+    DeviceNotFound: 'devices.errors.deviceNotFound',
+    RemoteControlNotAllowed: 'devices.errors.remoteControlNotAllowed',
+    NotActive: 'devices.errors.notActive',
+    Conflict: 'devices.errors.conflict',
+    Invalid: 'devices.errors.invalid',
 }

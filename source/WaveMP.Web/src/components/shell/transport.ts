@@ -2,6 +2,10 @@
 // (src/stores/player.ts) provides the state and handles the events.
 
 import type { CastAvailability, CastConnection, CastTechnology } from '@/casting/types'
+import type { ConnectionStatus } from '@/devices/connection'
+import type { DeviceEntry } from '@/devices/presentation'
+import type { CommandStatus } from '@/devices/protocol'
+import type { DeviceRole } from '@/devices/roles'
 import type { SleepTimerMode } from '@/player/sleepTimer'
 import { PlayerViewModeObject, type PlayerViewMode } from '@/api/generated/models'
 import type { StageView } from '@/player/videoSync'
@@ -72,6 +76,29 @@ export interface TransportCast {
     device: string | null
     /** Whether the browser found devices. */
     devicesFound: boolean
+}
+
+/**
+ * The devices of the profile as the transport bar shows them: the devices button with its picker,
+ * and while this device is a remote, the device that plays.
+ */
+export interface TransportDevices {
+    /** local: this device plays; remote: it controls the active device. */
+    readonly role: DeviceRole
+    /** The connection to the server. */
+    readonly connection: ConnectionStatus
+    /** The open devices of the profile and this device. */
+    readonly entries: readonly DeviceEntry[]
+    /** Name of the device that plays while this device is its remote; null otherwise. */
+    readonly playingOn: string | null
+    /** Whether other devices may control this one (for the running page only). */
+    readonly remoteControl: boolean
+    /** Whether this is an iPhone or iPad, which ends the connection in the background. */
+    readonly appleMobile: boolean
+    /** Outcome of the last command or hand-over of this device that was not accepted. */
+    readonly status: CommandStatus | null
+    /** Whether another tab of this browser took the device over. */
+    readonly replaced: boolean
 }
 
 /** data-state tokens of the cast control, e.g. "chromecast available connected". */
@@ -145,12 +172,14 @@ export interface TransportStateExtras {
     readonly swipe?: SwipePhase
     /** Whether the view switch of the full-screen player is open. */
     readonly viewSwitch?: boolean
+    /** Whether this device controls another device that plays. */
+    readonly remote?: boolean
 }
 
 /**
  * data-state tokens of the transport bar, e.g. "playing loading expanded"; while the full-screen
- * player is swiped, the phase ("dragging", "settling" or "dismissing"), and "view-switch"
- * while its view switch is open.
+ * player is swiped, the phase ("dragging", "settling" or "dismissing"), "view-switch" while
+ * its view switch is open, and "remote" while another device of the profile plays.
  */
 export function transportStateTokens(
     playback: PlaybackState,
@@ -166,6 +195,7 @@ export function transportStateTokens(
         ...(expanded ? ['expanded'] : []),
         ...swipe,
         ...viewSwitch,
+        ...(extras.remote ? ['remote'] : []),
     ].join(' ')
 }
 
@@ -185,6 +215,13 @@ export interface TransportStage {
     readonly hasVideo: boolean
     /** Whether a casting device plays (it shows the video; the browser does not hear the music). */
     readonly casting: boolean
+    /** Whether another device of the profile plays (this one is its remote). */
+    readonly remote?: boolean
+}
+
+/** Whether the music plays elsewhere: on a casting device or another device of the profile. */
+function playsElsewhere(stage: TransportStage): boolean {
+    return stage.casting || stage.remote === true
 }
 
 /** What the full-screen player shows: the lyrics stay on the stage of Now Playing. */
@@ -195,15 +232,16 @@ export function transportView(stage: TransportStage | null | undefined): Transpo
 
 /**
  * The checked option of the view switch of the full-screen player: the chosen mode, but the cover
- * for a song without a video while the video is chosen, while casting for the visualization, and
- * while the lyrics are chosen (the player has no lyrics view).
+ * for a song without a video while the video is chosen, for the visualization while the music
+ * plays elsewhere (casting, another device), and while the lyrics are chosen (the player has no
+ * lyrics view).
  */
 export function transportViewChoice(stage: TransportStage): PlayerViewMode {
     switch (stage.mode) {
         case PlayerViewModeObject.Video:
             return stage.hasVideo ? stage.mode : PlayerViewModeObject.Cover
         case PlayerViewModeObject.Visualization:
-            return stage.casting ? PlayerViewModeObject.Cover : stage.mode
+            return playsElsewhere(stage) ? PlayerViewModeObject.Cover : stage.mode
         case PlayerViewModeObject.Lyrics:
             return PlayerViewModeObject.Cover
         default:
@@ -213,13 +251,19 @@ export function transportViewChoice(stage: TransportStage): PlayerViewMode {
 
 /**
  * Whether the full-screen player needs its video element: the profile chose the video, the song has
- * one and no casting device plays. The video shows once it is ready (view "video").
+ * one and the music plays here (not on a casting device or another device). The video shows once
+ * it is ready (view "video").
  */
 export function transportNeedsVideo(stage: TransportStage | null | undefined): boolean {
-    return !!stage && stage.mode === PlayerViewModeObject.Video && stage.hasVideo && !stage.casting
+    return (
+        !!stage &&
+        stage.mode === PlayerViewModeObject.Video &&
+        stage.hasVideo &&
+        !playsElsewhere(stage)
+    )
 }
 
-/** Whether the full-screen player draws the visualization: chosen and no casting device plays. */
+/** Whether the full-screen player draws the visualization: chosen and the music plays here. */
 export function transportNeedsVisualization(stage: TransportStage | null | undefined): boolean {
-    return !!stage && stage.mode === PlayerViewModeObject.Visualization && !stage.casting
+    return !!stage && stage.mode === PlayerViewModeObject.Visualization && !playsElsewhere(stage)
 }

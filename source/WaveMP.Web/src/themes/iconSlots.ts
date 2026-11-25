@@ -129,6 +129,7 @@ export const iconSlots = {
     'sleep-timer': { file: fill('moon'), area: 'transport' },
     cast: { file: fill('screencast'), area: 'transport' },
     'resume-device': { file: fill('devices'), area: 'transport' },
+    devices: { file: fill('devices'), area: 'transport' },
     'collapse-player': { file: fill('caret-down'), area: 'transport' },
 
     // General (menus and dialogs)
@@ -191,6 +192,13 @@ export const iconSlots = {
     'organize-apply': { file: regular('folders'), area: 'general' },
     'organize-undo': { file: regular('arrow-u-up-left'), area: 'general' },
     'organize-stop': { file: regular('stop-circle'), area: 'general' },
+    'device-desktop': { file: regular('desktop'), area: 'general' },
+    'device-phone': { file: regular('device-mobile'), area: 'general' },
+    'device-tablet': { file: regular('device-tablet'), area: 'general' },
+    'device-tv': { file: regular('television-simple'), area: 'general' },
+    'device-watch': { file: regular('watch'), area: 'general' },
+    'device-other': { file: regular('speaker-hifi'), area: 'general' },
+    'remote-control': { file: regular('broadcast'), area: 'general' },
 
     // Profile selection and digit pad of the PIN
     'profile-lock': { file: fill('lock'), area: 'content' },

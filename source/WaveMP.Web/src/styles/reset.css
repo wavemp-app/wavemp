@@ -64,6 +64,7 @@
          */
         :is(
             [data-part='context-menu'],
+            [data-part='device-picker'],
             [data-part='dialog'],
             [data-part='app'] > [data-part='sidebar'],
             [data-part='app'] > [data-part='sidebar-backdrop'],

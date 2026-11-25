@@ -7,7 +7,7 @@ import AppHeader from './AppHeader.vue'
 import AppSidebar from './AppSidebar.vue'
 import AppToolbar from './AppToolbar.vue'
 import AppTransport from './AppTransport.vue'
-import type { SleepTimerChoice, TransportStage } from './transport'
+import type { SleepTimerChoice, TransportDevices, TransportStage } from './transport'
 import { contentAreaId } from '@/router/scroll'
 import BaseAlert from '@/components/base/BaseAlert.vue'
 import CompactPlayer from '@/components/player/CompactPlayer.vue'
@@ -19,6 +19,7 @@ import { useCoverColor } from '@/composables/useCoverColor'
 import { useKeyboardShortcuts } from '@/composables/useKeyboardShortcuts'
 import { useLayoutOptions } from '@/composables/useLayoutOptions'
 import { useMediaQuery } from '@/composables/useMediaQuery'
+import { deviceEntries } from '@/devices/presentation'
 import { miniPlayerShowsVideo } from '@/player/miniPlayer'
 import { useCollectionStore } from '@/stores/collection'
 import { useContextMenuStore } from '@/stores/contextMenu'
@@ -82,6 +83,18 @@ const transportStage = computed<TransportStage>(() => ({
     view: player.stageView,
     hasVideo: player.hasVideo,
     casting: player.casting,
+    remote: devices.remote,
+}))
+/** The devices of the profile for the devices button of the transport bar. */
+const transportDevices = computed<TransportDevices>(() => ({
+    role: devices.role,
+    connection: devices.status,
+    entries: deviceEntries(devices.devices, devices.self, devices.live),
+    playingOn: devices.remote ? (devices.activeDevice?.name ?? null) : null,
+    remoteControl: devices.remoteControl,
+    appleMobile: devices.appleMobile,
+    status: devices.lastStatus,
+    replaced: devices.replaced,
 }))
 /** The mini player shows in the window of the app; the app is hidden meanwhile. */
 const compactInline = computed(() => miniPlayer.mode === 'inline')
@@ -278,6 +291,7 @@ onUnmounted(() => {
             :stage="transportStage"
             :audio="player.analyser"
             :visualization="session.visualization"
+            :devices="transportDevices"
             @play="player.play"
             @pause="player.pause"
             @stop="player.stop"
@@ -294,6 +308,9 @@ onUnmounted(() => {
             @open-equalizer="openEqualizer"
             @sleep-timer="chooseSleepTimer"
             @cast="player.requestCast"
+            @transfer="devices.transfer"
+            @remote-control="devices.allowRemoteControl"
+            @dismiss-device-status="devices.dismissStatus"
             @compact="toggleCompact"
             @expand="expandPlayer"
             @collapse="collapsePlayer"

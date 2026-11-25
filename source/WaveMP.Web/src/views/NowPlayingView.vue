@@ -5,6 +5,7 @@ import { castStatusText } from '@/casting/presentation'
 import NowPlayingStage from '@/components/player/NowPlayingStage.vue'
 import AutoplayList from '@/components/player/AutoplayList.vue'
 import PlayQueue from '@/components/player/PlayQueue.vue'
+import { useDevicesStore } from '@/stores/devices'
 import { useFullPlayerStore } from '@/stores/fullPlayer'
 import { usePlayerStore } from '@/stores/player'
 import { useSessionStore } from '@/stores/session'
@@ -16,6 +17,7 @@ import type { VisualizationSettingsChange } from '@/visualization/settings'
  */
 const { t } = useI18n()
 const player = usePlayerStore()
+const devices = useDevicesStore()
 const session = useSessionStore()
 const fullPlayer = useFullPlayerStore()
 
@@ -23,6 +25,12 @@ const fullPlayer = useFullPlayerStore()
 const castNotice = computed(() => {
     const text = castStatusText(player.state.cast)
     return text ? t(text.key, { ...text.params }) : ''
+})
+
+/** "Playing on ..." while another device of the profile plays and this one is its remote. */
+const remoteNotice = computed(() => {
+    const device = devices.remote ? devices.activeDevice?.name : undefined
+    return device ? t('devices.playingOn', { device }) : ''
 })
 
 /**
@@ -51,6 +59,7 @@ function updateVisualization(change: VisualizationSettingsChange): void {
             :clock="player.livePosition"
             :casting="player.casting"
             :cast-notice="castNotice"
+            :remote-notice="remoteNotice"
             :covered="fullPlayer.expanded"
             @select-mode="player.selectViewMode"
             @attach-video="player.attachVideo"

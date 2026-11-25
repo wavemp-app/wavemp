@@ -258,6 +258,18 @@ export const parts = [
     'btn-resume',
     'btn-dismiss-resume',
     'cast-status',
+    'devices',
+    'btn-devices',
+    'device-picker',
+    'device-picker-title',
+    'device-list',
+    'device-item',
+    'device-meta',
+    'remote-control-toggle',
+    'switch-track',
+    'switch-thumb',
+    'device-hint',
+    'remote-status',
     'btn-collapse',
 
     // Mini player (compact mode)
@@ -406,6 +418,12 @@ export const parts = [
     'file-selection-title',
     'file-choices',
     'file-choice',
+
+    // Devices of the settings page
+    'known-devices',
+    'known-device',
+    'known-device-info',
+    'known-device-actions',
 
     // Online search for album info
     'online-search',

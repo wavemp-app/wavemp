@@ -11,6 +11,7 @@ import type { SegmentOption } from '@/components/base/BaseSegmentedControl.vue'
 import BaseSelect, { type SelectOption } from '@/components/base/BaseSelect.vue'
 import AvatarDialog, { type AvatarDialogProfile } from '@/components/profiles/AvatarDialog.vue'
 import ProfileSummary from '@/components/profiles/ProfileSummary.vue'
+import DeviceSettings from '@/components/profiles/DeviceSettings.vue'
 import ScrobblingServices from '@/components/profiles/ScrobblingServices.vue'
 import SubsonicAccess from '@/components/profiles/SubsonicAccess.vue'
 import ThemePicker from '@/components/themes/ThemePicker.vue'
@@ -64,6 +65,7 @@ const themeHintId = useId()
 const avatarTitleId = useId()
 const pinTitleId = useId()
 const resumeTitleId = useId()
+const devicesTitleId = useId()
 const scrobblingTitleId = useId()
 const subsonicTitleId = useId()
 
@@ -608,6 +610,13 @@ async function changeSleepTimerFade(value: string): Promise<void> {
                 />
             </template>
         </BaseDialog>
+        <section data-part="section" data-item="devices" :aria-labelledby="devicesTitleId">
+            <h2 :id="devicesTitleId" data-part="section-title">
+                {{ t('devices.settings.title') }}
+            </h2>
+            <p data-part="form-note">{{ t('devices.settings.hint') }}</p>
+            <DeviceSettings />
+        </section>
         <section data-part="section" data-item="avatar" :aria-labelledby="avatarTitleId">
             <h2 :id="avatarTitleId" data-part="section-title">{{ t('settings.avatar') }}</h2>
             <p data-part="form-note" data-field="avatar-status">

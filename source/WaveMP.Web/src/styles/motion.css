@@ -68,7 +68,8 @@
             [data-part='file-choices'],
             [data-part='online-matches'],
             [data-part='artist-match-list'],
-            [data-part='picture-candidate-list']
+            [data-part='picture-candidate-list'],
+            [data-part='device-list']
         ):is(:hover, :focus-within, :active)
         > [data-part='indicator'] {
         transition-property: left, top, inline-size, block-size, opacity;
@@ -137,6 +138,64 @@
 
         @starting-style {
             [data-part='context-menu'][data-placement='sheet']:popover-open {
+                translate: none;
+            }
+        }
+    }
+
+    /*
+     * The device picker grows upwards out of its button like a menu above it; as a sheet it
+     * slides up from the bottom edge (with reduced motion it only fades).
+     */
+    [data-part='device-picker'] {
+        transform-origin: bottom right;
+        transition-property: opacity, scale, translate, display, overlay;
+        transition-duration: var(--wmp-motion-duration-fast);
+        transition-timing-function: var(--wmp-motion-easing-exit);
+        transition-behavior: allow-discrete;
+    }
+
+    [data-part='device-picker'][data-placement='below'] {
+        transform-origin: top right;
+    }
+
+    [data-part='device-picker']:not(:popover-open) {
+        opacity: 0;
+        scale: var(--wmp-motion-scale);
+        pointer-events: none;
+    }
+
+    [data-part='device-picker']:popover-open {
+        transition-duration: var(--wmp-motion-duration-medium);
+        transition-timing-function: var(--wmp-motion-easing-enter);
+    }
+
+    @starting-style {
+        [data-part='device-picker']:popover-open {
+            opacity: 0;
+            scale: var(--wmp-motion-scale);
+        }
+    }
+
+    [data-part='device-picker'][data-placement='sheet']:not(:popover-open) {
+        scale: none;
+        translate: 0 100%;
+    }
+
+    @starting-style {
+        [data-part='device-picker'][data-placement='sheet']:popover-open {
+            scale: none;
+            translate: 0 100%;
+        }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        [data-part='device-picker'][data-placement='sheet']:not(:popover-open) {
+            translate: none;
+        }
+
+        @starting-style {
+            [data-part='device-picker'][data-placement='sheet']:popover-open {
                 translate: none;
             }
         }

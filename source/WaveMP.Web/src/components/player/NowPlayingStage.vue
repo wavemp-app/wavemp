@@ -31,7 +31,8 @@ import {
  * visualization is shown, its controls lie in a toolbar right below the views, never on the picture. The video view
  * stays in the page as long as the track has a video, the lyrics view as long as it has lyrics, so
  * switching back to them is quick. While a casting device plays, the stage names it, shows the cover
- * instead of the video (the device shows it) and offers no visualization. The context menu of the
+ * instead of the video (the device shows it) and offers no visualization; the same while another
+ * device of the profile plays and this one is its remote. The context menu of the
  * stage (right click, long press, the button "More options" or the keyboard) chooses the view and
  * shows the video or the visualization in full screen, like the key F.
  */
@@ -64,6 +65,8 @@ const props = withDefaults(
         casting?: boolean
         /** The notice while casting, e.g. "Playing on Living Room". */
         castNotice?: string
+        /** The notice while another device of the profile plays, e.g. "Playing on Living room PC". */
+        remoteNotice?: string
         /** Whether the full-screen player covers the stage; its visualization rests meanwhile. */
         covered?: boolean
     }>(),
@@ -82,6 +85,7 @@ const props = withDefaults(
         clock: undefined,
         casting: false,
         castNotice: '',
+        remoteNotice: '',
         covered: false,
     },
 )
@@ -126,6 +130,9 @@ const videoFailed = computed(
         props.videoState === 'failed',
 )
 
+/** Whether the music plays elsewhere: on a casting device or on another device of the profile. */
+const elsewhere = computed(() => props.casting || !!props.remoteNotice)
+
 /**
  * The pressed button: the chosen mode, but the cover for a track without a video or with a failed
  * one and for a track without lyrics. While the video loads, its button is pressed and the cover
@@ -136,7 +143,7 @@ const selected = computed<PlayerViewMode>(() => {
         return PlayerViewModeObject.Cover
     }
 
-    if (props.mode === PlayerViewModeObject.Visualization && props.casting) {
+    if (props.mode === PlayerViewModeObject.Visualization && elsewhere.value) {
         return PlayerViewModeObject.Cover
     }
 
@@ -163,10 +170,12 @@ const viewOptions = computed<SegmentOption[]>(() => [
         value: PlayerViewModeObject.Visualization,
         item: 'visualization',
         icon: 'view-visualization',
-        label: props.casting
-            ? t('cast.unavailableWhileCasting', { name: t('nowPlaying.viewVisualization') })
-            : t('nowPlaying.viewVisualization'),
-        disabled: props.casting,
+        label: props.remoteNotice
+            ? t('devices.unavailableWhileRemote', { name: t('nowPlaying.viewVisualization') })
+            : props.casting
+              ? t('cast.unavailableWhileCasting', { name: t('nowPlaying.viewVisualization') })
+              : t('nowPlaying.viewVisualization'),
+        disabled: elsewhere.value,
     },
     {
         value: PlayerViewModeObject.Lyrics,
@@ -341,11 +350,14 @@ const subtitle = computed(() => {
             @toggle-auto-change="toggleAutoChange"
             @toggle-fullscreen="stageVisualization.toggleFullscreen"
         />
-        <p v-if="videoFailed && !casting" data-part="stage-notice" role="status">
+        <p v-if="videoFailed && !elsewhere" data-part="stage-notice" role="status">
             {{ t('nowPlaying.videoFailed') }}
         </p>
         <p v-if="casting && castNotice" data-part="stage-notice" data-kind="cast" role="status">
             {{ castNotice }}
+        </p>
+        <p v-else-if="remoteNotice" data-part="stage-notice" data-kind="remote" role="status">
+            {{ remoteNotice }}
         </p>
         <div v-if="track" data-part="stage-info">
             <p data-part="stage-title">{{ track.title }}</p>

@@ -287,6 +287,59 @@
     "effectsUnavailable": "Beim Streamen spielt das Gerät die Musik unverändert: Equalizer, Überblenden, Lautstärkeausgleich und Visualisierung ruhen, bis die Wiedergabe wieder auf diesem Gerät läuft.",
     "unavailableWhileCasting": "{name} (beim Streamen nicht verfügbar)"
   },
+  "devices": {
+    "button": "Geräte",
+    "buttonRemote": "Wiedergabe auf {device}. Gerät auswählen",
+    "title": "Wiedergeben auf",
+    "playingOn": "Wiedergabe auf {device}",
+    "status": {
+      "thisDevice": "Dieses Gerät",
+      "playing": "Spielt",
+      "paused": "Pausiert",
+      "remoteControlOff": "Fernsteuerung aus",
+      "available": "Bereit",
+      "offline": "Nicht geöffnet"
+    },
+    "remoteControl": "Fernsteuerung erlauben",
+    "remoteControlHint": "Andere Geräte deines Profils können hier abspielen und dieses Gerät steuern, bis du diese Seite neu lädst.",
+    "remoteControlApple": "Auf iPhone und iPad muss WaveMP im Vordergrund geöffnet bleiben, damit andere Geräte es steuern können.",
+    "offline": "Keine Verbindung zum Server. Deine anderen Geräte erscheinen wieder, sobald die Verbindung zurück ist.",
+    "replaced": "WaveMP ist in einem anderen Tab dieses Browsers geöffnet, der jetzt deine Geräte zeigt.",
+    "unavailableWhileRemote": "{name} (nicht verfügbar, während ein anderes Gerät spielt)",
+    "errors": {
+      "notRegistered": "Dieses Gerät ist noch nicht verbunden. Versuche es gleich noch einmal.",
+      "deviceNotFound": "Dieses Gerät ist nicht mehr geöffnet.",
+      "remoteControlNotAllowed": "Auf diesem Gerät ist die Fernsteuerung aus. Schalte dort zuerst „Fernsteuerung erlauben“ ein.",
+      "notActive": "Ein anderes Gerät hat die Wiedergabe inzwischen übernommen.",
+      "conflict": "Die Wiedergabe hat sich inzwischen geändert. Versuche es noch einmal.",
+      "invalid": "Das Gerät konnte das nicht ausführen."
+    },
+    "settings": {
+      "title": "Geräte",
+      "hint": "Die Browser und Apps, die WaveMP mit deinem Profil geöffnet haben. Gib ihnen Namen, die du wiedererkennst, und entferne die, die du nicht mehr nutzt.",
+      "name": "Name",
+      "online": "Gerade geöffnet",
+      "current": "Dieses Gerät, gerade geöffnet",
+      "lastActive": "Zuletzt aktiv {date}",
+      "forget": "Gerät entfernen",
+      "empty": "Noch keine Geräte.",
+      "loading": "Die Geräte werden geladen",
+      "loadError": "Die Geräte konnten nicht geladen werden.",
+      "renamed": "Der Name ist gespeichert.",
+      "forgotten": "{device} ist entfernt.",
+      "forgetDialog": {
+        "title": "Gerät entfernen",
+        "text": "{device} aus deinen Geräten entfernen? Es erscheint wieder, sobald WaveMP dort das nächste Mal geöffnet wird.",
+        "confirm": "Entfernen"
+      },
+      "errors": {
+        "notFound": "Dieses Gerät ist bereits entfernt.",
+        "online": "Dieses Gerät ist gerade geöffnet. Schließe WaveMP dort, um es zu entfernen.",
+        "renameFailed": "Der Name konnte nicht gespeichert werden. Versuche es noch einmal.",
+        "forgetFailed": "Das Gerät konnte nicht entfernt werden. Versuche es noch einmal."
+      }
+    }
+  },
   "equalizer": {
     "title": "Equalizer",
     "power": "Equalizer an",
@@ -654,10 +707,17 @@
       "crossfade": "Überblenden an",
       "autoplay": "Autoplay an",
       "casting": "Streamen auf ein Gerät",
-      "castInsecure": "Streamen ohne HTTPS"
+      "castInsecure": "Streamen ohne HTTPS",
+      "remote": "Steuert ein anderes Gerät"
     },
     "castDevice": "Wohnzimmer",
     "resumeDevice": "Safari · iPhone",
+    "deviceSamples": {
+      "desktop": "PC im Wohnzimmer",
+      "phone": "Firefox · Android",
+      "tablet": "Safari · iPad",
+      "tv": "Fernseher in der Küche"
+    },
     "table": {
       "part": "Part",
       "slot": "Slot",

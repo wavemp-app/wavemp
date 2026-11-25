@@ -3292,6 +3292,265 @@
         white-space: nowrap;
     }
 
+    /*
+     * Devices of the profile: the button, and the device picker it opens (a popover; never set
+     * display here, the closed popover must stay hidden). Above the button on the desktop, as a
+     * sheet along the bottom edge on phones (data-placement).
+     */
+    [data-part='devices'] {
+        display: inline-flex;
+        align-items: center;
+    }
+
+    [data-part='device-picker'] {
+        /* The picker lies in the top layer: its icons follow its text, not the bar it opens from. */
+        --wmp-icon-fill: currentColor;
+
+        position: fixed;
+        inset: auto;
+        inset-block-start: var(--wmp-menu-y, auto);
+        inset-inline-start: var(--wmp-menu-x, auto);
+        inline-size: min(var(--wmp-device-picker-width), calc(100vw - 2 * var(--wmp-space-xs)));
+        max-block-size: var(--wmp-menu-max-height, 100vh);
+        margin: 0;
+        padding: var(--wmp-space-s);
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        border: 1px solid var(--wmp-color-border);
+        border-radius: var(--wmp-radius-m);
+        background: var(--wmp-menu-background);
+        color: var(--wmp-menu-color);
+        box-shadow: 0 0.5rem 1.5rem rgb(0 0 0 / 25%);
+    }
+
+    [data-part='device-picker'][data-placement='sheet'] {
+        inset-inline: 0;
+        inset-block: auto 0;
+        inline-size: auto;
+        max-block-size: var(--wmp-sheet-max-height);
+        padding-block-end: calc(var(--wmp-space-m) + env(safe-area-inset-bottom, 0px));
+        border-inline: 0;
+        border-block-end: 0;
+        border-radius: var(--wmp-radius-l) var(--wmp-radius-l) 0 0;
+    }
+
+    [data-part='device-picker'][data-placement='sheet']::backdrop {
+        background: var(--wmp-backdrop-color);
+    }
+
+    [data-part='device-picker-title'] {
+        margin: 0 0 var(--wmp-space-xs);
+        padding: var(--wmp-space-xs) var(--wmp-space-s);
+        font-size: var(--wmp-font-size-m);
+        font-weight: var(--wmp-font-weight-bold);
+    }
+
+    /*
+     * The open devices; the one that plays is checked. The base lays the indicator over it, a
+     * theme shows it (for example as a capsule that glides to the device playback moves to).
+     */
+    [data-part='device-list'] {
+        position: relative;
+        display: grid;
+        gap: 2px;
+    }
+
+    [data-part='device-list'] > [data-part='indicator'] {
+        position: absolute;
+        inset-block-start: var(--wmp-indicator-y, 0);
+        left: var(--wmp-indicator-x, 0);
+        inline-size: var(--wmp-indicator-width, 0);
+        block-size: var(--wmp-indicator-height, 0);
+        border-radius: var(--wmp-radius-m);
+        pointer-events: none;
+    }
+
+    [data-part='device-item'] {
+        position: relative;
+        display: grid;
+        grid-template:
+            'icon label' auto
+            'icon meta' auto
+            / var(--wmp-icon-size-l) minmax(0, 1fr);
+        align-items: center;
+        column-gap: var(--wmp-space-s);
+        inline-size: 100%;
+        min-block-size: var(--wmp-touch-target-size);
+        padding: var(--wmp-space-xs) var(--wmp-space-s);
+        border: 0;
+        border-radius: var(--wmp-radius-m);
+        background: none;
+        color: inherit;
+        font: inherit;
+        text-align: start;
+        cursor: pointer;
+    }
+
+    [data-part='device-item'] > [data-part='icon'] {
+        grid-area: icon;
+        justify-self: center;
+    }
+
+    [data-part='device-item'] > [data-part='label'] {
+        grid-area: label;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    [data-part='device-item'] > [data-part='device-meta'] {
+        grid-area: meta;
+    }
+
+    [data-part='device-item']:is(:hover, :focus-visible):not([aria-disabled='true']) {
+        background: var(--wmp-color-hover);
+    }
+
+    [data-part='device-item'][aria-checked='true'] {
+        background: var(--wmp-color-selection);
+        color: var(--wmp-color-selection-text);
+    }
+
+    [data-part='device-item'][aria-checked='true'] > [data-part='label'] {
+        font-weight: var(--wmp-font-weight-bold);
+    }
+
+    /* Devices that do not allow remote control stay readable and focusable, but greyed out. */
+    [data-part='device-item'][aria-disabled='true'] {
+        color: var(--wmp-color-text-disabled);
+        cursor: default;
+    }
+
+    [data-part='device-meta'] {
+        overflow: hidden;
+        font-size: var(--wmp-font-size-s);
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        opacity: 0.8;
+    }
+
+    /* "Allow remote control": a switch with its track and thumb, then its hint. */
+    [data-part='remote-control-toggle'] {
+        display: grid;
+        grid-template-columns: var(--wmp-icon-size-l) minmax(0, 1fr) auto;
+        align-items: center;
+        column-gap: var(--wmp-space-s);
+        inline-size: 100%;
+        min-block-size: var(--wmp-touch-target-size);
+        margin-block-start: var(--wmp-space-s);
+        padding: var(--wmp-space-s);
+        border: 0;
+        border-block-start: 1px solid var(--wmp-color-border);
+        border-radius: 0;
+        background: none;
+        color: inherit;
+        font: inherit;
+        text-align: start;
+        cursor: pointer;
+    }
+
+    [data-part='remote-control-toggle'] > [data-part='icon'] {
+        justify-self: center;
+    }
+
+    [data-part='remote-control-toggle']:focus-visible {
+        background: var(--wmp-color-hover);
+    }
+
+    [data-part='switch-track'] {
+        position: relative;
+        display: inline-block;
+        inline-size: 2.25rem;
+        block-size: 1.25rem;
+        border: 1px solid var(--wmp-color-border);
+        border-radius: var(--wmp-radius-round);
+        background: var(--wmp-slider-track-background);
+        transition: background-color var(--wmp-motion-duration-medium)
+            var(--wmp-motion-easing-standard);
+    }
+
+    [data-part='switch-thumb'] {
+        position: absolute;
+        inset-block-start: 1px;
+        inset-inline-start: 1px;
+        inline-size: calc(1.25rem - 4px);
+        block-size: calc(1.25rem - 4px);
+        border-radius: 50%;
+        background: var(--wmp-color-surface);
+        transition: translate var(--wmp-motion-duration-medium) var(--wmp-motion-easing-standard);
+    }
+
+    [aria-checked='true'] > [data-part='switch-track'] {
+        border-color: transparent;
+        background: var(--wmp-color-success);
+    }
+
+    [aria-checked='true'] > [data-part='switch-track'] > [data-part='switch-thumb'] {
+        translate: 1rem 0;
+    }
+
+    [dir='rtl'] [aria-checked='true'] > [data-part='switch-track'] > [data-part='switch-thumb'] {
+        translate: -1rem 0;
+    }
+
+    [data-part='device-hint'] {
+        margin: var(--wmp-space-xs) 0 0;
+        padding-inline: var(--wmp-space-s);
+        font-size: var(--wmp-font-size-s);
+        opacity: 0.8;
+    }
+
+    [data-part='device-picker'] > [data-part='alert'] {
+        margin-block-start: var(--wmp-space-s);
+    }
+
+    /* The device that plays while this one is its remote, below the artist of the mini player. */
+    [data-part='remote-status'] {
+        overflow: hidden;
+        font-size: var(--wmp-font-size-s);
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    /* The devices of the profile on the settings page. */
+    [data-part='known-devices'] {
+        display: grid;
+        gap: var(--wmp-space-s);
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
+    [data-part='known-device'] {
+        display: grid;
+        grid-template-columns: var(--wmp-icon-size-l) minmax(0, 1fr) auto;
+        align-items: center;
+        gap: var(--wmp-space-s) var(--wmp-space-m);
+        padding: var(--wmp-space-s) var(--wmp-space-m);
+        border: 1px solid var(--wmp-color-border);
+        border-radius: var(--wmp-radius-m);
+    }
+
+    [data-part='known-device'] > [data-part='icon'] {
+        justify-self: center;
+    }
+
+    [data-part='known-device-info'] {
+        display: grid;
+        gap: var(--wmp-space-xs);
+        min-inline-size: 0;
+    }
+
+    [data-part='known-device-info'] > [data-part='form'] {
+        display: block;
+        max-inline-size: 24rem;
+    }
+
+    [data-part='known-device-actions'] {
+        display: flex;
+        gap: var(--wmp-space-s);
+    }
+
     /* --- Mini player (compact mode) ------------------------------------------------------ */
 
     /*

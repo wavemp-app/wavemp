@@ -387,6 +387,10 @@
         --_icon: var(--wmp-icon-resume-device);
     }
 
+    [data-icon='devices'] {
+        --_icon: var(--wmp-icon-devices);
+    }
+
     [data-icon='fullscreen'] {
         --_icon: var(--wmp-icon-fullscreen);
     }
@@ -673,6 +677,34 @@
 
     [data-icon='organize-stop'] {
         --_icon: var(--wmp-icon-organize-stop);
+    }
+
+    [data-icon='device-desktop'] {
+        --_icon: var(--wmp-icon-device-desktop);
+    }
+
+    [data-icon='device-phone'] {
+        --_icon: var(--wmp-icon-device-phone);
+    }
+
+    [data-icon='device-tablet'] {
+        --_icon: var(--wmp-icon-device-tablet);
+    }
+
+    [data-icon='device-tv'] {
+        --_icon: var(--wmp-icon-device-tv);
+    }
+
+    [data-icon='device-watch'] {
+        --_icon: var(--wmp-icon-device-watch);
+    }
+
+    [data-icon='device-other'] {
+        --_icon: var(--wmp-icon-device-other);
+    }
+
+    [data-icon='remote-control'] {
+        --_icon: var(--wmp-icon-remote-control);
     }
 
     [data-icon='profile-lock'] {
