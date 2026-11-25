@@ -1917,9 +1917,10 @@ export const usePlayerStore = defineStore('player', () => {
     )
 
     // Play, pause, stop and a new song publish at once; starting playback here while this device
-    // is not the active one takes playback over.
+    // is not the active one takes playback over, also before the device is registered (the
+    // devices store sends that claim once it is).
     watch([playback, loading, () => current.value?.key ?? null], ([value], [before]) => {
-        if (!devices.registered || remote.value) {
+        if (remote.value) {
             return
         }
 

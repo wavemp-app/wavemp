@@ -232,6 +232,74 @@ describe('devices store', () => {
                 expect.objectContaining({ claim: true }),
             ])
         })
+
+        /** Starts the store with a session whose connection waits until open is called. */
+        async function connecting(player = fakePlayer()) {
+            const waiting: (() => void)[] = []
+            const create = devicesDependencies.createConnection
+            devicesDependencies.createConnection = (accessToken) => {
+                const created = create(accessToken) as FakeHubConnection
+                created.startWith = () => new Promise<void>((resolve) => waiting.push(resolve))
+                return created
+            }
+            const devices = useDevicesStore()
+            devices.attachPlayer(player)
+            useSessionStore().token = 'token'
+            devices.start()
+            await flushPromises()
+            return { devices, open: () => waiting.splice(0).forEach((resolve) => resolve()) }
+        }
+
+        it('sends a claim made before it registered once it is registered', async () => {
+            registerAnswer = snapshot({
+                devices: [device('me'), device('tv', { remoteControl: true })],
+                playback: live({ activeDeviceId: 'tv', status: 'Paused' }),
+            })
+            // Played and paused again while the connection was not up yet (right after a reload).
+            const { devices, open } = await connecting(fakePlayer({ playback: 'paused' }))
+            await devices.publish(true)
+            expect(hub().callsOf('PublishPlayback')).toEqual([])
+
+            open()
+            await flushPromises()
+
+            expect(hub().callsOf('PublishPlayback')).toEqual([
+                expect.objectContaining({ claim: true }),
+            ])
+            expect(devices.isActive).toBe(true)
+        })
+
+        it('claims nothing after registering without a claim of its own', async () => {
+            registerAnswer = snapshot({
+                devices: [device('me'), device('tv', { remoteControl: true })],
+                playback: live({ activeDeviceId: 'tv', status: 'Paused' }),
+            })
+            const { devices } = await connected()
+            hub().reconnected()
+            await flushPromises()
+
+            expect(hub().callsOf('PublishPlayback')).toEqual([])
+            expect(devices.isActive).toBe(false)
+        })
+
+        it('forgets a claim made before it registered when the profile changes', async () => {
+            registerAnswer = snapshot({
+                devices: [device('me'), device('tv', { remoteControl: true })],
+                playback: live({ activeDeviceId: 'tv', status: 'Paused' }),
+            })
+            const { devices, open } = await connecting()
+            await devices.publish(true)
+            useSessionStore().token = 'other'
+            await flushPromises()
+            // The attempt of the old profile ends, then the connection of the new one opens.
+            open()
+            await flushPromises()
+            open()
+            await flushPromises()
+
+            expect(devices.registered).toBe(true)
+            expect(hub().callsOf('PublishPlayback')).toEqual([])
+        })
     })
 
     describe('remote control permission', () => {

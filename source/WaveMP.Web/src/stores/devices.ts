@@ -144,6 +144,11 @@ export const useDevicesStore = defineStore('devices', () => {
     let publishedSignature: string | null = null
     let publishedQueue: LiveQueueInput | null = null
     let windowStart = 0
+    /**
+     * Playback was started here while this device was not registered (e.g. right after a reload,
+     * before the connection was up): the claim is sent once it is registered.
+     */
+    let pendingClaim = false
     const resumeHandlers = new Set<ResumeFromRemote>()
 
     const role = computed<DeviceRole>(() =>
@@ -328,10 +333,12 @@ export const useDevicesStore = defineStore('devices', () => {
         registered.value = true
         replaced.value = false
         const active = snapshot.playback.activeDeviceId
+        const claim = pendingClaim
+        pendingClaim = false
         if (active === self.id) {
             // Back after a reload or a lost connection: the state of this device is the live one.
             player.value?.publishNow()
-        } else if (active === null && player.value?.playing()) {
+        } else if (claim || (active === null && player.value?.playing())) {
             void publish(true)
         }
     }
@@ -342,6 +349,10 @@ export const useDevicesStore = defineStore('devices', () => {
      */
     async function publish(claim = false): Promise<void> {
         const target = player.value
+        if (claim && !registered.value && target) {
+            pendingClaim = true
+        }
+
         if (!registered.value || !target || handingOver.value || (!claim && !isActive.value)) {
             return
         }
@@ -553,6 +564,7 @@ export const useDevicesStore = defineStore('devices', () => {
         publishedSignature = null
         publishedQueue = null
         windowStart = 0
+        pendingClaim = false
     }
 
     /** Connects while a profile is selected; another profile connects anew without permission. */

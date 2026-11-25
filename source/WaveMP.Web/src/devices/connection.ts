@@ -189,6 +189,9 @@ export class DeviceConnection {
             if (this.wanted && this.connection === connection) {
                 this.setStatus('offline')
                 this.scheduleRetry()
+            } else {
+                // Stopped and started again (another profile) while this attempt ran.
+                void this.connect()
             }
 
             return
@@ -197,6 +200,9 @@ export class DeviceConnection {
         this.connecting = false
         if (!this.wanted || this.connection !== connection) {
             await connection.stop().catch(() => undefined)
+            // Stopped and started again (another profile) while this attempt ran: the new
+            // connection waited for it.
+            void this.connect()
             return
         }
 

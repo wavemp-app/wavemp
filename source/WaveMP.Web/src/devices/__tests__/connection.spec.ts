@@ -192,4 +192,27 @@ describe('DeviceConnection', () => {
         expect(events.connected).not.toHaveBeenCalled()
         expect(connections[0]!.state).toBe(HubConnectionState.Disconnected)
     })
+
+    it('connects anew when it was started again while an older attempt ran', async () => {
+        const waiting: (() => void)[] = []
+        const { connection, connections, events } = setup((hub) => {
+            hub.startWith = () => new Promise<void>((resolve) => waiting.push(resolve))
+        })
+        connection.start()
+        await connection.stop()
+        connection.start()
+        await flushPromises()
+        expect(connections).toHaveLength(1)
+
+        waiting.splice(0).forEach((resolve) => resolve())
+        await flushPromises()
+        expect(connections).toHaveLength(2)
+        expect(connections[0]!.state).toBe(HubConnectionState.Disconnected)
+        waiting.splice(0).forEach((resolve) => resolve())
+        await flushPromises()
+
+        expect(connections[1]!.state).toBe(HubConnectionState.Connected)
+        expect(connection.status).toBe('connected')
+        expect(events.connected).toHaveBeenCalledOnce()
+    })
 })
