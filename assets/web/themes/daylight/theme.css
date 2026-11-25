@@ -2022,6 +2022,103 @@ a[data-part='breadcrumb-link']:hover {
     filter: grayscale(1);
 }
 
+/* --- Devices and remote control ---------------------------------------------------------- */
+
+/* While this device is the remote of another one, its button turns azure like a connected cast. */
+[data-part='btn-devices'][data-state~='remote'] [data-part='icon'] {
+    --wmp-icon-fill: linear-gradient(#3f93dc, #134e8f);
+}
+
+[data-part='devices'][data-state~='connecting'] [data-part='btn-devices'] [data-part='icon'] {
+    opacity: 0.6;
+}
+
+[data-part='remote-status'] {
+    color: var(--daylight-azure);
+}
+
+[data-part='device-picker'] {
+    border-color: var(--daylight-hairline-strong);
+    box-shadow:
+        inset 0 1px #ffffff,
+        0 10px 26px -6px rgb(17 39 62 / 30%);
+}
+
+[data-part='device-picker'] [data-part='icon'] {
+    --wmp-icon-fill: var(--daylight-slate);
+}
+
+/*
+ * The device that plays lies on a capsule of frosted azure glass, the same glass as the capsule of
+ * the transport band; it glides to the device playback moves to.
+ */
+[data-part='device-list'] > [data-part='indicator'] {
+    display: block;
+    border-radius: 999px;
+    background: linear-gradient(#f4f9fe, #dcebf9 50%, #cfe3f7);
+    box-shadow:
+        inset 0 0 0 1px var(--daylight-selection-edge),
+        inset 0 1px 0 1px #ffffff;
+}
+
+[data-part='device-item'] {
+    border-radius: 999px;
+}
+
+[data-part='device-item']:is(:hover, :focus-visible):not([aria-disabled='true'], [aria-checked='true']) {
+    background: var(--daylight-hover);
+}
+
+[data-part='device-item'][aria-checked='true'] {
+    background: transparent;
+    color: var(--daylight-ink);
+}
+
+[data-part='device-picker'] [data-part='device-item'][aria-checked='true'] > [data-part='icon'] {
+    --wmp-icon-fill: linear-gradient(#4aa3ea, var(--daylight-azure-deep));
+}
+
+/* Devices that do not allow remote control are greyed out, symbol included. */
+[data-part='device-picker'] [data-part='device-item'][aria-disabled='true'] > [data-part='icon'] {
+    --wmp-icon-fill: var(--wmp-color-text-disabled);
+}
+
+[data-part='remote-control-toggle'] {
+    border-color: var(--daylight-hairline);
+}
+
+[data-part='switch-track'] {
+    border-color: var(--daylight-hairline-strong);
+    background: linear-gradient(#e8f0f8, #f8fbfe);
+}
+
+[data-part='switch-thumb'] {
+    background: linear-gradient(#ffffff, #e6eef7);
+    box-shadow:
+        inset 0 0 0 1px var(--daylight-hairline-strong),
+        0 1px 2px rgb(17 39 62 / 25%);
+}
+
+[aria-checked='true'] > [data-part='switch-track'] {
+    border-color: var(--daylight-azure-deep);
+    background: linear-gradient(var(--daylight-azure-light), var(--daylight-azure) 60%);
+}
+
+/* The devices of the profile on the settings page: rows on paper, divided by hairlines. */
+[data-part='known-device'] {
+    border-color: var(--daylight-hairline);
+    background: var(--daylight-frost);
+}
+
+[data-part='known-device'][data-state~='current'] {
+    border-color: var(--daylight-selection-edge);
+    background: var(--daylight-mist);
+}
+
+[data-part='known-device'] > [data-part='icon'] {
+    --wmp-icon-fill: var(--daylight-slate);
+}
+
 /* --- Accessibility ----------------------------------------------------------------------------- */
 
 :focus-visible {

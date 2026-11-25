@@ -2680,6 +2680,166 @@ a[data-part='breadcrumb-link']:hover {
     border-radius: 1.5rem;
 }
 
+/* --- Devices and remote control ---------------------------------------------------------------- */
+
+/* While this device is the remote of another one, its button lies on a small lens, lit teal. */
+[data-part='btn-devices'][data-state~='remote'] {
+    background: var(--cg-lens);
+    box-shadow: var(--cg-lens-shadow);
+    color: var(--wmp-color-accent);
+}
+
+[data-part='devices'][data-state~='connecting'] [data-part='btn-devices'] [data-part='icon'] {
+    opacity: 0.6;
+}
+
+[data-part='remote-status'] {
+    color: var(--wmp-color-accent);
+}
+
+/* The picker is a pane of glass like the menus, with its rim. */
+[data-part='device-picker'] {
+    -webkit-backdrop-filter: var(--cg-blur);
+    backdrop-filter: var(--cg-blur);
+    padding: 0.5rem;
+    border: 0;
+    border-radius: 1.375rem;
+    box-shadow: var(--cg-rim), var(--cg-hairline), 0 18px 40px -12px rgb(12 22 36 / 40%);
+}
+
+:root[data-theme-variant='dark'] [data-part='device-picker'] {
+    box-shadow: var(--cg-rim), var(--cg-hairline), 0 18px 40px -12px rgb(0 0 0 / 70%);
+}
+
+[data-part='device-picker'][data-placement='sheet'] {
+    border-radius: 1.375rem 1.375rem 0 0;
+}
+
+[data-part='device-picker'] [data-part='icon'] {
+    --wmp-icon-fill: var(--cg-muted);
+}
+
+/*
+ * The device that plays lies below a raised lens of glass with a streak of light, which springs
+ * to the device playback moves to, like the lens of every other group.
+ */
+[data-part='device-list'] > [data-part='indicator'] {
+    display: block;
+    border-radius: 999px;
+    background: var(--cg-lens);
+    box-shadow: var(--cg-lens-inset);
+    filter: var(--cg-lens-drop);
+}
+
+[data-part='device-list'] > [data-part='indicator']::after {
+    position: absolute;
+    inset: 1px 18% auto;
+    block-size: 40%;
+    border-radius: 999px;
+    background: linear-gradient(rgb(255 255 255 / 70%), rgb(255 255 255 / 0%));
+    content: '';
+    opacity: 0.8;
+}
+
+:root[data-theme-variant='dark'] [data-part='device-list'] > [data-part='indicator']::after {
+    opacity: 0.25;
+}
+
+[data-part='device-list']:is(:hover, :focus-within, :active) > [data-part='indicator'] {
+    transition:
+        left var(--wmp-motion-duration-slow) var(--cg-spring),
+        top var(--wmp-motion-duration-slow) var(--cg-spring),
+        inline-size var(--wmp-motion-duration-slow) var(--cg-spring),
+        block-size var(--wmp-motion-duration-slow) var(--cg-spring);
+}
+
+[data-part='device-item'] {
+    border-radius: 999px;
+    color: var(--cg-ink);
+}
+
+[data-part='device-item']:is(:hover, :focus-visible):not([aria-disabled='true'], [aria-checked='true']) {
+    background: var(--cg-hover);
+    box-shadow: var(--cg-hover-rim);
+}
+
+[data-part='device-item'][aria-checked='true'] {
+    background: transparent;
+    color: var(--cg-ink);
+}
+
+[data-part='device-picker'] [data-part='device-item'][aria-checked='true'] > [data-part='icon'] {
+    --wmp-icon-fill: var(--cg-edge);
+}
+
+[data-part='device-item'][aria-disabled='true'] {
+    color: var(--wmp-color-text-disabled);
+}
+
+/* Devices that do not allow remote control are greyed out, symbol included. */
+[data-part='device-picker'] [data-part='device-item'][aria-disabled='true'] > [data-part='icon'] {
+    --wmp-icon-fill: var(--wmp-color-text-disabled);
+}
+
+[data-part='remote-control-toggle'] {
+    border-color: rgb(12 22 36 / 10%);
+}
+
+:root[data-theme-variant='dark'] [data-part='remote-control-toggle'] {
+    border-color: rgb(255 255 255 / 10%);
+}
+
+/* The switch is a groove in the glass with a small lens as thumb; switched on, it fills teal. */
+[data-part='switch-track'] {
+    border-color: transparent;
+    background: var(--cg-groove);
+    box-shadow: var(--cg-groove-shadow);
+}
+
+[data-part='switch-thumb'] {
+    background: var(--cg-lens);
+    box-shadow: var(--cg-lens-inset);
+    filter: drop-shadow(0 1px 1.5px rgb(12 22 36 / 25%));
+}
+
+[aria-checked='true'] > [data-part='switch-track'] {
+    background: var(--wmp-color-accent);
+}
+
+/* In the dark variant the lens of a switched-off switch stays light, so it reads on the groove. */
+:root[data-theme-variant='dark'] [data-part='switch-thumb'] {
+    background: linear-gradient(#e4ebf2, #a9b6c4);
+}
+
+/* The devices of the profile on the settings page: small panes of clear glass. */
+[data-part='known-device'] {
+    border: 0;
+    border-radius: 1.125rem;
+    background: var(--cg-glass);
+    box-shadow: var(--cg-rim), var(--cg-hairline);
+}
+
+[data-part='known-device'] > [data-part='icon'] {
+    --wmp-icon-fill: var(--cg-muted);
+}
+
+[data-part='known-device'][data-state~='current'] > [data-part='icon'] {
+    --wmp-icon-fill: var(--cg-edge);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    [data-part='device-list']:is(:hover, :focus-within, :active) > [data-part='indicator'] {
+        transition: none;
+    }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+    [data-part='device-picker'] {
+        -webkit-backdrop-filter: none;
+        backdrop-filter: none;
+    }
+}
+
 /* --- Focus ------------------------------------------------------------------------------------- */
 
 :focus-visible {

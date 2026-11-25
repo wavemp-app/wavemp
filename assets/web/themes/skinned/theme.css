@@ -2357,6 +2357,134 @@ a[data-part='breadcrumb-link']:hover {
     }
 }
 
+/* --- Devices and remote control ------------------------------------------------------------- */
+
+/* While this device is the remote of another one, its key stays pressed in with an amber symbol. */
+[data-part='btn-devices'][data-state~='remote'] {
+    --wmp-icon-fill: #ffcf5c;
+
+    background: var(--skinned-key-pressed);
+    box-shadow: var(--skinned-pressed);
+}
+
+[data-part='remote-status'] {
+    color: #ffcf5c;
+}
+
+/* The picker is a small window of the body: gunmetal in its frame. */
+[data-part='device-picker'] {
+    padding: 4px;
+    border: 0;
+    border-radius: var(--wmp-radius-s);
+    background: var(--skinned-body);
+    box-shadow:
+        var(--skinned-frame),
+        0 0.5rem 1.25rem rgb(0 0 0 / 55%);
+}
+
+[data-part='device-picker'][data-placement='sheet'] {
+    border-radius: var(--wmp-radius-s) var(--wmp-radius-s) 0 0;
+}
+
+[data-part='device-picker-title'] {
+    color: #4cf07a;
+    font-family: var(--skinned-lcd-font);
+    font-size: var(--wmp-font-size-s);
+    font-weight: 400;
+}
+
+[data-part='device-picker'] [data-part='icon'] {
+    --wmp-icon-fill: #aeb5be;
+}
+
+/* The devices lie in a dark sunken well. */
+[data-part='device-list'] {
+    gap: 1px;
+    padding: 3px;
+    border-radius: 1px;
+    background: #131418;
+    box-shadow: var(--skinned-sunken);
+}
+
+/*
+ * The device that plays lies on a capsule of lit amber glass, the selection of the player, which
+ * glides to the device playback moves to.
+ */
+[data-part='device-list'] > [data-part='indicator'] {
+    display: block;
+    border-radius: 999px;
+    background: linear-gradient(#5a4512, #3a2a08 50%, #2c2006);
+    box-shadow:
+        inset 0 0 0 1px #8a6a1e,
+        inset 0 1px 0 1px rgb(255 207 92 / 25%);
+}
+
+[data-part='device-item'] {
+    border-radius: 999px;
+}
+
+[data-part='device-item']:is(:hover, :focus-visible):not([aria-disabled='true'], [aria-checked='true']) {
+    background: #1f2126;
+}
+
+[data-part='device-item'][aria-checked='true'] {
+    background: transparent;
+    color: #ffcf5c;
+}
+
+[data-part='device-picker'] [data-part='device-item'][aria-checked='true'] > [data-part='icon'] {
+    --wmp-icon-fill: #ffcf5c;
+}
+
+/* Devices that do not allow remote control are greyed out, symbol included. */
+[data-part='device-picker'] [data-part='device-item'][aria-disabled='true'] > [data-part='icon'] {
+    --wmp-icon-fill: var(--wmp-color-text-disabled);
+}
+
+[data-part='remote-control-toggle'] {
+    border-color: #0d0e11;
+    box-shadow: inset 0 1px 0 #3a3d45;
+}
+
+/* The switch is a sunken slot with a key as slider; switched on, the slot lights up green. */
+[data-part='switch-track'] {
+    border: 0;
+    border-radius: 2px;
+    background: #0d0e11;
+    box-shadow: var(--skinned-sunken);
+}
+
+[data-part='switch-thumb'] {
+    inset-block-start: 2px;
+    inset-inline-start: 2px;
+    border-radius: 1px;
+    background: var(--skinned-key);
+    box-shadow: var(--skinned-raised);
+}
+
+[aria-checked='true'] > [data-part='switch-track'] {
+    background: linear-gradient(#4cf07a, #2fbf5f);
+    box-shadow:
+        var(--skinned-sunken),
+        inset 0 0 6px rgb(76 240 122 / 45%);
+}
+
+/* The devices of the profile on the settings page: dark sunken rows. */
+[data-part='known-device'] {
+    border: 0;
+    border-radius: 1px;
+    background: #1a1c21;
+    box-shadow: var(--skinned-sunken);
+}
+
+[data-part='known-device'] > [data-part='icon'] {
+    --wmp-icon-fill: #aeb5be;
+}
+
+[data-part='known-device'][data-state~='current'] > [data-part='icon'] {
+    --wmp-icon-fill: #ffcf5c;
+}
+
 /* --- Preferences of the system -------------------------------------------------------------- */
 
 @media (prefers-contrast: more) {

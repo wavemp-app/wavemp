@@ -2127,6 +2127,164 @@ a[data-part='breadcrumb-link']:hover {
     color: var(--wmp-color-text);
 }
 
+/* --- Devices and remote control --------------------------------------------------------------- */
+
+/* While this device is the remote of another one, its button carries the ember like a pressed toggle. */
+[data-part='btn-devices'] {
+    position: relative;
+}
+
+[data-part='btn-devices'][data-state~='remote'] {
+    background: transparent;
+    color: var(--wmp-color-accent);
+}
+
+[data-part='btn-devices'][data-state~='remote']::after {
+    position: absolute;
+    inset-block-end: 0.0625rem;
+    inset-inline-start: 50%;
+    inline-size: 0.75rem;
+    block-size: 0.1875rem;
+    border-radius: 999px;
+    background: var(--acc-line);
+    content: '';
+    translate: -50% 0;
+}
+
+[data-part='remote-status'] {
+    color: var(--wmp-color-accent);
+}
+
+/* The picker is a frosted pane like the menus. */
+[data-part='device-picker'] {
+    -webkit-backdrop-filter: var(--acc-blur);
+    backdrop-filter: var(--acc-blur);
+    border-color: var(--acc-hairline);
+    border-radius: var(--wmp-radius-l);
+    box-shadow:
+        inset 0 1px 0 var(--acc-edge),
+        var(--acc-shadow-float);
+}
+
+[data-part='device-picker'][data-placement='sheet'] {
+    border-radius: var(--wmp-radius-l) var(--wmp-radius-l) 0 0;
+}
+
+[data-part='device-picker'] [data-part='icon'] {
+    --wmp-icon-fill: var(--wmp-color-text-muted);
+}
+
+/*
+ * The device that plays lies on a quiet capsule of frosted glass with the ember line at its start;
+ * both glide to the device playback moves to.
+ */
+[data-part='device-list'] > [data-part='indicator'] {
+    display: block;
+    border-radius: 999px;
+    background: var(--acc-chip);
+    box-shadow: inset 0 0 0 1px var(--acc-hairline);
+}
+
+[data-part='device-list'] > [data-part='indicator']::after {
+    position: absolute;
+    inset-block-start: 50%;
+    inset-inline-start: 0.5rem;
+    inline-size: 0.1875rem;
+    block-size: min(1rem, var(--wmp-indicator-height, 0px));
+    border-radius: 999px;
+    background: var(--acc-line);
+    content: '';
+    translate: 0 -50%;
+}
+
+[data-part='device-list']:is(:hover, :focus-within, :active) > [data-part='indicator'] {
+    transition:
+        left var(--acc-move),
+        top var(--acc-move),
+        inset-block-start var(--acc-move),
+        inline-size var(--acc-move),
+        block-size var(--acc-move),
+        opacity var(--wmp-motion-duration-medium) var(--wmp-motion-easing-standard);
+}
+
+[data-part='device-item'] {
+    border-radius: 999px;
+}
+
+[data-part='device-item']:is(:hover, :focus-visible):not([aria-disabled='true'], [aria-checked='true']) {
+    background: var(--wmp-color-hover);
+}
+
+[data-part='device-item'][aria-checked='true'] {
+    background: transparent;
+    color: var(--wmp-color-text);
+}
+
+[data-part='device-picker'] [data-part='device-item'][aria-checked='true'] > [data-part='icon'] {
+    --wmp-icon-fill: var(--wmp-color-accent);
+}
+
+[data-part='device-item']:focus-visible {
+    outline-offset: -2px;
+}
+
+/* Devices that do not allow remote control are greyed out, symbol included. */
+[data-part='device-picker'] [data-part='device-item'][aria-disabled='true'] > [data-part='icon'] {
+    --wmp-icon-fill: var(--wmp-color-text-disabled);
+}
+
+[data-part='remote-control-toggle'] {
+    border-color: var(--acc-hairline);
+}
+
+[data-part='remote-control-toggle']:focus-visible {
+    outline-offset: -2px;
+}
+
+/* A neutral switch; switched on, the ember fills it. */
+[data-part='switch-track'] {
+    border-color: var(--acc-hairline);
+    background: var(--acc-chip);
+    box-shadow: inset 0 0 0 1px var(--acc-hairline);
+}
+
+[data-part='switch-thumb'] {
+    background: var(--acc-ink);
+}
+
+[aria-checked='true'] > [data-part='switch-track'] {
+    border-color: transparent;
+    background: var(--acc-line);
+}
+
+[aria-checked='true'] > [data-part='switch-track'] > [data-part='switch-thumb'] {
+    background: #ffffff;
+}
+
+/* The devices of the profile on the settings page: frosted cards on the sheet. */
+[data-part='known-device'] {
+    border-color: var(--acc-hairline);
+    border-radius: var(--wmp-radius-l);
+    background: var(--acc-card);
+}
+
+[data-part='known-device'] > [data-part='icon'] {
+    --wmp-icon-fill: var(--wmp-color-text-muted);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    [data-part='device-list']:is(:hover, :focus-within, :active) > [data-part='indicator'] {
+        transition: none;
+    }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+    [data-part='device-picker'] {
+        -webkit-backdrop-filter: none;
+        backdrop-filter: none;
+    }
+}
+
 /* --- Motion ----------------------------------------------------------------------------------- */
 
 @media (prefers-reduced-motion: reduce) {

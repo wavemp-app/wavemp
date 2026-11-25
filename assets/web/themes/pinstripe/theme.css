@@ -1956,6 +1956,120 @@ a[data-part='breadcrumb-link']:hover {
     filter: grayscale(1);
 }
 
+/* --- Devices and remote control ---------------------------------------------------------------- */
+
+/* While this device is the remote of another one, its button glows teal like a connected cast. */
+[data-part='btn-devices'][data-state~='remote'] [data-part='icon'] {
+    --wmp-icon-fill: linear-gradient(#0a6570, #053f46);
+
+    filter: drop-shadow(0 0 3px rgb(64 200 214 / 55%));
+}
+
+[data-part='devices'][data-state~='connecting'] [data-part='btn-devices'] [data-part='icon'] {
+    opacity: 0.6;
+}
+
+[data-part='remote-status'] {
+    color: #0b5f68;
+}
+
+[data-part='device-picker'] {
+    border-color: #959ca4;
+    box-shadow:
+        inset 0 1px #ffffff,
+        0 0.5rem 1.5rem rgb(0 0 0 / 25%);
+}
+
+[data-part='device-picker'] [data-part='icon'] {
+    --wmp-icon-fill: #4d535b;
+}
+
+/*
+ * The device that plays lies on a capsule of deep teal gel, like the selected rows and the play
+ * button, with a bright reflection in its upper half; the capsule glides to the device playback
+ * moves to.
+ */
+[data-part='device-list'] > [data-part='indicator'] {
+    display: block;
+    border-radius: 999px;
+    background: linear-gradient(#1f8f9c, #127683 48%, #0b6672 52%, #0e6f7b);
+    box-shadow:
+        inset 0 0 0 1px #08525b,
+        inset 0 1px 0 1px rgb(255 255 255 / 30%);
+}
+
+[data-part='device-list'] > [data-part='indicator']::after {
+    position: absolute;
+    inset: 2px 1.25rem auto;
+    block-size: 40%;
+    border-radius: 999px;
+    background: linear-gradient(rgb(255 255 255 / 45%), rgb(255 255 255 / 5%));
+    content: '';
+}
+
+[data-part='device-item'] {
+    border-radius: 999px;
+}
+
+[data-part='device-item']:is(:hover, :focus-visible):not([aria-disabled='true'], [aria-checked='true']) {
+    background: #e2f0f1;
+}
+
+[data-part='device-item'][aria-checked='true'] {
+    background: transparent;
+    color: #ffffff;
+}
+
+[data-part='device-picker'] [data-part='device-item'][aria-checked='true'] > [data-part='icon'] {
+    --wmp-icon-fill: #ffffff;
+}
+
+[data-part='device-item'][aria-checked='true'] > [data-part='device-meta'] {
+    opacity: 0.9;
+}
+
+/* Devices that do not allow remote control are greyed out, symbol included. */
+[data-part='device-picker'] [data-part='device-item'][aria-disabled='true'] > [data-part='icon'] {
+    --wmp-icon-fill: var(--wmp-color-text-disabled);
+}
+
+[data-part='remote-control-toggle'] {
+    border-color: #c9ced4;
+}
+
+/* An aqua switch: a white groove that fills with teal gel. */
+[data-part='switch-track'] {
+    border-color: #959ca4;
+    background: linear-gradient(#e3e6ea, #fafbfc);
+    box-shadow: inset 0 1px 2px rgb(0 0 0 / 20%);
+}
+
+[data-part='switch-thumb'] {
+    background: linear-gradient(#ffffff, #dde1e5);
+    box-shadow:
+        inset 0 0 0 1px #959ca4,
+        0 1px 2px rgb(0 0 0 / 25%);
+}
+
+[aria-checked='true'] > [data-part='switch-track'] {
+    border-color: #08525b;
+    background: linear-gradient(#1f8f9c, #0b6672);
+}
+
+/* The devices of the profile on the settings page: white rows like the tables. */
+[data-part='known-device'] {
+    border-color: #b4bac1;
+    background: #ffffff;
+}
+
+[data-part='known-device'][data-state~='current'] {
+    border-color: #0f707c;
+}
+
+[data-part='known-device'] > [data-part='icon'] {
+    --wmp-icon-fill: #4d535b;
+}
+
 /* --- Focus ------------------------------------------------------------------------------------- */
 
 :focus-visible {
