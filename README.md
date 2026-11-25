@@ -41,6 +41,7 @@ WaveMP brings back the glossy, glassy look of the classic desktop media players 
 - **Lyrics.** Synchronized lyrics follow the music line by line or word by word, from `.lrc` files, from the tags of your files or, if you switch it on, downloaded from LRCLIB.
 - **Plays almost anything.** Formats your browser supports are streamed directly; everything else is transcoded on the fly with ffmpeg. Intel Quick Sync is supported for hardware acceleration.
 - **Casting.** Send the music, or the music video, to a Chromecast from Chrome and Edge or to an AirPlay device from Safari, while the queue and the controls stay in WaveMP.
+- **Play anywhere, control from anywhere.** Every browser and app that opens WaveMP with your profile is one of your devices: see where your music plays, control it from your phone like a remote, or move it to another device, where it goes on at the same position. A device can only be controlled once you allowed it on that device.
 - **Scrobbling.** Each profile can send what it listens to to Last.fm or ListenBrainz. Scrobbles wait in the database while a service is down and are sent later.
 - **Recaps and statistics.** Look back on the last month, three months or year, the current year, all time or days of your choice: an animated story of your top songs, artists, albums and genres, your listening time and the artists you discovered, in three designs. Save it as a picture or video for sharing, share it with the other profiles, or read the plain statistics with tables and charts.
 - **Subsonic apps.** Play your library on the phone with apps for the Subsonic API, such as Symfonium, play:Sub or Substreamer, with your favorites, ratings, playlists and plays. Each profile switches the access on and signs in with its own app password.
@@ -142,7 +143,7 @@ docker compose up -d
 
 Open `http://<your-server>:8080` and select the **Admin** profile to set up your library. WaveMP scans your media folders one minute after the start and then every six hours; changes are also picked up within seconds by watching the folders.
 
-WaveMP can be installed as an app (PWA). Browsers require HTTPS for that, except on `localhost`, for example behind a reverse proxy with TLS. Casting to Chromecast devices needs HTTPS as well; AirPlay works without it.
+WaveMP can be installed as an app (PWA). Browsers require HTTPS for that, except on `localhost`, for example behind a reverse proxy with TLS (see [Reverse proxy](#reverse-proxy)). Casting to Chromecast devices needs HTTPS as well; AirPlay works without it.
 
 ### Image tags
 
@@ -312,6 +313,49 @@ docker compose start wavemp
 ```
 
 An export of an older version of WaveMP is updated to the current version on the next start. To restore on a new server, start WaveMP once with an empty database, copy the data volume back (or the export into the new volume) and restore the export as above. Restoring is not possible in the web app, so a wrong click cannot replace your library.
+
+### Reverse proxy
+
+WaveMP runs behind any reverse proxy that forwards HTTP to port 8080 of the container, for example to add HTTPS. Besides normal requests, the devices of a profile keep a real-time connection to `/api/v1/hubs/devices` (see [Devices and remote control](#devices-and-remote-control)). It uses WebSockets when the proxy passes them on and falls back to Server-Sent Events and then to long polling by itself, so the device list and remote control work in every case; WebSockets are just the quickest.
+
+- **WebSockets** need the `Upgrade` and `Connection` headers forwarded over HTTP/1.1. Caddy (`reverse_proxy`) and Traefik do this without extra settings; nginx needs the lines below.
+- **Server-Sent Events** need a response that is passed on as it comes. Turn buffering off for the hub (`proxy_buffering off` in nginx), so messages are never held back.
+- **Timeouts:** the server sends a keep-alive every 15 seconds and a client gives up after 30 seconds without a message. Keep the idle or read timeout of the proxy above 30 seconds (the 60 seconds of nginx are enough).
+- **Access logs:** browsers cannot send headers with WebSockets and Server-Sent Events, so the address of the connection carries `access_token=` with a ticket: it is valid for 60 seconds, accepted by nothing but this connection and only while the session of the profile is active. The session token of the profile never appears in an address, and WaveMP itself does not log these addresses.
+- **One instance:** the live state of the devices is kept in the memory of the server. Run a single WaveMP container; there is nothing to configure for sticky sessions.
+
+For nginx, in a `server` block with your TLS settings (`map` belongs to the `http` block):
+
+```nginx
+map $http_upgrade $connection_upgrade {
+    default upgrade;
+    ''      close;
+}
+
+server {
+    # listen, server_name and TLS settings
+
+    location / {
+        proxy_pass http://127.0.0.1:8080;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection $connection_upgrade;
+    }
+
+    location /api/v1/hubs/ {
+        proxy_pass http://127.0.0.1:8080;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection $connection_upgrade;
+        proxy_buffering off;
+        proxy_read_timeout 120s;
+    }
+}
+```
+
+For Caddy, `reverse_proxy 127.0.0.1:8080` in the block of your address is all it needs.
 
 ## Installation
 
@@ -580,9 +624,10 @@ WaveMP can also move and rename your files for you, but only when an admin asks 
 
     On a Mac, an iPhone or an iPad, Command takes the place of Ctrl. The keys rest while you type in a field and while a dialog or menu is open; a focused button keeps Space and a focused slider, list or menu keeps the arrow keys for itself. Ctrl+Minus and Escape open the overview of the groups only on a page with a grouped list and only while nothing else is open (the side navigation, the full-screen player, the inline mini player, a dialog or a menu) and no field has the focus; everywhere else Ctrl+Minus zooms the page out and Escape closes what is open, as usual. The playback keys also work in the floating mini player. **Keyboard shortcuts** in the profile menu shows the same overview.
 28. **Cast.** The cast button in the transport bar (in the expanded player on smartphones) opens the device selection of your browser: Chrome and Edge show your Chromecast devices and TVs with Chromecast built in, Safari on Mac, iPhone and iPad shows its AirPlay menu. Choose a device, and the current song goes on there at the same position; the transport bar and **Now Playing** show **Playing on** with the name of the device (AirPlay does not tell the name). The device shows title, artist, album and cover; with the **Video** view chosen, it plays the music video of the song. The queue stays in WaveMP, and play, pause, seek, skip and the volume slider control the device. Songs the device cannot play are transcoded by the server. While casting, the device plays the music as it is: the equalizer, crossfade, volume leveling (ReplayGain) and the visualization are greyed out. Open the device selection again to stop casting; the song then waits paused in the browser at the same position. Chromecast needs WaveMP to be opened over HTTPS (see [Quick Start](#quick-start)); without it the button is greyed out and says so. Other browsers, such as Firefox, show no cast button. For Chromecast, the browser loads the Cast SDK from Google (`www.gstatic.com`) when WaveMP starts; the casting device itself must reach your WaveMP server under the same address as your browser.
-29. **Scrobble.** Under **Settings > Scrobbling**, connect your profile to Last.fm or ListenBrainz, and the songs you listen to are sent there; the page shows for each service whether it is connected, as which account, when the last song was sent and how many songs are still waiting. See [Scrobbling](#scrobbling).
-30. **Use Subsonic apps.** Under **Settings > Subsonic apps**, allow Subsonic apps and create an app password; then sign in in the app with the address of the server, the name of your profile and that password. See [Subsonic apps](#subsonic-apps).
-31. **Look back.** **Recap** in the sidebar (below the library and the playlists) tells the story of your listening: choose **Last month**, **Last 3 months**, **Last year** (the last 12 months), **This year**, **All time** or **Custom** (two days of your choice), and the recap shows your minutes of music, your top song, your top songs, artists, albums and genres, your listening over time, your favorite hour, the artists you discovered and a summary, one section after the other. It moves on by itself; tap or click the right of the story (or swipe left, or press the right arrow key) to go on, the left third (swipe right, left arrow key) to go back, and hold it or press Space to pause. Pick one of three designs, **Aurora** (dark), **Frost** (light) or **Prism** (colorful); your device remembers it. **Save picture** saves the shown section as picture in story format (1080 x 1920) or square (1080 x 1080), **Save video** the whole recap as MP4 video with music: on phones and tablets the share sheet of the device opens, on a computer the file is downloaded. Browsers that do not record MP4 themselves send the video to the server, which converts it with ffmpeg and keeps nothing. **Share with the other profiles** (off by default) lists the recap of these days under **Shared recaps** of every other profile, in your design, with numbers that always follow your play history; switch it off there or under **Shared recaps** again. **Statistics** shows the same period as plain numbers, charts and tables with up to 25 entries each. Days and hours count in the time zone of your browser; every play counts the full length of the song. With reduced motion switched on in your system, the sections appear without animation.
+29. **Play on your other devices.** The devices button in the transport bar (in the expanded player on smartphones) lists the open devices of your profile. Turn on **Allow remote control** on a device, and your other devices control it like a remote; choose a device in the list to move the music there. See [Devices and remote control](#devices-and-remote-control).
+30. **Scrobble.** Under **Settings > Scrobbling**, connect your profile to Last.fm or ListenBrainz, and the songs you listen to are sent there; the page shows for each service whether it is connected, as which account, when the last song was sent and how many songs are still waiting. See [Scrobbling](#scrobbling).
+31. **Use Subsonic apps.** Under **Settings > Subsonic apps**, allow Subsonic apps and create an app password; then sign in in the app with the address of the server, the name of your profile and that password. See [Subsonic apps](#subsonic-apps).
+32. **Look back.** **Recap** in the sidebar (below the library and the playlists) tells the story of your listening: choose **Last month**, **Last 3 months**, **Last year** (the last 12 months), **This year**, **All time** or **Custom** (two days of your choice), and the recap shows your minutes of music, your top song, your top songs, artists, albums and genres, your listening over time, your favorite hour, the artists you discovered and a summary, one section after the other. It moves on by itself; tap or click the right of the story (or swipe left, or press the right arrow key) to go on, the left third (swipe right, left arrow key) to go back, and hold it or press Space to pause. Pick one of three designs, **Aurora** (dark), **Frost** (light) or **Prism** (colorful); your device remembers it. **Save picture** saves the shown section as picture in story format (1080 x 1920) or square (1080 x 1080), **Save video** the whole recap as MP4 video with music: on phones and tablets the share sheet of the device opens, on a computer the file is downloaded. Browsers that do not record MP4 themselves send the video to the server, which converts it with ffmpeg and keeps nothing. **Share with the other profiles** (off by default) lists the recap of these days under **Shared recaps** of every other profile, in your design, with numbers that always follow your play history; switch it off there or under **Shared recaps** again. **Statistics** shows the same period as plain numbers, charts and tables with up to 25 entries each. Days and hours count in the time zone of your browser; every play counts the full length of the song. With reduced motion switched on in your system, the sections appear without animation.
 
 ### Profiles and PINs
 
@@ -640,6 +685,19 @@ Other Subsonic apps work as well, as long as they use the ID3-based browsing of 
 The apps see the same library as the web app, with the favorites, ratings, playlists, smart playlists (read-only) and play history of the profile. Each media folder that is switched on is a music folder of the Subsonic API, named like the folder in WaveMP; apps that let you choose a music folder then show only its artists, albums, songs, search results and favorites (the first media folder keeps the id 1, so apps set up with an earlier version still find it). Songs of a folder that is switched off stay in the library, but only outside the choice of a music folder. Plays from the apps are scrobbled to Last.fm and ListenBrainz like plays in the web app, and **Now Playing** in the apps shows what the profiles play in the apps and in the web app. Formats a phone usually plays (MP3, FLAC, AAC/M4A, Ogg, Opus, WAV) are streamed as they are; other formats, the sound of music videos and songs above the bitrate limit an app asks for are transcoded on the fly with ffmpeg (MP3 by default, Opus or AAC if the app asks for them). Downloads of the original files for offline use are off by default; an admin allows them for all profiles under **Administration > Library** with **Subsonic apps may download songs**. Without it, apps can still keep transcoded songs in their own cache if they offer that. Administration through the Subsonic API (users, scans, settings) is not available; WaveMP is administered in the web app.
 
 Apps outside your home network need to reach WaveMP; as with the web app, use a VPN or a reverse proxy with HTTPS instead of opening the port to the internet. Apps send the app password with every request (as a token or, with some apps, as a parameter of the address), so use HTTPS when they connect over the internet.
+
+### Devices and remote control
+
+Every browser tab, installed web app or app that opens WaveMP with your profile is one of your devices. The devices button in the transport bar (in the expanded player on smartphones) opens **Play on**, the list of the devices of your profile that are open right now; the device that plays is checked. A device is named after its browser and system, for example "Chrome · Windows". Under **Settings > Devices** you give your devices names you recognize and forget the ones you no longer use (a device that is open cannot be forgotten; it shows up again the next time WaveMP opens there).
+
+- **Allow remote control.** A device can only be controlled from your other devices after you turned on **Allow remote control** in its device list. The permission lasts until that page is reloaded or closed and is never stored, so after a reload it is off again. The same tap lets the browser start the music on that device later without another tap there. Devices without the permission are greyed out in the list of your other devices and cannot be chosen; the server refuses commands for them as well.
+- **One device plays.** Each profile has exactly one device that plays. While it allows remote control, your other open devices are its remotes: they show its song, position, volume, shuffle, repeat and queue live, say **Playing on** with its name below the artist, and their controls act on it: play and pause, previous and next, seek, volume and mute, shuffle, repeat, crossfade, autoplay, playing a song, an album or a playlist, and adding, moving, removing and choosing songs in the queue. The equalizer and the sleep timer belong to the device that plays and are greyed out on its remotes.
+- **Move the music.** Choose a device in the list, and it goes on with the song at the same position (playing if the music played, paused otherwise) while the device before stops. Choose **This device** to bring the music back. Starting a song yourself on another device moves the music there too; a device that plays and does not allow remote control is never stopped or changed by another device.
+- **Profiles stay apart.** A device sees and controls only the devices of the profile it is signed in with.
+- **Several tabs.** All tabs of one browser are one device; the newest tab takes part in the device list, older ones play on their own and say so.
+- **iPhone and iPad.** iOS and iPadOS close the connection of WaveMP as soon as it goes to the background or the screen locks. Music that plays goes on, but other devices can only see and control an iPhone or iPad reliably while WaveMP is open in the foreground there; when you return to WaveMP, it connects again and catches up at once. Other phones that pause pages in the background behave the same way.
+
+The devices of a profile meet on the server, which keeps the state of the device that plays in memory and decides which change wins. After a restart of the server the devices connect again on their own and the device that plays sends its state again. Run one instance of WaveMP per database; several instances behind a load balancer do not see each other's devices.
 
 ## Platforms
 
@@ -872,6 +930,8 @@ The E2E tests first select the built-in admin profile once (project `setup`, wit
 The projects `chromium` (desktop) and `mobile` (phone) run all specs except `tests/devices` and `tests/visualization.spec.ts`; the project `visualization` runs the visualization tests on the desktop and on a phone one after another in a single worker, because two visualizations drawn in software at the same time take too much of the CPU; the projects `iphone`, `ipad` and `ipad-landscape` run the specs in `tests/devices` with the viewport, touch and mobile emulation of an iPhone and an iPad in portrait and landscape (in Chromium, the only browser the setup installs). `npx playwright test --project=ipad` runs one of them. The visualization tests draw at a lower frame rate, and small where they do not check the layout, because WebGL drawn in software otherwise takes every core.
 
 Casting is tested with simulated devices (the unit tests in `source/WaveMP.Web/src/casting` and the integration tests of the cast addresses in `CastingApiTests`). To try it with real devices, open WaveMP over HTTPS (for example behind a reverse proxy with a certificate) under an address the devices reach, play a song and choose a device with the cast button: a Chromecast from Chrome or Edge on the same network, an AirPlay device (Apple TV, HomePod or an AirPlay speaker) from Safari. Check that the song goes on at its position with its cover, that pause, seek, skip and volume act on the device, that the next song of the queue follows, that the **Video** view casts the music video, that a FLAC or ALAC song plays (transcoded if the device needs it) and that ending the session leaves the song paused in the browser. Without HTTPS, Chrome shows the greyed out button with its hint.
+
+Device sync and remote control are tested on every level: the rules of the live state (permission, the one active device, version numbers and conflicts, hand-over) in `tests/WaveMP.Core.Devices.Tests`; the hub over real SignalR connections in `DeviceHubTests` and `DeviceHubLogTests` (profiles kept apart, refused commands, size limits, ended sessions, no credentials in the logs) and the contract test `AsyncApiContractTests` of `asyncapi.yaml` in `tests/WaveMP.Service.Tests`; the connection, the devices store and the player in Vitest (`source/WaveMP.Web/src/devices`, `src/stores/__tests__`); and end to end in `tests/remote-control.spec.ts` (project `chromium`) with two browser contexts of one profile, where one device controls the other and playback moves between them and back. What iOS does in the background cannot be tested automatically: open WaveMP on an iPhone and on a computer with the same profile, allow remote control on the iPhone, lock it and unlock it again, and check that the computer sees and controls it again once WaveMP is in the foreground.
 
 If you set `WAVEMP_PORT` in `.env`, point the E2E tests at it, for example `E2E_BASE_URL=http://localhost:8081 npm test`.
 
