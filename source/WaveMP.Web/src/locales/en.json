@@ -305,7 +305,7 @@
     "remoteControlApple": "On iPhone and iPad, keep WaveMP open in the foreground to control it from other devices.",
     "offline": "Not connected to the server. Your other devices show up again once the connection is back.",
     "replaced": "WaveMP is open in another tab of this browser, which shows your devices now.",
-    "unavailableWhileRemote": "{name} (not available while another device plays)",
+    "unavailableWhileRemote": "{name} (playing on another device)",
     "errors": {
       "notRegistered": "This device is not connected yet. Try again in a moment.",
       "deviceNotFound": "This device is no longer open.",

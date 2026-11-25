@@ -170,11 +170,12 @@ const viewOptions = computed<SegmentOption[]>(() => [
         value: PlayerViewModeObject.Visualization,
         item: 'visualization',
         icon: 'view-visualization',
-        label: props.remoteNotice
-            ? t('devices.unavailableWhileRemote', { name: t('nowPlaying.viewVisualization') })
-            : props.casting
-              ? t('cast.unavailableWhileCasting', { name: t('nowPlaying.viewVisualization') })
-              : t('nowPlaying.viewVisualization'),
+        // While another device plays, the notice of the stage right above names it; a longer
+        // label would widen the group beyond the stage.
+        label:
+            props.casting && !props.remoteNotice
+                ? t('cast.unavailableWhileCasting', { name: t('nowPlaying.viewVisualization') })
+                : t('nowPlaying.viewVisualization'),
         disabled: elsewhere.value,
     },
     {

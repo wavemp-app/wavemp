@@ -305,7 +305,7 @@
     "remoteControlApple": "Auf iPhone und iPad muss WaveMP im Vordergrund geöffnet bleiben, damit andere Geräte es steuern können.",
     "offline": "Keine Verbindung zum Server. Deine anderen Geräte erscheinen wieder, sobald die Verbindung zurück ist.",
     "replaced": "WaveMP ist in einem anderen Tab dieses Browsers geöffnet, der jetzt deine Geräte zeigt.",
-    "unavailableWhileRemote": "{name} (nicht verfügbar, während ein anderes Gerät spielt)",
+    "unavailableWhileRemote": "{name} (Wiedergabe auf anderem Gerät)",
     "errors": {
       "notRegistered": "Dieses Gerät ist noch nicht verbunden. Versuche es gleich noch einmal.",
       "deviceNotFound": "Dieses Gerät ist nicht mehr geöffnet.",

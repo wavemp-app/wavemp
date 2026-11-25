@@ -118,13 +118,13 @@ describe('transport of a remote', () => {
         })
         const equalizer = view.find('[data-part="btn-equalizer"]')
         expect(equalizer.attributes('disabled')).toBeDefined()
-        expect(equalizer.text()).toBe('Equalizer (not available while another device plays)')
+        expect(equalizer.text()).toBe('Equalizer (playing on another device)')
         const sleepTimer = view.find('[data-part="btn-sleep-timer"]')
         expect(sleepTimer.attributes('disabled')).toBeDefined()
-        expect(sleepTimer.text()).toBe('Sleep timer (not available while another device plays)')
+        expect(sleepTimer.text()).toBe('Sleep timer (playing on another device)')
         const visualization = view.find('[data-part="segment"][data-item="visualization"]')
         expect(visualization.attributes('disabled')).toBeDefined()
-        expect(visualization.text()).toContain('not available while another device plays')
+        expect(visualization.text()).toContain('playing on another device')
     })
 
     it('keeps the crossfade of the profile and a running sleep timer switchable', () => {

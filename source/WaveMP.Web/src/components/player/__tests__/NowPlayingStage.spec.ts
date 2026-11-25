@@ -33,6 +33,7 @@ function mountStage(
         lyrics?: TrackLyrics | null
         casting?: boolean
         castNotice?: string
+        remoteNotice?: string
     },
     attrs: Record<string, unknown> = {},
 ) {
@@ -307,6 +308,23 @@ describe('NowPlayingStage', () => {
         expect(checked(wrapper).cover).toBe('true')
         const notice = wrapper.get('[data-part="stage-notice"][data-kind="cast"]')
         expect(notice.text()).toBe('Playing on Living Room')
+        wrapper.unmount()
+    })
+
+    it('offers no visualization while another device plays and names that device', () => {
+        const wrapper = mountStage({
+            track: track(true),
+            mode: 'Visualization',
+            view: 'cover',
+            remoteNotice: 'Playing on Living room PC',
+        })
+
+        expect(segment(wrapper, 'visualization').attributes('disabled')).toBeDefined()
+        expect(segment(wrapper, 'visualization').text()).toBe('Visualization')
+        expect(checked(wrapper).cover).toBe('true')
+        const notice = wrapper.get('[data-part="stage-notice"][data-kind="remote"]')
+        expect(notice.text()).toBe('Playing on Living room PC')
+        expect(wrapper.find('[data-part="stage-notice"][data-kind="cast"]').exists()).toBe(false)
         wrapper.unmount()
     })
 })
