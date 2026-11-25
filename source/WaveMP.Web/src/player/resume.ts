@@ -6,6 +6,7 @@
 import {
     PlaybackSourceKindObject,
     RepeatModeObject,
+    type PlaybackSource,
     type PlaybackSourceKind,
     type PlaybackState,
     type RepeatMode as ApiRepeatMode,
@@ -55,7 +56,8 @@ export interface RestoredState {
 /** The state of the player without device and time, as it is sent to the server. */
 export type SavedState = Omit<UpdatePlaybackState, 'device' | 'changedAt'>
 
-const repeatToApi: Record<RepeatMode, ApiRepeatMode> = {
+/** Repeat modes of the player as the API names them. */
+export const repeatToApi: Record<RepeatMode, ApiRepeatMode> = {
     off: RepeatModeObject.Off,
     all: RepeatModeObject.All,
     one: RepeatModeObject.One,
@@ -68,7 +70,8 @@ const sourceToApi: Record<PlayerSource['kind'], PlaybackSourceKind> = {
     'smart-playlist': PlaybackSourceKindObject.SmartPlaylist,
 }
 
-function repeatFromApi(value: ApiRepeatMode | null | undefined): RepeatMode {
+/** A repeat mode of the API as the player names it; off for unknown values. */
+export function repeatFromApi(value: ApiRepeatMode | null | undefined): RepeatMode {
     switch (value) {
         case RepeatModeObject.All:
             return 'all'
@@ -79,12 +82,22 @@ function repeatFromApi(value: ApiRepeatMode | null | undefined): RepeatMode {
     }
 }
 
-function sourceFromApi(state: PlaybackState): PlayerSource | null {
-    const id = state.source?.id
+/** A source of the API as the player names it; null without one or for unknown kinds. */
+export function playerSourceOf(source: PlaybackSource | null | undefined): PlayerSource | null {
+    const id = source?.id
     const kind = (Object.keys(sourceToApi) as PlayerSource['kind'][]).find(
-        (key) => sourceToApi[key] === state.source?.kind,
+        (key) => sourceToApi[key] === source?.kind,
     )
     return id && kind ? { kind, id } : null
+}
+
+/** A source of the player as the API names it. */
+export function apiSourceOf(source: PlayerSource): PlaybackSource {
+    return { kind: sourceToApi[source.kind], id: source.id }
+}
+
+function sourceFromApi(state: PlaybackState): PlayerSource | null {
+    return playerSourceOf(state.source)
 }
 
 /**

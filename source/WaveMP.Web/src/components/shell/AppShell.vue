@@ -22,6 +22,7 @@ import { useMediaQuery } from '@/composables/useMediaQuery'
 import { miniPlayerShowsVideo } from '@/player/miniPlayer'
 import { useCollectionStore } from '@/stores/collection'
 import { useContextMenuStore } from '@/stores/contextMenu'
+import { useDevicesStore } from '@/stores/devices'
 import { useFullPlayerStore } from '@/stores/fullPlayer'
 import { useHealthStore } from '@/stores/health'
 import { useMiniPlayerStore } from '@/stores/miniPlayer'
@@ -58,6 +59,9 @@ const contextMenu = useContextMenuStore()
 
 const player = usePlayerStore()
 const resume = useResumeStore()
+// The devices of the profile: this instance registers and plays or controls the active device.
+const devices = useDevicesStore()
+devices.start()
 const session = useSessionStore()
 const miniPlayer = useMiniPlayerStore()
 const isDesktop = useMediaQuery(desktopMediaQuery)

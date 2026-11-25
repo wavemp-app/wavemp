@@ -12,8 +12,10 @@ import {
     saveIntervalSeconds,
     savedStateSignature,
     toSavedState,
+    type RestoredState,
     type SavedState,
 } from '@/player/resume'
+import { useDevicesStore } from './devices'
 import { usePlayerStore } from './player'
 import { useSessionStore } from './session'
 
@@ -55,10 +57,15 @@ export interface ResumeNotice {
  *
  * Clearing the saved state (in the settings) stops the player here and empties its queue first, so
  * this device does not save it again; the next start begins without a queue.
+ *
+ * While this device is a remote of another device (see src/stores/devices.ts), it neither saves nor
+ * takes over saved states: the active device plays and saves. When it stops being a remote because
+ * the active device closed, the state of that device waits in the player with the same notice.
  */
 export const useResumeStore = defineStore('resume', () => {
     const session = useSessionStore()
     const player = usePlayerStore()
+    const devices = useDevicesStore()
 
     const notice = ref<ResumeNotice | null>(null)
 
@@ -114,6 +121,23 @@ export const useResumeStore = defineStore('resume', () => {
         return player.playback === 'playing' || (player.loading && player.playback !== 'paused')
     }
 
+    /** Whether this device is a remote: its player shows the state of the active device. */
+    function remote(): boolean {
+        return devices.role === 'remote'
+    }
+
+    /** Takes over the state of the device that played before this device stopped being its remote. */
+    function adoptFromRemote(state: RestoredState, deviceName: string | null): boolean {
+        player.restore(state)
+        adoptedKey = player.current?.key ?? null
+        lastSignature = savedStateSignature(snapshot())
+        foreign = true
+        notice.value = deviceName && state.queue.items.length > 0 ? { device: deviceName } : null
+        return true
+    }
+
+    devices.onResumeFromRemote(adoptFromRemote)
+
     /** Loads the saved state of a new session into the empty player. */
     async function load(): Promise<void> {
         const own = ++generation
@@ -139,8 +163,9 @@ export const useResumeStore = defineStore('resume', () => {
             return
         }
 
-        // Something started meanwhile: the action of the user wins over the saved state.
-        if (state && player.queue.items.length === 0 && player.playback === 'idle') {
+        // Something started meanwhile: the action of the user wins over the saved state; a remote
+        // shows the state of the active device instead.
+        if (state && !remote() && player.queue.items.length === 0 && player.playback === 'idle') {
             adopt(state)
         }
 
@@ -152,7 +177,7 @@ export const useResumeStore = defineStore('resume', () => {
      * nothing plays here; called when the page comes back to the front or a save was too old.
      */
     async function checkOtherDevices(): Promise<void> {
-        if (!ready || busy()) {
+        if (!ready || busy() || remote()) {
             return
         }
 
@@ -168,6 +193,7 @@ export const useResumeStore = defineStore('resume', () => {
             own === generation &&
             state &&
             !busy() &&
+            !remote() &&
             isFromOtherDevice(state, device.id, adoptedChangedAt)
         ) {
             adopt(state)
@@ -177,7 +203,7 @@ export const useResumeStore = defineStore('resume', () => {
     /** Saves the state of the player now, if it changed since the last save. */
     function saveNow(): void {
         cancelDelayed()
-        if (!ready || !session.token || player.queue.items.length === 0) {
+        if (!ready || !session.token || player.queue.items.length === 0 || remote()) {
             return
         }
 

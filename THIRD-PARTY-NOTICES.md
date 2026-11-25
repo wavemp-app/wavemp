@@ -56,6 +56,7 @@ Packages bundled into the web app, which the image serves from `/app/wwwroot`.
 | `@microsoft/kiota-abstractions` | MIT | Generated API client |
 | `@microsoft/kiota-bundle` | MIT | Generated API client; includes the Kiota serializers (MIT), `@std-uritemplate/std-uritemplate` (Apache-2.0), `@opentelemetry/api` (Apache-2.0), `tinyduration` (MIT) and `tslib` (0BSD) |
 | `@microsoft/kiota-http-fetchlibrary` | MIT | Generated API client |
+| `@microsoft/signalr` | MIT | Real-time connection of the devices (`asyncapi.yaml`); its dependencies for Node.js (`ws`, `node-fetch`, `fetch-cookie`, `eventsource`, `abort-controller`) are not part of the bundle |
 | `butterchurn` | MIT | Milkdrop visualization; includes `ecma-proposal-math-extensions`, `babel-runtime`, `core-js` and `regenerator-runtime` (all MIT). License text under `/licenses/butterchurn` |
 | `butterchurn-presets` | MIT | Milkdrop presets; license text under `/licenses/butterchurn-presets` |
 | `hls.js` | Apache-2.0 | Plays transcoded songs and videos (HLS) |

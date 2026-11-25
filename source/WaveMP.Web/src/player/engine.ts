@@ -300,6 +300,24 @@ export class AudioEngine {
         }
     }
 
+    /**
+     * Unlocks playback within a gesture of the user without playing anything, so a later play()
+     * without a gesture (a command of another device) is allowed: builds and resumes the Web Audio
+     * graph and loads the empty decks, which Safari counts as the start of the elements.
+     */
+    unlock(): void {
+        this.ensureGraph()
+        if (this.context?.state === 'suspended') {
+            void this.context.resume().catch(() => undefined)
+        }
+
+        for (const deck of this.decks) {
+            if (!deck.source && deck.audio.paused) {
+                deck.audio.load()
+            }
+        }
+    }
+
     pause(): void {
         this.wantsPlay = false
         this.cancelHandover()

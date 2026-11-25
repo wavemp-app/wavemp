@@ -22,6 +22,10 @@ import {
     type RepeatMode,
     type TransportState,
 } from '@/components/shell/transport'
+import { getHandoverState } from '@/devices/api'
+import { runCommand, type CommandTarget, type RemoteAction } from '@/devices/commands'
+import { PlaybackPublisher } from '@/devices/publisher'
+import { livePositionMilliseconds } from '@/devices/remote'
 import { getLyrics } from '@/lyrics/api'
 import type { TrackLyrics } from '@/lyrics/timing'
 import {
@@ -64,6 +68,7 @@ import {
     jumpTo,
     move,
     moveNext,
+    moveTo,
     nextIndex,
     playTracks,
     previousIndex,
@@ -74,7 +79,7 @@ import {
     type QueueItem,
 } from '@/player/queue'
 import { replayGainFactor } from '@/player/replayGain'
-import type { PlayerSource, RestoredState } from '@/player/resume'
+import { fromSavedState, type PlayerSource, type RestoredState } from '@/player/resume'
 import { shouldPreload, shouldRestart } from '@/player/scheduling'
 import {
     browserSleepTimerClock,
@@ -95,6 +100,7 @@ import { stageViewOf, type StageView, type VideoState } from '@/player/videoSync
 import { clampVolume, loadVolume, saveVolume, volumeToGain } from '@/player/volume'
 import { useCastStore } from './cast'
 import { useCoversStore } from './covers'
+import { devicesDependencies, useDevicesStore } from './devices'
 import { useEqualizerStore } from './equalizer'
 import { useSessionStore } from './session'
 
@@ -199,12 +205,24 @@ function artistOf(track: Track | undefined): string | undefined {
  * While a casting device is connected (see src/casting), the device plays instead of the browser:
  * the queue and the controls stay here, the device gets one track after the other (its video while
  * the video view is chosen), and equalizer, crossfade, ReplayGain and the visualization rest.
+ *
+ * With the devices of the profile (see src/stores/devices.ts), this player is either the one that
+ * plays (local) or a remote of the active device. As the active device it publishes its state:
+ * at once for play, pause, stop, a new song, a seek and the switches, shortly after changes of the
+ * queue, throttled while the volume moves and every 10 seconds while it plays; a user action that
+ * starts playback while another device is active takes playback over (claim). Commands of remotes
+ * run through the same functions as the actions of its own user. As a remote, every command goes
+ * to the active device instead, the queue shows the live queue and the state the live playback,
+ * and the local engine, autoplay, video and visualization rest. When the active device closes or
+ * forbids remote control, its state waits here paused with the notice where it comes from; a
+ * hand-over to this device loads the saved state of the profile and plays it.
  */
 export const usePlayerStore = defineStore('player', () => {
     const session = useSessionStore()
     const covers = useCoversStore()
     const equalizer = useEqualizerStore()
     const cast = useCastStore()
+    const devices = useDevicesStore()
 
     const queue = shallowRef<Queue>(emptyQueue)
     const playback = ref<PlaybackState>('idle')
@@ -229,8 +247,12 @@ export const usePlayerStore = defineStore('player', () => {
     const localEqualizer = ref(playerDependencies.webAudio())
     /** Whether a casting device plays the music. */
     const casting = computed(() => cast.connected)
-    /** Whether the equalizer, crossfade and ReplayGain apply: not while casting. */
-    const equalizerAvailable = computed(() => localEqualizer.value && !casting.value)
+    /** Whether this device controls the active device of the profile instead of playing. */
+    const remote = computed(() => devices.remote)
+    /** Whether the equalizer, crossfade and ReplayGain apply: not while casting or remote. */
+    const equalizerAvailable = computed(
+        () => localEqualizer.value && !casting.value && !remote.value,
+    )
     /**
      * The output of the player (after volume and equalizer) for the visualizations; null without Web
      * Audio and before the first playback, which builds the audio graph.
@@ -267,7 +289,9 @@ export const usePlayerStore = defineStore('player', () => {
      */
     const stageView = computed<StageView>(() => {
         const view = stageViewOf(viewMode.value, hasVideo.value, videoState.value, hasLyrics.value)
-        return casting.value && (view === 'visualization' || view === 'video') ? 'cover' : view
+        return (casting.value || remote.value) && (view === 'visualization' || view === 'video')
+            ? 'cover'
+            : view
     })
     /**
      * Whether the video element lies in another window than the app, the floating mini player:
@@ -284,7 +308,8 @@ export const usePlayerStore = defineStore('player', () => {
             hasVideo.value &&
             viewMode.value === PlayerViewModeObject.Video &&
             (pageVisible.value || videoInOtherWindow.value) &&
-            !casting.value,
+            !casting.value &&
+            !remote.value,
     )
     /** What a casting device plays of the current track: its video or its sound. */
     const castKind = computed(() => castMediaKind(viewMode.value, hasVideo.value))
@@ -292,7 +317,11 @@ export const usePlayerStore = defineStore('player', () => {
     const autoplayList = computed(() => autoplayContext(queue.value))
     /** Whether autoplay goes on after the list: on for the profile, repeat off and a list to follow. */
     const autoplayActive = computed(
-        () => session.autoplay.enabled && repeat.value === 'off' && autoplayList.value.length > 0,
+        () =>
+            session.autoplay.enabled &&
+            repeat.value === 'off' &&
+            autoplayList.value.length > 0 &&
+            !remote.value,
     )
 
     let engine: PlayerEngine | null = null
@@ -836,6 +865,10 @@ export const usePlayerStore = defineStore('player', () => {
         start = 0,
         options: { shuffle?: boolean; source?: PlayerSource } = {},
     ): void {
+        if (delegated({ kind: 'playTracks', tracks, start, ...options })) {
+            return
+        }
+
         const shuffled = options.shuffle ?? queue.value.shuffle
         queue.value = playTracks(tracks, start, shuffled, playerDependencies.random)
         listSource.value = options.source ?? null
@@ -858,18 +891,30 @@ export const usePlayerStore = defineStore('player', () => {
 
     /** Songs of the user come before those of autoplay, which follow the new list. */
     function playNext(tracks: readonly Track[]): void {
+        if (delegated({ kind: 'playNext', tracks })) {
+            return
+        }
+
         retractAutoplay()
         queue.value = insertNext(queue.value, tracks)
         afterAdding()
     }
 
     function addToQueue(tracks: readonly Track[]): void {
+        if (delegated({ kind: 'addToQueue', tracks })) {
+            return
+        }
+
         retractAutoplay()
         queue.value = append(queue.value, tracks)
         afterAdding()
     }
 
     function playItem(key: string): void {
+        if (delegated({ kind: 'playItem', key })) {
+            return
+        }
+
         queue.value = jumpTo(queue.value, key)
         retried = null
         restoredKey = null
@@ -877,27 +922,47 @@ export const usePlayerStore = defineStore('player', () => {
     }
 
     function removeItem(key: string): void {
+        if (delegated({ kind: 'removeItem', key })) {
+            return
+        }
+
         queue.value = remove(queue.value, key)
         forgetPrepared()
     }
 
     function moveItem(key: string, offset: -1 | 1): void {
+        if (delegated({ kind: 'moveItem', key, offset })) {
+            return
+        }
+
         queue.value = move(queue.value, key, offset)
         forgetPrepared()
     }
 
     /** Moves an entry of the queue right after the current one. */
     function moveItemNext(key: string): void {
+        if (delegated({ kind: 'moveItemNext', key })) {
+            return
+        }
+
         queue.value = moveNext(queue.value, key)
         forgetPrepared()
     }
 
     function clearQueue(): void {
+        if (delegated({ kind: 'clearQueue' })) {
+            return
+        }
+
         queue.value = clearUpcoming(queue.value)
         forgetPrepared()
     }
 
     function play(): void {
+        if (delegated({ kind: 'play' })) {
+            return
+        }
+
         restoredKey = null
         if (!loaded) {
             void startCurrent(true, position.value)
@@ -915,6 +980,13 @@ export const usePlayerStore = defineStore('player', () => {
     }
 
     function pause(): void {
+        if (!delegated({ kind: 'pause' })) {
+            pauseHere()
+        }
+    }
+
+    /** Pauses the player of this device. */
+    function pauseHere(): void {
         runningEngine()?.pause()
         if (playback.value === 'playing') {
             playback.value = 'paused'
@@ -927,6 +999,10 @@ export const usePlayerStore = defineStore('player', () => {
     }
 
     function togglePlay(): void {
+        if (delegated({ kind: 'togglePlay' })) {
+            return
+        }
+
         if (playback.value === 'playing') {
             pause()
         } else {
@@ -935,7 +1011,9 @@ export const usePlayerStore = defineStore('player', () => {
     }
 
     function stop(): void {
-        stopPlayback()
+        if (!delegated({ kind: 'stop' })) {
+            stopPlayback()
+        }
     }
 
     function goTo(index: number | null): void {
@@ -954,6 +1032,10 @@ export const usePlayerStore = defineStore('player', () => {
 
     /** Skips to the next entry; at the end of a playing list to the next song of autoplay. */
     function next(): void {
+        if (delegated({ kind: 'next' })) {
+            return
+        }
+
         if (!current.value) {
             return
         }
@@ -967,6 +1049,10 @@ export const usePlayerStore = defineStore('player', () => {
     }
 
     function previous(): void {
+        if (delegated({ kind: 'previous' })) {
+            return
+        }
+
         if (!current.value) {
             return
         }
@@ -980,6 +1066,10 @@ export const usePlayerStore = defineStore('player', () => {
     }
 
     function seek(to: number): void {
+        if (delegated({ kind: 'seek', seconds: to })) {
+            return
+        }
+
         const target = Math.max(0, duration.value > 0 ? Math.min(to, duration.value) : to)
         position.value = target
         history.seek(target)
@@ -991,14 +1081,25 @@ export const usePlayerStore = defineStore('player', () => {
         }
 
         follower?.sync()
+        if (publishing()) {
+            publisher.now()
+        }
     }
 
     function toggleShuffle(): void {
+        if (delegated({ kind: 'toggleShuffle' })) {
+            return
+        }
+
         queue.value = setShuffle(queue.value, !queue.value.shuffle, playerDependencies.random)
         forgetPrepared()
     }
 
     function cycleRepeat(): void {
+        if (delegated({ kind: 'cycleRepeat' })) {
+            return
+        }
+
         repeat.value = nextRepeatMode(repeat.value)
         forgetPrepared()
     }
@@ -1008,6 +1109,10 @@ export const usePlayerStore = defineStore('player', () => {
      * fails, the switch goes back (the settings page shows the same state).
      */
     function toggleCrossfade(): void {
+        if (delegated({ kind: 'toggleCrossfade' })) {
+            return
+        }
+
         session.setCrossfadeEnabled(!session.crossfade.enabled).catch(() => undefined)
     }
 
@@ -1016,6 +1121,10 @@ export const usePlayerStore = defineStore('player', () => {
      * one; the current song plays on. If saving fails, the switch goes back.
      */
     function toggleAutoplay(): void {
+        if (delegated({ kind: 'toggleAutoplay' })) {
+            return
+        }
+
         session.setAutoplayEnabled(!session.autoplay.enabled).catch(() => undefined)
     }
 
@@ -1189,7 +1298,11 @@ export const usePlayerStore = defineStore('player', () => {
      * updates of the engine; for views that follow the music closely, such as the lyrics.
      */
     function livePosition(): number {
-        return clock().position
+        const remoteLive = remote.value ? devices.live : null
+        return remoteLive
+            ? livePositionMilliseconds(remoteLive, devices.receivedAt, devicesDependencies.now()) /
+                  1000
+            : clock().position
     }
 
     /** Increases with every request of lyrics, so late answers are ignored. */
@@ -1378,6 +1491,10 @@ export const usePlayerStore = defineStore('player', () => {
 
     /** Mutes the browser, or the device while casting. */
     function toggleMute(): void {
+        if (delegated({ kind: 'toggleMute' })) {
+            return
+        }
+
         if (casting.value) {
             cast.setMuted(!cast.muted)
             return
@@ -1389,6 +1506,10 @@ export const usePlayerStore = defineStore('player', () => {
 
     /** Sets the volume of the browser, or of the device while casting. */
     function setVolume(value: number): void {
+        if (delegated({ kind: 'setVolume', volume: value })) {
+            return
+        }
+
         if (casting.value) {
             const level = clampVolume(value)
             cast.setVolume(level)
@@ -1441,6 +1562,11 @@ export const usePlayerStore = defineStore('player', () => {
      * forgets the prepared one, so nothing fades into it.
      */
     function startSleepTimer(mode: SleepTimerMode, minutes?: number): void {
+        // The sleep timer belongs to the device that plays.
+        if (remote.value && mode !== 'off') {
+            return
+        }
+
         if (mode === 'off') {
             cancelSleepTimer()
             return
@@ -1519,7 +1645,8 @@ export const usePlayerStore = defineStore('player', () => {
             resetAutoplay()
             if (active) {
                 void fetchAutoplay(true)
-            } else {
+            } else if (!remote.value) {
+                // The queue of a remote is the live queue; autoplay of the active device fills it.
                 retractAutoplay()
             }
         },
@@ -1599,8 +1726,240 @@ export const usePlayerStore = defineStore('player', () => {
         },
     )
 
+    /**
+     * Sends an action of the user to the active device while this device is a remote; returns
+     * whether it did, so the action does nothing here.
+     */
+    function delegated(action: RemoteAction): boolean {
+        if (!remote.value) {
+            return false
+        }
+
+        void devices.sendAction(action)
+        return true
+    }
+
+    /** Whether changes of the player are published: as the registered device that plays. */
+    function publishing(): boolean {
+        return devices.isActive && !remote.value
+    }
+
+    const publisher = new PlaybackPublisher((claim) => void devices.publish(claim), {
+        setTimeout: (handler, milliseconds) =>
+            devicesDependencies.setTimeout(handler, milliseconds),
+        clearTimeout: (id) => devicesDependencies.clearTimeout(id),
+        setInterval: (handler, milliseconds) =>
+            devicesDependencies.setInterval(handler, milliseconds),
+        clearInterval: (id) => devicesDependencies.clearInterval(id),
+    })
+
+    /** The functions commands of remotes run; this device plays, so nothing is delegated. */
+    const commandTarget: CommandTarget = {
+        play,
+        pause,
+        stop,
+        next,
+        previous,
+        seek,
+        setVolume,
+        setMuted: (value) => {
+            if ((casting.value ? cast.muted : muted.value) !== value) {
+                toggleMute()
+            }
+        },
+        setShuffle: (enabled) => {
+            if (queue.value.shuffle !== enabled) {
+                toggleShuffle()
+            }
+        },
+        setRepeat: (mode) => {
+            repeat.value = mode
+            forgetPrepared()
+        },
+        setCrossfade: (enabled) => {
+            if (session.crossfade.enabled !== enabled) {
+                toggleCrossfade()
+            }
+        },
+        setAutoplay: (enabled) => {
+            if (session.autoplay.enabled !== enabled) {
+                toggleAutoplay()
+            }
+        },
+        playTracks: playTrackList,
+        addToQueue,
+        playNext,
+        playAt: (index) => {
+            const key = queue.value.items[index]?.key
+            if (key) {
+                playItem(key)
+            }
+        },
+        removeAt: (index) => {
+            const key = queue.value.items[index]?.key
+            if (key) {
+                removeItem(key)
+            }
+        },
+        moveTo: (index, toIndex) => {
+            queue.value = moveTo(queue.value, index, toIndex)
+            forgetPrepared()
+        },
+        clearQueue,
+    }
+
+    /**
+     * Playback was handed over to this device: the server saved the live state as the playback
+     * state of the profile, which loads here and plays if asked (a browser may still block it
+     * without a gesture; the player then waits paused).
+     */
+    async function takeOverPlayback(start: boolean): Promise<void> {
+        let saved
+        try {
+            saved = await getHandoverState()
+        } catch {
+            saved = undefined
+        }
+
+        if (saved) {
+            restore(fromSavedState(saved))
+        }
+
+        if (start && current.value) {
+            play()
+        }
+    }
+
+    /**
+     * Unlocks audio playback within a click (e.g. "Allow remote control"), so a remote can start
+     * playback here later: browsers block playback that no gesture of the user started.
+     */
+    function unlockAudio(): void {
+        const local = getEngine() as PlayerEngine & { unlock?: () => void }
+        local.unlock?.()
+    }
+
+    /** This device became a remote: the local playback rests and the queue shows the live one. */
+    function enterRemote(): void {
+        publisher.dispose()
+        sleep.cancel()
+        stopPlayback()
+        resetAutoplay()
+        autoplayPlaybacks.clear()
+        restoredKey = null
+        skipped = 0
+        retried = null
+        message.value = null
+        listSource.value = null
+        queue.value = devices.mirror
+    }
+
+    /**
+     * This device stopped being a remote. Unless playback is being handed over to it, the state of
+     * the device that played waits here paused, with the notice where it comes from.
+     */
+    function leaveRemote(): void {
+        const state = devices.handingOver ? null : devices.mirrorState()
+        const device = devices.activeDevice?.name ?? null
+        queue.value = emptyQueue
+        listSource.value = null
+        reset()
+        if (state && state.queue.items.length > 0 && !devices.resumeFromRemote(state, device)) {
+            restore(state)
+        }
+    }
+
+    devices.attachPlayer({
+        snapshot: () => ({
+            queue: queue.value,
+            repeat: repeat.value,
+            position: clock().position,
+            duration: duration.value,
+            playback: playback.value,
+            loading: loading.value,
+            volume: casting.value ? cast.volume : volume.value,
+            muted: casting.value ? cast.muted : muted.value,
+            crossfade: session.crossfade.enabled,
+            autoplay: session.autoplay.enabled,
+            source: listSource.value,
+        }),
+        playing: () => playback.value === 'playing',
+        execute: (command, windowStart) => {
+            runCommand(command, commandTarget, windowStart)
+        },
+        handover: takeOverPlayback,
+        yieldPlayback: pauseHere,
+        unlockAudio,
+        publishNow: () => {
+            if (publishing()) {
+                publisher.now()
+            }
+        },
+    })
+
+    // This device becomes a remote of the active device, or plays on its own again.
+    watch(remote, (now, before) => {
+        if (now) {
+            enterRemote()
+        } else if (before) {
+            leaveRemote()
+        }
+    })
+
+    // A remote shows the live queue.
+    watch(
+        () => devices.mirror,
+        (value) => {
+            if (remote.value) {
+                queue.value = value
+            }
+        },
+    )
+
+    // Play, pause, stop and a new song publish at once; starting playback here while this device
+    // is not the active one takes playback over.
+    watch([playback, loading, () => current.value?.key ?? null], ([value], [before]) => {
+        if (!devices.registered || remote.value) {
+            return
+        }
+
+        if (value === 'playing' && before !== 'playing' && !devices.isActive) {
+            publisher.now(true)
+        } else if (devices.isActive) {
+            publisher.now()
+        }
+    })
+
+    // The queue, shuffle, repeat and the source publish shortly after their change.
+    watch([queue, repeat, listSource], () => {
+        if (publishing()) {
+            publisher.soon()
+        }
+    })
+
+    // The volume publishes while it moves, at most every 250 ms.
+    watch([volume, muted, () => cast.volume, () => cast.muted, casting], () => {
+        if (publishing()) {
+            publisher.throttled()
+        }
+    })
+
+    // Crossfade and autoplay of the profile publish at once.
+    watch([() => session.crossfade.enabled, () => session.autoplay.enabled], () => {
+        if (publishing()) {
+            publisher.now()
+        }
+    })
+
+    // While the active device plays, it publishes every 10 seconds, so remotes keep the position.
+    watch(
+        () => publishing() && playback.value === 'playing',
+        (on) => publisher.heartbeat(on),
+    )
+
     const state = computed<TransportState>(() => {
         const track = current.value?.track
+        const remoteState = devices.transport
         return {
             playback: playback.value,
             loading: loading.value,
@@ -1625,7 +1984,7 @@ export const usePlayerStore = defineStore('player', () => {
                 remaining: sleepRemaining.value,
                 fading: sleepTimer.value.fading,
             },
-            effects: !casting.value,
+            effects: !casting.value && !remoteState,
             cast: {
                 availability: cast.availability,
                 connection: cast.connection,
@@ -1633,6 +1992,8 @@ export const usePlayerStore = defineStore('player', () => {
                 device: cast.deviceName,
                 devicesFound: cast.devicesFound,
             },
+            // A remote shows the live playback of the active device.
+            ...(remoteState ? { ...remoteState, message: null } : {}),
         }
     })
 
@@ -1687,6 +2048,7 @@ export const usePlayerStore = defineStore('player', () => {
         refreshLyrics,
         equalizerAvailable,
         casting,
+        remote,
         analyser,
         sleepTimer,
         sleepRemaining,
@@ -1727,5 +2089,6 @@ export const usePlayerStore = defineStore('player', () => {
         startSleepTimer,
         cancelSleepTimer,
         requestCast,
+        unlockAudio,
     }
 })

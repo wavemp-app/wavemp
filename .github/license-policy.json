@@ -23,11 +23,12 @@
   },
   "npm": {
     "projects": [".github/scripts", "source/WaveMP.Web", "tests/WaveMP.E2E"],
-    "$comment": "Reviewed 2026-11: spdx-exceptions, spdx-expression-validate and spdx-ranges are dependencies of licensee (license check tool, not part of the image). Their code is MIT, the bundled SPDX license lists are CC-BY-3.0 (attribution only).",
+    "$comment": "Reviewed 2026-11: spdx-exceptions, spdx-expression-validate and spdx-ranges are dependencies of licensee (license check tool, not part of the image). Their code is MIT, the bundled SPDX license lists are CC-BY-3.0 (attribution only). fetch-cookie 2.2.0 is a dependency of @microsoft/signalr that only its Node.js code path loads (never part of the web app bundle); its license is the Unlicense, a public-domain dedication without conditions, compatible with MIT.",
     "allowedPackages": {
       "spdx-exceptions": "2.5.0",
       "spdx-expression-validate": "2.0.0",
-      "spdx-ranges": "2.1.1"
+      "spdx-ranges": "2.1.1",
+      "fetch-cookie": "2.2.0"
     }
   }
 }

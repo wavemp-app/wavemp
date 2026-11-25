@@ -178,6 +178,22 @@ export function moveNext(queue: Queue, key: string): Queue {
     return { ...queue, items, index }
 }
 
+/**
+ * Moves the entry at from so it ends up at the index to (e.g. a command of another device); the
+ * current entry stays current. Indexes outside the queue change nothing.
+ */
+export function moveTo(queue: Queue, from: number, to: number): Queue {
+    const count = queue.items.length
+    if (from < 0 || from >= count || to < 0 || to >= count || from === to) {
+        return queue
+    }
+
+    const current = currentItem(queue)
+    const items = queue.items.filter((_, at) => at !== from)
+    items.splice(to, 0, queue.items[from]!)
+    return { ...queue, items, index: current ? items.indexOf(current) : queue.index }
+}
+
 /** Removes all entries but the current one. */
 export function clearUpcoming(queue: Queue): Queue {
     const current = currentItem(queue)
