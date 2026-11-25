@@ -657,4 +657,16 @@ public enum ProblemCodeDto
     /// </summary>
     [JsonStringEnumMemberName("organize.not_cancelable")]
     OrganizeNotCancelable,
+
+    /// <summary>
+    /// The current profile has no device with this id (404).
+    /// </summary>
+    [JsonStringEnumMemberName("device.not_found")]
+    DeviceNotFound,
+
+    /// <summary>
+    /// The device is open right now and cannot be forgotten; close WaveMP there first (409).
+    /// </summary>
+    [JsonStringEnumMemberName("device.online")]
+    DeviceOnline,
 }

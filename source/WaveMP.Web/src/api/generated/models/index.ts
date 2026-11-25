@@ -1008,6 +1008,33 @@ export function createCrossfadeSettingsFromDiscriminatorValue(parseNode: ParseNo
     return deserializeIntoCrossfadeSettings;
 }
 /**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {Device}
+ */
+// @ts-ignore
+export function createDeviceFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoDevice;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {DeviceHubTicket}
+ */
+// @ts-ignore
+export function createDeviceHubTicketFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoDeviceHubTicket;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {DevicePage}
+ */
+// @ts-ignore
+export function createDevicePageFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoDevicePage;
+}
+/**
  * A new session with its token.
  */
 export interface CreatedSession extends AdditionalDataHolder, Parsable {
@@ -2465,6 +2492,15 @@ export function createUpdateCrossfadeSettingsFromDiscriminatorValue(parseNode: P
 /**
  * Creates a new instance of the appropriate class based on discriminator value
  * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {UpdateDevice}
+ */
+// @ts-ignore
+export function createUpdateDeviceFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoUpdateDevice;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
  * @returns {UpdatedTrackReviews}
  */
 // @ts-ignore
@@ -3377,6 +3413,51 @@ export function deserializeIntoCrossfadeSettings(crossfadeSettings: Partial<Cros
         "albumsGapless": n => { crossfadeSettings.albumsGapless = n.getBooleanValue(); },
         "enabled": n => { crossfadeSettings.enabled = n.getBooleanValue(); },
         "seconds": n => { crossfadeSettings.seconds = n.getNumberValue(); },
+    }
+}
+/**
+ * The deserialization information for the current model
+ * @param Device The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoDevice(device: Partial<Device> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "active": n => { device.active = n.getBooleanValue(); },
+        "customName": n => { device.customName = n.getStringValue(); },
+        "id": n => { device.id = n.getStringValue(); },
+        "lastActiveAt": n => { device.lastActiveAt = n.getDateValue(); },
+        "name": n => { device.name = n.getStringValue(); },
+        "online": n => { device.online = n.getBooleanValue(); },
+        "remoteControl": n => { device.remoteControl = n.getBooleanValue(); },
+        "reportedName": n => { device.reportedName = n.getStringValue(); },
+        "type": n => { device.type = n.getEnumValue<DeviceType>(DeviceTypeObject); },
+    }
+}
+/**
+ * The deserialization information for the current model
+ * @param DeviceHubTicket The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoDeviceHubTicket(deviceHubTicket: Partial<DeviceHubTicket> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "expiresAt": n => { deviceHubTicket.expiresAt = n.getDateValue(); },
+        "ticket": n => { deviceHubTicket.ticket = n.getStringValue(); },
+    }
+}
+/**
+ * The deserialization information for the current model
+ * @param DevicePage The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoDevicePage(devicePage: Partial<DevicePage> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "items": n => { devicePage.items = n.getCollectionOfObjectValues<Device>(createDeviceFromDiscriminatorValue); },
+        "limit": n => { devicePage.limit = n.getNumberValue(); },
+        "offset": n => { devicePage.offset = n.getNumberValue(); },
+        "total": n => { devicePage.total = n.getNumberValue(); },
     }
 }
 /**
@@ -5646,6 +5727,17 @@ export function deserializeIntoUpdateCrossfadeSettings(updateCrossfadeSettings: 
 }
 /**
  * The deserialization information for the current model
+ * @param UpdateDevice The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoUpdateDevice(updateDevice: Partial<UpdateDevice> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "name": n => { updateDevice.name = n.getStringValue(); },
+    }
+}
+/**
+ * The deserialization information for the current model
  * @param UpdatedTrackReviews The instance to deserialize into.
  * @returns {Record<string, (node: ParseNode) => void>}
  */
@@ -6134,6 +6226,82 @@ export function deserializeIntoYearPage(yearPage: Partial<YearPage> | undefined 
         "total": n => { yearPage.total = n.getNumberValue(); },
     }
 }
+/**
+ * A device the current profile has used WaveMP on, with its live state. The same schema is used by the real-time connection of the devices (asyncapi.yaml).
+ */
+export interface Device extends AdditionalDataHolder, Parsable {
+    /**
+     * Whether the device is the active playback device of the profile. A closed device stays active, so it continues when it comes back, unless another device takes over.
+     */
+    active?: boolean | null;
+    /**
+     * The name the user gave the device; null if none.
+     */
+    customName?: string | null;
+    /**
+     * Id the device chose for itself and keeps: 1 to 64 letters, digits, dots, underscores, colons and hyphens.
+     */
+    id?: string | null;
+    /**
+     * When the device was last active: opened, played, sent a command or closed.
+     */
+    lastActiveAt?: Date | null;
+    /**
+     * The name to show: the one the user gave the device, otherwise the one it reports.
+     */
+    name?: string | null;
+    /**
+     * Whether the device is open and connected right now.
+     */
+    online?: boolean | null;
+    /**
+     * Whether the device allows remote control right now. The permission lasts as long as the page (or app) runs on the device; a closed device never allows it.
+     */
+    remoteControl?: boolean | null;
+    /**
+     * The name the device reports for itself, e.g. "Firefox · Windows".
+     */
+    reportedName?: string | null;
+    /**
+     * Kind of the device.
+     */
+    type?: DeviceType | null;
+}
+/**
+ * A short-lived ticket that opens the real-time connection of the devices (asyncapi.yaml) for the current session. Browsers cannot send a header when they open a WebSocket or an event stream, so the ticket goes into the query parameter `access_token` instead of the session token: it ends after a minute and is accepted by nothing but the connection of the devices, so a copy in an access log is of no use.
+ */
+export interface DeviceHubTicket extends AdditionalDataHolder, Parsable {
+    /**
+     * When the ticket ends; a connection must be opened (negotiated) before. An open connection stays open while its session is active.
+     */
+    expiresAt?: Date | null;
+    /**
+     * The ticket (a signed token).
+     */
+    ticket?: string | null;
+}
+/**
+ * One page of a collection.
+ */
+export interface DevicePage extends AdditionalDataHolder, Parsable {
+    /**
+     * Items of the page, at most limit.
+     */
+    items?: Device[] | null;
+    /**
+     * Maximum number of items of the page, as requested.
+     */
+    limit?: number | null;
+    /**
+     * Number of items skipped before this page.
+     */
+    offset?: number | null;
+    /**
+     * Number of items of the whole collection.
+     */
+    total?: number | null;
+}
+export type DeviceType = (typeof DeviceTypeObject)[keyof typeof DeviceTypeObject];
 /**
  * The equalizer of the players: its bands, the limits of the gains and the curves of the presets. The same for every profile; clients apply the curves with it instead of keeping own tables.
  */
@@ -9439,6 +9607,54 @@ export function serializeCrossfadeSettings(writer: SerializationWriter, crossfad
 }
 /**
  * Serializes information the current object
+ * @param Device The instance to serialize from.
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeDevice(writer: SerializationWriter, device: Partial<Device> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!device || isSerializingDerivedType) { return; }
+    writer.writeBooleanValue("active", device.active);
+    writer.writeStringValue("customName", device.customName);
+    writer.writeStringValue("id", device.id);
+    writer.writeDateValue("lastActiveAt", device.lastActiveAt);
+    writer.writeStringValue("name", device.name);
+    writer.writeBooleanValue("online", device.online);
+    writer.writeBooleanValue("remoteControl", device.remoteControl);
+    writer.writeStringValue("reportedName", device.reportedName);
+    writer.writeEnumValue<DeviceType>("type", device.type);
+    writer.writeAdditionalData(device.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param DeviceHubTicket The instance to serialize from.
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeDeviceHubTicket(writer: SerializationWriter, deviceHubTicket: Partial<DeviceHubTicket> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!deviceHubTicket || isSerializingDerivedType) { return; }
+    writer.writeDateValue("expiresAt", deviceHubTicket.expiresAt);
+    writer.writeStringValue("ticket", deviceHubTicket.ticket);
+    writer.writeAdditionalData(deviceHubTicket.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param DevicePage The instance to serialize from.
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeDevicePage(writer: SerializationWriter, devicePage: Partial<DevicePage> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!devicePage || isSerializingDerivedType) { return; }
+    writer.writeCollectionOfObjectValues<Device>("items", devicePage.items, serializeDevice);
+    writer.writeNumberValue("limit", devicePage.limit);
+    writer.writeNumberValue("offset", devicePage.offset);
+    writer.writeNumberValue("total", devicePage.total);
+    writer.writeAdditionalData(devicePage.additionalData);
+}
+/**
+ * Serializes information the current object
  * @param Equalizer The instance to serialize from.
  * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
  * @param writer Serialization writer to use to serialize this model
@@ -11857,6 +12073,18 @@ export function serializeUpdateCrossfadeSettings(writer: SerializationWriter, up
 /**
  * Serializes information the current object
  * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param UpdateDevice The instance to serialize from.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeUpdateDevice(writer: SerializationWriter, updateDevice: Partial<UpdateDevice> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!updateDevice || isSerializingDerivedType) { return; }
+    writer.writeStringValue("name", updateDevice.name);
+    writer.writeAdditionalData(updateDevice.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
  * @param UpdatedTrackReviews The instance to serialize from.
  * @param writer Serialization writer to use to serialize this model
  */
@@ -13676,6 +13904,15 @@ export interface UpdateCrossfadeSettings extends AdditionalDataHolder, Parsable 
     seconds?: number | null;
 }
 /**
+ * Changes a device of the current profile. Missing or null values stay unchanged.
+ */
+export interface UpdateDevice extends AdditionalDataHolder, Parsable {
+    /**
+     * The name the user gives the device, 1 to 100 characters without control characters; spaces at the ends are removed. The name the device reports for itself removes the given name.
+     */
+    name?: string | null;
+}
+/**
  * Result of setting the review status of several tracks.
  */
 export interface UpdatedTrackReviews extends AdditionalDataHolder, Parsable {
@@ -14496,6 +14733,17 @@ export const CoverRuleOptionObject = {
     TrackFirst: "TrackFirst",
 } as const;
 /**
+ * Kind of the device.
+ */
+export const DeviceTypeObject = {
+    Desktop: "Desktop",
+    Phone: "Phone",
+    Tablet: "Tablet",
+    Tv: "Tv",
+    Watch: "Watch",
+    Other: "Other",
+} as const;
+/**
  * Filter of the band.
  */
 export const EqualizerFilterTypeObject = {
@@ -14504,7 +14752,7 @@ export const EqualizerFilterTypeObject = {
     HighShelf: "HighShelf",
 } as const;
 /**
- * The selected curve; Flat by default.
+ * The preset.
  */
 export const EqualizerPresetObject = {
     Flat: "Flat",
@@ -15079,6 +15327,8 @@ export const ProblemCodeObject = {
     OrganizeConflicts: "organize.conflicts",
     OrganizePreview_outdated: "organize.preview_outdated",
     OrganizeNot_cancelable: "organize.not_cancelable",
+    DeviceNot_found: "device.not_found",
+    DeviceOnline: "device.online",
 } as const;
 /**
  * How the period of a recap was chosen. The days of a shared recap are fixed when it is shared.

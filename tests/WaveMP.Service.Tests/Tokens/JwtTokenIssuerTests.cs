@@ -47,7 +47,7 @@ public class JwtTokenIssuerTests
     [Test]
     public void Issue_Always_NamesProfileAndSessionOnly()
     {
-        string token = new JwtTokenIssuer(_keys).Issue(_session);
+        string token = new JwtTokenIssuer(_keys, TimeProvider.System).Issue(_session);
 
         JsonWebToken jwt = new(token);
         jwt.Alg.Should().Be(SecurityAlgorithms.HmacSha256);
@@ -63,7 +63,7 @@ public class JwtTokenIssuerTests
     [Test]
     public async Task Issue_ValidatedWithTheSameKey_IsValid()
     {
-        string token = new JwtTokenIssuer(_keys).Issue(_session);
+        string token = new JwtTokenIssuer(_keys, TimeProvider.System).Issue(_session);
 
         TokenValidationResult result = await new JsonWebTokenHandler().ValidateTokenAsync(
             token,
@@ -75,7 +75,7 @@ public class JwtTokenIssuerTests
     [Test]
     public async Task Issue_ValidatedWithAnotherKey_IsInvalid()
     {
-        string token = new JwtTokenIssuer(_keys).Issue(_session);
+        string token = new JwtTokenIssuer(_keys, TimeProvider.System).Issue(_session);
         SigningKeyStore otherKeys = await CreateKeyStoreAsync(2);
 
         TokenValidationResult result = await new JsonWebTokenHandler().ValidateTokenAsync(
@@ -85,12 +85,51 @@ public class JwtTokenIssuerTests
         result.IsValid.Should().BeFalse();
     }
 
-    private static TokenValidationParameters CreateParameters(SecurityKey key)
+    [Test]
+    public async Task IssueDeviceHubTicket_Always_IsShortLivedAndOnlyForTheHub()
+    {
+        DateTimeOffset now = DateTimeOffset.UtcNow;
+        TimeProvider clock = Substitute.For<TimeProvider>();
+        clock.GetUtcNow().Returns(now);
+
+        DeviceHubTicket ticket = new JwtTokenIssuer(_keys, clock)
+            .IssueDeviceHubTicket(_session.User.Id, _session.Session.Id);
+
+        ticket.ExpiresAt.Should().Be(now.AddSeconds(60));
+        JsonWebToken jwt = new(ticket.Ticket);
+        jwt.Issuer.Should().Be("wavemp");
+        jwt.Audiences.Should().Equal("wavemp-device-hub");
+        jwt.Subject.Should().Be(_session.User.Id.ToString());
+        jwt.GetClaim("sid").Value.Should().Be(_session.Session.Id.ToString());
+        jwt.Id.Should().NotBeNullOrEmpty();
+        jwt.ValidTo.Should().BeCloseTo(now.AddSeconds(60).UtcDateTime, TimeSpan.FromSeconds(1));
+        jwt.Claims.Select(claim => claim.Type).Should().NotContain(["role", "name"]);
+        (await new JsonWebTokenHandler().ValidateTokenAsync(ticket.Ticket, CreateParameters(_keys.Key)))
+            .IsValid.Should().BeFalse("a ticket is not a session token");
+        (await new JsonWebTokenHandler().ValidateTokenAsync(
+            ticket.Ticket,
+            CreateParameters(_keys.Key, TokenDefaults.DeviceHubAudience))).IsValid.Should().BeTrue();
+    }
+
+    [Test]
+    public void IssueDeviceHubTicket_TwoTickets_HaveDifferentIds()
+    {
+        JwtTokenIssuer issuer = new(_keys, TimeProvider.System);
+
+        DeviceHubTicket first = issuer.IssueDeviceHubTicket(_session.User.Id, _session.Session.Id);
+        DeviceHubTicket second = issuer.IssueDeviceHubTicket(_session.User.Id, _session.Session.Id);
+
+        new JsonWebToken(first.Ticket).Id.Should().NotBe(new JsonWebToken(second.Ticket).Id);
+    }
+
+    private static TokenValidationParameters CreateParameters(
+        SecurityKey key,
+        string audience = TokenDefaults.Audience)
     {
         return new TokenValidationParameters
         {
             ValidIssuer = TokenDefaults.Issuer,
-            ValidAudience = TokenDefaults.Audience,
+            ValidAudience = audience,
             ValidAlgorithms = [TokenDefaults.Algorithm],
             IssuerSigningKey = key,
         };

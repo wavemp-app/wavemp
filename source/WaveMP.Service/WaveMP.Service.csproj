@@ -37,6 +37,7 @@
     <ProjectReference Include="..\WaveMP.Core.Backups\WaveMP.Core.Backups.csproj" />
     <ProjectReference Include="..\WaveMP.Core.Caching\WaveMP.Core.Caching.csproj" />
     <ProjectReference Include="..\WaveMP.Core.Collection\WaveMP.Core.Collection.csproj" />
+    <ProjectReference Include="..\WaveMP.Core.Devices\WaveMP.Core.Devices.csproj" />
     <ProjectReference Include="..\WaveMP.Core.Jobs\WaveMP.Core.Jobs.csproj" />
     <ProjectReference Include="..\WaveMP.Core.Library\WaveMP.Core.Library.csproj" />
     <ProjectReference Include="..\WaveMP.Core.Lyrics\WaveMP.Core.Lyrics.csproj" />

@@ -16,6 +16,11 @@ public static class WaveMpClaimTypes
     public const string SessionId = "sid";
 
     /// <summary>
+    /// Unique id of a ticket of the real-time connection of the devices.
+    /// </summary>
+    public const string TokenId = "jti";
+
+    /// <summary>
     /// Role of the profile. Not part of the token: it is read from the database on every request, so a changed role
     /// applies at once.
     /// </summary>

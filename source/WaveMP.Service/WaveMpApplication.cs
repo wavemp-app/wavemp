@@ -4,6 +4,7 @@ using WaveMP.Core.Autoplay.Extensions;
 using WaveMP.Core.Backups.Extensions;
 using WaveMP.Core.Caching.Extensions;
 using WaveMP.Core.Collection.Extensions;
+using WaveMP.Core.Devices.Extensions;
 using WaveMP.Core.Jobs.Extensions;
 using WaveMP.Core.Library.Extensions;
 using WaveMP.Core.Lyrics.Extensions;
@@ -70,6 +71,7 @@ public static class WaveMpApplication
         builder.Services.AddWaveMpCollection();
         builder.Services.AddWaveMpAutoplay();
         builder.Services.AddWaveMpStreaming();
+        builder.Services.AddWaveMpDevices();
         builder.Services.AddWaveMpScrobbling();
         builder.Services.AddWaveMpTranscoding();
         builder.Services.AddWaveMpRecaps();

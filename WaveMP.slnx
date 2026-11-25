@@ -5,6 +5,7 @@
     <Project Path="source/WaveMP.Core.Backups/WaveMP.Core.Backups.csproj" />
     <Project Path="source/WaveMP.Core.Caching/WaveMP.Core.Caching.csproj" />
     <Project Path="source/WaveMP.Core.Collection/WaveMP.Core.Collection.csproj" />
+    <Project Path="source/WaveMP.Core.Devices/WaveMP.Core.Devices.csproj" />
     <Project Path="source/WaveMP.Core.Jobs/WaveMP.Core.Jobs.csproj" />
     <Project Path="source/WaveMP.Core.Library/WaveMP.Core.Library.csproj" />
     <Project Path="source/WaveMP.Core.Lyrics/WaveMP.Core.Lyrics.csproj" />
@@ -30,6 +31,7 @@
     <Project Path="tests/WaveMP.Core.Backups.Tests/WaveMP.Core.Backups.Tests.csproj" />
     <Project Path="tests/WaveMP.Core.Caching.Tests/WaveMP.Core.Caching.Tests.csproj" />
     <Project Path="tests/WaveMP.Core.Collection.Tests/WaveMP.Core.Collection.Tests.csproj" />
+    <Project Path="tests/WaveMP.Core.Devices.Tests/WaveMP.Core.Devices.Tests.csproj" />
     <Project Path="tests/WaveMP.Core.Jobs.Tests/WaveMP.Core.Jobs.Tests.csproj" />
     <Project Path="tests/WaveMP.Core.Library.Tests/WaveMP.Core.Library.Tests.csproj" />
     <Project Path="tests/WaveMP.Core.Lyrics.Tests/WaveMP.Core.Lyrics.Tests.csproj" />

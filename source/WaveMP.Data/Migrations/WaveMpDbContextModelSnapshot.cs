@@ -330,6 +330,48 @@ namespace WaveMP.Data.Migrations
                         });
                 });
 
+            modelBuilder.Entity("WaveMP.Data.Entities.Device", b =>
+                {
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.Property<string>("DeviceId")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("device_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("CustomName")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("custom_name");
+
+                    b.Property<DateTimeOffset>("LastActiveAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("last_active_at");
+
+                    b.Property<string>("ReportedName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("reported_name");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("type");
+
+                    b.HasKey("UserId", "DeviceId")
+                        .HasName("pk_devices");
+
+                    b.ToTable("devices", (string)null);
+                });
+
             modelBuilder.Entity("WaveMP.Data.Entities.Favorite", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2540,6 +2582,18 @@ namespace WaveMP.Data.Migrations
                     b.Navigation("MediaFile");
 
                     b.Navigation("Track");
+                });
+
+            modelBuilder.Entity("WaveMP.Data.Entities.Device", b =>
+                {
+                    b.HasOne("WaveMP.Data.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_devices_users_user_id");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("WaveMP.Data.Entities.Favorite", b =>

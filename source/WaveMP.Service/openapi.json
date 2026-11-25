@@ -3150,6 +3150,42 @@
         ]
       }
     },
+    "/api/v1/me/device-hub-tickets": {
+      "post": {
+        "tags": [
+          "DeviceHubTickets"
+        ],
+        "summary": "Issues a ticket that opens the real-time connection of the devices for the current session, valid for 60 seconds. Clients pass it in the query parameter `access_token` (never the session token) and fetch a new one for every connection attempt. The ticket is accepted by nothing but the connection of the devices; the connection stays open while the session is active. Clients that can send headers may open the connection with the session token in the header Authorization instead.",
+        "operationId": "CreateDeviceHubTicket",
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "The ticket.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeviceHubTicket"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
     "/api/v1/equalizer": {
       "get": {
         "tags": [
@@ -5884,6 +5920,221 @@
           },
           "404": {
             "description": "The profile was deleted in the meantime (code `user.not_found`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/api/v1/me/devices": {
+      "get": {
+        "tags": [
+          "MyDevices"
+        ],
+        "summary": "Lists the devices of the current profile: open devices first, then the most recently active. A profile keeps at most 50 devices; opening another one forgets the least recently active closed devices above the limit.",
+        "operationId": "ListMyDevices",
+        "parameters": [
+          {
+            "name": "offset",
+            "in": "query",
+            "description": "Number of devices to skip.",
+            "schema": {
+              "maximum": 2147483647,
+              "minimum": 0,
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Maximum number of devices of the page.",
+            "schema": {
+              "maximum": 100,
+              "minimum": 1,
+              "type": "integer",
+              "format": "int32",
+              "default": 50
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "One page of devices.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DevicePage"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid query parameters (code `request.invalid`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblem"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/api/v1/me/devices/{deviceId}": {
+      "patch": {
+        "tags": [
+          "MyDevices"
+        ],
+        "summary": "Renames a device of the current profile. The open devices of the profile learn the new name at once.",
+        "operationId": "UpdateMyDevice",
+        "parameters": [
+          {
+            "name": "deviceId",
+            "in": "path",
+            "description": "Id of the device.",
+            "required": true,
+            "schema": {
+              "pattern": "^[A-Za-z0-9._:-]{1,64}$",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "The new name.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateDevice"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateDevice"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "The device with its name.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Device"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request is invalid (code `request.invalid`): a `name` that is empty after removing the spaces at its ends (`required`), longer than 100 characters (`max_length`) or with control characters (`invalid_format`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The current profile has no device with this id (code `device.not_found`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "MyDevices"
+        ],
+        "summary": "Forgets a closed device of the current profile. It appears again when it opens WaveMP again.",
+        "operationId": "DeleteMyDevice",
+        "parameters": [
+          {
+            "name": "deviceId",
+            "in": "path",
+            "description": "Id of the device.",
+            "required": true,
+            "schema": {
+              "pattern": "^[A-Za-z0-9._:-]{1,64}$",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "The device is forgotten."
+          },
+          "404": {
+            "description": "The current profile has no device with this id (code `device.not_found`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The device is open right now (code `device.online`).",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -18354,6 +18605,128 @@
         },
         "description": "Crossfade between tracks of the current profile."
       },
+      "Device": {
+        "required": [
+          "id",
+          "name",
+          "reportedName",
+          "customName",
+          "type",
+          "online",
+          "remoteControl",
+          "active",
+          "lastActiveAt"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Id the device chose for itself and keeps: 1 to 64 letters, digits, dots, underscores, colons and hyphens."
+          },
+          "name": {
+            "type": "string",
+            "description": "The name to show: the one the user gave the device, otherwise the one it reports."
+          },
+          "reportedName": {
+            "type": "string",
+            "description": "The name the device reports for itself, e.g. \"Firefox · Windows\"."
+          },
+          "customName": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The name the user gave the device; null if none."
+          },
+          "type": {
+            "description": "Kind of the device.",
+            "$ref": "#/components/schemas/DeviceType"
+          },
+          "online": {
+            "type": "boolean",
+            "description": "Whether the device is open and connected right now."
+          },
+          "remoteControl": {
+            "type": "boolean",
+            "description": "Whether the device allows remote control right now. The permission lasts as long as the page (or app) runs on the device; a closed device never allows it."
+          },
+          "active": {
+            "type": "boolean",
+            "description": "Whether the device is the active playback device of the profile. A closed device stays active, so it continues when it comes back, unless another device takes over."
+          },
+          "lastActiveAt": {
+            "type": "string",
+            "description": "When the device was last active: opened, played, sent a command or closed.",
+            "format": "date-time"
+          }
+        },
+        "description": "A device the current profile has used WaveMP on, with its live state. The same schema is used by the real-time connection of the devices (asyncapi.yaml)."
+      },
+      "DeviceHubTicket": {
+        "required": [
+          "ticket",
+          "expiresAt"
+        ],
+        "type": "object",
+        "properties": {
+          "ticket": {
+            "type": "string",
+            "description": "The ticket (a signed token)."
+          },
+          "expiresAt": {
+            "type": "string",
+            "description": "When the ticket ends; a connection must be opened (negotiated) before. An open connection stays open while its session is active.",
+            "format": "date-time"
+          }
+        },
+        "description": "A short-lived ticket that opens the real-time connection of the devices (asyncapi.yaml) for the current session. Browsers cannot send a header when they open a WebSocket or an event stream, so the ticket goes into the query parameter `access_token` instead of the session token: it ends after a minute and is accepted by nothing but the connection of the devices, so a copy in an access log is of no use."
+      },
+      "DevicePage": {
+        "required": [
+          "items",
+          "offset",
+          "limit",
+          "total"
+        ],
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Device"
+            },
+            "description": "Items of the page, at most limit."
+          },
+          "offset": {
+            "type": "integer",
+            "description": "Number of items skipped before this page.",
+            "format": "int32"
+          },
+          "limit": {
+            "type": "integer",
+            "description": "Maximum number of items of the page, as requested.",
+            "format": "int32"
+          },
+          "total": {
+            "type": "integer",
+            "description": "Number of items of the whole collection.",
+            "format": "int32"
+          }
+        },
+        "description": "One page of a collection."
+      },
+      "DeviceType": {
+        "enum": [
+          "Desktop",
+          "Phone",
+          "Tablet",
+          "Tv",
+          "Watch",
+          "Other"
+        ],
+        "type": "string",
+        "description": "Kind of a device; clients show an icon for it."
+      },
       "Equalizer": {
         "required": [
           "minGainDb",
@@ -22378,7 +22751,9 @@
           "organize.preview_expired",
           "organize.conflicts",
           "organize.preview_outdated",
-          "organize.not_cancelable"
+          "organize.not_cancelable",
+          "device.not_found",
+          "device.online"
         ],
         "type": "string",
         "description": "Machine-readable code of a problem, part of every Problem Details response. Clients translate it."
@@ -25546,6 +25921,21 @@
         },
         "description": "Changes the crossfade of the current profile. Missing or null values stay unchanged."
       },
+      "UpdateDevice": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "maxLength": 100,
+            "minLength": 1,
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The name the user gives the device, 1 to 100 characters without control characters; spaces at the ends are removed. The name the device reports for itself removes the given name."
+          }
+        },
+        "description": "Changes a device of the current profile. Missing or null values stay unchanged."
+      },
       "UpdatedTrackReviews": {
         "required": [
           "changedCount"
@@ -27044,6 +27434,9 @@
       "name": "CoverRules"
     },
     {
+      "name": "DeviceHubTickets"
+    },
+    {
       "name": "Equalizer"
     },
     {
@@ -27084,6 +27477,9 @@
     },
     {
       "name": "MyAvatar"
+    },
+    {
+      "name": "MyDevices"
     },
     {
       "name": "OnlineMetadata"

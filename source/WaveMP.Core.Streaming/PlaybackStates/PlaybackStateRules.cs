@@ -69,7 +69,11 @@ public static class PlaybackStateRules
         return position >= 0 && position < newIndex.Length && newIndex[position] >= 0;
     }
 
-    private static bool IsPermutation(IReadOnlyList<int> order, int count)
+    /// <summary>
+    /// Whether <paramref name="order"/> names every position of a queue of <paramref name="count"/> entries exactly
+    /// once, as the order before shuffling of a shuffled queue does.
+    /// </summary>
+    public static bool IsPermutation(IReadOnlyList<int> order, int count)
     {
         if (order.Count != count)
         {

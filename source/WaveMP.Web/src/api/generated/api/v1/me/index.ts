@@ -6,6 +6,10 @@ import { AutoplayRequestBuilderNavigationMetadata, type AutoplayRequestBuilder }
 // @ts-ignore
 import { AvatarRequestBuilderRequestsMetadata, type AvatarRequestBuilder } from './avatar/index.js';
 // @ts-ignore
+import { DeviceHubTicketsRequestBuilderRequestsMetadata, type DeviceHubTicketsRequestBuilder } from './deviceHubTickets/index.js';
+// @ts-ignore
+import { DevicesRequestBuilderNavigationMetadata, DevicesRequestBuilderRequestsMetadata, type DevicesRequestBuilder } from './devices/index.js';
+// @ts-ignore
 import { FavoritesRequestBuilderNavigationMetadata, FavoritesRequestBuilderRequestsMetadata, type FavoritesRequestBuilder } from './favorites/index.js';
 // @ts-ignore
 import { HistoryRequestBuilderNavigationMetadata, HistoryRequestBuilderRequestsMetadata, type HistoryRequestBuilder } from './history/index.js';
@@ -48,6 +52,14 @@ export interface MeRequestBuilder extends BaseRequestBuilder<MeRequestBuilder> {
      * The avatar property
      */
     get avatar(): AvatarRequestBuilder;
+    /**
+     * The deviceHubTickets property
+     */
+    get deviceHubTickets(): DeviceHubTicketsRequestBuilder;
+    /**
+     * The devices property
+     */
+    get devices(): DevicesRequestBuilder;
     /**
      * The favorites property
      */
@@ -118,6 +130,13 @@ export const MeRequestBuilderNavigationMetadata: Record<Exclude<keyof MeRequestB
     },
     avatar: {
         requestsMetadata: AvatarRequestBuilderRequestsMetadata,
+    },
+    deviceHubTickets: {
+        requestsMetadata: DeviceHubTicketsRequestBuilderRequestsMetadata,
+    },
+    devices: {
+        requestsMetadata: DevicesRequestBuilderRequestsMetadata,
+        navigationMetadata: DevicesRequestBuilderNavigationMetadata,
     },
     favorites: {
         requestsMetadata: FavoritesRequestBuilderRequestsMetadata,

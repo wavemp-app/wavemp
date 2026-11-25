@@ -42,6 +42,7 @@ public class ModelTests
     [TestCase(typeof(Favorite), "favorites")]
     [TestCase(typeof(TrackRating), "track_ratings")]
     [TestCase(typeof(PlaybackState), "playback_states")]
+    [TestCase(typeof(Device), "devices")]
     public void Entity_Always_HasSnakeCaseTable(Type entityType, string expectedTable)
     {
         IEntityType entity = GetEntity(entityType);
@@ -90,6 +91,7 @@ public class ModelTests
     [TestCase(typeof(UserSettings))]
     [TestCase(typeof(PlayHistoryEntry))]
     [TestCase(typeof(PlaybackState))]
+    [TestCase(typeof(Device))]
     public void DependentsOfUser_Always_AreDeletedWithTheUser(Type dependentType)
     {
         IForeignKey foreignKey = GetEntity(dependentType).GetForeignKeys()
@@ -383,6 +385,34 @@ public class ModelTests
 
         entity.FindPrimaryKey()!.Properties.Select(property => property.Name)
             .Should().Equal(nameof(PlaybackState.UserId));
+    }
+
+    [Test]
+    public void Device_Always_BelongsToOneUserByItsId()
+    {
+        IEntityType entity = GetEntity(typeof(Device));
+
+        entity.FindPrimaryKey()!.Properties.Select(property => property.GetColumnName())
+            .Should().Equal("user_id", "device_id");
+    }
+
+    [Test]
+    public void Device_Type_IsStoredAsName()
+    {
+        IProperty type = GetEntity(typeof(Device)).FindProperty(nameof(Device.Type))!;
+
+        type.GetProviderClrType().Should().Be<string>();
+    }
+
+    [TestCase(nameof(Device.DeviceId), 64, false)]
+    [TestCase(nameof(Device.ReportedName), 100, false)]
+    [TestCase(nameof(Device.CustomName), 100, true)]
+    public void Device_Texts_AreLimited(string property, int maxLength, bool nullable)
+    {
+        IProperty column = GetEntity(typeof(Device)).FindProperty(property)!;
+
+        column.GetMaxLength().Should().Be(maxLength);
+        column.IsNullable.Should().Be(nullable);
     }
 
     [TestCase(nameof(TagBackup.Performers))]
