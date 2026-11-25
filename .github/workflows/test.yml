@@ -1,6 +1,7 @@
-# Builds and tests everything: .NET with unit, media and integration tests, the web app, the
-# license check, the templates of the app catalogs (deploy/), the Docker Hub description, the text of
-# the releases and the Docker image with the E2E tests. Called by pull-request.yml and main.yml.
+# Builds and tests everything: .NET with unit, media and integration tests, the web app, the line
+# length of the code, the license check, the templates of the app catalogs (deploy/), the Docker Hub
+# description, the text of the releases and the Docker image with the E2E tests. Called by
+# pull-request.yml and main.yml.
 #
 # All Docker images are pinned by the digest of their multi-arch index (image:tag@sha256:...); the
 # tag only documents the version. Resolve a new digest with docker buildx imagetools inspect.
@@ -146,6 +147,29 @@ jobs:
 
       - name: Build
         run: npm run build-only
+
+  line-length:
+    name: Line length
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Check out
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      # At most 120 characters per line in all code (C#, TypeScript, Vue, JavaScript, CSS, shell
+      # scripts) except generated code; reports every longer line as an error annotation.
+      - name: Check the line length
+        run: node .github/scripts/check-line-length.mjs
+
+      - name: Test the line length check
+        run: node --test .github/scripts/check-line-length.test.mjs
 
   licenses:
     name: License check

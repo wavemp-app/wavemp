@@ -75,6 +75,7 @@ Packages for building, checking and testing the web app (not shipped):
 | `@intlify/unplugin-vue-i18n` | MIT | Compiles the translation files |
 | `@phosphor-icons/core` | MIT | Source of the icons copied to `assets/web/icons/phosphor` |
 | `@resvg/resvg-js` | MPL-2.0 | Renders the PNG icons and the favicon from the logo during the build; includes the native renderer of its platform (`@resvg/resvg-js-<platform>`, MPL-2.0), used unchanged |
+| `@stylistic/eslint-plugin` | MIT | Lint rule for the line length |
 | `@tsconfig/node24` | MIT | TypeScript settings for Node.js |
 | `@types/node` | MIT | Type definitions of Node.js (also used by the E2E tests) |
 | `@types/sortablejs` | MIT | Type definitions of SortableJS |

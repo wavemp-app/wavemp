@@ -1,0 +1,5 @@
+# Commits that only changed the formatting of the code. GitHub skips them in its blame view; for git blame
+# on your machine, run once: git config blame.ignoreRevsFile .git-blame-ignore-revs
+
+# WMP-129: M9 wrap lines longer than 120 characters
+8ac52d077e2a403cb3323e01246d864427954ae5
