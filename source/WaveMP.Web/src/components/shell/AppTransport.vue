@@ -152,6 +152,7 @@ const tokens = computed(() =>
         swipe: swipePhase.value,
         viewSwitch: viewSwitchOpen.value,
         remote: remote.value,
+        plainAudio: props.state.audioPath === 'plain',
     }),
 )
 

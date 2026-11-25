@@ -6,6 +6,7 @@ import type { UpdateEqualizerSettings } from '@/api/generated/models'
 import { createWaveMpI18n } from '@/i18n'
 import { getEqualizer } from '@/player/api'
 import { fallbackEqualizerBands } from '@/player/equalizer'
+import { playerDependencies } from '@/stores/player'
 import { useSessionStore } from '@/stores/session'
 
 vi.mock('@/player/api', async (importOriginal) => ({
@@ -94,5 +95,22 @@ describe('EqualizerView', () => {
         expect(again.get('[data-part="alert"][data-state="error"]').text()).toBe(
             'The equalizer could not be saved.',
         )
+    })
+
+    it('tells an iPhone or iPad that the equalizer rests in the background', async () => {
+        const { webAudio, backgroundAudio } = playerDependencies
+        playerDependencies.webAudio = () => true
+        playerDependencies.backgroundAudio = () => true
+        try {
+            const wrapper = mountView()
+            await flushPromises()
+
+            expect(
+                wrapper.get('[data-part="alert"][data-item="background-effects"]').text(),
+            ).toContain('in the background')
+        } finally {
+            playerDependencies.webAudio = webAudio
+            playerDependencies.backgroundAudio = backgroundAudio
+        }
     })
 })

@@ -15,6 +15,7 @@ function mountPanel(
         gainsDb: number[]
         available: boolean
         casting: boolean
+        backgroundAudio: boolean
     }> = {},
     locale: 'en' | 'de' = 'en',
 ) {
@@ -160,5 +161,25 @@ describe('EqualizerPanel', () => {
         const wrapper = mountPanel({ casting: true })
 
         expect(wrapper.get('[data-part="alert"]').text()).toContain('While casting')
+    })
+    it('says that the equalizer rests in the background on an iPhone or iPad', () => {
+        const wrapper = mountPanel({ backgroundAudio: true })
+
+        const alert = wrapper.get('[data-part="alert"][data-item="background-effects"]')
+        expect(alert.attributes('data-state')).toBe('info')
+        expect(alert.attributes('role')).toBe('status')
+        expect(alert.text()).toContain('keeps playing when WaveMP is in the background')
+        expect(alert.get('[data-part="label"]').text()).toContain('come back')
+        expect(mountPanel({ backgroundAudio: true }, 'de').text()).toContain(
+            'spielt die Musik weiter',
+        )
+    })
+
+    it('shows no background note elsewhere or while casting', () => {
+        expect(mountPanel().find('[data-item="background-effects"]').exists()).toBe(false)
+        const casting = mountPanel({ backgroundAudio: true, casting: true })
+        expect(casting.find('[data-item="background-effects"]').exists()).toBe(false)
+        expect(casting.findAll('[data-part="alert"]')).toHaveLength(1)
+        expect(casting.get('[data-part="alert"]').text()).toContain('While casting')
     })
 })

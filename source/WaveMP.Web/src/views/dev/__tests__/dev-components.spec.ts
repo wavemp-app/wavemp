@@ -74,6 +74,10 @@ describe('component overview', () => {
         expect(states).toEqual(
             expect.arrayContaining(['idle', 'playing', 'paused', 'playing expanded']),
         )
+        expect(states).toContain('playing plain-audio')
+        expect(wrapper.find('[data-part="alert"][data-item="background-effects"]').exists()).toBe(
+            true,
+        )
         expect(wrapper.find('[data-part="btn-repeat"][data-state="one"]').exists()).toBe(true)
         expect(wrapper.find('[data-part="btn-repeat"][data-state="all"]').exists()).toBe(true)
         expect(wrapper.find('[data-part="btn-shuffle"][data-state="on"]').exists()).toBe(true)

@@ -45,6 +45,7 @@ onUnmounted(() => {
             :max-gain-db="equalizer.maxGainDb"
             :available="player.equalizerAvailable"
             :casting="player.casting"
+            :background-audio="player.backgroundAudio"
             @enable="equalizer.setEnabled"
             @preset="equalizer.selectPreset"
             @band="equalizer.setBand"

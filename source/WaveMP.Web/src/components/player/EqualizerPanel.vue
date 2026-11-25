@@ -32,8 +32,13 @@ const props = withDefaults(
         available?: boolean
         /** Whether a casting device plays, which plays the music without the equalizer. */
         casting?: boolean
+        /**
+         * Whether this browser plays on without the equalizer in the background (iPhone and iPad):
+         * a note tells the listener that it rests there and comes back on return.
+         */
+        backgroundAudio?: boolean
     }>(),
-    { available: true, casting: false },
+    { available: true, casting: false, backgroundAudio: false },
 )
 
 const emit = defineEmits<{
@@ -133,6 +138,12 @@ const bandItems = computed(() =>
         </div>
         <BaseAlert v-if="casting" tone="info" :message="t('cast.effectsUnavailable')" />
         <BaseAlert v-else-if="!available" tone="info" :message="t('equalizer.unavailable')" />
+        <BaseAlert
+            v-else-if="backgroundAudio"
+            tone="info"
+            data-item="background-effects"
+            :message="t('player.backgroundEffects')"
+        />
         <div data-part="equalizer-bands" role="group" :aria-label="t('equalizer.bands')">
             <div data-part="equalizer-band" data-kind="preamp">
                 <span data-part="equalizer-value" aria-hidden="true">{{

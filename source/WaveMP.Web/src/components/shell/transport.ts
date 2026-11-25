@@ -181,12 +181,15 @@ export interface TransportStateExtras {
     readonly viewSwitch?: boolean
     /** Whether this device controls another device that plays. */
     readonly remote?: boolean
+    /** Whether this browser plays on the plain path (in the background, without effects). */
+    readonly plainAudio?: boolean
 }
 
 /**
  * data-state tokens of the transport bar, e.g. "playing loading expanded"; while the full-screen
  * player is swiped, the phase ("dragging", "settling" or "dismissing"), "view-switch" while
- * its view switch is open, and "remote" while another device of the profile plays.
+ * its view switch is open, "remote" while another device of the profile plays and "plain-audio"
+ * while this browser plays on the plain path (equalizer, crossfade and visualization pause).
  */
 export function transportStateTokens(
     playback: PlaybackState,
@@ -203,6 +206,7 @@ export function transportStateTokens(
         ...swipe,
         ...viewSwitch,
         ...(extras.remote ? ['remote'] : []),
+        ...(extras.plainAudio ? ['plain-audio'] : []),
     ].join(' ')
 }
 

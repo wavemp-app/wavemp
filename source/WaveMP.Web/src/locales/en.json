@@ -154,6 +154,7 @@
       "failed": "Playback failed; the song was skipped."
     },
     "equalizer": "Equalizer",
+    "backgroundEffects": "On this iPhone or iPad, the music keeps playing when WaveMP is in the background. The equalizer, crossfade and visualization rest there and come back as soon as you return to WaveMP.",
     "sleepTimer": "Sleep timer",
     "sleepTimerMenu": "Stop playback",
     "sleepTimerOff": "Off",
@@ -708,7 +709,8 @@
       "autoplay": "Autoplay on",
       "casting": "Casting to a device",
       "castInsecure": "Casting without HTTPS",
-      "remote": "Controlling another device"
+      "remote": "Controlling another device",
+      "plainAudio": "In the background on an iPhone or iPad (without effects)"
     },
     "castDevice": "Living room",
     "resumeDevice": "Safari · iPhone",

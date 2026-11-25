@@ -7,6 +7,7 @@ import SettingsView from '../SettingsView.vue'
 import { FakeCastLayer } from '@/casting/__tests__/fakes'
 import { createWaveMpI18n } from '@/i18n'
 import { castDependencies } from '@/stores/cast'
+import { playerDependencies } from '@/stores/player'
 import { useHealthStore } from '@/stores/health'
 import { useResumeStore } from '@/stores/resume'
 import { useSessionStore } from '@/stores/session'
@@ -304,6 +305,39 @@ describe('SettingsView playback', () => {
         } finally {
             castDependencies.createLayer = createLayer
         }
+    })
+
+    it('tells an iPhone or iPad that the effects rest in the background, except while casting', async () => {
+        const layer = new FakeCastLayer()
+        const { createLayer } = castDependencies
+        const { backgroundAudio } = playerDependencies
+        castDependencies.createLayer = () => layer
+        playerDependencies.backgroundAudio = () => true
+        try {
+            const { wrapper } = mountView()
+            await flushPromises()
+
+            const note = wrapper.get('[data-part="form-note"][data-item="background-effects"]')
+            expect(note.text()).toBe(
+                'On this iPhone or iPad, the music keeps playing when WaveMP is in the background. The equalizer, crossfade and visualization rest there and come back as soon as you return to WaveMP.',
+            )
+
+            layer.connect()
+            await flushPromises()
+
+            expect(wrapper.find('[data-item="background-effects"]').exists()).toBe(false)
+            expect(wrapper.get('[data-item="cast-effects"]').text()).toContain('While casting')
+        } finally {
+            castDependencies.createLayer = createLayer
+            playerDependencies.backgroundAudio = backgroundAudio
+        }
+    })
+
+    it('shows no background note where the music plays on with its effects', async () => {
+        const { wrapper } = mountView()
+        await flushPromises()
+
+        expect(wrapper.find('[data-item="background-effects"]').exists()).toBe(false)
     })
 
     it('shows crossfade, album crossfade, sleep timer fade-out and equalizer of the profile', async () => {

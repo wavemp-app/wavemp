@@ -30,6 +30,7 @@ import { maxCrossfadeSeconds, type CrossfadeSettings } from '@/player/crossfade'
 import { useCastStore } from '@/stores/cast'
 import { useEqualizerStore } from '@/stores/equalizer'
 import { useHealthStore } from '@/stores/health'
+import { usePlayerStore } from '@/stores/player'
 import { useResumeStore } from '@/stores/resume'
 import { useSessionStore } from '@/stores/session'
 import { isThemeAppearance } from '@/themes/choice'
@@ -55,6 +56,8 @@ const session = useSessionStore()
 const equalizer = useEqualizerStore()
 const health = useHealthStore()
 const cast = useCastStore()
+/** Whether this browser plays on in the background without effects (iPhone and iPad). */
+const backgroundAudio = usePlayerStore().backgroundAudio
 const resume = useResumeStore()
 const format = useFormat()
 
@@ -479,6 +482,9 @@ async function changeSleepTimerFade(value: string): Promise<void> {
             <h2 data-part="section-title">{{ t('settings.playback') }}</h2>
             <p v-if="cast.connected" data-part="form-note" data-item="cast-effects">
                 {{ t('cast.effectsUnavailable') }}
+            </p>
+            <p v-else-if="backgroundAudio" data-part="form-note" data-item="background-effects">
+                {{ t('player.backgroundEffects') }}
             </p>
             <BaseCheckbox
                 data-field="equalizer"

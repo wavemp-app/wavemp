@@ -617,6 +617,17 @@ const transports = computed(() => [
         expanded: false,
     },
     {
+        id: 'plain-audio',
+        label: t('dev.transportStates.plainAudio'),
+        state: {
+            ...idle,
+            ...track.value,
+            playback: 'playing' as const,
+            audioPath: 'plain' as const,
+        },
+        expanded: false,
+    },
+    {
         id: 'cast-insecure',
         label: t('dev.transportStates.castInsecure'),
         state: {
@@ -1674,6 +1685,18 @@ const sampleTranscodeJobs = computed<TranscodeJob[]>(() => {
                     :min-gain-db="fallbackMinGainDb"
                     :max-gain-db="fallbackMaxGainDb"
                     :available="false"
+                />
+            </div>
+            <div data-part="dev-sample">
+                <EqualizerPanel
+                    :enabled="true"
+                    preset="Flat"
+                    :preamp-db="0"
+                    :gains-db="flatCurve()"
+                    :bands="fallbackEqualizerBands"
+                    :min-gain-db="fallbackMinGainDb"
+                    :max-gain-db="fallbackMaxGainDb"
+                    background-audio
                 />
             </div>
         </section>

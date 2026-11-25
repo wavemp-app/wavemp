@@ -154,6 +154,7 @@
       "failed": "Die Wiedergabe ist fehlgeschlagen; der Titel wurde übersprungen."
     },
     "equalizer": "Equalizer",
+    "backgroundEffects": "Auf diesem iPhone oder iPad spielt die Musik weiter, wenn WaveMP im Hintergrund ist. Equalizer, Überblenden und Visualisierung ruhen dort und sind wieder da, sobald du zu WaveMP zurückkehrst.",
     "sleepTimer": "Sleep-Timer",
     "sleepTimerMenu": "Wiedergabe beenden",
     "sleepTimerOff": "Aus",
@@ -708,7 +709,8 @@
       "autoplay": "Autoplay an",
       "casting": "Streamen auf ein Gerät",
       "castInsecure": "Streamen ohne HTTPS",
-      "remote": "Steuert ein anderes Gerät"
+      "remote": "Steuert ein anderes Gerät",
+      "plainAudio": "Im Hintergrund auf einem iPhone oder iPad (ohne Effekte)"
     },
     "castDevice": "Wohnzimmer",
     "resumeDevice": "Safari · iPhone",
