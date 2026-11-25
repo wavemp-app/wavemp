@@ -4,7 +4,7 @@ Richtlinien für Claude Code bei der Arbeit an **WaveMP – a nostalgic media pl
 
 ## Projekt
 
-WaveMP ist ein selbst gehosteter Media Player für Musik und Musikvideos, ausgeliefert als Docker-Image. Die Optik orientiert sich an den klassischen Desktop-Media-Playern der Frutiger-Aero-Ära (Glas, Glanz, Hellblau, weiche Verläufe). Der Server scannt einen eingebundenen Medienordner, speichert die Bibliothek in einer Datenbank und stellt sie einer Web-App bereit. Native Apps (iOS, iPadOS, macOS, tvOS, watchOS, Windows, Android, Linux) folgen in eigenen Repositories der Organisation und nutzen dieselbe API. Jeder App-Typ hat einen eigenen Meilenstein (M10 Apple, M11 Windows, M12 Android, M13 Linux) und wird in einem eigenen Workflow-Lauf umgesetzt.
+WaveMP ist ein selbst gehosteter Media Player für Musik und Musikvideos, ausgeliefert als Docker-Image. Die Optik orientiert sich an den klassischen Desktop-Media-Playern der Frutiger-Aero-Ära (Glas, Glanz, Hellblau, weiche Verläufe). Der Server scannt einen eingebundenen Medienordner, speichert die Bibliothek in einer Datenbank und stellt sie einer Web-App bereit. Native Apps (iOS, iPadOS, macOS, tvOS, watchOS, Windows, Android, Linux) folgen in eigenen Repositories der Organisation und nutzen dieselbe API. Jeder App-Typ hat einen eigenen Meilenstein (M12 Apple, M13 Windows, M14 Android, M15 Linux) und wird in einem eigenen Workflow-Lauf umgesetzt.
 
 ## Namen
 
@@ -178,7 +178,7 @@ Neue Projekte und Ordner fügen sich in diese Struktur ein. Abweichungen nur, we
 
 ## Issues und Projekt
 
-- **Einzige Quelle:** Was umgesetzt wird, steht in den Issues von `wavemp-app/wavemp`, zugeordnet zu den Milestones `M1` bis `M15` und im Org-Projekt "WaveMP Roadmap". Ein Workflow-Lauf setzt einen Meilenstein um: die offenen Issues des Milestones nacheinander, aufsteigend nach WMP-Nummer.
+- **Einzige Quelle:** Was umgesetzt wird, steht in den Issues von `wavemp-app/wavemp`, zugeordnet zu den Milestones `M1` bis `M17` und im Org-Projekt "WaveMP Roadmap". Ein Workflow-Lauf setzt einen Meilenstein um: die offenen Issues des Milestones nacheinander, aufsteigend nach WMP-Nummer.
 - **Titel-Schema:**
   - `WMP-{N}: {Titel}`: Punkte des Maintainers (Roadmap und eigene Bugs).
   - `[Bug] {Titel}` und `[Feature] {Titel}`: von Nutzern über die Issue-Formulare gemeldet, Labels `community` und `triage`.
