@@ -72,7 +72,7 @@ WaveMP has a new default logo. It is the logo of the web app, its favicon and it
 
 ## Themes
 
-The theme API gains parts for the recap, the statistics and the shared recaps (story, sections, rankings, charts and tables) and for the ambient light around videos, with variables for its intensity, blur, saturation, size and transitions. All shipped themes are styled for the new views. The theme API stays at version 5, since all changes are additions. [THEMING.md](../../THEMING.md) describes the new parts.
+The theme API gains parts for the recap, the statistics and the shared recaps (story, sections, rankings, charts and tables) and for the ambient light around videos, with variables for its intensity, blur, saturation, size and transitions. All shipped themes are styled for the new views. The theme API stays at version 5, since all changes are additions. [THEMING.md](https://github.com/wavemp-app/wavemp/blob/v1.0.106/THEMING.md) describes the new parts.
 
 ## For developers
 
@@ -84,7 +84,7 @@ The theme API gains parts for the recap, the statistics and the shared recaps (s
 - **Media folders.** `GET /api/v1/genres` and `GET /api/v1/years` take the filter `sourceId`.
 - **Cover sizes.** `?size=` of covers now rounds up to 96, 192, 300, 600, 1000 or 2000 pixels; clients pass the shown width times the pixel density of the screen.
 - **New error codes:** `recap.share_not_found`, `video.too_large`, `video.unsupported_format` and `video.unreadable`.
-- **New settings:** `Recaps__MaxVideoBytes` and `Recaps__ConversionTimeout`; the [README](../../README.md#settings) describes them.
+- **New settings:** `Recaps__MaxVideoBytes` and `Recaps__ConversionTimeout`; the [README](https://github.com/wavemp-app/wavemp/blob/v1.0.106/README.md#settings) describes them.
 
 All new endpoints and codes are described in the OpenAPI document.
 
