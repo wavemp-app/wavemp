@@ -5,6 +5,12 @@ import { adminStorageState } from './tests/helpers/storage'
 const deviceSpecs = /[\\/]devices[\\/].*\.spec\.ts$/
 
 /**
+ * Specs that run in WebKit with the screen of an iPhone and an iPad only (tests/webkit): playback
+ * in the background, which only WebKit on these devices treats differently.
+ */
+const webkitSpecs = /[\\/]webkit[\\/].*\.spec\.ts$/
+
+/**
  * The screenshot and contrast regression of the shipped themes (tests/themes). It runs after all
  * other projects, so no other spec changes the library while it takes its screenshots, and keeps
  * its baselines without the name of the platform: they are taken in the Playwright image of the
@@ -27,8 +33,8 @@ const visualizationSpec = /[\\/]visualization\.spec\.ts$/
 const organizeSpecs = /[\\/]organize[\\/].*\.spec\.ts$/
 
 /**
- * A phone or tablet of the test matrix: its viewport, touch and mobile emulation, in Chromium (the
- * only browser the E2E setup installs), with the session of the built-in admin.
+ * A phone or tablet of the test matrix: its viewport, touch and mobile emulation, in Chromium,
+ * with the session of the built-in admin. Only tests/webkit needs the engine of these devices.
  */
 function device(name: string, descriptor: string) {
     return {
@@ -44,14 +50,32 @@ function device(name: string, descriptor: string) {
 }
 
 /**
+ * An iPhone or iPad in WebKit, the engine of every browser on these devices, with the session of
+ * the built-in admin.
+ */
+function webkitDevice(name: string, descriptor: string) {
+    return {
+        name,
+        testMatch: webkitSpecs,
+        use: {
+            ...devices[descriptor],
+            browserName: 'webkit' as const,
+            storageState: adminStorageState,
+        },
+        dependencies: ['setup'],
+    }
+}
+
+/**
  * Runs against a running WaveMP instance, e.g. started with
  * `docker compose -f docker-compose.dev.yml up --build`.
  * The project "setup" selects the built-in admin profile once; the other projects start with its
  * session (see tests/helpers/storage.ts). "chromium" (desktop) and "mobile" (phone) run all specs
  * except tests/devices and the visualization spec; "visualization" runs the visualization spec on
  * the desktop and on a phone in one worker; "iphone", "ipad" and "ipad-landscape" run
- * tests/devices; "organize" moves files of the media after all of them (tests/organize), and
- * "themes" checks the shipped themes after that (tests/themes).
+ * tests/devices in Chromium; "webkit-iphone" and "webkit-ipad" run tests/webkit in WebKit;
+ * "organize" moves files of the media after all of them (tests/organize), and "themes" checks the
+ * shipped themes after that (tests/themes).
  */
 export default defineConfig({
     testDir: './tests',
@@ -71,7 +95,7 @@ export default defineConfig({
         },
         {
             name: 'chromium',
-            testIgnore: [deviceSpecs, visualizationSpec, themeSpecs, organizeSpecs],
+            testIgnore: [deviceSpecs, webkitSpecs, visualizationSpec, themeSpecs, organizeSpecs],
             use: {
                 ...devices['Desktop Chrome'],
                 storageState: adminStorageState,
@@ -80,7 +104,7 @@ export default defineConfig({
         },
         {
             name: 'mobile',
-            testIgnore: [deviceSpecs, visualizationSpec, themeSpecs, organizeSpecs],
+            testIgnore: [deviceSpecs, webkitSpecs, visualizationSpec, themeSpecs, organizeSpecs],
             use: { ...devices['Pixel 7'], storageState: adminStorageState },
             dependencies: ['setup'],
         },
@@ -98,6 +122,8 @@ export default defineConfig({
         device('iphone', 'iPhone 13'),
         device('ipad', 'iPad Pro 11'),
         device('ipad-landscape', 'iPad Pro 11 landscape'),
+        webkitDevice('webkit-iphone', 'iPhone 13'),
+        webkitDevice('webkit-ipad', 'iPad Pro 11'),
         {
             name: 'organize',
             testMatch: organizeSpecs,
@@ -114,6 +140,8 @@ export default defineConfig({
                 'iphone',
                 'ipad',
                 'ipad-landscape',
+                'webkit-iphone',
+                'webkit-ipad',
             ],
         },
         {

@@ -7,9 +7,10 @@
     "test": "playwright test",
     "screenshots": "playwright test --config playwright.screenshots.config.ts screenshots/readme.screenshots.ts",
     "screenshots:catalogs": "playwright test --config playwright.screenshots.config.ts screenshots/catalog.screenshots.ts",
-    "install-browsers": "playwright install --with-deps chromium",
+    "install-browsers": "playwright install --with-deps chromium webkit",
     "theme:screenshots": "node screenshots/theme-run.ts",
     "theme:contrast": "node screenshots/theme-run.ts --contrast-only",
+    "test:webkit": "node scripts/webkit-tests.ts",
     "test:themes": "node scripts/theme-regression.ts",
     "test:themes:update": "node scripts/theme-regression.ts --update"
   },

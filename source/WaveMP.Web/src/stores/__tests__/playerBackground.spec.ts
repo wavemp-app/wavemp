@@ -3,12 +3,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Track, TrackPlayback } from '@/api/generated/models'
 import { FakeCastLayer } from '@/casting/__tests__/fakes'
 import { getLyrics } from '@/lyrics/api'
-import { getPlayback, recordPlay, reportNowPlaying } from '@/player/api'
+import { getPlayback, getVideoPlayback, recordPlay, reportNowPlaying } from '@/player/api'
 import type { AudioEnvironment } from '@/player/engine'
 import { PlaybackPathEngine } from '@/player/pathEngine'
+import type { FollowerClock } from '@/player/videoFollower'
 import { castDependencies } from '../cast'
 import { useCoversStore } from '../covers'
-import { playerDependencies, usePlayerStore } from '../player'
+import { playerDependencies, usePlayerStore, type PlayerVideoFollower } from '../player'
 
 vi.mock('@/lyrics/api', () => ({
     getLyrics: vi.fn(),
@@ -463,6 +464,68 @@ describe('player store in the background', () => {
 
             expect(requests).toBe(1)
             expect(loadedOn('effects')?.paused).toBe(false)
+        })
+    })
+
+    describe('with a music video', () => {
+        const withVideo = [track('a', { hasVideo: true }), track('b')]
+        let follower: PlayerVideoFollower & { clock: () => FollowerClock }
+
+        beforeEach(() => {
+            vi.mocked(getVideoPlayback)
+                .mockReset()
+                .mockImplementation((id) =>
+                    Promise.resolve({
+                        trackId: id,
+                        method: 'DirectPlay',
+                        protocol: 'File',
+                        streamUrl: `/video/${id}`,
+                        durationMilliseconds: 200_000,
+                    }),
+                )
+            playerDependencies.videoFormats = () => ({
+                containers: ['Mp4'],
+                videoCodecs: ['H264'],
+                audioCodecs: ['Aac'],
+            })
+            playerDependencies.createVideoFollower = (_element, clock) =>
+                (follower = {
+                    clock,
+                    load: vi.fn(),
+                    unload: vi.fn(),
+                    setActive: vi.fn(),
+                    setOffset: vi.fn(),
+                    sync: vi.fn(),
+                    dispose: vi.fn(),
+                    allowPlayback: vi.fn(),
+                })
+        })
+
+        it('rests while the plain path plays in the background and follows the audio again on the return', async () => {
+            supported = true
+            const player = usePlayerStore()
+            player.attachVideo({} as HTMLVideoElement)
+            player.playTracks(withVideo, 0)
+            await settle()
+            paths().effectsA.advance(42)
+            expect(follower.setActive).toHaveBeenLastCalledWith(true)
+            expect(follower.clock()).toEqual({ position: 42, playing: true })
+
+            await hide()
+
+            expect(player.audioPath).toBe('plain')
+            expect(follower.setActive).toHaveBeenLastCalledWith(false)
+            loadedOn('plain')!.advance(50)
+            expect(follower.clock()).toEqual({ position: 50, playing: true })
+
+            await show()
+
+            expect(player.audioPath).toBe('effects')
+            expect(follower.setActive).toHaveBeenLastCalledWith(true)
+            loadedOn('effects')!.advance(51)
+            expect(follower.clock()).toEqual({ position: 51, playing: true })
+            // The video loaded once and only follows another clock.
+            expect(getVideoPlayback).toHaveBeenCalledOnce()
         })
     })
 
