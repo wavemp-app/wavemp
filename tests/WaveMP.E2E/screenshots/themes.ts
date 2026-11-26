@@ -394,6 +394,74 @@ function maskLibrarySections(page: Page): Locator[] {
     ]
 }
 
+/** Id of the smart playlist that mockSmartPlaylist answers for; it does not exist on the server. */
+const mockSmartPlaylistId = '019a0000-0000-7000-8000-00000000e2e5'
+
+/**
+ * Answers the requests of a smart playlist that is not stored, so the other views do not list it:
+ * a rule linked to E2E Album, a rule whose artist is not in the library and a rule of the rating,
+ * with the songs of E2E Album.
+ */
+async function mockSmartPlaylist(page: Page, request: APIRequestContext): Promise<void> {
+    const albumId = await findAlbumId(request, 'E2E Album')
+    const trackIds = await Promise.all(
+        [savedSong, 'Second Song'].map((title) => findTrackId(request, title)),
+    )
+    const smartPlaylist = {
+        id: mockSmartPlaylistId,
+        name: 'Album Night',
+        match: 'Any',
+        rules: [
+            { field: 'Album', operator: 'Is', text: 'E2E Album', referenceId: albumId },
+            { field: 'Artist', operator: 'Is', text: 'The Missing Band' },
+            { field: 'Rating', operator: 'AtLeast', number: 4 },
+        ],
+        sort: 'Title',
+        direction: 'Asc',
+        limit: null,
+        trackCount: trackIds.length,
+        durationMilliseconds: 4000,
+        cover: { kind: 'Tracks', trackIds },
+        createdAt: '2026-01-01T00:00:00Z',
+        updatedAt: '2026-01-01T00:00:00Z',
+    }
+    const path = `/api/v1/me/smart-playlists/${mockSmartPlaylistId}`
+    await page.route(
+        (url) => url.pathname === path,
+        (route) => route.fulfill({ contentType: 'application/json', json: smartPlaylist }),
+    )
+    await page.route(
+        (url) => url.pathname === `${path}/tracks`,
+        async (route) => {
+            const url = new URL(route.request().url())
+            url.pathname = `/api/v1/albums/${albumId}/tracks`
+            await route.fulfill({ response: await route.fetch({ url: url.toString() }) })
+        },
+    )
+}
+
+/** Opens the smart playlist of mockSmartPlaylist with its rules in words and its songs. */
+async function openSmartPlaylist(page: Page, request: APIRequestContext): Promise<void> {
+    await mockSmartPlaylist(page, request)
+    await page.goto(`/playlists/smart/${mockSmartPlaylistId}`)
+    await expect(part(page, 'detail-title')).toHaveText('Album Night')
+    await expect(part(page, 'smart-summary-note')).toBeVisible()
+    await expect(part(page, 'list-row')).toHaveCount(2)
+    // On the phone the rules lie below the cover and the buttons.
+    await part(page, 'smart-summary').evaluate((element) =>
+        element.scrollIntoView({ block: 'start' }),
+    )
+}
+
+/** Opens the editor of the smart playlist of mockSmartPlaylist, with the hint below the artist. */
+async function openSmartPlaylistEditor(page: Page, request: APIRequestContext): Promise<void> {
+    await mockSmartPlaylist(page, request)
+    await page.goto(`/playlists/smart/${mockSmartPlaylistId}/edit`)
+    const rules = part(page, 'smart-rule')
+    await expect(rules).toHaveCount(3)
+    await expect(rules.nth(1).locator("[data-part='field-hint']")).toBeVisible()
+}
+
 /** Opens the recap of the last month, paused on its second section once it has entered. */
 async function openRecap(page: Page): Promise<void> {
     await page.goto('/recap')
@@ -553,6 +621,14 @@ export const themeViews: readonly ThemeView[] = [
         open: openOrganizeTemplate,
     },
     {
+        // A smart playlist with a rule linked to its album and one whose artist is not in the
+        // library; the editor shows the hint below the text of that rule.
+        name: 'smart-playlist-edit',
+        device: 'desktop',
+        stable: true,
+        open: openSmartPlaylistEditor,
+    },
+    {
         name: 'phone-library',
         device: 'phone',
         stable: true,
@@ -562,6 +638,13 @@ export const themeViews: readonly ThemeView[] = [
             await expect(page.locator("[data-part='tile']").first()).toBeVisible()
             await expect(part(page, 'bottom-nav')).toBeVisible()
         },
+    },
+    {
+        // The rules of the smart playlist in words, the missing artist with its note.
+        name: 'phone-smart-playlist',
+        device: 'phone',
+        stable: true,
+        open: openSmartPlaylist,
     },
     {
         name: 'phone-now-playing',
