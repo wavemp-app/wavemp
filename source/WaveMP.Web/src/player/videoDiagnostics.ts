@@ -176,15 +176,23 @@ export class VideoDiagnosticsRecorder {
         this.checkEnd(sample.time)
     }
 
-    /** An entry of the log at the time, with the values of the last check. */
-    record(kind: VideoDiagnosticsEventKind, time: number, value: number | null = null): void {
+    /**
+     * An entry of the log at the time, with the values of the last check. Only while the video
+     * plays is a seek or a wait a sign of a stutter: a paused video seeks after the music.
+     */
+    record(
+        kind: VideoDiagnosticsEventKind,
+        time: number,
+        value: number | null = null,
+        playing = true,
+    ): void {
         if (kind === 'seek') {
             this.seeks++
         }
 
         this.push(kind, time, value)
         // A seek or a wait for data is a picture that stands still: a sign of a stutter.
-        if (kind === 'seek' || kind === 'waiting' || kind === 'stalled') {
+        if (playing && (kind === 'seek' || kind === 'waiting' || kind === 'stalled')) {
             this.signal(time, null)
         }
     }

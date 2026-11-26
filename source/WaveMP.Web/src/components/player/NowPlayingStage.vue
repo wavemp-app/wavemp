@@ -13,6 +13,7 @@ import { useContextMenuStore } from '@/stores/contextMenu'
 import LyricsStage from './LyricsStage.vue'
 import StageVisualization from './StageVisualization.vue'
 import VideoStage from './VideoStage.vue'
+import type { VideoDiagnosticsSnapshot } from '@/player/videoDiagnostics'
 import VisualizationControls from './VisualizationControls.vue'
 import { artistLabelKey } from '@/library/presentation'
 import type { TrackLyrics } from '@/lyrics/timing'
@@ -51,6 +52,8 @@ const props = withDefaults(
         visualization?: VisualizationSettings
         /** Whether videos show the ambient light around their picture. */
         ambient?: boolean
+        /** The diagnostics of the video, while this device shows them; null otherwise. */
+        videoDiagnostics?: VideoDiagnosticsSnapshot | null
         /** The lyrics of the track; null for tracks without lyrics. */
         lyrics?: TrackLyrics | null
         /** Whether the music plays. */
@@ -78,6 +81,7 @@ const props = withDefaults(
         audio: null,
         visualization: () => defaultVisualizationSettings,
         ambient: true,
+        videoDiagnostics: null,
         lyrics: null,
         playing: false,
         position: 0,
@@ -299,6 +303,7 @@ const subtitle = computed(() => {
                     ref="videoStage"
                     :active="view === 'video'"
                     :ambient="ambient"
+                    :diagnostics="videoDiagnostics"
                     @attach="emit('attachVideo', $event)"
                     @detach="emit('detachVideo', $event)"
                 />

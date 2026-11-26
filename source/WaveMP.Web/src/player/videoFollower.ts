@@ -494,7 +494,7 @@ export class VideoFollower {
 
     private record(kind: VideoDiagnosticsEventKind, value: number | null = null): void {
         if (this.loaded) {
-            this.diagnostics.record(kind, this.environment.now(), value)
+            this.diagnostics.record(kind, this.environment.now(), value, this.wantsPlaying)
         }
     }
 

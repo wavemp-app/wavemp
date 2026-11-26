@@ -3,6 +3,8 @@ import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import BaseButton from '@/components/base/BaseButton.vue'
 import VideoAmbient from './VideoAmbient.vue'
+import VideoDiagnostics from './VideoDiagnostics.vue'
+import type { VideoDiagnosticsSnapshot } from '@/player/videoDiagnostics'
 import { canFullscreen, enterFullscreen, exitFullscreen, isFullscreen } from '@/player/fullscreen'
 import { videoAspectRatio, videoOrientation } from '@/player/videoOrientation'
 
@@ -14,7 +16,8 @@ import { videoAspectRatio, videoOrientation } from '@/player/videoOrientation'
  * undistorted in the middle of the stage; the orientation of its picture (data-orientation) and its
  * aspect ratio (--wmp-video-aspect-ratio) let the theme design the free areas around it, for
  * example with the video-backdrop behind it. Above the backdrop, the video-ambient fills these areas
- * with soft light in the colors of the picture, unless the profile switched it off.
+ * with soft light in the colors of the picture, unless the profile switched it off. With the
+ * developer setting of the device, the video-diagnostics lie above the video.
  */
 const props = withDefaults(
     defineProps<{
@@ -22,8 +25,10 @@ const props = withDefaults(
         active?: boolean
         /** Whether the profile shows the ambient light around the picture. */
         ambient?: boolean
+        /** The diagnostics of the video, while this device shows them; null otherwise. */
+        diagnostics?: VideoDiagnosticsSnapshot | null
     }>(),
-    { active: true, ambient: true },
+    { active: true, ambient: true, diagnostics: null },
 )
 
 const emit = defineEmits<{
@@ -129,6 +134,7 @@ defineExpose({ fullscreen, fullscreenAvailable, toggleFullscreen })
             disablepictureinpicture
             :aria-label="t('nowPlaying.video')"
         ></video>
+        <VideoDiagnostics v-if="diagnostics" :snapshot="diagnostics" />
         <BaseButton
             part="btn-fullscreen"
             variant="icon"

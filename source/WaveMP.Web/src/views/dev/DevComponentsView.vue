@@ -188,6 +188,7 @@ import {
     sampleFiles,
     sampleLyrics,
     sampleLyricsPosition,
+    sampleVideoDiagnostics,
     sampleOnlineCurrent,
     sampleOnlineMatches,
     sampleOrganizeItems,
@@ -2486,6 +2487,7 @@ const sampleTranscodeJobs = computed<TranscodeJob[]>(() => {
                             :mode="sampleViewMode"
                             :view="stageViewOf(sampleViewMode, true, 'failed')"
                             video-state="failed"
+                            :video-diagnostics="sampleVideoDiagnostics()"
                             @select-mode="sampleViewMode = $event"
                         />
                     </div>

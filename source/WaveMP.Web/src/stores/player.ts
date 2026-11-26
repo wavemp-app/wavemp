@@ -111,6 +111,11 @@ import {
 import { browserVideoFormats, type VideoFormats } from '@/player/videoFormats'
 import { stageViewOf, type StageView, type VideoState } from '@/player/videoSync'
 import { clampVolume, loadVolume, saveVolume, volumeToGain } from '@/player/volume'
+import {
+    loadVideoDiagnostics,
+    saveVideoDiagnostics,
+    type VideoDiagnosticsSnapshot,
+} from '@/player/videoDiagnostics'
 import { useCastStore } from './cast'
 import { useCoversStore } from './covers'
 import { devicesDependencies, useDevicesStore } from './devices'
@@ -161,7 +166,14 @@ export type PlayerEngineHooks = Pick<
 /** What the store needs from the video follower; tests replace it. */
 export type PlayerVideoFollower = Pick<
     VideoFollower,
-    'load' | 'unload' | 'setActive' | 'setOffset' | 'sync' | 'dispose' | 'allowPlayback'
+    | 'load'
+    | 'unload'
+    | 'setActive'
+    | 'setOffset'
+    | 'sync'
+    | 'dispose'
+    | 'allowPlayback'
+    | 'setDiagnostics'
 >
 
 /** Parts of the browser the player uses; tests replace them. */
@@ -291,6 +303,10 @@ export const usePlayerStore = defineStore('player', () => {
     const videoElement = shallowRef<HTMLVideoElement | null>(null)
     /** State of the video of the current track. */
     const videoState = ref<VideoState>('idle')
+    /** Whether this device shows the diagnostics of the video (a developer setting). */
+    const videoDiagnosticsEnabled = ref(loadVideoDiagnostics())
+    /** The diagnostics of the current video while they are shown; null otherwise. */
+    const videoDiagnostics = shallowRef<VideoDiagnosticsSnapshot | null>(null)
     /** Whether the page is visible; a hidden page shows no video. */
     const pageVisible = ref(
         typeof document === 'undefined' || document.visibilityState !== 'hidden',
@@ -1562,7 +1578,11 @@ export const usePlayerStore = defineStore('player', () => {
             userPause: pause,
             userSeek: seek,
             ownControlsChange: onVideoOwnControls,
+            diagnostics: (snapshot) => {
+                videoDiagnostics.value = snapshot
+            },
         })
+        follower.setDiagnostics(videoDiagnosticsEnabled.value)
         videoElement.value = element
         // Not left to the watcher: when another element showed the video before, whether it is
         // wanted does not change, but the new element has to load it.
@@ -1581,7 +1601,19 @@ export const usePlayerStore = defineStore('player', () => {
         follower?.dispose()
         follower = null
         videoState.value = 'idle'
+        videoDiagnostics.value = null
         videoOwnControls.value = false
+    }
+
+    /** Shows or hides the diagnostics of the video on this device. */
+    function setVideoDiagnostics(enabled: boolean): void {
+        videoDiagnosticsEnabled.value = enabled
+        saveVideoDiagnostics(enabled)
+        if (!enabled) {
+            videoDiagnostics.value = null
+        }
+
+        follower?.setDiagnostics(enabled)
     }
 
     /**
@@ -1654,6 +1686,7 @@ export const usePlayerStore = defineStore('player', () => {
             videoRetried = null
             follower?.unload()
             videoState.value = 'idle'
+            videoDiagnostics.value = null
         }
 
         if (!follower) {
@@ -2253,6 +2286,8 @@ export const usePlayerStore = defineStore('player', () => {
         viewMode,
         stageView,
         videoState,
+        videoDiagnosticsEnabled,
+        videoDiagnostics,
         hasVideo,
         lyrics,
         hasLyrics,
@@ -2300,6 +2335,7 @@ export const usePlayerStore = defineStore('player', () => {
         attachVideo,
         detachVideo,
         applyVideoOffset,
+        setVideoDiagnostics,
         startSleepTimer,
         cancelSleepTimer,
         requestCast,

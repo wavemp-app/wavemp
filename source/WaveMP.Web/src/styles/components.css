@@ -4388,6 +4388,93 @@
         opacity: 1;
     }
 
+    /*
+     * The video diagnostics (developer setting of the device): a compact panel over the top left
+     * corner of the video, over its whole width on phones. Its height is limited by the stage, so
+     * the log scrolls in it; the figures are tabular, so the values do not jump while they change.
+     */
+    [data-part='video-diagnostics'] {
+        position: absolute;
+        inset-block-start: var(--wmp-space-s);
+        inset-inline-start: var(--wmp-space-s);
+        z-index: 1;
+        display: grid;
+        gap: var(--wmp-space-xs);
+        inline-size: min(22rem, calc(100% - 2 * var(--wmp-space-s)));
+        max-block-size: calc(100% - 2 * var(--wmp-space-s));
+        overflow: auto;
+        padding: var(--wmp-space-s);
+        border-radius: var(--wmp-radius-s);
+        font-size: var(--wmp-video-diagnostics-font-size);
+        line-height: 1.35;
+        color: var(--wmp-video-diagnostics-color);
+        background: var(--wmp-video-diagnostics-background);
+    }
+
+    [data-part='diagnostics-title'] {
+        margin: 0;
+        font-size: inherit;
+        font-weight: 700;
+    }
+
+    [data-part='video-diagnostics'][data-state~='stutter'] > [data-part='diagnostics-title'],
+    [data-part='video-diagnostics'][data-state~='stutter'] [data-field='stutter'] {
+        color: var(--wmp-video-diagnostics-alert-color);
+    }
+
+    [data-part='diagnostics-values'] {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        gap: 0 var(--wmp-space-s);
+        margin: 0;
+    }
+
+    [data-part='diagnostics-value'] {
+        display: contents;
+    }
+
+    [data-part='diagnostics-value'] > [data-part='label'] {
+        opacity: 0.75;
+    }
+
+    [data-part='diagnostics-figure'] {
+        margin: 0;
+        font-variant-numeric: tabular-nums;
+    }
+
+    [data-part='diagnostics-log'] {
+        display: grid;
+        gap: 2px;
+        margin: 0;
+        padding: var(--wmp-space-xs) 0 0;
+        list-style: none;
+        border-block-start: 1px solid currentColor;
+    }
+
+    [data-part='diagnostics-event'] {
+        display: grid;
+        grid-template-columns: 3.5em minmax(0, 1fr);
+        gap: 0 var(--wmp-space-s);
+    }
+
+    [data-part='diagnostics-event'] > [data-part='diagnostics-figure'] {
+        grid-column: 2;
+        opacity: 0.75;
+    }
+
+    [data-part='diagnostics-event'][data-kind='stutter-start'] {
+        color: var(--wmp-video-diagnostics-alert-color);
+    }
+
+    [data-part='diagnostics-time'] {
+        font-variant-numeric: tabular-nums;
+        opacity: 0.75;
+    }
+
+    [data-part='video-diagnostics'] > [data-part='button'] {
+        justify-self: start;
+    }
+
     /* --- Queue --------------------------------------------------------------------------- */
 
     [data-part='queue'] {

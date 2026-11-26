@@ -883,7 +883,12 @@
     "avatar": "Profilbild",
     "avatarOn": "Dieses Profil zeigt ein Bild.",
     "avatarOff": "Dieses Profil zeigt seine Initialen.",
-    "changeAvatar": "Bild ändern"
+    "changeAvatar": "Bild ändern",
+    "developer": {
+      "title": "Entwickler",
+      "videoDiagnostics": "Video-Diagnose anzeigen",
+      "videoDiagnosticsHint": "Zeigt auf dem Video von „Aktuelle Wiedergabe“, wie es der Musik folgt: Abweichung, Geschwindigkeit, Sprünge, Puffer und verworfene Bilder, mit einem Protokoll jedes Ruckelns. Gilt nur für dieses Gerät."
+    }
   },
   "pin": {
     "title": "PIN von {name} eingeben",
@@ -2730,5 +2735,52 @@
       "time": "Zeit",
       "firstPlayed": "Zuerst gehört"
     }
+  },
+  "videoDiagnostics": {
+    "title": "Video-Diagnose",
+    "delivery": "Auslieferung",
+    "deliveries": {
+      "file": "Datei (Direktwiedergabe)",
+      "hls": "HLS (transcodiert)"
+    },
+    "drift": "Abweichung",
+    "rate": "Geschwindigkeit",
+    "rateValue": "{value}×",
+    "action": "Nachführung",
+    "actions": {
+      "hold": "Hält das Bild",
+      "seek": "Springt",
+      "rate": "Passt die Geschwindigkeit an",
+      "wait": "Wartet auf das Video"
+    },
+    "seeks": "Sprünge",
+    "seeksValue": "{seeks} ({missed} nacheinander verfehlt)",
+    "seekLatency": "Dauer eines Sprungs",
+    "readyState": "Bereitschaft",
+    "buffered": "Gepuffert",
+    "bufferedValue": "{start} bis {end} s ({ahead} s voraus)",
+    "nothingBuffered": "Nichts an der Position",
+    "droppedFrames": "Verworfene Bilder",
+    "droppedFramesValue": "{dropped} von {total}",
+    "stutter": "Wiedergabe",
+    "stuttering": "Ruckelt (Ruckeln {count} dieses Videos)",
+    "smooth": "Flüssig (bisher {count}-mal geruckelt)",
+    "unknown": "Unbekannt",
+    "seconds": "{value} s",
+    "milliseconds": "{value} ms",
+    "log": "Protokoll des Videos",
+    "events": {
+      "seek": "Sprung zu {position} s",
+      "rate": "Geschwindigkeit {value}×",
+      "waiting": "Wartet auf Daten",
+      "stalled": "Bekommt keine Daten",
+      "stutterStart": "Ruckeln beginnt",
+      "stutterEnd": "Nach {length} s wieder flüssig",
+      "error": "Fehler des Videos"
+    },
+    "eventDetails": "Abweichung {drift}, Bereitschaft {readyState}, {ahead} s gepuffert",
+    "copy": "Protokoll kopieren",
+    "copied": "Protokoll kopiert",
+    "copyFailed": "Protokoll konnte nicht kopiert werden"
   }
 }

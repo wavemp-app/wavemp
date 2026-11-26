@@ -57,7 +57,8 @@ const equalizer = useEqualizerStore()
 const health = useHealthStore()
 const cast = useCastStore()
 /** Whether this browser plays on in the background without effects (iPhone and iPad). */
-const backgroundAudio = usePlayerStore().backgroundAudio
+const player = usePlayerStore()
+const backgroundAudio = player.backgroundAudio
 const resume = useResumeStore()
 const format = useFormat()
 
@@ -71,6 +72,7 @@ const resumeTitleId = useId()
 const devicesTitleId = useId()
 const scrobblingTitleId = useId()
 const subsonicTitleId = useId()
+const developerTitleId = useId()
 
 const avatarOpen = ref(false)
 
@@ -667,6 +669,18 @@ async function changeSleepTimerFade(value: string): Promise<void> {
             <h2 :id="subsonicTitleId" data-part="section-title">{{ t('subsonic.title') }}</h2>
             <p data-part="form-note">{{ t('subsonic.hint') }}</p>
             <SubsonicAccess />
+        </section>
+        <section data-part="section" data-item="developer" :aria-labelledby="developerTitleId">
+            <h2 :id="developerTitleId" data-part="section-title">
+                {{ t('settings.developer.title') }}
+            </h2>
+            <BaseCheckbox
+                :model-value="player.videoDiagnosticsEnabled"
+                data-field="video-diagnostics"
+                :label="t('settings.developer.videoDiagnostics')"
+                :hint="t('settings.developer.videoDiagnosticsHint')"
+                @update:model-value="player.setVideoDiagnostics"
+            />
         </section>
         <section data-part="section" data-item="about" :aria-labelledby="aboutTitleId">
             <h2 :id="aboutTitleId" data-part="section-title">{{ t('settings.about') }}</h2>

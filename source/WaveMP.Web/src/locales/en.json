@@ -883,7 +883,12 @@
     "avatar": "Profile picture",
     "avatarOn": "This profile shows a picture.",
     "avatarOff": "This profile shows its initials.",
-    "changeAvatar": "Change picture"
+    "changeAvatar": "Change picture",
+    "developer": {
+      "title": "Developer",
+      "videoDiagnostics": "Show video diagnostics",
+      "videoDiagnosticsHint": "Shows on the video of Now Playing how it follows the music: drift, speed, seeks, buffer and dropped frames, with a log of each stutter. Applies to this device only."
+    }
   },
   "pin": {
     "title": "Enter the PIN of {name}",
@@ -2730,5 +2735,52 @@
       "time": "Time",
       "firstPlayed": "First played"
     }
+  },
+  "videoDiagnostics": {
+    "title": "Video diagnostics",
+    "delivery": "Delivery",
+    "deliveries": {
+      "file": "File (direct play)",
+      "hls": "HLS (transcoded)"
+    },
+    "drift": "Drift",
+    "rate": "Speed",
+    "rateValue": "{value}×",
+    "action": "Follower",
+    "actions": {
+      "hold": "Holds the picture",
+      "seek": "Seeks",
+      "rate": "Adjusts the speed",
+      "wait": "Waits for the video"
+    },
+    "seeks": "Seeks",
+    "seeksValue": "{seeks} ({missed} missed in a row)",
+    "seekLatency": "Seek time",
+    "readyState": "Ready state",
+    "buffered": "Buffered",
+    "bufferedValue": "{start} to {end} s ({ahead} s ahead)",
+    "nothingBuffered": "Nothing at the position",
+    "droppedFrames": "Dropped frames",
+    "droppedFramesValue": "{dropped} of {total}",
+    "stutter": "Playback",
+    "stuttering": "Stutters (stutter {count} of this video)",
+    "smooth": "Smooth ({count} stutters so far)",
+    "unknown": "Unknown",
+    "seconds": "{value} s",
+    "milliseconds": "{value} ms",
+    "log": "Log of the video",
+    "events": {
+      "seek": "Seek to {position} s",
+      "rate": "Speed {value}×",
+      "waiting": "Waits for data",
+      "stalled": "Gets no data",
+      "stutterStart": "Stutter starts",
+      "stutterEnd": "Smooth again after {length} s",
+      "error": "Error of the video"
+    },
+    "eventDetails": "Drift {drift}, ready state {readyState}, {ahead} s buffered",
+    "copy": "Copy log",
+    "copied": "Log copied",
+    "copyFailed": "Could not copy the log"
   }
 }

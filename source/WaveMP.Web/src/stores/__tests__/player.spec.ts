@@ -7,6 +7,10 @@ import { getLyrics } from '@/lyrics/api'
 import type { TrackLyrics } from '@/lyrics/timing'
 import { getPlayback, getVideoPlayback, recordPlay, reportNowPlaying } from '@/player/api'
 import type { FollowerClock, VideoFollowerEvents } from '@/player/videoFollower'
+import {
+    videoDiagnosticsStorageKey,
+    type VideoDiagnosticsSnapshot,
+} from '@/player/videoDiagnostics'
 import { playTracks } from '@/player/queue'
 import {
     playerDependencies,
@@ -71,6 +75,7 @@ class FakeFollower implements PlayerVideoFollower {
     readonly sync = vi.fn()
     readonly dispose = vi.fn()
     readonly allowPlayback = vi.fn()
+    readonly setDiagnostics = vi.fn()
 
     constructor(
         readonly clock: () => FollowerClock,
@@ -576,6 +581,27 @@ describe('player store', () => {
             follower.events.stateChange?.('ready')
             expect(player.videoState).toBe('ready')
             expect(player.stageView).toBe('video')
+        })
+
+        it('shows the diagnostics of the video while the device switched them on', async () => {
+            localStorage.removeItem(videoDiagnosticsStorageKey)
+            const player = usePlayerStore()
+            player.attachVideo(element)
+            player.playTracks(withVideo, 0)
+            await flushPromises()
+            expect(player.videoDiagnosticsEnabled).toBe(false)
+            expect(follower.setDiagnostics).toHaveBeenLastCalledWith(false)
+
+            player.setVideoDiagnostics(true)
+            expect(follower.setDiagnostics).toHaveBeenLastCalledWith(true)
+            expect(localStorage.getItem(videoDiagnosticsStorageKey)).toBe('true')
+            const report = { delivery: 'file' } as VideoDiagnosticsSnapshot
+            follower.events.diagnostics?.(report)
+            expect(player.videoDiagnostics).toBe(report)
+
+            player.setVideoDiagnostics(false)
+            expect(player.videoDiagnostics).toBeNull()
+            expect(localStorage.getItem(videoDiagnosticsStorageKey)).toBeNull()
         })
 
         it('lets the video follow the position of the audio engine', async () => {

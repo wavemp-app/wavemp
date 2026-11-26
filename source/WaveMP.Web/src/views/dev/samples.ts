@@ -20,6 +20,7 @@ import type { OverviewGroup } from '@/library/groupOverview'
 import type { OnlineMatch, OnlineValues } from '@/library/onlineMetadata'
 import type { TileGroup } from '@/library/tileGrouping'
 import type { LyricsLineTiming, TrackLyrics } from '@/lyrics/timing'
+import type { VideoDiagnosticsSnapshot } from '@/player/videoDiagnostics'
 
 type Translate = (key: string, values?: Record<string, unknown>) => string
 
@@ -491,6 +492,35 @@ export function sampleLyrics(t: Translate, trackId: string): TrackLyrics {
 
 /** Position of the music in the lyrics sample, in seconds. */
 export const sampleLyricsPosition = 12.9
+
+/** Diagnostics of a transcoded video that stuttered once and plays smoothly again. */
+export function sampleVideoDiagnostics(): VideoDiagnosticsSnapshot {
+    const event = { position: 61.2, rate: 1, readyState: 4, bufferedAhead: 8.4, action: 'rate' }
+    return {
+        delivery: 'hls',
+        elapsed: 74.5,
+        drift: -0.062,
+        rate: 1.02,
+        readyState: 4,
+        action: 'rate',
+        buffered: { start: 54, end: 84 },
+        bufferedAhead: 9.6,
+        seeks: 2,
+        missedSeeks: 0,
+        seekLatency: 0.38,
+        droppedFrames: 14,
+        totalFrames: 1862,
+        stuttering: false,
+        stutters: 1,
+        events: [
+            { ...event, at: 58.1, kind: 'waiting', drift: -0.21, readyState: 2, value: null },
+            { ...event, at: 58.4, kind: 'stutter-start', drift: -0.34, readyState: 2, value: 6 },
+            { ...event, at: 60.2, kind: 'seek', drift: -0.58, value: 61.6 },
+            { ...event, at: 61.5, kind: 'rate', drift: -0.09, value: 1.02 },
+            { ...event, at: 66.3, kind: 'stutter-end', drift: -0.05, value: 2.1 },
+        ],
+    }
+}
 
 /** The selection of the sample files: the mp3 selected, the video automatic, a cover missing. */
 export function sampleFileSelection(): TrackFileSelection {

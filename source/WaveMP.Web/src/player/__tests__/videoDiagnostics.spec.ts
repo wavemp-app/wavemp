@@ -134,6 +134,21 @@ describe('video diagnostics', () => {
         ])
     })
 
+    it('takes no seek or wait of a paused video for a stutter', () => {
+        const recorder = new VideoDiagnosticsRecorder()
+        recorder.start('file', 0)
+        recorder.sample(sample({ time: 0 }))
+
+        recorder.record('seek', 1000, 31, false)
+        recorder.record('waiting', 1100, null, false)
+        recorder.record('seek', 1200, 32, false)
+
+        const snapshot = recorder.snapshot(1300)
+        expect(snapshot.stuttering).toBe(false)
+        expect(snapshot.stutters).toBe(0)
+        expect(snapshot.seeks).toBe(2)
+    })
+
     it('starts anew with every video', () => {
         const recorder = new VideoDiagnosticsRecorder()
         recorder.start('hls', 0)

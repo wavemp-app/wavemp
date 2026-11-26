@@ -346,6 +346,10 @@
         --wmp-video-ambient-scale: 1.2;
         --wmp-video-ambient-transition-duration: 0.25s;
         --wmp-video-ambient-fade-duration: 0.6s;
+        --wmp-video-diagnostics-background: rgb(0 0 0 / 0.78);
+        --wmp-video-diagnostics-color: #ffffff;
+        --wmp-video-diagnostics-alert-color: #ffb347;
+        --wmp-video-diagnostics-font-size: 0.75rem;
         --wmp-lyrics-color: #ffffff;
         --wmp-lyrics-muted-color: rgb(255 255 255 / 0.45);
         --wmp-lyrics-active-scale: 1.12;

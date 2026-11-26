@@ -557,6 +557,7 @@ describe('player store in the background', () => {
                     sync: vi.fn(),
                     dispose: vi.fn(),
                     allowPlayback: vi.fn(),
+                    setDiagnostics: vi.fn(),
                 }
             }
             const player = usePlayerStore()
@@ -624,6 +625,7 @@ describe('player store in the background', () => {
                     sync: vi.fn(),
                     dispose: vi.fn(),
                     allowPlayback: vi.fn(),
+                    setDiagnostics: vi.fn(),
                 })
         })
 

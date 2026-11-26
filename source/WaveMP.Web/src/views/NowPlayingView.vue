@@ -52,6 +52,7 @@ function updateVisualization(change: VisualizationSettingsChange): void {
             :audio="player.analyser"
             :visualization="session.visualization"
             :ambient="session.video.ambientMode"
+            :video-diagnostics="player.videoDiagnostics"
             :lyrics="player.lyrics"
             :playing="player.playback === 'playing'"
             :position="player.position"
