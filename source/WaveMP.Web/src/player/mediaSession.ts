@@ -88,6 +88,21 @@ export function connectMediaSession(
     }
 }
 
+/**
+ * Shows the state of the player in the media session again, also the metadata it already showed:
+ * the native full screen of a video may have shown its own in the meantime (iPhone and iPad).
+ */
+export function refreshMediaSession(
+    state: MediaSessionState,
+    session: MediaSession | null = defaultSession(),
+): void {
+    if (session) {
+        shown.delete(session)
+    }
+
+    updateMediaSession(state, session)
+}
+
 /** Shows the state of the player in the media session. */
 export function updateMediaSession(
     state: MediaSessionState,

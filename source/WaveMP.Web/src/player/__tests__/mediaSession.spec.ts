@@ -1,5 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { connectMediaSession, updateMediaSession, type MediaSessionHandlers } from '../mediaSession'
+import {
+    connectMediaSession,
+    refreshMediaSession,
+    updateMediaSession,
+    type MediaSessionHandlers,
+} from '../mediaSession'
 
 class FakeMetadata {
     title: string
@@ -176,5 +181,21 @@ describe('media session', () => {
         )
         expect(session.metadata).toBeNull()
         expect(session.playbackState).toBe('none')
+    })
+
+    it('shows the state and the metadata again after the full screen of a video', () => {
+        const session = fakeSession()
+        const state = { playback: 'playing', title: 'Song', position: 1, duration: 10 } as const
+        updateMediaSession(state, session as unknown as MediaSession)
+        const first = session.metadata
+        // The native full screen of the video showed its own state meanwhile.
+        session.metadata = new FakeMetadata({ title: 'Video', artist: '', album: '', artwork: [] })
+        session.playbackState = 'paused'
+
+        refreshMediaSession(state, session as unknown as MediaSession)
+
+        expect(session.metadata).not.toBe(first)
+        expect(session.metadata.title).toBe('Song')
+        expect(session.playbackState).toBe('playing')
     })
 })

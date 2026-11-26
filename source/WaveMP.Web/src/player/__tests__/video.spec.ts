@@ -146,6 +146,8 @@ describe('VideoFollower', () => {
             stateChange: vi.fn((state) => states.push(state)),
             userPlay: vi.fn(),
             userPause: vi.fn(),
+            userSeek: vi.fn(),
+            ownControlsChange: vi.fn(),
         }
         follower = new VideoFollower(
             video as unknown as HTMLVideoElement,
@@ -394,6 +396,115 @@ describe('VideoFollower', () => {
 
         video.play()
         expect(events.userPlay).toHaveBeenCalledOnce()
+    })
+
+    describe('in the native full screen', () => {
+        /** The video shows in the native full screen with its own controls. */
+        function enterFullscreen(): void {
+            ownControls = true
+            video.dispatchEvent(new Event('webkitbeginfullscreen'))
+        }
+
+        it('reports the start and the end and catches up with the audio on the end', () => {
+            loadShown()
+            enterFullscreen()
+            expect(events.ownControlsChange).toHaveBeenLastCalledWith(true)
+
+            now += 5000
+            clock.position = 45
+            ownControls = false
+            video.dispatchEvent(new Event('webkitendfullscreen'))
+
+            expect(events.ownControlsChange).toHaveBeenLastCalledWith(false)
+            expect(video.currentTime).toBe(45)
+        })
+
+        it('keeps the video muted when its own controls turn the sound on', () => {
+            loadShown()
+            enterFullscreen()
+
+            video.muted = false
+            video.dispatchEvent(new Event('volumechange'))
+
+            expect(video.muted).toBe(true)
+        })
+
+        it('plays and pauses the whole player and follows it without fighting', () => {
+            loadShown()
+            enterFullscreen()
+
+            video.pause()
+            expect(events.userPause).toHaveBeenCalledOnce()
+            // The player paused: the follower leaves the paused video alone.
+            clock.playing = false
+            tick()
+            expect(video.play).toHaveBeenCalledOnce()
+
+            video.play()
+            expect(events.userPlay).toHaveBeenCalledOnce()
+            // The player plays: the follower takes the video over again without a new event.
+            clock.playing = true
+            tick()
+            expect(video.paused).toBe(false)
+            expect(events.userPause).toHaveBeenCalledOnce()
+            expect(events.userPlay).toHaveBeenCalledOnce()
+        })
+
+        it('pauses a video the user started when the audio does not play', () => {
+            loadShown()
+            enterFullscreen()
+            video.pause()
+            clock.playing = false
+
+            video.play()
+            expect(events.userPlay).toHaveBeenCalledOnce()
+            // The audio could not start: the video shows the real state of the player.
+            tick()
+
+            expect(video.paused).toBe(true)
+            expect(events.userPause).toHaveBeenCalledOnce()
+        })
+
+        it('moves the audio with the timeline of its own controls', () => {
+            loadShown(1500)
+            enterFullscreen()
+
+            video.currentTime = 91.5
+            video.dispatchEvent(new Event('seeking'))
+
+            expect(events.userSeek).toHaveBeenCalledExactlyOnceWith(90)
+            // The video is not sent back to the old position of the audio meanwhile.
+            video.seeked()
+            clock.position = 90
+            tick()
+            expect(video.currentTime).toBe(91.5)
+        })
+
+        it('does not move the audio with its own seeks or small jumps of the browser', () => {
+            loadShown()
+            enterFullscreen()
+
+            now += 5000
+            clock.position = 60
+            tick()
+            expect(video.currentTime).toBe(60)
+            video.dispatchEvent(new Event('seeking'))
+            video.seeked()
+
+            video.currentTime = 60.4
+            video.dispatchEvent(new Event('seeking'))
+
+            expect(events.userSeek).not.toHaveBeenCalled()
+        })
+
+        it('leaves seeks outside of the full screen to the follower', () => {
+            loadShown()
+
+            video.currentTime = 120
+            video.dispatchEvent(new Event('seeking'))
+
+            expect(events.userSeek).not.toHaveBeenCalled()
+        })
     })
 
     it('ignores pauses of the browser outside of the own controls', () => {

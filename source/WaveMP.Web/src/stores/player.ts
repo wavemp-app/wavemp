@@ -66,8 +66,10 @@ import { browserAudioFormats } from '@/player/formats'
 import { PlayHistoryTracker } from '@/player/history'
 import {
     connectMediaSession,
+    refreshMediaSession,
     updateMediaSession,
     type MediaSessionArtwork,
+    type MediaSessionState,
 } from '@/player/mediaSession'
 import { PlaybackPathEngine, type PathEngineOptions } from '@/player/pathEngine'
 import {
@@ -296,6 +298,11 @@ export const usePlayerStore = defineStore('player', () => {
     /** Whether the page is in the background, as the playback paths of the engine know it. */
     let pageHidden = !pageVisible.value
     /**
+     * Whether the video shows in the native full screen with its own controls (iPhone and iPad);
+     * it stays shown there, also when the browser reports the page as hidden meanwhile.
+     */
+    const videoOwnControls = ref(false)
+    /**
      * Whether the browser stops the audio graph in the background (iPhone and iPad): the music then
      * plays on there through the plain path, without equalizer, crossfade and visualization.
      */
@@ -366,7 +373,7 @@ export const usePlayerStore = defineStore('player', () => {
             videoElement.value !== null &&
             hasVideo.value &&
             viewMode.value === PlayerViewModeObject.Video &&
-            (pageVisible.value || videoInOtherWindow.value) &&
+            (pageVisible.value || videoInOtherWindow.value || videoOwnControls.value) &&
             !casting.value &&
             !remote.value,
     )
@@ -587,18 +594,36 @@ export const usePlayerStore = defineStore('player', () => {
      * meanwhile loads again, paused at its position, so the next tap plays it at once.
      */
     function reconcileAfterReturn(): void {
-        if (output !== 'local' || remote.value || !loaded || !engine) {
+        if (!reconcilePlayback() || !engine) {
             return
-        }
-
-        if (playback.value === 'playing' && !loading.value && engine.paused === true) {
-            pauseHere()
         }
 
         if (playback.value === 'paused' && loadedExpired()) {
             engine.stop()
             void startCurrent(false, position.value)
         }
+    }
+
+    /**
+     * Shows the state the engine of the browser really has: paused when the browser stopped the
+     * track without telling the page, playing when it plays although the player shows it paused
+     * (e.g. after the native full screen of the video, where the system plays and pauses as well).
+     * Returns whether a loaded track of this browser was checked.
+     */
+    function reconcilePlayback(): boolean {
+        if (output !== 'local' || remote.value || !loaded || !engine) {
+            return false
+        }
+
+        if (!loading.value) {
+            if (playback.value === 'playing' && engine.paused === true) {
+                pauseHere()
+            } else if (playback.value === 'paused' && engine.paused === false) {
+                playback.value = 'playing'
+            }
+        }
+
+        return true
     }
 
     /** Starts the engine and notes whether its equalizer works (only the browser has one). */
@@ -1535,6 +1560,8 @@ export const usePlayerStore = defineStore('player', () => {
             // The own controls of the video (e.g. full screen on the iPhone) control the audio.
             userPlay: play,
             userPause: pause,
+            userSeek: seek,
+            ownControlsChange: onVideoOwnControls,
         })
         videoElement.value = element
         // Not left to the watcher: when another element showed the video before, whether it is
@@ -1554,6 +1581,24 @@ export const usePlayerStore = defineStore('player', () => {
         follower?.dispose()
         follower = null
         videoState.value = 'idle'
+        videoOwnControls.value = false
+    }
+
+    /**
+     * The video entered or left the native full screen with its own controls. Back on the page,
+     * the player shows the state the engine really has (the system plays and pauses there, too),
+     * and the media session shows it again, which the full screen of the video may have replaced.
+     */
+    function onVideoOwnControls(shown: boolean): void {
+        videoOwnControls.value = shown
+        if (shown) {
+            return
+        }
+
+        reconcilePlayback()
+        if (playerDependencies.mediaSession) {
+            refreshMediaSession(mediaSessionState())
+        }
     }
 
     /** Applies a new offset to the video of a track at once, if it is the current one. */
@@ -2171,19 +2216,21 @@ export const usePlayerStore = defineStore('player', () => {
             next,
             seekTo: seek,
         })
-        watch(
-            () => ({ ...state.value, artwork: artwork.value }),
-            (value) =>
-                updateMediaSession({
-                    playback: value.playback,
-                    title: value.title,
-                    artist: value.artist,
-                    album: current.value?.track.album?.title ?? undefined,
-                    artwork: value.artwork,
-                    position: value.position,
-                    duration: value.duration,
-                }),
-        )
+        watch(mediaSessionState, (value) => updateMediaSession(value))
+    }
+
+    /** What the media session shows: the state of the transport bar with the cover. */
+    function mediaSessionState(): MediaSessionState {
+        const value = state.value
+        return {
+            playback: value.playback,
+            title: value.title,
+            artist: value.artist,
+            album: current.value?.track.album?.title ?? undefined,
+            artwork: artwork.value,
+            position: value.position,
+            duration: value.duration,
+        }
     }
 
     if (typeof window !== 'undefined') {

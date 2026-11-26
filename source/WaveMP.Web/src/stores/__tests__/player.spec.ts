@@ -53,6 +53,8 @@ class FakeEngine implements PlayerEngine {
     readonly restoreOutput = vi.fn()
     equalizerAvailable = true
     analyser: AnalyserNode | null = null
+    /** Whether the track does not play, as the browser reports it; unknown unless a test sets it. */
+    paused: boolean | undefined = undefined
 
     constructor(readonly events: EngineEvents) {}
 
@@ -781,6 +783,57 @@ describe('player store', () => {
             expect(player.state.playback).toBe('paused')
 
             follower.events.userPlay?.()
+            expect(player.state.playback).toBe('playing')
+        })
+
+        it('moves the audio with the timeline of the own controls of the video', async () => {
+            const player = usePlayerStore()
+            player.attachVideo(element)
+            player.playTracks(withVideo, 0)
+            await flushPromises()
+
+            follower.events.userSeek?.(90)
+
+            expect(engine.seek).toHaveBeenLastCalledWith(90)
+            expect(player.state.position).toBe(90)
+        })
+
+        it('keeps the video of the native full screen shown while the page reports hidden', async () => {
+            const player = usePlayerStore()
+            player.attachVideo(element)
+            player.playTracks(withVideo, 0)
+            await flushPromises()
+            follower.events.ownControlsChange?.(true)
+
+            Object.defineProperty(document, 'visibilityState', {
+                value: 'hidden',
+                configurable: true,
+            })
+            document.dispatchEvent(new Event('visibilitychange'))
+            await flushPromises()
+            expect(follower.setActive).toHaveBeenLastCalledWith(true)
+
+            follower.events.ownControlsChange?.(false)
+            await flushPromises()
+            expect(follower.setActive).toHaveBeenLastCalledWith(false)
+        })
+
+        it('shows the state the engine really has after the native full screen', async () => {
+            const player = usePlayerStore()
+            player.attachVideo(element)
+            player.playTracks(withVideo, 0)
+            await flushPromises()
+            follower.events.ownControlsChange?.(true)
+
+            // The system stopped the music while the full screen showed the video.
+            engine.paused = true
+            follower.events.ownControlsChange?.(false)
+            expect(player.state.playback).toBe('paused')
+
+            // The system played it again while the player showed it paused.
+            follower.events.ownControlsChange?.(true)
+            engine.paused = false
+            follower.events.ownControlsChange?.(false)
             expect(player.state.playback).toBe('playing')
         })
 

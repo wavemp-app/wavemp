@@ -6,7 +6,7 @@ import { getLyrics } from '@/lyrics/api'
 import { getPlayback, getVideoPlayback, recordPlay, reportNowPlaying } from '@/player/api'
 import type { AudioEnvironment } from '@/player/engine'
 import { PlaybackPathEngine } from '@/player/pathEngine'
-import type { FollowerClock } from '@/player/videoFollower'
+import type { FollowerClock, VideoFollowerEvents } from '@/player/videoFollower'
 import { castDependencies } from '../cast'
 import { useCoversStore } from '../covers'
 import { playerDependencies, usePlayerStore, type PlayerVideoFollower } from '../player'
@@ -464,6 +464,132 @@ describe('player store in the background', () => {
 
             expect(requests).toBe(1)
             expect(loadedOn('effects')?.paused).toBe(false)
+        })
+    })
+
+    describe('when the browser interrupts the audio graph in the foreground', () => {
+        /** WebKit keeps the graph interrupted: resume never settles. */
+        function stuck(): void {
+            context.state = 'interrupted'
+            context.resume.mockImplementation(() => new Promise<void>(() => undefined))
+        }
+
+        /** Lets the time for the graph run out (capped to a few milliseconds here). */
+        async function timeout(): Promise<void> {
+            await new Promise((resolve) => setTimeout(resolve, 20))
+            await settle()
+        }
+
+        it.each([true, false])(
+            'plays, pauses and skips without a reload and resumes the graph with the next tap (iPhone: %s)',
+            async (iPhone) => {
+                supported = iPhone
+                const player = await playing(42)
+                stuck()
+                context.dispatchEvent(new Event('statechange'))
+                await settle()
+
+                // The music plays on, heard, through the plain path.
+                expect(player.audioPath).toBe('plain')
+                expect(player.state.playback).toBe('playing')
+                expect(loadedOn('plain')?.paused).toBe(false)
+                expect(loadedOn('effects')).toBeUndefined()
+
+                player.pause()
+                expect(loadedOn('plain')?.paused).toBe(true)
+                player.play()
+                await settle()
+                expect(player.state.playback).toBe('playing')
+                expect(loadedOn('plain')?.paused).toBe(false)
+
+                player.next()
+                await settle()
+                expect(player.current?.track.id).toBe('b')
+                expect(loadedOn('plain')?.src).toBe('/stream/b?n=2')
+                expect(loadedOn('plain')?.paused).toBe(false)
+
+                // The next tap resumes the graph, and the effects path takes the music back.
+                context.resume.mockImplementation(() => {
+                    context.state = 'running'
+                    return Promise.resolve()
+                })
+                document.dispatchEvent(new Event('click'))
+                await settle()
+
+                expect(player.audioPath).toBe('effects')
+                expect(loadedOn('effects')?.src).toBe('/stream/b?n=2')
+                expect(loadedOn('effects')?.paused).toBe(false)
+                expect(loadedOn('plain')).toBeUndefined()
+                expect(player.state.playback).toBe('playing')
+            },
+        )
+
+        it('plays the next song when the graph stopped unnoticed and never resumes', async () => {
+            const player = await playing(42)
+            player.pause()
+            stuck()
+
+            player.next()
+            await timeout()
+
+            expect(player.current?.track.id).toBe('b')
+            expect(player.state.playback).toBe('paused')
+
+            player.play()
+            await timeout()
+
+            expect(player.state.playback).toBe('playing')
+            expect(player.audioPath).toBe('plain')
+            expect(loadedOn('plain')?.src).toBe('/stream/b?n=2')
+            expect(loadedOn('plain')?.paused).toBe(false)
+        })
+
+        it('follows play and pause of the native full screen of the video and shows the real state', async () => {
+            const events: VideoFollowerEvents[] = []
+            vi.mocked(getVideoPlayback).mockReset().mockResolvedValue(undefined)
+            playerDependencies.createVideoFollower = (_element, _clock, followerEvents) => {
+                events.push(followerEvents)
+                return {
+                    load: vi.fn(),
+                    unload: vi.fn(),
+                    setActive: vi.fn(),
+                    setOffset: vi.fn(),
+                    sync: vi.fn(),
+                    dispose: vi.fn(),
+                    allowPlayback: vi.fn(),
+                }
+            }
+            const player = usePlayerStore()
+            player.attachVideo({} as HTMLVideoElement)
+            player.playTracks([track('a', { hasVideo: true }), track('b')], 0)
+            await settle()
+            const video = events.at(-1)!
+            video.ownControlsChange?.(true)
+
+            // Pause in the full screen pauses the music; the system then interrupts the graph.
+            video.userPause?.()
+            expect(player.state.playback).toBe('paused')
+            expect(loadedOn('effects')?.paused).toBe(true)
+            stuck()
+
+            // Play in the full screen plays the music again, through the plain path.
+            video.userPlay?.()
+            await timeout()
+            expect(player.state.playback).toBe('playing')
+            expect(loadedOn('plain')?.paused).toBe(false)
+
+            // Back on the page the player shows what plays.
+            video.ownControlsChange?.(false)
+            expect(player.state.playback).toBe('playing')
+            loadedOn('plain')!.pause()
+            video.ownControlsChange?.(true)
+            video.ownControlsChange?.(false)
+            expect(player.state.playback).toBe('paused')
+
+            player.play()
+            await settle()
+            expect(player.state.playback).toBe('playing')
+            expect(loadedOn('plain')?.paused).toBe(false)
         })
     })
 
