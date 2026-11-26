@@ -353,6 +353,10 @@ async function openOrganizePreview(page: Page): Promise<void> {
  * Opens the editor of the layout template on the library page of the administration, scrolled to
  * it, with the live preview of the fixture. The media folders and the scans above it come from the
  * fixture as well, so the editor lies at the same place in every run.
+ *
+ * The page scrolls only once every section has loaded: a section above the editor that grows after
+ * the scroll (the list of media folders) makes the browser keep the editor in place (scroll
+ * anchoring), but at another fraction of a pixel, so its texts and borders look different.
  */
 async function openOrganizeTemplate(page: Page): Promise<void> {
     await mockOrganize(page)
@@ -364,8 +368,23 @@ async function openOrganizeTemplate(page: Page): Promise<void> {
         'data-state',
         'folders',
     )
-    await expect(page.locator("[data-part='run-list'] > [data-part='run-item']")).toHaveCount(3)
+    await expectLibraryPageLoaded(page)
     await section.evaluate((element) => element.scrollIntoView({ block: 'start' }))
+}
+
+/**
+ * Waits until every section of the library page of the administration shows what it loaded: the
+ * media folders and the scans of the fixture (the summary of the last scan comes with them), and
+ * no section (settings, lyrics lookups) still busy.
+ */
+async function expectLibraryPageLoaded(page: Page): Promise<void> {
+    const view = page.locator("[data-part='view'][data-view='admin-library']")
+    await expect(view.locator("[data-part='source-list'] > [data-part='source-item']")).toHaveCount(
+        1,
+    )
+    await expect(view.locator("[data-part='run-list'] > [data-part='run-item']")).toHaveCount(3)
+    await expect(view).not.toHaveAttribute('aria-busy', 'true')
+    await expect(view.locator("[aria-busy='true']")).toHaveCount(0)
 }
 
 /** The other sections of the library page show numbers of the instance. */
