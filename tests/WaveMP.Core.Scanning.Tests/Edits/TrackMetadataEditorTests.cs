@@ -367,8 +367,20 @@ public class TrackMetadataEditorTests
             Title = new TagChange<string?>("Title"),
         });
 
-        await _repository.Received(1).RenameArtistAsync("AC/DC", "ac/dc", CancellationToken.None);
-        await _repository.Received(1).RenameArtistAsync("AC/DC BAND", "AC/DC Band", CancellationToken.None);
+        await _repository.Received(1).RenameArtistAsync("acdc", "ac/dc", CancellationToken.None);
+        await _repository.Received(1).RenameArtistAsync("acdcband", "AC/DC Band", CancellationToken.None);
+    }
+
+    [Test]
+    public async Task UpdateAsync_Genre_TakesOverTheTypedSpelling()
+    {
+        await _editor.UpdateAsync(_trackId, new TagChanges
+        {
+            Genre = new TagChange<string?>("Hip-Hop"),
+            Title = new TagChange<string?>("Title"),
+        });
+
+        await _repository.Received(1).RenameGenreAsync("hiphop", "Hip-Hop", CancellationToken.None);
     }
 
     [Test]

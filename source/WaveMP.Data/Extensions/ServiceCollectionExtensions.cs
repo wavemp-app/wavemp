@@ -61,6 +61,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ISubsonicRepository, SubsonicRepository>();
         services.AddScoped<IOrganizeRepository, OrganizeRepository>();
         services.AddScoped<IOwnAlbumRepository, OwnAlbumRepository>();
+        services.AddScoped<INameKeyUpgradeRepository, NameKeyUpgradeRepository>();
 
         return services;
     }

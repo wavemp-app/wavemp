@@ -12,6 +12,7 @@ namespace WaveMP.Data.Projections;
 /// <param name="AlbumTitle">Title of the album.</param>
 /// <param name="AlbumArtistId">Id of the artist of the album.</param>
 /// <param name="AlbumArtistName">Name of the artist of the album.</param>
+/// <param name="GenreId">Id of the genre of the track.</param>
 /// <param name="Genre">Genre of the track.</param>
 /// <param name="Duration">Duration of the track.</param>
 public sealed record PlayStatisticsRow(
@@ -24,5 +25,6 @@ public sealed record PlayStatisticsRow(
     string? AlbumTitle,
     Guid? AlbumArtistId,
     string? AlbumArtistName,
+    Guid? GenreId,
     string? Genre,
     TimeSpan? Duration);

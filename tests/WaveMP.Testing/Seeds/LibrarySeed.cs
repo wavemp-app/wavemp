@@ -1,5 +1,7 @@
+using Microsoft.EntityFrameworkCore;
 using WaveMP.Data;
 using WaveMP.Data.Entities;
+using WaveMP.Data.Texts;
 
 namespace WaveMP.Testing.Seeds;
 
@@ -15,6 +17,7 @@ public sealed class LibrarySeed
     public static readonly DateTimeOffset DefaultTime = new(2026, 1, 1, 12, 0, 0, TimeSpan.Zero);
 
     private readonly List<object> _entities = [];
+    private readonly Dictionary<string, Genre> _genres = new(StringComparer.Ordinal);
     private int _counter;
 
     public Artist Artist(string name, DateTimeOffset? firstSeenAt = null)
@@ -23,7 +26,7 @@ public sealed class LibrarySeed
         {
             Id = Guid.CreateVersion7(),
             Name = name,
-            NormalizedName = name.ToUpperInvariant(),
+            NormalizedName = NameKeys.Of(name)!,
             FirstSeenAt = firstSeenAt ?? DefaultTime,
         };
         _entities.Add(artist);
@@ -41,7 +44,7 @@ public sealed class LibrarySeed
         {
             Id = Guid.CreateVersion7(),
             Title = title,
-            NormalizedTitle = title.ToUpperInvariant(),
+            NormalizedTitle = NameKeys.Of(title) ?? string.Empty,
             AlbumKey = Guid.NewGuid().ToString("N") + Guid.NewGuid().ToString("N"),
             AlbumArtistId = albumArtist?.Id,
             IsCompilation = isCompilation,
@@ -81,7 +84,7 @@ public sealed class LibrarySeed
             TrackNumber = number,
             DiscNumber = disc,
             Year = year,
-            Genre = genre,
+            GenreId = GenreOf(genre)?.Id,
             Duration = duration,
             HasAudio = hasAudio,
             HasVideo = hasVideo,
@@ -91,6 +94,26 @@ public sealed class LibrarySeed
         };
         _entities.Add(track);
         return track;
+    }
+
+    /// <summary>
+    /// The genre of a name, one per normalized name (see <see cref="NameKeys"/>), spelled as first named.
+    /// </summary>
+    public Genre? GenreOf(string? name)
+    {
+        if (NameKeys.Of(name) is not { } key)
+        {
+            return null;
+        }
+
+        if (!_genres.TryGetValue(key, out Genre? genre))
+        {
+            genre = new Genre { Id = Guid.CreateVersion7(), Name = name!, NormalizedName = key };
+            _genres[key] = genre;
+            _entities.Add(genre);
+        }
+
+        return genre;
     }
 
     /// <summary>
@@ -307,10 +330,28 @@ public sealed class LibrarySeed
     }
 
     /// <summary>
-    /// Adds everything built so far to the database.
+    /// Adds everything built so far to the database. A genre whose normalized name is stored already, e.g. by an
+    /// earlier seed, is not added again; the tracks get the stored one.
     /// </summary>
     public async Task SaveAsync(WaveMpDbContext dbContext)
     {
+        string[] keys = [.. _entities.OfType<Genre>().Select(genre => genre.NormalizedName)];
+        Dictionary<string, Guid> stored = keys.Length == 0
+            ? []
+            : await dbContext.Genres.AsNoTracking()
+                .Where(genre => keys.Contains(genre.NormalizedName))
+                .ToDictionaryAsync(genre => genre.NormalizedName, genre => genre.Id, StringComparer.Ordinal);
+        foreach (Genre genre in _entities.OfType<Genre>().Where(genre => stored.ContainsKey(genre.NormalizedName)))
+        {
+            foreach (Track track in _entities.OfType<Track>().Where(track => track.GenreId == genre.Id))
+            {
+                track.GenreId = stored[genre.NormalizedName];
+            }
+
+            genre.Id = stored[genre.NormalizedName];
+        }
+
+        _entities.RemoveAll(entity => entity is Genre genre && stored.ContainsKey(genre.NormalizedName));
         dbContext.AddRange(_entities);
         await dbContext.SaveChangesAsync();
         _entities.Clear();

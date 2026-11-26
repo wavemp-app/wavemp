@@ -98,14 +98,29 @@ public class TrackMetadataRepositoryTests : LibraryDatabaseTests
         StandardLibrary library = await SeedStandardLibraryAsync();
         ITrackMetadataRepository repository = CreateRepository();
 
-        int changed = await repository.RenameArtistAsync("ALPHA BAND", "ALPHA band");
-        int unchanged = await repository.RenameArtistAsync("ALPHA BAND", "ALPHA band");
-        int missing = await repository.RenameArtistAsync("NOBODY", "Nobody");
+        int changed = await repository.RenameArtistAsync("alphaband", "ALPHA-band");
+        int unchanged = await repository.RenameArtistAsync("alphaband", "ALPHA-band");
+        int missing = await repository.RenameArtistAsync("nobody", "Nobody");
 
         (changed, unchanged, missing).Should().Be((1, 0, 0));
         Artist artist = await CreateDbContext().Artists.AsNoTracking().SingleAsync(item => item.Id == library.Alpha.Id);
-        artist.Name.Should().Be("ALPHA band");
-        artist.NormalizedName.Should().Be("ALPHA BAND");
+        artist.Name.Should().Be("ALPHA-band");
+        artist.NormalizedName.Should().Be("alphaband");
+    }
+
+    [Test]
+    public async Task RenameGenreAsync_OtherSpelling_ChangesOnlyTheName()
+    {
+        StandardLibrary library = await SeedStandardLibraryAsync();
+        ITrackMetadataRepository repository = CreateRepository();
+
+        int changed = await repository.RenameGenreAsync("rock", "ROCK");
+        int missing = await repository.RenameGenreAsync("jazz", "Jazz");
+
+        (changed, missing).Should().Be((1, 0));
+        Genre genre = await CreateDbContext().Genres.AsNoTracking()
+            .SingleAsync(item => item.Id == library.Opening.GenreId);
+        (genre.Name, genre.NormalizedName).Should().Be(("ROCK", "rock"));
     }
 
     private ITrackMetadataRepository CreateRepository()

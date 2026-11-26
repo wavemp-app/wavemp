@@ -1,4 +1,5 @@
 using AwesomeAssertions;
+using Microsoft.EntityFrameworkCore;
 using WaveMP.Data.Entities;
 using WaveMP.Data.Projections;
 using WaveMP.Data.Queries;
@@ -601,6 +602,152 @@ public class SmartPlaylistRepositoryTests : LibraryDatabaseTests
         (await CreateRepository().FindAsync(user.Id, playlist.Id)).Should().BeNull();
     }
 
+    [Test]
+    public async Task LinkAsync_RulesNamingEntries_GetTheIdsOfTheEntriesWithTheNormalizedNames()
+    {
+        StandardLibrary library = await SeedStandardLibraryAsync();
+        SmartPlaylistRule[] rules =
+        [
+            Text(SmartPlaylistField.Artist, SmartPlaylistOperator.Is, "alpha-band"),
+            Text(SmartPlaylistField.Album, SmartPlaylistOperator.IsNot, "SECOND ALBUM!"),
+            Text(SmartPlaylistField.Genre, SmartPlaylistOperator.Is, "rock"),
+            Text(SmartPlaylistField.Artist, SmartPlaylistOperator.Contains, "Alpha"),
+            Text(SmartPlaylistField.Artist, SmartPlaylistOperator.Is, "Nobody"),
+            Linked(SmartPlaylistField.Artist, SmartPlaylistOperator.Is, "Beta Singer", Guid.NewGuid()),
+            Linked(SmartPlaylistField.Artist, SmartPlaylistOperator.Is, "Old Name", library.Guest.Id),
+            Number(SmartPlaylistField.Year, SmartPlaylistOperator.AtLeast, 2000),
+        ];
+
+        IReadOnlyList<SmartPlaylistRule> linked = await CreateRepository().LinkAsync(rules);
+
+        linked.Select(rule => rule.ReferenceId).Should().Equal(
+            library.Alpha.Id,
+            library.SecondAlbum.Id,
+            library.Opening.GenreId,
+            null,
+            null,
+            library.Beta.Id,
+            library.Guest.Id,
+            null);
+        linked.Select(rule => rule.Text).Should().Equal(rules.Select(rule => rule.Text));
+    }
+
+    [Test]
+    public async Task LinkAsync_SeveralAlbumsWithTheTitle_LeavesTheRuleUnlinked()
+    {
+        await SeedStandardLibraryAsync();
+        LibrarySeed seed = new();
+        Artist other = seed.Artist("Other Band");
+        seed.Track("Elsewhere", other, seed.Album("First-Album", other));
+        await SaveAsync(seed);
+
+        IReadOnlyList<SmartPlaylistRule> linked = await CreateRepository().LinkAsync(
+            [Text(SmartPlaylistField.Album, SmartPlaylistOperator.Is, "First Album")]);
+
+        linked.Single().ReferenceId.Should().BeNull();
+    }
+
+    [Test]
+    public async Task NameReferencesAsync_LinkedRules_ShowTheCurrentNamesAndForgetRemovedEntries()
+    {
+        StandardLibrary library = await SeedStandardLibraryAsync();
+        SmartPlaylistRule[] rules =
+        [
+            Linked(SmartPlaylistField.Artist, SmartPlaylistOperator.Is, "alpha", library.Alpha.Id),
+            Linked(SmartPlaylistField.Album, SmartPlaylistOperator.Is, "Gone", Guid.NewGuid()),
+            Text(SmartPlaylistField.Genre, SmartPlaylistOperator.Is, "pop"),
+        ];
+
+        IReadOnlyList<SmartPlaylistRule> shown = await CreateRepository().NameReferencesAsync(rules);
+
+        shown.Should().Equal(
+            rules[0] with { Text = "Alpha Band" },
+            rules[1] with { ReferenceId = null },
+            rules[2]);
+    }
+
+    [Test]
+    public async Task ListTrackIdsAsync_LinkedArtistAfterRenaming_StillMatchesItsSongs()
+    {
+        StandardLibrary library = await SeedStandardLibraryAsync();
+        User user = await AddUserAsync();
+        SmartPlaylistRule linked = Linked(
+            SmartPlaylistField.Artist,
+            SmartPlaylistOperator.Is,
+            "Alpha Band",
+            library.Alpha.Id);
+        SmartPlaylistRule unlinked = Text(SmartPlaylistField.Artist, SmartPlaylistOperator.Is, "Alpha Band");
+        await using (WaveMpDbContext dbContext = CreateDbContext())
+        {
+            Artist artist = await dbContext.Artists.SingleAsync(item => item.Id == library.Alpha.Id);
+            artist.Name = "The Alpha Collective";
+            artist.NormalizedName = "thealphacollective";
+            await dbContext.SaveChangesAsync();
+        }
+
+        IReadOnlyList<Guid> byId = await MatchAsync(user, linked);
+        IReadOnlyList<Guid> byText = await MatchAsync(user, unlinked);
+        IReadOnlyList<Guid> others = await MatchAsync(user, linked with { Operator = SmartPlaylistOperator.IsNot });
+
+        byId.Should().BeEquivalentTo([library.Opening.Id, library.Closing.Id, library.Duet.Id, library.HitOne.Id]);
+        byText.Should().BeEmpty();
+        others.Should().BeEquivalentTo(AllTracks(library).Except(byId));
+    }
+
+    [Test]
+    public async Task ListTrackIdsAsync_LinkedAlbumAndGenre_MatchTheirSongs()
+    {
+        StandardLibrary library = await SeedStandardLibraryAsync();
+        User user = await AddUserAsync();
+
+        IReadOnlyList<Guid> album = await MatchAsync(
+            user,
+            Linked(SmartPlaylistField.Album, SmartPlaylistOperator.Is, "x", library.SecondAlbum.Id));
+        IReadOnlyList<Guid> genre = await MatchAsync(
+            user,
+            Linked(SmartPlaylistField.Genre, SmartPlaylistOperator.IsNot, "x", library.Ballad.GenreId));
+
+        album.Should().Equal(library.Ballad.Id);
+        genre.Should().BeEquivalentTo(
+            [library.Opening.Id, library.Closing.Id, library.Duet.Id, library.Clip.Id, library.LooseSong.Id]);
+    }
+
+    [Test]
+    public async Task DeleteOrphansAsync_ArtistJoinedIntoAnother_MovesTheRulesToTheArtistThatStays()
+    {
+        StandardLibrary library = await SeedStandardLibraryAsync();
+        User user = await AddUserAsync();
+        SmartPlaylist playlist = NewPlaylist(
+            user,
+            "Guest",
+            Linked(SmartPlaylistField.Artist, SmartPlaylistOperator.Is, "Guest Star", library.Guest.Id),
+            Linked(SmartPlaylistField.Album, SmartPlaylistOperator.Is, "Hits", library.Hits.Id));
+        await CreateRepository().CreateAsync(playlist);
+        await using (WaveMpDbContext dbContext = CreateDbContext())
+        {
+            dbContext.ArtistMoves.Add(new ArtistMove
+            {
+                FromArtistId = library.Guest.Id,
+                ToArtistId = library.Beta.Id,
+                TrackCount = 2,
+                MovedAt = _now,
+            });
+            await dbContext.SaveChangesAsync();
+            await dbContext.Tracks.Where(track => track.ArtistId == library.Guest.Id)
+                .ExecuteUpdateAsync(setters => setters.SetProperty(track => track.ArtistId, library.Beta.Id));
+            await dbContext.Tracks.Where(track => track.AlbumId == library.Hits.Id)
+                .ExecuteUpdateAsync(setters => setters.SetProperty(track => track.AlbumId, (Guid?)null));
+        }
+
+        await new LibraryScanRepository(CreateDbContext()).DeleteOrphansAsync(_now);
+
+        SmartPlaylist stored = (await CreateRepository().FindAsync(user.Id, playlist.Id))!;
+        stored.Rules.Should().Equal(
+            Linked(SmartPlaylistField.Artist, SmartPlaylistOperator.Is, "Beta Singer", library.Beta.Id),
+            Text(SmartPlaylistField.Album, SmartPlaylistOperator.Is, "Hits"));
+        stored.UpdatedAt.Should().Be(playlist.UpdatedAt);
+    }
+
     private static Guid[] AllTracks(StandardLibrary library)
     {
         return
@@ -619,6 +766,15 @@ public class SmartPlaylistRepositoryTests : LibraryDatabaseTests
     private static SmartPlaylistRule Text(SmartPlaylistField field, SmartPlaylistOperator op, string text)
     {
         return new SmartPlaylistRule(field, op, Text: text);
+    }
+
+    private static SmartPlaylistRule Linked(
+        SmartPlaylistField field,
+        SmartPlaylistOperator op,
+        string text,
+        Guid? referenceId)
+    {
+        return new SmartPlaylistRule(field, op, Text: text, ReferenceId: referenceId);
     }
 
     private static SmartPlaylistRule Number(

@@ -1,5 +1,6 @@
 using WaveMP.Core.Metadata.Paths;
 using WaveMP.Core.Metadata.Tags;
+using WaveMP.Core.Metadata.Texts;
 using WaveMP.Data.Entities;
 
 namespace WaveMP.Core.Metadata.Resolutions;
@@ -39,6 +40,10 @@ public static class TrackMetadataResolver
             tags.DiscNumber ?? path.DiscNumber,
             tags.Year ?? path.Year,
             tags.Genre,
-            tags.IsCompilation);
+            tags.IsCompilation,
+            // An id only belongs to a name from the tags, never to one taken from the folder or file name.
+            tags.Artist is null ? null : MusicBrainzIds.Single(tags.MusicBrainzArtistId),
+            tags.AlbumArtist is null ? null : MusicBrainzIds.Single(tags.MusicBrainzAlbumArtistId),
+            tags.Album is null ? null : MusicBrainzIds.Single(tags.MusicBrainzReleaseId));
     }
 }

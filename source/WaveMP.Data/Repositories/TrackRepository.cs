@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using WaveMP.Data.Entities;
 using WaveMP.Data.Projections;
 using WaveMP.Data.Queries;
+using WaveMP.Data.Texts;
 
 namespace WaveMP.Data.Repositories;
 
@@ -53,7 +54,7 @@ internal sealed class TrackRepository(WaveMpDbContext dbContext) : ITrackReposit
                 track.AlbumId,
                 track.ArtistId,
                 track.Year,
-                track.Genre!.Substring(0, 1))),
+                track.Genre!.Name.Substring(0, 1))),
             TrackSortField.Title => sorted.Select(track => new GroupKeyRow(
                 track.AlbumId,
                 track.ArtistId,
@@ -165,17 +166,17 @@ internal sealed class TrackRepository(WaveMpDbContext dbContext) : ITrackReposit
         {
             string pattern = LikePatterns.Contains(search);
             tracks = tracks.Where(track =>
-                EF.Functions.ILike(track.Genre!, pattern, LikePatterns.EscapeCharacter)
-                || EF.Functions.TrigramsAreWordSimilar(search, track.Genre!));
+                EF.Functions.ILike(track.Genre!.Name, pattern, LikePatterns.EscapeCharacter)
+                || EF.Functions.TrigramsAreWordSimilar(search, track.Genre!.Name));
         }
 
         var genres = tracks
-            .GroupBy(track => track.Genre!.ToUpper())
+            .GroupBy(track => new { Id = track.GenreId!.Value, track.Genre!.Name, track.Genre.NormalizedName })
             .Select(group => new
             {
-                group.Key,
-                // Binary order, so the spelling with capitals wins independent of the collation of the database.
-                Name = group.Min(track => EF.Functions.Collate(track.Genre!, BinaryCollation))!,
+                group.Key.Id,
+                Key = group.Key.NormalizedName,
+                group.Key.Name,
                 TrackCount = group.Count(),
                 AlbumCount = group
                     .Where(track => track.AlbumId != null)
@@ -189,7 +190,7 @@ internal sealed class TrackRepository(WaveMpDbContext dbContext) : ITrackReposit
             : genres.OrderBy(genre => genre.Key, query.Direction);
 
         return sorted
-            .Select(genre => new GenreRow(genre.Name, genre.TrackCount, genre.AlbumCount))
+            .Select(genre => new GenreRow(genre.Id, genre.Name, genre.TrackCount, genre.AlbumCount))
             .ToPageAsync(query.Offset, query.Limit, cancellationToken);
     }
 
@@ -242,9 +243,8 @@ internal sealed class TrackRepository(WaveMpDbContext dbContext) : ITrackReposit
 
         if (query.Genre is { } genre)
         {
-            string genrePattern = LikePatterns.Escape(genre);
-            tracks = tracks.Where(track =>
-                track.Genre != null && EF.Functions.ILike(track.Genre, genrePattern, LikePatterns.EscapeCharacter));
+            string? genreKey = NameKeys.Of(genre);
+            tracks = tracks.Where(track => track.Genre != null && track.Genre.NormalizedName == genreKey);
         }
 
         if (query.Year is { } year)
@@ -325,7 +325,7 @@ internal sealed class TrackRepository(WaveMpDbContext dbContext) : ITrackReposit
                 .OrderBy(track => track.Year, direction)
                 .ThenBy(track => track.Album!.NormalizedTitle)),
             TrackSortField.Genre => ThenByAlbum(tracks
-                .OrderBy(track => track.Genre, direction)
+                .OrderBy(track => track.Genre!.NormalizedName, direction)
                 .ThenBy(track => track.Album!.NormalizedTitle)),
             // Tracks of one folder are found at the same time, so albums stay together.
             TrackSortField.FirstSeenAt => ThenByAlbum(tracks.OrderBy(track => track.FirstSeenAt, direction)),
@@ -380,7 +380,7 @@ internal sealed class TrackRepository(WaveMpDbContext dbContext) : ITrackReposit
             track.TrackNumber,
             track.DiscNumber,
             track.Year,
-            track.Genre,
+            track.Genre != null ? track.Genre.Name : null,
             track.Duration,
             track.HasAudio,
             track.HasVideo,

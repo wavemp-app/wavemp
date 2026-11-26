@@ -104,7 +104,13 @@ public static class LibraryMappingExtensions
 
     public static GenreDto ToDto(this GenreRow genre)
     {
-        return new GenreDto { Name = genre.Name, TrackCount = genre.TrackCount, AlbumCount = genre.AlbumCount };
+        return new GenreDto
+        {
+            Id = genre.Id,
+            Name = genre.Name,
+            TrackCount = genre.TrackCount,
+            AlbumCount = genre.AlbumCount,
+        };
     }
 
     public static YearDto ToDto(this YearRow year)

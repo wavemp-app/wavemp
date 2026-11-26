@@ -41,8 +41,25 @@ public sealed record TestTags
     /// </summary>
     public string? Compilation { get; init; }
 
-    internal IEnumerable<string> ToArguments()
+    /// <summary>
+    /// MusicBrainz id of the artist (a single id, or several separated by <c>/</c>).
+    /// </summary>
+    public string? MusicBrainzArtistId { get; init; }
+
+    public string? MusicBrainzAlbumArtistId { get; init; }
+
+    /// <summary>
+    /// MusicBrainz id of the release (the album).
+    /// </summary>
+    public string? MusicBrainzAlbumId { get; init; }
+
+    /// <summary>
+    /// The arguments of ffmpeg; the MusicBrainz ids are written under the names TagLib reads for MP3 files (ID3v2
+    /// TXXX frames) and FLAC or Ogg files (Vorbis comments), the only formats tests write them to.
+    /// </summary>
+    internal IEnumerable<string> ToArguments(AudioFormat? format = null)
     {
+        bool id3 = format == AudioFormat.Mp3;
         (string Key, string? Value)[] values =
         [
             ("title", Title),
@@ -58,6 +75,9 @@ public sealed record TestTags
             ("REPLAYGAIN_ALBUM_GAIN", ReplayGainAlbumGain),
             ("REPLAYGAIN_ALBUM_PEAK", ReplayGainAlbumPeak),
             ("compilation", Compilation),
+            (id3 ? "MusicBrainz Artist Id" : "MUSICBRAINZ_ARTISTID", MusicBrainzArtistId),
+            (id3 ? "MusicBrainz Album Artist Id" : "MUSICBRAINZ_ALBUMARTISTID", MusicBrainzAlbumArtistId),
+            (id3 ? "MusicBrainz Album Id" : "MUSICBRAINZ_ALBUMID", MusicBrainzAlbumId),
         ];
 
         foreach ((string key, string? value) in values)

@@ -48,6 +48,7 @@ public static class SmartPlaylistMappingExtensions
             Field = rule.Field.ToDto(),
             Operator = rule.Operator.ToDto(),
             Text = rule.Text,
+            ReferenceId = rule.ReferenceId,
             Number = rule.Number,
             NumberTo = rule.NumberTo,
         };
@@ -67,7 +68,8 @@ public static class SmartPlaylistMappingExtensions
                 rule.Operator!.Value.ToEntity(),
                 rule.Text,
                 rule.Number,
-                rule.NumberTo))],
+                rule.NumberTo,
+                rule.ReferenceId))],
             (request.Sort ?? SmartPlaylistTrackSortDto.Artist).ToEntity(),
             (request.Direction ?? SortDirectionDto.Asc).ToEntity(),
             request.Limit);

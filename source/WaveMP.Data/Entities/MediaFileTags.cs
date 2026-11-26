@@ -65,6 +65,16 @@ public class MediaFileTags
     public string? MusicBrainzReleaseId { get; set; }
 
     /// <summary>
+    /// The MusicBrainz artist of the artist tag, only if the tag names exactly one.
+    /// </summary>
+    public string? MusicBrainzArtistId { get; set; }
+
+    /// <summary>
+    /// The MusicBrainz artist of the album artist tag, only if the tag names exactly one.
+    /// </summary>
+    public string? MusicBrainzAlbumArtistId { get; set; }
+
+    /// <summary>
     /// Whether the file is marked as part of a compilation (ID3 <c>TCMP</c>, MP4 <c>cpil</c>, Vorbis comment
     /// <c>COMPILATION</c>).
     /// </summary>

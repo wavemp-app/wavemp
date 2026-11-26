@@ -2,6 +2,7 @@ using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using WaveMP.Data.Entities;
 using WaveMP.Data.Repositories;
+using WaveMP.Data.Texts;
 
 namespace WaveMP.Data.Queries;
 
@@ -71,7 +72,7 @@ internal static class SmartPlaylistQueries
                 .ThenBy(track => track.Year, direction),
             SmartPlaylistSortField.Genre => tracks
                 .OrderBy(track => track.Genre == null)
-                .ThenBy(track => track.Genre!.ToUpper(), direction),
+                .ThenBy(track => track.Genre!.NormalizedName, direction),
             SmartPlaylistSortField.Rating => tracks.OrderBy(
                 track => ratings
                     .Where(rating => rating.TrackId == track.Id)
@@ -161,31 +162,61 @@ internal static class SmartPlaylistQueries
     }
 
     /// <summary>
-    /// Artist (of the track or the album), album or genre equal to the text or containing it, without regard to case.
+    /// Artist (of the track or the album), album or genre. A rule with a reference compares the id of the entry it
+    /// names, so it follows a new spelling of the name; a rule "is" or "is not" without one compares the normalized
+    /// name (see <see cref="NameKeys"/>); "contains" looks for the text without regard to case.
     /// </summary>
     private static Expression<Func<Track, bool>> Text(SmartPlaylistRule rule)
     {
-        string text = rule.Text ?? throw new ArgumentException("The rule needs a text.", nameof(rule));
-        string pattern = rule.Operator switch
+        if (rule.ReferenceId is { } id && rule.CanReference())
         {
-            SmartPlaylistOperator.Is or SmartPlaylistOperator.IsNot => LikePatterns.Escape(text),
-            SmartPlaylistOperator.Contains or SmartPlaylistOperator.DoesNotContain => LikePatterns.Contains(text),
-            _ => throw UnsupportedOperator(rule),
-        };
+            return rule.Field switch
+            {
+                SmartPlaylistField.Artist => track =>
+                    track.ArtistId == id || (track.Album != null && track.Album.AlbumArtistId == id),
+                SmartPlaylistField.Album => track => track.AlbumId == id,
+                _ => track => track.GenreId == id,
+            };
+        }
 
-        return rule.Field switch
+        string text = rule.Text ?? throw new ArgumentException("The rule needs a text.", nameof(rule));
+        switch (rule.Operator)
         {
-            SmartPlaylistField.Artist => track =>
-                (track.Artist != null
-                    && EF.Functions.ILike(track.Artist.Name, pattern, LikePatterns.EscapeCharacter))
-                || (track.Album != null
-                    && track.Album.AlbumArtist != null
-                    && EF.Functions.ILike(track.Album.AlbumArtist.Name, pattern, LikePatterns.EscapeCharacter)),
-            SmartPlaylistField.Album => track =>
-                track.Album != null && EF.Functions.ILike(track.Album.Title, pattern, LikePatterns.EscapeCharacter),
-            _ => track =>
-                track.Genre != null && EF.Functions.ILike(track.Genre, pattern, LikePatterns.EscapeCharacter),
-        };
+            case SmartPlaylistOperator.Is or SmartPlaylistOperator.IsNot:
+                string key = NameKeys.Of(text) ?? string.Empty;
+                return rule.Field switch
+                {
+                    SmartPlaylistField.Artist => track =>
+                        (track.Artist != null && track.Artist.NormalizedName == key)
+                        || (track.Album != null
+                            && track.Album.AlbumArtist != null
+                            && track.Album.AlbumArtist.NormalizedName == key),
+                    SmartPlaylistField.Album => track => track.Album != null && track.Album.NormalizedTitle == key,
+                    _ => track => track.Genre != null && track.Genre.NormalizedName == key,
+                };
+            case SmartPlaylistOperator.Contains or SmartPlaylistOperator.DoesNotContain:
+                string pattern = LikePatterns.Contains(text);
+                return rule.Field switch
+                {
+                    SmartPlaylistField.Artist => track =>
+                        (track.Artist != null
+                            && EF.Functions.ILike(track.Artist.Name, pattern, LikePatterns.EscapeCharacter))
+                        || (track.Album != null
+                            && track.Album.AlbumArtist != null
+                            && EF.Functions.ILike(
+                                track.Album.AlbumArtist.Name,
+                                pattern,
+                                LikePatterns.EscapeCharacter)),
+                    SmartPlaylistField.Album => track =>
+                        track.Album != null
+                        && EF.Functions.ILike(track.Album.Title, pattern, LikePatterns.EscapeCharacter),
+                    _ => track =>
+                        track.Genre != null
+                        && EF.Functions.ILike(track.Genre.Name, pattern, LikePatterns.EscapeCharacter),
+                };
+            default:
+                throw UnsupportedOperator(rule);
+        }
     }
 
     /// <summary>

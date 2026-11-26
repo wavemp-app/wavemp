@@ -130,6 +130,9 @@ internal sealed class MediaMetadataReader(ITagReader tagReader, IMediaProber pro
             Genre = genre,
             Genres = genre,
             Composer = Get("composer"),
+            MusicBrainzArtistId = MusicBrainzIds.SingleText(Get("musicbrainz_artistid", "musicbrainz artist id")),
+            MusicBrainzAlbumArtistId = MusicBrainzIds.SingleText(
+                Get("musicbrainz_albumartistid", "musicbrainz album artist id")),
             IsCompilation = Get("compilation") is { } compilation && compilation != "0",
         };
     }
@@ -155,6 +158,8 @@ internal sealed class MediaMetadataReader(ITagReader tagReader, IMediaProber pro
             Genre = tags.Genre ?? fallback.Genre,
             Genres = tags.Genres ?? fallback.Genres,
             Composer = tags.Composer ?? fallback.Composer,
+            MusicBrainzArtistId = tags.MusicBrainzArtistId ?? fallback.MusicBrainzArtistId,
+            MusicBrainzAlbumArtistId = tags.MusicBrainzAlbumArtistId ?? fallback.MusicBrainzAlbumArtistId,
             IsCompilation = tags.IsCompilation || fallback.IsCompilation,
         };
     }

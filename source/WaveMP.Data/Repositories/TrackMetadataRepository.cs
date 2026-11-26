@@ -54,4 +54,14 @@ internal sealed class TrackMetadataRepository(WaveMpDbContext dbContext) : ITrac
             .Where(artist => artist.NormalizedName == normalizedName && artist.Name != name)
             .ExecuteUpdateAsync(setters => setters.SetProperty(artist => artist.Name, name), cancellationToken);
     }
+
+    public Task<int> RenameGenreAsync(
+        string normalizedName,
+        string name,
+        CancellationToken cancellationToken = default)
+    {
+        return dbContext.Genres
+            .Where(genre => genre.NormalizedName == normalizedName && genre.Name != name)
+            .ExecuteUpdateAsync(setters => setters.SetProperty(genre => genre.Name, name), cancellationToken);
+    }
 }

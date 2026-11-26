@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using WaveMP.Data.Entities;
 using WaveMP.Data.Projections;
+using WaveMP.Data.Texts;
 
 namespace WaveMP.Data.Repositories;
 
@@ -23,7 +24,11 @@ internal sealed class AutoplayRepository(WaveMpDbContext dbContext) : IAutoplayR
         Guid[] distinct = [.. trackIds.Distinct()];
         return await dbContext.Tracks.AsNoTracking()
             .Where(track => distinct.Contains(track.Id))
-            .Select(track => new AutoplaySeedRow(track.Id, track.ArtistId, track.Genre, track.Year))
+            .Select(track => new AutoplaySeedRow(
+                track.Id,
+                track.ArtistId,
+                track.Genre != null ? track.Genre.Name : null,
+                track.Year))
             .ToListAsync(cancellationToken);
     }
 
@@ -49,8 +54,8 @@ internal sealed class AutoplayRepository(WaveMpDbContext dbContext) : IAutoplayR
         {
             if (query.Genres is { } genres)
             {
-                string[] normalized = [.. genres.Select(genre => genre.ToUpperInvariant()).Distinct()];
-                tracks = tracks.Where(track => track.Genre != null && normalized.Contains(track.Genre.ToUpper()));
+                string[] keys = [.. genres.Select(NameKeys.Of).OfType<string>().Distinct()];
+                tracks = tracks.Where(track => track.Genre != null && keys.Contains(track.Genre.NormalizedName));
             }
 
             if (query.Decades is { } decades)
@@ -66,7 +71,7 @@ internal sealed class AutoplayRepository(WaveMpDbContext dbContext) : IAutoplayR
             .Select(track => new AutoplayCandidateRow(
                 track.Id,
                 track.ArtistId,
-                track.Genre,
+                track.Genre != null ? track.Genre.Name : null,
                 track.Year,
                 track.HasAudio,
                 dbContext.Favorites.Any(favorite => favorite.UserId == userId && favorite.TrackId == track.Id),

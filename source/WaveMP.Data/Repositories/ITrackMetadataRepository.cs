@@ -27,4 +27,10 @@ public interface ITrackMetadataRepository
     /// artists: 0 if there is no such artist or it already has this spelling, otherwise 1.
     /// </summary>
     Task<int> RenameArtistAsync(string normalizedName, string name, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Gives the genre with this normalized name the spelling <paramref name="name"/>. Returns the number of changed
+    /// genres: 0 if there is no such genre or it already has this spelling, otherwise 1.
+    /// </summary>
+    Task<int> RenameGenreAsync(string normalizedName, string name, CancellationToken cancellationToken = default);
 }

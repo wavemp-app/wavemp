@@ -68,7 +68,7 @@ public static class TestMediaGenerator
             arguments.AddRange(["-id3v2_version", "3"]);
         }
 
-        arguments.AddRange(tags?.ToArguments() ?? []);
+        arguments.AddRange(tags?.ToArguments(format) ?? []);
         arguments.AddRange(["-f", MuxerOf(format), Prepare(path)]);
         await FfmpegTool.RunAsync([.. arguments]);
     }

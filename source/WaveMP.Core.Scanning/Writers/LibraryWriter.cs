@@ -12,6 +12,7 @@ using WaveMP.Core.Settings.Groups;
 using WaveMP.Core.Settings.Snapshots;
 using WaveMP.Data.Entities;
 using WaveMP.Data.Repositories;
+using WaveMP.Data.Texts;
 
 namespace WaveMP.Core.Scanning.Writers;
 
@@ -403,8 +404,14 @@ public sealed class LibraryWriter(
 
         foreach (ProcessedTrack processed in folder.Tracks)
         {
-            Guid? artistId = await GetArtistIdAsync(processed.Metadata.Artist, cache, now, cancellationToken);
+            Guid? artistId = await GetArtistIdAsync(
+                processed.Metadata.Artist,
+                processed.Metadata.MusicBrainzArtistId,
+                cache,
+                now,
+                cancellationToken);
             Guid? albumId = await GetAlbumIdAsync(processed.Album, cache, now, cancellationToken);
+            Guid? genreId = await GetGenreIdAsync(processed.Metadata.Genre, cache, cancellationToken);
 
             if (!tracks.Remove(processed.Group.NormalizedBaseName, out Track? track))
             {
@@ -424,13 +431,13 @@ public sealed class LibraryWriter(
                 };
                 library.Add(track);
                 added++;
-                Update(track, processed, artistId, albumId);
+                Update(track, processed, artistId, albumId, genreId);
             }
             else
             {
                 Guid? previousAlbumId = track.AlbumId;
                 written.Add(new WrittenSong(track.ArtistId, previousAlbumId, artistId, albumId));
-                if (Update(track, processed, artistId, albumId) | adopted.Contains(track.Id))
+                if (Update(track, processed, artistId, albumId, genreId) | adopted.Contains(track.Id))
                 {
                     track.UpdatedAt = now;
                     updated++;
@@ -560,12 +567,14 @@ public sealed class LibraryWriter(
     /// <summary>
     /// Applies the processed values to the track. Returns whether anything changed.
     /// </summary>
-    private static bool Update(Track track, ProcessedTrack processed, Guid? artistId, Guid? albumId)
+    private static bool Update(
+        Track track,
+        ProcessedTrack processed,
+        Guid? artistId,
+        Guid? albumId,
+        Guid? genreId)
     {
         ResolvedTrackMetadata metadata = processed.Metadata;
-        string? genre = metadata.Genre is { Length: > GenreMaxLength } longGenre
-            ? longGenre[..GenreMaxLength]
-            : metadata.Genre;
         bool hasAudio = processed.PrimaryAudio is not null;
         bool hasVideo = processed.PrimaryVideo is not null;
 
@@ -577,7 +586,7 @@ public sealed class LibraryWriter(
             || track.TrackNumber != metadata.TrackNumber
             || track.DiscNumber != metadata.DiscNumber
             || track.Year != metadata.Year
-            || track.Genre != genre
+            || track.GenreId != genreId
             || track.Duration != processed.Duration
             || track.HasAudio != hasAudio
             || track.HasVideo != hasVideo;
@@ -590,7 +599,7 @@ public sealed class LibraryWriter(
         track.TrackNumber = metadata.TrackNumber;
         track.DiscNumber = metadata.DiscNumber;
         track.Year = metadata.Year;
-        track.Genre = genre;
+        track.GenreId = genreId;
         track.Duration = processed.Duration;
         track.HasAudio = hasAudio;
         track.HasVideo = hasVideo;
@@ -645,15 +654,35 @@ public sealed class LibraryWriter(
         }
     }
 
+    /// <summary>
+    /// The artist of a name: the artist with the MusicBrainz artist of the tags if there is one, otherwise the artist
+    /// with the same normalized name (see <see cref="NameKeys"/>), otherwise a new one. An artist found by its name
+    /// that has no MusicBrainz artist yet takes the one of the tags. The name of an existing artist stays as it is.
+    /// </summary>
     private async Task<Guid?> GetArtistIdAsync(
         string? name,
+        Guid? musicBrainzArtistId,
         EntityCache cache,
         DateTimeOffset now,
         CancellationToken cancellationToken)
     {
-        if (MetadataText.Normalize(name) is not { } displayName || MetadataText.ToKey(displayName) is not { } key)
+        if (MetadataText.Normalize(name) is not { } displayName || NameKeys.Of(displayName) is not { } key)
         {
             return null;
+        }
+
+        if (musicBrainzArtistId is { } musicBrainzId)
+        {
+            if (cache.MusicBrainzArtists.TryGetValue(musicBrainzId, out Guid cached))
+            {
+                return cached;
+            }
+
+            if (await library.FindArtistByMusicBrainzIdAsync(musicBrainzId, cancellationToken) is { } known)
+            {
+                cache.MusicBrainzArtists[musicBrainzId] = known.Id;
+                return known.Id;
+            }
         }
 
         if (cache.Artists.TryGetValue(key, out Guid id))
@@ -670,14 +699,29 @@ public sealed class LibraryWriter(
                 Name = displayName,
                 NormalizedName = key,
                 FirstSeenAt = now,
+                MusicBrainzArtistId = musicBrainzArtistId,
             };
             library.Add(artist);
         }
+        else if (artist.MusicBrainzArtistId is null && musicBrainzArtistId is not null)
+        {
+            artist.MusicBrainzArtistId = musicBrainzArtistId;
+        }
 
         cache.Artists[key] = artist.Id;
+        if (musicBrainzArtistId is { } newId && artist.MusicBrainzArtistId == newId)
+        {
+            cache.MusicBrainzArtists[newId] = artist.Id;
+        }
+
         return artist.Id;
     }
 
+    /// <summary>
+    /// The album of an assignment: the album with the MusicBrainz release of the tags if there is one, otherwise the
+    /// album with the key of the assignment, otherwise a new one. An album found by its key that has no release yet
+    /// takes the one of the tags.
+    /// </summary>
     private async Task<Guid?> GetAlbumIdAsync(
         AlbumAssignment? assignment,
         EntityCache cache,
@@ -694,19 +738,31 @@ public sealed class LibraryWriter(
             return id;
         }
 
-        Album? album = await library.FindAlbumAsync(assignment.Key, cancellationToken);
+        Album? album = null;
+        if (assignment.MusicBrainzReleaseId is { } releaseId)
+        {
+            album = await library.FindAlbumByReleaseIdAsync(releaseId, cancellationToken);
+        }
+
+        album ??= await library.FindAlbumAsync(assignment.Key, cancellationToken);
         if (album is null)
         {
             album = new Album
             {
                 Id = Guid.CreateVersion7(now),
                 Title = assignment.Title,
-                NormalizedTitle = MetadataText.ToKey(assignment.Title)!,
+                NormalizedTitle = NameKeys.Of(assignment.Title)!,
                 AlbumKey = assignment.Key,
-                AlbumArtistId = await GetArtistIdAsync(assignment.AlbumArtist, cache, now, cancellationToken),
+                AlbumArtistId = await GetArtistIdAsync(
+                    assignment.AlbumArtist,
+                    assignment.AlbumArtistMusicBrainzId,
+                    cache,
+                    now,
+                    cancellationToken),
                 // Set over all its tracks once every folder is written (see UpdateAlbumCompilationsAsync).
                 IsCompilation = false,
                 Year = assignment.Year,
+                MusicBrainzReleaseId = assignment.MusicBrainzReleaseId,
                 FirstSeenAt = now,
                 UpdatedAt = now,
             };
@@ -723,6 +779,44 @@ public sealed class LibraryWriter(
     }
 
     /// <summary>
+    /// The genre of a name: the genre with the same normalized name (see <see cref="NameKeys"/>), otherwise a new one.
+    /// The name of an existing genre stays as it is.
+    /// </summary>
+    private async Task<Guid?> GetGenreIdAsync(string? name, EntityCache cache, CancellationToken cancellationToken)
+    {
+        string? displayName = MetadataText.Normalize(name);
+        if (displayName is { Length: > GenreMaxLength })
+        {
+            displayName = displayName[..GenreMaxLength].TrimEnd();
+        }
+
+        if (displayName is null || NameKeys.Of(displayName) is not { } key)
+        {
+            return null;
+        }
+
+        if (cache.Genres.TryGetValue(key, out Guid id))
+        {
+            return id;
+        }
+
+        Genre? genre = await library.FindGenreAsync(key, cancellationToken);
+        if (genre is null)
+        {
+            genre = new Genre
+            {
+                Id = Guid.CreateVersion7(),
+                Name = displayName,
+                NormalizedName = key,
+            };
+            library.Add(genre);
+        }
+
+        cache.Genres[key] = genre.Id;
+        return genre.Id;
+    }
+
+    /// <summary>
     /// An existing album follows the folder written last: the spelling of its title (the key, and so the album, stays
     /// the same) and its year, unless the folder names none. Returns whether anything changed. Artists keep their
     /// first spelling, so their names do not change from folder to folder.
@@ -730,9 +824,18 @@ public sealed class LibraryWriter(
     private static bool UpdateAlbum(Album album, AlbumAssignment assignment)
     {
         bool changed = false;
-        if (album.Title != assignment.Title)
+        // An album found by its MusicBrainz release may carry another title in the tags of a song; only a new
+        // spelling of the same title is taken over.
+        if (album.Title != assignment.Title && NameKeys.AreEqual(album.Title, assignment.Title))
         {
             album.Title = assignment.Title;
+            album.NormalizedTitle = NameKeys.Of(assignment.Title)!;
+            changed = true;
+        }
+
+        if (album.MusicBrainzReleaseId is null && assignment.MusicBrainzReleaseId is not null)
+        {
+            album.MusicBrainzReleaseId = assignment.MusicBrainzReleaseId;
             changed = true;
         }
 
@@ -845,6 +948,8 @@ public sealed class LibraryWriter(
             ReplayGainAlbumPeak = tags.ReplayGainAlbumPeak,
             MusicBrainzTrackId = Truncate(tags.MusicBrainzTrackId, 64),
             MusicBrainzReleaseId = Truncate(tags.MusicBrainzReleaseId, 64),
+            MusicBrainzArtistId = tags.MusicBrainzArtistId,
+            MusicBrainzAlbumArtistId = tags.MusicBrainzAlbumArtistId,
             IsCompilation = tags.IsCompilation,
         };
     }
@@ -874,5 +979,9 @@ public sealed class LibraryWriter(
         public Dictionary<string, Guid> Albums { get; } = new(StringComparer.Ordinal);
 
         public Dictionary<Guid, Guid?> AlbumArtists { get; } = [];
+
+        public Dictionary<Guid, Guid> MusicBrainzArtists { get; } = [];
+
+        public Dictionary<string, Guid> Genres { get; } = new(StringComparer.Ordinal);
     }
 }

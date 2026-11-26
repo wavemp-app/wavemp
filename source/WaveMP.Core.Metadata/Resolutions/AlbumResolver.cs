@@ -38,7 +38,9 @@ public static class AlbumResolver
                 MetadataText.Normalize(members[0].Album)!,
                 ArtistOf(members[0]),
                 members.Select(track => track.Year).FirstOrDefault(value => value is not null),
-                album.Key);
+                album.Key,
+                members.Select(track => track.MusicBrainzReleaseId).FirstOrDefault(value => value is not null),
+                ArtistMusicBrainzIdOf(members[0]));
             foreach (int index in album)
             {
                 assignments[index] = assignment;
@@ -56,5 +58,19 @@ public static class AlbumResolver
     {
         return MetadataText.Normalize(track.AlbumArtist)
             ?? (track.IsCompilation ? null : MetadataText.Normalize(track.Artist));
+    }
+
+    /// <summary>
+    /// The MusicBrainz artist of <see cref="ArtistOf"/>: that of the album artist tag, otherwise that of the artist
+    /// tag.
+    /// </summary>
+    private static Guid? ArtistMusicBrainzIdOf(ResolvedTrackMetadata track)
+    {
+        if (MetadataText.Normalize(track.AlbumArtist) is not null)
+        {
+            return track.MusicBrainzAlbumArtistId;
+        }
+
+        return track.IsCompilation || MetadataText.Normalize(track.Artist) is null ? null : track.MusicBrainzArtistId;
     }
 }

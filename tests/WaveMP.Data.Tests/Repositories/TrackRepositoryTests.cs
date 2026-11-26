@@ -263,7 +263,7 @@ public class TrackRepositoryTests : LibraryDatabaseTests
     }
 
     [Test]
-    public async Task ListGenresAsync_Always_GroupsGenresWithoutRegardToCase()
+    public async Task ListGenresAsync_Always_CountsTheTracksAndAlbumsOfEachGenre()
     {
         await SeedStandardLibraryAsync();
         TrackRepository repository = new(CreateDbContext());
@@ -275,9 +275,8 @@ public class TrackRepositoryTests : LibraryDatabaseTests
         Page<GenreRow> search = await repository.ListGenresAsync(
             new GenreListQuery(0, 100, GenreSortField.Name, SortDirection.Asc, "rok"));
 
-        byName.Items.Should().BeEquivalentTo(
-            [new GenreRow("Pop", 3, 2), new GenreRow("Rock", 3, 1)],
-            options => options.WithStrictOrdering());
+        byName.Items.Select(genre => (genre.Name, genre.TrackCount, genre.AlbumCount))
+            .Should().Equal(("Pop", 3, 2), ("Rock", 3, 1));
         byName.Total.Should().Be(2);
         byCount.Items.Select(genre => genre.Name).Should().Equal("Pop", "Rock");
         search.Items.Select(genre => genre.Name).Should().Equal("Rock");
@@ -318,12 +317,10 @@ public class TrackRepositoryTests : LibraryDatabaseTests
         Page<YearRow> none = await repository.ListYearsAsync(
             new YearListQuery(0, 100, SortDirection.Desc, SourceId: Guid.NewGuid()));
 
-        genres.Items.Should().BeEquivalentTo(
-            [new GenreRow("Jazz", 1, 1), new GenreRow("rock", 1, 1)],
-            options => options.WithStrictOrdering());
-        allGenres.Items.Should().BeEquivalentTo(
-            [new GenreRow("Jazz", 1, 1), new GenreRow("Pop", 3, 2), new GenreRow("Rock", 4, 2)],
-            options => options.WithStrictOrdering());
+        genres.Items.Select(genre => (genre.Name, genre.TrackCount, genre.AlbumCount))
+            .Should().Equal(("Jazz", 1, 1), ("Rock", 1, 1));
+        allGenres.Items.Select(genre => (genre.Name, genre.TrackCount, genre.AlbumCount))
+            .Should().Equal(("Jazz", 1, 1), ("Pop", 3, 2), ("Rock", 4, 2));
         years.Items.Should().BeEquivalentTo(
             [new YearRow(2001, 1, 1), new YearRow(1999, 1, 1)],
             options => options.WithStrictOrdering());

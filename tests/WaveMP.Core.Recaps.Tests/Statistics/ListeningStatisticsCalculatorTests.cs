@@ -59,7 +59,7 @@ public class ListeningStatisticsCalculatorTests
     }
 
     [Test]
-    public void Calculate_GenresInDifferentCase_CountsThemAsOneGenreInTheMostPlayedSpelling()
+    public void Calculate_TracksOfOneGenre_CountsThemByTheIdOfTheGenre()
     {
         List<PlayStatisticsRow> plays =
         [
@@ -72,7 +72,7 @@ public class ListeningStatisticsCalculatorTests
         StatisticsCalculation result = Calculate(plays);
 
         result.TopGenres.Select(genre => (genre.Name, genre.Plays, genre.Tracks)).Should().Equal(
-            ("pop", 3, 2),
+            ("Pop", 3, 2),
             ("Rock", 1, 1));
     }
 

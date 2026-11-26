@@ -291,10 +291,11 @@ public class LibraryApiTests
 
         genres.Items.Should().BeEquivalentTo(
             [
-                new GenreDto { Name = "Pop", TrackCount = 1, AlbumCount = 1 },
-                new GenreDto { Name = "Rock", TrackCount = 2, AlbumCount = 1 },
+                new GenreDto { Id = Guid.Empty, Name = "Pop", TrackCount = 1, AlbumCount = 1 },
+                new GenreDto { Id = Guid.Empty, Name = "Rock", TrackCount = 2, AlbumCount = 1 },
             ],
-            options => options.WithStrictOrdering());
+            options => options.WithStrictOrdering().Excluding(genre => genre.Id));
+        genres.Items.Should().OnlyContain(genre => genre.Id != Guid.Empty);
         years.Items.Select(year => year.Year).Should().Equal(2010, 2001);
     }
 

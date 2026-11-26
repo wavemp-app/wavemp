@@ -61,11 +61,11 @@ internal static class ListeningStatisticsCalculator
             group => group.First().AlbumId!.Value,
             group => (group.First().AlbumArtistId, group.First().AlbumArtistName));
         List<CountedGroup> genres = CountGroups(
-            plays.Where(play => !string.IsNullOrWhiteSpace(play.Genre)),
-            play => play.Genre!.Trim().ToUpperInvariant(),
-            MostPlayedSpelling,
+            plays.Where(play => play.GenreId is not null),
+            play => play.GenreId!.Value.ToString(),
+            group => group.First().Genre ?? string.Empty,
             trackById,
-            _ => Guid.Empty);
+            group => group.First().GenreId!.Value);
 
         List<CountedGroup> newArtists = [.. artists
             .Where(artist => firstArtistPlays.TryGetValue(artist.Id, out DateTimeOffset first) && first >= periodStart)
@@ -186,20 +186,6 @@ internal static class ListeningStatisticsCalculator
             .ThenByDescending(group => group.ListeningTime)
             .ThenBy(group => group.Name, StringComparer.OrdinalIgnoreCase)
             .ThenBy(group => group.Id)];
-    }
-
-    /// <summary>
-    /// The spelling of a genre played most often; ties by ordinal order.
-    /// </summary>
-    private static string MostPlayedSpelling(IGrouping<string, PlayStatisticsRow> group)
-    {
-        return group
-            .Select(play => play.Genre!.Trim())
-            .GroupBy(spelling => spelling, StringComparer.Ordinal)
-            .OrderByDescending(spelling => spelling.Count())
-            .ThenBy(spelling => spelling.Key, StringComparer.Ordinal)
-            .First()
-            .Key;
     }
 
     private static Timeline BuildTimeline(

@@ -3,6 +3,7 @@ using WaveMP.Data.Entities;
 using WaveMP.Data.Extensions;
 using WaveMP.Data.Projections;
 using WaveMP.Data.Queries;
+using WaveMP.Data.Texts;
 
 namespace WaveMP.Data.Repositories;
 
@@ -293,9 +294,8 @@ internal sealed class SubsonicRepository(WaveMpDbContext dbContext) : ISubsonicR
 
         if (query.Genre is { } genre)
         {
-            string pattern = LikePatterns.Escape(genre);
-            tracks = tracks.Where(track =>
-                track.Genre != null && EF.Functions.ILike(track.Genre, pattern, LikePatterns.EscapeCharacter));
+            string? genreKey = NameKeys.Of(genre);
+            tracks = tracks.Where(track => track.Genre != null && track.Genre.NormalizedName == genreKey);
         }
 
         if (query.FromYear is { } fromYear)

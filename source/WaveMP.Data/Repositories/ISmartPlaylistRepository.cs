@@ -30,6 +30,24 @@ public interface ISmartPlaylistRepository
     Task<bool> DeleteAsync(Guid userId, Guid id, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Links the rules that name an artist, album or genre (see <see cref="SmartPlaylistRule.CanReference"/>) to the
+    /// entry they name: a reference to an existing entry of the field stays; otherwise the text is looked up by its
+    /// normalized name (see <see cref="Texts.NameKeys"/>) and the rule gets the id of the matching entry if exactly one
+    /// matches, or none. Other rules are returned as they are.
+    /// </summary>
+    Task<IReadOnlyList<SmartPlaylistRule>> LinkAsync(
+        IReadOnlyList<SmartPlaylistRule> rules,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// The rules as they are shown: a rule with a reference gets the current name of its entry as text; a reference to
+    /// an entry that no longer exists is left out, so the rule shows as one that compares its text.
+    /// </summary>
+    Task<IReadOnlyList<SmartPlaylistRule>> NameReferencesAsync(
+        IReadOnlyList<SmartPlaylistRule> rules,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// One page of the ids of the tracks the criteria pick for the user, in their order; the total respects the limit
     /// of the criteria.
     /// </summary>

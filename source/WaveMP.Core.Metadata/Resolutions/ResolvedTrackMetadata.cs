@@ -16,6 +16,11 @@ namespace WaveMP.Core.Metadata.Resolutions;
 /// <param name="Genre">Genre of the track.</param>
 /// <param name="IsCompilation">Whether the tags mark the track as part of a compilation, which changes how its album
 /// is formed (see <see cref="AlbumResolver"/>).</param>
+/// <param name="MusicBrainzArtistId">The MusicBrainz artist of <paramref name="Artist"/>, if its tag names exactly
+/// one.</param>
+/// <param name="MusicBrainzAlbumArtistId">The MusicBrainz artist of <paramref name="AlbumArtist"/>, if its tag names
+/// exactly one.</param>
+/// <param name="MusicBrainzReleaseId">The MusicBrainz release of <paramref name="Album"/>.</param>
 public sealed record ResolvedTrackMetadata(
     string Title,
     TrackMetadataSource TitleSource,
@@ -26,4 +31,7 @@ public sealed record ResolvedTrackMetadata(
     int? DiscNumber,
     int? Year,
     string? Genre,
-    bool IsCompilation = false);
+    bool IsCompilation = false,
+    Guid? MusicBrainzArtistId = null,
+    Guid? MusicBrainzAlbumArtistId = null,
+    Guid? MusicBrainzReleaseId = null);

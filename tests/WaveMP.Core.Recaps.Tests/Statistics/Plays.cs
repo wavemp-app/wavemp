@@ -18,8 +18,11 @@ internal static class Plays
     public static readonly Guid Daybreak = Guid.Parse("00000000-0000-0000-0000-0000000000b1");
     public static readonly Guid Evening = Guid.Parse("00000000-0000-0000-0000-0000000000b2");
 
+    public static readonly Guid Pop = Guid.Parse("00000000-0000-0000-0000-0000000000c1");
+    public static readonly Guid Rock = Guid.Parse("00000000-0000-0000-0000-0000000000c2");
+
     /// <summary>
-    /// A play of one of the tracks: Ballad (Aurora, Daybreak, Pop, 4 minutes), Opening (Aurora, Daybreak, pop, 3
+    /// A play of one of the tracks: Ballad (Aurora, Daybreak, Pop, 4 minutes), Opening (Aurora, Daybreak, Pop, 3
     /// minutes), Closing (Breeze, Evening, Rock, 5 minutes) and Single (no artist, album or genre, 2 minutes).
     /// </summary>
     public static PlayStatisticsRow Of(Guid track, DateTimeOffset playedAt)
@@ -27,26 +30,26 @@ internal static class Plays
         if (track == Ballad)
         {
             return new PlayStatisticsRow(
-                playedAt, Ballad, "Ballad", Aurora, "Aurora", Daybreak, "Daybreak", Aurora, "Aurora", "Pop",
+                playedAt, Ballad, "Ballad", Aurora, "Aurora", Daybreak, "Daybreak", Aurora, "Aurora", Pop, "Pop",
                 TimeSpan.FromMinutes(4));
         }
 
         if (track == Opening)
         {
             return new PlayStatisticsRow(
-                playedAt, Opening, "Opening", Aurora, "Aurora", Daybreak, "Daybreak", Aurora, "Aurora", "pop",
+                playedAt, Opening, "Opening", Aurora, "Aurora", Daybreak, "Daybreak", Aurora, "Aurora", Pop, "Pop",
                 TimeSpan.FromMinutes(3));
         }
 
         if (track == Closing)
         {
             return new PlayStatisticsRow(
-                playedAt, Closing, "Closing", Breeze, "Breeze", Evening, "Evening", Breeze, "Breeze", "Rock",
+                playedAt, Closing, "Closing", Breeze, "Breeze", Evening, "Evening", Breeze, "Breeze", Rock, "Rock",
                 TimeSpan.FromMinutes(5));
         }
 
         return new PlayStatisticsRow(
-            playedAt, Single, "Single", null, null, null, null, null, null, null, TimeSpan.FromMinutes(2));
+            playedAt, Single, "Single", null, null, null, null, null, null, null, null, TimeSpan.FromMinutes(2));
     }
 
     public static TrackRow Row(Guid id, bool hasCover, Guid? albumId = null, bool albumIsCompilation = false)

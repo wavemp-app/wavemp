@@ -3,6 +3,7 @@ using WaveMP.Data.Entities;
 using WaveMP.Data.Extensions;
 using WaveMP.Data.Projections;
 using WaveMP.Data.Queries;
+using WaveMP.Data.Texts;
 
 namespace WaveMP.Data.Repositories;
 
@@ -75,6 +76,116 @@ internal sealed class SmartPlaylistRepository(WaveMpDbContext dbContext) : ISmar
             .Where(playlist => playlist.Id == id && playlist.UserId == userId)
             .ExecuteDeleteAsync(cancellationToken);
         return deleted > 0;
+    }
+
+    public async Task<IReadOnlyList<SmartPlaylistRule>> LinkAsync(
+        IReadOnlyList<SmartPlaylistRule> rules,
+        CancellationToken cancellationToken = default)
+    {
+        List<SmartPlaylistRule> linked = [];
+        foreach (SmartPlaylistRule rule in rules)
+        {
+            if (!rule.CanReference())
+            {
+                linked.Add(rule);
+                continue;
+            }
+
+            Guid? id = rule.ReferenceId is { } referenceId
+                && (await NamesOfAsync(rule.Field, [referenceId], cancellationToken)).ContainsKey(referenceId)
+                    ? referenceId
+                    : await FindByNameAsync(rule.Field, rule.Text, cancellationToken);
+            linked.Add(rule with { ReferenceId = id });
+        }
+
+        return linked;
+    }
+
+    public async Task<IReadOnlyList<SmartPlaylistRule>> NameReferencesAsync(
+        IReadOnlyList<SmartPlaylistRule> rules,
+        CancellationToken cancellationToken = default)
+    {
+        Dictionary<SmartPlaylistField, IReadOnlyDictionary<Guid, string>> names = [];
+        foreach (IGrouping<SmartPlaylistField, SmartPlaylistRule> field in rules
+            .Where(rule => rule.ReferenceId is not null)
+            .GroupBy(rule => rule.Field))
+        {
+            names[field.Key] = await NamesOfAsync(
+                field.Key,
+                [.. field.Select(rule => rule.ReferenceId!.Value).Distinct()],
+                cancellationToken);
+        }
+
+        return [.. rules.Select(rule =>
+        {
+            if (rule.ReferenceId is not { } id)
+            {
+                return rule;
+            }
+
+            return names.TryGetValue(rule.Field, out IReadOnlyDictionary<Guid, string>? known)
+                && known.TryGetValue(id, out string? name)
+                    ? rule with { Text = name }
+                    : rule with { ReferenceId = null };
+        })];
+    }
+
+    /// <summary>
+    /// The names of the entries of a field (artists, album titles or genres) with these ids; ids of other entries are
+    /// left out.
+    /// </summary>
+    private async Task<IReadOnlyDictionary<Guid, string>> NamesOfAsync(
+        SmartPlaylistField field,
+        Guid[] ids,
+        CancellationToken cancellationToken)
+    {
+        return field switch
+        {
+            SmartPlaylistField.Artist => await dbContext.Artists.AsNoTracking()
+                .Where(artist => ids.Contains(artist.Id))
+                .ToDictionaryAsync(artist => artist.Id, artist => artist.Name, cancellationToken),
+            SmartPlaylistField.Album => await dbContext.Albums.AsNoTracking()
+                .Where(album => ids.Contains(album.Id))
+                .ToDictionaryAsync(album => album.Id, album => album.Title, cancellationToken),
+            SmartPlaylistField.Genre => await dbContext.Genres.AsNoTracking()
+                .Where(genre => ids.Contains(genre.Id))
+                .ToDictionaryAsync(genre => genre.Id, genre => genre.Name, cancellationToken),
+            _ => [],
+        };
+    }
+
+    /// <summary>
+    /// The entry of a field with the normalized name of the text, if exactly one has it.
+    /// </summary>
+    private async Task<Guid?> FindByNameAsync(
+        SmartPlaylistField field,
+        string? text,
+        CancellationToken cancellationToken)
+    {
+        if (NameKeys.Of(text) is not { } key)
+        {
+            return null;
+        }
+
+        List<Guid> matches = field switch
+        {
+            SmartPlaylistField.Artist => await dbContext.Artists.AsNoTracking()
+                .Where(artist => artist.NormalizedName == key)
+                .Select(artist => artist.Id)
+                .Take(2)
+                .ToListAsync(cancellationToken),
+            SmartPlaylistField.Album => await dbContext.Albums.AsNoTracking()
+                .Where(album => album.NormalizedTitle == key)
+                .Select(album => album.Id)
+                .Take(2)
+                .ToListAsync(cancellationToken),
+            _ => await dbContext.Genres.AsNoTracking()
+                .Where(genre => genre.NormalizedName == key)
+                .Select(genre => genre.Id)
+                .Take(2)
+                .ToListAsync(cancellationToken),
+        };
+        return matches is [Guid id] ? id : null;
     }
 
     public async Task<Page<Guid>> ListTrackIdsAsync(

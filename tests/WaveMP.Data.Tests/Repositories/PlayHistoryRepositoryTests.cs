@@ -226,6 +226,7 @@ public class PlayHistoryRepositoryTests : LibraryDatabaseTests
                 "Second Album",
                 library.Beta.Id,
                 "Beta Singer",
+                library.Ballad.GenreId,
                 "Pop",
                 TimeSpan.FromMinutes(5)),
             new PlayStatisticsRow(
@@ -238,6 +239,7 @@ public class PlayHistoryRepositoryTests : LibraryDatabaseTests
                 "First Album",
                 library.Alpha.Id,
                 "Alpha Band",
+                library.Opening.GenreId,
                 "Rock",
                 TimeSpan.FromMinutes(3)));
     }

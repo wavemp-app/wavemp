@@ -58,6 +58,7 @@ internal sealed class SmartPlaylistService(
         }
 
         DateTimeOffset now = TruncateToMicroseconds(timeProvider.GetUtcNow());
+        validation = await LinkAsync(validation, cancellationToken);
         SmartPlaylist playlist = ToEntity(Guid.CreateVersion7(now), userId, validation, now, now);
         await smartPlaylists.CreateAsync(playlist, cancellationToken);
         return await ResultOfAsync(userId, playlist.Id, cancellationToken);
@@ -76,6 +77,7 @@ internal sealed class SmartPlaylistService(
         }
 
         DateTimeOffset now = TruncateToMicroseconds(timeProvider.GetUtcNow());
+        validation = await LinkAsync(validation, cancellationToken);
 
         // The time of creation is not changed by the update.
         bool updated = await smartPlaylists.UpdateAsync(ToEntity(id, userId, validation, now, now), cancellationToken);
@@ -201,7 +203,25 @@ internal sealed class SmartPlaylistService(
         PlaylistCover cover = picked.TryGetValue(playlist.Id, out IReadOnlyList<Guid>? trackIds) && trackIds.Count > 0
             ? new PlaylistCover(PlaylistCoverKind.Tracks, null, trackIds)
             : PlaylistCover.None;
+        IReadOnlyList<SmartPlaylistRule> shown = await smartPlaylists.NameReferencesAsync(
+            playlist.Rules,
+            cancellationToken);
+        playlist.Rules = [.. shown];
         return new SmartPlaylistItem(playlist, summary, cover);
+    }
+
+    /// <summary>
+    /// The rules of a valid smart playlist linked to the artists, albums and genres they name (see
+    /// <see cref="ISmartPlaylistRepository.LinkAsync"/>).
+    /// </summary>
+    private async Task<SmartPlaylistValidation> LinkAsync(
+        SmartPlaylistValidation validation,
+        CancellationToken cancellationToken)
+    {
+        IReadOnlyList<SmartPlaylistRule> rules = await smartPlaylists.LinkAsync(
+            validation.Criteria.Rules,
+            cancellationToken);
+        return validation with { Criteria = validation.Criteria with { Rules = rules } };
     }
 
     private async Task<SmartPlaylistResult> ResultOfAsync(Guid userId, Guid id, CancellationToken cancellationToken)

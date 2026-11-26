@@ -118,11 +118,12 @@ public class TrackMetadataEditorDatabaseTests
         });
         Track track = await db.Tracks
             .Include(item => item.Artist)
+            .Include(item => item.Genre)
             .Include(item => item.Album).ThenInclude(item => item!.AlbumArtist)
             .SingleAsync(item => item.Id == trackId);
         (track.Title, track.Artist!.Name, track.Album!.Title, track.Album.AlbumArtist!.Name)
             .Should().Be(("Uno", "Solo Artist", "Solo Album", "Solo Artist"));
-        (track.Year, track.TrackNumber, track.DiscNumber, track.Genre).Should().Be((2020, 5, 1, "Jazz"));
+        (track.Year, track.TrackNumber, track.DiscNumber, track.Genre?.Name).Should().Be((2020, 5, 1, "Jazz"));
         (await db.Albums.Select(item => item.Title).OrderBy(title => title).ToListAsync())
             .Should().Equal("Album", "Solo Album");
     }

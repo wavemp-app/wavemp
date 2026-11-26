@@ -1,4 +1,5 @@
 using WaveMP.Data.Projections;
+using WaveMP.Data.Texts;
 
 namespace WaveMP.Core.Autoplay.Selections;
 
@@ -171,7 +172,7 @@ internal static class AutoplayPicker
 
     private static string Normalize(string genre)
     {
-        return genre.Trim().ToUpperInvariant();
+        return NameKeys.Of(genre) ?? string.Empty;
     }
 
     private static IEnumerable<AutoplayCandidateRow> Distinct(IEnumerable<AutoplayCandidateRow> candidates)

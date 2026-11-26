@@ -5,8 +5,9 @@ namespace WaveMP.Data.Entities;
 /// to it. When its songs moved to other artists because their artist or album artist was renamed (see
 /// <see cref="ArtistMove"/>), its favorites, its first seen date and a list in the player started from it go to those
 /// artists before it is removed; its uploaded picture, its online picture and its MusicBrainz artist go to the artist
-/// that got most of its songs, each only if that artist has none. Smart playlist rules, the scrobble queue and tag
-/// backups hold the artist name as text, not this row, and are not changed by a rename.
+/// that got most of its songs, each only if that artist has none, and rules of smart playlists that name it to that
+/// artist too. Everything that refers to an artist stores its id; only the scrobble queue and tag backups keep the
+/// name as text, since they hold what was played or what stood in the tags.
 /// </summary>
 public class Artist
 {
@@ -18,7 +19,8 @@ public class Artist
     public required string Name { get; set; }
 
     /// <summary>
-    /// Upper-case form of <see cref="Name"/> with normalized white space; carries the unique index.
+    /// The key the artist is found by (see <see cref="Texts.NameKeys"/>), e.g. <c>kflay</c> for "K.Flay"; carries the
+    /// unique index and sorts the artists. Never shown.
     /// </summary>
     public required string NormalizedName { get; set; }
 
@@ -34,8 +36,9 @@ public class Artist
     public MediaFile? LocalPictureFile { get; set; }
 
     /// <summary>
-    /// The MusicBrainz artist an admin chose in the online lookup of artist pictures, so the next lookup skips the
-    /// choice.
+    /// The MusicBrainz artist of the artist: from the tags of its songs (a single MusicBrainz artist id), or as an
+    /// admin chose it in the online lookup of artist pictures, so the next lookup skips the choice. A scan finds an
+    /// artist by this id before its name.
     /// </summary>
     public Guid? MusicBrainzArtistId { get; set; }
 

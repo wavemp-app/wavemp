@@ -53,7 +53,12 @@ public class Track
 
     public int? Year { get; set; }
 
-    public string? Genre { get; set; }
+    /// <summary>
+    /// The genre of the track (its first genre tag), by id.
+    /// </summary>
+    public Guid? GenreId { get; set; }
+
+    public Genre? Genre { get; set; }
 
     /// <summary>
     /// Duration of the primary audio file, otherwise of the primary video file.

@@ -250,7 +250,8 @@ public class CollectionQueryTests : LibraryDatabaseTests
         Page<YearRow> years = await repository.ListYearsAsync(
             new YearListQuery(0, 100, SortDirection.Desc, user.Id, MyMusic: true));
 
-        genres.Items.Should().Equal(new GenreRow("Pop", 2, 2), new GenreRow("Rock", 1, 1));
+        genres.Items.Select(genre => (genre.Name, genre.TrackCount, genre.AlbumCount))
+            .Should().Equal(("Pop", 2, 2), ("Rock", 1, 1));
         years.Items.Should().Equal(new YearRow(2010, 1, 1), new YearRow(2005, 1, 1), new YearRow(2001, 1, 1));
     }
 

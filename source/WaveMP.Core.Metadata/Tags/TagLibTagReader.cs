@@ -63,6 +63,8 @@ internal sealed class TagLibTagReader : ITagReader
             ReplayGainAlbumPeak = Finite(tag.ReplayGainAlbumPeak),
             MusicBrainzTrackId = MetadataText.Normalize(tag.MusicBrainzTrackId),
             MusicBrainzReleaseId = MetadataText.Normalize(tag.MusicBrainzReleaseId),
+            MusicBrainzArtistId = MusicBrainzIds.SingleText(tag.MusicBrainzArtistId),
+            MusicBrainzAlbumArtistId = MusicBrainzIds.SingleText(tag.MusicBrainzReleaseArtistId),
         };
     }
 

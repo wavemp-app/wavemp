@@ -54,6 +54,17 @@ public sealed record MediaTags
     public string? MusicBrainzReleaseId { get; init; }
 
     /// <summary>
+    /// The MusicBrainz artist of the artist tag, only if the tag names exactly one (see
+    /// <see cref="Texts.MusicBrainzIds"/>).
+    /// </summary>
+    public string? MusicBrainzArtistId { get; init; }
+
+    /// <summary>
+    /// The MusicBrainz artist of the album artist tag, only if the tag names exactly one.
+    /// </summary>
+    public string? MusicBrainzAlbumArtistId { get; init; }
+
+    /// <summary>
     /// Whether the file is marked as part of a compilation: ID3 <c>TCMP</c>, MP4 <c>cpil</c> or the Vorbis comment
     /// <c>COMPILATION</c>.
     /// </summary>

@@ -58,6 +58,10 @@ namespace WaveMP.Data.Migrations
                         .HasColumnType("boolean")
                         .HasColumnName("is_compilation");
 
+                    b.Property<Guid?>("MusicBrainzReleaseId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("music_brainz_release_id");
+
                     b.Property<string>("NormalizedTitle")
                         .IsRequired()
                         .HasMaxLength(512)
@@ -87,6 +91,9 @@ namespace WaveMP.Data.Migrations
                     b.HasIndex("AlbumKey")
                         .IsUnique()
                         .HasDatabaseName("ix_albums_album_key");
+
+                    b.HasIndex("MusicBrainzReleaseId")
+                        .HasDatabaseName("ix_albums_music_brainz_release_id");
 
                     b.HasIndex("Title")
                         .HasDatabaseName("ix_albums_title_trgm");
@@ -162,6 +169,9 @@ namespace WaveMP.Data.Migrations
 
                     b.HasIndex("LocalPictureFileId")
                         .HasDatabaseName("ix_artists_local_picture_file_id");
+
+                    b.HasIndex("MusicBrainzArtistId")
+                        .HasDatabaseName("ix_artists_music_brainz_artist_id");
 
                     b.HasIndex("Name")
                         .HasDatabaseName("ix_artists_name_trgm");
@@ -335,6 +345,23 @@ namespace WaveMP.Data.Migrations
                         });
                 });
 
+            modelBuilder.Entity("WaveMP.Data.Entities.DataUpgrade", b =>
+                {
+                    b.Property<string>("Name")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("name");
+
+                    b.Property<DateTimeOffset?>("CompletedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("completed_at");
+
+                    b.HasKey("Name")
+                        .HasName("pk_data_upgrades");
+
+                    b.ToTable("data_upgrades", (string)null);
+                });
+
             modelBuilder.Entity("WaveMP.Data.Entities.Device", b =>
                 {
                     b.Property<Guid>("UserId")
@@ -444,6 +471,40 @@ namespace WaveMP.Data.Migrations
                         {
                             t.HasCheckConstraint("ck_favorites_target", "(type = 'Track' AND track_id IS NOT NULL AND album_id IS NULL AND artist_id IS NULL) OR (type = 'Album' AND album_id IS NOT NULL AND track_id IS NULL AND artist_id IS NULL) OR (type = 'Artist' AND artist_id IS NOT NULL AND track_id IS NULL AND album_id IS NULL)");
                         });
+                });
+
+            modelBuilder.Entity("WaveMP.Data.Entities.Genre", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)")
+                        .HasColumnName("name");
+
+                    b.Property<string>("NormalizedName")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)")
+                        .HasColumnName("normalized_name");
+
+                    b.HasKey("Id")
+                        .HasName("pk_genres");
+
+                    b.HasIndex("Name")
+                        .HasDatabaseName("ix_genres_name_trgm");
+
+                    NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex("Name"), "gin");
+                    NpgsqlIndexBuilderExtensions.HasOperators(b.HasIndex("Name"), new[] { "gin_trgm_ops" });
+
+                    b.HasIndex("NormalizedName")
+                        .IsUnique()
+                        .HasDatabaseName("ix_genres_normalized_name");
+
+                    b.ToTable("genres", (string)null);
                 });
 
             modelBuilder.Entity("WaveMP.Data.Entities.JobRun", b =>
@@ -828,6 +889,16 @@ namespace WaveMP.Data.Migrations
                             b1.Property<bool>("IsCompilation")
                                 .HasColumnType("boolean")
                                 .HasColumnName("tags_is_compilation");
+
+                            b1.Property<string>("MusicBrainzAlbumArtistId")
+                                .HasMaxLength(64)
+                                .HasColumnType("character varying(64)")
+                                .HasColumnName("tags_music_brainz_album_artist_id");
+
+                            b1.Property<string>("MusicBrainzArtistId")
+                                .HasMaxLength(64)
+                                .HasColumnType("character varying(64)")
+                                .HasColumnName("tags_music_brainz_artist_id");
 
                             b1.Property<string>("MusicBrainzReleaseId")
                                 .HasMaxLength(64)
@@ -2091,10 +2162,9 @@ namespace WaveMP.Data.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("first_seen_at");
 
-                    b.Property<string>("Genre")
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)")
-                        .HasColumnName("genre");
+                    b.Property<Guid?>("GenreId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("genre_id");
 
                     b.Property<bool>("HasAudio")
                         .HasColumnType("boolean")
@@ -2160,6 +2230,9 @@ namespace WaveMP.Data.Migrations
 
                     b.HasIndex("FirstSeenAt")
                         .HasDatabaseName("ix_tracks_first_seen_at");
+
+                    b.HasIndex("GenreId")
+                        .HasDatabaseName("ix_tracks_genre_id");
 
                     b.HasIndex("ReviewedAt")
                         .HasDatabaseName("ix_tracks_reviewed_at");
@@ -3011,6 +3084,12 @@ namespace WaveMP.Data.Migrations
                         .OnDelete(DeleteBehavior.SetNull)
                         .HasConstraintName("fk_tracks_artists_artist_id");
 
+                    b.HasOne("WaveMP.Data.Entities.Genre", "Genre")
+                        .WithMany()
+                        .HasForeignKey("GenreId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_tracks_genres_genre_id");
+
                     b.HasOne("WaveMP.Data.Entities.User", "ReviewedBy")
                         .WithMany()
                         .HasForeignKey("ReviewedByUserId")
@@ -3027,6 +3106,8 @@ namespace WaveMP.Data.Migrations
                     b.Navigation("Album");
 
                     b.Navigation("Artist");
+
+                    b.Navigation("Genre");
 
                     b.Navigation("ReviewedBy");
 

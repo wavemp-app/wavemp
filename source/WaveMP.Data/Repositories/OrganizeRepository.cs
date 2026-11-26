@@ -70,7 +70,7 @@ internal sealed class OrganizeRepository(WaveMpDbContext dbContext) : IOrganizeR
                 Year = track.Year ?? (track.Album == null ? null : track.Album.Year),
                 track.TrackNumber,
                 track.DiscNumber,
-                track.Genre,
+                Genre = track.Genre == null ? null : track.Genre.Name,
             })
             .ToListAsync(cancellationToken);
         ILookup<Guid, OrganizeFileRow> files = (await LoadFilesAsync(
@@ -827,7 +827,7 @@ internal sealed class OrganizeRepository(WaveMpDbContext dbContext) : IOrganizeR
                 Year = track.Year ?? (track.Album == null ? null : track.Album.Year),
                 track.TrackNumber,
                 track.DiscNumber,
-                track.Genre,
+                Genre = track.Genre == null ? null : track.Genre.Name,
                 track.BaseName,
             })
             .ToListAsync(cancellationToken);

@@ -9,4 +9,14 @@ namespace WaveMP.Core.Metadata.Resolutions;
 /// tag.</param>
 /// <param name="Year">Year of the album, the first one its tracks name.</param>
 /// <param name="Key">Identity of the album, see <see cref="AlbumKeys"/>.</param>
-public sealed record AlbumAssignment(string Title, string? AlbumArtist, int? Year, string Key);
+/// <param name="MusicBrainzReleaseId">The MusicBrainz release of the album, the first one its tracks name; a scan finds
+/// the album by it before its key.</param>
+/// <param name="AlbumArtistMusicBrainzId">The MusicBrainz artist of <paramref name="AlbumArtist"/>, if its tag names
+/// exactly one.</param>
+public sealed record AlbumAssignment(
+    string Title,
+    string? AlbumArtist,
+    int? Year,
+    string Key,
+    Guid? MusicBrainzReleaseId = null,
+    Guid? AlbumArtistMusicBrainzId = null);

@@ -19429,15 +19429,20 @@
       },
       "Genre": {
         "required": [
+          "id",
           "name",
           "trackCount",
           "albumCount"
         ],
         "type": "object",
         "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
           "name": {
             "type": "string",
-            "description": "Name of the genre as found in the tracks; use it as filter genre of the lists."
+            "description": "Name of the genre as first found in the tracks; use it as filter genre of the lists."
           },
           "trackCount": {
             "type": "integer",
@@ -19449,7 +19454,7 @@
             "format": "int32"
           }
         },
-        "description": "A genre of the tracks; genres that differ only in case are one genre."
+        "description": "A genre of the tracks; genres whose names differ only in case, diacritics, spaces or punctuation are one genre."
       },
       "GenrePage": {
         "required": [
@@ -23625,6 +23630,14 @@
             ],
             "description": "Text of a text field, 1 to 200 characters; spaces at the ends are removed."
           },
+          "referenceId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The artist, album or genre a rule with Is or IsNot names, by id, e.g. as received with the rule or chosen from the library; the text is still required. Without an id, or with one that names no entry of the field, the server looks the text up by its normalized name and stores the id of the matching entry, if exactly one matches. Ignored for other rules.",
+            "format": "uuid"
+          },
           "number": {
             "type": [
               "null",
@@ -24302,7 +24315,15 @@
               "null",
               "string"
             ],
-            "description": "Text of a text field."
+            "description": "Text of a text field. For a rule with `referenceId`, the current name of the artist, album or genre."
+          },
+          "referenceId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The artist, album or genre a rule with Is or IsNot names, by id; the rule follows a new spelling of its name. Such a rule without an id names no single entry of the library (no entry has that name, or several albums do) and compares the normalized name of its text: lower case, without diacritics, spaces and punctuation. Clients mark these rules.",
+            "format": "uuid"
           },
           "number": {
             "type": [

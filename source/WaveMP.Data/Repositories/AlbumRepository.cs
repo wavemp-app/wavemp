@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using WaveMP.Data.Entities;
 using WaveMP.Data.Projections;
 using WaveMP.Data.Queries;
+using WaveMP.Data.Texts;
 
 namespace WaveMP.Data.Repositories;
 
@@ -120,9 +121,9 @@ internal sealed class AlbumRepository(WaveMpDbContext dbContext) : IAlbumReposit
 
         if (query.Genre is { } genre)
         {
-            string genrePattern = LikePatterns.Escape(genre);
+            string? genreKey = NameKeys.Of(genre);
             albums = albums.Where(album => album.Tracks.Any(track =>
-                track.Genre != null && EF.Functions.ILike(track.Genre, genrePattern, LikePatterns.EscapeCharacter)));
+                track.Genre != null && track.Genre.NormalizedName == genreKey));
         }
 
         if (query.Year is { } year)
@@ -194,7 +195,7 @@ internal sealed class AlbumRepository(WaveMpDbContext dbContext) : IAlbumReposit
                 .OrderBy(track => track.DiscNumber)
                 .ThenBy(track => track.TrackNumber)
                 .ThenBy(track => track.Id)
-                .Select(track => track.Genre)
+                .Select(track => track.Genre!.Name)
                 .FirstOrDefault(),
             album.Tracks.Count,
             album.Tracks.Sum(track => track.Duration.HasValue ? track.Duration.Value.TotalMilliseconds : 0),

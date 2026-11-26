@@ -45,7 +45,7 @@ public class AutoplayRepositoryTests : LibraryDatabaseTests
 
         candidates.Should().BeEquivalentTo(
         [
-            new AutoplayCandidateRow(library.Closing.Id, library.Alpha.Id, "rock", 2001, true, false, 3),
+            new AutoplayCandidateRow(library.Closing.Id, library.Alpha.Id, "Rock", 2001, true, false, 3),
             new AutoplayCandidateRow(library.HitOne.Id, library.Alpha.Id, "Pop", 2005, true, true, 5),
         ]);
     }

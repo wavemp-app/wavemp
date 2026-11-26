@@ -37,6 +37,10 @@ public class SmartPlaylistServiceTests
                 Arg.Any<DateTimeOffset>(),
                 Arg.Any<CancellationToken>())
             .Returns(new SmartPlaylistSummary(0, 0));
+        _smartPlaylists.LinkAsync(Arg.Any<IReadOnlyList<SmartPlaylistRule>>(), Arg.Any<CancellationToken>())
+            .Returns(call => call.Arg<IReadOnlyList<SmartPlaylistRule>>());
+        _smartPlaylists.NameReferencesAsync(Arg.Any<IReadOnlyList<SmartPlaylistRule>>(), Arg.Any<CancellationToken>())
+            .Returns(call => call.Arg<IReadOnlyList<SmartPlaylistRule>>());
         TimeProvider timeProvider = Substitute.For<TimeProvider>();
         timeProvider.GetUtcNow().Returns(_now);
         _service = new SmartPlaylistService(
@@ -75,6 +79,51 @@ public class SmartPlaylistServiceTests
         created.Limit.Should().Be(25);
         created.CreatedAt.Should().Be(_now);
         result.Item!.Playlist.Should().BeSameAs(created);
+    }
+
+    [Test]
+    public async Task CreateAsync_RuleNamingAnArtist_StoresTheLinkedRulesAndShowsTheCurrentName()
+    {
+        var artistId = Guid.NewGuid();
+        SmartPlaylistRule typed = new(SmartPlaylistField.Artist, SmartPlaylistOperator.Is, "kflay");
+        SmartPlaylistRule linked = typed with { ReferenceId = artistId };
+        _smartPlaylists.LinkAsync(
+                Arg.Is<IReadOnlyList<SmartPlaylistRule>>(rules => rules.SequenceEqual(new[] { typed })),
+                Arg.Any<CancellationToken>())
+            .Returns([linked]);
+        _smartPlaylists.NameReferencesAsync(
+                Arg.Is<IReadOnlyList<SmartPlaylistRule>>(rules => rules.SequenceEqual(new[] { linked })),
+                Arg.Any<CancellationToken>())
+            .Returns([linked with { Text = "K.Flay" }]);
+        SmartPlaylist? created = null;
+        await _smartPlaylists.CreateAsync(
+            Arg.Do<SmartPlaylist>(playlist => created = playlist),
+            Arg.Any<CancellationToken>());
+        _smartPlaylists.FindAsync(_userId, Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+            .Returns(_ => new SmartPlaylist
+            {
+                Id = created!.Id,
+                UserId = _userId,
+                Name = created.Name,
+                NormalizedName = created.NormalizedName,
+                Match = created.Match,
+                Rules = [.. created.Rules],
+                Sort = created.Sort,
+                Direction = created.Direction,
+                CreatedAt = created.CreatedAt,
+                UpdatedAt = created.UpdatedAt,
+            });
+
+        SmartPlaylistResult result = await _service.CreateAsync(_userId, new SmartPlaylistDefinition(
+            "Artist",
+            SmartPlaylistMatch.All,
+            [typed],
+            SmartPlaylistSortField.Title,
+            SortDirection.Asc));
+
+        result.IsOk.Should().BeTrue();
+        created!.Rules.Should().Equal(linked);
+        result.Item!.Playlist.Rules.Should().Equal(linked with { Text = "K.Flay" });
     }
 
     [Test]

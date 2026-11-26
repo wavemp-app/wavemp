@@ -195,7 +195,8 @@ public static class SmartPlaylistRules
             SmartPlaylistFieldKind.Text => new SmartPlaylistRule(
                 rule.Field,
                 rule.Operator,
-                Text: NormalizeText(rule.Text, path + ".text", errors)),
+                Text: NormalizeText(rule.Text, path + ".text", errors),
+                ReferenceId: rule.CanReference() ? rule.ReferenceId : null),
             SmartPlaylistFieldKind.Flag => new SmartPlaylistRule(rule.Field, rule.Operator),
             _ => NormalizeNumbers(rule, path, errors),
         };

@@ -134,6 +134,33 @@ internal sealed class LibraryScanRepository(WaveMpDbContext dbContext) : ILibrar
         return dbContext.Albums.FirstOrDefaultAsync(album => album.AlbumKey == albumKey, cancellationToken);
     }
 
+    public Task<Artist?> FindArtistByMusicBrainzIdAsync(
+        Guid musicBrainzArtistId,
+        CancellationToken cancellationToken = default)
+    {
+        return dbContext.Artists
+            .Where(artist => artist.MusicBrainzArtistId == musicBrainzArtistId)
+            .OrderBy(artist => artist.FirstSeenAt)
+            .ThenBy(artist => artist.Id)
+            .FirstOrDefaultAsync(cancellationToken);
+    }
+
+    public Task<Album?> FindAlbumByReleaseIdAsync(
+        Guid musicBrainzReleaseId,
+        CancellationToken cancellationToken = default)
+    {
+        return dbContext.Albums
+            .Where(album => album.MusicBrainzReleaseId == musicBrainzReleaseId)
+            .OrderBy(album => album.FirstSeenAt)
+            .ThenBy(album => album.Id)
+            .FirstOrDefaultAsync(cancellationToken);
+    }
+
+    public Task<Genre?> FindGenreAsync(string normalizedName, CancellationToken cancellationToken = default)
+    {
+        return dbContext.Genres.FirstOrDefaultAsync(genre => genre.NormalizedName == normalizedName, cancellationToken);
+    }
+
     public async Task<IReadOnlyDictionary<Guid, Guid?>> GetAlbumArtistIdsAsync(
         IReadOnlyCollection<Guid> albumIds,
         CancellationToken cancellationToken = default)
@@ -439,43 +466,84 @@ internal sealed class LibraryScanRepository(WaveMpDbContext dbContext) : ILibrar
             async token =>
             {
                 await using IDbContextTransaction transaction = await dbContext.Database.BeginTransactionAsync(token);
-                List<Guid> orphans = await dbContext.Albums
-                    .Where(album => !dbContext.Tracks.Any(track => track.AlbumId == album.Id))
-                    .OrderBy(album => album.Id)
-                    .Select(album => album.Id)
-                    .ToListAsync(token);
-                int albums = 0;
-                if (orphans.Count > 0)
-                {
-                    await CarryOverAsync(orphans, now, token);
-                    albums = await dbContext.Albums
-                        .Where(album => orphans.Contains(album.Id)
-                            && !dbContext.Tracks.Any(track => track.AlbumId == album.Id))
-                        .ExecuteDeleteAsync(token);
-                }
-
-                // After the albums, so an artist whose last album was just deleted is left empty as well.
-                List<Guid> emptyArtists = await dbContext.Artists
-                    .Where(artist => !dbContext.Tracks.Any(track => track.ArtistId == artist.Id)
-                        && !dbContext.Albums.Any(album => album.AlbumArtistId == artist.Id))
-                    .OrderBy(artist => artist.Id)
-                    .Select(artist => artist.Id)
-                    .ToListAsync(token);
-                int artists = 0;
-                if (emptyArtists.Count > 0)
-                {
-                    await CarryOverArtistsAsync(emptyArtists, token);
-                    artists = await dbContext.Artists
-                        .Where(artist => emptyArtists.Contains(artist.Id)
-                            && !dbContext.Tracks.Any(track => track.ArtistId == artist.Id)
-                            && !dbContext.Albums.Any(album => album.AlbumArtistId == artist.Id))
-                        .ExecuteDeleteAsync(token);
-                }
-
+                (int Albums, int Artists) deleted = await DeleteOrphansInTransactionAsync(now, token);
                 await transaction.CommitAsync(token);
-                return (albums, artists);
+                return deleted;
             },
             cancellationToken);
+    }
+
+    /// <summary>
+    /// The work of <see cref="DeleteOrphansAsync"/> in the transaction the caller opened.
+    /// </summary>
+    internal async Task<(int Albums, int Artists)> DeleteOrphansInTransactionAsync(
+        DateTimeOffset now,
+        CancellationToken cancellationToken)
+    {
+        List<Guid> orphans = await dbContext.Albums
+            .Where(album => !dbContext.Tracks.Any(track => track.AlbumId == album.Id))
+            .OrderBy(album => album.Id)
+            .Select(album => album.Id)
+            .ToListAsync(cancellationToken);
+        int albums = 0;
+        if (orphans.Count > 0)
+        {
+            IReadOnlyDictionary<Guid, Guid> successors = await CarryOverAsync(orphans, now, cancellationToken);
+            albums = await dbContext.Albums
+                .Where(album => orphans.Contains(album.Id)
+                    && !dbContext.Tracks.Any(track => track.AlbumId == album.Id))
+                .ExecuteDeleteAsync(cancellationToken);
+            await SmartPlaylistReferences.RelinkAsync(
+                dbContext,
+                SmartPlaylistField.Album,
+                orphans,
+                successors,
+                cancellationToken);
+        }
+
+        // After the albums, so an artist whose last album was just deleted is left empty as well.
+        List<Guid> emptyArtists = await dbContext.Artists
+            .Where(artist => !dbContext.Tracks.Any(track => track.ArtistId == artist.Id)
+                && !dbContext.Albums.Any(album => album.AlbumArtistId == artist.Id))
+            .OrderBy(artist => artist.Id)
+            .Select(artist => artist.Id)
+            .ToListAsync(cancellationToken);
+        int artists = 0;
+        if (emptyArtists.Count > 0)
+        {
+            IReadOnlyDictionary<Guid, Guid> successors = await CarryOverArtistsAsync(emptyArtists, cancellationToken);
+            artists = await dbContext.Artists
+                .Where(artist => emptyArtists.Contains(artist.Id)
+                    && !dbContext.Tracks.Any(track => track.ArtistId == artist.Id)
+                    && !dbContext.Albums.Any(album => album.AlbumArtistId == artist.Id))
+                .ExecuteDeleteAsync(cancellationToken);
+            await SmartPlaylistReferences.RelinkAsync(
+                dbContext,
+                SmartPlaylistField.Artist,
+                emptyArtists,
+                successors,
+                cancellationToken);
+        }
+
+        List<Guid> emptyGenres = await dbContext.Genres
+            .Where(genre => !dbContext.Tracks.Any(track => track.GenreId == genre.Id))
+            .Select(genre => genre.Id)
+            .ToListAsync(cancellationToken);
+        if (emptyGenres.Count > 0)
+        {
+            await dbContext.Genres
+                .Where(genre => emptyGenres.Contains(genre.Id)
+                    && !dbContext.Tracks.Any(track => track.GenreId == genre.Id))
+                .ExecuteDeleteAsync(cancellationToken);
+            await SmartPlaylistReferences.RelinkAsync(
+                dbContext,
+                SmartPlaylistField.Genre,
+                emptyGenres,
+                new Dictionary<Guid, Guid>(),
+                cancellationToken);
+        }
+
+        return (albums, artists);
     }
 
     public async Task<int> UpdateAlbumCompilationsAsync(
@@ -512,7 +580,10 @@ internal sealed class LibraryScanRepository(WaveMpDbContext dbContext) : ILibrar
     /// <see cref="AlbumSuccessionPlanner"/>. Runs in the transaction of <see cref="DeleteOrphansAsync"/>, before the
     /// albums left empty are deleted (their moves, favorites and online covers go with them).
     /// </summary>
-    private async Task CarryOverAsync(List<Guid> orphans, DateTimeOffset now, CancellationToken cancellationToken)
+    private async Task<IReadOnlyDictionary<Guid, Guid>> CarryOverAsync(
+        List<Guid> orphans,
+        DateTimeOffset now,
+        CancellationToken cancellationToken)
     {
         List<AlbumSuccessionMove> moves = await dbContext.AlbumMoves.AsNoTracking()
             .Where(move => orphans.Contains(move.FromAlbumId) || orphans.Contains(move.ToAlbumId))
@@ -520,7 +591,7 @@ internal sealed class LibraryScanRepository(WaveMpDbContext dbContext) : ILibrar
             .ToListAsync(cancellationToken);
         if (moves.Count == 0)
         {
-            return;
+            return new Dictionary<Guid, Guid>();
         }
 
         Guid[] ids = [.. moves.SelectMany(move => new[] { move.FromAlbumId, move.ToAlbumId }).Union(orphans)];
@@ -545,7 +616,7 @@ internal sealed class LibraryScanRepository(WaveMpDbContext dbContext) : ILibrar
         AlbumSuccessionPlan plan = AlbumSuccessionPlanner.Plan(albums, moves, favorites);
         if (plan.Successors.Count == 0)
         {
-            return;
+            return new Dictionary<Guid, Guid>();
         }
 
         if (plan.Favorites.Count > 0)
@@ -625,6 +696,8 @@ internal sealed class LibraryScanRepository(WaveMpDbContext dbContext) : ILibrar
                 """,
                 cancellationToken);
         }
+
+        return plan.MainSuccessors;
     }
 
     /// <summary>
@@ -633,7 +706,9 @@ internal sealed class LibraryScanRepository(WaveMpDbContext dbContext) : ILibrar
     /// albums left empty are deleted and before the artists left empty are deleted (their moves, favorites and the
     /// pictures not passed on go with them). Artists have no change time, so nothing else is touched.
     /// </summary>
-    private async Task CarryOverArtistsAsync(List<Guid> orphans, CancellationToken cancellationToken)
+    private async Task<IReadOnlyDictionary<Guid, Guid>> CarryOverArtistsAsync(
+        List<Guid> orphans,
+        CancellationToken cancellationToken)
     {
         List<ArtistSuccessionMove> moves = await dbContext.ArtistMoves.AsNoTracking()
             .Where(move => orphans.Contains(move.FromArtistId) || orphans.Contains(move.ToArtistId))
@@ -642,7 +717,7 @@ internal sealed class LibraryScanRepository(WaveMpDbContext dbContext) : ILibrar
             .ToListAsync(cancellationToken);
         if (moves.Count == 0)
         {
-            return;
+            return new Dictionary<Guid, Guid>();
         }
 
         Guid[] ids = [.. moves.SelectMany(move => new[] { move.FromArtistId, move.ToArtistId }).Union(orphans)];
@@ -671,7 +746,7 @@ internal sealed class LibraryScanRepository(WaveMpDbContext dbContext) : ILibrar
         ArtistSuccessionPlan plan = ArtistSuccessionPlanner.Plan(artists, moves, favorites);
         if (plan.Successors.Count == 0)
         {
-            return;
+            return new Dictionary<Guid, Guid>();
         }
 
         if (plan.Favorites.Count > 0)
@@ -755,6 +830,8 @@ internal sealed class LibraryScanRepository(WaveMpDbContext dbContext) : ILibrar
                 """,
                 cancellationToken);
         }
+
+        return plan.MainSuccessors;
     }
 
     /// <summary>

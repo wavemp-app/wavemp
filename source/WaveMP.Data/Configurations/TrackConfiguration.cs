@@ -18,7 +18,6 @@ internal sealed class TrackConfiguration : IEntityTypeConfiguration<Track>
 
         builder.Property(track => track.Id).ValueGeneratedNever();
         builder.Property(track => track.Title).HasMaxLength(LibraryColumns.TextMaxLength);
-        builder.Property(track => track.Genre).HasMaxLength(LibraryColumns.GenreMaxLength);
         builder.Property(track => track.MetadataSource)
             .HasConversion<string>()
             .HasMaxLength(LibraryColumns.EnumMaxLength);
@@ -51,6 +50,11 @@ internal sealed class TrackConfiguration : IEntityTypeConfiguration<Track>
         builder.HasOne(track => track.Album)
             .WithMany(album => album.Tracks)
             .HasForeignKey(track => track.AlbumId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        builder.HasOne(track => track.Genre)
+            .WithMany()
+            .HasForeignKey(track => track.GenreId)
             .OnDelete(DeleteBehavior.SetNull);
 
         // A deleted profile leaves its reviews with the time but without the profile.

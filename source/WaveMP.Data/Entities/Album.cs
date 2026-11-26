@@ -16,13 +16,13 @@ public class Album
     public required string Title { get; set; }
 
     /// <summary>
-    /// Upper-case form of <see cref="Title"/> with normalized white space.
+    /// The normalized title (see <see cref="Texts.NameKeys"/>); sorts the albums and finds them by title. Never shown.
     /// </summary>
     public required string NormalizedTitle { get; set; }
 
     /// <summary>
-    /// SHA-256 (hex) of the normalized artist (the album folder for albums without artist) and title; carries the
-    /// unique index.
+    /// SHA-256 (hex) of the normalized artist (the album folder for albums without artist) and the normalized title
+    /// (see <see cref="Texts.NameKeys"/>); carries the unique index.
     /// </summary>
     public required string AlbumKey { get; set; }
 
@@ -33,6 +33,12 @@ public class Album
     public Guid? AlbumArtistId { get; set; }
 
     public Artist? AlbumArtist { get; set; }
+
+    /// <summary>
+    /// The MusicBrainz release of the album, from the tags of its songs. A scan finds an album by it before its artist
+    /// and title.
+    /// </summary>
+    public Guid? MusicBrainzReleaseId { get; set; }
 
     /// <summary>
     /// Whether the album is a compilation: at least one of its tracks is marked as part of a compilation in the tags of

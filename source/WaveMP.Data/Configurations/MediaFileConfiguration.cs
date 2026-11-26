@@ -37,6 +37,8 @@ internal sealed class MediaFileConfiguration : IEntityTypeConfiguration<MediaFil
             tags.Property(tag => tag.Composer).HasMaxLength(LibraryColumns.TextMaxLength);
             tags.Property(tag => tag.MusicBrainzTrackId).HasMaxLength(LibraryColumns.TechnicalMaxLength);
             tags.Property(tag => tag.MusicBrainzReleaseId).HasMaxLength(LibraryColumns.TechnicalMaxLength);
+            tags.Property(tag => tag.MusicBrainzArtistId).HasMaxLength(LibraryColumns.TechnicalMaxLength);
+            tags.Property(tag => tag.MusicBrainzAlbumArtistId).HasMaxLength(LibraryColumns.TechnicalMaxLength);
         });
 
         builder.HasIndex(file => new { file.SourceId, file.RelativePath }).IsUnique();

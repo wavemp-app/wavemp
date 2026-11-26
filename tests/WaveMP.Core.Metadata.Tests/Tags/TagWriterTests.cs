@@ -19,6 +19,10 @@ namespace WaveMP.Core.Metadata.Tests.Tags;
 [Category("Media")]
 public class TagWriterTests
 {
+    private const string ArtistId = "5b11f4ce-a62d-471e-81fc-a69a8278c7da";
+    private const string AlbumArtistId = "a74b1b7f-71a5-4011-9441-d0b5e4122711";
+    private const string ReleaseId = "1d4a1b46-3c5f-4a3e-9d1d-1a0c6c1b2e3f";
+
     private static readonly TestTags _tags = new()
     {
         Title = "Old Title",
@@ -386,6 +390,75 @@ public class TagWriterTests
     {
         TagChanges.None.IsEmpty.Should().BeTrue();
         new TagChanges { Year = new TagChange<int?>(null) }.IsEmpty.Should().BeFalse();
+    }
+
+    [TestCase(AudioFormat.Mp3, "mp3")]
+    [TestCase(AudioFormat.Flac, "flac")]
+    public async Task Write_OtherArtistAndAlbum_RemovesTheirMusicBrainzIds(AudioFormat format, string extension)
+    {
+        string path = await CreateWithMusicBrainzIdsAsync(format, extension);
+
+        TagWriteStatus status = _writer.Write(path, MediaFileKind.Audio, new TagChanges
+        {
+            Artist = new TagChange<string?>("Another Artist"),
+            Album = new TagChange<string?>("Another Album"),
+        });
+
+        status.Should().Be(TagWriteStatus.Written);
+        MediaTags tags = (await _reader.ReadAsync(path, MediaFileKind.Audio)).Tags;
+        (tags.Artist, tags.MusicBrainzArtistId, tags.MusicBrainzReleaseId).Should().Be(("Another Artist", null, null));
+        tags.MusicBrainzAlbumArtistId.Should().Be(AlbumArtistId);
+    }
+
+    [TestCase(AudioFormat.Mp3, "mp3")]
+    [TestCase(AudioFormat.Flac, "flac")]
+    public async Task Write_OtherSpellingOfTheNames_KeepsTheMusicBrainzIds(AudioFormat format, string extension)
+    {
+        string path = await CreateWithMusicBrainzIdsAsync(format, extension);
+
+        TagWriteStatus status = _writer.Write(path, MediaFileKind.Audio, new TagChanges
+        {
+            Artist = new TagChange<string?>("OLD-ARTIST"),
+            AlbumArtist = new TagChange<string?>("Old Album Artist!"),
+            Album = new TagChange<string?>("old album"),
+        });
+
+        status.Should().Be(TagWriteStatus.Written);
+        MediaTags tags = (await _reader.ReadAsync(path, MediaFileKind.Audio)).Tags;
+        (tags.Artist, tags.MusicBrainzArtistId, tags.MusicBrainzAlbumArtistId, tags.MusicBrainzReleaseId)
+            .Should().Be(("OLD-ARTIST", ArtistId, AlbumArtistId, ReleaseId));
+    }
+
+    [TestCase(AudioFormat.Mp3, "mp3")]
+    [TestCase(AudioFormat.Flac, "flac")]
+    public async Task Write_OtherAlbumArtist_RemovesItsMusicBrainzIdAndTheRelease(AudioFormat format, string extension)
+    {
+        string path = await CreateWithMusicBrainzIdsAsync(format, extension);
+
+        TagWriteStatus status = _writer.Write(path, MediaFileKind.Audio, new TagChanges
+        {
+            AlbumArtist = new TagChange<string?>("Various Artists"),
+        });
+
+        status.Should().Be(TagWriteStatus.Written);
+        MediaTags tags = (await _reader.ReadAsync(path, MediaFileKind.Audio)).Tags;
+        (tags.MusicBrainzArtistId, tags.MusicBrainzAlbumArtistId, tags.MusicBrainzReleaseId)
+            .Should().Be((ArtistId, null, null));
+    }
+
+    private async Task<string> CreateWithMusicBrainzIdsAsync(AudioFormat format, string extension)
+    {
+        string path = _directory.Combine($"musicbrainz.{extension}");
+        await TestMediaGenerator.CreateAudioAsync(path, format, _tags with
+        {
+            MusicBrainzArtistId = ArtistId,
+            MusicBrainzAlbumArtistId = AlbumArtistId,
+            MusicBrainzAlbumId = ReleaseId,
+        });
+        MediaTags tags = (await _reader.ReadAsync(path, MediaFileKind.Audio)).Tags;
+        (tags.MusicBrainzArtistId, tags.MusicBrainzAlbumArtistId, tags.MusicBrainzReleaseId)
+            .Should().Be((ArtistId, AlbumArtistId, ReleaseId));
+        return path;
     }
 
     private TagSnapshot ReadSnapshot(string path)

@@ -1,4 +1,5 @@
 using WaveMP.Data.Entities;
+using WaveMP.Data.Texts;
 
 namespace WaveMP.Core.Metadata.Tags;
 
@@ -118,6 +119,7 @@ internal sealed class TagLibTagWriter : ITagWriter
 
     private static void Apply(TagLib.Tag tag, TagChanges changes)
     {
+        RemoveStaleMusicBrainzIds(tag, changes);
         if (changes.Title is { } title)
         {
             tag.Title = title.Value;
@@ -185,6 +187,40 @@ internal sealed class TagLibTagWriter : ITagWriter
         else if (changes.Genre is { } genre)
         {
             tag.Genres = ToArray(genre.Value);
+        }
+    }
+
+    /// <summary>
+    /// The scan finds artists and albums by their MusicBrainz ids before their names, so an id that no longer belongs
+    /// to the name it stands next to would keep the song with its old artist or album. It is removed when the artist,
+    /// the album artist or the album gets another name (compared by normalized names, see <see cref="NameKeys"/>); a
+    /// new spelling of the same name keeps it. Another album artist also removes the release, which belongs to it.
+    /// </summary>
+    private static void RemoveStaleMusicBrainzIds(TagLib.Tag tag, TagChanges changes)
+    {
+        // TagLib# removes a field set to an empty text; some kinds of tags fail on null.
+        if (changes.Artist is { } artist
+            && !NameKeys.AreEqual(artist.Value, tag.FirstPerformer)
+            && !string.IsNullOrEmpty(tag.MusicBrainzArtistId))
+        {
+            tag.MusicBrainzArtistId = string.Empty;
+        }
+
+        string? albumArtist = changes.AlbumArtists is { } albumArtists
+            ? albumArtists.Value.FirstOrDefault()
+            : changes.AlbumArtist?.Value;
+        bool albumArtistChanged = (changes.AlbumArtists is not null || changes.AlbumArtist is not null)
+            && !NameKeys.AreEqual(albumArtist, tag.FirstAlbumArtist);
+        if (albumArtistChanged && !string.IsNullOrEmpty(tag.MusicBrainzReleaseArtistId))
+        {
+            tag.MusicBrainzReleaseArtistId = string.Empty;
+        }
+
+        bool albumChanged = albumArtistChanged
+            || (changes.Album is { } album && !NameKeys.AreEqual(album.Value, tag.Album));
+        if (albumChanged && !string.IsNullOrEmpty(tag.MusicBrainzReleaseId))
+        {
+            tag.MusicBrainzReleaseId = string.Empty;
         }
     }
 

@@ -29,6 +29,7 @@ internal sealed class AlbumConfiguration : IEntityTypeConfiguration<Album>
 
         builder.HasIndex(album => album.AlbumKey).IsUnique();
         builder.HasIndex(album => album.AlbumArtistId);
+        builder.HasIndex(album => album.MusicBrainzReleaseId);
         builder.HasIndex(album => album.Title)
             .HasDatabaseName(TitleTrigramIndex)
             .HasMethod(LibraryColumns.TrigramIndexMethod)

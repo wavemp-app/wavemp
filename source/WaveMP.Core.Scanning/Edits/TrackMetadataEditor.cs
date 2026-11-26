@@ -7,6 +7,7 @@ using WaveMP.Core.Scanning.Writers;
 using WaveMP.Data.Entities;
 using WaveMP.Data.Projections;
 using WaveMP.Data.Repositories;
+using WaveMP.Data.Texts;
 
 namespace WaveMP.Core.Scanning.Edits;
 
@@ -98,6 +99,10 @@ internal sealed class TrackMetadataEditor(
                 CancellationToken.None);
             await TakeOverSpellingAsync(normalized.Artist);
             await TakeOverSpellingAsync(normalized.AlbumArtist);
+            if (normalized.Genre?.Value is { } genre && NameKeys.Of(genre) is { } genreKey)
+            {
+                await repository.RenameGenreAsync(genreKey, genre, CancellationToken.None);
+            }
         }
 
         TrackMetadata? metadata = await GetAsync(trackId, CancellationToken.None);
@@ -193,7 +198,7 @@ internal sealed class TrackMetadataEditor(
 
     private async Task TakeOverSpellingAsync(TagChange<string?>? change)
     {
-        if (change?.Value is { } name && MetadataText.ToKey(name) is { } key)
+        if (change?.Value is { } name && NameKeys.Of(name) is { } key)
         {
             await repository.RenameArtistAsync(key, name, CancellationToken.None);
         }

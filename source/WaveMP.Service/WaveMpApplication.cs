@@ -152,6 +152,9 @@ public static class WaveMpApplication
             return false;
         }
 
+        // Changes of the stored data that need the rules of the service, after the migrations that added them.
+        await app.Services.UpgradeWaveMpLibraryAsync(cancellationToken);
+
         await app.Services.InitializeWaveMpUsersAsync(cancellationToken);
         await app.Services.GetRequiredService<SigningKeyStore>().InitializeAsync(cancellationToken);
         await app.Services.InitializeWaveMpStreamingAsync(cancellationToken);

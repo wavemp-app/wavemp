@@ -21,6 +21,7 @@ internal sealed class ArtistConfiguration : IEntityTypeConfiguration<Artist>
         builder.Property(artist => artist.NormalizedName).HasMaxLength(LibraryColumns.TextMaxLength);
 
         builder.HasIndex(artist => artist.NormalizedName).IsUnique();
+        builder.HasIndex(artist => artist.MusicBrainzArtistId);
         builder.HasIndex(artist => artist.Name)
             .HasDatabaseName(NameTrigramIndex)
             .HasMethod(LibraryColumns.TrigramIndexMethod)

@@ -347,13 +347,123 @@ public class LibraryScannerTests
         await ScanAsync();
 
         await using WaveMpDbContext db = _database.CreateDbContext();
-        List<Track> tracks = await db.Tracks.Include(track => track.Artist).Include(track => track.Album).ToListAsync();
+        List<Track> tracks = await db.Tracks
+            .Include(track => track.Genre)
+            .Include(track => track.Artist)
+            .Include(track => track.Album)
+            .ToListAsync();
         Track right = tracks.Single(track => track.Title == "Right Title");
-        (right.Artist!.Name, right.Album!.Title, right.TrackNumber, right.Year, right.Genre)
+        (right.Artist!.Name, right.Album!.Title, right.TrackNumber, right.Year, right.Genre?.Name)
             .Should().Be(("Right Artist", "Right Album", 4, 1999, "Jazz"));
         right.MetadataSource.Should().Be(TrackMetadataSource.Tags);
         Track partial = tracks.Single(track => track.Title == "Tagged");
         (partial.Album!.Title, partial.TrackNumber).Should().Be(("Folder Album", 5));
+    }
+
+    [Test]
+    public async Task Scan_NamesWithEqualNormalizedNames_FindTheSameArtistAlbumAndGenre()
+    {
+        await AudioAsync("One/01.mp3", tags: new TestTags
+        {
+            Title = "First",
+            Artist = "K.Flay",
+            Album = "Solutions",
+            Genre = "Hip-Hop",
+        });
+        await ScanAsync();
+        await AudioAsync("Two/02.mp3", tags: new TestTags
+        {
+            Title = "Second",
+            Artist = "k flay",
+            Album = "SOLUTIONS",
+            Genre = "hip hop",
+        });
+        // ID3v2.3 tags of MP3 files split artists at slashes.
+        await AudioAsync(
+            "Three/03.flac",
+            AudioFormat.Flac,
+            tags: new TestTags { Title = "Third", Artist = "K/DA", Genre = "Pop" });
+
+        await ScanAsync();
+
+        await using WaveMpDbContext db = _database.CreateDbContext();
+        List<Track> tracks = await db.Tracks
+            .Include(track => track.Artist)
+            .Include(track => track.Album)
+            .Include(track => track.Genre)
+            .ToListAsync();
+        Track first = tracks.Single(track => track.Title == "First");
+        Track second = tracks.Single(track => track.Title == "Second");
+        (second.ArtistId, second.AlbumId, second.GenreId).Should().Be((first.ArtistId, first.AlbumId, first.GenreId));
+        (first.Artist!.Name, first.Artist.NormalizedName).Should().Be(("K.Flay", "kflay"));
+        // The title of an album follows the spelling of its songs, as before.
+        (first.Album!.Title, first.Album.NormalizedTitle).Should().Be(("SOLUTIONS", "solutions"));
+        (first.Genre!.Name, first.Genre.NormalizedName).Should().Be(("Hip-Hop", "hiphop"));
+        tracks.Single(track => track.Title == "Third").Artist!.NormalizedName.Should().Be("kda");
+        (await db.Artists.CountAsync(), await db.Albums.CountAsync(), await db.Genres.CountAsync())
+            .Should().Be((2, 1, 2));
+    }
+
+    [Test]
+    public async Task Scan_MusicBrainzIds_FindArtistAndAlbumBeforeTheirNames()
+    {
+        const string ArtistId = "5b11f4ce-a62d-471e-81fc-a69a8278c7da";
+        const string ReleaseId = "1d4a1b46-3c5f-4a3e-9d1d-1a0c6c1b2e3f";
+        await AudioAsync("Old/01.mp3", tags: new TestTags
+        {
+            Title = "Old Name",
+            Artist = "Mononym",
+            Album = "Debut",
+            MusicBrainzArtistId = ArtistId,
+            MusicBrainzAlbumId = ReleaseId,
+        });
+        await ScanAsync();
+        await AudioAsync("New/02.flac", AudioFormat.Flac, tags: new TestTags
+        {
+            Title = "New Name",
+            Artist = "The Artist Formerly Known As Mononym",
+            Album = "Debut (Remastered)",
+            MusicBrainzArtistId = ArtistId,
+            MusicBrainzAlbumId = ReleaseId,
+        });
+        await AudioAsync("Other/03.mp3", tags: new TestTags
+        {
+            Title = "Same Name",
+            Artist = "Mononym",
+            Album = "Debut",
+            MusicBrainzArtistId = "a74b1b7f-71a5-4011-9441-d0b5e4122711",
+        });
+
+        await ScanAsync();
+
+        await using WaveMpDbContext db = _database.CreateDbContext();
+        List<Track> tracks = await db.Tracks.Include(track => track.Artist).Include(track => track.Album).ToListAsync();
+        Track old = tracks.Single(track => track.Title == "Old Name");
+        Track renamed = tracks.Single(track => track.Title == "New Name");
+        (renamed.ArtistId, renamed.AlbumId).Should().Be((old.ArtistId, old.AlbumId));
+        old.Artist!.Name.Should().Be("Mononym");
+        old.Artist.MusicBrainzArtistId.Should().Be(Guid.Parse(ArtistId));
+        (old.Album!.Title, old.Album.MusicBrainzReleaseId).Should().Be(("Debut", Guid.Parse(ReleaseId)));
+
+        // The name finds the artist when the id is unknown.
+        tracks.Single(track => track.Title == "Same Name").ArtistId.Should().Be(old.ArtistId);
+    }
+
+    [Test]
+    public async Task Scan_SeveralArtistIdsInATag_FindsTheArtistByItsName()
+    {
+        await AudioAsync("Duet/01.mp3", tags: new TestTags
+        {
+            Title = "Duet",
+            Artist = "Singer feat. Rapper",
+            MusicBrainzArtistId = "5b11f4ce-a62d-471e-81fc-a69a8278c7da/a74b1b7f-71a5-4011-9441-d0b5e4122711",
+        });
+
+        await ScanAsync();
+
+        await using WaveMpDbContext db = _database.CreateDbContext();
+        Artist artist = await db.Artists.SingleAsync();
+        (artist.NormalizedName, artist.MusicBrainzArtistId).Should().Be(("singerfeatrapper", null));
     }
 
     [Test]
@@ -2206,7 +2316,7 @@ public class LibraryScannerTests
         changed.Should().BeTrue();
         await using WaveMpDbContext db = _database.CreateDbContext();
         Track track = await LoadTrackAsync(db, "01 - ONE");
-        (track.Title, track.Genre).Should().Be(("After", "Jazz"));
+        (track.Title, track.Genre?.Name).Should().Be(("After", "Jazz"));
         track.Files.Single().Tags.Title.Should().Be("After");
     }
 
@@ -3169,6 +3279,7 @@ public class LibraryScannerTests
     {
         return db.Tracks
             .Include(track => track.Files)
+            .Include(track => track.Genre)
             .Include(track => track.Covers).ThenInclude(cover => cover.MediaFile)
             .SingleAsync(track => track.NormalizedBaseName == normalizedBaseName);
     }

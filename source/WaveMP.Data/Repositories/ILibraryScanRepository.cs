@@ -73,7 +73,7 @@ public interface ILibraryScanRepository
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// An artist by its normalized name, tracked.
+    /// An artist by its normalized name (see <see cref="Texts.NameKeys"/>), tracked.
     /// </summary>
     Task<Artist?> FindArtistAsync(string normalizedName, CancellationToken cancellationToken = default);
 
@@ -81,6 +81,27 @@ public interface ILibraryScanRepository
     /// An album by its key, tracked.
     /// </summary>
     Task<Album?> FindAlbumAsync(string albumKey, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// The artist with this MusicBrainz artist, tracked; of several, the first one found (earliest first seen date,
+    /// then smallest id).
+    /// </summary>
+    Task<Artist?> FindArtistByMusicBrainzIdAsync(
+        Guid musicBrainzArtistId,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// The album with this MusicBrainz release, tracked; of several, the first one found (earliest first seen date,
+    /// then smallest id).
+    /// </summary>
+    Task<Album?> FindAlbumByReleaseIdAsync(
+        Guid musicBrainzReleaseId,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// A genre by its normalized name (see <see cref="Texts.NameKeys"/>), tracked.
+    /// </summary>
+    Task<Genre?> FindGenreAsync(string normalizedName, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// The album artist of each of the stored albums (<c>null</c> for an album without one), untracked; ids without a
@@ -220,7 +241,10 @@ public interface ILibraryScanRepository
     /// and its MusicBrainz artist to the main successor, each only if that has none (the pictures not passed on are
     /// removed with their artist). The picture in the folder of an artist is not passed on; the scan finds the picture
     /// of the new artist in its own folder (see <see cref="SetArtistLocalPicturesAsync"/>). Nothing is passed on while
-    /// the old artist still has songs or albums. Returns the number of deleted albums and artists.
+    /// the old artist still has songs or albums. Rules of smart playlists that name a deleted album or artist name its
+    /// main successor instead; without a successor they keep the name as text and lose the reference. Finally genres
+    /// without tracks are deleted, and rules that name them keep the name as text. Returns the number of deleted
+    /// albums and artists.
     /// </summary>
     Task<(int Albums, int Artists)> DeleteOrphansAsync(
         DateTimeOffset now,

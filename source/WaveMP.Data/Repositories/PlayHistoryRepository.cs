@@ -111,7 +111,8 @@ internal sealed class PlayHistoryRepository(WaveMpDbContext dbContext) : IPlayHi
                 entry.Track.Album != null && entry.Track.Album.AlbumArtist != null
                     ? entry.Track.Album.AlbumArtist.Name
                     : null,
-                entry.Track.Genre,
+                entry.Track.GenreId,
+                entry.Track.Genre != null ? entry.Track.Genre.Name : null,
                 entry.Track.Duration))
             .ToListAsync(cancellationToken);
     }

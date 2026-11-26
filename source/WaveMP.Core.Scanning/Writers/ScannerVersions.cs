@@ -10,9 +10,10 @@ public static class ScannerVersions
 {
     /// <summary>
     /// Version of the metadata of audio files. Version 2 adds the compilation flag of the tags, which marks albums as
-    /// compilations.
+    /// compilations. Version 3 adds the MusicBrainz artists of the artist and album artist tags, by which the scan
+    /// finds artists before their names.
     /// </summary>
-    public const int AudioMetadata = 2;
+    public const int AudioMetadata = 3;
 
     /// <summary>
     /// Version of the metadata of videos. Version 2 adds the codec of the audio stream and the pixel format, which the
