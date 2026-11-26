@@ -1550,13 +1550,29 @@ const sampleTranscodeJobs = computed<TranscodeJob[]>(() => {
                         {{ t('smartPlaylists.summary.match.all') }}
                     </p>
                     <ul data-part="smart-summary-rules">
-                        <li data-part="smart-summary-rule">
-                            {{
-                                t('smartPlaylists.summary.is', {
-                                    field: t('smartPlaylists.fields.genre'),
-                                    value: 'Rock',
-                                })
-                            }}
+                        <li data-part="smart-summary-rule" data-reference="linked">
+                            <span data-part="label">
+                                {{
+                                    t('smartPlaylists.summary.is', {
+                                        field: t('smartPlaylists.fields.genre'),
+                                        value: 'Rock',
+                                    })
+                                }}
+                            </span>
+                        </li>
+                        <li data-part="smart-summary-rule" data-reference="unlinked">
+                            <span data-part="label">
+                                {{
+                                    t('smartPlaylists.summary.is', {
+                                        field: t('smartPlaylists.fields.artist'),
+                                        value: 'K.Flay',
+                                    })
+                                }}
+                            </span>
+                            <span data-part="smart-summary-note">
+                                <BaseIcon name="rule-unlinked" />
+                                <span data-part="label">{{ t('smartPlaylists.unlinked') }}</span>
+                            </span>
                         </li>
                     </ul>
                     <p data-part="smart-summary-order">
