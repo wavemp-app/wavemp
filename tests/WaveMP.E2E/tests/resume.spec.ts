@@ -272,4 +272,61 @@ test.describe('resume playback', () => {
             .poll(async () => (await savedState(request, user))?.device.id, { timeout: 15_000 })
             .not.toBe('e2e-other-device')
     })
+
+    test('makes room at the end of the page for the notice on phones', async ({
+        page,
+        request,
+    }, testInfo) => {
+        test.skip(
+            testInfo.project.name !== 'mobile',
+            'The notice floats over the end of the page above the mini player',
+        )
+        const headers = await profileAuthorization(request, user)
+        const trackIds = [
+            await findTrackId(request, 'First Song'),
+            await findTrackId(request, 'Second Song'),
+            await findTrackId(request, 'Video Only'),
+        ]
+        const saved = await request.put('/api/v1/me/playback-state', {
+            headers,
+            data: {
+                items: [{ trackId: trackIds[0] }],
+                currentIndex: 0,
+                positionMilliseconds: 0,
+                device: { id: 'e2e-other-device', name: 'E2E Device' },
+            },
+        })
+        expect(saved.status()).toBe(204)
+        const created = await request.post('/api/v1/me/playlists', {
+            headers,
+            data: { name: `Resume ${uniqueSuffix()}`, trackIds },
+        })
+        expect(created.status()).toBe(201)
+        const { id } = await created.json()
+
+        await page.goto(`/playlists/${id}`)
+        const notice = part(page, 'resume-notice')
+        await expect(notice).toBeVisible()
+        const rows = part(page, 'list-row')
+        await expect(rows).toHaveCount(3)
+
+        // At the end of the page the last row ends above the notice, and its button takes the tap.
+        await part(page, 'content').evaluate((content) => content.scrollTo(0, content.scrollHeight))
+        const button = rows.last().locator("[data-part='btn-item-menu']")
+        await expect(button).toBeVisible()
+        const buttonBox = (await button.boundingBox())!
+        const noticeBox = (await notice.boundingBox())!
+        expect(buttonBox.y + buttonBox.height).toBeLessThanOrEqual(noticeBox.y)
+        await button.tap()
+        await expect(
+            page.locator("[data-part='context-menu']:popover-open:not([data-kind='submenu'])"),
+        ).toHaveAttribute('aria-label', 'Song actions')
+        await page.keyboard.press('Escape')
+
+        // Without the notice the room goes again.
+        await expect(part(page, 'resume-notice-space')).toHaveCount(1)
+        await notice.locator("[data-part='btn-dismiss-resume']").click()
+        await expect(notice).toHaveCount(0)
+        await expect(part(page, 'resume-notice-space')).toHaveCount(0)
+    })
 })
