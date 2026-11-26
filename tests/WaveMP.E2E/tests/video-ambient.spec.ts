@@ -176,3 +176,64 @@ test('fills the sides of a portrait video and the screen in full screen', async 
     await part(page, 'video-stage').locator("[data-part='btn-fullscreen']").click()
     await expect(part(page, 'video-stage')).not.toHaveAttribute('data-state', 'fullscreen')
 })
+
+/** Box of a part of the full-screen player and the size of the picture its video shows. */
+function videoLayout(page: Page) {
+    return part(page, 'player-media').evaluate((media) => {
+        const box = (element: Element | null) => {
+            const rect = element!.getBoundingClientRect()
+            return { width: rect.width, height: rect.height }
+        }
+        const video = media.querySelector<HTMLVideoElement>("[data-part='player-video']")!
+        const area = box(video)
+        const scale = Math.min(area.width / video.videoWidth, area.height / video.videoHeight)
+        return {
+            media: box(media),
+            video: area,
+            ambient: box(media.querySelector("[data-part='video-ambient']")),
+            cover: box(media.querySelector("[data-part='cover']")),
+            picture: { width: video.videoWidth * scale, height: video.videoHeight * scale },
+            background: getComputedStyle(video).backgroundColor,
+        }
+    })
+}
+
+test('fills the room of the full-screen player around the video with the ambient light', async ({
+    page,
+    request,
+    isMobile,
+}) => {
+    test.skip(!isMobile, 'The full-screen player exists on phones only.')
+    const id = await findTrackId(request, 'Loose Song')
+    await playSong(page, id, 'Loose Song')
+    const transport = part(page, 'transport')
+    await part(page, 'now-playing-mini').click()
+    await expect(transport).toHaveAttribute('data-state', /\bexpanded\b/)
+
+    // The video takes the whole width of the player, not the square of the cover; the ambient
+    // light fills the room above and below its picture and the cover fades out under it.
+    const media = part(page, 'player-media')
+    await expect(media).toHaveAttribute('data-state', 'video', { timeout: 15_000 })
+    const ambient = media.locator("> [data-part='video-ambient']")
+    await expect(ambient).toHaveAttribute('data-state', 'running', { timeout: 15_000 })
+    await expect.poll(() => opacity(ambient)).toBeGreaterThan(0.3)
+    await expect.poll(() => opacity(media.locator("> [data-part='cover']"))).toBe(0)
+    const portrait = await videoLayout(page)
+    expect(portrait.video).toEqual(portrait.media)
+    expect(portrait.ambient).toEqual(portrait.media)
+    expect(portrait.video.width).toBeGreaterThan(portrait.cover.width)
+    expect(portrait.picture.width).toBeCloseTo(portrait.media.width, 0)
+    expect(portrait.picture.height).toBeLessThan(portrait.media.height)
+    expect(portrait.background).toBe('rgba(0, 0, 0, 0)')
+
+    // Held sideways, the cover area takes the left half of the screen and still shows the video.
+    const size = page.viewportSize()!
+    await page.setViewportSize({ width: size.height, height: size.width })
+    await expect
+        .poll(async () => (await videoLayout(page)).media.height)
+        .toBeGreaterThan(size.width / 3)
+    const landscape = await videoLayout(page)
+    expect(landscape.media.width).toBeLessThan(size.height / 2)
+    expect(landscape.ambient).toEqual(landscape.media)
+    await page.setViewportSize(size)
+})
