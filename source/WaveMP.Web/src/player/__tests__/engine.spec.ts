@@ -4,6 +4,7 @@ import {
     crossfadeUnloadDelay,
     deckPosition,
     handoverLead,
+    playResumeTimeout,
     type AudioEnvironment,
     type EngineEvents,
 } from '../engine'
@@ -563,6 +564,21 @@ describe('AudioEngine', () => {
         expect(s.decks[0]!.play).not.toHaveBeenCalled()
     })
 
+    it('plays after a while when the browser keeps the audio graph interrupted', async () => {
+        s = setup(true)
+        s.context!.state = 'interrupted'
+        s.context!.resume.mockImplementation(() => new Promise<void>(() => undefined))
+        s.engine.load({ url: '/a', gain: 1 })
+
+        const playing = s.engine.play()
+        expect(s.delays.at(-1)).toBe(playResumeTimeout)
+        s.timers.at(-1)!()
+        await playing
+
+        expect(s.decks[0]!.play).toHaveBeenCalledOnce()
+        expect(s.engine.outputSuspended).toBe(true)
+    })
+
     it('routes both decks through their gains into the master with Web Audio', async () => {
         s = setup(true)
         s.engine.setVolume(0.3)
@@ -684,6 +700,9 @@ describe('AudioEngine', () => {
             s = setup(true)
             s.engine.load({ url: '/a', gain: 1 })
             await s.engine.play()
+            // Only the timers of the crossfade count: the one of the resumed graph has ended.
+            s.timers.length = 0
+            s.delays.length = 0
         })
 
         it('starts the next track the length of the crossfade before the end', () => {

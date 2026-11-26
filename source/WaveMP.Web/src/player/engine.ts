@@ -45,7 +45,8 @@ export interface EngineEvents {
     error?(error: unknown): void
     /**
      * The browser interrupted or suspended the audio graph while a track should play (e.g. WebKit
-     * when the page goes to the background): the elements may run on but are not heard.
+     * when the page goes to the background, or in the foreground when the native full screen of a
+     * video, a call or another app takes over the audio): the elements may run on but are not heard.
      */
     interrupted?(): void
 }
@@ -113,6 +114,13 @@ export const elementFadeStepsPerSecond = 10
 
 /** Time constant in seconds with which the output returns after the sleep timer. */
 export const outputRestoreSmoothing = 0.05
+
+/**
+ * Milliseconds play waits for a suspended or interrupted audio graph to run again. WebKit keeps the
+ * promise of resume pending as long as it interrupts the graph (e.g. after the native full screen of a
+ * video, a call or another app), which can last until the page is reloaded; play never waits longer.
+ */
+export const playResumeTimeout = 1000
 
 interface Deck {
     readonly audio: HTMLAudioElement
@@ -304,7 +312,8 @@ export class AudioEngine {
         this.wantsPlay = true
         this.ensureGraph()
         if (this.context && !outputRunning(this.context)) {
-            await this.context.resume().catch(() => undefined)
+            // At most for a while: a graph that stays interrupted must not block play for good.
+            await this.resumeOutput(playResumeTimeout)
             // Paused or stopped while the context resumed: stay paused.
             if (!this.wantsPlay) {
                 return

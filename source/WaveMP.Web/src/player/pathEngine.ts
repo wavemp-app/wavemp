@@ -9,11 +9,18 @@
 // moves silently; a playing one starts on the new path (loaded, ready and caught up to the position)
 // before the old path stops, so it plays on without a gap. Every command of the store during a
 // handover cancels it; the newest wanted path wins.
+//
+// The browser may also interrupt the audio graph in the foreground (WebKit when the native full
+// screen of a video, a call or another app takes over the audio) and keep it interrupted, sometimes
+// until the page is reloaded. Then the effects path waits for a gesture of the user and the music
+// plays on through the plain path meanwhile: play never waits for the graph longer than a moment,
+// and the next tap or click tries the effects path again.
 
 import { wantedPath, type PlaybackPath } from './backgroundAudio'
 import {
     AudioEngine,
     browserAudioEnvironment,
+    playResumeTimeout,
     type AudioEnvironment,
     type DeckSource,
     type EngineEvents,
@@ -31,6 +38,8 @@ export interface PathEngineOptions {
     readonly environment?: AudioEnvironment
     /** Milliseconds of a handover to wait; handoverTimeout by default. */
     readonly timeout?: number
+    /** Milliseconds play waits for the audio graph of the effects path; playResumeTimeout by default. */
+    readonly resumeTimeout?: number
     /** The active path changed. */
     readonly onPathChange?: (path: PlaybackPath) => void
     /**
@@ -136,8 +145,31 @@ export class PlaybackPathEngine implements PlayerEngine {
         }
 
         this.cancelHandover()
+        if (this.targetPath() === 'effects') {
+            // The audio graph runs again (also within this gesture), or the browser keeps it
+            // interrupted: then the plain path plays until a later gesture resumes the graph.
+            const running = await this.effects.resumeOutput(
+                this.options.resumeTimeout ?? playResumeTimeout,
+            )
+            // Paused, stopped or another track meanwhile: that command decides.
+            if (!this.wantsPlay) {
+                return
+            }
+
+            if (!running) {
+                this.setEffectsPending(true)
+            }
+        }
+
         const target = this.targetPath()
-        if (target !== this.active && this.current.paused) {
+        if (target !== this.active) {
+            if (!this.current.paused) {
+                // It still plays on the other path (unheard through an interrupted graph):
+                // handed over at its position.
+                this.sync()
+                return
+            }
+
             this.switchSilently(target)
         }
 
@@ -221,7 +253,7 @@ export class PlaybackPathEngine implements PlayerEngine {
 
     /**
      * Resumes the effects path within a gesture of the user after the browser kept its audio graph
-     * suspended on the return to the foreground.
+     * suspended on the return to the foreground or interrupted it in the foreground.
      */
     resumeEffects(): void {
         if (!this.pendingEffects) {
@@ -301,10 +333,21 @@ export class PlaybackPathEngine implements PlayerEngine {
                 }
             },
             interrupted: () => {
-                if (path === 'effects' && active() && this.hidden) {
-                    this.interrupted = true
-                    this.sync()
+                if (path !== 'effects' || !active()) {
+                    return
                 }
+
+                if (this.hidden) {
+                    this.interrupted = true
+                } else {
+                    // In the foreground the graph may stay interrupted for good (WebKit): the plain
+                    // path plays on, and the next gesture tries the effects path again. The graph
+                    // running again by itself does not move the track back, so two players that
+                    // take the audio from each other cannot make it jump to and fro.
+                    this.setEffectsPending(true)
+                }
+
+                this.sync()
             },
         }
     }

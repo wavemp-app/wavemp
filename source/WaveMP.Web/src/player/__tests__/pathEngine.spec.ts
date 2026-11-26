@@ -303,16 +303,6 @@ describe('PlaybackPathEngine', () => {
             expect(s.engine.path).toBe('plain')
         })
 
-        it('ignores an interruption in the foreground where the probe saw no need', async () => {
-            const s = setup(false)
-            await playing(s)
-
-            s.context.change('interrupted')
-            await settle()
-
-            expect(s.engine.path).toBe('effects')
-        })
-
         it('stays on the effects path when the plain one does not start', async () => {
             const s = setup()
             await playing(s)
@@ -416,6 +406,144 @@ describe('PlaybackPathEngine', () => {
             expect(s.effectsA.src).toBe('/a')
             expect(s.engine.position).toBe(60)
             expect(s.effectsA.play).not.toHaveBeenCalled()
+        })
+    })
+
+    describe('when the browser interrupts the audio graph in the foreground', () => {
+        /** The graph that WebKit keeps interrupted: resume never settles. */
+        function stuck(s: Setup): void {
+            s.context.state = 'interrupted'
+            s.context.resume.mockImplementation(() => new Promise<void>(() => undefined))
+        }
+
+        it.each([true, false])(
+            'plays on through the plain path at the position (plain path needed: %s)',
+            async (supported) => {
+                const s = setup(supported)
+                await playing(s, 42)
+                stuck(s)
+
+                s.context.dispatchEvent(new Event('statechange'))
+                await settle()
+
+                expect(s.engine.path).toBe('plain')
+                expect(s.engine.effectsPending).toBe(true)
+                expect(s.pending).toEqual([true])
+                expect(s.plainA.src).toBe('/a')
+                expect(s.plainA.currentTime).toBe(42)
+                expect(s.plainA.paused).toBe(false)
+                expect(s.effectsA.src).toBe('')
+                expect(s.events.paused).not.toHaveBeenCalled()
+            },
+        )
+
+        it('stays on the plain path when the graph runs again by itself, until a gesture', async () => {
+            const s = setup()
+            await playing(s, 42)
+            s.context.change('interrupted')
+            await settle()
+            expect(s.engine.path).toBe('plain')
+
+            s.context.change('running')
+            await settle()
+            expect(s.engine.path).toBe('plain')
+
+            s.plainA.advance(50, 200)
+            s.engine.resumeEffects()
+            await settle()
+
+            expect(s.engine.path).toBe('effects')
+            expect(s.engine.effectsPending).toBe(false)
+            expect(s.effectsA.currentTime).toBe(50)
+            expect(s.effectsA.paused).toBe(false)
+            expect(s.plainA.src).toBe('')
+        })
+
+        it('plays within a moment on the plain path when the graph never resumes', async () => {
+            const s = setup()
+            await playing(s, 42)
+            s.engine.pause()
+            stuck(s)
+
+            let done = false
+            const played = s.engine.play().then(() => {
+                done = true
+            })
+            await settle()
+            expect(done).toBe(false)
+            expect(s.plainA.play).not.toHaveBeenCalled()
+
+            // The time for the graph runs out: play does not wait for it any longer.
+            s.timers.at(-1)!()
+            await played
+
+            expect(s.engine.path).toBe('plain')
+            expect(s.engine.effectsPending).toBe(true)
+            expect(s.plainA.src).toBe('/a')
+            expect(s.engine.position).toBe(42)
+            expect(s.plainA.paused).toBe(false)
+            expect(s.effectsA.src).toBe('')
+        })
+
+        it('plays the next track and play after pause on the plain path without waiting', async () => {
+            const s = setup(false)
+            await playing(s, 42)
+            stuck(s)
+            s.context.dispatchEvent(new Event('statechange'))
+            await settle()
+            s.context.resume.mockClear()
+
+            s.engine.pause()
+            await s.engine.play()
+            expect(s.plainA.paused).toBe(false)
+
+            s.engine.load({ url: '/b', gain: 1 })
+            await s.engine.play()
+
+            expect(s.engine.path).toBe('plain')
+            expect(s.plainA.src).toBe('/b')
+            expect(s.plainA.paused).toBe(false)
+            expect(s.context.resume).not.toHaveBeenCalled()
+        })
+
+        it('tries the effects path again with the play of the next gesture', async () => {
+            const s = setup()
+            await playing(s, 42)
+            stuck(s)
+            s.context.dispatchEvent(new Event('statechange'))
+            await settle()
+            s.engine.pause()
+            s.plainA.advance(45, 200)
+
+            // The gesture of the play button: the graph runs again.
+            s.context.resume.mockImplementation(() => {
+                s.context.state = 'running'
+                return Promise.resolve()
+            })
+            s.engine.resumeEffects()
+            await s.engine.play()
+
+            expect(s.engine.path).toBe('effects')
+            expect(s.effectsA.src).toBe('/a')
+            expect(s.engine.position).toBe(45)
+            expect(s.effectsA.paused).toBe(false)
+            expect(s.plainA.src).toBe('')
+        })
+
+        it('stays paused when paused while it waits for the graph', async () => {
+            const s = setup()
+            await playing(s, 42)
+            s.engine.pause()
+            stuck(s)
+
+            const played = s.engine.play()
+            s.engine.pause()
+            s.timers.at(-1)!()
+            await played
+
+            expect(s.effectsA.paused).toBe(true)
+            expect(s.plainA.play).not.toHaveBeenCalled()
+            expect(s.engine.effectsPending).toBe(false)
         })
     })
 
