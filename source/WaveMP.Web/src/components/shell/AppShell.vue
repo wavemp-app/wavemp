@@ -90,6 +90,7 @@ const transportStage = computed<TransportStage>(() => ({
     hasVideo: player.hasVideo,
     casting: player.casting,
     remote: devices.remote,
+    ambient: session.video.ambientMode,
 }))
 /** The devices of the profile for the devices button of the transport bar. */
 const transportDevices = computed<TransportDevices>(() => ({

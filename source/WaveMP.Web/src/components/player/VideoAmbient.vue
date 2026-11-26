@@ -15,6 +15,8 @@ import {
  * pictures of the video into two canvases by turns; the base CSS enlarges, blurs and cross-fades
  * them. It draws only while the video plays and is visible, keeps the last picture while the video
  * is paused, and shows one static color for prefers-reduced-motion (--wmp-video-ambient-color).
+ * The full-screen player on phones shows it around its video as well; there it lies in a button,
+ * so it is a span instead of a div.
  */
 const props = withDefaults(
     defineProps<{
@@ -26,8 +28,10 @@ const props = withDefaults(
         active?: boolean
         /** Whether the video stage is in full screen. */
         fullscreen?: boolean
+        /** The element of the ambient light: a div, or a span where only phrasing content fits. */
+        tag?: 'div' | 'span'
     }>(),
-    { video: null, enabled: true, active: true, fullscreen: false },
+    { video: null, enabled: true, active: true, fullscreen: false, tag: 'div' },
 )
 
 const container = ref<HTMLElement | null>(null)
@@ -152,7 +156,8 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-    <div
+    <component
+        :is="tag"
         ref="container"
         data-part="video-ambient"
         :data-state="state"
@@ -161,5 +166,5 @@ onBeforeUnmount(() => {
     >
         <canvas ref="first" data-part="video-ambient-canvas" :data-state="canvasState(0)"></canvas>
         <canvas ref="second" data-part="video-ambient-canvas" :data-state="canvasState(1)"></canvas>
-    </div>
+    </component>
 </template>

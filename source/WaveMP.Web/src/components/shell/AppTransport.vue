@@ -13,6 +13,7 @@ import FavoriteButton from '@/components/collection/FavoriteButton.vue'
 import CastButton from '@/components/player/CastButton.vue'
 import DevicesControl from '@/components/player/DevicesControl.vue'
 import PlayerVisualization from '@/components/player/PlayerVisualization.vue'
+import VideoAmbient from '@/components/player/VideoAmbient.vue'
 import RatingStars from '@/components/collection/RatingStars.vue'
 import SleepTimerControl from '@/components/player/SleepTimerControl.vue'
 import LibraryCover from '@/components/library/LibraryCover.vue'
@@ -52,8 +53,10 @@ import {
  * The full-screen player (mobile) closes with its button or by swiping it down (useSwipeDismiss).
  * Like the stage of Now Playing, it shows the cover, the video or the visualization the profile
  * chose; tapping the cover and title opens its view switch. Its video element is handed to the
- * player (attachVideo) and taken back before it goes (detachVideo). Title and artist scroll when
- * they are too long for their place (BaseMarquee).
+ * player (attachVideo) and taken back before it goes (detachVideo). The video takes the whole room
+ * of the cover area, not only the square of the cover; the ambient light of the profile fills the
+ * free space around its picture. Title and artist scroll when they are too long for their place
+ * (BaseMarquee).
  */
 const props = withDefaults(
     defineProps<{
@@ -392,6 +395,13 @@ function onMiniPlayer(): void {
                     :available="state.hasCover ?? false"
                 />
                 <BaseCover v-else />
+                <VideoAmbient
+                    v-if="needsVideo"
+                    tag="span"
+                    :video="videoElement"
+                    :enabled="stage?.ambient ?? true"
+                    :active="shownView === 'video'"
+                />
                 <video
                     v-if="needsVideo"
                     ref="videoElement"

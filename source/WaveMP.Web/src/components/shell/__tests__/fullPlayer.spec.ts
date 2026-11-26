@@ -116,6 +116,35 @@ describe('full-screen player', () => {
         expect(media.attributes('data-state')).toBe('cover')
     })
 
+    it('lays the ambient light of the profile behind the video', async () => {
+        const videoStage: TransportStage = {
+            ...coverStage,
+            mode: PlayerViewModeObject.Video,
+            view: 'video',
+        }
+        const player = mountFullPlayer(videoStage)
+        await player.vm.$nextTick()
+        const media = player.get('[data-part="player-media"]')
+        const ambient = media.get(':scope > [data-part="video-ambient"]')
+
+        // A span between the cover and the video: the player lies in a button.
+        expect(ambient.element.tagName).toBe('SPAN')
+        expect(ambient.attributes('aria-hidden')).toBe('true')
+        const order = [...media.element.children].map((child) => child.getAttribute('data-part'))
+        expect(order.indexOf('video-ambient')).toBeGreaterThan(order.indexOf('cover'))
+        expect(order.indexOf('video-ambient')).toBeLessThan(order.indexOf('player-video'))
+        expect(ambient.findAll('[data-part="video-ambient-canvas"]')).toHaveLength(2)
+        // On until the video has a picture; switched off by the profile, it stays off.
+        expect(ambient.attributes('data-state')).toBe('waiting')
+
+        await player.setProps({ stage: { ...videoStage, ambient: false } })
+        expect(ambient.attributes('data-state')).toBe('off')
+
+        // Without the video, the ambient light goes with it.
+        await player.setProps({ stage: coverStage })
+        expect(media.find('[data-part="video-ambient"]').exists()).toBe(false)
+    })
+
     it('starts with a closed view switch every time it opens', async () => {
         const player = mountFullPlayer()
         await player.get('[data-part="now-playing-mini"]').trigger('click')

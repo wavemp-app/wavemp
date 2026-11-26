@@ -344,6 +344,54 @@
             grid-template-rows: auto minmax(0, 1fr) auto auto auto auto auto !important;
         }
 
+        /*
+         * A phone held sideways is too low for the rows one below the other: the heart and the
+         * stars move into the top row, at its end; the cover area with the title takes the left
+         * half below it, the controls lie in the middle of the right half. If they need more height
+         * than the screen has, the player scrolls.
+         */
+        @media (orientation: landscape) and (height < 32rem) {
+            [data-part='app'] > [data-part='transport'][data-state~='expanded'] {
+                grid-template-areas:
+                    'btn-collapse now-playing-actions'
+                    'now-playing-mini .'
+                    'now-playing-mini seek'
+                    'now-playing-mini transport-controls'
+                    'now-playing-mini mode-switch'
+                    'now-playing-mini .' !important;
+                grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+                grid-template-rows: auto minmax(0, 1fr) auto auto auto minmax(0, 1fr) !important;
+                column-gap: var(--wmp-space-xl);
+                row-gap: var(--wmp-space-s);
+            }
+
+            [data-part='app']
+                > [data-part='transport'][data-state~='expanded'][data-state~='view-switch'] {
+                grid-template-areas:
+                    'btn-collapse now-playing-actions'
+                    'now-playing-mini .'
+                    'now-playing-mini player-view-switch'
+                    'now-playing-mini seek'
+                    'now-playing-mini transport-controls'
+                    'now-playing-mini mode-switch'
+                    'now-playing-mini .' !important;
+                grid-template-rows: auto minmax(0, 1fr) auto auto auto auto minmax(0, 1fr) !important;
+            }
+
+            /* The grip stays in the middle of the whole top row. */
+            [data-part='app']
+                > [data-part='transport'][data-state~='expanded']
+                > [data-part='swipe-grip'] {
+                grid-area: 1 / 1 / 2 / -1 !important;
+            }
+
+            [data-part='app']
+                > [data-part='transport'][data-state~='expanded']
+                > [data-part='now-playing-actions'] {
+                justify-self: end;
+            }
+        }
+
         [data-part='transport'][data-state~='expanded'][data-state~='dragging'] {
             cursor: grabbing;
             user-select: none;
@@ -374,10 +422,13 @@
         }
 
         /*
-         * The cover takes the room the other rows leave (a size container), so the player fits
-         * the screen also with the view switch open. The views of the player lie on the cover, in
-         * its square: the video (whole, on the background of the stage) and the visualization;
-         * the chosen one fades in when it is ready.
+         * The cover area takes the room the other rows leave (a size container), so the player
+         * fits the screen also with the view switch open. The cover and the visualization take the
+         * largest square that fits there. The video takes the whole area instead, as wide as the
+         * player, and shows its picture whole and undistorted in the middle; the ambient light
+         * behind it fills the free space above and below (or beside) the picture, and without it
+         * the background of the player shows there. The chosen view fades in when it is ready, the
+         * cover fades out under the video.
          */
         [data-part='transport'][data-state~='expanded'] [data-part='player-media'] {
             --_player-media-size: min(80vw, 45dvh, 100cqb);
@@ -390,16 +441,44 @@
             container-type: size;
         }
 
+        /* Held sideways, the square takes the whole height of the cover area. */
+        @media (orientation: landscape) and (height < 32rem) {
+            [data-part='transport'][data-state~='expanded'] [data-part='player-media'] {
+                --_player-media-size: min(100cqi, 100cqb);
+            }
+        }
+
         [data-part='transport'][data-state~='expanded']
             [data-part='player-media']
-            > :is(
-                [data-part='cover'],
-                [data-part='player-video'],
-                [data-part='player-visualization']
-            ) {
+            > :is([data-part='cover'], [data-part='player-visualization']) {
             grid-area: 1 / 1 !important;
             inline-size: var(--_player-media-size) !important;
             block-size: var(--_player-media-size) !important;
+        }
+
+        [data-part='transport'][data-state~='expanded']
+            [data-part='player-media']
+            > :is([data-part='player-video'], [data-part='video-ambient']) {
+            grid-area: 1 / 1 !important;
+            position: relative !important;
+            inset: auto !important;
+            display: block !important;
+            inline-size: 100cqi !important;
+            block-size: 100cqb !important;
+            overflow: hidden;
+            border-radius: var(--wmp-radius-m);
+        }
+
+        [data-part='transport'][data-state~='expanded']
+            [data-part='player-media']
+            > [data-part='cover'] {
+            transition: opacity var(--wmp-stage-transition-duration) ease-in-out;
+        }
+
+        [data-part='transport'][data-state~='expanded']
+            [data-part='player-media'][data-state~='video']
+            > [data-part='cover'] {
+            opacity: 0;
         }
 
         [data-part='transport'][data-state~='expanded']
@@ -409,13 +488,25 @@
             display: block !important;
             overflow: hidden;
             border-radius: var(--wmp-radius-m);
-            background: var(--wmp-stage-view-background);
             opacity: 0;
             transition: opacity var(--wmp-stage-transition-duration) ease-in-out;
         }
 
+        [data-part='transport'][data-state~='expanded'] [data-part='player-visualization'] {
+            background: var(--wmp-stage-view-background);
+        }
+
         [data-part='transport'][data-state~='expanded'] [data-part='player-video'] {
             object-fit: contain;
+            object-position: center;
+            background: transparent;
+        }
+
+        /* The ambient light shows with the video only; the base fades it in and out. */
+        [data-part='transport'][data-state~='expanded']
+            [data-part='player-media']:not([data-state~='video'])
+            > [data-part='video-ambient'] {
+            opacity: 0;
         }
 
         [data-part='transport'][data-state~='expanded']

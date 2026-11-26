@@ -3175,14 +3175,18 @@
 
     /*
      * The cover of now-playing-mini lies in player-media; on the bar the wrapper does not take part
-     * in the layout. The full-screen player (mobile.css) stacks the video and the visualization over
-     * the cover, in its square, and shows the chosen view.
+     * in the layout. The full-screen player (mobile.css) stacks the video with its ambient light and
+     * the visualization over the cover and shows the chosen view.
      */
     [data-part='player-media'] {
         display: contents;
     }
 
-    :is([data-part='player-video'], [data-part='player-visualization']) {
+    :is(
+        [data-part='player-video'],
+        [data-part='player-visualization'],
+        [data-part='player-media'] > [data-part='video-ambient']
+    ) {
         display: none;
     }
 

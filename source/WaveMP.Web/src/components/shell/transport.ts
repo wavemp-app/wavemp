@@ -228,6 +228,8 @@ export interface TransportStage {
     readonly casting: boolean
     /** Whether another device of the profile plays (this one is its remote). */
     readonly remote?: boolean
+    /** Whether the profile shows the ambient light around videos (on without it). */
+    readonly ambient?: boolean
 }
 
 /** Whether the music plays elsewhere: on a casting device or another device of the profile. */
