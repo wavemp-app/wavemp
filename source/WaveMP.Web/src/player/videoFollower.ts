@@ -8,10 +8,26 @@
 // plays, pauses or seeks and the video follows it as always. The video stays muted there as well,
 // so it never takes the audio over from the engine; the start and the end of the full screen are
 // reported, so the player can check its state when the page shows again.
+//
+// The follower moves the video only when it can play: never while it waits for data or for its
+// last seek, and with longer pauses after seeks that missed (rules in videoSync.ts). With the
+// developer setting of the video diagnostics, it reports what it does with every check.
 
 import { finiteOrZero } from './engine'
 import { browserHlsSupport, MediaSourceSlot, type HlsSupport } from './hls'
-import { softSyncThreshold, syncAction, type VideoState } from './videoSync'
+import {
+    VideoDiagnosticsRecorder,
+    type VideoDiagnosticsEventKind,
+    type VideoDiagnosticsSnapshot,
+} from './videoDiagnostics'
+import {
+    missedSeeksAfter,
+    nextSeekLatency,
+    softSyncThreshold,
+    syncAction,
+    videoTarget,
+    type VideoState,
+} from './videoSync'
 
 /** The audio the video follows. */
 export interface FollowerClock {
@@ -32,6 +48,8 @@ export interface VideoFollowerEvents {
     userSeek?(position: number): void
     /** The video entered (true) or left (false) the native full screen with its own controls. */
     ownControlsChange?(shown: boolean): void
+    /** The diagnostics after each check, while they are switched on (setDiagnostics). */
+    diagnostics?(snapshot: VideoDiagnosticsSnapshot): void
 }
 
 /** The source of a video. */
@@ -68,6 +86,12 @@ export const syncInterval = 250
 /** readyState from which the element shows the picture of its position (HAVE_CURRENT_DATA). */
 const haveCurrentData = 2
 
+/** readyState from which the element can play on from its position (HAVE_FUTURE_DATA). */
+const haveFutureData = 3
+
+/** Events of the element that the diagnostics log. */
+const diagnosticEvents = ['waiting', 'stalled'] as const
+
 /** Seconds within which a seek of the element counts as the one the follower started. */
 const ownSeekTolerance = 0.5
 
@@ -89,7 +113,18 @@ export class VideoFollower {
     /** Whether the follower itself wants the video to play; other plays and pauses are the user's. */
     private wantsPlaying = false
     private offset = 0
+    private hls = false
     private lastSeek = Number.NEGATIVE_INFINITY
+    /** The last seek of the follower is not done: the video did not play (or show) again since. */
+    private settling = false
+    /** Whether the audio played when the follower last seeked; only such seeks are measured. */
+    private seekWhilePlaying = false
+    /** Seeks in a row after which the video was still out of sync. */
+    private missedSeeks = 0
+    /** Seconds the seeks of this video took so far; null before the first one. */
+    private seekLatency: number | null = null
+    private readonly diagnostics = new VideoDiagnosticsRecorder()
+    private diagnosticsEnabled = false
     /** Where the follower last sent the video; seeks elsewhere come from the own controls. */
     private ownSeek: number | null = null
     private timer: number | null = null
@@ -118,7 +153,18 @@ export class VideoFollower {
             { signal },
         )
         for (const name of ['loadeddata', 'canplay', 'seeked', 'playing']) {
-            element.addEventListener(name, () => this.checkReady(), { signal })
+            element.addEventListener(
+                name,
+                () => {
+                    this.checkSettled()
+                    this.checkReady()
+                },
+                { signal },
+            )
+        }
+
+        for (const name of diagnosticEvents) {
+            element.addEventListener(name, () => this.record(name), { signal })
         }
         element.addEventListener(
             'play',
@@ -172,7 +218,14 @@ export class VideoFollower {
             )
         }
 
-        element.addEventListener('error', () => this.fail(), { signal })
+        element.addEventListener(
+            'error',
+            () => {
+                this.record('error')
+                this.fail()
+            },
+            { signal },
+        )
     }
 
     /** State of the video. */
@@ -185,6 +238,8 @@ export class VideoFollower {
         this.unload()
         this.loaded = true
         this.offset = offsetMilliseconds / 1000
+        this.hls = source.hls === true
+        this.diagnostics.start(this.hls ? 'hls' : 'file', this.environment.now())
         this.setState('loading')
         this.slot.set(source.url, source.hls === true, () => this.fail())
     }
@@ -197,9 +252,21 @@ export class VideoFollower {
         this.hasMetadata = false
         this.revealing = false
         this.lastSeek = Number.NEGATIVE_INFINITY
+        this.settling = false
+        this.seekWhilePlaying = false
+        this.missedSeeks = 0
+        this.seekLatency = null
         this.ownSeek = null
         this.slot.clear()
         this.setState('idle')
+    }
+
+    /** Switches the report of the diagnostics after each check on or off. */
+    setDiagnostics(enabled: boolean): void {
+        this.diagnosticsEnabled = enabled
+        if (enabled && this.loaded) {
+            this.events.diagnostics?.(this.diagnostics.snapshot(this.environment.now()))
+        }
     }
 
     /** A new offset in milliseconds; it applies with the next check. */
@@ -217,7 +284,7 @@ export class VideoFollower {
             this.stopTimer()
             this.wantsPlaying = false
             this.element.pause()
-            this.element.playbackRate = 1
+            this.setRate(1)
             return
         }
 
@@ -267,10 +334,13 @@ export class VideoFollower {
 
         const element = this.element
         if (element.seeking) {
+            this.report(null)
             return
         }
 
+        this.checkSettled()
         const clock = this.clock()
+        const revealing = this.revealing
         const action = syncAction({
             audioPosition: clock.position,
             playing: clock.playing,
@@ -278,25 +348,35 @@ export class VideoFollower {
             offset: this.offset,
             videoDuration: finiteOrZero(element.duration),
             sinceLastSeek: (this.environment.now() - this.lastSeek) / 1000,
+            hls: this.hls,
+            rate: element.playbackRate,
+            // Only a video that showed and then ran out of data waits; a new one is positioned.
+            buffering: this.state === 'ready' && !revealing && element.readyState < haveFutureData,
+            settling: this.settling,
+            missedSeeks: this.missedSeeks,
+            seekLatency: this.seekLatency ?? 0,
         })
-        const revealing = this.revealing
         this.revealing = false
         if (action.kind === 'hold') {
-            element.playbackRate = 1
+            this.setRate(1)
             this.pause()
             if (Math.abs(finiteOrZero(element.currentTime) - action.at) > softSyncThreshold) {
-                this.seek(action.at, revealing)
+                this.seek(action.at, revealing, false)
             }
         } else if (action.kind === 'seek') {
-            element.playbackRate = 1
-            this.seek(action.to, revealing)
+            this.setRate(1)
+            this.seek(action.to, revealing, clock.playing)
+            this.follow(clock.playing)
+        } else if (action.kind === 'wait') {
+            this.setRate(1)
             this.follow(clock.playing)
         } else {
-            element.playbackRate = clock.playing ? action.rate : 1
+            this.setRate(clock.playing ? action.rate : 1)
             this.follow(clock.playing)
         }
 
         this.checkReady()
+        this.report(action.kind)
     }
 
     /** Stops the video and lets go of the element, e.g. when the stage closes. */
@@ -306,10 +386,13 @@ export class VideoFollower {
         this.listeners.abort()
     }
 
-    private seek(to: number, hidden: boolean): void {
+    private seek(to: number, hidden: boolean, playing: boolean): void {
         this.lastSeek = this.environment.now()
+        this.settling = true
+        this.seekWhilePlaying = playing
         this.ownSeek = to
         this.element.currentTime = to
+        this.record('seek', to)
         // A video that is about to be shown stays hidden until it shows the right picture.
         if (hidden && this.state === 'ready') {
             this.setState('loading')
@@ -337,6 +420,82 @@ export class VideoFollower {
         // The video is where the user wants it: no correction of the follower moves it back first.
         this.lastSeek = this.environment.now()
         this.events.userSeek?.(Math.max(0, time - this.offset))
+    }
+
+    /**
+     * Ends the wait for the last seek once the video plays again at its new position (or shows it,
+     * while the audio is paused). A seek while the audio played is measured: its time lets the next
+     * seek aim ahead, and a seek that still left the video out of sync makes the next one wait
+     * longer.
+     */
+    private checkSettled(): void {
+        const element = this.element
+        if (!this.settling || !this.loaded || element.seeking) {
+            return
+        }
+
+        const clock = this.clock()
+        if (clock.playing && element.readyState < haveFutureData) {
+            return
+        }
+
+        this.settling = false
+        if (!this.seekWhilePlaying || !clock.playing) {
+            return
+        }
+
+        const measured = (this.environment.now() - this.lastSeek) / 1000
+        this.seekLatency = nextSeekLatency(this.seekLatency, measured)
+        const target = videoTarget(clock.position, this.offset)
+        const distance = Math.abs(finiteOrZero(element.currentTime) - target)
+        this.missedSeeks = missedSeeksAfter(this.missedSeeks, distance, this.hls)
+    }
+
+    /** Sets the speed of the video only when it changes: each change may cost pictures. */
+    private setRate(rate: number): void {
+        if (Math.abs(this.element.playbackRate - rate) > 1e-6) {
+            this.element.playbackRate = rate
+            if (this.state === 'ready') {
+                this.record('rate', rate)
+            }
+        }
+    }
+
+    /** The values of a check for the diagnostics, and their report while they are switched on. */
+    private report(action: string | null): void {
+        if (!this.loaded) {
+            return
+        }
+
+        const element = this.element
+        const clock = this.clock()
+        const quality = playbackQualityOf(element)
+        const videoPosition = finiteOrZero(element.currentTime)
+        this.diagnostics.sample({
+            time: this.environment.now(),
+            audioPosition: clock.position,
+            drift: this.hasMetadata
+                ? videoPosition - videoTarget(clock.position, this.offset)
+                : null,
+            rate: element.playbackRate,
+            readyState: element.readyState,
+            videoPosition,
+            buffered: bufferedRangesOf(element),
+            droppedFrames: quality?.droppedVideoFrames ?? null,
+            totalFrames: quality?.totalVideoFrames ?? null,
+            action,
+            missedSeeks: this.missedSeeks,
+            seekLatency: this.seekLatency,
+        })
+        if (this.diagnosticsEnabled) {
+            this.events.diagnostics?.(this.diagnostics.snapshot(this.environment.now()))
+        }
+    }
+
+    private record(kind: VideoDiagnosticsEventKind, value: number | null = null): void {
+        if (this.loaded) {
+            this.diagnostics.record(kind, this.environment.now(), value)
+        }
     }
 
     private follow(playing: boolean): void {
@@ -396,4 +555,21 @@ export class VideoFollower {
             this.events.stateChange?.(state)
         }
     }
+}
+
+/** The loaded ranges of the element in seconds. */
+function bufferedRangesOf(element: HTMLVideoElement): [number, number][] {
+    const ranges = element.buffered as TimeRanges | undefined
+    const result: [number, number][] = []
+    for (let index = 0; index < (ranges?.length ?? 0); index++) {
+        result.push([ranges!.start(index), ranges!.end(index)])
+    }
+
+    return result
+}
+
+/** The pictures the element dropped and showed, if the browser tells. */
+function playbackQualityOf(element: HTMLVideoElement): VideoPlaybackQuality | null {
+    const read = (element as Partial<HTMLVideoElement>).getVideoPlaybackQuality
+    return typeof read === 'function' ? read.call(element) : null
 }

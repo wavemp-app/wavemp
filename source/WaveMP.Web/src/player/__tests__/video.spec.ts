@@ -148,6 +148,7 @@ describe('VideoFollower', () => {
             userPause: vi.fn(),
             userSeek: vi.fn(),
             ownControlsChange: vi.fn(),
+            diagnostics: vi.fn(),
         }
         follower = new VideoFollower(
             video as unknown as HTMLVideoElement,
@@ -286,6 +287,122 @@ describe('VideoFollower', () => {
         expect(video.currentTime).toBe(35)
         expect(video.playbackRate).toBe(1)
         expect(follower.videoState).toBe('ready')
+    })
+
+    it('does not seek while the shown video waits for data, and seeks once it can play', () => {
+        loadShown()
+        video.readyState = 2
+        now += 5000
+        clock.position = 35
+        tick()
+        tick()
+        expect(video.currentTime).toBe(30)
+        expect(video.playbackRate).toBe(1)
+
+        video.readyState = 4
+        tick()
+        expect(video.currentTime).toBe(35)
+    })
+
+    it('does not seek again until the video plays after its last seek', () => {
+        loadShown()
+        now += 5000
+        clock.position = 35
+        tick()
+        expect(video.currentTime).toBe(35)
+
+        // The seek is done, but the video cannot play on yet.
+        video.seeking = false
+        video.readyState = 2
+        now += 5000
+        clock.position = 40
+        tick()
+        expect(video.currentTime).toBe(35)
+
+        video.seeked()
+        now += 1000
+        tick()
+        // Ahead by the time the seeks took: the mean of 0 and the 4 seconds the measurement allows.
+        expect(video.currentTime).toBe(42)
+    })
+
+    it('aims ahead by the time seeks took and waits longer after a seek that missed', () => {
+        loadShown()
+        now += 5000
+        clock.position = 40
+        tick()
+        expect(video.currentTime).toBe(40)
+
+        // The seek took 0.6 seconds, in which the audio played on: the video is behind.
+        now += 600
+        clock.position = 40.6
+        video.seeked()
+
+        now += 1000
+        clock.position = 41.6
+        tick()
+        expect(video.currentTime).toBe(40)
+        expect(video.playbackRate).toBeCloseTo(1.08)
+
+        now += 1000
+        clock.position = 42.6
+        tick()
+        // The mean of the first seek (0 seconds) and this one (0.6 seconds).
+        expect(video.currentTime).toBeCloseTo(42.9)
+    })
+
+    it('sets the speed of the video only when it changes', () => {
+        let changes = 0
+        let rate = 1
+        Object.defineProperty(video, 'playbackRate', {
+            get: () => rate,
+            set: (value: number) => {
+                rate = value
+                changes++
+            },
+        })
+        loadShown()
+        clock.position = 29.85
+
+        tick()
+        tick()
+        tick()
+
+        expect(rate).toBeCloseTo(0.95)
+        expect(changes).toBe(1)
+    })
+
+    it('reports its diagnostics with every check while they are switched on', () => {
+        follower.setDiagnostics(true)
+        follower.load({ url: '/master.m3u8', hls: true })
+        follower.setActive(true)
+        video.loadMetadata()
+        video.seeked()
+        clock.position = 30.2
+        tick()
+
+        const snapshot = vi.mocked(events.diagnostics).mock.lastCall?.[0]
+        expect(snapshot?.delivery).toBe('hls')
+        expect(snapshot?.seeks).toBe(1)
+        expect(snapshot?.drift).toBeCloseTo(-0.2)
+        expect(snapshot?.readyState).toBe(4)
+        expect(snapshot?.events.map((event) => event.kind)).toEqual(['seek', 'rate'])
+
+        const calls = vi.mocked(events.diagnostics).mock.calls.length
+        follower.setDiagnostics(false)
+        tick()
+        expect(events.diagnostics).toHaveBeenCalledTimes(calls)
+    })
+
+    it('logs when the video waits for data', () => {
+        follower.setDiagnostics(true)
+        loadShown()
+        video.dispatchEvent(new Event('waiting'))
+        tick()
+
+        const snapshot = vi.mocked(events.diagnostics).mock.lastCall?.[0]
+        expect(snapshot?.delivery).toBe('file')
+        expect(snapshot?.events.map((event) => event.kind)).toContain('waiting')
     })
 
     it('waits for a running seek before it checks again', () => {
