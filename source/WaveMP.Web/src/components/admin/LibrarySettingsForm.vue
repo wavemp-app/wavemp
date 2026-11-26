@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import type { CoverPriority, LibrarySettings } from '@/api/generated/models'
+import type { AlbumCoverFallback, CoverPriority, LibrarySettings } from '@/api/generated/models'
 import { problemCodeOf, validationErrorsOf } from '@/api/problems'
 import { customIntervalKey, formatList, intervalOptions, parseList } from '@/admin/presentation'
 import { changedSettings } from '@/admin/settingsChanges'
@@ -15,9 +15,12 @@ import BaseTextField from '@/components/base/BaseTextField.vue'
 import { useFormat } from '@/composables/useFormat'
 import { useSettingsLock } from '@/composables/useSettingsLock'
 import {
+    albumCoverFallbackKey,
+    albumCoverFallbackOf,
+    albumCoverFallbacks,
     coverPriorities,
+    coverPriorityKey,
     coverPriorityOf,
-    coverRuleOptionKey,
     coverRuleToken,
 } from '@/library/coverRules'
 import { validationMessagesByField, type ValidationMessageOptions } from '@/i18n/validation'
@@ -32,13 +35,15 @@ type Field =
     | 'coverNames'
     | 'artistPictureNames'
     | 'coverPriority'
+    | 'albumCoverFallback'
 
 /**
  * Settings of the library: scan interval, file watcher, extension lists, album cover names, names
- * of the pictures in artist folders, the global cover rule, the download of lyrics (off by default, because it sends
- * the titles of the library to an online service) and whether Subsonic apps may download the original files. A changed
- * cover rule loads the covers of albums and songs again. Saving sends only the changed values, so settings changed
- * elsewhere since the page was loaded stay as they are.
+ * of the pictures in artist folders, the cover rules of songs and albums, the download of lyrics
+ * (off by default, because it sends the titles of the library to an online service) and whether
+ * Subsonic apps may download the original files. A changed cover rule loads the covers of albums
+ * and songs again. Saving sends only the changed values, so settings changed elsewhere since the
+ * page was loaded stay as they are.
  */
 const { t } = useI18n()
 const format = useFormat()
@@ -52,7 +57,8 @@ const video = ref('')
 const images = ref('')
 const coverNames = ref('')
 const artistPictureNames = ref('')
-const coverPriority = ref<string>('AlbumFirst')
+const coverPriority = ref<string>('TrackFirst')
+const albumCoverFallback = ref<string>('ArtistPicture')
 const downloadLyrics = ref(false)
 const subsonicDownloads = ref(false)
 const saving = ref(false)
@@ -70,6 +76,7 @@ const fields: Record<string, Field> = {
     albumCoverNames: 'coverNames',
     artistPictureNames: 'artistPictureNames',
     coverPriority: 'coverPriority',
+    albumCoverFallback: 'albumCoverFallback',
 }
 
 const extensionKeys = {
@@ -87,6 +94,7 @@ const messageKeys: Record<Field, ValidationMessageOptions['keys']> = {
     coverNames: { invalid_format: 'adminLibrary.errors.coverNames' },
     artistPictureNames: { invalid_format: 'adminLibrary.errors.coverNames' },
     coverPriority: {},
+    albumCoverFallback: {},
 }
 
 function show(settings: LibrarySettings | null): void {
@@ -102,6 +110,7 @@ function show(settings: LibrarySettings | null): void {
     coverNames.value = formatList(settings.albumCoverNames)
     artistPictureNames.value = formatList(settings.artistPictureNames)
     coverPriority.value = coverPriorityOf(settings.coverPriority)
+    albumCoverFallback.value = albumCoverFallbackOf(settings.albumCoverFallback)
     downloadLyrics.value = settings.downloadLyrics ?? false
     subsonicDownloads.value = settings.subsonicDownloads ?? false
 }
@@ -110,7 +119,15 @@ const coverPriorityOptions = computed<SegmentOption[]>(() =>
     coverPriorities.map((priority) => ({
         value: priority,
         item: coverRuleToken(priority),
-        label: t(coverRuleOptionKey(priority)),
+        label: t(coverPriorityKey(priority)),
+    })),
+)
+
+const albumCoverFallbackOptions = computed<SegmentOption[]>(() =>
+    albumCoverFallbacks.map((fallback) => ({
+        value: fallback,
+        item: coverRuleToken(fallback),
+        label: t(albumCoverFallbackKey(fallback)),
     })),
 )
 
@@ -139,6 +156,7 @@ async function save(): Promise<void> {
     failed.value = false
     errors.value = {}
     const previousPriority = store.settings?.coverPriority
+    const previousFallback = store.settings?.albumCoverFallback
     try {
         // Only the changed values: an unchanged field must not put back a value that was changed
         // elsewhere since the form was loaded. The answer shows all settings of the server again.
@@ -152,12 +170,19 @@ async function save(): Promise<void> {
                 albumCoverNames: parseList(coverNames.value),
                 artistPictureNames: parseList(artistPictureNames.value),
                 coverPriority: coverPriorityOf(coverPriority.value as CoverPriority),
+                albumCoverFallback: albumCoverFallbackOf(
+                    albumCoverFallback.value as AlbumCoverFallback,
+                ),
                 downloadLyrics: downloadLyrics.value,
                 subsonicDownloads: subsonicDownloads.value,
             }),
         )
-        if (result && result.coverPriority !== previousPriority) {
-            // Albums and songs without a rule of their own may show another cover now.
+        if (
+            result &&
+            (result.coverPriority !== previousPriority ||
+                result.albumCoverFallback !== previousFallback)
+        ) {
+            // Albums and songs without an exception of their own may show another cover now.
             covers.invalidate()
         }
 
@@ -262,6 +287,16 @@ onMounted(async () => {
             :options="coverPriorityOptions"
             :hint="t('adminLibrary.coverPriorityHint')"
             :error="errors.coverPriority"
+            :disabled="locked"
+        />
+        <BaseSegmentedField
+            v-model="albumCoverFallback"
+            data-field="album-cover-fallback"
+            item="album-cover-fallback"
+            :label="t('adminLibrary.albumCoverFallback')"
+            :options="albumCoverFallbackOptions"
+            :hint="t('adminLibrary.albumCoverFallbackHint')"
+            :error="errors.albumCoverFallback"
             :disabled="locked"
         />
         <BaseCheckbox

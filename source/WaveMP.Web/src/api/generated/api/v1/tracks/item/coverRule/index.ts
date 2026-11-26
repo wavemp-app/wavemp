@@ -26,7 +26,7 @@ export interface CoverRuleRequestBuilder extends BaseRequestBuilder<CoverRuleReq
      */
      get(requestConfiguration?: RequestConfiguration<object> | undefined) : Promise<CoverRule | undefined>;
     /**
-     * Sets the cover rule of a track; Inherit follows the rule of its album again. A cover the admin selected for the track (SetTrackFileSelection) still comes first. A change starts the job cover-cache, which prepares the covers shown now; the cover URLs stay the same and deliver the new picture with a new ETag.
+     * Sets the cover rule of a track; Inherit follows the rule of its album again. A cover the admin selected for the track (SetTrackFileSelection) still comes first under every rule. A change starts the job cover-cache, which prepares the covers shown now; the cover URLs stay the same and deliver the new picture with a new ETag.
      * @param body Sets the cover rule of an album or a track.
      * @param requestConfiguration Configuration for the request such as headers, query parameters, and middleware options.
      * @returns {Promise<CoverRule>}
@@ -43,7 +43,7 @@ export interface CoverRuleRequestBuilder extends BaseRequestBuilder<CoverRuleReq
      */
      toGetRequestInformation(requestConfiguration?: RequestConfiguration<object> | undefined) : RequestInformation;
     /**
-     * Sets the cover rule of a track; Inherit follows the rule of its album again. A cover the admin selected for the track (SetTrackFileSelection) still comes first. A change starts the job cover-cache, which prepares the covers shown now; the cover URLs stay the same and deliver the new picture with a new ETag.
+     * Sets the cover rule of a track; Inherit follows the rule of its album again. A cover the admin selected for the track (SetTrackFileSelection) still comes first under every rule. A change starts the job cover-cache, which prepares the covers shown now; the cover URLs stay the same and deliver the new picture with a new ETag.
      * @param body Sets the cover rule of an album or a track.
      * @param requestConfiguration Configuration for the request such as headers, query parameters, and middleware options.
      * @returns {RequestInformation}

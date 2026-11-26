@@ -383,7 +383,7 @@ describe('OnlineMetadataDialog', () => {
             expect(wrapper.findAll('[data-part="alert"]').map((alert) => alert.text())).toEqual([
                 'Songs with the new tags: 8',
                 'Songs that could not be written: 2',
-                'The music folder cannot be written, so WaveMP keeps the cover in its data folder.',
+                'The cover was saved for this album.',
             ])
             expect(wrapper.emitted('applied')?.[0]?.[0]).toEqual({
                 albumId: 'album-2',

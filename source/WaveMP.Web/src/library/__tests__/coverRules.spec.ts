@@ -1,39 +1,51 @@
 import { describe, expect, it } from 'vitest'
 import {
+    albumCoverFallbackKey,
+    albumCoverFallbackOf,
+    albumCoverFallbackOptionOf,
+    albumCoverFallbackOptions,
+    albumCoverFallbacks,
     coverPriorities,
     coverPriorityKey,
     coverPriorityOf,
-    coverRuleOptionKey,
     coverRuleOptionOf,
     coverRuleOptions,
     coverRuleToken,
 } from '../coverRules'
 
 describe('cover rules', () => {
-    it('offers inherit before the two priorities', () => {
-        expect(coverRuleOptions).toEqual(['Inherit', 'AlbumFirst', 'TrackFirst'])
-        expect(coverPriorities).toEqual(['AlbumFirst', 'TrackFirst'])
+    it('offers the default first and inherit before the rules of an exception', () => {
+        expect(coverPriorities).toEqual(['TrackFirst', 'AlbumFirst', 'TrackOnly'])
+        expect(coverRuleOptions).toEqual(['Inherit', 'TrackFirst', 'AlbumFirst', 'TrackOnly'])
+        expect(albumCoverFallbacks).toEqual(['ArtistPicture', 'None'])
+        expect(albumCoverFallbackOptions).toEqual(['Inherit', 'ArtistPicture', 'None'])
     })
 
-    it('names the rules and priorities with message keys', () => {
-        expect(coverRuleOptionKey('Inherit')).toBe('coverRule.inherit')
-        expect(coverRuleOptionKey('AlbumFirst')).toBe('coverRule.albumFirst')
-        expect(coverRuleOptionKey('TrackFirst')).toBe('coverRule.trackFirst')
+    it('names the rules with message keys', () => {
         expect(coverPriorityKey('TrackFirst')).toBe('coverRule.priorities.trackFirst')
-        expect(coverPriorityKey(null)).toBe('coverRule.priorities.albumFirst')
+        expect(coverPriorityKey('AlbumFirst')).toBe('coverRule.priorities.albumFirst')
+        expect(coverPriorityKey('TrackOnly')).toBe('coverRule.priorities.trackOnly')
+        expect(coverPriorityKey(null)).toBe('coverRule.priorities.trackFirst')
+        expect(albumCoverFallbackKey('None')).toBe('coverRule.fallbacks.none')
+        expect(albumCoverFallbackKey(undefined)).toBe('coverRule.fallbacks.artistPicture')
     })
 
     it('turns rules into stable tokens', () => {
         expect(coverRuleToken('Inherit')).toBe('inherit')
         expect(coverRuleToken('AlbumFirst')).toBe('album-first')
-        expect(coverRuleToken('TrackFirst')).toBe('track-first')
+        expect(coverRuleToken('TrackOnly')).toBe('track-only')
+        expect(coverRuleToken('ArtistPicture')).toBe('artist-picture')
     })
 
-    it('starts with inherit and album first while nothing is known', () => {
+    it('starts with inherit and the defaults while nothing is known', () => {
         expect(coverRuleOptionOf(undefined)).toBe('Inherit')
         expect(coverRuleOptionOf(null)).toBe('Inherit')
-        expect(coverRuleOptionOf('TrackFirst')).toBe('TrackFirst')
-        expect(coverPriorityOf(undefined)).toBe('AlbumFirst')
-        expect(coverPriorityOf('TrackFirst')).toBe('TrackFirst')
+        expect(coverRuleOptionOf('TrackOnly')).toBe('TrackOnly')
+        expect(albumCoverFallbackOptionOf(undefined)).toBe('Inherit')
+        expect(albumCoverFallbackOptionOf('None')).toBe('None')
+        expect(coverPriorityOf(undefined)).toBe('TrackFirst')
+        expect(coverPriorityOf('AlbumFirst')).toBe('AlbumFirst')
+        expect(albumCoverFallbackOf(null)).toBe('ArtistPicture')
+        expect(albumCoverFallbackOf('None')).toBe('None')
     })
 })

@@ -14,7 +14,8 @@ const settings = {
     imageExtensions: ['jpg'],
     albumCoverNames: ['cover', 'folder'],
     artistPictureNames: ['artist', 'folder', 'photo'],
-    coverPriority: 'AlbumFirst' as const,
+    coverPriority: 'TrackFirst' as const,
+    albumCoverFallback: 'ArtistPicture' as const,
     downloadLyrics: false,
     subsonicDownloads: false,
 }
@@ -138,26 +139,54 @@ describe('LibrarySettingsForm', () => {
         wrapper.unmount()
     })
 
-    it('shows the global cover rule as segmented control and saves a change', async () => {
+    it('shows the global cover rule of songs as segmented control and saves a change', async () => {
         const { wrapper, update } = await mountForm()
         const covers = useCoversStore()
         const invalidate = vi.spyOn(covers, 'invalidate')
-        update.mockResolvedValue({ ...settings, coverPriority: 'TrackFirst' })
+        update.mockResolvedValue({ ...settings, coverPriority: 'TrackOnly' })
 
         const field = wrapper.get('[data-field="cover-priority"]')
         const segments = field.findAll('[data-part="segment"]')
         expect(segments.map((segment) => segment.attributes('data-item'))).toEqual([
-            'album-first',
             'track-first',
+            'album-first',
+            'track-only',
         ])
-        expect(segments.map((segment) => segment.text())).toEqual(['Album cover', 'Song cover'])
+        expect(segments.map((segment) => segment.text())).toEqual([
+            'Own first',
+            'Album first',
+            'Own only',
+        ])
+        expect(segments[0]!.attributes('aria-checked')).toBe('true')
+
+        await segments[2]!.trigger('click')
+        await wrapper.get('form').trigger('submit')
+        await flushPromises()
+
+        expect(update).toHaveBeenCalledWith({ coverPriority: 'TrackOnly' })
+        expect(invalidate).toHaveBeenCalledTimes(1)
+        wrapper.unmount()
+    })
+
+    it('shows what albums without a cover show and saves a change', async () => {
+        const { wrapper, update } = await mountForm()
+        const invalidate = vi.spyOn(useCoversStore(), 'invalidate')
+        update.mockResolvedValue({ ...settings, albumCoverFallback: 'None' })
+
+        const field = wrapper.get('[data-field="album-cover-fallback"]')
+        const segments = field.findAll('[data-part="segment"]')
+        expect(segments.map((segment) => segment.attributes('data-item'))).toEqual([
+            'artist-picture',
+            'none',
+        ])
+        expect(segments.map((segment) => segment.text())).toEqual(['Artist picture', 'No cover'])
         expect(segments[0]!.attributes('aria-checked')).toBe('true')
 
         await segments[1]!.trigger('click')
         await wrapper.get('form').trigger('submit')
         await flushPromises()
 
-        expect(update).toHaveBeenCalledWith({ coverPriority: 'TrackFirst' })
+        expect(update).toHaveBeenCalledWith({ albumCoverFallback: 'None' })
         expect(invalidate).toHaveBeenCalledTimes(1)
         wrapper.unmount()
     })

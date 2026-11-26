@@ -1186,8 +1186,10 @@
     "coverNamesHint": "Dateinamen ohne Endung, die wichtigsten zuerst. Gilt ab dem nächsten Scan.",
     "artistPictureNames": "Namen von Künstlerbildern",
     "artistPictureNamesHint": "Dateinamen ohne Endung, die wichtigsten zuerst, für Bilder direkt im Ordner mit dem Namen des Künstlers. Gilt ab dem nächsten Scan.",
-    "coverPriority": "Zuerst gezeigtes Cover",
-    "coverPriorityHint": "Gilt für alle Alben und Titel ohne eigene Regel. Fehlt das gewählte Cover, wird das andere gezeigt. Ein Bild mit dem Namen eines Titels kommt für diesen Titel immer zuerst.",
+    "coverPriority": "Cover von Titeln",
+    "coverPriorityHint": "Eigenes zuerst: das Bild mit dem Namen des Titels, sonst das Album-Cover. Album zuerst: das Album-Cover, sonst das Bild des Titels. Nur eigenes: nie das Album-Cover. Titel zeigen nie das Bild eines Interpreten. Einzelne Alben und Titel können in ihrem Editor eine Ausnahme haben.",
+    "albumCoverFallback": "Cover von Alben ohne eigenes Cover",
+    "albumCoverFallbackHint": "Ein Album zeigt sein eigenes Cover: ein Bild in seinem Ordner, ein in seine Titel eingebettetes Bild oder ein Cover aus der Online-Suche. Ohne eines zeigt es das Bild seines Interpreten oder kein Cover, nie das Cover eines anderen Albums. Die Collage aus Album-Covern zählt nicht als Bild eines Interpreten.",
     "save": "Speichern",
     "saved": "Die Einstellungen sind gespeichert.",
     "saveError": "Die Einstellungen konnten nicht gespeichert werden.",
@@ -2109,22 +2111,31 @@
   },
   "coverRule": {
     "title": "Cover",
-    "label": "Zuerst gezeigtes Cover",
-    "inherit": "Übernommen ({priority})",
-    "albumFirst": "Album-Cover",
-    "trackFirst": "Titel-Cover",
+    "label": "Cover dieses Titels",
+    "inherit": "Standard",
     "priorities": {
-      "albumFirst": "Album-Cover zuerst",
-      "trackFirst": "Titel-Cover zuerst"
+      "trackFirst": "Eigenes zuerst",
+      "albumFirst": "Album zuerst",
+      "trackOnly": "Nur eigenes"
     },
-    "albumHint": "Gilt für das Album und seine Titel ohne eigene Regel. Fehlt das gewählte Cover, wird das andere gezeigt. Ein Bild mit dem Namen eines Titels kommt für diesen Titel immer zuerst.",
-    "trackHint": "Fehlt das gewählte Cover, wird das andere gezeigt. Ein in den Dateien des Titels gewähltes Cover kommt immer zuerst, danach ein Bild mit seinem Namen, außer hier ist das Album-Cover gewählt.",
+    "fallbacks": {
+      "artistPicture": "Interpretenbild",
+      "none": "Kein Cover"
+    },
+    "albumLabel": "Ohne eigenes Cover",
+    "albumHint": "Was das Album zeigt, wenn es kein eigenes Cover hat. Standard: {rule}, aus den Einstellungen der Bibliothek.",
+    "songsLabel": "Cover seiner Titel",
+    "songsHint": "Gilt für die Titel dieses Albums ohne eigene Regel. Standard: {rule}, aus den Einstellungen der Bibliothek.",
+    "trackHint": "Standard: {rule}, vom Album oder aus den Einstellungen der Bibliothek. Ein in den Dateien des Titels gewähltes Cover kommt immer zuerst.",
     "preview": "Vorschau",
     "previewNone": "Kein Cover",
-    "save": "Speichern",
-    "saved": "Gespeichert. Die Cover werden aktualisiert.",
     "loadError": "Die Cover-Regel konnte nicht geladen werden.",
     "saveError": "Die Cover-Regel konnte nicht gespeichert werden."
+  },
+  "albumMetadata": {
+    "edit": "Album bearbeiten",
+    "title": "Album bearbeiten",
+    "save": "Speichern"
   },
   "trackMetadata": {
     "edit": "Metadaten bearbeiten",
@@ -2200,6 +2211,7 @@
       "skipped": "Nicht beschreibbare Songs: {count}",
       "coverMediaFolder": "Das Cover wurde im Musikordner gespeichert.",
       "coverDataFolder": "Der Musikordner ist nicht beschreibbar, deshalb bewahrt WaveMP das Cover in seinem Datenordner auf.",
+      "coverAlbum": "Das Cover wurde für dieses Album gespeichert.",
       "coverNotSaved": "Das Cover konnte nicht gespeichert werden."
     },
     "errors": {

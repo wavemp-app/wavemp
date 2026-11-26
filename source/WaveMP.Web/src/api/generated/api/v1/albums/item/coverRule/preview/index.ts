@@ -11,7 +11,7 @@ import { type BaseRequestBuilder, type Parsable, type ParsableFactory, type Requ
  */
 export interface PreviewRequestBuilder extends BaseRequestBuilder<PreviewRequestBuilder> {
     /**
-     * Returns the cover an album would show with the given rule, without changing it, e.g. to preview a rule before it is set. The picture is delivered like GetAlbumCover: scaled as WebP with size, as stored without.
+     * Returns the cover an album shows, like GetAlbumCover: the rule of its songs does not change the cover of the album itself. Kept for clients that preview the rule; scaled as WebP with size, as stored without.
      * @param requestConfiguration Configuration for the request such as headers, query parameters, and middleware options.
      * @returns {Promise<ArrayBuffer>}
      * @throws {ValidationProblem} error when the service returns a 400 status code
@@ -21,14 +21,14 @@ export interface PreviewRequestBuilder extends BaseRequestBuilder<PreviewRequest
      */
      get(requestConfiguration?: RequestConfiguration<PreviewRequestBuilderGetQueryParameters> | undefined) : Promise<ArrayBuffer | undefined>;
     /**
-     * Returns the cover an album would show with the given rule, without changing it, e.g. to preview a rule before it is set. The picture is delivered like GetAlbumCover: scaled as WebP with size, as stored without.
+     * Returns the cover an album shows, like GetAlbumCover: the rule of its songs does not change the cover of the album itself. Kept for clients that preview the rule; scaled as WebP with size, as stored without.
      * @param requestConfiguration Configuration for the request such as headers, query parameters, and middleware options.
      * @returns {RequestInformation}
      */
      toGetRequestInformation(requestConfiguration?: RequestConfiguration<PreviewRequestBuilderGetQueryParameters> | undefined) : RequestInformation;
 }
 /**
- * Returns the cover an album would show with the given rule, without changing it, e.g. to preview a rule before it is set. The picture is delivered like GetAlbumCover: scaled as WebP with size, as stored without.
+ * Returns the cover an album shows, like GetAlbumCover: the rule of its songs does not change the cover of the album itself. Kept for clients that preview the rule; scaled as WebP with size, as stored without.
  */
 export interface PreviewRequestBuilderGetQueryParameters {
     /**

@@ -1,47 +1,85 @@
-// Cover rules: whether albums and songs show the cover of the album or of the song first. The
-// global rule lives in the library settings, albums and songs may have a rule of their own or
-// inherit the next level. Pure functions only.
+// Cover rules. Songs show their own cover, else the album cover (the default); the album cover,
+// else their own; or only their own. Albums show their own cover, else the picture of their artist
+// (the default); or only their own. The global rules live in the library settings; admins set
+// exceptions for single albums and songs in their editors, which inherit the next level otherwise.
+// Pure functions only.
 
-import type { CoverPriority, CoverRuleOption } from '@/api/generated/models'
+import type {
+    AlbumCoverFallback,
+    AlbumCoverFallbackOption,
+    CoverPriority,
+    CoverRuleOption,
+} from '@/api/generated/models'
 
-/** The priorities of the global rule, in the order they are offered. */
-export const coverPriorities: readonly CoverPriority[] = ['AlbumFirst', 'TrackFirst']
+/** The rules of the songs, in the order they are offered; the default first. */
+export const coverPriorities: readonly CoverPriority[] = ['TrackFirst', 'AlbumFirst', 'TrackOnly']
 
-/** The rules of an album or song, in the order they are offered. */
-export const coverRuleOptions: readonly CoverRuleOption[] = ['Inherit', 'AlbumFirst', 'TrackFirst']
+/** The exceptions of a song or of the songs of an album, in the order they are offered. */
+export const coverRuleOptions: readonly CoverRuleOption[] = [
+    'Inherit',
+    'TrackFirst',
+    'AlbumFirst',
+    'TrackOnly',
+]
 
-const optionKeys: Record<CoverRuleOption, string> = {
-    Inherit: 'coverRule.inherit',
-    AlbumFirst: 'coverRule.albumFirst',
-    TrackFirst: 'coverRule.trackFirst',
-}
+/** What albums without a cover of their own show, in the order they are offered; the default first. */
+export const albumCoverFallbacks: readonly AlbumCoverFallback[] = ['ArtistPicture', 'None']
+
+/** The exceptions of an album for its own cover, in the order they are offered. */
+export const albumCoverFallbackOptions: readonly AlbumCoverFallbackOption[] = [
+    'Inherit',
+    'ArtistPicture',
+    'None',
+]
 
 const priorityKeys: Record<CoverPriority, string> = {
-    AlbumFirst: 'coverRule.priorities.albumFirst',
     TrackFirst: 'coverRule.priorities.trackFirst',
+    AlbumFirst: 'coverRule.priorities.albumFirst',
+    TrackOnly: 'coverRule.priorities.trackOnly',
 }
 
-/** Message key of a rule of an album or song, e.g. on its segment. */
-export function coverRuleOptionKey(option: CoverRuleOption): string {
-    return optionKeys[option]
+const fallbackKeys: Record<AlbumCoverFallback, string> = {
+    ArtistPicture: 'coverRule.fallbacks.artistPicture',
+    None: 'coverRule.fallbacks.none',
 }
 
-/** Message key of a priority, e.g. the inherited one; unknown values read as album first. */
+/** Message key of a rule of the songs; unknown values read as the default. */
 export function coverPriorityKey(priority: CoverPriority | null | undefined): string {
-    return priorityKeys[priority ?? 'AlbumFirst'] ?? priorityKeys.AlbumFirst
+    return priorityKeys[priority ?? 'TrackFirst'] ?? priorityKeys.TrackFirst
 }
 
-/** Stable token of a rule or priority for data-item, e.g. album-first. */
-export function coverRuleToken(value: CoverRuleOption | CoverPriority): string {
+/** Message key of what albums show without a cover; unknown values read as the default. */
+export function albumCoverFallbackKey(fallback: AlbumCoverFallback | null | undefined): string {
+    return fallbackKeys[fallback ?? 'ArtistPicture'] ?? fallbackKeys.ArtistPicture
+}
+
+/** Stable token of a rule for data-item, e.g. album-first. */
+export function coverRuleToken(
+    value: CoverRuleOption | CoverPriority | AlbumCoverFallback | AlbumCoverFallbackOption,
+): string {
     return value.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase()
 }
 
-/** The rule a form starts with: the stored one, Inherit while none is known. */
+/** The exception a form starts with: the stored one, Inherit while none is known. */
 export function coverRuleOptionOf(rule: CoverRuleOption | null | undefined): CoverRuleOption {
     return rule && coverRuleOptions.includes(rule) ? rule : 'Inherit'
 }
 
-/** The global priority a form starts with: the stored one, album first while none is known. */
+/** The exception of an album a form starts with: the stored one, Inherit while none is known. */
+export function albumCoverFallbackOptionOf(
+    fallback: AlbumCoverFallbackOption | null | undefined,
+): AlbumCoverFallbackOption {
+    return fallback && albumCoverFallbackOptions.includes(fallback) ? fallback : 'Inherit'
+}
+
+/** The global rule of the songs a form starts with: the stored one, the default while none is known. */
 export function coverPriorityOf(priority: CoverPriority | null | undefined): CoverPriority {
-    return priority && coverPriorities.includes(priority) ? priority : 'AlbumFirst'
+    return priority && coverPriorities.includes(priority) ? priority : 'TrackFirst'
+}
+
+/** The global rule of the albums a form starts with: the stored one, the default while none is known. */
+export function albumCoverFallbackOf(
+    fallback: AlbumCoverFallback | null | undefined,
+): AlbumCoverFallback {
+    return fallback && albumCoverFallbacks.includes(fallback) ? fallback : 'ArtistPicture'
 }

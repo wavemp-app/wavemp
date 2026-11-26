@@ -17,7 +17,7 @@ export interface CoverRuleRequestBuilder extends BaseRequestBuilder<CoverRuleReq
      */
     get preview(): PreviewRequestBuilder;
     /**
-     * Returns the cover rule of an album, the global rule it inherits and the priority that applies to it.
+     * Returns the cover rule of the songs of an album, the global rule it inherits and the priority that applies to its songs without a rule of their own.
      * @param requestConfiguration Configuration for the request such as headers, query parameters, and middleware options.
      * @returns {Promise<CoverRule>}
      * @throws {ProblemDetails} error when the service returns a 401 status code
@@ -26,7 +26,7 @@ export interface CoverRuleRequestBuilder extends BaseRequestBuilder<CoverRuleReq
      */
      get(requestConfiguration?: RequestConfiguration<object> | undefined) : Promise<CoverRule | undefined>;
     /**
-     * Sets the cover rule of an album; it applies to the album and to its tracks without a rule of their own. Inherit follows the global rule again. A change starts the job cover-cache, which prepares the covers shown now; the cover URLs stay the same and deliver the new picture with a new ETag.
+     * Sets the cover rule of the songs of an album; it applies to its songs without a rule of their own, not to the cover of the album itself (see SetAlbumCoverFallback). Inherit follows the global rule again. A change starts the job cover-cache, which prepares the covers shown now; the cover URLs stay the same and deliver the new picture with a new ETag.
      * @param body Sets the cover rule of an album or a track.
      * @param requestConfiguration Configuration for the request such as headers, query parameters, and middleware options.
      * @returns {Promise<CoverRule>}
@@ -37,13 +37,13 @@ export interface CoverRuleRequestBuilder extends BaseRequestBuilder<CoverRuleReq
      */
      put(body: UpdateCoverRule, requestConfiguration?: RequestConfiguration<object> | undefined) : Promise<CoverRule | undefined>;
     /**
-     * Returns the cover rule of an album, the global rule it inherits and the priority that applies to it.
+     * Returns the cover rule of the songs of an album, the global rule it inherits and the priority that applies to its songs without a rule of their own.
      * @param requestConfiguration Configuration for the request such as headers, query parameters, and middleware options.
      * @returns {RequestInformation}
      */
      toGetRequestInformation(requestConfiguration?: RequestConfiguration<object> | undefined) : RequestInformation;
     /**
-     * Sets the cover rule of an album; it applies to the album and to its tracks without a rule of their own. Inherit follows the global rule again. A change starts the job cover-cache, which prepares the covers shown now; the cover URLs stay the same and deliver the new picture with a new ETag.
+     * Sets the cover rule of the songs of an album; it applies to its songs without a rule of their own, not to the cover of the album itself (see SetAlbumCoverFallback). Inherit follows the global rule again. A change starts the job cover-cache, which prepares the covers shown now; the cover URLs stay the same and deliver the new picture with a new ETag.
      * @param body Sets the cover rule of an album or a track.
      * @param requestConfiguration Configuration for the request such as headers, query parameters, and middleware options.
      * @returns {RequestInformation}

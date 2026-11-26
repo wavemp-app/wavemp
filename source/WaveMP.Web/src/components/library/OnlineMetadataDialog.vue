@@ -249,7 +249,11 @@ function coverMessage(outcome: OnlineCoverOutcome | null | undefined): string | 
         case OnlineCoverOutcomeObject.MediaFolder:
             return t('onlineMetadata.results.coverMediaFolder')
         case OnlineCoverOutcomeObject.DataFolder:
-            return t('onlineMetadata.results.coverDataFolder')
+            // The cover of an album is always kept by WaveMP, so it never becomes the cover of
+            // another album in the same folder.
+            return props.owner === 'album'
+                ? t('onlineMetadata.results.coverAlbum')
+                : t('onlineMetadata.results.coverDataFolder')
         case OnlineCoverOutcomeObject.NotSaved:
             return t('onlineMetadata.results.coverNotSaved')
         default:

@@ -9,7 +9,6 @@ import BaseButton from '@/components/base/BaseButton.vue'
 import BaseLink from '@/components/base/BaseLink.vue'
 import FavoriteButton from '@/components/collection/FavoriteButton.vue'
 import RatingStars from '@/components/collection/RatingStars.vue'
-import CoverRuleForm from '@/components/library/CoverRuleForm.vue'
 import DetailHeader from '@/components/library/DetailHeader.vue'
 import LibraryCover from '@/components/library/LibraryCover.vue'
 import MetaItem from '@/components/library/MetaItem.vue'
@@ -28,7 +27,7 @@ import { useSessionStore } from '@/stores/session'
 /**
  * The details of a track: its cover, artist, album, numbers, year, genre, length and media, its
  * rating and the heart that marks it as favorite. Admins also see all its files, edit its
- * metadata, choose its cover rule, download its lyrics and set the offset of its video; the query
+ * metadata and its cover rule, download its lyrics and set the offset of its video; the query
  * edit=metadata opens the editor at once (context menu of a track, library check), edit=online the
  * online search (library check).
  */
@@ -44,7 +43,6 @@ const session = useSessionStore()
 const player = usePlayerStore()
 const filesTitleId = useId()
 const videoSyncTitleId = useId()
-const coverRuleTitleId = useId()
 const lyricsTitleId = useId()
 
 const track = ref<Track | null>(null)
@@ -282,19 +280,6 @@ useDetailTitle(() => (status.value === 'ready' ? track.value?.title : null))
                         {{ t('track.openFiles') }}
                     </BaseLink>
                 </template>
-            </section>
-            <section
-                v-if="session.isAdmin"
-                data-part="section"
-                data-item="cover-rule"
-                :aria-labelledby="coverRuleTitleId"
-            >
-                <h2 :id="coverRuleTitleId" data-part="section-title">{{ t('coverRule.title') }}</h2>
-                <CoverRuleForm
-                    owner="track"
-                    :id="track.id ?? id"
-                    :available="track.hasCover ?? false"
-                />
             </section>
             <section
                 v-if="session.isAdmin"

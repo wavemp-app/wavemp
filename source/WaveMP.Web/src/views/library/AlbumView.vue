@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, useId, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import type { Album, Track } from '@/api/generated/models'
@@ -8,7 +8,7 @@ import { statusOf } from '@/api/problems'
 import BaseButton from '@/components/base/BaseButton.vue'
 import BaseLink from '@/components/base/BaseLink.vue'
 import FavoriteButton from '@/components/collection/FavoriteButton.vue'
-import CoverRuleForm from '@/components/library/CoverRuleForm.vue'
+import AlbumMetadataDialog from '@/components/library/AlbumMetadataDialog.vue'
 import DetailHeader from '@/components/library/DetailHeader.vue'
 import GroupOverview from '@/components/library/GroupOverview.vue'
 import LibraryCover from '@/components/library/LibraryCover.vue'
@@ -27,7 +27,8 @@ import { useSessionStore } from '@/stores/session'
 
 /**
  * An album with its cover, details and all its tracks in the order of disc and track number, and the
- * heart that marks it as favorite. Admins also choose the cover rule of the album. An album with
+ * heart that marks it as favorite. Admins also edit the album (its exceptions from the cover rules)
+ * and search its info online. An album with
  * several discs offers the quick jump between them (a click on the heading of a disc, Ctrl+Minus,
  * Escape or pinching the list).
  */
@@ -40,8 +41,8 @@ const format = useFormat()
 const player = usePlayerStore()
 const session = useSessionStore()
 const router = useRouter()
-const coverRuleTitleId = useId()
 const searchingOnline = ref(false)
+const editing = ref(false)
 
 const album = ref<Album | null>(null)
 const tracks = ref<Track[]>([])
@@ -192,6 +193,13 @@ useDetailTitle(() => (status.value === 'ready' ? album.value?.title : null))
                     />
                     <BaseButton
                         v-if="session.isAdmin"
+                        data-item="edit-metadata"
+                        icon="edit"
+                        :label="t('albumMetadata.edit')"
+                        @click="editing = true"
+                    />
+                    <BaseButton
+                        v-if="session.isAdmin"
                         data-item="search-online"
                         icon="search-online"
                         :label="t('onlineMetadata.search')"
@@ -218,19 +226,12 @@ useDetailTitle(() => (status.value === 'ready' ? album.value?.title : null))
                 unit="songs"
                 @choose="(group) => jump.choose(group.position)"
             />
-            <section
+            <AlbumMetadataDialog
                 v-if="session.isAdmin"
-                data-part="section"
-                data-item="cover-rule"
-                :aria-labelledby="coverRuleTitleId"
-            >
-                <h2 :id="coverRuleTitleId" data-part="section-title">{{ t('coverRule.title') }}</h2>
-                <CoverRuleForm
-                    owner="album"
-                    :id="album.id ?? id"
-                    :available="album.hasCover ?? false"
-                />
-            </section>
+                v-model:open="editing"
+                :album-id="album.id ?? id"
+                @saved="load"
+            />
             <OnlineMetadataDialog
                 v-if="session.isAdmin"
                 v-model:open="searchingOnline"

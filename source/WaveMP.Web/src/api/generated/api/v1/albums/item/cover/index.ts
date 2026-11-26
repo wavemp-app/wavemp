@@ -11,7 +11,7 @@ import { type BaseRequestBuilder, type Parsable, type ParsableFactory, type Requ
  */
 export interface CoverRequestBuilder extends BaseRequestBuilder<CoverRequestBuilder> {
     /**
-     * Returns the cover of an album as picture: the picture in its folder, otherwise the cover of one of its tracks. With size, the picture is scaled to fit into a square of 96, 192, 300, 600, 1000 or 2000 pixels (the requested size rounded up, at most 2000; never enlarged) and delivered as WebP from the cache; without size, as stored (JPEG, PNG, WebP, GIF or BMP). Every picture carries a strong ETag of its version and size, Last-Modified and Cache-Control: private, no-cache; a request with a matching If-None-Match returns 304.
+     * Returns the cover of an album as picture: its own cover (its online cover, the picture in its folder, otherwise a picture embedded in one of its tracks); without one, the picture of its album artist if the rule of the album allows it (GetAlbumCoverFallback), never the cover of another album or a picture with the name of a song. With size, the picture is scaled to fit into a square of 96, 192, 300, 600, 1000 or 2000 pixels (the requested size rounded up, at most 2000; never enlarged) and delivered as WebP from the cache; without size, as stored (JPEG, PNG, WebP, GIF or BMP). Every picture carries a strong ETag of its version and size, Last-Modified and Cache-Control: private, no-cache; a request with a matching If-None-Match returns 304.
      * @param requestConfiguration Configuration for the request such as headers, query parameters, and middleware options.
      * @returns {Promise<ArrayBuffer>}
      * @throws {ValidationProblem} error when the service returns a 400 status code
@@ -20,14 +20,14 @@ export interface CoverRequestBuilder extends BaseRequestBuilder<CoverRequestBuil
      */
      get(requestConfiguration?: RequestConfiguration<CoverRequestBuilderGetQueryParameters> | undefined) : Promise<ArrayBuffer | undefined>;
     /**
-     * Returns the cover of an album as picture: the picture in its folder, otherwise the cover of one of its tracks. With size, the picture is scaled to fit into a square of 96, 192, 300, 600, 1000 or 2000 pixels (the requested size rounded up, at most 2000; never enlarged) and delivered as WebP from the cache; without size, as stored (JPEG, PNG, WebP, GIF or BMP). Every picture carries a strong ETag of its version and size, Last-Modified and Cache-Control: private, no-cache; a request with a matching If-None-Match returns 304.
+     * Returns the cover of an album as picture: its own cover (its online cover, the picture in its folder, otherwise a picture embedded in one of its tracks); without one, the picture of its album artist if the rule of the album allows it (GetAlbumCoverFallback), never the cover of another album or a picture with the name of a song. With size, the picture is scaled to fit into a square of 96, 192, 300, 600, 1000 or 2000 pixels (the requested size rounded up, at most 2000; never enlarged) and delivered as WebP from the cache; without size, as stored (JPEG, PNG, WebP, GIF or BMP). Every picture carries a strong ETag of its version and size, Last-Modified and Cache-Control: private, no-cache; a request with a matching If-None-Match returns 304.
      * @param requestConfiguration Configuration for the request such as headers, query parameters, and middleware options.
      * @returns {RequestInformation}
      */
      toGetRequestInformation(requestConfiguration?: RequestConfiguration<CoverRequestBuilderGetQueryParameters> | undefined) : RequestInformation;
 }
 /**
- * Returns the cover of an album as picture: the picture in its folder, otherwise the cover of one of its tracks. With size, the picture is scaled to fit into a square of 96, 192, 300, 600, 1000 or 2000 pixels (the requested size rounded up, at most 2000; never enlarged) and delivered as WebP from the cache; without size, as stored (JPEG, PNG, WebP, GIF or BMP). Every picture carries a strong ETag of its version and size, Last-Modified and Cache-Control: private, no-cache; a request with a matching If-None-Match returns 304.
+ * Returns the cover of an album as picture: its own cover (its online cover, the picture in its folder, otherwise a picture embedded in one of its tracks); without one, the picture of its album artist if the rule of the album allows it (GetAlbumCoverFallback), never the cover of another album or a picture with the name of a song. With size, the picture is scaled to fit into a square of 96, 192, 300, 600, 1000 or 2000 pixels (the requested size rounded up, at most 2000; never enlarged) and delivered as WebP from the cache; without size, as stored (JPEG, PNG, WebP, GIF or BMP). Every picture carries a strong ETag of its version and size, Last-Modified and Cache-Control: private, no-cache; a request with a matching If-None-Match returns 304.
  */
 export interface CoverRequestBuilderGetQueryParameters {
     /**

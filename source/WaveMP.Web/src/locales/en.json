@@ -1186,8 +1186,10 @@
     "coverNamesHint": "File names without extension, the most important first. Applies with the next scan.",
     "artistPictureNames": "Names of artist pictures",
     "artistPictureNamesHint": "File names without extension, the most important first, for pictures directly in the folder named like the artist. Applies with the next scan.",
-    "coverPriority": "Cover shown first",
-    "coverPriorityHint": "Applies to all albums and songs without a rule of their own. If the chosen cover is missing, the other one is shown. A picture with the name of a song always comes first for that song.",
+    "coverPriority": "Covers of songs",
+    "coverPriorityHint": "Own first: the picture with the name of the song, else the album cover. Album first: the album cover, else the picture of the song. Own only: never the album cover. Songs never show the picture of an artist. Each album and song can have its own exception in its editor.",
+    "albumCoverFallback": "Covers of albums without a cover of their own",
+    "albumCoverFallbackHint": "An album shows its own cover: a picture in its folder, a picture embedded in its songs or a cover from the online search. Without one it shows the picture of its artist or no cover, never the cover of another album. The collage of album covers does not count as picture of an artist.",
     "save": "Save",
     "saved": "The settings are saved.",
     "saveError": "The settings could not be saved.",
@@ -2109,22 +2111,31 @@
   },
   "coverRule": {
     "title": "Cover",
-    "label": "Cover shown first",
-    "inherit": "Inherited ({priority})",
-    "albumFirst": "Album cover",
-    "trackFirst": "Song cover",
+    "label": "Cover of this song",
+    "inherit": "Default",
     "priorities": {
-      "albumFirst": "album cover first",
-      "trackFirst": "song cover first"
+      "trackFirst": "Own first",
+      "albumFirst": "Album first",
+      "trackOnly": "Own only"
     },
-    "albumHint": "Applies to the album and to its songs without a rule of their own. If the chosen cover is missing, the other one is shown. A picture with the name of a song always comes first for that song.",
-    "trackHint": "If the chosen cover is missing, the other one is shown. A cover chosen in the files of the song always comes first, then a picture with its name, unless the album cover is chosen here.",
+    "fallbacks": {
+      "artistPicture": "Artist picture",
+      "none": "No cover"
+    },
+    "albumLabel": "Without a cover of its own",
+    "albumHint": "What the album shows when it has no cover of its own. Default: {rule}, from the library settings.",
+    "songsLabel": "Covers of its songs",
+    "songsHint": "Applies to the songs of this album without a rule of their own. Default: {rule}, from the library settings.",
+    "trackHint": "Default: {rule}, from the album or the library settings. A cover chosen in the files of the song always comes first.",
     "preview": "Preview",
     "previewNone": "No cover",
-    "save": "Save",
-    "saved": "Saved. The covers are updated.",
     "loadError": "The cover rule could not be loaded.",
     "saveError": "The cover rule could not be saved."
+  },
+  "albumMetadata": {
+    "edit": "Edit album",
+    "title": "Edit album",
+    "save": "Save"
   },
   "trackMetadata": {
     "edit": "Edit metadata",
@@ -2200,6 +2211,7 @@
       "skipped": "Songs that could not be written: {count}",
       "coverMediaFolder": "The cover was saved in the music folder.",
       "coverDataFolder": "The music folder cannot be written, so WaveMP keeps the cover in its data folder.",
+      "coverAlbum": "The cover was saved for this album.",
       "coverNotSaved": "The cover could not be saved."
     },
     "errors": {

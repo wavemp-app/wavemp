@@ -79,6 +79,25 @@ export interface Album extends AdditionalDataHolder, Parsable {
      */
     year?: number | null;
 }
+export type AlbumCoverFallback = (typeof AlbumCoverFallbackObject)[keyof typeof AlbumCoverFallbackObject];
+export type AlbumCoverFallbackOption = (typeof AlbumCoverFallbackOptionObject)[keyof typeof AlbumCoverFallbackOptionObject];
+/**
+ * What an album shows without a cover of its own: its exception, the global rule it inherits and the rule that applies.
+ */
+export interface AlbumCoverFallbackRule extends AdditionalDataHolder, Parsable {
+    /**
+     * The rule that applies: its own, otherwise the inherited one.
+     */
+    effectiveFallback?: AlbumCoverFallback | null;
+    /**
+     * The exception of the album; Inherit if it has none.
+     */
+    fallback?: AlbumCoverFallbackOption | null;
+    /**
+     * The global rule of the library settings.
+     */
+    inheritedFallback?: AlbumCoverFallback | null;
+}
 /**
  * One page of a collection.
  */
@@ -612,7 +631,7 @@ export interface ConnectScrobblingService extends AdditionalDataHolder, Parsable
 }
 export type CoverPriority = (typeof CoverPriorityObject)[keyof typeof CoverPriorityObject];
 /**
- * The cover rule of an album or a track and the priority that applies to it.
+ * The cover rule of a song or of the songs of an album and the priority that applies to it.
  */
 export interface CoverRule extends AdditionalDataHolder, Parsable {
     /**
@@ -646,6 +665,15 @@ export function createAddedPlaylistEntriesFromDiscriminatorValue(parseNode: Pars
 // @ts-ignore
 export function createAddPlaylistEntriesFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
     return deserializeIntoAddPlaylistEntries;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {AlbumCoverFallbackRule}
+ */
+// @ts-ignore
+export function createAlbumCoverFallbackRuleFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoAlbumCoverFallbackRule;
 }
 /**
  * Creates a new instance of the appropriate class based on discriminator value
@@ -2429,6 +2457,15 @@ export function createTranscodingStatusFromDiscriminatorValue(parseNode: ParseNo
 /**
  * Creates a new instance of the appropriate class based on discriminator value
  * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {UpdateAlbumCoverFallback}
+ */
+// @ts-ignore
+export function createUpdateAlbumCoverFallbackFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoUpdateAlbumCoverFallback;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
  * @returns {UpdateAlbumTags}
  */
 // @ts-ignore
@@ -2894,6 +2931,19 @@ export function deserializeIntoAlbum(album: Partial<Album> | undefined = {}) : R
         "title": n => { album.title = n.getStringValue(); },
         "trackCount": n => { album.trackCount = n.getNumberValue(); },
         "year": n => { album.year = n.getNumberValue(); },
+    }
+}
+/**
+ * The deserialization information for the current model
+ * @param AlbumCoverFallbackRule The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoAlbumCoverFallbackRule(albumCoverFallbackRule: Partial<AlbumCoverFallbackRule> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "effectiveFallback": n => { albumCoverFallbackRule.effectiveFallback = n.getEnumValue<AlbumCoverFallback>(AlbumCoverFallbackObject); },
+        "fallback": n => { albumCoverFallbackRule.fallback = n.getEnumValue<AlbumCoverFallbackOption>(AlbumCoverFallbackOptionObject); },
+        "inheritedFallback": n => { albumCoverFallbackRule.inheritedFallback = n.getEnumValue<AlbumCoverFallback>(AlbumCoverFallbackObject); },
     }
 }
 /**
@@ -3874,6 +3924,7 @@ export function deserializeIntoLibraryIssueTrack(libraryIssueTrack: Partial<Libr
 // @ts-ignore
 export function deserializeIntoLibrarySettings(librarySettings: Partial<LibrarySettings> | undefined = {}) : Record<string, (node: ParseNode) => void> {
     return {
+        "albumCoverFallback": n => { librarySettings.albumCoverFallback = n.getEnumValue<AlbumCoverFallback>(AlbumCoverFallbackObject); },
         "albumCoverNames": n => { librarySettings.albumCoverNames = n.getCollectionOfPrimitiveValues<string>("string"); },
         "artistPictureNames": n => { librarySettings.artistPictureNames = n.getCollectionOfPrimitiveValues<string>("string"); },
         "audioExtensions": n => { librarySettings.audioExtensions = n.getCollectionOfPrimitiveValues<string>("string"); },
@@ -5642,6 +5693,17 @@ export function deserializeIntoTranscodingStatus(transcodingStatus: Partial<Tran
 }
 /**
  * The deserialization information for the current model
+ * @param UpdateAlbumCoverFallback The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoUpdateAlbumCoverFallback(updateAlbumCoverFallback: Partial<UpdateAlbumCoverFallback> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "fallback": n => { updateAlbumCoverFallback.fallback = n.getEnumValue<AlbumCoverFallbackOption>(AlbumCoverFallbackOptionObject); },
+    }
+}
+/**
+ * The deserialization information for the current model
  * @param UpdateAlbumTags The instance to deserialize into.
  * @returns {Record<string, (node: ParseNode) => void>}
  */
@@ -5769,6 +5831,7 @@ export function deserializeIntoUpdateEqualizerSettings(updateEqualizerSettings: 
 // @ts-ignore
 export function deserializeIntoUpdateLibrarySettings(updateLibrarySettings: Partial<UpdateLibrarySettings> | undefined = {}) : Record<string, (node: ParseNode) => void> {
     return {
+        "albumCoverFallback": n => { updateLibrarySettings.albumCoverFallback = n.getEnumValue<AlbumCoverFallback>(AlbumCoverFallbackObject); },
         "albumCoverNames": n => { updateLibrarySettings.albumCoverNames = n.getCollectionOfPrimitiveValues<string>("string"); },
         "artistPictureNames": n => { updateLibrarySettings.artistPictureNames = n.getCollectionOfPrimitiveValues<string>("string"); },
         "audioExtensions": n => { updateLibrarySettings.audioExtensions = n.getCollectionOfPrimitiveValues<string>("string"); },
@@ -7008,6 +7071,10 @@ export type LibraryIssueType = (typeof LibraryIssueTypeObject)[keyof typeof Libr
  */
 export interface LibrarySettings extends AdditionalDataHolder, Parsable {
     /**
+     * What albums without a cover of their own show: the picture of their album artist (ArtistPicture, the default) or nothing (None). Albums with an exception (GetAlbumCoverFallback) override it.
+     */
+    albumCoverFallback?: AlbumCoverFallback | null;
+    /**
      * Base names of pictures that are album covers, in the order of their priority.
      */
     albumCoverNames?: string[] | null;
@@ -7020,7 +7087,7 @@ export interface LibrarySettings extends AdditionalDataHolder, Parsable {
      */
     audioExtensions?: string[] | null;
     /**
-     * The global cover rule: whether tracks and albums show the cover of the album or the cover of the track first. Albums and tracks with a rule of their own (GetAlbumCoverRule, GetTrackCoverRule) override it.
+     * The global cover rule of the songs: own cover, else album cover (TrackFirst, the default); album cover, else own cover (AlbumFirst); or only the own cover (TrackOnly). Songs and albums with an exception (GetTrackCoverRule, GetAlbumCoverRule) override it.
      */
     coverPriority?: CoverPriority | null;
     /**
@@ -9048,6 +9115,20 @@ export function serializeAlbum(writer: SerializationWriter, album: Partial<Album
 }
 /**
  * Serializes information the current object
+ * @param AlbumCoverFallbackRule The instance to serialize from.
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeAlbumCoverFallbackRule(writer: SerializationWriter, albumCoverFallbackRule: Partial<AlbumCoverFallbackRule> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!albumCoverFallbackRule || isSerializingDerivedType) { return; }
+    writer.writeEnumValue<AlbumCoverFallback>("effectiveFallback", albumCoverFallbackRule.effectiveFallback);
+    writer.writeEnumValue<AlbumCoverFallbackOption>("fallback", albumCoverFallbackRule.fallback);
+    writer.writeEnumValue<AlbumCoverFallback>("inheritedFallback", albumCoverFallbackRule.inheritedFallback);
+    writer.writeAdditionalData(albumCoverFallbackRule.additionalData);
+}
+/**
+ * Serializes information the current object
  * @param AlbumPage The instance to serialize from.
  * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
  * @param writer Serialization writer to use to serialize this model
@@ -10096,6 +10177,7 @@ export function serializeLibraryIssueTrack(writer: SerializationWriter, libraryI
 // @ts-ignore
 export function serializeLibrarySettings(writer: SerializationWriter, librarySettings: Partial<LibrarySettings> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
     if (!librarySettings || isSerializingDerivedType) { return; }
+    writer.writeEnumValue<AlbumCoverFallback>("albumCoverFallback", librarySettings.albumCoverFallback);
     writer.writeCollectionOfPrimitiveValues<string>("albumCoverNames", librarySettings.albumCoverNames);
     writer.writeCollectionOfPrimitiveValues<string>("artistPictureNames", librarySettings.artistPictureNames);
     writer.writeCollectionOfPrimitiveValues<string>("audioExtensions", librarySettings.audioExtensions);
@@ -11981,6 +12063,18 @@ export function serializeTranscodingStatus(writer: SerializationWriter, transcod
 /**
  * Serializes information the current object
  * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param UpdateAlbumCoverFallback The instance to serialize from.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeUpdateAlbumCoverFallback(writer: SerializationWriter, updateAlbumCoverFallback: Partial<UpdateAlbumCoverFallback> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!updateAlbumCoverFallback || isSerializingDerivedType) { return; }
+    writer.writeEnumValue<AlbumCoverFallbackOption>("fallback", updateAlbumCoverFallback.fallback);
+    writer.writeAdditionalData(updateAlbumCoverFallback.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
  * @param UpdateAlbumTags The instance to serialize from.
  * @param writer Serialization writer to use to serialize this model
  */
@@ -12118,6 +12212,7 @@ export function serializeUpdateEqualizerSettings(writer: SerializationWriter, up
 // @ts-ignore
 export function serializeUpdateLibrarySettings(writer: SerializationWriter, updateLibrarySettings: Partial<UpdateLibrarySettings> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
     if (!updateLibrarySettings || isSerializingDerivedType) { return; }
+    writer.writeEnumValue<AlbumCoverFallback>("albumCoverFallback", updateLibrarySettings.albumCoverFallback);
     writer.writeCollectionOfPrimitiveValues<string>("albumCoverNames", updateLibrarySettings.albumCoverNames);
     writer.writeCollectionOfPrimitiveValues<string>("artistPictureNames", updateLibrarySettings.artistPictureNames);
     writer.writeCollectionOfPrimitiveValues<string>("audioExtensions", updateLibrarySettings.audioExtensions);
@@ -13809,6 +13904,15 @@ export interface TranscodingStatus extends AdditionalDataHolder, Parsable {
     runningJobs?: number | null;
 }
 /**
+ * Sets what an album shows without a cover of its own.
+ */
+export interface UpdateAlbumCoverFallback extends AdditionalDataHolder, Parsable {
+    /**
+     * The fallback property
+     */
+    fallback?: AlbumCoverFallbackOption | null;
+}
+/**
  * Changes the album tags of the songs of an album. Missing members stay unchanged; null or an empty text removes the value from the tags.
  */
 export interface UpdateAlbumTags extends AdditionalDataHolder, Parsable {
@@ -13946,6 +14050,10 @@ export interface UpdateEqualizerSettings extends AdditionalDataHolder, Parsable 
  * Changes the settings of the media library. Missing or null values stay unchanged.
  */
 export interface UpdateLibrarySettings extends AdditionalDataHolder, Parsable {
+    /**
+     * The albumCoverFallback property
+     */
+    albumCoverFallback?: AlbumCoverFallback | null;
     /**
      * Base names of album covers (without extension), in the order of their priority.
      */
@@ -14654,6 +14762,21 @@ export interface YearPage extends AdditionalDataHolder, Parsable {
      */
     total?: number | null;
 }
+/**
+ * The global rule of the library settings.
+ */
+export const AlbumCoverFallbackObject = {
+    ArtistPicture: "ArtistPicture",
+    None: "None",
+} as const;
+/**
+ * The exception of the album; Inherit if it has none.
+ */
+export const AlbumCoverFallbackOptionObject = {
+    Inherit: "Inherit",
+    ArtistPicture: "ArtistPicture",
+    None: "None",
+} as const;
 export const AlbumSortObject = {
     Title: "Title",
     Artist: "Artist",
@@ -14723,6 +14846,7 @@ export const BackupTriggerObject = {
 export const CoverPriorityObject = {
     AlbumFirst: "AlbumFirst",
     TrackFirst: "TrackFirst",
+    TrackOnly: "TrackOnly",
 } as const;
 /**
  * The rule of the album or track itself; Inherit if it has none.
@@ -14731,6 +14855,7 @@ export const CoverRuleOptionObject = {
     Inherit: "Inherit",
     AlbumFirst: "AlbumFirst",
     TrackFirst: "TrackFirst",
+    TrackOnly: "TrackOnly",
 } as const;
 /**
  * Kind of the device.

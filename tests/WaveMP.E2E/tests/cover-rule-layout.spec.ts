@@ -5,9 +5,10 @@ import { adminHeaders, deleteUser, findAlbumId, findTrackId, uniqueSuffix } from
 import { homeUrl, profileTile } from './helpers/navigation'
 import { emptyStorageState } from './helpers/storage'
 
-// The section "Cover" of song and album pages on a phone 390 px wide, in every shipped theme and
-// in English and German: the options of the cover rule wrap their labels where they do not fit
-// side by side, so the segmented control, its labels and its hint stay inside the section.
+// The section "Cover" in the metadata editor of a song and in the editor of an album on a phone 390
+// px wide, in every shipped theme and in English and German: the options of the cover rules wrap
+// their labels where they do not fit side by side, so the segmented controls, their labels and
+// their hints stay inside the section and the dialog.
 
 test.skip(({ isMobile }) => !isMobile, 'Mobile layout only')
 test.use({ storageState: emptyStorageState, viewport: { width: 390, height: 844 } })
@@ -17,18 +18,23 @@ interface Edges {
     readonly right: number
 }
 
-interface SectionLayout {
-    readonly section: Edges
+interface FieldLayout {
     readonly control: Edges
     readonly hint: Edges
     readonly segments: { readonly segment: Edges; readonly label: Edges }[]
+}
+
+interface SectionLayout {
+    readonly dialog: Edges
+    readonly section: Edges
+    readonly fields: FieldLayout[]
     readonly pageOverflow: number
 }
 
-async function sectionLayout(page: Page): Promise<SectionLayout> {
-    const section = page.locator("[data-part='app'] [data-part='section'][data-item='cover-rule']")
-    await expect(section.locator("[data-part='form']")).not.toHaveAttribute('aria-busy', 'true')
-    await expect(section.locator("[data-part='segment']")).toHaveCount(3)
+async function sectionLayout(page: Page, fieldCount: number): Promise<SectionLayout> {
+    const section = page.locator("[data-part='dialog'][open] [data-part='section'][data-item='cover-rule']")
+    await expect(section).not.toHaveAttribute('aria-busy', 'true')
+    await expect(section.locator("[data-part='segmented-control']")).toHaveCount(fieldCount)
     await page.evaluate(() => document.fonts.ready)
     return section.evaluate((element) => {
         const edges = (node: Element | null): Edges => {
@@ -37,13 +43,18 @@ async function sectionLayout(page: Page): Promise<SectionLayout> {
         }
         const root = document.documentElement
         return {
+            dialog: edges(element.closest("[data-part='dialog']")),
             section: edges(element),
-            control: edges(element.querySelector("[data-part='segmented-control']")),
-            hint: edges(element.querySelector("[data-part='field-hint']")),
-            segments: [...element.querySelectorAll("[data-part='segment']")].map((segment) => ({
-                segment: edges(segment),
-                label: edges(segment.querySelector(":scope > [data-part='label']")),
-            })),
+            fields: [...element.querySelectorAll("[data-part='field']")]
+                .filter((field) => field.querySelector("[data-part='segmented-control']"))
+                .map((field) => ({
+                    control: edges(field.querySelector("[data-part='segmented-control']")),
+                    hint: edges(field.querySelector("[data-part='field-hint']")),
+                    segments: [...field.querySelectorAll("[data-part='segment']")].map((segment) => ({
+                        segment: edges(segment),
+                        label: edges(segment.querySelector(":scope > [data-part='label']")),
+                    })),
+                })),
             pageOverflow: root.scrollWidth - root.clientWidth,
         }
     })
@@ -55,7 +66,7 @@ function expectInside(inner: Edges, outer: Edges, context: string): void {
 }
 
 for (const target of shippedThemeTargets()) {
-    test(`fits the cover rule into the section in ${target.name} (${target.variant})`, async ({
+    test(`fits the cover rules into the editors in ${target.name} (${target.variant})`, async ({
         page,
         request,
     }) => {
@@ -79,23 +90,29 @@ for (const target of shippedThemeTargets()) {
             await expect(page).toHaveURL(homeUrl)
             await expect(page.locator(':root')).toHaveAttribute('data-theme', target.theme)
 
-            const pages = [
-                `/library/tracks/${await findTrackId(request, 'First Song')}`,
-                `/library/albums/${await findAlbumId(request, 'E2E Album')}`,
-            ]
+            const track = `/library/tracks/${await findTrackId(request, 'First Song')}?edit=metadata`
+            const album = `/library/albums/${await findAlbumId(request, 'E2E Album')}`
             for (const language of ['en', 'de']) {
                 await send(request, headers, 'patch', '/api/v1/me/settings', { language })
-                for (const path of pages) {
+                for (const path of [track, album]) {
                     await page.goto(path)
                     await expect(page.locator('html')).toHaveAttribute('lang', language)
+                    if (path === album) {
+                        await page.locator("[data-part='detail-actions'] [data-item='edit-metadata']").click()
+                    }
+
                     const context = `${target.theme} ${target.variant} ${language} ${path}`
-                    const layout = await sectionLayout(page)
+                    const layout = await sectionLayout(page, path === album ? 2 : 1)
                     expect(layout.pageOverflow, context).toBeLessThanOrEqual(0)
-                    expectInside(layout.control, layout.section, `${context}: options`)
-                    expectInside(layout.hint, layout.section, `${context}: hint`)
-                    for (const [index, { segment, label }] of layout.segments.entries()) {
-                        expectInside(segment, layout.control, `${context}: option ${index}`)
-                        expectInside(label, segment, `${context}: label ${index}`)
+                    expectInside(layout.section, layout.dialog, `${context}: section`)
+                    for (const [fieldIndex, field] of layout.fields.entries()) {
+                        const fieldContext = `${context}: field ${fieldIndex}`
+                        expectInside(field.control, layout.section, `${fieldContext} options`)
+                        expectInside(field.hint, layout.section, `${fieldContext} hint`)
+                        for (const [index, { segment, label }] of field.segments.entries()) {
+                            expectInside(segment, field.control, `${fieldContext} option ${index}`)
+                            expectInside(label, segment, `${fieldContext} label ${index}`)
+                        }
                     }
                 }
             }

@@ -6,6 +6,8 @@ import { createAlbumFromDiscriminatorValue, createProblemDetailsFromDiscriminato
 // @ts-ignore
 import { CoverRequestBuilderRequestsMetadata, type CoverRequestBuilder } from './cover/index.js';
 // @ts-ignore
+import { CoverFallbackRequestBuilderRequestsMetadata, type CoverFallbackRequestBuilder } from './coverFallback/index.js';
+// @ts-ignore
 import { CoverRuleRequestBuilderNavigationMetadata, CoverRuleRequestBuilderRequestsMetadata, type CoverRuleRequestBuilder } from './coverRule/index.js';
 // @ts-ignore
 import { OnlineMatchesRequestBuilderRequestsMetadata, type OnlineMatchesRequestBuilder } from './onlineMatches/index.js';
@@ -24,6 +26,10 @@ export interface AlbumsItemRequestBuilder extends BaseRequestBuilder<AlbumsItemR
      * The cover property
      */
     get cover(): CoverRequestBuilder;
+    /**
+     * The coverFallback property
+     */
+    get coverFallback(): CoverFallbackRequestBuilder;
     /**
      * The coverRule property
      */
@@ -65,6 +71,9 @@ export const AlbumsItemRequestBuilderUriTemplate = "{+baseurl}/api/v1/albums/{id
 export const AlbumsItemRequestBuilderNavigationMetadata: Record<Exclude<keyof AlbumsItemRequestBuilder, KeysToExcludeForNavigationMetadata>, NavigationMetadata> = {
     cover: {
         requestsMetadata: CoverRequestBuilderRequestsMetadata,
+    },
+    coverFallback: {
+        requestsMetadata: CoverFallbackRequestBuilderRequestsMetadata,
     },
     coverRule: {
         requestsMetadata: CoverRuleRequestBuilderRequestsMetadata,

@@ -44,7 +44,9 @@ test('shows the editor greyed out with a hint for a song with a video only', asy
     for (const name of ['title', 'artist', 'year', 'genre']) {
         await expect(field(dialog, name)).toBeDisabled()
     }
-    await expect(dialog.locator("[data-part='dialog-footer'] button[type='submit']")).toBeDisabled()
+    // No tags to write; the button still saves the cover rule of the song.
+    await expect(dialog.locator("[data-part='dialog-footer'] button[type='submit']")).toHaveCount(0)
+    await expect(dialog.locator("[data-part='dialog-footer'] button[data-variant='primary']")).toBeEnabled()
     await expect(dialog.locator("[data-part='alert'][data-state='info']")).toBeVisible()
     if (isMobile) {
         await expectNoHorizontalScroll(page)

@@ -18,6 +18,8 @@ import type {
     AlbumPage,
     Artist,
     ArtistPage,
+    AlbumCoverFallbackOption,
+    AlbumCoverFallbackRule,
     CoverRule,
     CoverRuleOption,
     GenrePage,
@@ -161,12 +163,12 @@ function coverRuleOf(owner: CoverRuleOwner, id: string) {
         : apiClient.api.v1.tracks.byId(id).coverRule
 }
 
-/** The cover rule of an album or track with the priority it inherits (admins only). */
+/** The cover rule of a song or of the songs of an album with the rule it inherits (admins only). */
 export function getCoverRule(owner: CoverRuleOwner, id: string): Promise<CoverRule | undefined> {
     return coverRuleOf(owner, id).get()
 }
 
-/** Sets the cover rule of an album or track; Inherit removes its own rule (admins only). */
+/** Sets the cover rule of a song or of the songs of an album; Inherit removes it (admins only). */
 export function setCoverRule(
     owner: CoverRuleOwner,
     id: string,
@@ -183,4 +185,17 @@ export function fetchCoverRulePreview(
     size: CoverSize,
 ): Promise<ArrayBuffer | undefined> {
     return coverRuleOf(owner, id).preview.get({ queryParameters: { rule, size } })
+}
+
+/** What an album shows without a cover of its own, with the rule it inherits (admins only). */
+export function getAlbumCoverFallback(id: string): Promise<AlbumCoverFallbackRule | undefined> {
+    return apiClient.api.v1.albums.byId(id).coverFallback.get()
+}
+
+/** Sets what an album shows without a cover of its own; Inherit removes its exception (admins only). */
+export function setAlbumCoverFallback(
+    id: string,
+    fallback: AlbumCoverFallbackOption,
+): Promise<AlbumCoverFallbackRule | undefined> {
+    return apiClient.api.v1.albums.byId(id).coverFallback.put({ fallback })
 }

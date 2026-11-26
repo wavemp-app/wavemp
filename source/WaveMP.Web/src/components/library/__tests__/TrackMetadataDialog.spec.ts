@@ -7,6 +7,11 @@ import { createWaveMpI18n } from '@/i18n'
 const api = vi.hoisted(() => ({
     getTrackMetadata: vi.fn(),
     updateTrackMetadata: vi.fn(),
+    getCoverRule: vi.fn(),
+    setCoverRule: vi.fn(),
+    fetchCoverRulePreview: vi.fn(),
+    getAlbumCoverFallback: vi.fn(),
+    setAlbumCoverFallback: vi.fn(),
 }))
 
 vi.mock('@/library/api', () => api)
@@ -55,15 +60,29 @@ async function submit(wrapper: Wrapper) {
 }
 
 function saveButton(wrapper: Wrapper) {
-    return wrapper.get('[data-part="dialog-footer"] button[type="submit"]')
+    return wrapper.get('[data-part="dialog-footer"] button[data-variant="primary"]')
+}
+
+async function chooseCoverRule(wrapper: Wrapper, item: string) {
+    await wrapper
+        .get(`[data-item="cover-rule"] [data-part="segment"][data-item="${item}"]`)
+        .trigger('click')
+    await flushPromises()
 }
 
 describe('TrackMetadataDialog', () => {
     beforeEach(() => {
         setActivePinia(createPinia())
-        api.getTrackMetadata.mockReset()
-        api.updateTrackMetadata.mockReset()
+        for (const mock of Object.values(api)) {
+            mock.mockReset()
+        }
         api.getTrackMetadata.mockResolvedValue(metadata)
+        api.getCoverRule.mockResolvedValue({
+            rule: 'Inherit',
+            inheritedPriority: 'TrackFirst',
+            effectivePriority: 'TrackFirst',
+        })
+        api.fetchCoverRulePreview.mockResolvedValue(undefined)
     })
 
     it('loads the metadata into the fields and names the file', async () => {
@@ -89,7 +108,7 @@ describe('TrackMetadataDialog', () => {
     it.each([
         ['NoAudio', 'This song only has a video.'],
         ['NotWritable', 'The audio file cannot be written.'],
-    ] as const)('disables everything with a hint for %s', async (status, hint) => {
+    ] as const)('disables the tags with a hint for %s', async (status, hint) => {
         api.getTrackMetadata.mockResolvedValue({ ...metadata, status })
 
         const wrapper = await mountDialog()
@@ -97,7 +116,8 @@ describe('TrackMetadataDialog', () => {
         const inputs = wrapper.findAll('[data-part="form"] input')
         expect(inputs).toHaveLength(8)
         expect(inputs.every((item) => item.attributes('disabled') !== undefined)).toBe(true)
-        expect(saveButton(wrapper).attributes('disabled')).toBeDefined()
+        // The cover rule of the song can still be saved.
+        expect(saveButton(wrapper).attributes('disabled')).toBeUndefined()
         expect(wrapper.get('[data-part="alert"][data-state="info"]').text()).toContain(hint)
         const notes = wrapper.findAll('[data-part="form-note"]').map((note) => note.text())
         expect(notes.join(' ')).not.toContain('Empty fields')
@@ -185,8 +205,8 @@ describe('TrackMetadataDialog', () => {
             'The audio file cannot be written.',
         )
         expect(input(wrapper, 'title').attributes('disabled')).toBeDefined()
-        expect(saveButton(wrapper).attributes('disabled')).toBeDefined()
         expect(wrapper.emitted('saved')).toBeUndefined()
+        expect(wrapper.emitted('update:open')).toBeUndefined()
         wrapper.unmount()
     })
 
@@ -231,6 +251,73 @@ describe('TrackMetadataDialog', () => {
             'The changes could not be saved.',
         )
         expect(input(wrapper, 'title').attributes('disabled')).toBeUndefined()
+        wrapper.unmount()
+    })
+
+    it('shows the rule of the song with the inherited one and saves a changed rule after the tags', async () => {
+        api.updateTrackMetadata.mockResolvedValue({ ...metadata, title: 'Other' })
+        api.setCoverRule.mockResolvedValue({
+            rule: 'TrackOnly',
+            inheritedPriority: 'TrackFirst',
+            effectivePriority: 'TrackOnly',
+        })
+        const wrapper = await mountDialog()
+        const invalidate = vi.spyOn(useCoversStore(), 'invalidate')
+
+        const segments = wrapper.findAll('[data-item="cover-rule"] [data-part="segment"]')
+        expect(segments.map((segment) => segment.text())).toEqual([
+            'Default',
+            'Own first',
+            'Album first',
+            'Own only',
+        ])
+        expect(segments[0]?.attributes('aria-checked')).toBe('true')
+        expect(api.fetchCoverRulePreview).toHaveBeenCalledWith('track', 'song', 'Inherit', 300)
+
+        await input(wrapper, 'title').setValue('Other')
+        await chooseCoverRule(wrapper, 'track-only')
+        await saveButton(wrapper).trigger('click')
+        await flushPromises()
+
+        expect(api.updateTrackMetadata).toHaveBeenCalledWith('song', { title: 'Other' })
+        expect(api.setCoverRule).toHaveBeenCalledWith('track', 'song', 'TrackOnly')
+        expect(invalidate).toHaveBeenCalled()
+        expect(wrapper.emitted('update:open')?.at(-1)).toEqual([false])
+        wrapper.unmount()
+    })
+
+    it('saves only the cover rule when the file cannot be written', async () => {
+        api.getTrackMetadata.mockResolvedValue({ ...metadata, status: 'NotWritable' })
+        api.setCoverRule.mockResolvedValue({
+            rule: 'AlbumFirst',
+            inheritedPriority: 'TrackFirst',
+            effectivePriority: 'AlbumFirst',
+        })
+        const wrapper = await mountDialog()
+
+        await chooseCoverRule(wrapper, 'album-first')
+        await saveButton(wrapper).trigger('click')
+        await flushPromises()
+
+        expect(api.updateTrackMetadata).not.toHaveBeenCalled()
+        expect(api.setCoverRule).toHaveBeenCalledWith('track', 'song', 'AlbumFirst')
+        expect(wrapper.emitted('update:open')?.at(-1)).toEqual([false])
+        wrapper.unmount()
+    })
+
+    it('stays open with a message when the cover rule cannot be saved', async () => {
+        api.setCoverRule.mockRejectedValue(new Error('offline'))
+        const wrapper = await mountDialog()
+
+        await chooseCoverRule(wrapper, 'album-first')
+        await saveButton(wrapper).trigger('click')
+        await flushPromises()
+
+        expect(api.updateTrackMetadata).not.toHaveBeenCalled()
+        expect(wrapper.get('[data-item="cover-rule"] [data-part="alert"]').text()).toBe(
+            'The cover rule could not be saved.',
+        )
+        expect(wrapper.emitted('update:open')).toBeUndefined()
         wrapper.unmount()
     })
 
