@@ -16,6 +16,7 @@ import type { TrackGroup } from '@/library/grouping'
 import {
     artistLabelKey,
     durationSeconds,
+    namesTrackArtist,
     trackListState,
     trackRowState,
 } from '@/library/presentation'
@@ -34,6 +35,8 @@ import { usePlayerStore } from '@/stores/player'
  */
 interface TrackRow extends ListRowBase {
     readonly track: Track
+    /** The artist differs from the album artist of the group (or the group has none to go by). */
+    readonly otherArtist: boolean
 }
 
 const props = withDefaults(
@@ -110,6 +113,7 @@ const listGroups = computed<ListGroup<TrackRow>[]>(() =>
                 ...(track.id && track.id === playingId.value ? ['playing'] : []),
             ],
             track,
+            otherArtist: namesTrackArtist(track, group),
         })),
     })),
 )
@@ -265,6 +269,12 @@ function activate(rowId: string): void {
                     }}</span>
                 </span>
                 <span data-part="label">{{ row.track.title }}</span>
+                <span
+                    data-part="list-subtitle"
+                    :data-state="row.otherArtist ? 'other-artist' : undefined"
+                >
+                    <span data-part="label">{{ trackArtist(row.track) }}</span>
+                </span>
             </template>
             <template v-else-if="column.id === 'duration'">
                 {{

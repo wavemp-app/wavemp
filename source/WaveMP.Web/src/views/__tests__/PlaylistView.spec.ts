@@ -80,7 +80,10 @@ async function mountView() {
 async function openMenu(wrapper: VueWrapper, title: string) {
     const row = wrapper
         .findAll('[data-part="list-row"]')
-        .find((candidate) => candidate.get('[data-column="title"]').text() === title)!
+        .find(
+            (candidate) =>
+                candidate.get('[data-column="title"] > [data-part="label"]').text() === title,
+        )!
     await row.trigger('contextmenu')
     await flushPromises()
 }

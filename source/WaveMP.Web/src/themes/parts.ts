@@ -101,6 +101,7 @@ export const parts = [
     'list-group-rows',
     'list-row',
     'list-cell',
+    'list-subtitle',
     'badge',
 
     // Library

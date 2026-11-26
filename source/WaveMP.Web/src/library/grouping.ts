@@ -1,7 +1,7 @@
 // Groups of tracks for the list grouped by album. Pure functions only; the views translate the
 // texts (unknown album, discs).
 
-import type { ArtistReference, Track } from '@/api/generated/models'
+import type { Album, ArtistReference, Track } from '@/api/generated/models'
 
 /** Cover shown for a group: the cover of its album, or of one of its tracks without album. */
 export interface GroupCover {
@@ -105,14 +105,19 @@ export function groupTracksByAlbum(tracks: readonly Track[], start = 0): TrackGr
 
 /**
  * The tracks of an album page: one group with the album title, or one group per disc as soon as
- * the album has more than one disc, in the order of the discs.
+ * the album has more than one disc, in the order of the discs. The groups take the artist and the
+ * compilation flag of the album, if given, so the list can tell the songs of other artists.
  */
-export function groupTracksByDisc(tracks: readonly Track[], albumTitle: string): TrackGroup[] {
+export function groupTracksByDisc(
+    tracks: readonly Track[],
+    albumTitle: string,
+    album?: Pick<Album, 'artist' | 'isCompilation'>,
+): TrackGroup[] {
     const discs = [...new Set(tracks.map((track) => track.discNumber ?? 1))]
     const base: Omit<TrackGroup, 'id' | 'position' | 'tracks'> = {
         title: albumTitle,
-        artist: null,
-        isCompilation: false,
+        artist: album?.artist ?? null,
+        isCompilation: album?.isCompilation ?? false,
         year: null,
         genre: null,
         cover: null,

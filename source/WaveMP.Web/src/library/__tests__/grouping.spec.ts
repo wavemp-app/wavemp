@@ -141,6 +141,28 @@ describe('groupTracksByDisc', () => {
         ])
         expect(groups.map((group) => group.position)).toEqual([0, 1])
     })
+
+    it('gives every disc the artist and the compilation flag of the album', () => {
+        const tracks = [track('a', { discNumber: 1 }), track('b', { discNumber: 2 })]
+
+        expect(
+            groupTracksByDisc(tracks, 'Hits', hits).map((group) => [
+                group.artist,
+                group.isCompilation,
+            ]),
+        ).toEqual([
+            [null, true],
+            [null, true],
+        ])
+        expect(groupTracksByDisc(tracks.slice(0, 1), 'First Album', first)[0]).toMatchObject({
+            artist: alpha,
+            isCompilation: false,
+        })
+        expect(groupTracksByDisc(tracks, 'Album')[0]).toMatchObject({
+            artist: null,
+            isCompilation: false,
+        })
+    })
 })
 
 describe('groupTracksAsList', () => {

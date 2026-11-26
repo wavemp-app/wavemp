@@ -5,6 +5,7 @@ import {
     fileKindKey,
     fileKindToken,
     mediaKey,
+    namesTrackArtist,
     trackListState,
     trackRowState,
 } from '../presentation'
@@ -18,6 +19,41 @@ describe('artistLabelKey', () => {
         expect(artistLabelKey(null, true)).toBe('library.variousArtists')
         expect(artistLabelKey(undefined)).toBe('library.unknownArtist')
         expect(artistLabelKey({ id: 'a', name: '' })).toBe('library.unknownArtist')
+    })
+})
+
+describe('namesTrackArtist', () => {
+    const alpha = { id: 'alpha', name: 'Alpha Band' }
+    const beta = { id: 'beta', name: 'Beta Singer' }
+    const album = { artist: alpha, isCompilation: false }
+
+    it('leaves out the artist of the album', () => {
+        expect(namesTrackArtist({ artist: alpha }, album)).toBe(false)
+        expect(namesTrackArtist({ artist: { name: 'alpha band ' } }, album)).toBe(false)
+        expect(namesTrackArtist({ artist: null }, { artist: null, isCompilation: false })).toBe(
+            false,
+        )
+    })
+
+    it('names other artists than the one of the album', () => {
+        expect(namesTrackArtist({ artist: beta }, album)).toBe(true)
+        expect(namesTrackArtist({ artist: { id: 'alpha-2', name: 'Alpha Band' } }, album)).toBe(
+            true,
+        )
+        expect(namesTrackArtist({ artist: null }, album)).toBe(true)
+    })
+
+    it('names every artist of a compilation and of a plain list', () => {
+        expect(namesTrackArtist({ artist: alpha }, { artist: alpha, isCompilation: true })).toBe(
+            true,
+        )
+        expect(namesTrackArtist({ artist: null }, { artist: null, isCompilation: true })).toBe(true)
+        expect(
+            namesTrackArtist(
+                { artist: alpha },
+                { artist: null, isCompilation: false, untitled: true },
+            ),
+        ).toBe(true)
     })
 })
 

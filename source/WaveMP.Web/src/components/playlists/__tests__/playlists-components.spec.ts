@@ -450,6 +450,20 @@ describe('PlaylistTrackList', () => {
         wrapper.unmount()
     })
 
+    it('names the artist of every entry below its title', async () => {
+        const wrapper = await mountWith(PlaylistTrackList, { rows, label: 'Road Trip' })
+
+        const subtitles = wrapper.findAll('[data-column="title"] > [data-part="list-subtitle"]')
+        expect(subtitles).toHaveLength(rows.length)
+        expect(
+            subtitles.every((subtitle) => subtitle.attributes('data-state') === 'other-artist'),
+        ).toBe(true)
+        expect(subtitles[0]!.text()).toBe(
+            wrapper.get('[data-part="list-row"] [data-column="artist"]').text(),
+        )
+        wrapper.unmount()
+    })
+
     it('shows the video badge before the title and keeps its column in the list', async () => {
         const wrapper = await mountWith(PlaylistTrackList, {
             rows,
@@ -462,6 +476,7 @@ describe('PlaylistTrackList', () => {
         expect([...clip.children].map((child) => child.getAttribute('data-part'))).toEqual([
             'badge',
             'label',
+            'list-subtitle',
         ])
         wrapper.unmount()
     })

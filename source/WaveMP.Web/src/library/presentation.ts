@@ -18,6 +18,37 @@ export function artistLabelKey(
     return isCompilation ? 'library.variousArtists' : 'library.unknownArtist'
 }
 
+/** The same artist: the same id if both have one, otherwise the same name; two unknown are the same. */
+function sameArtist(
+    first: ArtistReference | null | undefined,
+    second: ArtistReference | null | undefined,
+): boolean {
+    if (first?.id && second?.id) {
+        return first.id === second.id
+    }
+
+    const name = (artist: ArtistReference | null | undefined) =>
+        (artist?.name ?? '').trim().toLocaleLowerCase()
+    return name(first) === name(second)
+}
+
+/** What a list knows about the group of a track: the album artist and whether it is a compilation. */
+export interface TrackArtistContext {
+    readonly artist: ArtistReference | null
+    readonly isCompilation: boolean
+    /** The one group of a plain list, which has no album artist to go by. */
+    readonly untitled?: boolean
+}
+
+/**
+ * Whether a list names the artist of a track below its title (part list-subtitle with the state
+ * "other-artist"), for phones, which leave out the column of the artist: in a compilation, in a
+ * plain list and whenever the track has another artist than its group (the album artist).
+ */
+export function namesTrackArtist(track: Pick<Track, 'artist'>, group: TrackArtistContext): boolean {
+    return group.untitled === true || group.isCompilation || !sameArtist(track.artist, group.artist)
+}
+
 /** Duration in seconds from milliseconds; null if unknown. */
 export function durationSeconds(milliseconds: number | null | undefined): number | null {
     return typeof milliseconds === 'number' && Number.isFinite(milliseconds)

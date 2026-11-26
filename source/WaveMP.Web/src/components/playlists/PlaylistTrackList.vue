@@ -269,6 +269,9 @@ function openRowMenu(rowId: string, x: number, y: number): void {
                     }}</span>
                 </span>
                 <span data-part="label">{{ row.entry.track.title }}</span>
+                <span data-part="list-subtitle" data-state="other-artist">
+                    <span data-part="label">{{ artistOf(row.entry.track) }}</span>
+                </span>
             </template>
             <template v-else-if="column.id === 'duration'">
                 {{

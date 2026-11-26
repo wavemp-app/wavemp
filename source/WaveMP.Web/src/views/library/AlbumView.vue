@@ -49,7 +49,7 @@ const status = ref<'loading' | 'ready' | 'notFound' | 'error'>('loading')
 let generation = 0
 
 const groups = computed(() =>
-    album.value ? groupTracksByDisc(tracks.value, album.value.title ?? '') : [],
+    album.value ? groupTracksByDisc(tracks.value, album.value.title ?? '', album.value) : [],
 )
 const artistKey = computed(() =>
     artistLabelKey(album.value?.artist, album.value?.isCompilation ?? false),

@@ -5,7 +5,7 @@ import { createPinia, setActivePinia } from 'pinia'
 import { createMemoryHistory, createRouter } from 'vue-router'
 import type { Track } from '@/api/generated/models'
 import { createWaveMpI18n } from '@/i18n'
-import { groupTracksByAlbum } from '@/library/grouping'
+import { groupTracksAsList, groupTracksByAlbum, groupTracksByDisc } from '@/library/grouping'
 import { createRoutes } from '@/router/routes'
 import { getPlayback } from '@/player/api'
 import { playerDependencies, usePlayerStore } from '@/stores/player'
@@ -222,12 +222,11 @@ describe('TrackGroupList', () => {
             'rating',
             'favorite',
         ])
-        expect(cells.slice(0, 4).map((cell) => cell.text())).toEqual([
-            '1',
-            'Opening',
-            '3:05',
-            'Alpha Band',
-        ])
+        expect(
+            [cells[0]!, cells[1]!.get('[data-part="label"]'), cells[2]!, cells[3]!].map((cell) =>
+                cell.text(),
+            ),
+        ).toEqual(['1', 'Opening', '3:05', 'Alpha Band'])
         expect(cells[4]!.findAll('[data-part="rating-star"]')).toHaveLength(5)
         expect(cells[5]!.get('[data-part="btn-favorite"]').attributes('aria-pressed')).toBe('false')
         expect(rows[1]!.attributes('data-state')).toBe('has-video')
@@ -243,8 +242,67 @@ describe('TrackGroupList', () => {
         expect([...title.children].map((child) => child.getAttribute('data-part'))).toEqual([
             'badge',
             'label',
+            'list-subtitle',
         ])
-        expect(title.lastElementChild!.textContent).toBe('Closing')
+        expect(title.children[1]!.textContent).toBe('Closing')
+        wrapper.unmount()
+    })
+
+    it('names the artists of the songs of a compilation below their titles', async () => {
+        const hits = { id: 'hits', title: 'Hits', artist: null, isCompilation: true }
+        const songs: Track[] = [
+            { ...tracks[0]!, id: 'one', album: hits, artist: alpha },
+            { ...tracks[0]!, id: 'two', album: hits, artist: { id: 'beta', name: 'Beta Singer' } },
+            { ...tracks[0]!, id: 'three', album: hits, artist: null },
+        ]
+
+        for (const groups of [groupTracksByAlbum(songs), groupTracksByDisc(songs, 'Hits', hits)]) {
+            const { wrapper } = await mountWith(TrackGroupList, { groups, label: 'Hits' })
+            const subtitles = wrapper.findAll('[data-column="title"] > [data-part="list-subtitle"]')
+            expect(subtitles.map((subtitle) => subtitle.text())).toEqual([
+                'Alpha Band',
+                'Beta Singer',
+                'Unknown artist',
+            ])
+            expect(subtitles.map((subtitle) => subtitle.attributes('data-state'))).toEqual([
+                'other-artist',
+                'other-artist',
+                'other-artist',
+            ])
+            wrapper.unmount()
+        }
+    })
+
+    it('names the artist below the title only where it is not the one of the album', async () => {
+        const guest = { ...tracks[1]!, id: 'guest', artist: { id: 'beta', name: 'Beta Singer' } }
+        const songs = [tracks[0]!, guest]
+
+        for (const groups of [
+            groupTracksByAlbum(songs),
+            groupTracksByDisc(songs, 'First', album),
+        ]) {
+            const { wrapper } = await mountWith(TrackGroupList, { groups, label: 'First Album' })
+            const subtitles = wrapper.findAll('[data-part="list-subtitle"]')
+            expect(subtitles.map((subtitle) => subtitle.text())).toEqual([
+                'Alpha Band',
+                'Beta Singer',
+            ])
+            expect(subtitles.map((subtitle) => subtitle.attributes('data-state'))).toEqual([
+                undefined,
+                'other-artist',
+            ])
+            wrapper.unmount()
+        }
+
+        const { wrapper } = await mountWith(TrackGroupList, {
+            groups: groupTracksAsList(songs),
+            label: 'Songs',
+        })
+        expect(
+            wrapper
+                .findAll('[data-part="list-subtitle"]')
+                .map((subtitle) => subtitle.attributes('data-state')),
+        ).toEqual(['other-artist', 'other-artist'])
         wrapper.unmount()
     })
 

@@ -945,6 +945,33 @@
         margin-inline: 0;
     }
 
+    /*
+     * The artist of a song as a second line below its title (list-subtitle). Left out where the
+     * column artist shows it; the mobile base, which has no such column, shows it for the songs
+     * with the state other-artist (compilations, plain lists, playlists and songs of guests).
+     */
+    [data-part='list-subtitle'] {
+        display: none;
+        min-inline-size: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        color: var(--wmp-color-text-muted);
+        font-size: var(--wmp-font-size-s);
+        font-weight: var(--wmp-font-weight-normal);
+    }
+
+    [data-part='list-row'][aria-selected='true'] [data-part='list-subtitle'] {
+        color: inherit;
+    }
+
+    [data-part='list'][data-state~='has-video']
+        [data-part='list-cell'][data-column='title']
+        > [data-part='list-subtitle'] {
+        grid-row: 2;
+        grid-column: 2;
+    }
+
     /* --- Avatar and alert ---------------------------------------------------------------- */
 
     /* Initials on the color of the profile; containers set the size with --_avatar-size. */
