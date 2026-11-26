@@ -77,6 +77,32 @@ const flagOperators: readonly SmartPlaylistOperator[] = [
     SmartPlaylistOperatorObject.IsFalse,
 ]
 
+/**
+ * Whether a rule names an artist, album or genre that the server links by id: "is" and "is not"
+ * of these fields. "Contains" compares the text.
+ */
+export function canReference(rule: Pick<SmartPlaylistRule, 'field' | 'operator'>): boolean {
+    return (
+        kindOf(rule.field ?? SmartPlaylistFieldObject.Year) === 'text' &&
+        (rule.operator === SmartPlaylistOperatorObject.Is ||
+            rule.operator === SmartPlaylistOperatorObject.IsNot)
+    )
+}
+
+/**
+ * Whether a rule is linked to an entry of the library: linked, unlinked (the server found no
+ * single entry of its name, so it compares the text) or undefined (no such rule, or not known).
+ */
+export function referenceOf(
+    rule: Pick<RuleDraft, 'field' | 'operator' | 'referenceId'>,
+): 'linked' | 'unlinked' | undefined {
+    if (!canReference(rule) || rule.referenceId === undefined) {
+        return undefined
+    }
+
+    return rule.referenceId === null ? 'unlinked' : 'linked'
+}
+
 export function kindOf(field: SmartPlaylistField): FieldKind {
     switch (field) {
         case SmartPlaylistFieldObject.Artist:
@@ -136,6 +162,12 @@ export interface RuleDraft {
     text: string
     number: string
     numberTo: string
+    /**
+     * The artist, album or genre a rule with "is" or "is not" names, as the server linked it: its
+     * id, null if the server found no single entry of that name, or undefined while unknown (a new
+     * rule, or one whose field or text changed; the server links it on saving).
+     */
+    referenceId?: string | null
 }
 
 /** The whole smart playlist as the editor holds it. */
@@ -325,6 +357,9 @@ export function toSaveRule(rule: RuleDraft): SaveSmartPlaylistRule {
     const saved: SaveSmartPlaylistRule = { field: rule.field, operator: rule.operator }
     if (values === 'text') {
         saved.text = rule.text.trim()
+        if (canReference(rule) && typeof rule.referenceId === 'string') {
+            saved.referenceId = rule.referenceId
+        }
     } else if (values !== 'none') {
         saved.number = parseValue(rule.field, rule.number) ?? null
         if (values === 'range') {
@@ -347,6 +382,8 @@ export function toRuleDraft(rule: SmartPlaylistRule): RuleDraft | undefined {
         text: rule.text ?? '',
         number: showValue(rule.field, rule.number),
         numberTo: showValue(rule.field, rule.numberTo),
+        // The server leaves the id out of a rule it could not link.
+        referenceId: canReference(rule) ? (rule.referenceId ?? null) : undefined,
     }
 }
 
@@ -428,6 +465,8 @@ export interface RuleSummary {
     readonly operatorKey: string
     readonly value: string
     readonly to: string
+    /** Whether a rule that names an artist, album or genre is linked to it; see referenceOf. */
+    readonly reference?: 'linked' | 'unlinked'
 }
 
 export function summaryOf(rule: SmartPlaylistRule): RuleSummary | undefined {
@@ -443,5 +482,6 @@ export function summaryOf(rule: SmartPlaylistRule): RuleSummary | undefined {
         operatorKey: `smartPlaylists.summary.${flagKey}${messageKey(rule.operator)}`,
         value: kind === 'text' ? (rule.text ?? '') : show(rule.number),
         to: show(rule.numberTo),
+        reference: canReference(rule) ? (rule.referenceId ? 'linked' : 'unlinked') : undefined,
     }
 }

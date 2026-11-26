@@ -84,6 +84,7 @@ export const iconSlots = {
     'organize-conflict': { file: regular('warning'), area: 'content' },
     'organize-warning': { file: regular('warning-circle'), area: 'content' },
     'tags-missing': { file: regular('warning'), area: 'content' },
+    'rule-unlinked': { file: regular('link-break'), area: 'content' },
     album: { file: fill('vinyl-record'), area: 'content' },
     artist: { file: fill('microphone-stage'), area: 'content' },
     genre: { file: fill('guitar'), area: 'content' },

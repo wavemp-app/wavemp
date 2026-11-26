@@ -3619,6 +3619,7 @@ export function deserializeIntoFileSelection(fileSelection: Partial<FileSelectio
 export function deserializeIntoGenre(genre: Partial<Genre> | undefined = {}) : Record<string, (node: ParseNode) => void> {
     return {
         "albumCount": n => { genre.albumCount = n.getNumberValue(); },
+        "id": n => { genre.id = n.getGuidValue(); },
         "name": n => { genre.name = n.getStringValue(); },
         "trackCount": n => { genre.trackCount = n.getNumberValue(); },
     }
@@ -4883,6 +4884,7 @@ export function deserializeIntoSaveSmartPlaylistRule(saveSmartPlaylistRule: Part
         "number": n => { saveSmartPlaylistRule.number = n.getNumberValue(); },
         "numberTo": n => { saveSmartPlaylistRule.numberTo = n.getNumberValue(); },
         "operator": n => { saveSmartPlaylistRule.operator = n.getEnumValue<SmartPlaylistOperator>(SmartPlaylistOperatorObject); },
+        "referenceId": n => { saveSmartPlaylistRule.referenceId = n.getGuidValue(); },
         "text": n => { saveSmartPlaylistRule.text = n.getStringValue(); },
     }
 }
@@ -5115,6 +5117,7 @@ export function deserializeIntoSmartPlaylistRule(smartPlaylistRule: Partial<Smar
         "number": n => { smartPlaylistRule.number = n.getNumberValue(); },
         "numberTo": n => { smartPlaylistRule.numberTo = n.getNumberValue(); },
         "operator": n => { smartPlaylistRule.operator = n.getEnumValue<SmartPlaylistOperator>(SmartPlaylistOperatorObject); },
+        "referenceId": n => { smartPlaylistRule.referenceId = n.getGuidValue(); },
         "text": n => { smartPlaylistRule.text = n.getStringValue(); },
     }
 }
@@ -6529,7 +6532,7 @@ export type FileSelectionFilter = (typeof FileSelectionFilterObject)[keyof typeo
 export type FileSelectionSort = (typeof FileSelectionSortObject)[keyof typeof FileSelectionSortObject];
 export type FileSelectionState = (typeof FileSelectionStateObject)[keyof typeof FileSelectionStateObject];
 /**
- * A genre of the tracks; genres that differ only in case are one genre.
+ * A genre of the tracks; genres whose names differ only in case, diacritics, spaces or punctuation are one genre.
  */
 export interface Genre extends AdditionalDataHolder, Parsable {
     /**
@@ -6537,7 +6540,11 @@ export interface Genre extends AdditionalDataHolder, Parsable {
      */
     albumCount?: number | null;
     /**
-     * Name of the genre as found in the tracks; use it as filter genre of the lists.
+     * The id property
+     */
+    id?: Guid | null;
+    /**
+     * Name of the genre as first found in the tracks; use it as filter genre of the lists.
      */
     name?: string | null;
     /**
@@ -8808,6 +8815,10 @@ export interface SaveSmartPlaylistRule extends AdditionalDataHolder, Parsable {
      */
     operator?: SmartPlaylistOperator | null;
     /**
+     * The artist, album or genre a rule with Is or IsNot names, by id, e.g. as received with the rule or chosen from the library; the text is still required. Without an id, or with one that names no entry of the field, the server looks the text up by its normalized name and stores the id of the matching entry, if exactly one matches. Ignored for other rules.
+     */
+    referenceId?: Guid | null;
+    /**
      * Text of a text field, 1 to 200 characters; spaces at the ends are removed.
      */
     text?: string | null;
@@ -9854,6 +9865,7 @@ export function serializeFileSelection(writer: SerializationWriter, fileSelectio
 export function serializeGenre(writer: SerializationWriter, genre: Partial<Genre> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
     if (!genre || isSerializingDerivedType) { return; }
     writer.writeNumberValue("albumCount", genre.albumCount);
+    writer.writeGuidValue("id", genre.id);
     writer.writeStringValue("name", genre.name);
     writer.writeNumberValue("trackCount", genre.trackCount);
     writer.writeAdditionalData(genre.additionalData);
@@ -11202,6 +11214,7 @@ export function serializeSaveSmartPlaylistRule(writer: SerializationWriter, save
     writer.writeNumberValue("number", saveSmartPlaylistRule.number);
     writer.writeNumberValue("numberTo", saveSmartPlaylistRule.numberTo);
     writer.writeEnumValue<SmartPlaylistOperator>("operator", saveSmartPlaylistRule.operator);
+    writer.writeGuidValue("referenceId", saveSmartPlaylistRule.referenceId);
     writer.writeStringValue("text", saveSmartPlaylistRule.text);
     writer.writeAdditionalData(saveSmartPlaylistRule.additionalData);
 }
@@ -11449,6 +11462,7 @@ export function serializeSmartPlaylistRule(writer: SerializationWriter, smartPla
     writer.writeNumberValue("number", smartPlaylistRule.number);
     writer.writeNumberValue("numberTo", smartPlaylistRule.numberTo);
     writer.writeEnumValue<SmartPlaylistOperator>("operator", smartPlaylistRule.operator);
+    writer.writeGuidValue("referenceId", smartPlaylistRule.referenceId);
     writer.writeStringValue("text", smartPlaylistRule.text);
     writer.writeAdditionalData(smartPlaylistRule.additionalData);
 }
@@ -12857,7 +12871,11 @@ export interface SmartPlaylistRule extends AdditionalDataHolder, Parsable {
      */
     operator?: SmartPlaylistOperator | null;
     /**
-     * Text of a text field.
+     * The artist, album or genre a rule with Is or IsNot names, by id; the rule follows a new spelling of its name. Such a rule without an id names no single entry of the library (no entry has that name, or several albums do) and compares the normalized name of its text: lower case, without diacritics, spaces and punctuation. Clients mark these rules.
+     */
+    referenceId?: Guid | null;
+    /**
+     * Text of a text field. For a rule with `referenceId`, the current name of the artist, album or genre.
      */
     text?: string | null;
 }
@@ -14776,7 +14794,7 @@ export interface YearPage extends AdditionalDataHolder, Parsable {
     total?: number | null;
 }
 /**
- * The global rule of the library settings.
+ * What albums without a cover of their own show: the picture of their album artist (ArtistPicture, the default) or nothing (None). Albums with an exception (GetAlbumCoverFallback) override it.
  */
 export const AlbumCoverFallbackObject = {
     ArtistPicture: "ArtistPicture",
@@ -14890,7 +14908,7 @@ export const EqualizerFilterTypeObject = {
     HighShelf: "HighShelf",
 } as const;
 /**
- * The selected curve; Flat by default.
+ * The preset.
  */
 export const EqualizerPresetObject = {
     Flat: "Flat",
@@ -14981,7 +14999,7 @@ export const HealthStatusObject = {
     Unhealthy: "Unhealthy",
 } as const;
 /**
- * What an HLS stream of a track carries.
+ * Video with sound or sound only.
  */
 export const HlsMediaObject = {
     Audio: "Audio",

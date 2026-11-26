@@ -259,3 +259,66 @@ test("offers the built-in templates through the API", async ({ request }) => {
         "Favorites",
     ]);
 });
+
+test("links rules to the library by their normalized name and marks the others", async ({
+    page,
+    request,
+}) => {
+    const name = `E2E Smart Linked ${uniqueSuffix()}`;
+    const missing = `Nobody ${uniqueSuffix()}`;
+    const response = await request.post("/api/v1/me/smart-playlists", {
+        data: {
+            name,
+            match: "Any",
+            rules: [
+                { field: "Album", operator: "Is", text: "e2e-album" },
+                { field: "Artist", operator: "Is", text: missing },
+            ],
+            sort: "Title",
+            direction: "Asc",
+        },
+        headers: await adminHeaders(request),
+    });
+    expect(response.status()).toBe(201);
+    const created = await response.json();
+    try {
+        // The server stored the id of E2E Album and names it as the library spells it.
+        expect(created.rules[0].referenceId).toEqual(expect.any(String));
+        expect(created.rules[0].text).toBe("E2E Album");
+        expect(created.rules[1].referenceId ?? null).toBeNull();
+
+        await page.goto(`/playlists/smart/${created.id}`);
+        const summaries = part(page, "smart-summary-rule");
+        await expect(summaries.nth(0)).toHaveAttribute(
+            "data-reference",
+            "linked",
+        );
+        await expect(summaries.nth(0)).toHaveText('Album is "E2E Album"');
+        await expect(summaries.nth(1)).toHaveAttribute(
+            "data-reference",
+            "unlinked",
+        );
+        await expect(
+            summaries.nth(1).locator("[data-part='smart-summary-note']"),
+        ).toHaveText("Not in the library");
+        await expect(rowTitles(page)).toHaveText(["First Song", "Second Song"]);
+
+        await page.goto(`/playlists/smart/${created.id}/edit`);
+        await expect(ruleRow(page, 0)).toHaveAttribute(
+            "data-reference",
+            "linked",
+        );
+        await expect(
+            ruleRow(page, 0).locator("[data-part='field-hint']"),
+        ).toHaveCount(0);
+        await expect(ruleRow(page, 1)).toHaveAttribute(
+            "data-reference",
+            "unlinked",
+        );
+        await expect(
+            ruleRow(page, 1).locator("[data-part='field-hint']"),
+        ).toContainText("Not found in the library");
+    } finally {
+        await cleanUp(request, name);
+    }
+});

@@ -457,6 +457,8 @@
     "duration": "Dauer",
     "durationHint": "Minuten und Sekunden, z. B. 3:30",
     "ratingHint": "0 (unbewertet) bis 5 Sterne",
+    "unlinkedHint": "Nicht in der Bibliothek gefunden. Die Regel vergleicht den Namen als Text und folgt keiner Umbenennung.",
+    "unlinked": "Nicht in der Bibliothek",
     "addRule": "Regel hinzufügen",
     "removeRule": "Regel {number} entfernen",
     "noRules": "Ohne Regeln gehört jeder Song der Bibliothek zu dieser intelligenten Playlist.",

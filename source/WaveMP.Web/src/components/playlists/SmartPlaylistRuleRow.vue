@@ -6,9 +6,11 @@ import BaseButton from '@/components/base/BaseButton.vue'
 import BaseSelect, { type SelectOption } from '@/components/base/BaseSelect.vue'
 import BaseTextField from '@/components/base/BaseTextField.vue'
 import {
+    canReference,
     kindOf,
     messageKey,
     operatorsOf,
+    referenceOf,
     smartFields,
     valuesOf,
     withField,
@@ -28,6 +30,8 @@ export interface RuleErrors {
  * One rule of the editor of a smart playlist: field, condition and the values the condition needs
  * (none, one or a range). data-kind is the kind of the field (text, number, duration, days, flag)
  * and data-values the values shown (none, text, number, range), so themes can lay out the row.
+ * data-reference tells whether a rule that names an artist, album or genre is linked to it
+ * (linked) or compares its text because the library has no single entry of that name (unlinked).
  */
 const props = withDefaults(
     defineProps<{
@@ -89,6 +93,12 @@ const hint = computed(() => {
     return props.rule.field === 'Rating' ? t('smartPlaylists.ratingHint') : undefined
 })
 
+const reference = computed(() => referenceOf(props.rule))
+
+const textHint = computed(() =>
+    reference.value === 'unlinked' ? t('smartPlaylists.unlinkedHint') : undefined,
+)
+
 const inputmode = computed(() => (kind.value === 'text' ? undefined : ('numeric' as const)))
 
 function update(change: Partial<Omit<RuleDraft, 'key'>>): void {
@@ -102,12 +112,17 @@ const field = computed({
 
 const operator = computed({
     get: () => props.rule.operator,
-    set: (value: string) => update({ operator: value as SmartPlaylistOperator }),
+    set: (value: string) => {
+        const next = value as SmartPlaylistOperator
+        // "Is" and "is not" name the same entry; "contains" names none.
+        const keeps = canReference({ field: props.rule.field, operator: next })
+        update({ operator: next, referenceId: keeps ? props.rule.referenceId : undefined })
+    },
 })
 
 const text = computed({
     get: () => props.rule.text,
-    set: (value: string) => update({ text: value }),
+    set: (value: string) => update({ text: value, referenceId: undefined }),
 })
 
 const number = computed({
@@ -126,6 +141,7 @@ const numberTo = computed({
         data-part="smart-rule"
         :data-kind="kind"
         :data-values="values"
+        :data-reference="reference"
         :data-state="invalid ? 'invalid' : undefined"
         :aria-label="t('smartPlaylists.ruleLabel', { number: index + 1 })"
     >
@@ -151,6 +167,7 @@ const numberTo = computed({
                 v-model="text"
                 data-field="rule-text"
                 :label="t('smartPlaylists.value')"
+                :hint="textHint"
                 :error="errors.text"
                 :disabled="disabled"
                 autocomplete="off"

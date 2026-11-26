@@ -457,6 +457,8 @@
     "duration": "Duration",
     "durationHint": "Minutes and seconds, e.g. 3:30",
     "ratingHint": "0 (unrated) to 5 stars",
+    "unlinkedHint": "Not found in the library. The rule compares the name as text and does not follow a renamed entry.",
+    "unlinked": "Not in the library",
     "addRule": "Add rule",
     "removeRule": "Remove rule {number}",
     "noRules": "Without rules, every song of the library belongs to this smart playlist.",

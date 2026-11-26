@@ -2102,11 +2102,30 @@
     }
 
     [data-part='smart-summary-rule'] {
+        display: inline-flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0 var(--wmp-space-s);
         padding: var(--wmp-space-xs) var(--wmp-space-s);
         border: 1px solid var(--wmp-color-border);
         border-radius: var(--wmp-radius-s);
         background: var(--wmp-color-surface);
         overflow-wrap: anywhere;
+    }
+
+    /* A rule whose artist, album or genre is not in the library: dashed, with a quiet note. */
+    [data-part='smart-summary-rule'][data-reference='unlinked'] {
+        border-style: dashed;
+    }
+
+    [data-part='smart-summary-note'] {
+        --wmp-icon-size: var(--wmp-icon-size-s);
+
+        display: inline-flex;
+        align-items: center;
+        gap: var(--wmp-space-xs);
+        color: var(--wmp-color-text-muted);
+        font-size: var(--wmp-font-size-s);
     }
 
     [data-view='playlist'] [data-part='list'] {

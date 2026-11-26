@@ -6,6 +6,7 @@ import type { SmartPlaylist, Track } from '@/api/generated/models'
 import { fetchAllPages } from '@/api/paging'
 import { problemCodeOf, statusOf } from '@/api/problems'
 import BaseButton from '@/components/base/BaseButton.vue'
+import BaseIcon from '@/components/base/BaseIcon.vue'
 import BaseLink from '@/components/base/BaseLink.vue'
 import DetailHeader from '@/components/library/DetailHeader.vue'
 import MetaItem from '@/components/library/MetaItem.vue'
@@ -75,6 +76,7 @@ const rules = computed(() =>
             ? [
                   {
                       key: index,
+                      reference: summary.reference,
                       text: t(summary.operatorKey, {
                           field: t(summary.fieldKey),
                           value: summary.value,
@@ -270,8 +272,17 @@ onActivated(() => {
             <section data-part="smart-summary" :aria-label="t('smartPlaylists.rulesTitle')">
                 <p data-part="smart-summary-intro">{{ ruleIntro }}</p>
                 <ul v-if="rules.length > 0" data-part="smart-summary-rules">
-                    <li v-for="rule in rules" :key="rule.key" data-part="smart-summary-rule">
-                        {{ rule.text }}
+                    <li
+                        v-for="rule in rules"
+                        :key="rule.key"
+                        data-part="smart-summary-rule"
+                        :data-reference="rule.reference"
+                    >
+                        <span data-part="label">{{ rule.text }}</span>
+                        <span v-if="rule.reference === 'unlinked'" data-part="smart-summary-note">
+                            <BaseIcon name="rule-unlinked" />
+                            <span data-part="label">{{ t('smartPlaylists.unlinked') }}</span>
+                        </span>
                     </li>
                 </ul>
                 <p data-part="smart-summary-order">{{ order }}</p>

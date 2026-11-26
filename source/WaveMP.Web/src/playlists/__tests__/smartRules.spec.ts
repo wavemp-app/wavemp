@@ -13,6 +13,7 @@ import de from '@/locales/de.json'
 import en from '@/locales/en.json'
 import { convertFailureKey } from '../presentation'
 import {
+    canReference,
     draftOf,
     emptyDraft,
     formatDurationValue,
@@ -24,6 +25,7 @@ import {
     parseDuration,
     parseLimit,
     parseValue,
+    referenceOf,
     ruleErrorOf,
     ruleProblems,
     ruleTextMaxLength,
@@ -330,6 +332,71 @@ describe('conversion from and to the API', () => {
         expect(ruleErrorOf('rules[2].numberTo')).toEqual({ index: 2, part: 'numberTo' })
         expect(ruleErrorOf('rules[0].text')).toEqual({ index: 0, part: 'text' })
         expect(ruleErrorOf('name')).toBeUndefined()
+    })
+})
+
+describe('links to the library', () => {
+    const linkedId = '01990000-0000-7000-8000-000000000001'
+
+    it('links only "is" and "is not" of artists, albums and genres', () => {
+        const is = SmartPlaylistOperatorObject.Is
+        expect(canReference({ field: SmartPlaylistFieldObject.Artist, operator: is })).toBe(true)
+        expect(
+            canReference({
+                field: SmartPlaylistFieldObject.Genre,
+                operator: SmartPlaylistOperatorObject.IsNot,
+            }),
+        ).toBe(true)
+        expect(
+            canReference({
+                field: SmartPlaylistFieldObject.Album,
+                operator: SmartPlaylistOperatorObject.Contains,
+            }),
+        ).toBe(false)
+        expect(canReference({ field: SmartPlaylistFieldObject.Year, operator: is })).toBe(false)
+    })
+
+    it('marks stored rules the server could not link', () => {
+        const stored = {
+            field: SmartPlaylistFieldObject.Artist,
+            operator: SmartPlaylistOperatorObject.Is,
+            text: 'K.Flay',
+        }
+
+        expect(referenceOf(toRuleDraft(stored)!)).toBe('unlinked')
+        expect(referenceOf(toRuleDraft({ ...stored, referenceId: linkedId })!)).toBe('linked')
+        expect(
+            referenceOf(
+                toRuleDraft({ ...stored, operator: SmartPlaylistOperatorObject.Contains })!,
+            ),
+        ).toBeUndefined()
+        expect(referenceOf(newRule(SmartPlaylistFieldObject.Artist))).toBeUndefined()
+        expect(summaryOf(stored)?.reference).toBe('unlinked')
+        expect(summaryOf({ ...stored, referenceId: linkedId })?.reference).toBe('linked')
+        expect(
+            summaryOf({ field: SmartPlaylistFieldObject.Rating, operator: stored.operator })
+                ?.reference,
+        ).toBeUndefined()
+    })
+
+    it('sends the id of a linked rule back and drops it with another field', () => {
+        const linked = rule(SmartPlaylistFieldObject.Artist, {
+            operator: SmartPlaylistOperatorObject.Is,
+            text: 'K.Flay',
+            referenceId: linkedId,
+        })
+
+        expect(toSaveRule(linked)).toEqual({
+            field: SmartPlaylistFieldObject.Artist,
+            operator: SmartPlaylistOperatorObject.Is,
+            text: 'K.Flay',
+            referenceId: linkedId,
+        })
+        expect(toSaveRule({ ...linked, referenceId: null }).referenceId).toBeUndefined()
+        expect(withField(linked, SmartPlaylistFieldObject.Album).referenceId).toBeUndefined()
+        expect(
+            toSaveRule({ ...linked, operator: SmartPlaylistOperatorObject.Contains }).referenceId,
+        ).toBeUndefined()
     })
 })
 

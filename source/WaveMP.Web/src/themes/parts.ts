@@ -172,6 +172,7 @@ export const parts = [
     'smart-summary-intro',
     'smart-summary-rules',
     'smart-summary-rule',
+    'smart-summary-note',
     'smart-summary-order',
 
     // Collection

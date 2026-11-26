@@ -263,6 +263,10 @@
         --_icon: var(--wmp-icon-tags-missing);
     }
 
+    [data-icon='rule-unlinked'] {
+        --_icon: var(--wmp-icon-rule-unlinked);
+    }
+
     [data-icon='album'] {
         --_icon: var(--wmp-icon-album);
     }

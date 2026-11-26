@@ -162,6 +162,7 @@
         --wmp-icon-organize-conflict: url('/icons/phosphor/regular/warning.svg');
         --wmp-icon-organize-warning: url('/icons/phosphor/regular/warning-circle.svg');
         --wmp-icon-tags-missing: url('/icons/phosphor/regular/warning.svg');
+        --wmp-icon-rule-unlinked: url('/icons/phosphor/regular/link-break.svg');
         --wmp-icon-album: url('/icons/phosphor/fill/vinyl-record-fill.svg');
         --wmp-icon-artist: url('/icons/phosphor/fill/microphone-stage-fill.svg');
         --wmp-icon-genre: url('/icons/phosphor/fill/guitar-fill.svg');

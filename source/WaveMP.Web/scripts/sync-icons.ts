@@ -123,6 +123,7 @@ const icons: Record<IconStyle, string[]> = {
         'image-square',
         'info',
         'keyboard',
+        'link-break',
         'list-dashes',
         'list-plus',
         'lock',

@@ -291,12 +291,13 @@ The color changes with the song; a theme can let it fade with `transition` on th
 | `drag-handle` | `span` | `list-cell` with `data-column="handle"` | Handle that drags an entry of a playlist to another place (mouse, pen and touch), with `icon` and a `label` for screen readers; the menu of the entry moves it with the keyboard; neither works while the `list` has the state `busy` |
 | `smart-templates` | `div` | `section` `templates` of the editor of a smart playlist | The built-in templates as `button`s (`data-item` `four-stars-and-more`, `never-played`, `recently-added`, `most-played`, `favorites`); the one applied last has the state `applied`. Only when a smart playlist is created |
 | `smart-rules` | `ol` | `section` `rules` of the editor of a smart playlist | The rules as `smart-rule`s; the base makes it a size container (`wavemp-smart-rules`) and puts the values of a rule below field and condition when it is narrower than 36rem |
-| `smart-rule` | `li` (`aria-label`, `data-kind`, `data-values`) | `smart-rules` | One rule: the `field`s `rule-field` and `rule-operator`, `smart-rule-values` and the `button` `remove-rule`; `data-kind` is the kind of the field, `data-values` the values it needs, see [Other attributes](#other-attributes) |
+| `smart-rule` | `li` (`aria-label`, `data-kind`, `data-values`, `data-reference`) | `smart-rules` | One rule: the `field`s `rule-field` and `rule-operator`, `smart-rule-values` and the `button` `remove-rule`; `data-kind` is the kind of the field, `data-values` the values it needs, `data-reference` whether a rule that names an artist, album or genre is linked to it, see [Other attributes](#other-attributes). The `field` `rule-text` of an `unlinked` rule shows a `field-hint` |
 | `smart-rule-values` | `div` (`data-values`) | `smart-rule` | The values of a rule as `field`s: `rule-text`, `rule-number` and, for a range, `rule-number-to`; empty for yes/no fields |
 | `smart-summary` | `section` (`aria-label`) | `view` (`data-view="smart-playlist"`, after `detail-header`) | The rules of a smart playlist in words, with `smart-summary-intro`, `smart-summary-rules` and `smart-summary-order` |
 | `smart-summary-intro` | `p` | `smart-summary` | Whether the songs meet all or any of the rules, or that all songs belong to it without rules |
 | `smart-summary-rules` | `ul` | `smart-summary` | The rules as `smart-summary-rule`s |
-| `smart-summary-rule` | `li` | `smart-summary-rules` | One rule in words, for example `Genre is "Rock"` |
+| `smart-summary-rule` | `li` (`data-reference`) | `smart-summary-rules` | One rule in words as `label`, for example `Genre is "Rock"`; an `unlinked` rule adds a `smart-summary-note` |
+| `smart-summary-note` | `span` | `smart-summary-rule` | Note that the artist, album or genre of the rule is not in the library: `icon` (slot `rule-unlinked`) and `label` |
 | `smart-summary-order` | `p` | `smart-summary` | Sort order and limit of the songs in words |
 | `btn-favorite` | `button` (`aria-pressed`) | `detail-actions`, `list-cell` with `data-column="favorite"`, `now-playing-actions` | Heart that marks a song, album or artist as favorite of the profile, with `icon` and `label`; in lists it is no tab stop (the menu of the song offers the same) |
 | `rating` | `span` (`role="group"`) | `meta-value` of the `meta-item` `rating`, `list-cell` with `data-column="rating"`, `now-playing-actions` | Rating of a song with five `rating-star`s; `data-value` holds the stars (0 to 5), `--wmp-item-count` the number of stars and `--wmp-active-index` the index of the star of the rating (`-1` without one) |
@@ -959,6 +960,7 @@ The base links states to graphics: buttons use the variables `--wmp-image-<varia
 | `data-source` | `picture-source` | `local` (picture in the artist folder), `uploaded`, `online` or `albums` (collage of album covers) |
 | `data-provider` | `artist-credit`, `picture-candidate` | Service of the picture: `Wikimedia` or `FanartTv` |
 | `data-kind` | `smart-rule` | Kind of the field of the rule: `text` (artist, album, genre), `number` (year, rating, play count), `duration`, `days` (last played, date added) or `flag` (favorite, audio file, music video) |
+| `data-reference` | `smart-rule`, `smart-summary-rule` | Rules with "is" or "is not" of artist, album or genre: `linked` (the rule names the entry by id and follows a new spelling of its name) or `unlinked` (no single entry of the library has the name, so the rule compares the name as text); missing for other rules and, in the editor, for rules whose field or text changed before saving |
 | `data-values` | `smart-rule`, `smart-rule-values` | Values the condition of the rule needs: `text`, `number`, `range` (from and to) or `none` |
 | `data-kind` | `form` | `smart-playlist` for the editor of a smart playlist; the base widens it to 56rem |
 | `data-field` | `field` (editor of a smart playlist) | `name`, `sort`, `direction` (segmented control), `limited` (checkbox) and `limit`; per rule `rule-field`, `rule-operator`, `rule-text`, `rule-number` and `rule-number-to` |
@@ -1436,6 +1438,7 @@ The defaults are icons of [Phosphor Icons](https://phosphoricons.com) (MIT) unde
 | `organize-conflict` | `--wmp-icon-organize-conflict` | `/icons/phosphor/regular/warning.svg` | Content (the conflict of an `organize-item`) |
 | `organize-warning` | `--wmp-icon-organize-warning` | `/icons/phosphor/regular/warning-circle.svg` | Content (a warning of an `organize-item`) |
 | `tags-missing` | `--wmp-icon-tags-missing` | `/icons/phosphor/regular/warning.svg` | Content (review inbox) |
+| `rule-unlinked` | `--wmp-icon-rule-unlinked` | `/icons/phosphor/regular/link-break.svg` | Content (a rule of a smart playlist whose artist, album or genre is not in the library, in `smart-summary-note`) |
 | `album` | `--wmp-icon-album` | `/icons/phosphor/fill/vinyl-record-fill.svg` | Content (library: tiles and pages without a cover) |
 | `artist` | `--wmp-icon-artist` | `/icons/phosphor/fill/microphone-stage-fill.svg` | Content (library: tiles and pages without a cover) |
 | `genre` | `--wmp-icon-genre` | `/icons/phosphor/fill/guitar-fill.svg` | Content (library: tiles and pages without a cover) |
