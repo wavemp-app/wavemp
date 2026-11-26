@@ -133,6 +133,15 @@
         }
 
         /*
+         * The resume notice floats above the mini player, over the end of the content: the end of
+         * the content makes room for it, so the last rows can be scrolled clear of it.
+         */
+        [data-part='content'] > [data-part='resume-notice-space'] {
+            display: block !important;
+            block-size: var(--wmp-resume-notice-space, 0px) !important;
+        }
+
+        /*
          * The docked play queue is a desktop layout option; the app does not render it below
          * 64rem, and should it be there, it stays hidden.
          */

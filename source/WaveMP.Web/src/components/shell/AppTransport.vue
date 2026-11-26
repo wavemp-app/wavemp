@@ -18,6 +18,7 @@ import SleepTimerControl from '@/components/player/SleepTimerControl.vue'
 import LibraryCover from '@/components/library/LibraryCover.vue'
 import { useFormat } from '@/composables/useFormat'
 import { useMediaQuery } from '@/composables/useMediaQuery'
+import { useOverhang } from '@/composables/useOverhang'
 import { useSwipeDismiss } from '@/composables/useSwipeDismiss'
 import { PlayerViewModeObject, type PlayerViewMode } from '@/api/generated/models'
 import type { VisualizationSettings } from '@/visualization/settings'
@@ -113,6 +114,11 @@ const emit = defineEmits<{
     /** Plays the state taken over from another device. */
     resume: []
     dismissResume: []
+    /**
+     * How far the resume notice reaches above the transport bar, in pixels (0 without it), so the
+     * area above can make room for it.
+     */
+    resumeSpace: [pixels: number]
     /** The view switch of the full-screen player chose a view (the same choice as on Now Playing). */
     selectView: [mode: PlayerViewMode]
     /** The video element of the full-screen player is shown; the player shows videos there. */
@@ -131,6 +137,9 @@ const empty = computed(() => !props.state.trackId)
 const playing = computed(() => props.state.playback === 'playing')
 const icons = computed(() => transportIcons(props.state))
 const root = ref<HTMLElement | null>(null)
+const resumeNotice = ref<HTMLElement | null>(null)
+const resumeOverhang = useOverhang(resumeNotice, root)
+watch(resumeOverhang, (pixels) => emit('resumeSpace', pixels), { immediate: true })
 const videoElement = ref<HTMLVideoElement | null>(null)
 const viewSwitchOpen = ref(false)
 const viewSwitchId = useId()
@@ -443,7 +452,7 @@ function onMiniPlayer(): void {
         >
             {{ messageText }}
         </p>
-        <div v-if="resume" data-part="resume-notice" role="status">
+        <div v-if="resume" ref="resumeNotice" data-part="resume-notice" role="status">
             <BaseIcon name="resume-device" />
             <I18nT keypath="player.resume.from" tag="span" data-part="label" scope="global">
                 <template #device>

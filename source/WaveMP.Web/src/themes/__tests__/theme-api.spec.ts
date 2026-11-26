@@ -48,6 +48,7 @@ const runtimeVariables = [
     '--wmp-swipe-offset',
     '--wmp-swipe-progress',
     '--wmp-swipe-duration',
+    '--wmp-resume-notice-space',
 ]
 
 function read(file: string): string {

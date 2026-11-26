@@ -8,8 +8,9 @@ import { createRoutes, devRoutes } from '@/router/routes'
 import { devPartPrefix, parts } from '@/themes/parts'
 
 // Parts that only the app shell renders around the page content. The overview shows them in the
-// previews of the real app (iframes), not as single components.
-const shownInPreviewsOnly = ['app', 'content', 'content-title']
+// previews of the real app (iframes), not as single components; resume-notice-space only while the
+// player shows the notice "Continue listening from".
+const shownInPreviewsOnly = ['app', 'content', 'content-title', 'resume-notice-space']
 
 async function mountOverview() {
     const router = createRouter({ history: createMemoryHistory(), routes: createRoutes(devRoutes) })

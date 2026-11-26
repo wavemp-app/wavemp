@@ -60,6 +60,12 @@ const contextMenu = useContextMenuStore()
 
 const player = usePlayerStore()
 const resume = useResumeStore()
+/**
+ * How far the resume notice reaches above the transport bar, in pixels: the end of the content
+ * makes that much room while it shows (data-part="resume-notice-space"), so the last rows can be
+ * scrolled clear of it.
+ */
+const resumeSpace = ref(0)
 // The devices of the profile: this instance registers and plays or controls the active device.
 const devices = useDevicesStore()
 devices.start()
@@ -243,7 +249,11 @@ onUnmounted(() => {
 </script>
 
 <template>
-    <div data-part="app" :hidden="compactInline || undefined">
+    <div
+        data-part="app"
+        :hidden="compactInline || undefined"
+        :style="{ '--wmp-resume-notice-space': `${resumeSpace}px` }"
+    >
         <AppHeader :sidebar-open="sidebarOpen" @toggle-sidebar="toggleSidebar" />
         <AppToolbar />
         <AppSidebar
@@ -267,6 +277,7 @@ onUnmounted(() => {
             />
             <BaseAlert v-if="contextMenu.error" tone="error" :message="t(contextMenu.error)" />
             <slot />
+            <div v-if="resume.notice" data-part="resume-notice-space" aria-hidden="true"></div>
         </main>
         <QueuePane
             v-if="queuePaneShown"
@@ -316,6 +327,7 @@ onUnmounted(() => {
             @collapse="collapsePlayer"
             @resume="resume.resume"
             @dismiss-resume="resume.dismiss"
+            @resume-space="resumeSpace = $event"
             @select-view="player.selectViewMode"
             @attach-video="player.attachVideo"
             @detach-video="player.detachVideo"

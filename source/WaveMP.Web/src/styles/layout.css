@@ -60,6 +60,16 @@
         overscroll-behavior: contain;
     }
 
+    /*
+     * Room at the end of the content while the resume notice floats over it (above the transport
+     * bar): as high as the notice reaches above the transport, so the last rows can be scrolled
+     * clear of it. Layouts that do not show the notice over the content hide it.
+     */
+    [data-part='content'] > [data-part='resume-notice-space'] {
+        display: block;
+        block-size: var(--wmp-resume-notice-space, 0px);
+    }
+
     /* The docked play queue (layout option), a scrolling area like the sidebar. */
     [data-part='app'] > [data-part='queue-pane'] {
         grid-area: queue-pane;

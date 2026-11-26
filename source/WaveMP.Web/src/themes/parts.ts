@@ -257,6 +257,7 @@ export const parts = [
     'resume-device',
     'btn-resume',
     'btn-dismiss-resume',
+    'resume-notice-space',
     'cast-status',
     'devices',
     'btn-devices',
