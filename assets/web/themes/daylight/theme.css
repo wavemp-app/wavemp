@@ -243,8 +243,8 @@
     filter: drop-shadow(0 1px 1px rgb(17 39 62 / 18%));
 }
 
-[data-part='btn-back']:disabled,
-[data-part='btn-forward']:disabled {
+/* Stronger than the fill of the header, so a lens without a way back or forth looks empty. */
+[data-part='header'] :is([data-part='btn-back'], [data-part='btn-forward']):disabled {
     --wmp-icon-fill: #8fa3b8;
 
     color: #8fa3b8;
@@ -2117,6 +2117,32 @@ a[data-part='breadcrumb-link']:hover {
 
 [data-part='known-device'] > [data-part='icon'] {
     --wmp-icon-fill: var(--daylight-slate);
+}
+
+/* --- Disabled buttons and menu entries -------------------------------------------------------- */
+
+/*
+ * A disabled button or menu entry draws its label and its icon in the disabled color, whatever
+ * color the area around it gives its buttons and icons. Segments keep the look of their segmented
+ * control, which also shows the checked option of a disabled group.
+ */
+:where(button, a)[data-variant='default']:not([data-part='segment']):is(:disabled, [aria-disabled='true']) {
+    color: var(--wmp-color-text-disabled);
+}
+
+:is([data-variant='default']:not([data-part='segment']), [data-part='menu-item']):is(
+        :disabled,
+        [aria-disabled='true']
+    )
+    > [data-part='icon'] {
+    --wmp-icon-fill: var(--wmp-color-text-disabled);
+}
+
+/* The actions of the queue and of autoplay, e.g. moving the first entry up. */
+:is([data-part='queue-item-actions'], [data-part='autoplay-item-actions'])
+    > [data-variant='icon']:disabled
+    > [data-part='icon'] {
+    --wmp-icon-fill: var(--wmp-color-text-disabled);
 }
 
 /* --- Accessibility ----------------------------------------------------------------------------- */
