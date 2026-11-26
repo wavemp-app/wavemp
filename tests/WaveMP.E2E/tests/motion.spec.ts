@@ -292,12 +292,14 @@ test.describe('with reduced motion', () => {
         await tile.click({ button: 'right' })
         const menu = page.locator(openMenu)
         await expect(menu).toBeVisible()
-        expect(
-            await menu.evaluate((element) => {
-                const style = getComputedStyle(element)
-                return [style.transitionDuration, style.scale]
-            }),
-        ).toEqual(['0.1s', '1'])
+        const [duration, scale] = await menu.evaluate((element) => {
+            const style = getComputedStyle(element)
+            return [style.transitionDuration, style.scale]
+        })
+        expect(duration).toBe('0.1s')
+        // The closed menu has a scale of 1 and the open one none; both mean no scaling. Which one
+        // is read depends on whether the short fade between them has already ended.
+        expect(['1', 'none']).toContain(scale)
         expect(
             await page
                 .locator("[data-part='content'] > [data-view]")
