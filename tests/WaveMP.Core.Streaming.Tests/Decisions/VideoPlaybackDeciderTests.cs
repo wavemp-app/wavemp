@@ -46,17 +46,92 @@ public class VideoPlaybackDeciderTests
     }
 
     [Test]
-    public void Decide_UnknownContainer_IsTranscodedAsUnknown()
+    public void Decide_UnknownContainerWithAPlayablePicture_IsRemuxed()
     {
         VideoPlaybackDecider.Decide(_h264Aac with { Container = null }, _browser)
+            .Should().Be(VideoPlaybackDecision.Remux(TranscodeReason.FormatUnknown, RemuxAudio.Copy));
+    }
+
+    [Test]
+    public void Decide_UnknownContainerAndPicture_IsTranscodedAsUnknown()
+    {
+        VideoPlaybackDecider.Decide(_h264Aac with { Container = null, VideoCodec = null }, _browser)
             .Should().Be(VideoPlaybackDecision.Transcode(TranscodeReason.FormatUnknown));
     }
 
     [Test]
-    public void Decide_UnsupportedContainer_IsTranscoded()
+    public void Decide_UnsupportedContainerWithAPlayablePicture_IsRemuxedWithTheSound()
     {
         VideoPlaybackDecider.Decide(_h264Aac with { Container = VideoContainer.Matroska }, _browser)
+            .Should().Be(VideoPlaybackDecision.Remux(TranscodeReason.ContainerUnsupported, RemuxAudio.Copy));
+    }
+
+    [Test]
+    public void Decide_UnsupportedContainerAndSound_IsRemuxedWithAac()
+    {
+        VideoSource matroska = _h264Aac with { Container = VideoContainer.Matroska, AudioCodec = AudioCodec.Ac3 };
+
+        VideoPlaybackDecider.Decide(matroska, _browser)
+            .Should().Be(VideoPlaybackDecision.Remux(TranscodeReason.ContainerUnsupported, RemuxAudio.Aac));
+    }
+
+    [Test]
+    public void Decide_UnsupportedContainerWithoutSound_IsRemuxedWithoutSound()
+    {
+        VideoSource silent = _h264Aac with { Container = VideoContainer.Mov, HasAudio = false, AudioCodec = null };
+
+        VideoPlaybackDecider.Decide(silent, _browser)
+            .Should().Be(VideoPlaybackDecision.Remux(TranscodeReason.ContainerUnsupported, RemuxAudio.None));
+    }
+
+    [Test]
+    public void Decide_UnsupportedContainerOfAPictureMp4CannotHold_IsTranscoded()
+    {
+        VideoSource vp9 = _h264Aac with { Container = VideoContainer.Matroska, VideoCodec = VideoCodec.Vp9 };
+
+        VideoPlaybackDecider.Decide(vp9, _browser)
             .Should().Be(VideoPlaybackDecision.Transcode(TranscodeReason.ContainerUnsupported));
+    }
+
+    [Test]
+    public void Decide_UnsupportedContainerForAClientWithoutMp4_IsTranscoded()
+    {
+        VideoCapabilities webmOnly = _browser with { Containers = new HashSet<VideoContainer> { VideoContainer.Webm } };
+
+        VideoPlaybackDecider.Decide(_h264Aac with { Container = VideoContainer.Matroska }, webmOnly)
+            .Should().Be(VideoPlaybackDecision.Transcode(TranscodeReason.ContainerUnsupported));
+    }
+
+    [Test]
+    public void Decide_UnsupportedContainerAndSoundForAClientWithoutAac_IsTranscoded()
+    {
+        VideoSource matroska = _h264Aac with { Container = VideoContainer.Matroska, AudioCodec = AudioCodec.Vorbis };
+        VideoCapabilities opusOnly = _browser with { AudioCodecs = new HashSet<AudioCodec> { AudioCodec.Opus } };
+
+        VideoPlaybackDecider.Decide(matroska, opusOnly)
+            .Should().Be(VideoPlaybackDecision.Transcode(TranscodeReason.ContainerUnsupported));
+    }
+
+    [Test]
+    public void Decide_UnsupportedContainerWithH264Of10Bit_IsTranscoded()
+    {
+        VideoSource tenBit = _h264Aac with { Container = VideoContainer.Matroska, PixelFormat = "yuv420p10le" };
+
+        VideoPlaybackDecider.Decide(tenBit, _browser)
+            .Should().Be(VideoPlaybackDecision.Transcode(TranscodeReason.ContainerUnsupported));
+    }
+
+    [Test]
+    public void Decide_HevcInMatroskaForAClientThatPlaysHevc_IsRemuxed()
+    {
+        VideoSource hevc = _h264Aac with { Container = VideoContainer.Matroska, VideoCodec = VideoCodec.Hevc };
+        VideoCapabilities safari = _browser with
+        {
+            VideoCodecs = new HashSet<VideoCodec> { VideoCodec.H264, VideoCodec.Hevc },
+        };
+
+        VideoPlaybackDecider.Decide(hevc, safari)
+            .Should().Be(VideoPlaybackDecision.Remux(TranscodeReason.ContainerUnsupported, RemuxAudio.Copy));
     }
 
     [Test]
@@ -92,11 +167,25 @@ public class VideoPlaybackDeciderTests
     }
 
     [Test]
-    public void Decide_UnsupportedOrUnknownAudioCodec_IsTranscoded()
+    public void Decide_UnsupportedOrUnknownAudioCodec_IsRemuxedWithAac()
     {
         VideoPlaybackDecider.Decide(_h264Aac with { AudioCodec = AudioCodec.Ac3 }, _browser)
-            .Should().Be(VideoPlaybackDecision.Transcode(TranscodeReason.AudioCodecUnsupported));
+            .Should().Be(VideoPlaybackDecision.Remux(TranscodeReason.AudioCodecUnsupported, RemuxAudio.Aac));
         VideoPlaybackDecider.Decide(_h264Aac with { AudioCodec = null }, _browser)
+            .Should().Be(VideoPlaybackDecision.Remux(TranscodeReason.AudioCodecUnsupported, RemuxAudio.Aac));
+    }
+
+    [Test]
+    public void Decide_UnsupportedAudioCodecOfAWebmVideo_IsTranscoded()
+    {
+        VideoSource webm = _h264Aac with
+        {
+            Container = VideoContainer.Webm,
+            VideoCodec = VideoCodec.Vp9,
+            AudioCodec = AudioCodec.Vorbis,
+        };
+
+        VideoPlaybackDecider.Decide(webm, _browser)
             .Should().Be(VideoPlaybackDecision.Transcode(TranscodeReason.AudioCodecUnsupported));
     }
 

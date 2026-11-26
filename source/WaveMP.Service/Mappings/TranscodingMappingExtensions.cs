@@ -49,6 +49,8 @@ public static class TranscodingMappingExtensions
             StartedAt = item.Job.StartedAt,
             LastAccessAt = item.Job.LastAccessAt,
             UserId = item.Job.UserId,
+            Speed = item.Job.Speed,
+            SlowerThanRealTime = item.Job.SlowerThanRealTime,
         };
     }
 

@@ -26,6 +26,16 @@ public sealed class MediaUrlFactory(IMediaUrlIssuer issuer, LinkGenerator links)
     public const string StreamTrackVideoRoute = "StreamTrackVideo";
 
     /// <summary>
+    /// Route name (operation id) of the remuxed video of a track.
+    /// </summary>
+    public const string StreamTrackVideoRemuxRoute = "StreamTrackVideoRemux";
+
+    /// <summary>
+    /// Query parameter of the remuxed video that selects what happens with its sound.
+    /// </summary>
+    public const string RemuxAudioParameter = "audio";
+
+    /// <summary>
     /// Route name (operation id) of the HLS master playlist of a track.
     /// </summary>
     public const string HlsMasterPlaylistRoute = "GetTrackHlsMasterPlaylist";
@@ -73,6 +83,26 @@ public sealed class MediaUrlFactory(IMediaUrlIssuer issuer, LinkGenerator links)
         MediaUrlTarget target = MediaUrlTarget.Local)
     {
         return Create(context, MediaResource.TrackVideo, StreamTrackVideoRoute, trackId, duration, target: target);
+    }
+
+    /// <summary>
+    /// The signed URL of the remuxed video of a track; it shares the kind of media of the video stream.
+    /// </summary>
+    public MediaUrl CreateVideoRemuxUrl(
+        HttpContext context,
+        Guid trackId,
+        RemuxAudioDto audio,
+        TimeSpan? duration,
+        MediaUrlTarget target = MediaUrlTarget.Local)
+    {
+        return Create(
+            context,
+            MediaResource.TrackVideo,
+            StreamTrackVideoRemuxRoute,
+            trackId,
+            duration,
+            QueryString.Create(RemuxAudioParameter, audio.ToString()),
+            target);
     }
 
     /// <summary>

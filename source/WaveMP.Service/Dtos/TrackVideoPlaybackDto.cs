@@ -11,17 +11,17 @@ public sealed class TrackVideoPlaybackDto
     public required Guid TrackId { get; init; }
 
     /// <summary>
-    /// Direct play or transcoding.
+    /// Direct play, remux or transcoding.
     /// </summary>
     public required PlaybackMethodDto Method { get; init; }
 
     /// <summary>
-    /// The file as it is (direct play) or an HLS stream (transcoding).
+    /// A file (direct play and remux) or an HLS stream (transcoding).
     /// </summary>
     public required StreamProtocolDto Protocol { get; init; }
 
     /// <summary>
-    /// Why the video has to be transcoded; null for direct play.
+    /// Why the video has to be remuxed or transcoded; null for direct play.
     /// </summary>
     public TranscodeReasonDto? TranscodeReason { get; init; }
 
@@ -62,8 +62,9 @@ public sealed class TrackVideoPlaybackDto
 
     /// <summary>
     /// Signed, short-lived URL of the stream (path with query, relative to the server), for players that cannot send
-    /// the session token: the file for direct play, the HLS master playlist for transcoding. Null if the video has to
-    /// be transcoded and transcoding is unavailable. It stays valid until expiresAt and while the session is active.
+    /// the session token: the file for direct play, the remuxed MP4 file for a remux, the HLS master playlist for
+    /// transcoding. Null if the video has to be transcoded and transcoding is unavailable. It stays valid until
+    /// expiresAt and while the session is active.
     /// </summary>
     public string? StreamUrl { get; init; }
 

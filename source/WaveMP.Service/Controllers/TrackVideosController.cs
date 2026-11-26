@@ -6,6 +6,7 @@ using WaveMP.Core.Streaming.Formats;
 using WaveMP.Core.Streaming.Offsets;
 using WaveMP.Core.Streaming.Signatures;
 using WaveMP.Core.Streaming.Sources;
+using WaveMP.Core.Transcoding.Remuxes;
 using WaveMP.Core.Transcoding.Services;
 using WaveMP.Service.Dtos;
 using WaveMP.Service.Extensions;
@@ -16,8 +17,9 @@ using WaveMP.Service.Tokens;
 namespace WaveMP.Service.Controllers;
 
 /// <summary>
-/// Playback of the video of tracks: the decision between direct play and transcoding, the stream of the file and the
-/// offset of the video against the audio. The transcoded HLS stream is delivered by the HLS endpoints of the track.
+/// Playback of the video of tracks: the decision between direct play, remux and transcoding, the stream of the file and
+/// of its remux, and the offset of the video against the audio. The transcoded HLS stream is delivered by the HLS
+/// endpoints of the track.
 /// </summary>
 [ApiController]
 [Authorize]
@@ -27,6 +29,7 @@ public sealed class TrackVideosController(
     IStreamService streams,
     ITranscodingService transcoding,
     IVideoOffsetService offsets,
+    IVideoRemuxService remuxes,
     MediaUrlFactory urls) : ControllerBase
 {
     /// <summary>
@@ -42,12 +45,14 @@ public sealed class TrackVideosController(
 
     /// <summary>
     /// Decides how the client plays the video of a track from what it supports: directly, if it plays the container,
-    /// the video codec (H.264 only as 8 bit 4:2:0) and the audio codec of the file, otherwise transcoded to H.264 and
-    /// AAC as an HLS stream. Videos read by an older version of the scan are transcoded until the next scan. The answer
-    /// contains a signed, short-lived stream URL that works without the session token, for example in a video element:
-    /// the file (protocol File) or the HLS master playlist (protocol Hls; null if transcoding is unavailable). For a
-    /// casting device (target Cast), the client sends what the device plays; the URL then stays valid longer, and the
-    /// answer adds a signed URL of the cover.
+    /// the video codec (H.264 only as 8 bit 4:2:0) and the audio codec of the file; remuxed into MP4 (method Remux), if
+    /// it plays the video codec (H.264, HEVC or AV1) and MP4 but not the container or the audio codec of the file (the
+    /// picture is copied, the sound copied or converted to AAC); otherwise transcoded to H.264 and AAC as an HLS
+    /// stream. A file ffmpeg could not remux is transcoded. Videos read by an older version of the scan are transcoded
+    /// until the next scan. The answer contains a signed, short-lived stream URL that works without the session token,
+    /// for example in a video element: the file or its remux (protocol File) or the HLS master playlist (protocol Hls;
+    /// null if transcoding is unavailable). For a casting device (target Cast), the client sends what the device plays;
+    /// the URL then stays valid longer, and the answer adds a signed URL of the cover.
     /// </summary>
     /// <param name="id">Id of the track.</param>
     /// <param name="videoContainers">The containers the client plays (at most 20, repeated query parameter).</param>
@@ -93,14 +98,91 @@ public sealed class TrackVideosController(
 
         TimeSpan? duration = result.Source.Duration;
         MediaUrlTarget urlTarget = target.ToEntity();
-        MediaUrl? stream = result.Decision.Method == PlaybackMethod.DirectPlay
-            ? urls.CreateVideoStreamUrl(HttpContext, id, duration, urlTarget)
-            : transcoding.IsAvailable && duration > TimeSpan.Zero
+        VideoPlaybackDecision decision = result.Decision;
+        if (decision is { Method: PlaybackMethod.Remux, Audio: { } remuxAudio, Reason: { } reason }
+            && !remuxes.CanRemux(result.Source, remuxAudio))
+        {
+            decision = VideoPlaybackDecision.Transcode(reason);
+        }
+
+        MediaUrl? stream = decision switch
+        {
+            { Method: PlaybackMethod.DirectPlay } => urls.CreateVideoStreamUrl(HttpContext, id, duration, urlTarget),
+            { Method: PlaybackMethod.Remux, Audio: { } audio } =>
+                urls.CreateVideoRemuxUrl(HttpContext, id, audio.ToDto(), duration, urlTarget),
+            _ => transcoding.IsAvailable && duration > TimeSpan.Zero
                 ? urls.CreateHlsMasterUrl(HttpContext, id, HlsMediaDto.Video, duration, urlTarget)
-                : null;
+                : null,
+        };
         MediaUrl? cover = urlTarget == MediaUrlTarget.Cast ? urls.CreateCoverUrl(HttpContext, id, duration) : null;
         Response.Headers.CacheControl = "no-store";
-        return Ok(result.Source.ToDto(result.Decision, stream, cover));
+        return Ok(result.Source.ToDto(decision, stream, cover));
+    }
+
+    /// <summary>
+    /// Streams the video of a track remuxed into MP4 (method Remux of GetTrackVideoPlayback): the picture copied as it
+    /// is, the sound copied or converted to AAC, with the index at the start. The first request remuxes the file into
+    /// the cache and waits for it (a few seconds, reading the file once); later requests read it from the cache, with
+    /// HTTP range requests, a strong ETag and Cache-Control: private, no-cache. Besides the session token, it accepts
+    /// the signed URL of GetTrackVideoPlayback (query uid, sid, exp and sig).
+    /// </summary>
+    /// <param name="id">Id of the track.</param>
+    /// <param name="cancellationToken">Aborts the request; a running remux goes on for the next request.</param>
+    /// <param name="audio">What happens with the sound: none (the video has none), copied or converted to AAC.</param>
+    /// <response code="200">The whole file.</response>
+    /// <response code="206">The requested range of the file.</response>
+    /// <response code="400">Invalid audio (code <c>request.invalid</c>).</response>
+    /// <response code="404">The track does not exist (code <c>track.not_found</c>), has no video (code
+    /// <c>track.no_video</c>) or its video is gone since the last scan (code <c>stream.file_missing</c>).</response>
+    /// <response code="416">The requested range is outside the file; without body and with Content-Range: bytes
+    /// */length.</response>
+    /// <response code="500">ffmpeg could not remux the file (code <c>transcode.failed</c>); the next decision
+    /// transcodes it.</response>
+    /// <response code="503">ffmpeg or the cache is unavailable (code <c>transcode.unavailable</c>).</response>
+    [HttpGet("remux", Name = MediaUrlFactory.StreamTrackVideoRemuxRoute)]
+    [Authorize(Policy = AuthorizationPolicies.Media)]
+    [SignedMedia(MediaResource.TrackVideo)]
+    [ProducesResponseType<Stream>(StatusCodes.Status200OK, VideoContentTypes.Mp4)]
+    [ProducesResponseType<Stream>(StatusCodes.Status206PartialContent, VideoContentTypes.Mp4)]
+    [ProducesResponseType<ValidationProblemDto>(StatusCodes.Status400BadRequest, "application/problem+json")]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound, "application/problem+json")]
+    [ProducesResponseType(StatusCodes.Status416RangeNotSatisfiable)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status500InternalServerError, "application/problem+json")]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status503ServiceUnavailable, "application/problem+json")]
+    public async Task<IActionResult> StreamTrackVideoRemuxAsync(
+        Guid id,
+        CancellationToken cancellationToken,
+        [FromQuery(Name = MediaUrlFactory.RemuxAudioParameter)] RemuxAudioDto audio = RemuxAudioDto.Copy)
+    {
+        this.ValidateEnum<RemuxAudioDto>(audio, nameof(audio));
+        if (!ModelState.IsValid)
+        {
+            return ValidationProblem();
+        }
+
+        RemuxResult result = await remuxes.GetAsync(id, audio.ToEntity(), cancellationToken);
+        if (!result.IsReady)
+        {
+            return result.Status switch
+            {
+                RemuxStatus.TrackNotFound => NotFound(StreamSourceStatus.TrackNotFound),
+                RemuxStatus.NoVideo => NotFound(StreamSourceStatus.NoVideo),
+                RemuxStatus.FileMissing => NotFound(StreamSourceStatus.FileMissing),
+                RemuxStatus.Unavailable => this.Problem(
+                    ProblemCodeDto.TranscodeUnavailable,
+                    StatusCodes.Status503ServiceUnavailable),
+                _ => this.Problem(ProblemCodeDto.TranscodeFailed, StatusCodes.Status500InternalServerError),
+            };
+        }
+
+        Response.Headers.CacheControl = StreamCacheControl;
+        Response.Headers.XContentTypeOptions = "nosniff";
+        return File(
+            result.Stream,
+            VideoContentTypes.Mp4,
+            result.LastModified,
+            new EntityTagHeaderValue($"\"{result.ETag}\""),
+            enableRangeProcessing: true);
     }
 
     /// <summary>

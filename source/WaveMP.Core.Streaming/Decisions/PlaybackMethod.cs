@@ -14,4 +14,10 @@ public enum PlaybackMethod
     /// The client cannot play the file; the server converts it to HLS.
     /// </summary>
     Transcode,
+
+    /// <summary>
+    /// Videos only: the client plays the codec of the picture but not the container (or not the codec of the sound);
+    /// the server copies the picture into an MP4 file without converting it, which the client plays like a file.
+    /// </summary>
+    Remux,
 }

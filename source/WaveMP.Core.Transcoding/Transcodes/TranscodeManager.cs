@@ -100,11 +100,12 @@ internal sealed class TranscodeManager(
 
     public IReadOnlyList<TranscodeJobInfo> ListJobs()
     {
+        DateTimeOffset now = timeProvider.GetUtcNow();
         lock (_lock)
         {
             return [.. _jobs.Where(job => job.IsActive)
                 .OrderByDescending(job => job.StartedAt)
-                .Select(job => job.ToInfo())];
+                .Select(job => job.ToInfo(now))];
         }
     }
 
@@ -292,6 +293,7 @@ internal sealed class TranscodeManager(
                 : exitCode == 0
                     ? TranscodeJobState.Completed
                     : TranscodeJobState.Failed;
+            LogEnd(job, state);
             if (state == TranscodeJobState.Failed)
             {
                 logger.LogWarning(
@@ -359,6 +361,43 @@ internal sealed class TranscodeManager(
 
             job.Advance(index + 1);
         }
+
+        ReportSlow(job);
+    }
+
+    /// <summary>
+    /// Warns once per transcode when it produces its segments slower than real time: a player that plays from its
+    /// start then has to wait for segments, and its video stutters.
+    /// </summary>
+    private void ReportSlow(TranscodeJob job)
+    {
+        double? speed = job.SpeedAt(timeProvider.GetUtcNow());
+        if (!TranscodeSpeed.IsSlowerThanRealTime(speed, job.ProducedSegments) || !job.MarkSlowReported())
+        {
+            return;
+        }
+
+        logger.LogWarning(
+            "Transcode {JobId} of track {TrackId} ({Media}, {Accelerator}) runs slower than real time: {Speed}x",
+            job.Id,
+            job.Variant.Input.TrackId,
+            job.Variant.Media,
+            job.Accelerator,
+            speed);
+    }
+
+    private void LogEnd(TranscodeJob job, TranscodeJobState state)
+    {
+        logger.LogInformation(
+            "Transcode {JobId} of track {TrackId} ({Media}, {Accelerator}) ended {State} after {Segments} segments "
+            + "at {Speed}x real time",
+            job.Id,
+            job.Variant.Input.TrackId,
+            job.Variant.Media,
+            job.Accelerator,
+            state,
+            job.ProducedSegments,
+            job.SpeedAt(timeProvider.GetUtcNow()));
     }
 
     private static string? ReadPlaylist(string path)

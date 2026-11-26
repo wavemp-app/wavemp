@@ -134,6 +134,38 @@ describe('AdminTranscodingView', () => {
         wrapper.unmount()
     })
 
+    it('shows the speed of a transcode and warns while one is slower than real time', async () => {
+        api.jobs.mockResolvedValue({
+            items: [
+                { ...job, speed: 2.44, slowerThanRealTime: false },
+                { ...job, id: 'job-2', speed: 0.6, slowerThanRealTime: true },
+            ],
+            total: 2,
+            offset: 0,
+            limit: 50,
+        })
+        const wrapper = await mountView()
+
+        const items = wrapper.findAll('[data-part="transcode-item"]')
+        expect(items.map((item) => item.attributes('data-state'))).toEqual(['video', 'video slow'])
+        const speeds = wrapper.findAll('[data-field="speed"]')
+        expect(speeds.map((speed) => speed.attributes('data-state'))).toEqual(['fast', 'slow'])
+        expect(speeds.map((speed) => speed.text())).toEqual([
+            '2.4× real time',
+            '0.6× real time, too slow',
+        ])
+        expect(wrapper.find('[data-item="slow-transcodes"]').exists()).toBe(true)
+        wrapper.unmount()
+    })
+
+    it('shows no speed before the first part and no warning for fast transcodes', async () => {
+        const wrapper = await mountView()
+
+        expect(wrapper.find('[data-field="speed"]').exists()).toBe(false)
+        expect(wrapper.find('[data-item="slow-transcodes"]').exists()).toBe(false)
+        wrapper.unmount()
+    })
+
     it('stops a running transcode', async () => {
         const wrapper = await mountView()
         api.cancel.mockResolvedValue(undefined)

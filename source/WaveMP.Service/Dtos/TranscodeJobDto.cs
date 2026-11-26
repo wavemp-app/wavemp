@@ -59,4 +59,16 @@ public sealed class TranscodeJobDto
     /// Id of the profile whose player started it, if known.
     /// </summary>
     public Guid? UserId { get; init; }
+
+    /// <summary>
+    /// The speed factor of the transcode: seconds of the file produced per second since its start (as the speed of
+    /// ffmpeg); below 1 it is slower than real time. Null before its first segment.
+    /// </summary>
+    public double? Speed { get; init; }
+
+    /// <summary>
+    /// Whether the transcode produces its segments slower than real time, measured after its first two segments: a
+    /// player that plays from its start has to wait for segments, so its video stutters.
+    /// </summary>
+    public required bool SlowerThanRealTime { get; init; }
 }

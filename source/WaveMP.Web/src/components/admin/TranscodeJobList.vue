@@ -6,7 +6,10 @@ import BaseButton from '@/components/base/BaseButton.vue'
 import BaseProgress from '@/components/base/BaseProgress.vue'
 import { useFormat } from '@/composables/useFormat'
 
-/** The running transcodes with their song, progress and a button that stops them. */
+/**
+ * The running transcodes with their song, progress, speed and a button that stops them. A transcode
+ * slower than real time has the state slow, and so has its speed badge.
+ */
 withDefaults(
     defineProps<{
         jobs: readonly TranscodeJob[]
@@ -40,6 +43,18 @@ function segments(job: TranscodeJob): string {
     })
 }
 
+function speed(job: TranscodeJob): string {
+    const value = format.number(job.speed ?? 0, { maximumFractionDigits: 1 })
+    return job.slowerThanRealTime
+        ? t('adminTranscoding.slowSpeed', { speed: value })
+        : t('adminTranscoding.speed', { speed: value })
+}
+
+function itemState(job: TranscodeJob): string {
+    const media = job.media === 'Video' ? 'video' : 'audio'
+    return job.slowerThanRealTime ? `${media} slow` : media
+}
+
 function startedAt(job: TranscodeJob): string {
     return job.startedAt
         ? t('adminTranscoding.startedAt', {
@@ -58,7 +73,7 @@ function startedAt(job: TranscodeJob): string {
             v-for="job in jobs"
             :key="job.id ?? ''"
             data-part="transcode-item"
-            :data-state="job.media === 'Video' ? 'video' : 'audio'"
+            :data-state="itemState(job)"
         >
             <div data-part="transcode-info">
                 <span data-part="transcode-title">{{ title(job) }}</span>
@@ -68,6 +83,14 @@ function startedAt(job: TranscodeJob): string {
                     </span>
                     <span data-part="label">{{ t(acceleratorKey(job.accelerator)) }}</span>
                     <span data-part="label">{{ segments(job) }}</span>
+                    <span
+                        v-if="job.speed != null"
+                        data-part="badge"
+                        data-field="speed"
+                        :data-state="job.slowerThanRealTime ? 'slow' : 'fast'"
+                    >
+                        <span data-part="label">{{ speed(job) }}</span>
+                    </span>
                     <span v-if="job.startedAt" data-part="label">{{ startedAt(job) }}</span>
                 </span>
                 <BaseProgress

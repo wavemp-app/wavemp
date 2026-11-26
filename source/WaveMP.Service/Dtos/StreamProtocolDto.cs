@@ -10,7 +10,7 @@ namespace WaveMP.Service.Dtos;
 public enum StreamProtocolDto
 {
     /// <summary>
-    /// The file as it is, with HTTP range requests.
+    /// A file with HTTP range requests: the file as it is (direct play) or its remux into MP4.
     /// </summary>
     File,
 

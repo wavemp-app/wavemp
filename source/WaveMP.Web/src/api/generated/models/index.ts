@@ -5640,6 +5640,8 @@ export function deserializeIntoTranscodeJob(transcodeJob: Partial<TranscodeJob> 
         "lastAccessAt": n => { transcodeJob.lastAccessAt = n.getDateValue(); },
         "media": n => { transcodeJob.media = n.getEnumValue<HlsMedia>(HlsMediaObject); },
         "segmentCount": n => { transcodeJob.segmentCount = n.getNumberValue(); },
+        "slowerThanRealTime": n => { transcodeJob.slowerThanRealTime = n.getBooleanValue(); },
+        "speed": n => { transcodeJob.speed = n.getNumberValue(); },
         "startedAt": n => { transcodeJob.startedAt = n.getDateValue(); },
         "startSegment": n => { transcodeJob.startSegment = n.getNumberValue(); },
         "track": n => { transcodeJob.track = n.getObjectValue<Track>(createTrackFromDiscriminatorValue); },
@@ -8731,6 +8733,7 @@ export interface RecentlyPlayedTrackPage extends AdditionalDataHolder, Parsable 
      */
     total?: number | null;
 }
+export type RemuxAudio = (typeof RemuxAudioObject)[keyof typeof RemuxAudioObject];
 export type RepeatMode = (typeof RepeatModeObject)[keyof typeof RepeatModeObject];
 /**
  * The ReplayGain tags of the audio file of a track. Missing tags are null; clients then leave the volume as it is.
@@ -12006,6 +12009,8 @@ export function serializeTranscodeJob(writer: SerializationWriter, transcodeJob:
     writer.writeDateValue("lastAccessAt", transcodeJob.lastAccessAt);
     writer.writeEnumValue<HlsMedia>("media", transcodeJob.media);
     writer.writeNumberValue("segmentCount", transcodeJob.segmentCount);
+    writer.writeBooleanValue("slowerThanRealTime", transcodeJob.slowerThanRealTime);
+    writer.writeNumberValue("speed", transcodeJob.speed);
     writer.writeDateValue("startedAt", transcodeJob.startedAt);
     writer.writeNumberValue("startSegment", transcodeJob.startSegment);
     writer.writeObjectValue<Track>("track", transcodeJob.track, serializeTrack);
@@ -13750,7 +13755,7 @@ export interface TrackVideoPlayback extends AdditionalDataHolder, Parsable {
      */
     height?: number | null;
     /**
-     * Direct play or transcoding.
+     * Direct play, remux or transcoding.
      */
     method?: PlaybackMethod | null;
     /**
@@ -13758,11 +13763,11 @@ export interface TrackVideoPlayback extends AdditionalDataHolder, Parsable {
      */
     offsetMilliseconds?: number | null;
     /**
-     * The file as it is (direct play) or an HLS stream (transcoding).
+     * A file (direct play and remux) or an HLS stream (transcoding).
      */
     protocol?: StreamProtocol | null;
     /**
-     * Signed, short-lived URL of the stream (path with query, relative to the server), for players that cannot send the session token: the file for direct play, the HLS master playlist for transcoding. Null if the video has to be transcoded and transcoding is unavailable. It stays valid until expiresAt and while the session is active.
+     * Signed, short-lived URL of the stream (path with query, relative to the server), for players that cannot send the session token: the file for direct play, the remuxed MP4 file for a remux, the HLS master playlist for transcoding. Null if the video has to be transcoded and transcoding is unavailable. It stays valid until expiresAt and while the session is active.
      */
     streamUrl?: string | null;
     /**
@@ -13810,6 +13815,14 @@ export interface TranscodeJob extends AdditionalDataHolder, Parsable {
      * Number of segments of the file.
      */
     segmentCount?: number | null;
+    /**
+     * Whether the transcode produces its segments slower than real time, measured after its first two segments: a player that plays from its start has to wait for segments, so its video stutters.
+     */
+    slowerThanRealTime?: boolean | null;
+    /**
+     * The speed factor of the transcode: seconds of the file produced per second since its start (as the speed of ffmpeg); below 1 it is slower than real time. Null before its first segment.
+     */
+    speed?: number | null;
     /**
      * When the transcode started.
      */
@@ -15303,6 +15316,7 @@ export const OwnAlbumTrackStateObject = {
 export const PlaybackMethodObject = {
     DirectPlay: "DirectPlay",
     Transcode: "Transcode",
+    Remux: "Remux",
 } as const;
 export const PlaybackSourceKindObject = {
     Album: "Album",
@@ -15469,6 +15483,14 @@ export const RecapPeriodObject = {
 export const RecapShareScopeObject = {
     Received: "Received",
     Own: "Own",
+} as const;
+/**
+ * What the remux of a video does with its sound; the picture is always copied.
+ */
+export const RemuxAudioObject = {
+    None: "None",
+    Copy: "Copy",
+    Aac: "Aac",
 } as const;
 /**
  * Repeat mode of a player.

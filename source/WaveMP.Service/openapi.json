@@ -15862,7 +15862,7 @@
         "tags": [
           "TrackVideos"
         ],
-        "summary": "Decides how the client plays the video of a track from what it supports: directly, if it plays the container, the video codec (H.264 only as 8 bit 4:2:0) and the audio codec of the file, otherwise transcoded to H.264 and AAC as an HLS stream. Videos read by an older version of the scan are transcoded until the next scan. The answer contains a signed, short-lived stream URL that works without the session token, for example in a video element: the file (protocol File) or the HLS master playlist (protocol Hls; null if transcoding is unavailable). For a casting device (target Cast), the client sends what the device plays; the URL then stays valid longer, and the answer adds a signed URL of the cover.",
+        "summary": "Decides how the client plays the video of a track from what it supports: directly, if it plays the container, the video codec (H.264 only as 8 bit 4:2:0) and the audio codec of the file; remuxed into MP4 (method Remux), if it plays the video codec (H.264, HEVC or AV1) and MP4 but not the container or the audio codec of the file (the picture is copied, the sound copied or converted to AAC); otherwise transcoded to H.264 and AAC as an HLS stream. A file ffmpeg could not remux is transcoded. Videos read by an older version of the scan are transcoded until the next scan. The answer contains a signed, short-lived stream URL that works without the session token, for example in a video element: the file or its remux (protocol File) or the HLS master playlist (protocol Hls; null if transcoding is unavailable). For a casting device (target Cast), the client sends what the device plays; the URL then stays valid longer, and the answer adds a signed URL of the cover.",
         "operationId": "GetTrackVideoPlayback",
         "parameters": [
           {
@@ -15963,6 +15963,173 @@
         "security": [
           {
             "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/api/v1/tracks/{id}/video/remux": {
+      "get": {
+        "tags": [
+          "TrackVideos"
+        ],
+        "summary": "Streams the video of a track remuxed into MP4 (method Remux of GetTrackVideoPlayback): the picture copied as it is, the sound copied or converted to AAC, with the index at the start. The first request remuxes the file into the cache and waits for it (a few seconds, reading the file once); later requests read it from the cache, with HTTP range requests, a strong ETag and Cache-Control: private, no-cache. Besides the session token, it accepts the signed URL of GetTrackVideoPlayback (query uid, sid, exp and sig).",
+        "operationId": "StreamTrackVideoRemux",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Id of the track.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "audio",
+            "in": "query",
+            "description": "What happens with the sound: none (the video has none), copied or converted to AAC.",
+            "schema": {
+              "default": "Copy",
+              "$ref": "#/components/schemas/RemuxAudio"
+            }
+          },
+          {
+            "name": "uid",
+            "in": "query",
+            "description": "Signed media URL: id of the user the URL was issued to.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "sid",
+            "in": "query",
+            "description": "Signed media URL: id of the session the URL was issued in.",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "exp",
+            "in": "query",
+            "description": "Signed media URL: expiry in Unix seconds.",
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "sig",
+            "in": "query",
+            "description": "Signed media URL: Base64Url-encoded signature.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "The whole file.",
+            "content": {
+              "video/mp4": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "206": {
+            "description": "The requested range of the file.",
+            "content": {
+              "video/mp4": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid audio (code `request.invalid`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The track does not exist (code `track.not_found`), has no video (code `track.no_video`) or its video is gone since the last scan (code `stream.file_missing`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "416": {
+            "description": "The requested range is outside the file; without body and with Content-Range: bytes */length.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "ffmpeg could not remux the file (code `transcode.failed`); the next decision transcodes it.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "ffmpeg or the cache is unavailable (code `transcode.unavailable`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          },
+          {
+            "MediaSignature": [ ]
           }
         ]
       }
@@ -22424,7 +22591,8 @@
       "PlaybackMethod": {
         "enum": [
           "DirectPlay",
-          "Transcode"
+          "Transcode",
+          "Remux"
         ],
         "type": "string",
         "description": "How a client plays a track."
@@ -23278,6 +23446,15 @@
           }
         },
         "description": "One page of a collection."
+      },
+      "RemuxAudio": {
+        "enum": [
+          "None",
+          "Copy",
+          "Aac"
+        ],
+        "type": "string",
+        "description": "What the remux of a video does with its sound; the picture is always copied."
       },
       "RepeatMode": {
         "enum": [
@@ -25642,11 +25819,11 @@
             "format": "uuid"
           },
           "method": {
-            "description": "Direct play or transcoding.",
+            "description": "Direct play, remux or transcoding.",
             "$ref": "#/components/schemas/PlaybackMethod"
           },
           "protocol": {
-            "description": "The file as it is (direct play) or an HLS stream (transcoding).",
+            "description": "A file (direct play and remux) or an HLS stream (transcoding).",
             "$ref": "#/components/schemas/StreamProtocol"
           },
           "transcodeReason": {
@@ -25655,7 +25832,7 @@
                 "type": "null"
               },
               {
-                "description": "Why the video has to be transcoded; null for direct play.",
+                "description": "Why the video has to be remuxed or transcoded; null for direct play.",
                 "$ref": "#/components/schemas/TranscodeReason"
               }
             ]
@@ -25725,7 +25902,7 @@
               "null",
               "string"
             ],
-            "description": "Signed, short-lived URL of the stream (path with query, relative to the server), for players that cannot send the session token: the file for direct play, the HLS master playlist for transcoding. Null if the video has to be transcoded and transcoding is unavailable. It stays valid until expiresAt and while the session is active."
+            "description": "Signed, short-lived URL of the stream (path with query, relative to the server), for players that cannot send the session token: the file for direct play, the remuxed MP4 file for a remux, the HLS master playlist for transcoding. Null if the video has to be transcoded and transcoding is unavailable. It stays valid until expiresAt and while the session is active."
           },
           "expiresAt": {
             "type": [
@@ -25768,7 +25945,8 @@
           "completedSegments",
           "segmentCount",
           "startedAt",
-          "lastAccessAt"
+          "lastAccessAt",
+          "slowerThanRealTime"
         ],
         "type": "object",
         "properties": {
@@ -25833,6 +26011,18 @@
             ],
             "description": "Id of the profile whose player started it, if known.",
             "format": "uuid"
+          },
+          "speed": {
+            "type": [
+              "null",
+              "number"
+            ],
+            "description": "The speed factor of the transcode: seconds of the file produced per second since its start (as the speed of ffmpeg); below 1 it is slower than real time. Null before its first segment.",
+            "format": "double"
+          },
+          "slowerThanRealTime": {
+            "type": "boolean",
+            "description": "Whether the transcode produces its segments slower than real time, measured after its first two segments: a player that plays from its start has to wait for segments, so its video stutters."
           }
         },
         "description": "A running transcode."

@@ -21,6 +21,7 @@ internal sealed class TranscodeJob(
     private int _nextSegment = startSegment;
     private int _state = (int)TranscodeJobState.Running;
     private int _stopRequested;
+    private int _slowReported;
     private TaskCompletionSource _changed = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
     public Guid Id { get; } = id;
@@ -65,6 +66,28 @@ internal sealed class TranscodeJob(
     public bool IsActive => !HasEnded && !StopRequested;
 
     public bool ProducedAny => NextSegment > StartSegment;
+
+    /// <summary>
+    /// Number of segments the job produced so far.
+    /// </summary>
+    public int ProducedSegments => Math.Max(0, NextSegment - StartSegment);
+
+    /// <summary>
+    /// The speed factor of the job at the time: seconds of the file produced per second since its start; <c>null</c>
+    /// before its first segment.
+    /// </summary>
+    public double? SpeedAt(DateTimeOffset now)
+    {
+        return TranscodeSpeed.Of(TranscodeSpeed.ProducedOf(Variant, StartSegment, NextSegment), now - StartedAt);
+    }
+
+    /// <summary>
+    /// Marks that the job was reported as slower than real time; <c>true</c> only the first time.
+    /// </summary>
+    public bool MarkSlowReported()
+    {
+        return Interlocked.Exchange(ref _slowReported, 1) == 0;
+    }
 
     /// <summary>
     /// Whether a request for the segment should wait for this job: the segment is next or close ahead.
@@ -135,7 +158,7 @@ internal sealed class TranscodeJob(
         }
     }
 
-    public TranscodeJobInfo ToInfo()
+    public TranscodeJobInfo ToInfo(DateTimeOffset now)
     {
         return new TranscodeJobInfo(
             Id,
@@ -147,7 +170,8 @@ internal sealed class TranscodeJob(
             Variant.SegmentCount,
             StartedAt,
             LastAccess,
-            UserId);
+            UserId,
+            SpeedAt(now));
     }
 
     private void Pulse()

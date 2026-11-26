@@ -19,4 +19,11 @@ public enum PlaybackMethodDto
     /// (protocol <c>Hls</c>).
     /// </summary>
     Transcode,
+
+    /// <summary>
+    /// Videos only: the client plays the codec of the picture but not the container (or not the codec of the sound);
+    /// the server copies the picture into an MP4 file without converting it, delivered from <c>streamUrl</c> as a file
+    /// (protocol <c>File</c>, <c>video/mp4</c>). The first request waits until the copy is ready.
+    /// </summary>
+    Remux,
 }

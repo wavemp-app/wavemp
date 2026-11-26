@@ -8,6 +8,8 @@ import { OffsetRequestBuilderRequestsMetadata, type OffsetRequestBuilder } from 
 // @ts-ignore
 import { PlaybackRequestBuilderRequestsMetadata, type PlaybackRequestBuilder } from './playback/index.js';
 // @ts-ignore
+import { RemuxRequestBuilderRequestsMetadata, type RemuxRequestBuilder } from './remux/index.js';
+// @ts-ignore
 import { type BaseRequestBuilder, type Guid, type KeysToExcludeForNavigationMetadata, type NavigationMetadata, type Parsable, type ParsableFactory, type RequestConfiguration, type RequestInformation, type RequestsMetadata } from '@microsoft/kiota-abstractions';
 
 /**
@@ -22,6 +24,10 @@ export interface VideoRequestBuilder extends BaseRequestBuilder<VideoRequestBuil
      * The playback property
      */
     get playback(): PlaybackRequestBuilder;
+    /**
+     * The remux property
+     */
+    get remux(): RemuxRequestBuilder;
     /**
      * Streams the video of a track as it is, with HTTP range requests (Accept-Ranges: bytes, 206 Partial Content), a strong ETag of the file version, Last-Modified and Cache-Control: private, no-cache. Besides the session token, it accepts the signed URL of GetTrackVideoPlayback (query uid, sid, exp and sig), because video elements, casting devices and players cannot send a token header.
      * @param requestConfiguration Configuration for the request such as headers, query parameters, and middleware options.
@@ -72,6 +78,9 @@ export const VideoRequestBuilderNavigationMetadata: Record<Exclude<keyof VideoRe
     },
     playback: {
         requestsMetadata: PlaybackRequestBuilderRequestsMetadata,
+    },
+    remux: {
+        requestsMetadata: RemuxRequestBuilderRequestsMetadata,
     },
 };
 /**

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref, useId } from 'vue'
+import { computed, onMounted, ref, useId } from 'vue'
 import { useI18n } from 'vue-i18n'
 import AdminNav from '@/components/admin/AdminNav.vue'
 import TranscodeJobList from '@/components/admin/TranscodeJobList.vue'
@@ -22,6 +22,9 @@ const message = ref<string | null>(null)
 const statusTitleId = useId()
 const jobsTitleId = useId()
 const settingsTitleId = useId()
+
+/** Whether a running transcode is slower than real time: its video stutters. */
+const slowJobs = computed(() => transcoding.jobs.some((job) => job.slowerThanRealTime === true))
 
 const polling = usePolling(() => transcoding.load(), 3000)
 
@@ -70,6 +73,11 @@ onMounted(async () => {
         <section data-part="section" data-item="jobs" :aria-labelledby="jobsTitleId">
             <h2 :id="jobsTitleId" data-part="section-title">{{ t('adminTranscoding.jobs') }}</h2>
             <BaseAlert v-if="message" tone="error" :message="message" />
+            <BaseAlert
+                v-if="slowJobs"
+                data-item="slow-transcodes"
+                :message="t('adminTranscoding.slowJobs')"
+            />
             <TranscodeJobList
                 v-if="transcoding.status"
                 :jobs="transcoding.jobs"

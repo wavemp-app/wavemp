@@ -314,6 +314,44 @@ public class TranscodeManagerTests
     }
 
     [Test]
+    public async Task ListJobs_RunningTranscode_MeasuresItsSpeed()
+    {
+        TranscodeVariant variant = TestVariants.Video();
+        Task<SegmentResult> request = _manager.GetSegmentAsync(variant, 0, null);
+        FakeFfmpegProcess process = _processes.Last;
+        _manager.ListJobs().Single().Speed.Should().BeNull("nothing is produced yet");
+
+        // Two segments of 2 seconds in 8 seconds: half of real time.
+        _time.Advance(TimeSpan.FromSeconds(8));
+        process.Produce(0);
+        process.Produce(1);
+        (await request).Content?.Dispose();
+        await WaitUntilAsync(() => _manager.ListJobs().Single().CompletedSegments == 2);
+
+        TranscodeJobInfo job = _manager.ListJobs().Single();
+        job.Speed.Should().Be(0.5);
+        job.SlowerThanRealTime.Should().BeTrue();
+    }
+
+    [Test]
+    public async Task ListJobs_FastTranscode_IsNotSlowerThanRealTime()
+    {
+        TranscodeVariant variant = TestVariants.Video();
+        Task<SegmentResult> request = _manager.GetSegmentAsync(variant, 0, null);
+        FakeFfmpegProcess process = _processes.Last;
+
+        _time.Advance(TimeSpan.FromSeconds(1));
+        process.Produce(0);
+        process.Produce(1);
+        (await request).Content?.Dispose();
+        await WaitUntilAsync(() => _manager.ListJobs().Single().CompletedSegments == 2);
+
+        TranscodeJobInfo job = _manager.ListJobs().Single();
+        job.Speed.Should().Be(4);
+        job.SlowerThanRealTime.Should().BeFalse();
+    }
+
+    [Test]
     public async Task Cancel_RunningTranscode_StopsIt()
     {
         _options.SegmentWaitTimeout = TimeSpan.FromMilliseconds(50);

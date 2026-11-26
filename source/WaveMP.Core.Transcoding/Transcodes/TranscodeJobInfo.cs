@@ -18,6 +18,8 @@ namespace WaveMP.Core.Transcoding.Transcodes;
 /// <param name="StartedAt">When the transcode started.</param>
 /// <param name="LastAccessAt">When a client last asked for one of its segments.</param>
 /// <param name="UserId">The user whose request started it.</param>
+/// <param name="Speed">The speed factor: seconds of the file produced per second since the start; below 1 the transcode
+/// is slower than real time. <c>null</c> before the first segment.</param>
 public sealed record TranscodeJobInfo(
     Guid Id,
     Guid TrackId,
@@ -28,4 +30,12 @@ public sealed record TranscodeJobInfo(
     int SegmentCount,
     DateTimeOffset StartedAt,
     DateTimeOffset LastAccessAt,
-    Guid? UserId);
+    Guid? UserId,
+    double? Speed = null)
+{
+    /// <summary>
+    /// Whether the transcode produces its segments slower than real time (measured after its first segments).
+    /// </summary>
+    public bool SlowerThanRealTime =>
+        TranscodeSpeed.IsSlowerThanRealTime(Speed, CompletedSegments - StartSegment);
+}

@@ -10,9 +10,9 @@ using WaveMP.Testing.Media;
 namespace WaveMP.Service.Tests.IntegrationTests;
 
 /// <summary>
-/// Plays synthetic videos through the API: the decision between direct play and HLS, the signed video stream with
-/// range requests, the HLS playlists and segments transcoded by the real ffmpeg (segments of 2 seconds), and the
-/// state of the transcoding for admins.
+/// Plays synthetic videos through the API: the decision between direct play, remux and HLS, the signed video stream
+/// and the remuxed MP4 with range requests, the HLS playlists and segments transcoded by the real ffmpeg (segments of 2
+/// seconds), and the state of the transcoding for admins.
 /// </summary>
 [TestFixture]
 [Category("Integration")]
@@ -47,6 +47,14 @@ public class VideoStreamingApiTests
             240,
             new TestTags { Title = "Webm Clip" },
             TestVideoCodec.Vp9,
+            durationSeconds: 3);
+        await TestMediaGenerator.CreateVideoAsync(
+            _media.Combine("Matroska Clip.mkv"),
+            VideoFormat.Mkv,
+            320,
+            240,
+            new TestTags { Title = "Matroska Clip" },
+            TestVideoCodec.H264,
             durationSeconds: 3);
         await TestMediaGenerator.CreateAudioAsync(
             _media.Combine("Song.flac"),
@@ -138,6 +146,49 @@ public class VideoStreamingApiTests
         HttpResponseMessage response = await _anonymous.GetAsync($"/api/v1/tracks/{Track("Song").Id}/video{query}");
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+    }
+
+    [Test]
+    public async Task GetTrackVideoPlayback_H264InMatroska_ReturnsTheRemuxedFile()
+    {
+        TrackVideoPlaybackDto playback = await VideoPlaybackAsync("Matroska Clip", BrowserCapabilities);
+
+        playback.Method.Should().Be(PlaybackMethodDto.Remux);
+        playback.Protocol.Should().Be(StreamProtocolDto.File);
+        playback.TranscodeReason.Should().Be(TranscodeReasonDto.ContainerUnsupported);
+        playback.Container.Should().Be(VideoContainerDto.Matroska);
+        playback.ContentType.Should().Be("video/mp4");
+        playback.StreamUrl.Should().StartWith(
+            $"/api/v1/tracks/{Track("Matroska Clip").Id}/video/remux?audio=Copy&uid=");
+    }
+
+    [Test]
+    public async Task StreamTrackVideoRemux_SignedUrl_DeliversAnMp4WithRangesWithoutToken()
+    {
+        TrackVideoPlaybackDto playback = await VideoPlaybackAsync("Matroska Clip", BrowserCapabilities);
+
+        HttpResponseMessage whole = await _anonymous.GetAsync(playback.StreamUrl);
+        whole.StatusCode.Should().Be(HttpStatusCode.OK, await whole.Content.ReadAsStringAsync());
+        whole.Content.Headers.ContentType!.MediaType.Should().Be("video/mp4");
+        whole.Headers.ETag.Should().NotBeNull();
+        byte[] file = await whole.Content.ReadAsByteArrayAsync();
+        System.Text.Encoding.ASCII.GetString(file, 4, 4).Should().Be("ftyp");
+
+        using HttpRequestMessage request = new(HttpMethod.Get, playback.StreamUrl);
+        request.Headers.Range = new RangeHeaderValue(100, 199);
+        HttpResponseMessage part = await _anonymous.SendAsync(request);
+
+        part.StatusCode.Should().Be(HttpStatusCode.PartialContent);
+        (await part.Content.ReadAsByteArrayAsync()).Should().Equal(file[100..200]);
+    }
+
+    [Test]
+    public async Task StreamTrackVideoRemux_UndefinedAudio_ReturnsValidationProblem()
+    {
+        HttpResponseMessage response = await _user.GetAsync(
+            $"/api/v1/tracks/{Track("Matroska Clip").Id}/video/remux?audio=Loud");
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 
     [Test]

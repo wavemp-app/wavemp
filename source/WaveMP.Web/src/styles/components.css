@@ -1612,6 +1612,11 @@
         --_badge-color: var(--wmp-color-danger);
     }
 
+    /* A transcode slower than real time makes its video wait for parts. */
+    [data-part='transcode-meta'] > [data-part='badge'][data-state~='slow'] {
+        --_badge-color: var(--wmp-color-warning);
+    }
+
     /* A hint of a service takes a row of its own between its info and its buttons. */
     [data-part='scrobble-item'] > [data-part='form-note'] {
         flex: 1 1 100%;

@@ -70,4 +70,14 @@ public sealed class TranscodingOptions
     /// How often idle transcodes are looked for.
     /// </summary>
     public TimeSpan JanitorInterval { get; set; } = TimeSpan.FromSeconds(10);
+
+    /// <summary>
+    /// How long a remux of a video (the picture copied into MP4) may take; it reads and writes the file once.
+    /// </summary>
+    public TimeSpan RemuxTimeout { get; set; } = TimeSpan.FromMinutes(5);
+
+    /// <summary>
+    /// How many remuxes run at a time; further ones wait.
+    /// </summary>
+    public int MaxParallelRemuxes { get; set; } = 2;
 }

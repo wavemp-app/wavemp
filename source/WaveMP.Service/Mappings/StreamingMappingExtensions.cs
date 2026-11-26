@@ -92,7 +92,29 @@ public static class StreamingMappingExtensions
 
     public static StreamProtocolDto ProtocolOf(PlaybackMethod method)
     {
-        return method == PlaybackMethod.DirectPlay ? StreamProtocolDto.File : StreamProtocolDto.Hls;
+        return method == PlaybackMethod.Transcode ? StreamProtocolDto.Hls : StreamProtocolDto.File;
+    }
+
+    public static RemuxAudioDto ToDto(this RemuxAudio audio)
+    {
+        return audio switch
+        {
+            RemuxAudio.None => RemuxAudioDto.None,
+            RemuxAudio.Copy => RemuxAudioDto.Copy,
+            RemuxAudio.Aac => RemuxAudioDto.Aac,
+            _ => throw new ArgumentOutOfRangeException(nameof(audio), audio, "Unknown sound of a remux."),
+        };
+    }
+
+    public static RemuxAudio ToEntity(this RemuxAudioDto audio)
+    {
+        return audio switch
+        {
+            RemuxAudioDto.None => RemuxAudio.None,
+            RemuxAudioDto.Copy => RemuxAudio.Copy,
+            RemuxAudioDto.Aac => RemuxAudio.Aac,
+            _ => throw new ArgumentOutOfRangeException(nameof(audio), audio, "Unknown sound of a remux."),
+        };
     }
 
     public static VideoCapabilities ToCapabilities(
@@ -203,6 +225,7 @@ public static class StreamingMappingExtensions
         {
             PlaybackMethod.DirectPlay => PlaybackMethodDto.DirectPlay,
             PlaybackMethod.Transcode => PlaybackMethodDto.Transcode,
+            PlaybackMethod.Remux => PlaybackMethodDto.Remux,
             _ => throw new ArgumentOutOfRangeException(nameof(method), method, "Unknown playback method."),
         };
     }
@@ -268,6 +291,11 @@ public static class StreamingMappingExtensions
             return null;
         }
 
-        return method == PlaybackMethod.DirectPlay ? fileContentType : VideoContentTypes.HlsPlaylist;
+        return method switch
+        {
+            PlaybackMethod.DirectPlay => fileContentType,
+            PlaybackMethod.Remux => VideoContentTypes.Mp4,
+            _ => VideoContentTypes.HlsPlaylist,
+        };
     }
 }

@@ -1221,6 +1221,22 @@ const sampleTranscodeJobs = computed<TranscodeJob[]>(() => {
             segmentCount: 40,
             startedAt: sampleTime,
             lastAccessAt: sampleTime,
+            speed: 0.7,
+            slowerThanRealTime: true,
+        },
+        {
+            id: 'sample-transcode-fast',
+            trackId: track?.id,
+            track,
+            media: 'Audio',
+            accelerator: 'None',
+            startSegment: 0,
+            completedSegments: 30,
+            segmentCount: 40,
+            startedAt: sampleTime,
+            lastAccessAt: sampleTime,
+            speed: 6.2,
+            slowerThanRealTime: false,
         },
     ]
 })

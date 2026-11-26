@@ -5,6 +5,7 @@ using WaveMP.Core.Settings.Handlers;
 using WaveMP.Core.Transcoding.Accelerators;
 using WaveMP.Core.Transcoding.Options;
 using WaveMP.Core.Transcoding.Processes;
+using WaveMP.Core.Transcoding.Remuxes;
 using WaveMP.Core.Transcoding.Services;
 using WaveMP.Core.Transcoding.Transcodes;
 
@@ -14,9 +15,9 @@ public static class ServiceCollectionExtensions
 {
     /// <summary>
     /// Registers the transcoding to HLS with ffmpeg: the ffmpeg processes with their limit, the segments in the cache,
-    /// the detection of Intel Quick Sync in the background after the start and the clean-up of idle transcodes, with
-    /// technical settings from the section <c>Transcoding</c>. Needs <c>AddWaveMpData</c>, <c>AddWaveMpSettings</c>,
-    /// <c>AddWaveMpCaching</c> and <c>AddWaveMpStreaming</c>.
+    /// the detection of Intel Quick Sync in the background after the start, the clean-up of idle transcodes and the
+    /// remux of videos into MP4, with technical settings from the section <c>Transcoding</c>. Needs
+    /// <c>AddWaveMpData</c>, <c>AddWaveMpSettings</c>, <c>AddWaveMpCaching</c> and <c>AddWaveMpStreaming</c>.
     /// </summary>
     public static IServiceCollection AddWaveMpTranscoding(this IServiceCollection services)
     {
@@ -33,6 +34,9 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<ITranscodeManager, TranscodeManager>();
         services.AddHostedService<TranscodeJanitor>();
         services.AddScoped<ITranscodingService, TranscodingService>();
+
+        services.AddSingleton<VideoRemuxer>();
+        services.AddScoped<IVideoRemuxService, VideoRemuxService>();
 
         return services;
     }
