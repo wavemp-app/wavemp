@@ -33,8 +33,12 @@ internal sealed class OnlineCoverWriter(
         Guid releaseId,
         CancellationToken cancellationToken = default)
     {
+        // The cover of an album is never a file in the media folder: other albums may share the folder, and a
+        // picture there would become their cover too (and replace theirs). It is kept in the data folder by the id
+        // of the album.
         string? extension = ExtensionOf(ImageFormats.Detect(picture), librarySettings.Current.ImageExtensions);
-        if (extension is not null
+        if (target.AlbumId is null
+            && extension is not null
             && WriteToMediaFolder(target, picture, extension) is { } written)
         {
             if (await repository.RemoveOnlineCoverAsync(target.AlbumId, target.TrackId, CancellationToken.None)

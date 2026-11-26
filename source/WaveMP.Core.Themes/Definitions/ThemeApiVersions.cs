@@ -10,7 +10,7 @@ public static class ThemeApiVersions
     /// <summary>
     /// The version of the theme API of this server, the same as in THEMING.md and in <c>data-theme-api</c>.
     /// </summary>
-    public const int Current = 8;
+    public const int Current = 9;
 
     /// <summary>
     /// The oldest version an uploaded theme may be written for.

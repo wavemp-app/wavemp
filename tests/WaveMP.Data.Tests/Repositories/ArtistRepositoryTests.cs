@@ -121,7 +121,14 @@ public class ArtistRepositoryTests : LibraryDatabaseTests
         seed.Track("Guest Spot", singer, hosted, 3);
         Album compilation = seed.Album("Hits", isCompilation: true, year: 2020);
         Track hit = seed.Track("Hit", singer, compilation, 1);
-        seed.TrackCover(hit, seed.File("Hits/01.mp3", MediaFileKind.Audio, hit, hasEmbeddedPicture: true));
+        seed.TrackCover(
+            hit,
+            seed.File("Hits/01.mp3", MediaFileKind.Audio, hit, hasEmbeddedPicture: true),
+            CoverSource.Embedded);
+        // A picture with the name of a song is no cover of its album, so this album has none for the collage.
+        Album singles = seed.Album("Singles", year: 2021);
+        Track single = seed.Track("Single", singer, singles, 1);
+        seed.TrackCover(single, seed.File("Singles/01 Single.jpg", MediaFileKind.Image, single));
         await SaveAsync(seed);
 
         IReadOnlyList<ArtistRow> artists =

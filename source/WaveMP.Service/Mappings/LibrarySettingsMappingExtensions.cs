@@ -17,7 +17,8 @@ public static class LibrarySettingsMappingExtensions
             ImageExtensions = settings.ImageExtensions,
             AlbumCoverNames = settings.AlbumCoverNames,
             ArtistPictureNames = settings.ArtistPictureNames,
-            CoverPriority = settings.CoverPriority.ToDto(),
+            CoverPriority = settings.TrackCoverPriority.ToDto(),
+            AlbumCoverFallback = settings.AlbumCoverFallback.ToDto(),
             DownloadLyrics = settings.DownloadLyrics,
             SubsonicDownloads = settings.SubsonicDownloads,
         };
@@ -35,7 +36,8 @@ public static class LibrarySettingsMappingExtensions
             request.CoverPriority?.ToEntity(),
             request.DownloadLyrics,
             request.SubsonicDownloads,
-            request.ArtistPictureNames);
+            request.ArtistPictureNames,
+            request.AlbumCoverFallback?.ToEntity());
     }
 
     /// <summary>
@@ -51,7 +53,8 @@ public static class LibrarySettingsMappingExtensions
             LibrarySettingsField.VideoExtensions => "videoExtensions",
             LibrarySettingsField.ImageExtensions => "imageExtensions",
             LibrarySettingsField.AlbumCoverNames => "albumCoverNames",
-            LibrarySettingsField.CoverPriority => "coverPriority",
+            LibrarySettingsField.TrackCoverPriority => "coverPriority",
+            LibrarySettingsField.AlbumCoverFallback => "albumCoverFallback",
             LibrarySettingsField.ArtistPictureNames => "artistPictureNames",
             _ => throw new ArgumentOutOfRangeException(nameof(field), field, "Unknown field."),
         };

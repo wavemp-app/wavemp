@@ -3,7 +3,7 @@ using WaveMP.Data.Entities;
 namespace WaveMP.Data.Repositories;
 
 /// <summary>
-/// Decides where the data of albums left empty goes (favorites of all profiles, cover rule, online cover, first seen
+/// Decides where the data of albums left empty goes (favorites of all profiles, cover rules, online cover, first seen
 /// date), from the stored moves of their songs. Pure, so every rule is deterministic and testable without a database.
 /// Successors, their order, the favorites, the first seen date and the passed-on moves follow the rules the albums
 /// share with the artists (<see cref="SuccessionPlanner"/>):
@@ -18,8 +18,8 @@ namespace WaveMP.Data.Repositories;
 /// the earliest first seen date of the predecessor, then the smallest id.</item>
 /// <item><b>Favorites</b>: every successor gets the album favorites of all its predecessors (union over a merge, to
 /// every part of a split), with the earliest time per user.</item>
-/// <item><b>Cover rule</b>: the rule of the successor wins; without one, the rule of the first predecessor that has
-/// one.</item>
+/// <item><b>Cover rules</b> (the rule of the songs and the fallback of the album cover, each on its own): the rule of
+/// the successor wins; without one, the rule of the first predecessor that has one.</item>
 /// <item><b>Online cover</b>: only to the main successor and only if it has none, from the first predecessor (among
 /// those it is the main successor of) that has one; never two per album.</item>
 /// <item><b>First seen date</b>: the earliest of the successor and its predecessors.</item>
@@ -52,9 +52,13 @@ internal static class AlbumSuccessionPlanner
             DateTimeOffset firstSeenAt = SuccessionPlanner.EarliestFirstSeenAt(successor.FirstSeenAt, nodes);
             CoverPriority? coverPriority = successor.CoverPriority
                 ?? before.Select(predecessor => predecessor.CoverPriority).FirstOrDefault(rule => rule is not null);
-            if (firstSeenAt != successor.FirstSeenAt || coverPriority != successor.CoverPriority)
+            AlbumCoverFallback? coverFallback = successor.CoverFallback
+                ?? before.Select(predecessor => predecessor.CoverFallback).FirstOrDefault(rule => rule is not null);
+            if (firstSeenAt != successor.FirstSeenAt
+                || coverPriority != successor.CoverPriority
+                || coverFallback != successor.CoverFallback)
             {
-                updates.Add(new AlbumSuccessionUpdate(successorId, firstSeenAt, coverPriority));
+                updates.Add(new AlbumSuccessionUpdate(successorId, firstSeenAt, coverPriority, coverFallback));
             }
 
             if (successor.OnlineCoverId is null

@@ -4,10 +4,12 @@ using WaveMP.Data.Projections;
 namespace WaveMP.Core.Library.Covers;
 
 /// <summary>
-/// Which cover rule applies: the most specific level that sets one wins (track, then album, then the global setting).
-/// A level without a rule of its own (<c>null</c>) inherits the next one. The rules of albums and tracks travel with
-/// their covers (<see cref="CoverCandidateRow.AlbumCoverPriority"/> and
-/// <see cref="CoverCandidateRow.TrackCoverPriority"/>).
+/// Which cover rules apply. The rule of the songs (<see cref="CoverPriority"/>): the most specific level that sets one
+/// wins (the exception of the track, then the exception of its album, then the global setting); a level without a rule
+/// of its own (<c>null</c>) inherits the next one. The rules of albums and tracks travel with their covers
+/// (<see cref="CoverCandidateRow.AlbumCoverPriority"/> and <see cref="CoverCandidateRow.TrackCoverPriority"/>). What an
+/// album shows without a cover of its own (<see cref="AlbumCoverFallback"/>): the exception of the album, otherwise the
+/// global setting.
 /// </summary>
 public static class CoverRules
 {
@@ -16,8 +18,14 @@ public static class CoverRules
         return track ?? album ?? global;
     }
 
+    public static AlbumCoverFallback EffectiveFallback(AlbumCoverFallback global, AlbumCoverFallback? album)
+    {
+        return album ?? global;
+    }
+
     /// <summary>
-    /// The rule that applies to an album: its own, otherwise the global one.
+    /// The rule that applies to the songs of an album without a rule of their own: the exception of the album,
+    /// otherwise the global one.
     /// </summary>
     public static CoverPriority ForAlbum(CoverPriority global, IEnumerable<CoverCandidateRow> candidatesOfAlbum)
     {
@@ -25,9 +33,7 @@ public static class CoverRules
     }
 
     /// <summary>
-    /// The rule that applies to a track: its own, otherwise the one of its album, otherwise the global one. A track
-    /// without covers of its own shows the cover of its album first under every rule, so its own rule only matters if
-    /// it has covers.
+    /// The rule that applies to a track: its own, otherwise the one of its album, otherwise the global one.
     /// </summary>
     public static CoverPriority ForTrack(
         Guid trackId,

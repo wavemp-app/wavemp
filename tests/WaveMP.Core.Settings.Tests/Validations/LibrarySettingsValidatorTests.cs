@@ -219,27 +219,46 @@ public class LibrarySettingsValidatorTests
     }
 
     [Test]
-    public void CoverPriority_ByDefault_IsAlbumFirst()
+    public void CoverRules_ByDefault_AreOwnCoverFirstAndArtistPicture()
     {
-        new LibrarySettings().CoverPriority.Should().Be(CoverPriority.AlbumFirst);
+        new LibrarySettings().TrackCoverPriority.Should().Be(CoverPriority.TrackFirst);
+        new LibrarySettings().AlbumCoverFallback.Should().Be(AlbumCoverFallback.ArtistPicture);
     }
 
     [Test]
-    public void Normalize_CoverPriority_KeepsTheValue()
+    public void Normalize_CoverRules_KeepsTheValues()
     {
-        LibrarySettings settings = new() { CoverPriority = CoverPriority.TrackFirst };
+        LibrarySettings settings = new()
+        {
+            TrackCoverPriority = CoverPriority.TrackOnly,
+            AlbumCoverFallback = AlbumCoverFallback.None,
+        };
 
-        LibrarySettingsValidator.Normalize(settings).CoverPriority.Should().Be(CoverPriority.TrackFirst);
+        LibrarySettings normalized = LibrarySettingsValidator.Normalize(settings);
+
+        normalized.TrackCoverPriority.Should().Be(CoverPriority.TrackOnly);
+        normalized.AlbumCoverFallback.Should().Be(AlbumCoverFallback.None);
     }
 
     [Test]
-    public void Validate_UndefinedCoverPriority_IsInvalid()
+    public void Validate_UndefinedTrackCoverPriority_IsInvalid()
     {
-        LibrarySettings settings = new() { CoverPriority = (CoverPriority)7 };
+        LibrarySettings settings = new() { TrackCoverPriority = (CoverPriority)7 };
 
         IReadOnlyList<SettingsValidationError> errors = LibrarySettingsValidator.Validate(settings);
 
         errors.Should().Equal(
-            new SettingsValidationError(LibrarySettingsField.CoverPriority, SettingsErrorReason.Invalid));
+            new SettingsValidationError(LibrarySettingsField.TrackCoverPriority, SettingsErrorReason.Invalid));
+    }
+
+    [Test]
+    public void Validate_UndefinedAlbumCoverFallback_IsInvalid()
+    {
+        LibrarySettings settings = new() { AlbumCoverFallback = (AlbumCoverFallback)7 };
+
+        IReadOnlyList<SettingsValidationError> errors = LibrarySettingsValidator.Validate(settings);
+
+        errors.Should().Equal(
+            new SettingsValidationError(LibrarySettingsField.AlbumCoverFallback, SettingsErrorReason.Invalid));
     }
 }

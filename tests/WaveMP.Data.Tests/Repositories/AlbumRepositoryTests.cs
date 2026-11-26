@@ -220,6 +220,35 @@ public class AlbumRepositoryTests : LibraryDatabaseTests
     }
 
     [Test]
+    public async Task FindAsync_AlbumWithoutOwnCover_HasACoverOnlyIfItMayShowARealPictureOfItsArtist()
+    {
+        LibrarySeed seed = new();
+        Artist pictured = seed.Artist("Pictured");
+        seed.ArtistPicture(pictured, ArtistPictureKind.Uploaded);
+        Artist plain = seed.Artist("Plain");
+        Album fallsBack = seed.Album("Falls Back", pictured);
+        Album noFallback = seed.Album("No Fallback", pictured);
+        noFallback.CoverFallback = AlbumCoverFallback.None;
+        Album withoutPicture = seed.Album("Without Picture", plain);
+        Album embedded = seed.Album("Embedded", plain);
+        Track song = seed.Track("Song", plain, embedded, 1);
+        seed.TrackCover(song, seed.File("Embedded/01 Song.mp3", MediaFileKind.Audio, song), CoverSource.Embedded);
+        Album named = seed.Album("Named", plain);
+        Track other = seed.Track("Other", plain, named, 1);
+        seed.TrackCover(other, seed.File("Named/01 Other.jpg", MediaFileKind.Image, other));
+        await SaveAsync(seed);
+        AlbumRepository repository = new(CreateDbContext());
+
+        // The collage of an artist without a picture is no picture of the artist, and a picture with the name of a
+        // song is no cover of its album.
+        (await repository.FindAsync(fallsBack.Id))!.HasCover.Should().BeTrue();
+        (await repository.FindAsync(noFallback.Id))!.HasCover.Should().BeFalse();
+        (await repository.FindAsync(withoutPicture.Id))!.HasCover.Should().BeFalse();
+        (await repository.FindAsync(embedded.Id))!.HasCover.Should().BeTrue();
+        (await repository.FindAsync(named.Id))!.HasCover.Should().BeFalse();
+    }
+
+    [Test]
     public async Task ListGroupAlbumsAsync_WithoutIds_ReturnsNothing()
     {
         IReadOnlyList<GroupAlbumRow> rows = await new AlbumRepository(CreateDbContext()).ListGroupAlbumsAsync([]);

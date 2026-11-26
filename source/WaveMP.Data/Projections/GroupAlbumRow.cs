@@ -8,7 +8,7 @@ namespace WaveMP.Data.Projections;
 /// <param name="ArtistId">Id of the album artist; <c>null</c> for albums without a known artist.</param>
 /// <param name="ArtistName">Name of the album artist.</param>
 /// <param name="IsCompilation">Whether the album is a compilation (see the album entity).</param>
-/// <param name="HasCover">Whether the album or one of its tracks has a cover, the same rule as
+/// <param name="HasCover">Whether the album may show a cover, the same rule as
 /// <see cref="AlbumRow.HasCover"/>.</param>
 public sealed record GroupAlbumRow(
     Guid Id,

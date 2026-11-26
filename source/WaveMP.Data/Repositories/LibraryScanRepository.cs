@@ -531,6 +531,7 @@ internal sealed class LibraryScanRepository(WaveMpDbContext dbContext) : ILibrar
                 dbContext.Tracks.Any(track => track.AlbumId == album.Id),
                 album.FirstSeenAt,
                 album.CoverPriority,
+                album.CoverFallback,
                 dbContext.OnlineCovers
                     .Where(cover => cover.AlbumId == album.Id)
                     .Select(cover => (Guid?)cover.Id)
@@ -573,12 +574,14 @@ internal sealed class LibraryScanRepository(WaveMpDbContext dbContext) : ILibrar
             Guid[] albumIds = [.. plan.Updates.Select(update => update.AlbumId)];
             DateTimeOffset[] firstSeenAt = [.. plan.Updates.Select(update => update.FirstSeenAt)];
             string?[] coverPriorities = [.. plan.Updates.Select(update => update.CoverPriority?.ToString())];
+            string?[] coverFallbacks = [.. plan.Updates.Select(update => update.CoverFallback?.ToString())];
             await dbContext.Database.ExecuteSqlAsync(
                 $"""
                 UPDATE albums
-                SET first_seen_at = changed.first_seen_at, cover_priority = changed.cover_priority, updated_at = {now}
-                FROM unnest({albumIds}, {firstSeenAt}, {coverPriorities})
-                    AS changed(album_id, first_seen_at, cover_priority)
+                SET first_seen_at = changed.first_seen_at, cover_priority = changed.cover_priority,
+                    cover_fallback = changed.cover_fallback, updated_at = {now}
+                FROM unnest({albumIds}, {firstSeenAt}, {coverPriorities}, {coverFallbacks})
+                    AS changed(album_id, first_seen_at, cover_priority, cover_fallback)
                 WHERE albums.id = changed.album_id
                 """,
                 cancellationToken);

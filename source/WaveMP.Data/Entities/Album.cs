@@ -52,12 +52,19 @@ public class Album
     public required DateTimeOffset UpdatedAt { get; set; }
 
     /// <summary>
-    /// The cover rule of the album, set by the admin: whether the album and its tracks show the cover of the album or
-    /// the covers of the tracks first. <c>null</c> inherits the global rule of the library settings. A scan never
-    /// changes it, except that an album without a rule of its own takes the rule of an album whose tracks it got once
-    /// that album is removed. Stored as its name.
+    /// The cover rule of the songs of the album, an exception the admin set: whether they show their own cover or the
+    /// cover of the album first, or only their own. <c>null</c> inherits the global rule of the library settings; a
+    /// song with a rule of its own follows that one. A scan never changes it, except that an album without a rule of
+    /// its own takes the rule of an album whose tracks it got once that album is removed. Stored as its name.
     /// </summary>
     public CoverPriority? CoverPriority { get; set; }
+
+    /// <summary>
+    /// What the album shows without a cover of its own, an exception the admin set: the picture of its album artist
+    /// or nothing. <c>null</c> inherits the global rule of the library settings. Carried over like
+    /// <see cref="CoverPriority"/>. Stored as its name.
+    /// </summary>
+    public AlbumCoverFallback? CoverFallback { get; set; }
 
     public ICollection<Track> Tracks { get; set; } = [];
 

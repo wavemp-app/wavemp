@@ -51,9 +51,15 @@ public sealed class UpdateLibrarySettingsDto
     public IReadOnlyList<string>? ArtistPictureNames { get; init; }
 
     /// <summary>
-    /// The global cover rule; applies at once to all albums and tracks without a rule of their own.
+    /// The global cover rule of the songs; applies at once to all songs without an exception of their own or of their
+    /// album.
     /// </summary>
     public CoverPriorityDto? CoverPriority { get; init; }
+
+    /// <summary>
+    /// What albums without a cover of their own show; applies at once to all albums without an exception.
+    /// </summary>
+    public AlbumCoverFallbackDto? AlbumCoverFallback { get; init; }
 
     /// <summary>
     /// Switches the download of lyrics from LRCLIB on or off; switching it on starts the job lyrics-download.

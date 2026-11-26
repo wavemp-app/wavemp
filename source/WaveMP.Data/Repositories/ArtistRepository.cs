@@ -171,8 +171,8 @@ internal sealed class ArtistRepository(WaveMpDbContext dbContext) : IArtistRepos
 
     /// <summary>
     /// Adds the albums of the collage to the artists without a picture of their own, with two queries for all of them:
-    /// the albums of the artist as album artist and the albums with its tracks, each only with a cover (of the album
-    /// or of one of its tracks, from the library or online).
+    /// the albums of the artist as album artist and the albums with its tracks, each only with a cover of its own (a
+    /// picture in its folder, a picture embedded in one of its tracks or an online cover).
     /// </summary>
     private async Task<IReadOnlyList<ArtistRow>> WithCollagesAsync(
         IReadOnlyList<ArtistRow> rows,
@@ -187,11 +187,12 @@ internal sealed class ArtistRepository(WaveMpDbContext dbContext) : IArtistRepos
             return rows;
         }
 
+        // Only albums with a cover of their own: the picture of the artist an album may fall back to is no album cover.
         IQueryable<Album> withCover = dbContext.Albums.AsNoTracking().Where(album =>
             dbContext.Covers.Any(cover =>
-                cover.AlbumId == album.Id || (cover.Track != null && cover.Track.AlbumId == album.Id))
-            || dbContext.OnlineCovers.Any(cover =>
-                cover.AlbumId == album.Id || (cover.Track != null && cover.Track.AlbumId == album.Id)));
+                cover.AlbumId == album.Id
+                || (cover.Source == CoverSource.Embedded && cover.Track != null && cover.Track.AlbumId == album.Id))
+            || dbContext.OnlineCovers.Any(cover => cover.AlbumId == album.Id));
         List<CollageAlbum> asAlbumArtist = await withCover
             .Where(album => album.AlbumArtistId != null && ids.Contains(album.AlbumArtistId.Value))
             .Select(album => new CollageAlbum(

@@ -13,6 +13,7 @@ public class CoverCacheServiceTests
     private readonly Guid _id = Guid.NewGuid();
     private ICoverService _covers = null!;
     private ICoverImageCache _cache = null!;
+    private IAlbumCoverFallback _fallback = null!;
     private CoverCacheService _service = null!;
 
     [SetUp]
@@ -20,7 +21,8 @@ public class CoverCacheServiceTests
     {
         _covers = Substitute.For<ICoverService>();
         _cache = Substitute.For<ICoverImageCache>();
-        _service = new CoverCacheService(_covers, _cache);
+        _fallback = Substitute.For<IAlbumCoverFallback>();
+        _service = new CoverCacheService(_covers, _cache, [_fallback]);
     }
 
     [Test]
@@ -63,6 +65,57 @@ public class CoverCacheServiceTests
         CoverDeliveryResult result = await _service.GetAlbumCoverAsync(_id, null);
 
         result.Should().Be(CoverDeliveryResult.NotFound);
+    }
+
+    [Test]
+    public async Task GetAlbumCoverAsync_NoOwnCoverAndArtistAllowed_DeliversThePictureOfTheArtist()
+    {
+        var artistId = Guid.NewGuid();
+        CoverDelivery picture = new(new MemoryStream([2]), "image/webp", "artist", DateTimeOffset.UnixEpoch);
+        _covers.GetAlbumCandidatesAsync(_id, Arg.Any<CancellationToken>())
+            .Returns(new CoverCandidates(true, [], artistId));
+        _cache.DeliverAsync(Arg.Any<IReadOnlyList<CoverCandidateRow>>(), 300, Arg.Any<CancellationToken>())
+            .Returns((CoverDelivery?)null);
+        _fallback.DeliverArtistPictureAsync(artistId, 300, Arg.Any<CancellationToken>()).Returns(picture);
+
+        CoverDeliveryResult result = await _service.GetAlbumCoverAsync(_id, 300);
+
+        result.Should().Be(CoverDeliveryResult.Found(picture));
+    }
+
+    [Test]
+    public async Task GetAlbumCoverAsync_OwnCover_NeverAsksForThePictureOfTheArtist()
+    {
+        CoverDelivery delivery = new(new MemoryStream([1]), "image/webp", "etag", DateTimeOffset.UnixEpoch);
+        _covers.GetAlbumCandidatesAsync(_id, Arg.Any<CancellationToken>())
+            .Returns(new CoverCandidates(true, [Candidate()], Guid.NewGuid()));
+        _cache.DeliverAsync(Arg.Any<IReadOnlyList<CoverCandidateRow>>(), 300, Arg.Any<CancellationToken>())
+            .Returns(delivery);
+
+        CoverDeliveryResult result = await _service.GetAlbumCoverAsync(_id, 300);
+
+        result.Should().Be(CoverDeliveryResult.Found(delivery));
+        await _fallback.DidNotReceiveWithAnyArgs().DeliverArtistPictureAsync(default, default, default);
+    }
+
+    [Test]
+    public async Task GetAlbumCoverAsync_ArtistNotAllowedOrWithoutPicture_ReturnsNotFound()
+    {
+        var artistId = Guid.NewGuid();
+        _cache.DeliverAsync(Arg.Any<IReadOnlyList<CoverCandidateRow>>(), null, Arg.Any<CancellationToken>())
+            .Returns((CoverDelivery?)null);
+        _fallback.DeliverArtistPictureAsync(artistId, null, Arg.Any<CancellationToken>())
+            .Returns((CoverDelivery?)null);
+
+        _covers.GetAlbumCandidatesAsync(_id, Arg.Any<CancellationToken>()).Returns(new CoverCandidates(true, []));
+        CoverDeliveryResult notAllowed = await _service.GetAlbumCoverAsync(_id, null);
+        _covers.GetAlbumCandidatesAsync(_id, Arg.Any<CancellationToken>())
+            .Returns(new CoverCandidates(true, [], artistId));
+        CoverDeliveryResult withoutPicture = await _service.GetAlbumCoverAsync(_id, null);
+
+        notAllowed.Should().Be(CoverDeliveryResult.NotFound);
+        withoutPicture.Should().Be(CoverDeliveryResult.NotFound);
+        await _fallback.Received(1).DeliverArtistPictureAsync(artistId, null, Arg.Any<CancellationToken>());
     }
 
     [Test]

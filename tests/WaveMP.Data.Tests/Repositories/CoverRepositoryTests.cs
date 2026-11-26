@@ -13,7 +13,7 @@ public class CoverRepositoryTests : LibraryDatabaseTests
     protected override string DatabaseName => "wavemp_tests_library_covers";
 
     [Test]
-    public async Task GetTrackCandidatesAsync_TrackOfAnAlbum_ReturnsItsOwnAndTheAlbumCoversButNotThoseOfOtherTracks()
+    public async Task GetTrackCandidatesAsync_TrackOfAnAlbum_ReturnsItsOwnAndTheAlbumCoversButNotPicturesOfOtherTracks()
     {
         LibrarySeed seed = new();
         Album album = seed.Album("Album");
@@ -38,8 +38,10 @@ public class CoverRepositoryTests : LibraryDatabaseTests
         IReadOnlyList<CoverCandidateRow> candidates = (await repository.GetTrackCandidatesAsync(first.Id))!;
 
         candidates.Select(candidate => candidate.CoverId).Should().BeEquivalentTo([albumCover.Id, firstCover.Id]);
+        // The picture embedded in the first track is a cover of the album, the picture named after the second one is
+        // not; the picture of the track on the other album never.
         (await repository.GetTrackCandidatesAsync(second.Id))!.Select(candidate => candidate.CoverId)
-            .Should().BeEquivalentTo([albumCover.Id, secondCover.Id]);
+            .Should().BeEquivalentTo([albumCover.Id, firstCover.Id, secondCover.Id]);
         candidates.Single(candidate => candidate.CoverId == firstCover.Id).Should().BeEquivalentTo(
             new CoverCandidateRow(
                 firstCover.Id,
@@ -194,6 +196,29 @@ public class CoverRepositoryTests : LibraryDatabaseTests
             TrackAlbumId = (Guid?)null,
         });
         (await repository.GetAlbumBatchCandidatesAsync([])).Should().BeEmpty();
+    }
+
+    [Test]
+    public async Task AlbumCoverFallback_SetAndGet_StoresTheExceptionOfTheAlbumOnly()
+    {
+        LibrarySeed seed = new();
+        Artist band = seed.Artist("Band");
+        Album album = seed.Album("Album", band);
+        Album other = seed.Album("Other", band);
+        await SaveAsync(seed);
+        CoverRepository repository = new(CreateDbContext());
+
+        (await repository.GetAlbumCoverFallbackAsync(album.Id)).Should().Be(new AlbumCoverFallbackRow(null, band.Id));
+        (await repository.SetAlbumCoverFallbackAsync(album.Id, AlbumCoverFallback.None)).Should().BeTrue();
+        (await repository.SetAlbumCoverFallbackAsync(Guid.NewGuid(), AlbumCoverFallback.None)).Should().BeFalse();
+
+        CoverRepository reloaded = new(CreateDbContext());
+        (await reloaded.GetAlbumCoverFallbackAsync(album.Id))!.Fallback.Should().Be(AlbumCoverFallback.None);
+        (await reloaded.GetAlbumCoverFallbackAsync(other.Id))!.Fallback.Should().BeNull();
+        (await reloaded.GetAlbumCoverFallbackAsync(Guid.NewGuid())).Should().BeNull();
+        (await reloaded.SetAlbumCoverFallbackAsync(album.Id, null)).Should().BeTrue();
+        (await new CoverRepository(CreateDbContext()).GetAlbumCoverFallbackAsync(album.Id))!.Fallback
+            .Should().BeNull();
     }
 
     [Test]

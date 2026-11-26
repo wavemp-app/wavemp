@@ -4,7 +4,8 @@ using WaveMP.Service.Converters;
 namespace WaveMP.Service.Dtos;
 
 /// <summary>
-/// The cover rule of an album or a track: a priority of its own or the rule of the next level.
+/// The cover rule of a song or of the songs of an album, as an exception from the library settings: a rule of its own
+/// (see <see cref="CoverPriorityDto"/>) or the rule of the next level.
 /// </summary>
 [JsonConverter(typeof(StrictStringEnumConverter<CoverRuleOptionDto>))]
 public enum CoverRuleOptionDto
@@ -15,12 +16,17 @@ public enum CoverRuleOptionDto
     Inherit,
 
     /// <summary>
-    /// The cover of the album before the cover of the track.
+    /// The cover of the album, otherwise the own cover.
     /// </summary>
     AlbumFirst,
 
     /// <summary>
-    /// The cover of the track before the cover of the album.
+    /// The own cover, otherwise the cover of the album.
     /// </summary>
     TrackFirst,
+
+    /// <summary>
+    /// Only the own cover.
+    /// </summary>
+    TrackOnly,
 }

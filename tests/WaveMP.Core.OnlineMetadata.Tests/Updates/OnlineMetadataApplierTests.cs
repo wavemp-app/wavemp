@@ -88,8 +88,9 @@ public class OnlineMetadataApplierTests
     }
 
     [Test]
-    public async Task ApplyToTrackAsync_TagsAndCover_WritesThroughTheEditorAndStoresTheCoverOfTheAlbum()
+    public async Task ApplyToTrackAsync_AlbumFirstRule_WritesThroughTheEditorAndStoresTheCoverOfTheAlbum()
     {
+        _librarySettings.Current = new LibrarySettings { TrackCoverPriority = CoverPriority.AlbumFirst };
         TagChanges changes = TitleChange();
 
         TrackApplyResult result = await _applier.ApplyToTrackAsync(_trackId, changes, _releaseId);
@@ -100,17 +101,15 @@ public class OnlineMetadataApplierTests
         await _coverArtArchive.Received(1)
             .GetFrontCoverAsync(_releaseId, CoverArtSize.ExtraLarge, Arg.Any<CancellationToken>());
         await _covers.Received(1).SaveAsync(
-            new CoverTarget(_albumId, null, _sourceId, "Band/Album", "cover"),
+            CoverTarget.ForAlbum(_albumId),
             _jpeg,
             _releaseId,
             Arg.Any<CancellationToken>());
     }
 
     [Test]
-    public async Task ApplyToTrackAsync_TrackFirstRule_StoresTheCoverOfTheSong()
+    public async Task ApplyToTrackAsync_DefaultRule_StoresTheCoverOfTheSong()
     {
-        _librarySettings.Current = new LibrarySettings { CoverPriority = CoverPriority.TrackFirst };
-
         await _applier.ApplyToTrackAsync(_trackId, new TagChanges(), _releaseId);
 
         await _covers.Received(1).SaveAsync(
@@ -218,7 +217,7 @@ public class OnlineMetadataApplierTests
                 && written.Year == new TagChange<int?>(1999)),
             Arg.Any<CancellationToken>());
         await _covers.Received(1).SaveAsync(
-            new CoverTarget(renamed, null, _sourceId, "Band/Album", "cover"),
+            CoverTarget.ForAlbum(renamed),
             _jpeg,
             _releaseId,
             Arg.Any<CancellationToken>());

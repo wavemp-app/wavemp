@@ -46,7 +46,7 @@ public class CoverRuleChangeHandlerTests
     {
         await _handler.OnSettingsChangedAsync(
             new LibrarySettings(),
-            new LibrarySettings { CoverPriority = CoverPriority.TrackFirst },
+            new LibrarySettings { TrackCoverPriority = CoverPriority.AlbumFirst },
             CancellationToken.None);
 
         await _jobs.Received(1).StartRunAsync(

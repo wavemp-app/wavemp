@@ -1,7 +1,7 @@
 namespace WaveMP.Service.Dtos;
 
 /// <summary>
-/// The cover rule of an album or a track and the priority that applies to it.
+/// The cover rule of a song or of the songs of an album and the priority that applies to it.
 /// </summary>
 public sealed class CoverRuleDto
 {

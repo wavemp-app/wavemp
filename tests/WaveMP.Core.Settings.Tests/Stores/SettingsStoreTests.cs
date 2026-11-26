@@ -47,14 +47,30 @@ public class SettingsStoreTests
     }
 
     [Test]
-    public async Task GetAsync_WithCoverPriorityName_ReadsIt()
+    public async Task GetAsync_WithCoverRuleNames_ReadsThem()
     {
         _repository.FindAsync(LibrarySettings.Key, Arg.Any<CancellationToken>())
-            .Returns("{\"coverPriority\":\"TrackFirst\"}");
+            .Returns("{\"trackCoverPriority\":\"TrackOnly\",\"albumCoverFallback\":\"None\"}");
 
         LibrarySettings settings = await _store.GetAsync<LibrarySettings>(LibrarySettings.Key);
 
-        settings.CoverPriority.Should().Be(CoverPriority.TrackFirst);
+        settings.TrackCoverPriority.Should().Be(CoverPriority.TrackOnly);
+        settings.AlbumCoverFallback.Should().Be(AlbumCoverFallback.None);
+    }
+
+    [TestCase("AlbumFirst")]
+    [TestCase("TrackFirst")]
+    public async Task GetAsync_WithTheCoverRuleOfEarlierVersions_KeepsTheOtherSettingsAndUsesTheDefaults(string old)
+    {
+        // Both values of the former global rule showed a picture with the name of a song first, like the default.
+        _repository.FindAsync(LibrarySettings.Key, Arg.Any<CancellationToken>())
+            .Returns($"{{\"scanIntervalMinutes\":60,\"coverPriority\":\"{old}\"}}");
+
+        LibrarySettings settings = await _store.GetAsync<LibrarySettings>(LibrarySettings.Key);
+
+        settings.ScanIntervalMinutes.Should().Be(60);
+        settings.TrackCoverPriority.Should().Be(CoverPriority.TrackFirst);
+        settings.AlbumCoverFallback.Should().Be(AlbumCoverFallback.ArtistPicture);
     }
 
     [Test]
@@ -84,14 +100,17 @@ public class SettingsStoreTests
             VideoExtensions = [],
             ImageExtensions = ["png"],
             AlbumCoverNames = ["front"],
-            CoverPriority = CoverPriority.TrackFirst,
+            TrackCoverPriority = CoverPriority.AlbumFirst,
+            AlbumCoverFallback = AlbumCoverFallback.None,
         };
 
         await _store.SaveAsync(LibrarySettings.Key, settings);
         _repository.FindAsync(LibrarySettings.Key, Arg.Any<CancellationToken>()).Returns(saved);
         LibrarySettings loaded = await _store.GetAsync<LibrarySettings>(LibrarySettings.Key);
 
-        saved.Should().Contain("\"scanIntervalMinutes\":60").And.Contain("\"coverPriority\":\"TrackFirst\"");
+        saved.Should().Contain("\"scanIntervalMinutes\":60")
+            .And.Contain("\"trackCoverPriority\":\"AlbumFirst\"")
+            .And.Contain("\"albumCoverFallback\":\"None\"");
         loaded.Should().BeEquivalentTo(settings);
     }
 }

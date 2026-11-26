@@ -72,47 +72,84 @@ public class OnlineCoverWriterTests
     }
 
     [Test]
-    public async Task SaveAsync_WritableFolder_WritesThePictureAfterTheCoverRulesAndReadsTheFolder()
+    public async Task SaveAsync_AlbumCoverWithWritableFolder_KeepsItInTheDataFolderByTheIdOfTheAlbum()
     {
         _media.CreateDirectory("Band/Album");
 
         CoverSaveOutcome outcome = await _writer.SaveAsync(AlbumTarget(), _jpeg, _releaseId);
 
+        outcome.Should().Be(CoverSaveOutcome.DataFolder);
+        Directory.EnumerateFiles(_media.Combine("Band/Album")).Should().BeEmpty();
+        await _repository.Received(1).SetOnlineCoverAsync(
+            Arg.Is<OnlineCover>(cover => cover.AlbumId == _albumId && cover.TrackId == null),
+            Arg.Any<CancellationToken>());
+        _scanner.ReceivedCalls().Should().BeEmpty();
+    }
+
+    [Test]
+    public async Task SaveAsync_TwoAlbumsInTheSameFolder_KeepTheirOwnCovers()
+    {
+        var otherAlbumId = Guid.NewGuid();
+        byte[] otherJpeg = [.. _jpeg, 7];
+        List<OnlineCover> stored = [];
+        _repository.SetOnlineCoverAsync(Arg.Do<OnlineCover>(stored.Add), Arg.Any<CancellationToken>())
+            .Returns((true, (string?)null));
+        _media.CreateDirectory("Band/Album");
+
+        await _writer.SaveAsync(AlbumTarget(), _jpeg, _releaseId);
+        await _writer.SaveAsync(CoverTarget.ForAlbum(otherAlbumId), otherJpeg, _releaseId);
+
+        // Each album gets a picture of its own; neither becomes a file in the folder they share.
+        stored.Select(cover => cover.AlbumId).Should().Equal(_albumId, otherAlbumId);
+        stored[0].FileName.Should().NotBe(stored[1].FileName);
+        File.ReadAllBytes(_data.Combine("online-covers/" + stored[0].FileName)).Should().Equal(_jpeg);
+        File.ReadAllBytes(_data.Combine("online-covers/" + stored[1].FileName)).Should().Equal(otherJpeg);
+        Directory.EnumerateFiles(_media.Combine("Band/Album")).Should().BeEmpty();
+    }
+
+    [Test]
+    public async Task SaveAsync_SongCoverWithWritableFolder_WritesThePictureAndReadsTheFolder()
+    {
+        var trackId = Guid.NewGuid();
+        _media.CreateDirectory("Band/Album");
+
+        CoverSaveOutcome outcome = await _writer.SaveAsync(SongTarget(trackId), _jpeg, _releaseId);
+
         outcome.Should().Be(CoverSaveOutcome.MediaFolder);
-        File.ReadAllBytes(_media.Combine("Band/Album/cover.jpg")).Should().Equal(_jpeg);
+        File.ReadAllBytes(_media.Combine("Band/Album/Song.jpg")).Should().Equal(_jpeg);
         Directory.EnumerateFiles(_media.Combine("Band/Album")).Should().ContainSingle();
         await _scanner.Received(1).RefreshFolderAsync(
             _sourceId,
             "Band/Album",
-            Arg.Is<IReadOnlyCollection<string>>(changed => changed.SequenceEqual(new[] { "Band/Album/cover.jpg" })),
+            Arg.Is<IReadOnlyCollection<string>>(changed => changed.SequenceEqual(new[] { "Band/Album/Song.jpg" })),
             Arg.Any<CancellationToken>());
-        await _repository.Received(1).RemoveOnlineCoverAsync(_albumId, null, Arg.Any<CancellationToken>());
+        await _repository.Received(1).RemoveOnlineCoverAsync(null, trackId, Arg.Any<CancellationToken>());
     }
 
     [Test]
     public async Task SaveAsync_PictureOfSameName_ReplacesItAndKeepsACopy()
     {
         _media.CreateDirectory("Band/Album");
-        File.WriteAllBytes(_media.Combine("Band/Album/Cover.png"), [1, 2, 3]);
+        File.WriteAllBytes(_media.Combine("Band/Album/Song.png"), [1, 2, 3]);
         File.WriteAllBytes(_media.Combine("Band/Album/Song.mp3"), [4]);
 
-        CoverSaveOutcome outcome = await _writer.SaveAsync(AlbumTarget(), _jpeg, _releaseId);
+        CoverSaveOutcome outcome = await _writer.SaveAsync(SongTarget(Guid.NewGuid()), _jpeg, _releaseId);
 
         outcome.Should().Be(CoverSaveOutcome.MediaFolder);
         Directory.EnumerateFiles(_media.Combine("Band/Album")).Select(Path.GetFileName)
-            .Should().BeEquivalentTo("cover.jpg", "Song.mp3");
+            .Should().BeEquivalentTo("Song.jpg", "Song.mp3");
         string copy = Directory.EnumerateFiles(
                 _data.Combine("online-covers/" + OnlineCoverWriter.ReplacedFolderName),
                 "*",
                 SearchOption.AllDirectories)
             .Should().ContainSingle().Subject;
-        Path.GetFileName(copy).Should().Be("Cover.png");
+        Path.GetFileName(copy).Should().Be("Song.png");
         File.ReadAllBytes(copy).Should().Equal(1, 2, 3);
         await _scanner.Received(1).RefreshFolderAsync(
             _sourceId,
             "Band/Album",
             Arg.Is<IReadOnlyCollection<string>>(changed =>
-                changed.Order().SequenceEqual(new[] { "Band/Album/Cover.png", "Band/Album/cover.jpg" }.Order())),
+                changed.Order().SequenceEqual(new[] { "Band/Album/Song.png", "Band/Album/Song.jpg" }.Order())),
             Arg.Any<CancellationToken>());
     }
 
@@ -134,14 +171,16 @@ public class OnlineCoverWriterTests
     [Test]
     public async Task SaveAsync_FolderNotReachable_KeepsTheCoverInTheDataFolder()
     {
-        CoverSaveOutcome outcome = await _writer.SaveAsync(AlbumTarget(), _jpeg, _releaseId);
+        var trackId = Guid.NewGuid();
+
+        CoverSaveOutcome outcome = await _writer.SaveAsync(SongTarget(trackId), _jpeg, _releaseId);
 
         outcome.Should().Be(CoverSaveOutcome.DataFolder);
         string stored = _files.ListFileNames().Should().ContainSingle().Subject;
         await _repository.Received(1).SetOnlineCoverAsync(
             Arg.Is<OnlineCover>(cover =>
-                cover.AlbumId == _albumId
-                && cover.TrackId == null
+                cover.AlbumId == null
+                && cover.TrackId == trackId
                 && cover.FileName == stored
                 && cover.MimeType == "image/jpeg"
                 && cover.Size == _jpeg.Length
@@ -156,7 +195,7 @@ public class OnlineCoverWriterTests
         _media.CreateDirectory("Band/Album");
         _librarySettings.Current = new LibrarySettings { ImageExtensions = ["png"] };
 
-        CoverSaveOutcome outcome = await _writer.SaveAsync(AlbumTarget(), _jpeg, _releaseId);
+        CoverSaveOutcome outcome = await _writer.SaveAsync(SongTarget(Guid.NewGuid()), _jpeg, _releaseId);
 
         outcome.Should().Be(CoverSaveOutcome.DataFolder);
         Directory.EnumerateFiles(_media.Combine("Band/Album")).Should().BeEmpty();
@@ -214,6 +253,11 @@ public class OnlineCoverWriterTests
 
     private static CoverTarget AlbumTarget()
     {
-        return new CoverTarget(_albumId, null, _sourceId, "Band/Album", "cover");
+        return CoverTarget.ForAlbum(_albumId);
+    }
+
+    private static CoverTarget SongTarget(Guid trackId)
+    {
+        return new CoverTarget(null, trackId, _sourceId, "Band/Album", "Song");
     }
 }

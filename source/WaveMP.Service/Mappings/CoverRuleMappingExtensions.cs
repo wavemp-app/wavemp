@@ -16,12 +16,23 @@ public static class CoverRuleMappingExtensions
         };
     }
 
+    public static AlbumCoverFallbackRuleDto ToDto(this AlbumCoverFallbackResult result)
+    {
+        return new AlbumCoverFallbackRuleDto
+        {
+            Fallback = result.Fallback.ToOptionDto(),
+            InheritedFallback = result.Inherited.ToDto(),
+            EffectiveFallback = result.Effective.ToDto(),
+        };
+    }
+
     public static CoverPriorityDto ToDto(this CoverPriority priority)
     {
         return priority switch
         {
             CoverPriority.AlbumFirst => CoverPriorityDto.AlbumFirst,
             CoverPriority.TrackFirst => CoverPriorityDto.TrackFirst,
+            CoverPriority.TrackOnly => CoverPriorityDto.TrackOnly,
             _ => throw new ArgumentOutOfRangeException(nameof(priority), priority, "Unknown cover priority."),
         };
     }
@@ -32,7 +43,28 @@ public static class CoverRuleMappingExtensions
         {
             CoverPriorityDto.AlbumFirst => CoverPriority.AlbumFirst,
             CoverPriorityDto.TrackFirst => CoverPriority.TrackFirst,
+            CoverPriorityDto.TrackOnly => CoverPriority.TrackOnly,
             _ => throw new ArgumentOutOfRangeException(nameof(priority), priority, "Unknown cover priority."),
+        };
+    }
+
+    public static AlbumCoverFallbackDto ToDto(this AlbumCoverFallback fallback)
+    {
+        return fallback switch
+        {
+            AlbumCoverFallback.ArtistPicture => AlbumCoverFallbackDto.ArtistPicture,
+            AlbumCoverFallback.None => AlbumCoverFallbackDto.None,
+            _ => throw new ArgumentOutOfRangeException(nameof(fallback), fallback, "Unknown album cover fallback."),
+        };
+    }
+
+    public static AlbumCoverFallback ToEntity(this AlbumCoverFallbackDto fallback)
+    {
+        return fallback switch
+        {
+            AlbumCoverFallbackDto.ArtistPicture => AlbumCoverFallback.ArtistPicture,
+            AlbumCoverFallbackDto.None => AlbumCoverFallback.None,
+            _ => throw new ArgumentOutOfRangeException(nameof(fallback), fallback, "Unknown album cover fallback."),
         };
     }
 
@@ -42,9 +74,14 @@ public static class CoverRuleMappingExtensions
     /// </summary>
     public static CoverRuleOptionDto ToOptionDto(this CoverPriority? rule)
     {
-        return rule is { } priority
-            ? priority == CoverPriority.AlbumFirst ? CoverRuleOptionDto.AlbumFirst : CoverRuleOptionDto.TrackFirst
-            : CoverRuleOptionDto.Inherit;
+        return rule switch
+        {
+            null => CoverRuleOptionDto.Inherit,
+            CoverPriority.AlbumFirst => CoverRuleOptionDto.AlbumFirst,
+            CoverPriority.TrackFirst => CoverRuleOptionDto.TrackFirst,
+            CoverPriority.TrackOnly => CoverRuleOptionDto.TrackOnly,
+            _ => throw new ArgumentOutOfRangeException(nameof(rule), rule, "Unknown cover priority."),
+        };
     }
 
     /// <summary>
@@ -57,7 +94,36 @@ public static class CoverRuleMappingExtensions
             CoverRuleOptionDto.Inherit => null,
             CoverRuleOptionDto.AlbumFirst => CoverPriority.AlbumFirst,
             CoverRuleOptionDto.TrackFirst => CoverPriority.TrackFirst,
+            CoverRuleOptionDto.TrackOnly => CoverPriority.TrackOnly,
             _ => throw new ArgumentOutOfRangeException(nameof(option), option, "Unknown cover rule."),
+        };
+    }
+
+    /// <summary>
+    /// The exception of an album as option; <c>null</c> is <see cref="AlbumCoverFallbackOptionDto.Inherit"/>.
+    /// </summary>
+    public static AlbumCoverFallbackOptionDto ToOptionDto(this AlbumCoverFallback? fallback)
+    {
+        return fallback switch
+        {
+            null => AlbumCoverFallbackOptionDto.Inherit,
+            AlbumCoverFallback.ArtistPicture => AlbumCoverFallbackOptionDto.ArtistPicture,
+            AlbumCoverFallback.None => AlbumCoverFallbackOptionDto.None,
+            _ => throw new ArgumentOutOfRangeException(nameof(fallback), fallback, "Unknown album cover fallback."),
+        };
+    }
+
+    /// <summary>
+    /// The exception of an option; <see cref="AlbumCoverFallbackOptionDto.Inherit"/> is <c>null</c>.
+    /// </summary>
+    public static AlbumCoverFallback? ToFallback(this AlbumCoverFallbackOptionDto option)
+    {
+        return option switch
+        {
+            AlbumCoverFallbackOptionDto.Inherit => null,
+            AlbumCoverFallbackOptionDto.ArtistPicture => AlbumCoverFallback.ArtistPicture,
+            AlbumCoverFallbackOptionDto.None => AlbumCoverFallback.None,
+            _ => throw new ArgumentOutOfRangeException(nameof(option), option, "Unknown album cover fallback."),
         };
     }
 }

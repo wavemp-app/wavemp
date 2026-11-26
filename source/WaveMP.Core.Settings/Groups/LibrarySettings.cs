@@ -58,11 +58,22 @@ public sealed class LibrarySettings
     public IReadOnlyList<string> ArtistPictureNames { get; init; } = ["artist", "folder", "photo"];
 
     /// <summary>
-    /// Which cover a track shows: the cover of its album or its own; the other one is the fallback. Applies to all
-    /// albums and tracks without a rule of their own (a rule of an album or a track overrides it). Stored as its name.
+    /// Which cover a song shows: its own cover, else the cover of its album (the default); the cover of its album,
+    /// else its own; or only its own. Never the picture of an artist. Applies to all songs without an exception of
+    /// their own or of their album. Stored as its name. Replaces the setting <c>coverPriority</c> of earlier versions,
+    /// whose two values both showed a picture with the name of a song first, as the default does now; a stored value of
+    /// it is no longer read.
     /// </summary>
     [JsonConverter(typeof(JsonStringEnumConverter<CoverPriority>))]
-    public CoverPriority CoverPriority { get; init; } = CoverPriority.AlbumFirst;
+    public CoverPriority TrackCoverPriority { get; init; } = CoverPriority.TrackFirst;
+
+    /// <summary>
+    /// What an album shows without a cover of its own: the picture of its album artist (the default) or nothing.
+    /// Never the cover of another album; the collage of album covers of an artist without a picture is no picture of
+    /// the artist. Applies to all albums without an exception of their own. Stored as its name.
+    /// </summary>
+    [JsonConverter(typeof(JsonStringEnumConverter<AlbumCoverFallback>))]
+    public AlbumCoverFallback AlbumCoverFallback { get; init; } = AlbumCoverFallback.ArtistPicture;
 
     /// <summary>
     /// Downloads the lyrics of tracks without lyrics from the online lyrics database LRCLIB (lrclib.net): for new

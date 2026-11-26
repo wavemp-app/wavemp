@@ -220,11 +220,13 @@ public sealed class AlbumsController(
     }
 
     /// <summary>
-    /// Returns the cover of an album as picture: the picture in its folder, otherwise the cover of one of its tracks.
-    /// With size, the picture is scaled to fit into a square of 96, 192, 300, 600, 1000 or 2000 pixels (the requested
-    /// size rounded up, at most 2000; never enlarged) and delivered as WebP from the cache; without size, as stored
-    /// (JPEG, PNG, WebP, GIF or BMP). Every picture carries a strong ETag of its version and size, Last-Modified and
-    /// Cache-Control: private, no-cache; a request with a matching If-None-Match returns 304.
+    /// Returns the cover of an album as picture: its own cover (its online cover, the picture in its folder,
+    /// otherwise a picture embedded in one of its tracks); without one, the picture of its album artist if the rule
+    /// of the album allows it (GetAlbumCoverFallback), never the cover of another album or a picture with the name of
+    /// a song. With size, the picture is scaled to fit into a square of 96, 192, 300, 600, 1000 or 2000 pixels (the
+    /// requested size rounded up, at most 2000; never enlarged) and delivered as WebP from the cache; without size, as
+    /// stored (JPEG, PNG, WebP, GIF or BMP). Every picture carries a strong ETag of its version and size,
+    /// Last-Modified and Cache-Control: private, no-cache; a request with a matching If-None-Match returns 304.
     /// </summary>
     /// <param name="id">Id of the album.</param>
     /// <param name="size">Largest width and height in pixels the client shows the picture with (1 to 4096), its width

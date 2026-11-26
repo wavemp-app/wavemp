@@ -12,7 +12,8 @@ public sealed record UpdateLibrarySettingsCommand(
     IReadOnlyList<string>? VideoExtensions = null,
     IReadOnlyList<string>? ImageExtensions = null,
     IReadOnlyList<string>? AlbumCoverNames = null,
-    CoverPriority? CoverPriority = null,
+    CoverPriority? TrackCoverPriority = null,
     bool? DownloadLyrics = null,
     bool? SubsonicDownloads = null,
-    IReadOnlyList<string>? ArtistPictureNames = null);
+    IReadOnlyList<string>? ArtistPictureNames = null,
+    AlbumCoverFallback? AlbumCoverFallback = null);

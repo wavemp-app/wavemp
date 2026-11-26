@@ -495,7 +495,7 @@
         "tags": [
           "Albums"
         ],
-        "summary": "Returns the cover of an album as picture: the picture in its folder, otherwise the cover of one of its tracks. With size, the picture is scaled to fit into a square of 96, 192, 300, 600, 1000 or 2000 pixels (the requested size rounded up, at most 2000; never enlarged) and delivered as WebP from the cache; without size, as stored (JPEG, PNG, WebP, GIF or BMP). Every picture carries a strong ETag of its version and size, Last-Modified and Cache-Control: private, no-cache; a request with a matching If-None-Match returns 304.",
+        "summary": "Returns the cover of an album as picture: its own cover (its online cover, the picture in its folder, otherwise a picture embedded in one of its tracks); without one, the picture of its album artist if the rule of the album allows it (GetAlbumCoverFallback), never the cover of another album or a picture with the name of a song. With size, the picture is scaled to fit into a square of 96, 192, 300, 600, 1000 or 2000 pixels (the requested size rounded up, at most 2000; never enlarged) and delivered as WebP from the cache; without size, as stored (JPEG, PNG, WebP, GIF or BMP). Every picture carries a strong ETag of its version and size, Last-Modified and Cache-Control: private, no-cache; a request with a matching If-None-Match returns 304.",
         "operationId": "GetAlbumCover",
         "parameters": [
           {
@@ -2589,7 +2589,7 @@
         "tags": [
           "CoverRules"
         ],
-        "summary": "Returns the cover rule of an album, the global rule it inherits and the priority that applies to it.",
+        "summary": "Returns the cover rule of the songs of an album, the global rule it inherits and the priority that applies to its songs without a rule of their own.",
         "operationId": "GetAlbumCoverRule",
         "parameters": [
           {
@@ -2655,7 +2655,7 @@
         "tags": [
           "CoverRules"
         ],
-        "summary": "Sets the cover rule of an album; it applies to the album and to its tracks without a rule of their own. Inherit follows the global rule again. A change starts the job cover-cache, which prepares the covers shown now; the cover URLs stay the same and deliver the new picture with a new ETag.",
+        "summary": "Sets the cover rule of the songs of an album; it applies to its songs without a rule of their own, not to the cover of the album itself (see SetAlbumCoverFallback). Inherit follows the global rule again. A change starts the job cover-cache, which prepares the covers shown now; the cover URLs stay the same and deliver the new picture with a new ETag.",
         "operationId": "SetAlbumCoverRule",
         "parameters": [
           {
@@ -2749,7 +2749,7 @@
         "tags": [
           "CoverRules"
         ],
-        "summary": "Returns the cover an album would show with the given rule, without changing it, e.g. to preview a rule before it is set. The picture is delivered like GetAlbumCover: scaled as WebP with size, as stored without.",
+        "summary": "Returns the cover an album shows, like GetAlbumCover: the rule of its songs does not change the cover of the album itself. Kept for clients that preview the rule; scaled as WebP with size, as stored without.",
         "operationId": "GetAlbumCoverRulePreview",
         "parameters": [
           {
@@ -2938,7 +2938,7 @@
         "tags": [
           "CoverRules"
         ],
-        "summary": "Sets the cover rule of a track; Inherit follows the rule of its album again. A cover the admin selected for the track (SetTrackFileSelection) still comes first. A change starts the job cover-cache, which prepares the covers shown now; the cover URLs stay the same and deliver the new picture with a new ETag.",
+        "summary": "Sets the cover rule of a track; Inherit follows the rule of its album again. A cover the admin selected for the track (SetTrackFileSelection) still comes first under every rule. A change starts the job cover-cache, which prepares the covers shown now; the cover URLs stay the same and deliver the new picture with a new ETag.",
         "operationId": "SetTrackCoverRule",
         "parameters": [
           {
@@ -3134,6 +3134,166 @@
           },
           "404": {
             "description": "The track does not exist (code `track.not_found`) or has no cover (code `cover.not_found`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/api/v1/albums/{id}/cover-fallback": {
+      "get": {
+        "tags": [
+          "CoverRules"
+        ],
+        "summary": "Returns what an album shows without a cover of its own: its exception, the global rule it inherits and the rule that applies.",
+        "operationId": "GetAlbumCoverFallback",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Id of the album.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "The rule of the album.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlbumCoverFallbackRule"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The album does not exist (code `album.not_found`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "CoverRules"
+        ],
+        "summary": "Sets what an album shows without a cover of its own: the picture of its album artist (ArtistPicture) or nothing (None); Inherit follows the global rule again. The cover URL of the album stays the same and delivers the new picture with a new ETag.",
+        "operationId": "SetAlbumCoverFallback",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Id of the album.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "The rule.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateAlbumCoverFallback"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateAlbumCoverFallback"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "The rule is set.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlbumCoverFallbackRule"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The rule is missing or unknown (code `request.invalid`, field `fallback`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The album does not exist (code `album.not_found`).",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -14921,7 +15081,7 @@
         "tags": [
           "Tracks"
         ],
-        "summary": "Returns the cover of a track as picture: a cover chosen in its files, then a picture with its base name, then by default the cover of its album before its other covers (embedded pictures); if the preferred cover is missing, the other one is used. A track never shows the cover of another track; without any cover it has none. With size, the picture is scaled to fit into a square of 96, 192, 300, 600, 1000 or 2000 pixels (the requested size rounded up, at most 2000; never enlarged) and delivered as WebP from the cache; without size, as stored (JPEG, PNG, WebP, GIF or BMP). Every picture carries a strong ETag of its version and size, Last-Modified and Cache-Control: private, no-cache; a request with a matching If-None-Match returns 304. Besides the session token, it accepts the signed cover URL of the playback endpoints for casting devices (query uid, sid, exp and sig), because they cannot send a token header.",
+        "summary": "Returns the cover of a track as picture: a cover chosen in its files first, then by default its own cover (an online cover of the track, a picture with its base name) before the cover of its album (the online cover of the album, a picture in its folder, a picture embedded in the track or another track of the album); the rule of the track, of its album or of the library settings may put the album cover first or show only the own cover. A track never shows the picture of an artist; without any cover it has none. With size, the picture is scaled to fit into a square of 96, 192, 300, 600, 1000 or 2000 pixels (the requested size rounded up, at most 2000; never enlarged) and delivered as WebP from the cache; without size, as stored (JPEG, PNG, WebP, GIF or BMP). Every picture carries a strong ETag of its version and size, Last-Modified and Cache-Control: private, no-cache; a request with a matching If-None-Match returns 304. Besides the session token, it accepts the signed cover URL of the playback endpoints for casting devices (query uid, sid, exp and sig), because they cannot send a token header.",
         "operationId": "GetTrackCover",
         "parameters": [
           {
@@ -17324,6 +17484,46 @@
         },
         "description": "An album of the library."
       },
+      "AlbumCoverFallback": {
+        "enum": [
+          "ArtistPicture",
+          "None"
+        ],
+        "type": "string",
+        "description": "What an album shows without a cover of its own (an online cover of the album, a picture in its folder or a picture embedded in its songs). An album never shows the cover of another album or a picture with the name of a song."
+      },
+      "AlbumCoverFallbackOption": {
+        "enum": [
+          "Inherit",
+          "ArtistPicture",
+          "None"
+        ],
+        "type": "string",
+        "description": "What an album shows without a cover of its own, as an exception from the library settings: a rule of its own (see AlbumCoverFallbackDto) or the global rule."
+      },
+      "AlbumCoverFallbackRule": {
+        "required": [
+          "fallback",
+          "inheritedFallback",
+          "effectiveFallback"
+        ],
+        "type": "object",
+        "properties": {
+          "fallback": {
+            "description": "The exception of the album; Inherit if it has none.",
+            "$ref": "#/components/schemas/AlbumCoverFallbackOption"
+          },
+          "inheritedFallback": {
+            "description": "The global rule of the library settings.",
+            "$ref": "#/components/schemas/AlbumCoverFallback"
+          },
+          "effectiveFallback": {
+            "description": "The rule that applies: its own, otherwise the inherited one.",
+            "$ref": "#/components/schemas/AlbumCoverFallback"
+          }
+        },
+        "description": "What an album shows without a cover of its own: its exception, the global rule it inherits and the rule that applies."
+      },
       "AlbumPage": {
         "required": [
           "items",
@@ -18250,10 +18450,11 @@
       "CoverPriority": {
         "enum": [
           "AlbumFirst",
-          "TrackFirst"
+          "TrackFirst",
+          "TrackOnly"
         ],
         "type": "string",
-        "description": "Which cover comes first: the cover of the album or the cover of the track. If the preferred cover is missing, the other one is shown."
+        "description": "Which cover a song shows. The own cover of a song is a cover selected for it in its files, an online cover of the song and a picture with its name (Song.jpg); the cover of its album is the online cover of the album, a picture in the folder of the album and a picture embedded in the songs of the album. A song never shows the picture of an artist."
       },
       "CoverRule": {
         "required": [
@@ -18276,16 +18477,17 @@
             "$ref": "#/components/schemas/CoverPriority"
           }
         },
-        "description": "The cover rule of an album or a track and the priority that applies to it."
+        "description": "The cover rule of a song or of the songs of an album and the priority that applies to it."
       },
       "CoverRuleOption": {
         "enum": [
           "Inherit",
           "AlbumFirst",
-          "TrackFirst"
+          "TrackFirst",
+          "TrackOnly"
         ],
         "type": "string",
-        "description": "The cover rule of an album or a track: a priority of its own or the rule of the next level."
+        "description": "The cover rule of a song or of the songs of an album, as an exception from the library settings: a rule of its own (see CoverPriorityDto) or the rule of the next level."
       },
       "CreatedSession": {
         "required": [
@@ -20091,6 +20293,7 @@
           "albumCoverNames",
           "artistPictureNames",
           "coverPriority",
+          "albumCoverFallback",
           "downloadLyrics",
           "subsonicDownloads"
         ],
@@ -20141,8 +20344,12 @@
             "description": "Base names of pictures that are artist pictures in the folder named after the artist, in the order of their priority (default artist, folder, photo)."
           },
           "coverPriority": {
-            "description": "The global cover rule: whether tracks and albums show the cover of the album or the cover of the track first. Albums and tracks with a rule of their own (GetAlbumCoverRule, GetTrackCoverRule) override it.",
+            "description": "The global cover rule of the songs: own cover, else album cover (TrackFirst, the default); album cover, else own cover (AlbumFirst); or only the own cover (TrackOnly). Songs and albums with an exception (GetTrackCoverRule, GetAlbumCoverRule) override it.",
             "$ref": "#/components/schemas/CoverPriority"
+          },
+          "albumCoverFallback": {
+            "description": "What albums without a cover of their own show: the picture of their album artist (ArtistPicture, the default) or nothing (None). Albums with an exception (GetAlbumCoverFallback) override it.",
+            "$ref": "#/components/schemas/AlbumCoverFallback"
           },
           "downloadLyrics": {
             "type": "boolean",
@@ -25746,6 +25953,26 @@
         },
         "description": "State of the transcoding."
       },
+      "UpdateAlbumCoverFallback": {
+        "required": [
+          "fallback"
+        ],
+        "type": "object",
+        "properties": {
+          "fallback": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "The rule; Inherit removes the exception of the album.",
+                "$ref": "#/components/schemas/AlbumCoverFallbackOption"
+              }
+            ]
+          }
+        },
+        "description": "Sets what an album shows without a cover of its own."
+      },
       "UpdateAlbumTags": {
         "type": "object",
         "properties": {
@@ -26078,8 +26305,19 @@
                 "type": "null"
               },
               {
-                "description": "The global cover rule; applies at once to all albums and tracks without a rule of their own.",
+                "description": "The global cover rule of the songs; applies at once to all songs without an exception of their own or of their album.",
                 "$ref": "#/components/schemas/CoverPriority"
+              }
+            ]
+          },
+          "albumCoverFallback": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "What albums without a cover of their own show; applies at once to all albums without an exception.",
+                "$ref": "#/components/schemas/AlbumCoverFallback"
               }
             ]
           },

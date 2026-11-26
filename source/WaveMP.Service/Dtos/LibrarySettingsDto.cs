@@ -42,10 +42,17 @@ public sealed class LibrarySettingsDto
     public required IReadOnlyList<string> ArtistPictureNames { get; init; }
 
     /// <summary>
-    /// The global cover rule: whether tracks and albums show the cover of the album or the cover of the track first.
-    /// Albums and tracks with a rule of their own (GetAlbumCoverRule, GetTrackCoverRule) override it.
+    /// The global cover rule of the songs: own cover, else album cover (TrackFirst, the default); album cover, else own
+    /// cover (AlbumFirst); or only the own cover (TrackOnly). Songs and albums with an exception (GetTrackCoverRule,
+    /// GetAlbumCoverRule) override it.
     /// </summary>
     public required CoverPriorityDto CoverPriority { get; init; }
+
+    /// <summary>
+    /// What albums without a cover of their own show: the picture of their album artist (ArtistPicture, the default)
+    /// or nothing (None). Albums with an exception (GetAlbumCoverFallback) override it.
+    /// </summary>
+    public required AlbumCoverFallbackDto AlbumCoverFallback { get; init; }
 
     /// <summary>
     /// Downloads the lyrics of tracks without lyrics from the online lyrics database LRCLIB (lrclib.net): new tracks

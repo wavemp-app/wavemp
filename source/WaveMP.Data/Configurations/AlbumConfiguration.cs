@@ -23,6 +23,9 @@ internal sealed class AlbumConfiguration : IEntityTypeConfiguration<Album>
         builder.Property(album => album.CoverPriority)
             .HasConversion<string>()
             .HasMaxLength(LibraryColumns.EnumMaxLength);
+        builder.Property(album => album.CoverFallback)
+            .HasConversion<string>()
+            .HasMaxLength(LibraryColumns.EnumMaxLength);
 
         builder.HasIndex(album => album.AlbumKey).IsUnique();
         builder.HasIndex(album => album.AlbumArtistId);

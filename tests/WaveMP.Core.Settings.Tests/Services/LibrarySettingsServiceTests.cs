@@ -87,39 +87,61 @@ public class LibrarySettingsServiceTests
     }
 
     [Test]
-    public async Task UpdateAsync_AnyChange_KeepsTheCoverPriority()
+    public async Task UpdateAsync_AnyChange_KeepsTheCoverRules()
     {
-        _saved = new LibrarySettings { CoverPriority = CoverPriority.TrackFirst };
+        _saved = new LibrarySettings
+        {
+            TrackCoverPriority = CoverPriority.TrackOnly,
+            AlbumCoverFallback = AlbumCoverFallback.None,
+        };
 
         LibrarySettingsResult result = await _service.UpdateAsync(
             new UpdateLibrarySettingsCommand(ScanIntervalMinutes: 60));
 
         result.IsSuccess.Should().BeTrue();
-        result.Settings!.CoverPriority.Should().Be(CoverPriority.TrackFirst);
+        result.Settings!.TrackCoverPriority.Should().Be(CoverPriority.TrackOnly);
+        result.Settings.AlbumCoverFallback.Should().Be(AlbumCoverFallback.None);
     }
 
-    [Test]
-    public async Task UpdateAsync_WithCoverPriority_ChangesTheGlobalCoverRule()
+    [TestCase(CoverPriority.TrackFirst)]
+    [TestCase(CoverPriority.AlbumFirst)]
+    [TestCase(CoverPriority.TrackOnly)]
+    public async Task UpdateAsync_WithTrackCoverPriority_ChangesTheGlobalCoverRuleOfTheSongs(CoverPriority priority)
     {
         _saved = new LibrarySettings { ScanIntervalMinutes = 45 };
 
         LibrarySettingsResult result = await _service.UpdateAsync(
-            new UpdateLibrarySettingsCommand(CoverPriority: CoverPriority.TrackFirst));
+            new UpdateLibrarySettingsCommand(TrackCoverPriority: priority));
 
         result.IsSuccess.Should().BeTrue();
-        result.Settings!.CoverPriority.Should().Be(CoverPriority.TrackFirst);
+        result.Settings!.TrackCoverPriority.Should().Be(priority);
         result.Settings.ScanIntervalMinutes.Should().Be(45);
-        _snapshot.Current.CoverPriority.Should().Be(CoverPriority.TrackFirst);
+        _snapshot.Current.TrackCoverPriority.Should().Be(priority);
+    }
+
+    [TestCase(AlbumCoverFallback.ArtistPicture)]
+    [TestCase(AlbumCoverFallback.None)]
+    public async Task UpdateAsync_WithAlbumCoverFallback_ChangesTheGlobalCoverRuleOfTheAlbums(
+        AlbumCoverFallback fallback)
+    {
+        LibrarySettingsResult result = await _service.UpdateAsync(
+            new UpdateLibrarySettingsCommand(AlbumCoverFallback: fallback));
+
+        result.IsSuccess.Should().BeTrue();
+        result.Settings!.AlbumCoverFallback.Should().Be(fallback);
+        _snapshot.Current.AlbumCoverFallback.Should().Be(fallback);
     }
 
     [Test]
-    public async Task UpdateAsync_UndefinedCoverPriority_IsRejected()
+    public async Task UpdateAsync_UndefinedCoverRules_AreRejected()
     {
-        LibrarySettingsResult result = await _service.UpdateAsync(
-            new UpdateLibrarySettingsCommand(CoverPriority: (CoverPriority)99));
+        LibrarySettingsResult result = await _service.UpdateAsync(new UpdateLibrarySettingsCommand(
+            TrackCoverPriority: (CoverPriority)99,
+            AlbumCoverFallback: (AlbumCoverFallback)99));
 
         result.IsSuccess.Should().BeFalse();
-        result.Errors.Should().ContainSingle().Which.Field.Should().Be(LibrarySettingsField.CoverPriority);
+        result.Errors.Select(error => error.Field).Should().BeEquivalentTo(
+            [LibrarySettingsField.TrackCoverPriority, LibrarySettingsField.AlbumCoverFallback]);
         await _store.DidNotReceiveWithAnyArgs().SaveAsync<LibrarySettings>(default!, default!, default);
     }
 

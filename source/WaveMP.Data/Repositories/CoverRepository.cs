@@ -19,11 +19,18 @@ internal sealed class CoverRepository(WaveMpDbContext dbContext) : ICoverReposit
             return null;
         }
 
-        // A track shows its own covers and those of its album, never the cover of another track.
+        // A track shows its own covers and those of its album: the pictures in the folder of the album, its online
+        // cover and the pictures embedded in the files of its tracks. Pictures with the name of another track and the
+        // online covers of other tracks are no covers of the album.
         if (track.AlbumId is { } albumId)
         {
             return await ListAsync(
-                dbContext.Covers.Where(cover => cover.TrackId == trackId || cover.AlbumId == albumId),
+                dbContext.Covers.Where(cover =>
+                    cover.TrackId == trackId
+                    || cover.AlbumId == albumId
+                    || (cover.Source == CoverSource.Embedded
+                        && cover.Track != null
+                        && cover.Track.AlbumId == albumId)),
                 dbContext.OnlineCovers.Where(cover => cover.TrackId == trackId || cover.AlbumId == albumId),
                 cancellationToken);
         }
@@ -138,6 +145,30 @@ internal sealed class CoverRepository(WaveMpDbContext dbContext) : ICoverReposit
         int changed = await dbContext.Tracks
             .Where(track => track.Id == trackId)
             .ExecuteUpdateAsync(setters => setters.SetProperty(track => track.CoverPriority, rule), cancellationToken);
+        return changed > 0;
+    }
+
+    public async Task<AlbumCoverFallbackRow?> GetAlbumCoverFallbackAsync(
+        Guid albumId,
+        CancellationToken cancellationToken = default)
+    {
+        return await dbContext.Albums.AsNoTracking()
+            .Where(album => album.Id == albumId)
+            .Select(album => new AlbumCoverFallbackRow(album.CoverFallback, album.AlbumArtistId))
+            .FirstOrDefaultAsync(cancellationToken);
+    }
+
+    public async Task<bool> SetAlbumCoverFallbackAsync(
+        Guid albumId,
+        AlbumCoverFallback? fallback,
+        CancellationToken cancellationToken = default)
+    {
+        // Not a change of the content of the library, so the time of the last change stays.
+        int changed = await dbContext.Albums
+            .Where(album => album.Id == albumId)
+            .ExecuteUpdateAsync(
+                setters => setters.SetProperty(album => album.CoverFallback, fallback),
+                cancellationToken);
         return changed > 0;
     }
 

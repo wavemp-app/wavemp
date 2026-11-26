@@ -40,6 +40,11 @@ namespace WaveMP.Data.Migrations
                         .HasColumnType("character varying(64)")
                         .HasColumnName("album_key");
 
+                    b.Property<string>("CoverFallback")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("cover_fallback");
+
                     b.Property<string>("CoverPriority")
                         .HasMaxLength(32)
                         .HasColumnType("character varying(32)")

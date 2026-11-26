@@ -24,6 +24,7 @@ public class OnlineMetadataApiTests
 {
     private static readonly Guid _releaseId = Guid.Parse("7a0c3d43-1d7e-4b0e-9a69-2c6dd1b46a01");
     private static readonly Guid _releaseWithoutCover = Guid.Parse("7a0c3d43-1d7e-4b0e-9a69-2c6dd1b46a02");
+    private static readonly Guid _otherRelease = Guid.Parse("7a0c3d43-1d7e-4b0e-9a69-2c6dd1b46a03");
 
     private static readonly TestTags _album = new() { Artist = "Band", Album = "Album", Date = "2001" };
 
@@ -53,6 +54,8 @@ public class OnlineMetadataApiTests
         await AudioAsync("Singles/Lonely.mp3", new TestTags { Title = "Lonely", Artist = "Solo" });
         await AudioAsync("Singles/Offline.mp3", new TestTags { Title = "Offline", Artist = "Solo" });
         await AudioAsync("Locked/Locked.mp3", new TestTags { Title = "Locked", Artist = "Solo" });
+        await AudioAsync("Shared/01 First.mp3", new TestTags { Title = "First", Artist = "Duo", Album = "One" });
+        await AudioAsync("Shared/02 Second.mp3", new TestTags { Title = "Second", Artist = "Duo", Album = "Two" });
         File.SetAttributes(_media.Combine("Locked/Locked.mp3"), FileAttributes.ReadOnly);
 
         _musicBrainz = Substitute.For<IMusicBrainzClient>();
@@ -69,6 +72,8 @@ public class OnlineMetadataApiTests
             .Returns(OnlineResponse<byte[]>.Found(_jpeg));
         _coverArtArchive.GetFrontCoverAsync(_releaseWithoutCover, Arg.Any<CoverArtSize>(), Arg.Any<CancellationToken>())
             .Returns(OnlineResponse<byte[]>.Failed(OnlineStatus.NotFound));
+        _coverArtArchive.GetFrontCoverAsync(_otherRelease, Arg.Any<CoverArtSize>(), Arg.Any<CancellationToken>())
+            .Returns(OnlineResponse<byte[]>.Found(_png));
 
         _factory = new WaveMpWebApplicationFactory(
             WaveMpWebApplicationFactory.TestDatabaseName + "_online_metadata",
@@ -306,7 +311,7 @@ public class OnlineMetadataApiTests
     }
 
     [Test]
-    public async Task ApplyTrackOnlineMetadata_TagsAndCover_WritesTheFileWithBackupAndTheCoverOfTheAlbum()
+    public async Task ApplyTrackOnlineMetadata_TagsAndCover_WritesTheFileWithBackupAndTheCoverOfTheSong()
     {
         await SetEnabledAsync(true);
         TrackDto track = await TrackAsync("Song");
@@ -322,7 +327,8 @@ public class OnlineMetadataApiTests
         result.Metadata.Title.Should().Be("Song (Remastered)");
         result.Metadata.Year.Should().Be(1999);
         result.Cover.Should().Be(OnlineCoverOutcomeDto.MediaFolder);
-        (await File.ReadAllBytesAsync(_media.Combine("Band/Album/cover.jpg"))).Should().Equal(_jpeg);
+        (await File.ReadAllBytesAsync(_media.Combine("Band/Album/01 - Song.jpg"))).Should().Equal(_jpeg);
+        File.Exists(_media.Combine("Band/Album/cover.jpg")).Should().BeFalse();
         using (var file = TagLib.File.Create(_media.Combine("Band/Album/01 - Song.mp3")))
         {
             (file.Tag.Title, file.Tag.Year).Should().Be(("Song (Remastered)", 1999u));
@@ -333,7 +339,28 @@ public class OnlineMetadataApiTests
         (await db.TagBackups.AnyAsync(backup => backup.RelativePath == "Band/Album/01 - Song.mp3"))
             .Should().BeTrue();
         TrackDto other = await TrackAsync("Other");
-        other.HasCover.Should().BeTrue("the cover belongs to the album");
+        other.HasCover.Should().BeFalse("a song never shows the picture named after another song");
+    }
+
+    [Test]
+    public async Task ApplyAlbumOnlineMetadata_TwoAlbumsInTheSameFolder_KeepTheirOwnCovers()
+    {
+        await SetEnabledAsync(true);
+        Guid one = (await TrackAsync("First")).Album!.Id;
+        Guid two = (await TrackAsync("Second")).Album!.Id;
+
+        OnlineAlbumApplyResultDto first = await ApplyAlbumCoverAsync(one, _releaseId);
+        OnlineAlbumApplyResultDto second = await ApplyAlbumCoverAsync(two, _otherRelease);
+
+        // The covers are kept by the id of each album, never as a picture in the folder both albums share.
+        (first.Cover, second.Cover).Should().Be((OnlineCoverOutcomeDto.DataFolder, OnlineCoverOutcomeDto.DataFolder));
+        Directory.EnumerateFiles(_media.Combine("Shared")).Select(Path.GetFileName)
+            .Should().BeEquivalentTo("01 First.mp3", "02 Second.mp3");
+        (await (await _user.GetAsync($"/api/v1/albums/{one}/cover")).Content.ReadAsByteArrayAsync())
+            .Should().Equal(_jpeg);
+        (await (await _user.GetAsync($"/api/v1/albums/{two}/cover")).Content.ReadAsByteArrayAsync())
+            .Should().Equal(_png);
+        (await TrackAsync("First")).HasCover.Should().BeTrue();
     }
 
     [Test]
@@ -444,6 +471,16 @@ public class OnlineMetadataApiTests
         reloaded.HasCover.Should().BeTrue();
         cover.StatusCode.Should().Be(HttpStatusCode.OK, await cover.Content.ReadAsStringAsync());
         cover.Content.Headers.ContentType!.MediaType.Should().StartWith("image/");
+    }
+
+    private async Task<OnlineAlbumApplyResultDto> ApplyAlbumCoverAsync(Guid albumId, Guid releaseId)
+    {
+        HttpResponseMessage response = await _admin.SendJsonAsync(
+            "POST",
+            $"/api/v1/albums/{albumId}/online-metadata",
+            $$"""{ "tags": {}, "coverReleaseId": "{{releaseId}}" }""");
+        response.StatusCode.Should().Be(HttpStatusCode.OK, await response.Content.ReadAsStringAsync());
+        return (await response.Content.ReadFromJsonAsync<OnlineAlbumApplyResultDto>(HttpClientExtensions.JsonOptions))!;
     }
 
     private async Task SetEnabledAsync(bool enabled)

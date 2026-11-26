@@ -18,10 +18,7 @@ internal sealed class CoverService(
         Guid trackId,
         CancellationToken cancellationToken = default)
     {
-        IReadOnlyList<CoverCandidateRow>? candidates = await covers.GetTrackCandidatesAsync(trackId, cancellationToken);
-        return candidates is null
-            ? CoverCandidates.OwnerNotFound
-            : new CoverCandidates(true, CoverChoices.ForTrack(trackId, Global(), candidates));
+        return await TrackCandidatesAsync(trackId, preview: false, rule: null, cancellationToken);
     }
 
     public async Task<CoverCandidates> GetAlbumCandidatesAsync(
@@ -29,11 +26,20 @@ internal sealed class CoverService(
         CancellationToken cancellationToken = default)
     {
         IReadOnlyList<CoverCandidateRow>? candidates = await covers.GetAlbumCandidatesAsync(albumId, cancellationToken);
-        return candidates is null
-            ? CoverCandidates.OwnerNotFound
-            : new CoverCandidates(
-                true,
-                CoverResolver.OrderForAlbum(CoverRules.ForAlbum(Global(), candidates), candidates));
+        AlbumCoverFallbackRow? fallback = candidates is null
+            ? null
+            : await covers.GetAlbumCoverFallbackAsync(albumId, cancellationToken);
+        if (candidates is null || fallback is null)
+        {
+            return CoverCandidates.OwnerNotFound;
+        }
+
+        bool showsArtist = CoverRules.EffectiveFallback(settings.Current.AlbumCoverFallback, fallback.Fallback)
+            == AlbumCoverFallback.ArtistPicture;
+        return new CoverCandidates(
+            true,
+            CoverResolver.OrderForAlbum(candidates),
+            showsArtist ? fallback.AlbumArtistId : null);
     }
 
     public async Task<CoverCandidates> PreviewTrackCandidatesAsync(
@@ -41,10 +47,7 @@ internal sealed class CoverService(
         CoverPriority? rule,
         CancellationToken cancellationToken = default)
     {
-        IReadOnlyList<CoverCandidateRow>? candidates = await covers.GetTrackCandidatesAsync(trackId, cancellationToken);
-        return candidates is null
-            ? CoverCandidates.OwnerNotFound
-            : new CoverCandidates(true, CoverChoices.PreviewForTrack(trackId, Global(), rule, candidates));
+        return await TrackCandidatesAsync(trackId, preview: true, rule, cancellationToken);
     }
 
     public async Task<CoverCandidates> PreviewAlbumCandidatesAsync(
@@ -52,10 +55,8 @@ internal sealed class CoverService(
         CoverPriority? rule,
         CancellationToken cancellationToken = default)
     {
-        IReadOnlyList<CoverCandidateRow>? candidates = await covers.GetAlbumCandidatesAsync(albumId, cancellationToken);
-        return candidates is null
-            ? CoverCandidates.OwnerNotFound
-            : new CoverCandidates(true, CoverChoices.PreviewForAlbum(Global(), rule, candidates));
+        // The rule of the songs does not change the cover of the album itself.
+        return await GetAlbumCandidatesAsync(albumId, cancellationToken);
     }
 
     public async IAsyncEnumerable<IReadOnlyList<CoverCandidateRow>> EnumerateShownCoversAsync(
@@ -103,10 +104,32 @@ internal sealed class CoverService(
     }
 
     /// <summary>
-    /// The global rule; albums and tracks may override it with rules of their own, which travel with their covers.
+    /// The covers of a track by the rule that applies to it, or by the rule to try for a preview (<c>null</c> inherits
+    /// the rule of its album). The rules are read on their own, since a track without covers of its own carries none.
+    /// </summary>
+    private async Task<CoverCandidates> TrackCandidatesAsync(
+        Guid trackId,
+        bool preview,
+        CoverPriority? rule,
+        CancellationToken cancellationToken)
+    {
+        IReadOnlyList<CoverCandidateRow>? candidates = await covers.GetTrackCandidatesAsync(trackId, cancellationToken);
+        CoverRuleRow? rules = candidates is null ? null : await covers.GetTrackRuleAsync(trackId, cancellationToken);
+        if (candidates is null || rules is null)
+        {
+            return CoverCandidates.OwnerNotFound;
+        }
+
+        CoverPriority priority = CoverRules.Effective(Global(), rules.AlbumRule, preview ? rule : rules.Rule);
+        return new CoverCandidates(true, CoverResolver.OrderForTrack(trackId, priority, candidates));
+    }
+
+    /// <summary>
+    /// The global rule of the songs; albums and tracks may override it with rules of their own, which travel with their
+    /// covers.
     /// </summary>
     private CoverPriority Global()
     {
-        return settings.Current.CoverPriority;
+        return settings.Current.TrackCoverPriority;
     }
 }

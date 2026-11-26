@@ -84,9 +84,9 @@ public class Track
     public int VideoOffsetMilliseconds { get; set; }
 
     /// <summary>
-    /// The cover rule of the track, set by the admin: whether it shows the cover of its album or its own cover first.
-    /// <c>null</c> inherits the rule of its album, and that one the global rule. A scan never changes it. Stored as its
-    /// name.
+    /// The cover rule of the track, an exception the admin set: whether it shows its own cover or the cover of its
+    /// album first, or only its own. <c>null</c> inherits the rule of its album, and that one the global rule. A scan
+    /// never changes it. Stored as its name.
     /// </summary>
     public CoverPriority? CoverPriority { get; set; }
 

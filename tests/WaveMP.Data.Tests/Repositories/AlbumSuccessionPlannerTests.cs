@@ -41,7 +41,8 @@ public class AlbumSuccessionPlannerTests
         ]);
 
         // Most songs first, then the earliest: album two comes before album three, both after album one.
-        plan.Updates.Should().Equal(new AlbumSuccessionUpdate(merged.Id, _day.AddDays(1), CoverPriority.TrackFirst));
+        plan.Updates.Should().Equal(
+            new AlbumSuccessionUpdate(merged.Id, _day.AddDays(1), CoverPriority.TrackFirst, null));
         plan.OnlineCovers.Should().Equal(new AlbumSuccessionOnlineCover(Id(91), merged.Id));
         plan.PassedOnMoves.Should().BeEmpty();
     }
@@ -64,8 +65,8 @@ public class AlbumSuccessionPlannerTests
             new AlbumSuccessionFavorite(_firstUser, large.Id, _day.AddDays(4)),
         ]);
         plan.Updates.Should().BeEquivalentTo([
-            new AlbumSuccessionUpdate(small.Id, _day, CoverPriority.TrackFirst),
-            new AlbumSuccessionUpdate(large.Id, _day, CoverPriority.TrackFirst),
+            new AlbumSuccessionUpdate(small.Id, _day, CoverPriority.TrackFirst, null),
+            new AlbumSuccessionUpdate(large.Id, _day, CoverPriority.TrackFirst, null),
         ]);
         plan.OnlineCovers.Should().Equal(new AlbumSuccessionOnlineCover(Id(91), large.Id));
     }
@@ -96,7 +97,7 @@ public class AlbumSuccessionPlannerTests
             [Move(1, 10, 1), Move(2, 10, 1), Move(3, 10, 1)],
             []);
 
-        plan.Updates.Should().Equal(new AlbumSuccessionUpdate(Id(10), _day.AddDays(1), CoverPriority.TrackFirst));
+        plan.Updates.Should().Equal(new AlbumSuccessionUpdate(Id(10), _day.AddDays(1), CoverPriority.TrackFirst, null));
         plan.OnlineCovers.Should().Equal(new AlbumSuccessionOnlineCover(Id(92), Id(10)));
     }
 
@@ -112,7 +113,8 @@ public class AlbumSuccessionPlannerTests
             [new AlbumSuccessionFavorite(_firstUser, old.Id, _day)]);
 
         plan.Favorites.Should().Equal(new AlbumSuccessionFavorite(_firstUser, existing.Id, _day));
-        plan.Updates.Should().Equal(new AlbumSuccessionUpdate(existing.Id, _day.AddDays(1), CoverPriority.AlbumFirst));
+        plan.Updates.Should().Equal(
+            new AlbumSuccessionUpdate(existing.Id, _day.AddDays(1), CoverPriority.AlbumFirst, null));
         plan.OnlineCovers.Should().BeEmpty();
     }
 
@@ -152,7 +154,7 @@ public class AlbumSuccessionPlannerTests
             new AlbumSuccessionFavorite(_firstUser, last.Id, _day.AddDays(5)),
             new AlbumSuccessionFavorite(_secondUser, last.Id, _day.AddDays(6)),
         ]);
-        plan.Updates.Should().Equal(new AlbumSuccessionUpdate(last.Id, _day, CoverPriority.TrackFirst));
+        plan.Updates.Should().Equal(new AlbumSuccessionUpdate(last.Id, _day, CoverPriority.TrackFirst, null));
         plan.OnlineCovers.Should().Equal(new AlbumSuccessionOnlineCover(Id(92), last.Id));
     }
 
@@ -279,18 +281,43 @@ public class AlbumSuccessionPlannerTests
         int id,
         DateTimeOffset firstSeenAt,
         CoverPriority? coverPriority = null,
-        Guid? onlineCover = null)
+        Guid? onlineCover = null,
+        AlbumCoverFallback? coverFallback = null)
     {
-        return new AlbumSuccessionAlbum(Id(id), false, firstSeenAt, coverPriority, onlineCover);
+        return new AlbumSuccessionAlbum(Id(id), false, firstSeenAt, coverPriority, coverFallback, onlineCover);
     }
 
     private static AlbumSuccessionAlbum Live(
         int id,
         DateTimeOffset firstSeenAt,
         CoverPriority? coverPriority = null,
-        Guid? onlineCover = null)
+        Guid? onlineCover = null,
+        AlbumCoverFallback? coverFallback = null)
     {
-        return new AlbumSuccessionAlbum(Id(id), true, firstSeenAt, coverPriority, onlineCover);
+        return new AlbumSuccessionAlbum(Id(id), true, firstSeenAt, coverPriority, coverFallback, onlineCover);
+    }
+
+    [Test]
+    public void Plan_FallbackOfTheAlbumCover_IsCarriedOnItsOwnAndTheSuccessorKeepsItsOwn()
+    {
+        AlbumSuccessionPlan merged = AlbumSuccessionPlanner.Plan(
+            [
+                Empty(1, _day, CoverPriority.AlbumFirst, coverFallback: AlbumCoverFallback.None),
+                Live(10, _day, CoverPriority.TrackOnly),
+            ],
+            [Move(1, 10, 1)],
+            []);
+        AlbumSuccessionPlan kept = AlbumSuccessionPlanner.Plan(
+            [
+                Empty(1, _day, coverFallback: AlbumCoverFallback.None),
+                Live(10, _day, coverFallback: AlbumCoverFallback.ArtistPicture),
+            ],
+            [Move(1, 10, 1)],
+            []);
+
+        merged.Updates.Should().Equal(
+            new AlbumSuccessionUpdate(Id(10), _day, CoverPriority.TrackOnly, AlbumCoverFallback.None));
+        kept.Updates.Should().BeEmpty();
     }
 
     private static AlbumSuccessionMove Move(int from, int to, int trackCount, DateTimeOffset? movedAt = null)

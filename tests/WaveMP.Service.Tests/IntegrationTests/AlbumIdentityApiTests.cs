@@ -93,7 +93,8 @@ public class AlbumIdentityApiTests
         await CoverShouldBeMissingAsync($"/api/v1/tracks/{beta.Id}/cover");
         await CoverShouldBeMissingAsync($"/api/v1/albums/{alpha.Album.Id}/cover");
         (await CoverAsync($"/api/v1/tracks/{gamma.Id}/cover")).Should().Equal(_ownPicture);
-        (await CoverAsync($"/api/v1/albums/{gamma.Album.Id}/cover")).Should().Equal(_ownPicture);
+        // A picture named after a song is no cover of its album.
+        await CoverShouldBeMissingAsync($"/api/v1/albums/{gamma.Album.Id}/cover");
         (await CoverAsync($"/api/v1/tracks/{x.Id}/cover")).Should().Equal(_folderPicture);
         (await CoverAsync($"/api/v1/tracks/{y.Id}/cover")).Should().Equal(_folderPicture);
 

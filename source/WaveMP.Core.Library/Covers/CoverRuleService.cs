@@ -68,9 +68,36 @@ internal sealed class CoverRuleService(
         return current with { Rule = rule };
     }
 
+    public async Task<AlbumCoverFallbackResult> GetAlbumFallbackAsync(
+        Guid albumId,
+        CancellationToken cancellationToken = default)
+    {
+        AlbumCoverFallbackRow? row = await covers.GetAlbumCoverFallbackAsync(albumId, cancellationToken);
+        return row is null
+            ? AlbumCoverFallbackResult.NotFound
+            : new AlbumCoverFallbackResult(true, row.Fallback, settings.Current.AlbumCoverFallback);
+    }
+
+    public async Task<AlbumCoverFallbackResult> SetAlbumFallbackAsync(
+        Guid albumId,
+        AlbumCoverFallback? fallback,
+        CancellationToken cancellationToken = default)
+    {
+        AlbumCoverFallbackResult current = await GetAlbumFallbackAsync(albumId, cancellationToken);
+        if (!current.IsFound)
+        {
+            return current;
+        }
+
+        // The picture of an artist is no cover that the cache prepares, so no handler needs to know.
+        return await covers.SetAlbumCoverFallbackAsync(albumId, fallback, cancellationToken)
+            ? current with { Fallback = fallback }
+            : AlbumCoverFallbackResult.NotFound;
+    }
+
     private CoverPriority Global()
     {
-        return settings.Current.CoverPriority;
+        return settings.Current.TrackCoverPriority;
     }
 
     /// <summary>

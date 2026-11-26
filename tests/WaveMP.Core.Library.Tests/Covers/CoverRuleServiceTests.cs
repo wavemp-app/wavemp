@@ -28,10 +28,18 @@ public class CoverRuleServiceTests
         _covers = Substitute.For<ICoverRepository>();
         _covers.GetAlbumRuleAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>()).Returns((CoverRuleRow?)null);
         _covers.GetTrackRuleAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>()).Returns((CoverRuleRow?)null);
+        _covers.GetAlbumCoverFallbackAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+            .Returns((AlbumCoverFallbackRow?)null);
+        _covers.SetAlbumCoverFallbackAsync(_albumId, Arg.Any<AlbumCoverFallback?>(), Arg.Any<CancellationToken>())
+            .Returns(true);
         _covers.SetAlbumRuleAsync(_albumId, Arg.Any<CoverPriority?>(), Arg.Any<CancellationToken>()).Returns(true);
         _covers.SetTrackRuleAsync(_trackId, Arg.Any<CoverPriority?>(), Arg.Any<CancellationToken>()).Returns(true);
         _settings = Substitute.For<ISettingsSnapshot<LibrarySettings>>();
-        _settings.Current.Returns(new LibrarySettings { CoverPriority = CoverPriority.TrackFirst });
+        _settings.Current.Returns(new LibrarySettings
+        {
+            TrackCoverPriority = CoverPriority.TrackFirst,
+            AlbumCoverFallback = AlbumCoverFallback.ArtistPicture,
+        });
         _handler = Substitute.For<ICoverRuleChangeHandler>();
         _service = new CoverRuleService(_covers, _settings, [_handler], NullLogger<CoverRuleService>.Instance);
     }
@@ -150,5 +158,54 @@ public class CoverRuleServiceTests
         CoverRuleResult result = await _service.SetAlbumRuleAsync(_albumId, CoverPriority.TrackFirst);
 
         result.Rule.Should().Be(CoverPriority.TrackFirst);
+    }
+
+    [TestCase(null, AlbumCoverFallback.ArtistPicture)]
+    [TestCase(AlbumCoverFallback.None, AlbumCoverFallback.None)]
+    public async Task GetAlbumFallbackAsync_KnownAlbum_InheritsTheGlobalRule(
+        AlbumCoverFallback? fallback,
+        AlbumCoverFallback effective)
+    {
+        _covers.GetAlbumCoverFallbackAsync(_albumId, Arg.Any<CancellationToken>())
+            .Returns(new AlbumCoverFallbackRow(fallback, null));
+
+        AlbumCoverFallbackResult result = await _service.GetAlbumFallbackAsync(_albumId);
+
+        result.Should().Be(new AlbumCoverFallbackResult(true, fallback, AlbumCoverFallback.ArtistPicture));
+        result.Effective.Should().Be(effective);
+    }
+
+    [Test]
+    public async Task GetAlbumFallbackAsync_UnknownAlbum_ReturnsNotFound()
+    {
+        AlbumCoverFallbackResult result = await _service.GetAlbumFallbackAsync(Guid.NewGuid());
+
+        result.IsFound.Should().BeFalse();
+    }
+
+    [Test]
+    public async Task SetAlbumFallbackAsync_KnownAlbum_StoresTheExceptionWithoutStartingTheCoverCache()
+    {
+        _covers.GetAlbumCoverFallbackAsync(_albumId, Arg.Any<CancellationToken>())
+            .Returns(new AlbumCoverFallbackRow(null, Guid.NewGuid()));
+
+        AlbumCoverFallbackResult result = await _service.SetAlbumFallbackAsync(_albumId, AlbumCoverFallback.None);
+
+        result.Should().Be(
+            new AlbumCoverFallbackResult(true, AlbumCoverFallback.None, AlbumCoverFallback.ArtistPicture));
+        await _covers.Received(1).SetAlbumCoverFallbackAsync(
+            _albumId,
+            AlbumCoverFallback.None,
+            Arg.Any<CancellationToken>());
+        await _handler.DidNotReceiveWithAnyArgs().OnCoverRuleChangedAsync(default!, default);
+    }
+
+    [Test]
+    public async Task SetAlbumFallbackAsync_UnknownAlbum_ReturnsNotFoundAndChangesNothing()
+    {
+        AlbumCoverFallbackResult result = await _service.SetAlbumFallbackAsync(Guid.NewGuid(), null);
+
+        result.IsFound.Should().BeFalse();
+        await _covers.DidNotReceiveWithAnyArgs().SetAlbumCoverFallbackAsync(default, default, default);
     }
 }

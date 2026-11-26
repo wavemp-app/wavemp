@@ -151,7 +151,10 @@ internal sealed class SmartPlaylistRepository(WaveMpDbContext dbContext) : ISmar
                 HasCover = track.Covers.Any()
                     || (track.AlbumId != null
                         && dbContext.Covers.Any(cover =>
-                            cover.AlbumId == track.AlbumId))
+                            cover.AlbumId == track.AlbumId
+                            || (cover.Source == CoverSource.Embedded
+                                && cover.Track != null
+                                && cover.Track.AlbumId == track.AlbumId)))
                     || dbContext.OnlineCovers.Any(cover =>
                         cover.TrackId == track.Id
                         || (track.AlbumId != null

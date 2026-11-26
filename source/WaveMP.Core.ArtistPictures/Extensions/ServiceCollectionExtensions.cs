@@ -7,6 +7,7 @@ using WaveMP.Core.ArtistPictures.Lookups;
 using WaveMP.Core.ArtistPictures.Options;
 using WaveMP.Core.ArtistPictures.Pictures;
 using WaveMP.Core.ArtistPictures.Stores;
+using WaveMP.Core.Caching.Covers;
 using WaveMP.Core.OnlineMetadata.Options;
 using WaveMP.Core.Settings.Paths;
 
@@ -53,6 +54,7 @@ public static class ServiceCollectionExtensions
 
         services.AddSingleton<IArtistPictureStore, ArtistPictureStore>();
         services.AddScoped<IArtistPictureService, ArtistPictureService>();
+        services.AddScoped<IAlbumCoverFallback, ArtistPictureAlbumCoverFallback>();
         services.AddSingleton<ArtistLookupCache>();
         services.AddScoped<IArtistPictureLookupService, ArtistPictureLookupService>();
 

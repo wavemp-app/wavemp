@@ -439,6 +439,7 @@ public class LibraryScanRepositoryTests : LibraryDatabaseTests
         seed.Favorite(second, smaller, _day.AddDays(2));
         await SaveAsync(seed);
         await SetCoverPriorityAsync(smaller, CoverPriority.TrackFirst);
+        await SetCoverFallbackAsync(larger, AlbumCoverFallback.None);
         Guid largerCover = await AddOnlineCoverAsync(larger);
         await AddOnlineCoverAsync(smaller);
         await AddPlaybackStateAsync(first, smaller);
@@ -452,6 +453,7 @@ public class LibraryScanRepositoryTests : LibraryDatabaseTests
         Album album = await db.Albums.SingleAsync();
         (album.Id, album.CoverPriority, album.FirstSeenAt, album.UpdatedAt)
             .Should().Be((merged.Id, (CoverPriority?)CoverPriority.TrackFirst, _day.AddDays(1), now));
+        album.CoverFallback.Should().Be(AlbumCoverFallback.None);
         (await FavoritesAsync(first, second)).Should().BeEquivalentTo([
             (first.Id, merged.Id, _day.AddDays(3)),
             (second.Id, merged.Id, _day.AddDays(2)),
@@ -1092,6 +1094,14 @@ public class LibraryScanRepositoryTests : LibraryDatabaseTests
         await db.Albums
             .Where(item => item.Id == album.Id)
             .ExecuteUpdateAsync(setters => setters.SetProperty(item => item.CoverPriority, coverPriority));
+    }
+
+    private async Task SetCoverFallbackAsync(Album album, AlbumCoverFallback coverFallback)
+    {
+        WaveMpDbContext db = CreateDbContext();
+        await db.Albums
+            .Where(item => item.Id == album.Id)
+            .ExecuteUpdateAsync(setters => setters.SetProperty(item => item.CoverFallback, coverFallback));
     }
 
     private async Task<Guid> AddOnlineCoverAsync(Album album)

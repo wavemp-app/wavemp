@@ -27,7 +27,8 @@ public static partial class LibrarySettingsValidator
             VideoExtensions = NormalizeList(settings.VideoExtensions, trimDot: true),
             ImageExtensions = NormalizeList(settings.ImageExtensions, trimDot: true),
             AlbumCoverNames = NormalizeList(settings.AlbumCoverNames, trimDot: false),
-            CoverPriority = settings.CoverPriority,
+            TrackCoverPriority = settings.TrackCoverPriority,
+            AlbumCoverFallback = settings.AlbumCoverFallback,
             DownloadLyrics = settings.DownloadLyrics,
             SubsonicDownloads = settings.SubsonicDownloads,
             ArtistPictureNames = NormalizeList(settings.ArtistPictureNames, trimDot: false),
@@ -88,9 +89,14 @@ public static partial class LibrarySettingsValidator
         AddPictureNameErrors(errors, LibrarySettingsField.ArtistPictureNames, settings.ArtistPictureNames);
 
         // The stored JSON may hold a number instead of the name.
-        if (!Enum.IsDefined(settings.CoverPriority))
+        if (!Enum.IsDefined(settings.TrackCoverPriority))
         {
-            errors.Add(new(LibrarySettingsField.CoverPriority, SettingsErrorReason.Invalid));
+            errors.Add(new(LibrarySettingsField.TrackCoverPriority, SettingsErrorReason.Invalid));
+        }
+
+        if (!Enum.IsDefined(settings.AlbumCoverFallback))
+        {
+            errors.Add(new(LibrarySettingsField.AlbumCoverFallback, SettingsErrorReason.Invalid));
         }
 
         return errors;

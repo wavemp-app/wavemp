@@ -10,8 +10,9 @@ namespace WaveMP.Data.Repositories;
 public interface ICoverRepository
 {
     /// <summary>
-    /// The covers of the track and of its album (never those of other tracks), in no particular order; <c>null</c> if
-    /// the track does not exist.
+    /// The covers of the track and of its album, in no particular order; <c>null</c> if the track does not exist. The
+    /// covers of the album are the pictures in its folder, its online cover and the pictures embedded in the files of
+    /// its tracks; pictures with the name of another track and its online covers are left out.
     /// </summary>
     Task<IReadOnlyList<CoverCandidateRow>?> GetTrackCandidatesAsync(
         Guid trackId,
@@ -70,6 +71,22 @@ public interface ICoverRepository
     /// exist.
     /// </summary>
     Task<bool> SetTrackRuleAsync(Guid trackId, CoverPriority? rule, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// What the album shows without a cover of its own, and its album artist; <c>null</c> if the album does not exist.
+    /// </summary>
+    Task<AlbumCoverFallbackRow?> GetAlbumCoverFallbackAsync(
+        Guid albumId,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Sets what the album shows without a cover of its own; <c>null</c> inherits the global rule. <c>false</c> if the
+    /// album does not exist.
+    /// </summary>
+    Task<bool> SetAlbumCoverFallbackAsync(
+        Guid albumId,
+        AlbumCoverFallback? fallback,
+        CancellationToken cancellationToken = default);
 
     /// <summary>
     /// All distinct versions of pictures that covers come from, e.g. to find cached pictures of older versions.

@@ -27,7 +27,7 @@ internal sealed class CoverRuleChangeHandler(IJobService jobs, ILogger<CoverRule
         LibrarySettings current,
         CancellationToken cancellationToken)
     {
-        if (previous.CoverPriority != current.CoverPriority)
+        if (previous.TrackCoverPriority != current.TrackCoverPriority)
         {
             await StartPreparationAsync(cancellationToken);
         }

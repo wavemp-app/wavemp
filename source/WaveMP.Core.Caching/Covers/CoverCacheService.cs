@@ -3,7 +3,10 @@ using WaveMP.Data.Entities;
 
 namespace WaveMP.Core.Caching.Covers;
 
-internal sealed class CoverCacheService(ICoverService covers, ICoverImageCache cache) : ICoverCacheService
+internal sealed class CoverCacheService(
+    ICoverService covers,
+    ICoverImageCache cache,
+    IEnumerable<IAlbumCoverFallback> fallbacks) : ICoverCacheService
 {
     public async Task<CoverDeliveryResult> GetTrackCoverAsync(
         Guid trackId,
@@ -54,6 +57,18 @@ internal sealed class CoverCacheService(ICoverService covers, ICoverImageCache c
         }
 
         CoverDelivery? delivery = await cache.DeliverAsync(candidates.Ordered, size, cancellationToken);
+        if (delivery is null && candidates.FallbackArtistId is { } artistId)
+        {
+            foreach (IAlbumCoverFallback fallback in fallbacks)
+            {
+                delivery = await fallback.DeliverArtistPictureAsync(artistId, size, cancellationToken);
+                if (delivery is not null)
+                {
+                    break;
+                }
+            }
+        }
+
         return delivery is null ? CoverDeliveryResult.NotFound : CoverDeliveryResult.Found(delivery);
     }
 }

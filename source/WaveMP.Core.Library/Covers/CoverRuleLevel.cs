@@ -11,7 +11,7 @@ public enum CoverRuleLevel
     Global,
 
     /// <summary>
-    /// An album; applies to the album and to its tracks without a rule of their own.
+    /// An album; applies to its tracks without a rule of their own.
     /// </summary>
     Album,
 

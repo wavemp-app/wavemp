@@ -12,7 +12,9 @@ namespace WaveMP.Data.Projections;
 /// <param name="Genre">The first genre of its tracks in the order of disc and track number.</param>
 /// <param name="TrackCount">Number of tracks.</param>
 /// <param name="DurationMilliseconds">Sum of the durations of the tracks.</param>
-/// <param name="HasCover">Whether the album or one of its tracks has a cover.</param>
+/// <param name="HasCover">Whether the album has a cover of its own (a picture in its folder, a picture embedded in
+/// one of its tracks or an online cover) or may show the picture of its album artist instead; the rules of the
+/// library settings decide what GetAlbumCover delivers.</param>
 /// <param name="FirstSeenAt">When the album was found for the first time.</param>
 /// <param name="IsFavorite">Whether the user of the query marked the album as favorite.</param>
 public sealed record AlbumRow(

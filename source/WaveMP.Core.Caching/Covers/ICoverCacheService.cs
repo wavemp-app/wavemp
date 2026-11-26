@@ -9,8 +9,8 @@ namespace WaveMP.Core.Caching.Covers;
 public interface ICoverCacheService
 {
     /// <summary>
-    /// The cover of a track: by default the cover of its album, otherwise its own, otherwise the cover of another
-    /// track of its album. Covers whose file is missing or unreadable are skipped.
+    /// The cover of a track: by default its own cover, otherwise the cover of its album; never the picture of an
+    /// artist. Covers whose file is missing or unreadable are skipped.
     /// </summary>
     /// <param name="trackId">Id of the track.</param>
     /// <param name="size">Requested width and height in pixels, rounded up to a size of <see cref="CoverSizes"/>;
@@ -22,7 +22,8 @@ public interface ICoverCacheService
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// The cover of an album: by default the picture in its folder, otherwise the cover of one of its tracks.
+    /// The cover of an album: its own cover (online cover, picture in its folder, picture embedded in one of its
+    /// tracks); without one, by default the real picture of its album artist (<see cref="IAlbumCoverFallback"/>).
     /// </summary>
     /// <param name="albumId">Id of the album.</param>
     /// <param name="size">Requested width and height in pixels, rounded up to a size of <see cref="CoverSizes"/>;
@@ -47,7 +48,7 @@ public interface ICoverCacheService
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// The cover an album would show with another rule of its own, without changing it.
+    /// The cover an album shows; the rule of its songs does not change it.
     /// </summary>
     /// <param name="albumId">Id of the album.</param>
     /// <param name="rule">The rule to try; <c>null</c> inherits the global rule.</param>

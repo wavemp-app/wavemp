@@ -11,13 +11,13 @@ public enum CoverSaveOutcome
     None,
 
     /// <summary>
-    /// As picture in the media folder, named after the cover rules (e.g. <c>cover.jpg</c> in the folder of the album
-    /// or <c>Song.jpg</c> next to the song).
+    /// As picture with the name of the song next to it in the media folder (<c>Song.jpg</c>).
     /// </summary>
     MediaFolder,
 
     /// <summary>
-    /// In the data folder, because the media folder cannot be written; only WaveMP shows it.
+    /// In the data folder: always for the cover of an album, for the cover of a song if the media folder cannot be
+    /// written. Only WaveMP shows it.
     /// </summary>
     DataFolder,
 

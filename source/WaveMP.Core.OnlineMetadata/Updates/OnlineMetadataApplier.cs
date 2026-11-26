@@ -60,14 +60,7 @@ internal sealed class OnlineMetadataApplier(
         {
             // The song may have a new album now; its cover goes where the cover rules expect it today.
             OnlineTrackRow current = await repository.FindTrackAsync(trackId, CancellationToken.None) ?? track;
-            IReadOnlyList<OnlineAlbumTrackRow> albumTracks = current.AlbumId is { } albumId
-                ? (await repository.FindAlbumAsync(albumId, CancellationToken.None))?.Tracks ?? []
-                : [];
-            var target = CoverTarget.ForTrack(
-                current,
-                librarySettings.Current.CoverPriority,
-                albumTracks,
-                librarySettings.Current.AlbumCoverNames);
+            var target = CoverTarget.ForTrack(current, librarySettings.Current.TrackCoverPriority);
             cover = await covers.SaveAsync(target, picture, releaseId, CancellationToken.None);
         }
 
@@ -130,13 +123,11 @@ internal sealed class OnlineMetadataApplier(
         CoverSaveOutcome cover = CoverSaveOutcome.None;
         if (picture is not null && coverReleaseId is { } releaseId)
         {
-            IReadOnlyList<OnlineAlbumTrackRow> tracks =
-                (await repository.FindAlbumAsync(currentAlbumId, CancellationToken.None))?.Tracks ?? album.Tracks;
-            var target = CoverTarget.ForAlbum(
-                currentAlbumId,
-                tracks,
-                librarySettings.Current.AlbumCoverNames);
-            cover = await covers.SaveAsync(target, picture, releaseId, CancellationToken.None);
+            cover = await covers.SaveAsync(
+                CoverTarget.ForAlbum(currentAlbumId),
+                picture,
+                releaseId,
+                CancellationToken.None);
         }
 
         logger.LogInformation(

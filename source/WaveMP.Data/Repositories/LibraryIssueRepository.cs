@@ -420,8 +420,9 @@ internal sealed class LibraryIssueRepository(WaveMpDbContext dbContext) : ILibra
     }
 
     /// <summary>
-    /// Albums with a cover of their own (also an online cover). The covers of their tracks do not count, since a track
-    /// never shows the cover of another track.
+    /// Albums with a cover of their own: a picture in their folder, a picture embedded in the files of one of their
+    /// tracks or an online cover. Pictures with the name of a track do not count, since they are no cover of the
+    /// album.
     /// </summary>
     private async Task<HashSet<Guid>> AlbumsWithCoverAsync(CancellationToken cancellationToken)
     {
@@ -430,12 +431,17 @@ internal sealed class LibraryIssueRepository(WaveMpDbContext dbContext) : ILibra
             .Select(cover => cover.AlbumId!.Value)
             .Distinct()
             .ToListAsync(cancellationToken);
+        List<Guid> embeddedCovers = await dbContext.Covers.AsNoTracking()
+            .Where(cover => cover.Source == CoverSource.Embedded && cover.Track != null && cover.Track.AlbumId != null)
+            .Select(cover => cover.Track!.AlbumId!.Value)
+            .Distinct()
+            .ToListAsync(cancellationToken);
         List<Guid> onlineCovers = await dbContext.OnlineCovers.AsNoTracking()
             .Where(cover => cover.AlbumId != null)
             .Select(cover => cover.AlbumId!.Value)
             .Distinct()
             .ToListAsync(cancellationToken);
-        return [.. albumCovers, .. onlineCovers];
+        return [.. albumCovers, .. embeddedCovers, .. onlineCovers];
     }
 
     private static IQueryable<LibraryIssue> Filter(IQueryable<LibraryIssue> issues, LibraryIssueListQuery query)
