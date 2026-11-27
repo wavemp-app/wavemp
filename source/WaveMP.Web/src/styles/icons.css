@@ -311,6 +311,10 @@
         --_icon: var(--wmp-icon-artist-new);
     }
 
+    [data-icon='alias-remove'] {
+        --_icon: var(--wmp-icon-alias-remove);
+    }
+
     [data-icon='track'] {
         --_icon: var(--wmp-icon-track);
     }
@@ -617,6 +621,10 @@
 
     [data-icon='change-cover'] {
         --_icon: var(--wmp-icon-change-cover);
+    }
+
+    [data-icon='edit-aliases'] {
+        --_icon: var(--wmp-icon-edit-aliases);
     }
 
     [data-icon='add-favorite'] {

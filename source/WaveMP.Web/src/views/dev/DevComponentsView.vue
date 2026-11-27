@@ -2228,6 +2228,20 @@ const sampleTranscodeJobs = computed<TranscodeJob[]>(() => {
                     <ArtistCredit :credit="sampleArtistCredit" />
                 </section>
             </div>
+            <div data-part="artist-alias-editor" data-state="ready">
+                <ul data-part="alias-list" :aria-label="t('artistAliases.title')">
+                    <li data-part="alias" data-source="admin">
+                        <span data-part="alias-name">Alecia Moore</span>
+                        <span data-part="alias-source">{{ t('artistAliases.sources.admin') }}</span>
+                    </li>
+                    <li data-part="alias" data-source="musicbrainz">
+                        <span data-part="alias-name">Pink</span>
+                        <span data-part="alias-source">
+                            {{ t('artistAliases.sources.musicbrainz') }}
+                        </span>
+                    </li>
+                </ul>
+            </div>
             <div data-part="view" data-view="admin-transcoding">
                 <section data-part="section" data-item="status">
                     <h2 data-part="section-title">{{ t('adminTranscoding.statusTitle') }}</h2>

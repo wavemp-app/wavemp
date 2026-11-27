@@ -68,7 +68,7 @@ export interface AlbumsRequestBuilderGetQueryParameters {
      */
     offset?: number;
     /**
-     * Search text: only albums whose title or album artist contains it or is similar to it (small typos).
+     * Search text: only albums whose title or album artist contains it or is similar to it, tolerant like SearchLibrary.
      */
     q?: string;
     /**

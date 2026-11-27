@@ -231,6 +231,45 @@ export interface Artist extends AdditionalDataHolder, Parsable {
     trackCount?: number | null;
 }
 /**
+ * A further name of an artist that the search finds it by, e.g. "Alecia Moore" for "P!nk". Search results always show the name of the artist.
+ */
+export interface ArtistAlias extends AdditionalDataHolder, Parsable {
+    /**
+     * The id property
+     */
+    id?: Guid | null;
+    /**
+     * The name property
+     */
+    name?: string | null;
+    /**
+     * Where an alias of an artist came from.
+     */
+    source?: ArtistAliasSource | null;
+}
+/**
+ * One page of a collection.
+ */
+export interface ArtistAliasPage extends AdditionalDataHolder, Parsable {
+    /**
+     * Items of the page, at most limit.
+     */
+    items?: ArtistAlias[] | null;
+    /**
+     * Maximum number of items of the page, as requested.
+     */
+    limit?: number | null;
+    /**
+     * Number of items skipped before this page.
+     */
+    offset?: number | null;
+    /**
+     * Number of items of the whole collection.
+     */
+    total?: number | null;
+}
+export type ArtistAliasSource = (typeof ArtistAliasSourceObject)[keyof typeof ArtistAliasSourceObject];
+/**
  * An artist of a song or album, in the order of its artists, with its role.
  */
 export interface ArtistCredit extends AdditionalDataHolder, Parsable {
@@ -800,6 +839,33 @@ export function createApplyTrackOnlineMetadataFromDiscriminatorValue(parseNode: 
     return deserializeIntoApplyTrackOnlineMetadata;
 }
 /**
+ * Adds an alias to an artist.
+ */
+export interface CreateArtistAlias extends AdditionalDataHolder, Parsable {
+    /**
+     * The alias, 1 to 512 characters; white space is joined and removed at the ends.
+     */
+    name?: string | null;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {ArtistAlias}
+ */
+// @ts-ignore
+export function createArtistAliasFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoArtistAlias;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {ArtistAliasPage}
+ */
+// @ts-ignore
+export function createArtistAliasPageFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoArtistAliasPage;
+}
+/**
  * Creates a new instance of the appropriate class based on discriminator value
  * @param parseNode The parse node to use to read the discriminator value and create the object
  * @returns {ArtistCredit}
@@ -1041,6 +1107,15 @@ export function createConnectScrobblingServiceFromDiscriminatorValue(parseNode: 
 // @ts-ignore
 export function createCoverRuleFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
     return deserializeIntoCoverRule;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {CreateArtistAlias}
+ */
+// @ts-ignore
+export function createCreateArtistAliasFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoCreateArtistAlias;
 }
 /**
  * Creates a new instance of the appropriate class based on discriminator value
@@ -3139,6 +3214,33 @@ export function deserializeIntoArtist(artist: Partial<Artist> | undefined = {}) 
 }
 /**
  * The deserialization information for the current model
+ * @param ArtistAlias The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoArtistAlias(artistAlias: Partial<ArtistAlias> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "id": n => { artistAlias.id = n.getGuidValue(); },
+        "name": n => { artistAlias.name = n.getStringValue(); },
+        "source": n => { artistAlias.source = n.getEnumValue<ArtistAliasSource>(ArtistAliasSourceObject); },
+    }
+}
+/**
+ * The deserialization information for the current model
+ * @param ArtistAliasPage The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoArtistAliasPage(artistAliasPage: Partial<ArtistAliasPage> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "items": n => { artistAliasPage.items = n.getCollectionOfObjectValues<ArtistAlias>(createArtistAliasFromDiscriminatorValue); },
+        "limit": n => { artistAliasPage.limit = n.getNumberValue(); },
+        "offset": n => { artistAliasPage.offset = n.getNumberValue(); },
+        "total": n => { artistAliasPage.total = n.getNumberValue(); },
+    }
+}
+/**
+ * The deserialization information for the current model
  * @param ArtistCredit The instance to deserialize into.
  * @returns {Record<string, (node: ParseNode) => void>}
  */
@@ -3480,6 +3582,17 @@ export function deserializeIntoCoverRule(coverRule: Partial<CoverRule> | undefin
         "effectivePriority": n => { coverRule.effectivePriority = n.getEnumValue<CoverPriority>(CoverPriorityObject); },
         "inheritedPriority": n => { coverRule.inheritedPriority = n.getEnumValue<CoverPriority>(CoverPriorityObject); },
         "rule": n => { coverRule.rule = n.getEnumValue<CoverRuleOption>(CoverRuleOptionObject); },
+    }
+}
+/**
+ * The deserialization information for the current model
+ * @param CreateArtistAlias The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoCreateArtistAlias(createArtistAlias: Partial<CreateArtistAlias> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "name": n => { createArtistAlias.name = n.getStringValue(); },
     }
 }
 /**
@@ -9408,6 +9521,35 @@ export function serializeArtist(writer: SerializationWriter, artist: Partial<Art
 }
 /**
  * Serializes information the current object
+ * @param ArtistAlias The instance to serialize from.
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeArtistAlias(writer: SerializationWriter, artistAlias: Partial<ArtistAlias> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!artistAlias || isSerializingDerivedType) { return; }
+    writer.writeGuidValue("id", artistAlias.id);
+    writer.writeStringValue("name", artistAlias.name);
+    writer.writeEnumValue<ArtistAliasSource>("source", artistAlias.source);
+    writer.writeAdditionalData(artistAlias.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param ArtistAliasPage The instance to serialize from.
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeArtistAliasPage(writer: SerializationWriter, artistAliasPage: Partial<ArtistAliasPage> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!artistAliasPage || isSerializingDerivedType) { return; }
+    writer.writeCollectionOfObjectValues<ArtistAlias>("items", artistAliasPage.items, serializeArtistAlias);
+    writer.writeNumberValue("limit", artistAliasPage.limit);
+    writer.writeNumberValue("offset", artistAliasPage.offset);
+    writer.writeNumberValue("total", artistAliasPage.total);
+    writer.writeAdditionalData(artistAliasPage.additionalData);
+}
+/**
+ * Serializes information the current object
  * @param ArtistCredit The instance to serialize from.
  * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
  * @param writer Serialization writer to use to serialize this model
@@ -9777,6 +9919,18 @@ export function serializeCoverRule(writer: SerializationWriter, coverRule: Parti
     writer.writeEnumValue<CoverPriority>("inheritedPriority", coverRule.inheritedPriority);
     writer.writeEnumValue<CoverRuleOption>("rule", coverRule.rule);
     writer.writeAdditionalData(coverRule.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param CreateArtistAlias The instance to serialize from.
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeCreateArtistAlias(writer: SerializationWriter, createArtistAlias: Partial<CreateArtistAlias> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!createArtistAlias || isSerializingDerivedType) { return; }
+    writer.writeStringValue("name", createArtistAlias.name);
+    writer.writeAdditionalData(createArtistAlias.additionalData);
 }
 /**
  * Serializes information the current object
@@ -15071,6 +15225,13 @@ export const AlbumSortObject = {
     Relevance: "Relevance",
 } as const;
 /**
+ * Where an alias of an artist came from.
+ */
+export const ArtistAliasSourceObject = {
+    Admin: "Admin",
+    MusicBrainz: "MusicBrainz",
+} as const;
+/**
  * What an artist shows as its picture, in the order of priority.
  */
 export const ArtistPictureKindObject = {
@@ -15701,6 +15862,9 @@ export const ProblemCodeObject = {
     ArtistPicture_lookup_disabled: "artist.picture_lookup_disabled",
     ArtistPicture_lookup_unavailable: "artist.picture_lookup_unavailable",
     ArtistPicture_candidate_not_found: "artist.picture_candidate_not_found",
+    ArtistAlias_not_found: "artist.alias_not_found",
+    ArtistAlias_exists: "artist.alias_exists",
+    ArtistMusicbrainz_artist_missing: "artist.musicbrainz_artist_missing",
     LyricsNot_found: "lyrics.not_found",
     LyricsDownload_disabled: "lyrics.download_disabled",
     LyricsFile_exists: "lyrics.file_exists",

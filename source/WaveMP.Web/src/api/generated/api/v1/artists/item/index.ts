@@ -6,6 +6,8 @@ import { createArtistFromDiscriminatorValue, createProblemDetailsFromDiscriminat
 // @ts-ignore
 import { AlbumsRequestBuilderRequestsMetadata, type AlbumsRequestBuilder } from './albums/index.js';
 // @ts-ignore
+import { AliasesRequestBuilderNavigationMetadata, AliasesRequestBuilderRequestsMetadata, type AliasesRequestBuilder } from './aliases/index.js';
+// @ts-ignore
 import { MusicbrainzMatchesRequestBuilderRequestsMetadata, type MusicbrainzMatchesRequestBuilder } from './musicbrainzMatches/index.js';
 // @ts-ignore
 import { OnlinePictureRequestBuilderRequestsMetadata, type OnlinePictureRequestBuilder } from './onlinePicture/index.js';
@@ -26,6 +28,10 @@ export interface ArtistsItemRequestBuilder extends BaseRequestBuilder<ArtistsIte
      * The albums property
      */
     get albums(): AlbumsRequestBuilder;
+    /**
+     * The aliases property
+     */
+    get aliases(): AliasesRequestBuilder;
     /**
      * The musicbrainzMatches property
      */
@@ -71,6 +77,10 @@ export const ArtistsItemRequestBuilderUriTemplate = "{+baseurl}/api/v1/artists/{
 export const ArtistsItemRequestBuilderNavigationMetadata: Record<Exclude<keyof ArtistsItemRequestBuilder, KeysToExcludeForNavigationMetadata>, NavigationMetadata> = {
     albums: {
         requestsMetadata: AlbumsRequestBuilderRequestsMetadata,
+    },
+    aliases: {
+        requestsMetadata: AliasesRequestBuilderRequestsMetadata,
+        navigationMetadata: AliasesRequestBuilderNavigationMetadata,
     },
     musicbrainzMatches: {
         requestsMetadata: MusicbrainzMatchesRequestBuilderRequestsMetadata,

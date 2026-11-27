@@ -2400,6 +2400,40 @@
       "key": "Enter the key as 1 to 64 letters (A to Z) or digits."
     }
   },
+  "artistAliases": {
+    "open": "Aliases",
+    "title": "Aliases",
+    "hint": "The search also finds {name} by these names, for example a spelling without symbols or a real name. Lists and pages still show {name}.",
+    "loading": "Loading the aliases",
+    "listLabel": "Aliases of {name}",
+    "sources": {
+      "admin": "Added by an admin",
+      "musicbrainz": "From MusicBrainz"
+    },
+    "remove": "Remove {name}",
+    "removed": "{name} was removed. A name from MusicBrainz is not taken again.",
+    "empty": "No aliases yet.",
+    "name": "New alias",
+    "add": "Add alias",
+    "added": "{name} was added.",
+    "import": "Take from MusicBrainz",
+    "imported": "The aliases from MusicBrainz were taken over.",
+    "privacy": "Taking aliases from MusicBrainz sends the MusicBrainz id of the artist to MusicBrainz. It works once the artist is linked to MusicBrainz, through its tags or an online picture.",
+    "errors": {
+      "nameRequired": "Enter a name.",
+      "nameInvalid": "This name cannot be used.",
+      "exists": "The artist already has this name or alias.",
+      "aliasNotFound": "This alias no longer exists. The list was loaded again.",
+      "artistNotFound": "This artist no longer exists.",
+      "lookupDisabled": "Online lookup is off. Switch it on under Administration, Library.",
+      "musicBrainzArtistMissing": "The artist is not linked to MusicBrainz yet. Choose its artist on MusicBrainz when you change its picture online, or add a MusicBrainz id to its tags.",
+      "unavailable": "MusicBrainz cannot be reached right now. Try again later.",
+      "loadFailed": "The aliases could not be loaded.",
+      "addFailed": "The alias could not be added.",
+      "removeFailed": "The alias could not be removed.",
+      "importFailed": "The aliases could not be taken from MusicBrainz."
+    }
+  },
   "files": {
     "label": "Files of the song",
     "kinds": {

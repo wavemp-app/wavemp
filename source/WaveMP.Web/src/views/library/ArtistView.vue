@@ -7,6 +7,7 @@ import BaseButton from '@/components/base/BaseButton.vue'
 import BaseLink from '@/components/base/BaseLink.vue'
 import FavoriteButton from '@/components/collection/FavoriteButton.vue'
 import ArtistCredit from '@/components/library/ArtistCredit.vue'
+import ArtistAliasDialog from '@/components/library/ArtistAliasDialog.vue'
 import ArtistPicture from '@/components/library/ArtistPicture.vue'
 import ArtistPictureDialog from '@/components/library/ArtistPictureDialog.vue'
 import DetailHeader from '@/components/library/DetailHeader.vue'
@@ -23,7 +24,7 @@ import { useSessionStore } from '@/stores/session'
 /**
  * An artist with its picture (with the credit of a picture from an online service), its albums
  * (also those it only contributes to), its songs and the heart that marks it as favorite. Admins
- * change the picture in a dialog.
+ * change the picture and the aliases (other names the search finds the artist by) in dialogs.
  */
 const props = defineProps<{
     id: string
@@ -36,6 +37,7 @@ const albumsTitleId = useId()
 const songsTitleId = useId()
 const session = useSessionStore()
 const editingPicture = ref(false)
+const editingAliases = ref(false)
 
 const artist = ref<Artist | null>(null)
 const status = ref<'loading' | 'ready' | 'notFound' | 'error'>('loading')
@@ -140,6 +142,13 @@ useDetailTitle(() => (status.value === 'ready' ? artist.value?.name : null))
                         :label="t('artistPictures.change')"
                         @click="editingPicture = true"
                     />
+                    <BaseButton
+                        v-if="session.isAdmin"
+                        data-item="artist-aliases"
+                        icon="edit-aliases"
+                        :label="t('artistAliases.open')"
+                        @click="editingAliases = true"
+                    />
                 </template>
             </DetailHeader>
             <section
@@ -173,6 +182,11 @@ useDetailTitle(() => (status.value === 'ready' ? artist.value?.name : null))
                 v-model:open="editingPicture"
                 :artist="artist"
                 @changed="onPictureChanged"
+            />
+            <ArtistAliasDialog
+                v-if="session.isAdmin"
+                v-model:open="editingAliases"
+                :artist="artist"
             />
         </template>
     </div>

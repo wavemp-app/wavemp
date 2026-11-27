@@ -484,6 +484,13 @@ export const parts = [
     'picture-candidate-license',
     'picture-candidate-size',
 
+    // Dialog of the aliases of an artist
+    'artist-alias-editor',
+    'alias-list',
+    'alias',
+    'alias-name',
+    'alias-source',
+
     'review-filters',
     'review-bulk',
     'review-list',

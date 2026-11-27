@@ -3289,6 +3289,68 @@
         white-space: nowrap;
     }
 
+    /* --- Dialog of the aliases of an artist ----------------------------------------------- */
+
+    [data-part='dialog'][data-item='artist-aliases'] {
+        inline-size: min(34rem, calc(100vw - 2rem));
+    }
+
+    [data-part='artist-alias-editor'] {
+        display: grid;
+        gap: var(--wmp-space-l);
+        min-inline-size: 0;
+    }
+
+    /* One row per alias: the name above its origin, the button to remove it at the end. */
+    [data-part='alias-list'] {
+        display: grid;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        border-block-start: 1px solid var(--wmp-color-border);
+    }
+
+    [data-part='alias'] {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        grid-template-areas:
+            'name remove'
+            'source remove';
+        align-items: center;
+        column-gap: var(--wmp-space-s);
+        padding: var(--wmp-space-xs) 0 var(--wmp-space-xs) var(--wmp-space-s);
+        border-block-end: 1px solid var(--wmp-color-border);
+    }
+
+    [data-part='alias-name'] {
+        grid-area: name;
+        overflow-wrap: anywhere;
+    }
+
+    [data-part='alias-source'] {
+        grid-area: source;
+        color: var(--wmp-color-text-muted);
+        font-size: var(--wmp-font-size-s);
+    }
+
+    [data-part='alias'] > [data-item='remove-alias'] {
+        grid-area: remove;
+    }
+
+    /* The new alias with its button below it, like the other forms; the actions start below. */
+    [data-part='form'][data-item='add-alias'] {
+        gap: var(--wmp-space-s);
+        max-inline-size: none;
+    }
+
+    [data-part='form'][data-item='add-alias'] > [data-part='button'] {
+        justify-self: start;
+    }
+
+    [data-part='artist-alias-editor'] > [data-part='view-actions'] {
+        justify-content: flex-start;
+    }
+
     /* --- Slider -------------------------------------------------------------------------- */
 
     [data-part='slider'] {

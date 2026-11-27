@@ -60,7 +60,7 @@ export interface ArtistsRequestBuilderGetQueryParameters {
      */
     offset?: number;
     /**
-     * Search text: only artists whose name contains it or is similar to it (small typos).
+     * Search text: only artists whose name or one of whose aliases contains it or is similar to it, tolerant like SearchLibrary.
      */
     q?: string;
     /**

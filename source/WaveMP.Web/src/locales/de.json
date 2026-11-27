@@ -2400,6 +2400,40 @@
       "key": "Gib den Schlüssel als 1 bis 64 Buchstaben (A bis Z) oder Ziffern ein."
     }
   },
+  "artistAliases": {
+    "open": "Aliasnamen",
+    "title": "Aliasnamen",
+    "hint": "Die Suche findet {name} auch unter diesen Namen, zum Beispiel in einer Schreibweise ohne Sonderzeichen oder unter dem bürgerlichen Namen. Listen und Seiten zeigen weiter {name}.",
+    "loading": "Aliasnamen werden geladen",
+    "listLabel": "Aliasnamen von {name}",
+    "sources": {
+      "admin": "Von einem Admin hinzugefügt",
+      "musicbrainz": "Von MusicBrainz"
+    },
+    "remove": "{name} entfernen",
+    "removed": "{name} wurde entfernt. Ein Name von MusicBrainz wird nicht erneut übernommen.",
+    "empty": "Noch keine Aliasnamen.",
+    "name": "Neuer Aliasname",
+    "add": "Aliasnamen hinzufügen",
+    "added": "{name} wurde hinzugefügt.",
+    "import": "Von MusicBrainz übernehmen",
+    "imported": "Die Aliasnamen von MusicBrainz wurden übernommen.",
+    "privacy": "Beim Übernehmen von MusicBrainz wird die MusicBrainz-ID des Interpreten an MusicBrainz gesendet. Das geht, sobald der Interpret mit MusicBrainz verknüpft ist, über seine Tags oder ein Online-Bild.",
+    "errors": {
+      "nameRequired": "Gib einen Namen ein.",
+      "nameInvalid": "Dieser Name kann nicht verwendet werden.",
+      "exists": "Der Interpret hat diesen Namen oder Aliasnamen schon.",
+      "aliasNotFound": "Diesen Aliasnamen gibt es nicht mehr. Die Liste wurde neu geladen.",
+      "artistNotFound": "Diesen Interpreten gibt es nicht mehr.",
+      "lookupDisabled": "Die Online-Suche ist aus. Schalte sie unter Administration, Bibliothek ein.",
+      "musicBrainzArtistMissing": "Der Interpret ist noch nicht mit MusicBrainz verknüpft. Wähle seinen Interpreten bei MusicBrainz, wenn du sein Bild online änderst, oder trage eine MusicBrainz-ID in seine Tags ein.",
+      "unavailable": "MusicBrainz ist gerade nicht erreichbar. Versuche es später noch einmal.",
+      "loadFailed": "Die Aliasnamen konnten nicht geladen werden.",
+      "addFailed": "Der Aliasname konnte nicht hinzugefügt werden.",
+      "removeFailed": "Der Aliasname konnte nicht entfernt werden.",
+      "importFailed": "Die Aliasnamen konnten nicht von MusicBrainz übernommen werden."
+    }
+  },
   "files": {
     "label": "Dateien des Titels",
     "kinds": {

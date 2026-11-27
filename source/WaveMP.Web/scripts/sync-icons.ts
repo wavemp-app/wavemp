@@ -151,6 +151,7 @@ const icons: Record<IconStyle, string[]> = {
         'stop-circle',
         'subtitles',
         'swap',
+        'tag',
         'television-simple',
         'trash',
         'tray',

@@ -80,7 +80,7 @@ export interface TracksRequestBuilderGetQueryParameters {
      */
     offset?: number;
     /**
-     * Search text: only tracks whose title, artist or album contains it or is similar to it (small typos).
+     * Search text: only tracks whose title, artist or album contains it or is similar to it, tolerant like SearchLibrary.
      */
     q?: string;
     /**

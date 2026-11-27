@@ -11,7 +11,7 @@ import { type BaseRequestBuilder, type Parsable, type ParsableFactory, type Requ
  */
 export interface SearchRequestBuilder extends BaseRequestBuilder<SearchRequestBuilder> {
     /**
-     * Searches artists, albums and tracks at once and returns the best matches of each, sorted by relevance. Finds texts that contain the search text or are similar to it, so small typos are fine. Tracks are also found by their artist and album. To see more of a group, use the parameter q of its list.
+     * Searches artists, albums and tracks at once and returns the best matches of each, sorted by relevance. The search is tolerant: it finds names that contain the search text (without regard to case, accents and punctuation), names with symbols that stand for letters in both directions ("pink" finds "P!nk", "kesha" "Ke$ha"; "!" as i, "$" as s, "@" as a, "0" as o, "3" as e, "&amp;" and "+" as "and"), artists by their aliases (results show the name of the artist) and names similar to it, so typos are fine ("rihana" finds "Rihanna"). Exact matches come first, then names that start with the text, names that contain it, artists found by an alias and similar names. Albums are also found by their artists, tracks by their artists and album. The lists of artists, albums and tracks with q and the Subsonic search use the same search. To see more of a group, use the parameter q of its list.
      * @param requestConfiguration Configuration for the request such as headers, query parameters, and middleware options.
      * @returns {Promise<SearchResult>}
      * @throws {ValidationProblem} error when the service returns a 400 status code
@@ -19,14 +19,14 @@ export interface SearchRequestBuilder extends BaseRequestBuilder<SearchRequestBu
      */
      get(requestConfiguration?: RequestConfiguration<SearchRequestBuilderGetQueryParameters> | undefined) : Promise<SearchResult | undefined>;
     /**
-     * Searches artists, albums and tracks at once and returns the best matches of each, sorted by relevance. Finds texts that contain the search text or are similar to it, so small typos are fine. Tracks are also found by their artist and album. To see more of a group, use the parameter q of its list.
+     * Searches artists, albums and tracks at once and returns the best matches of each, sorted by relevance. The search is tolerant: it finds names that contain the search text (without regard to case, accents and punctuation), names with symbols that stand for letters in both directions ("pink" finds "P!nk", "kesha" "Ke$ha"; "!" as i, "$" as s, "@" as a, "0" as o, "3" as e, "&amp;" and "+" as "and"), artists by their aliases (results show the name of the artist) and names similar to it, so typos are fine ("rihana" finds "Rihanna"). Exact matches come first, then names that start with the text, names that contain it, artists found by an alias and similar names. Albums are also found by their artists, tracks by their artists and album. The lists of artists, albums and tracks with q and the Subsonic search use the same search. To see more of a group, use the parameter q of its list.
      * @param requestConfiguration Configuration for the request such as headers, query parameters, and middleware options.
      * @returns {RequestInformation}
      */
      toGetRequestInformation(requestConfiguration?: RequestConfiguration<SearchRequestBuilderGetQueryParameters> | undefined) : RequestInformation;
 }
 /**
- * Searches artists, albums and tracks at once and returns the best matches of each, sorted by relevance. Finds texts that contain the search text or are similar to it, so small typos are fine. Tracks are also found by their artist and album. To see more of a group, use the parameter q of its list.
+ * Searches artists, albums and tracks at once and returns the best matches of each, sorted by relevance. The search is tolerant: it finds names that contain the search text (without regard to case, accents and punctuation), names with symbols that stand for letters in both directions ("pink" finds "P!nk", "kesha" "Ke$ha"; "!" as i, "$" as s, "@" as a, "0" as o, "3" as e, "&amp;" and "+" as "and"), artists by their aliases (results show the name of the artist) and names similar to it, so typos are fine ("rihana" finds "Rihanna"). Exact matches come first, then names that start with the text, names that contain it, artists found by an alias and similar names. Albums are also found by their artists, tracks by their artists and album. The lists of artists, albums and tracks with q and the Subsonic search use the same search. To see more of a group, use the parameter q of its list.
  */
 export interface SearchRequestBuilderGetQueryParameters {
     /**
