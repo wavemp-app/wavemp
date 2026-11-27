@@ -108,7 +108,10 @@ public sealed class ArtistAliasesController(
         switch (result.Status)
         {
             case ArtistAliasAddStatus.Added:
-                return CreatedAtRoute(GetArtistAliasRoute, new { id, aliasId = result.Alias!.Id }, result.Alias.ToDto());
+                return CreatedAtRoute(
+                    GetArtistAliasRoute,
+                    new { id, aliasId = result.Alias!.Id },
+                    result.Alias.ToDto());
             case ArtistAliasAddStatus.Empty:
                 ModelState.AddValidationError("name", ValidationErrorCodeDto.Required);
                 return ValidationProblem();
