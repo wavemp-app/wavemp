@@ -36,6 +36,22 @@ import { withoutSavedPlayback } from '../helpers/player'
 /** Touch points of an iPhone and an iPad. */
 const appleTouchPoints = 5
 
+/**
+ * How long to wait for a change of the playback path: a handover waits up to three seconds
+ * each for the audio graph and for the data of the other path (handoverTimeout in pathEngine.ts),
+ * longer than an assertion waits by default.
+ */
+const pathChange = { timeout: 15_000 }
+
+/**
+ * Seconds the seek bar may move ahead of the time that passed. WebKit of Linux reports the position
+ * of an element that plays through the audio graph about a second ahead as soon as it starts, also
+ * after a completed seek and on the first start of a song (1.0 to 1.2 seconds measured in the
+ * Playwright image), so the return to the effects path moves the seek bar forward by that much
+ * once.
+ */
+const effectsPathLead = 2
+
 async function emulateAppleDevice(page: Page): Promise<void> {
     await page.addInitScript((touchPoints) => {
         if (!('GestureEvent' in window)) {
@@ -71,6 +87,9 @@ function sessionMetadata(page: Page) {
 }
 
 test.beforeEach(async ({ page }) => {
+    // WebKit in a busy container loads pages and starts the playback paths slowly, and a test
+    // waits for up to two path changes and three times for the music to go on (playsOn).
+    test.setTimeout(60_000)
     await withoutSavedPlayback(page)
     await emulateAppleDevice(page)
     await controlVisibility(page)
@@ -112,7 +131,7 @@ test('keeps a song playing in the background and brings the effects back', async
 
     // To the background: the plain audio elements take over at the same place and play on.
     await setHidden(page, true)
-    await expect(transport(page)).toHaveAttribute('data-state', /\bplain-audio\b/)
+    await expect(transport(page)).toHaveAttribute('data-state', /\bplain-audio\b/, pathChange)
     await expect(transport(page)).toHaveAttribute('data-state', /\bplaying\b/)
     await playsOn(page)
     await expect
@@ -122,14 +141,14 @@ test('keeps a song playing in the background and brings the effects back', async
 
     // Back again: the audio graph with its effects takes over, and the song still plays on.
     await setHidden(page, false)
-    await expect(transport(page)).not.toHaveAttribute('data-state', /\bplain-audio\b/)
+    await expect(transport(page)).not.toHaveAttribute('data-state', /\bplain-audio\b/, pathChange)
     await expect(transport(page)).toHaveAttribute('data-state', /\bplaying\b/)
     await playsOn(page)
 
     const samples = await recordedSamples(page)
     expect(samples.some((sample) => hasToken(sample, 'plain-audio'))).toBe(true)
     expect(samples.filter((sample) => !hasToken(sample, 'playing'))).toEqual([])
-    expectContinuous(samples)
+    expectContinuous(samples, effectsPathLead)
 })
 
 test('shows the album on the lock screen and plays the next song in the background', async ({
@@ -161,7 +180,7 @@ test('shows the album on the lock screen and plays the next song in the backgrou
     // screen, the first song ends there and the second one follows on the plain path.
     await startRecording(page)
     await setHidden(page, true)
-    await expect(transport(page)).toHaveAttribute('data-state', /\bplain-audio\b/)
+    await expect(transport(page)).toHaveAttribute('data-state', /\bplain-audio\b/, pathChange)
     await part(page, 'btn-play').click()
     await expect
         .poll(
@@ -185,5 +204,5 @@ test('shows the album on the lock screen and plays the next song in the backgrou
     expect(played.some((sample) => sample.title === 'First Song')).toBe(true)
 
     await setHidden(page, false)
-    await expect(transport(page)).not.toHaveAttribute('data-state', /\bplain-audio\b/)
+    await expect(transport(page)).not.toHaveAttribute('data-state', /\bplain-audio\b/, pathChange)
 })

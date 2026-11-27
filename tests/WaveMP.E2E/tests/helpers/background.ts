@@ -7,8 +7,15 @@ import { expect, type Locator, type Page } from '@playwright/test'
 
 /** One sample of the recording: what the page showed and told the system at one moment. */
 export interface Sample {
+    /** Moment of the sample on the clock of the page (performance.now()), in milliseconds. */
+    readonly time: number
     /** Position of the audio as the seek bar shows it, in seconds. */
     readonly position: number
+    /**
+     * Moment the seek bar began to show this position, on the clock of the page, in milliseconds.
+     * A sample may come later than that: the timer of the recording waits while the page is busy.
+     */
+    readonly positionTime: number
     /** State tokens of the transport bar. */
     readonly state: string
     /** Title of the current song in the transport bar. */
@@ -89,7 +96,8 @@ export async function playsOn(page: Page): Promise<void> {
 /**
  * Records every 100 milliseconds what the page shows and tells the system, so a test can tell
  * afterwards whether the song ever jumped, stopped or switched the playback path, also for songs
- * that last only two seconds.
+ * that last only two seconds. The moment the seek bar changes its position is noted right away, as
+ * the timer of the recording may wait while the page is busy (loading the other playback path).
  */
 export async function startRecording(page: Page): Promise<void> {
     await page.evaluate(() => {
@@ -99,12 +107,35 @@ export async function startRecording(page: Page): Promise<void> {
             document
                 .querySelector(`[data-part='app'] [data-part='${name}']`)
                 ?.textContent?.trim() ?? ''
+        const shownPosition = (): number =>
+            Number(
+                document
+                    .querySelector("[data-part='seek'] [role='slider']")
+                    ?.getAttribute('aria-valuenow') ?? Number.NaN,
+            )
+        let position = shownPosition()
+        let positionTime = performance.now()
+        const notePosition = (): void => {
+            const now = shownPosition()
+            if (!Object.is(now, position)) {
+                position = now
+                positionTime = performance.now()
+            }
+        }
+        new MutationObserver(notePosition).observe(document.documentElement, {
+            subtree: true,
+            attributes: true,
+            attributeFilter: ['aria-valuenow'],
+        })
         window.setInterval(() => {
-            const slider = document.querySelector("[data-part='seek'] [role='slider']")
+            // Also a seek bar the observer missed, e.g. one that was rendered anew.
+            notePosition()
             const bar = document.querySelector("[data-part='app'] [data-part='transport']")
             const session = 'mediaSession' in navigator ? navigator.mediaSession : null
             state.e2eSamples.push({
-                position: Number(slider?.getAttribute('aria-valuenow') ?? Number.NaN),
+                time: performance.now(),
+                position,
+                positionTime,
                 state: bar?.getAttribute('data-state') ?? '',
                 title: text('now-playing-title'),
                 sessionTitle: session?.metadata?.title ?? '',
@@ -125,16 +156,32 @@ export function hasToken(sample: Sample, token: string): boolean {
 
 /**
  * Checks that the recorded positions went on without a jump: never back by more than half a second
- * (the song started again, or the other playback path began earlier) and never ahead by more than
- * a second and a half between two samples a tenth of a second apart (a part of the song was
- * skipped).
+ * (the song started again, or the other playback path began earlier) and never further ahead than
+ * the time that passed on the clock of the page plus `allowedLead` seconds (a part of the song was
+ * skipped). The time that passed is taken from the moments the seek bar changed, not from the
+ * samples, so a page that is busy for a while (and records late) does not look like a skip.
  */
-export function expectContinuous(samples: readonly Sample[]): void {
-    const known = samples.map((sample) => sample.position).filter(Number.isFinite)
+export function expectContinuous(samples: readonly Sample[], allowedLead = 0.5): void {
+    const known = samples.filter((sample) => Number.isFinite(sample.position))
     expect(known.length).toBeGreaterThan(10)
+    const start = known[0]!.time
+    const at = (time: number): string => `${Math.round(time - start)} ms`
+    const timeline = known
+        .map(
+            (sample) =>
+                `${at(sample.time)}: ${sample.position} (shown since ${at(sample.positionTime)}), ` +
+                sample.state,
+        )
+        .join('\n')
     for (let index = 1; index < known.length; index++) {
-        const step = known[index]! - known[index - 1]!
-        expect(step, `step ${index} of ${known.join(', ')}`).toBeGreaterThan(-0.5)
-        expect(step, `step ${index} of ${known.join(', ')}`).toBeLessThan(1.5)
+        const previous = known[index - 1]!
+        const sample = known[index]!
+        const step = sample.position - previous.position
+        const passed = (sample.positionTime - previous.positionTime) / 1000
+        const message = `sample ${index} of\n${timeline}\n`
+        expect(step, `${message}step back`).toBeGreaterThan(-0.5)
+        expect(step - passed, `${message}step ahead of the time that passed`).toBeLessThan(
+            allowedLead,
+        )
     }
 }
