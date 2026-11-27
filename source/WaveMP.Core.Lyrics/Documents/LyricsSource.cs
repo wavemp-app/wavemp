@@ -16,6 +16,11 @@ public enum LyricsSource
     Download,
 
     /// <summary>
+    /// Lyrics an admin uploaded, stored in the database, because the folder of the track is not writable.
+    /// </summary>
+    Upload,
+
+    /// <summary>
     /// The tags of the audio file (or of the video file of tracks without audio): synchronized lyrics first, then
     /// unsynchronized ones.
     /// </summary>

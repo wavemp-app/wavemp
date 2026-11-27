@@ -456,6 +456,19 @@ public enum ProblemCodeDto
     LyricsLookupFoundLyrics,
 
     /// <summary>
+    /// The lyrics file of the track cannot be replaced by the chosen or uploaded lyrics, because its folder or the
+    /// file is read-only (409).
+    /// </summary>
+    [JsonStringEnumMemberName("lyrics.file_not_writable")]
+    LyricsFileNotWritable,
+
+    /// <summary>
+    /// The chosen track of the lyrics service no longer exists or has no lyrics (404).
+    /// </summary>
+    [JsonStringEnumMemberName("lyrics.match_not_found")]
+    LyricsMatchNotFound,
+
+    /// <summary>
     /// The scrobbling service cannot be connected because the server has no API account for it: Last.fm needs the
     /// environment variables LASTFM_API_KEY and LASTFM_SHARED_SECRET (409).
     /// </summary>

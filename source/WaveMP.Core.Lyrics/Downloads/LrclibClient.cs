@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Globalization;
 using System.Net;
 using System.Net.Http.Headers;
@@ -10,13 +11,23 @@ using Microsoft.Extensions.Logging;
 namespace WaveMP.Core.Lyrics.Downloads;
 
 /// <summary>
-/// Calls the API of LRCLIB over HTTP: <c>GET api/get</c> for the exact lookup and <c>GET api/search</c> for the
-/// search. Every request names WaveMP and its version in the User-Agent, as LRCLIB asks clients to, and waits for its
-/// turn at the <see cref="LrclibRequestPacer"/>.
+/// Calls the API of LRCLIB over HTTP: <c>GET api/get</c> for the exact lookup, <c>GET api/get/{id}</c> for a chosen
+/// track, <c>GET api/search</c> for the search by fields and the free-text search, and
+/// <c>POST api/request-challenge</c> and <c>POST api/publish</c> to publish lyrics. Every request names WaveMP and its
+/// version in the User-Agent, as LRCLIB asks clients to, and waits for its turn at the
+/// <see cref="LrclibRequestPacer"/>.
 /// </summary>
-internal sealed class LrclibClient(HttpClient http, LrclibRequestPacer pacer, ILogger<LrclibClient> logger)
-    : ILrclibClient
+internal sealed class LrclibClient(
+    HttpClient http,
+    LrclibRequestPacer pacer,
+    TimeSpan challengeTimeout,
+    ILogger<LrclibClient> logger) : ILrclibClient
 {
+    /// <summary>
+    /// The header that carries the solved challenge of a publication.
+    /// </summary>
+    internal const string PublishTokenHeader = "X-Publish-Token";
+
     private static readonly JsonSerializerOptions _jsonOptions = new(JsonSerializerDefaults.Web);
 
     /// <summary>
@@ -47,6 +58,90 @@ internal sealed class LrclibClient(HttpClient http, LrclibRequestPacer pacer, IL
     {
         string url = "api/search?" + QueryString(("track_name", query.TrackName), ("artist_name", query.ArtistName));
         return SendAsync(url, single: false, cancellationToken);
+    }
+
+    public Task<LrclibResponse> SearchTextAsync(string text, CancellationToken cancellationToken = default)
+    {
+        string url = "api/search?" + QueryString(("q", text));
+        return SendAsync(url, single: false, cancellationToken);
+    }
+
+    public Task<LrclibResponse> GetByIdAsync(long id, CancellationToken cancellationToken = default)
+    {
+        string url = "api/get/" + id.ToString(CultureInfo.InvariantCulture);
+        return SendAsync(url, single: true, cancellationToken);
+    }
+
+    public async Task<LrclibPublishResult> PublishAsync(
+        LrclibPublication publication,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            await pacer.WaitAsync(cancellationToken);
+            LrclibChallengeResponse? challenge;
+            using (HttpResponseMessage response = await http.PostAsync(
+                "api/request-challenge",
+                content: null,
+                cancellationToken))
+            {
+                if (Failure(response) is { } failure)
+                {
+                    return failure;
+                }
+
+                challenge = await response.Content.ReadFromJsonAsync<LrclibChallengeResponse>(
+                    _jsonOptions,
+                    cancellationToken);
+            }
+
+            if (challenge?.Prefix is not { } prefix || challenge.Target is not { } target)
+            {
+                logger.LogWarning("LRCLIB sent no challenge to publish lyrics");
+                return new LrclibPublishResult(LrclibPublishStatus.Unavailable);
+            }
+
+            long nonce = await SolveAsync(prefix, target, cancellationToken);
+            await pacer.WaitAsync(cancellationToken);
+            using HttpRequestMessage request = new(HttpMethod.Post, "api/publish")
+            {
+                Content = JsonContent.Create(
+                    new LrclibPublishRequest(
+                        publication.TrackName,
+                        publication.ArtistName,
+                        publication.AlbumName,
+                        Math.Round(publication.Duration.TotalSeconds),
+                        publication.PlainLyrics,
+                        publication.SyncedLyrics),
+                    options: _jsonOptions),
+            };
+            request.Headers.Add(PublishTokenHeader, prefix + ":" + nonce.ToString(CultureInfo.InvariantCulture));
+            using HttpResponseMessage published = await http.SendAsync(request, cancellationToken);
+            if (published.StatusCode == HttpStatusCode.BadRequest)
+            {
+                logger.LogWarning(
+                    "LRCLIB refused the published lyrics: {Answer}",
+                    await published.Content.ReadAsStringAsync(cancellationToken));
+                return new LrclibPublishResult(LrclibPublishStatus.Rejected);
+            }
+
+            return Failure(published) ?? new LrclibPublishResult(LrclibPublishStatus.Published);
+        }
+        catch (HttpRequestException exception)
+        {
+            logger.LogWarning("LRCLIB cannot be reached: {Reason}", exception.Message);
+            return new LrclibPublishResult(LrclibPublishStatus.Unavailable);
+        }
+        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+        {
+            logger.LogWarning("LRCLIB did not answer in time, or its challenge took too long");
+            return new LrclibPublishResult(LrclibPublishStatus.Unavailable);
+        }
+        catch (Exception exception) when (exception is JsonException or FormatException)
+        {
+            logger.LogWarning(exception, "The challenge of LRCLIB cannot be read");
+            return new LrclibPublishResult(LrclibPublishStatus.Unavailable);
+        }
     }
 
     /// <summary>
@@ -129,6 +224,39 @@ internal sealed class LrclibClient(HttpClient http, LrclibRequestPacer pacer, IL
             logger.LogWarning(exception, "The answer of LRCLIB cannot be read");
             return LrclibResponse.Unavailable;
         }
+    }
+
+    /// <summary>
+    /// Solves the challenge on the thread pool, at most for the configured time.
+    /// </summary>
+    private async Task<long> SolveAsync(string prefix, string target, CancellationToken cancellationToken)
+    {
+        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        timeout.CancelAfter(challengeTimeout);
+        long started = Stopwatch.GetTimestamp();
+        long nonce = await Task.Run(() => LrclibChallenge.Solve(prefix, target, timeout.Token), timeout.Token);
+        logger.LogInformation("Solved the challenge of LRCLIB in {Elapsed}", Stopwatch.GetElapsedTime(started));
+        return nonce;
+    }
+
+    /// <summary>
+    /// The result of a failed answer to a publication, or <c>null</c> if it succeeded.
+    /// </summary>
+    private LrclibPublishResult? Failure(HttpResponseMessage response)
+    {
+        if (response.StatusCode == HttpStatusCode.TooManyRequests)
+        {
+            logger.LogInformation("LRCLIB refuses requests for a while (429)");
+            return new LrclibPublishResult(LrclibPublishStatus.RateLimited, RetryAfter(response));
+        }
+
+        if (!response.IsSuccessStatusCode)
+        {
+            logger.LogWarning("LRCLIB answered {StatusCode}", (int)response.StatusCode);
+            return new LrclibPublishResult(LrclibPublishStatus.Unavailable);
+        }
+
+        return null;
     }
 
     private static TimeSpan? RetryAfter(HttpResponseMessage response)

@@ -29,6 +29,7 @@ public class LyricsDownloadRunnerTests
                 Arg.Any<int>(),
                 Arg.Any<IReadOnlyCollection<Guid>>(),
                 Arg.Any<DateTimeOffset?>(),
+                LrclibMatcher.Version,
                 Arg.Any<CancellationToken>())
             .Returns([]);
         _downloader = Substitute.For<ILyricsDownloader>();
@@ -70,6 +71,7 @@ public class LyricsDownloadRunnerTests
             LyricsDownloadRunner.BatchSize,
             Arg.Is<IReadOnlyCollection<Guid>>(excluded => excluded.Count == 4),
             Arg.Any<DateTimeOffset?>(),
+            LrclibMatcher.Version,
             Arg.Any<CancellationToken>());
     }
 
@@ -138,6 +140,7 @@ public class LyricsDownloadRunnerTests
             LyricsDownloadRunner.BatchSize,
             Arg.Any<IReadOnlyCollection<Guid>>(),
             now.AddDays(-30),
+            LrclibMatcher.Version,
             Arg.Any<CancellationToken>());
     }
 
@@ -154,6 +157,7 @@ public class LyricsDownloadRunnerTests
             LyricsDownloadRunner.BatchSize,
             Arg.Any<IReadOnlyCollection<Guid>>(),
             null,
+            LrclibMatcher.Version,
             Arg.Any<CancellationToken>());
     }
 
@@ -173,6 +177,7 @@ public class LyricsDownloadRunnerTests
                 Arg.Any<int>(),
                 Arg.Any<IReadOnlyCollection<Guid>>(),
                 Arg.Any<DateTimeOffset?>(),
+                LrclibMatcher.Version,
                 Arg.Any<CancellationToken>())
             .Returns(again, none);
         Outcome(id, LyricsDownloadOutcome.SavedToFile);
@@ -231,6 +236,7 @@ public class LyricsDownloadRunnerTests
                 Arg.Any<int>(),
                 Arg.Any<IReadOnlyCollection<Guid>>(),
                 Arg.Any<DateTimeOffset?>(),
+                LrclibMatcher.Version,
                 Arg.Any<CancellationToken>())
             .Returns(rows[0], [.. rows.Skip(1), []]);
     }

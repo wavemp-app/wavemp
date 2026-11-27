@@ -24,6 +24,20 @@ public class LyricsApiTests
         [00:00.80]Second line
         """;
 
+    /// <summary>
+    /// The lyrics of a version of "Chosen" that is much longer than the track.
+    /// </summary>
+    private static readonly LrclibRecord _otherVersion = new()
+    {
+        Id = 77,
+        TrackName = "Chosen",
+        ArtistName = "Band",
+        AlbumName = "Album (Deluxe)",
+        Duration = 300,
+        PlainLyrics = "Chosen line",
+        SyncedLyrics = "[00:10.00]Chosen line",
+    };
+
     private TemporaryDirectory _media = null!;
     private ILrclibClient _lrclib = null!;
     private WaveMpWebApplicationFactory _factory = null!;
@@ -45,10 +59,17 @@ public class LyricsApiTests
         await AudioAsync("Plain");
         await AudioAsync("Missing");
         await AudioAsync("Instrumental");
+        await AudioAsync("Uploaded");
+        await AudioAsync("Chosen");
 
         _lrclib = Substitute.For<ILrclibClient>();
         _lrclib.GetAsync(Arg.Any<LrclibQuery>(), Arg.Any<CancellationToken>()).Returns(LrclibResponse.NotFound);
         _lrclib.SearchAsync(Arg.Any<LrclibQuery>(), Arg.Any<CancellationToken>()).Returns(LrclibResponse.NotFound);
+        _lrclib.SearchTextAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(LrclibResponse.NotFound);
+        _lrclib.GetByIdAsync(Arg.Any<long>(), Arg.Any<CancellationToken>()).Returns(LrclibResponse.NotFound);
+        _lrclib.GetByIdAsync(77, Arg.Any<CancellationToken>()).Returns(LrclibResponse.Found([_otherVersion]));
+        _lrclib.PublishAsync(Arg.Any<LrclibPublication>(), Arg.Any<CancellationToken>())
+            .Returns(new LrclibPublishResult(LrclibPublishStatus.Published));
         Answer("Plain", LrclibResponse.Found([new LrclibRecord
         {
             Id = 1,
@@ -345,6 +366,144 @@ public class LyricsApiTests
         LookupsOf("Missing").Should().BeGreaterThan(asked);
         (await _admin.GetJsonAsync<LyricsLookupDto>($"/api/v1/tracks/{missing}/lyrics/lookup"))
             .Status.Should().Be(LyricsLookupStatusDto.NotFound);
+    }
+
+    [TestCase("GET", "/api/v1/tracks/{0}/lyrics/online-matches")]
+    [TestCase("PUT", "/api/v1/tracks/{0}/lyrics/online-match")]
+    [TestCase("PUT", "/api/v1/tracks/{0}/lyrics")]
+    public async Task ChoosingAndUploadingLyrics_WithoutTokenOrAsUser_IsRejected(string method, string path)
+    {
+        string url = string.Format(System.Globalization.CultureInfo.InvariantCulture, path, Track("Missing").Id);
+
+        await (await _anonymous.SendAsync(new HttpRequestMessage(new HttpMethod(method), url)))
+            .ShouldBeProblemAsync(HttpStatusCode.Unauthorized, "auth.unauthorized");
+        await (await _user.SendAsync(new HttpRequestMessage(new HttpMethod(method), url)))
+            .ShouldBeProblemAsync(HttpStatusCode.Forbidden, "auth.forbidden");
+    }
+
+    [Test]
+    public async Task SearchTrackLyricsOnlineMatches_Track_ReturnsTheTracksWithLyricsAndWhatWasSearched()
+    {
+        await SwitchOnAsync();
+        _lrclib.SearchAsync(
+                Arg.Is<LrclibQuery>(query => query.TrackName == "Chosen" && query.AlbumName == null),
+                Arg.Any<CancellationToken>())
+            .Returns(LrclibResponse.Found([_otherVersion]));
+
+        LyricsOnlineMatchesDto found = await _admin.GetJsonAsync<LyricsOnlineMatchesDto>(
+            $"/api/v1/tracks/{Track("Chosen").Id}/lyrics/online-matches");
+
+        found.Title.Should().Be("Chosen");
+        found.Artist.Should().Be("Band");
+        LyricsOnlineMatchDto match = found.Matches.Should().ContainSingle().Subject;
+        match.Id.Should().Be(77);
+        match.Album.Should().Be("Album (Deluxe)");
+        match.DurationSeconds.Should().Be(300);
+        match.Synchronized.Should().BeTrue();
+        match.FitsDuration.Should().BeFalse();
+    }
+
+    [Test]
+    public async Task SearchTrackLyricsOnlineMatches_SwitchedOffOrUnknownTrack_SaysWhy()
+    {
+        await PatchSettingsAsync("""{ "downloadLyrics": false }""");
+        await _admin.WaitForJobsIdleAsync();
+
+        await (await _admin.GetAsync($"/api/v1/tracks/{Track("Chosen").Id}/lyrics/online-matches"))
+            .ShouldBeProblemAsync(HttpStatusCode.Conflict, "lyrics.download_disabled");
+        await SwitchOnAsync();
+        await (await _admin.GetAsync($"/api/v1/tracks/{Guid.NewGuid()}/lyrics/online-matches"))
+            .ShouldBeProblemAsync(HttpStatusCode.NotFound, "track.not_found");
+    }
+
+    [Test]
+    public async Task ChooseTrackLyricsOnlineMatch_TrackOfAnotherDuration_SavesItsPlainLyricsAsOtherVersion()
+    {
+        await SwitchOnAsync();
+        string path = $"/api/v1/tracks/{Track("Chosen").Id}/lyrics";
+
+        HttpResponseMessage response =
+            await _admin.SendJsonAsync("PUT", $"{path}/online-match", """{ "matchId": 77 }""");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK, await response.Content.ReadAsStringAsync());
+        LyricsDto lyrics = (await response.Content.ReadFromJsonAsync<LyricsDto>(HttpClientExtensions.JsonOptions))!;
+        lyrics.Type.Should().Be(LyricsTypeDto.Static);
+        lyrics.FromOtherVersion.Should().BeTrue();
+        lyrics.Lines.Select(line => line.Text).Should().Equal("Chosen line");
+        (await File.ReadAllTextAsync(_media.Combine("Band/Album/Chosen.lrc"))).Should().Be("Chosen line");
+        (await _user.GetJsonAsync<LyricsDto>(path)).FromOtherVersion.Should().BeTrue();
+    }
+
+    [Test]
+    public async Task ChooseTrackLyricsOnlineMatch_UnknownOrInvalidMatch_IsRejected()
+    {
+        await SwitchOnAsync();
+        string path = $"/api/v1/tracks/{Track("Missing").Id}/lyrics/online-match";
+
+        await (await _admin.SendJsonAsync("PUT", path, """{ "matchId": 78 }"""))
+            .ShouldBeProblemAsync(HttpStatusCode.NotFound, "lyrics.match_not_found");
+        (await _admin.SendJsonAsync("PUT", path, """{ "matchId": 0 }""")).StatusCode
+            .Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Test]
+    public async Task UploadTrackLyrics_SynchronizedLyrics_SavesThemAsFileAndPublishesThemOnRequest()
+    {
+        await SwitchOnAsync();
+        string path = $"/api/v1/tracks/{Track("Uploaded").Id}/lyrics";
+
+        HttpResponseMessage response = await _admin.SendJsonAsync(
+            "PUT",
+            path,
+            """{ "text": "[00:00.10]Own line\r\n[00:00.50]Second own line", "publish": true }""");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK, await response.Content.ReadAsStringAsync());
+        LyricsUploadDto upload =
+            (await response.Content.ReadFromJsonAsync<LyricsUploadDto>(HttpClientExtensions.JsonOptions))!;
+        upload.Publication.Should().Be(LyricsPublicationDto.Published);
+        upload.Lyrics.Source.Should().Be(LyricsSourceDto.File);
+        upload.Lyrics.Type.Should().Be(LyricsTypeDto.LineSynchronized);
+        upload.Lyrics.Lines.Select(line => line.Text).Should().Equal("Own line", "Second own line");
+        (await File.ReadAllTextAsync(_media.Combine("Band/Album/Uploaded.lrc")))
+            .Should().Be("[00:00.10]Own line\n[00:00.50]Second own line");
+        (await _admin.GetJsonAsync<LyricsLookupDto>($"{path}/lookup")).Status
+            .Should().Be(LyricsLookupStatusDto.Uploaded);
+        await _lrclib.Received().PublishAsync(
+            Arg.Is<LrclibPublication>(publication => publication.TrackName == "Uploaded"
+                && publication.ArtistName == "Band"
+                && publication.AlbumName == "Album"
+                && publication.PlainLyrics == "Own line\nSecond own line"
+                && publication.SyncedLyrics == "[00:00.10]Own line\n[00:00.50]Second own line"),
+            Arg.Any<CancellationToken>());
+
+        // A second upload replaces the file.
+        HttpResponseMessage again = await _admin.SendJsonAsync("PUT", path, """{ "text": "Plain own line" }""");
+        again.StatusCode.Should().Be(HttpStatusCode.OK, await again.Content.ReadAsStringAsync());
+        LyricsUploadDto replaced =
+            (await again.Content.ReadFromJsonAsync<LyricsUploadDto>(HttpClientExtensions.JsonOptions))!;
+        replaced.Publication.Should().Be(LyricsPublicationDto.NotRequested);
+        replaced.Lyrics.Type.Should().Be(LyricsTypeDto.Static);
+        (await File.ReadAllTextAsync(_media.Combine("Band/Album/Uploaded.lrc"))).Should().Be("Plain own line");
+    }
+
+    [TestCase("""{ "text": "  " }""")]
+    [TestCase("""{ "text": "[ar:Band]" }""")]
+    [TestCase("""{ }""")]
+    public async Task UploadTrackLyrics_NoLineWithText_IsRejected(string body)
+    {
+        HttpResponseMessage response =
+            await _admin.SendJsonAsync("PUT", $"/api/v1/tracks/{Track("Missing").Id}/lyrics", body);
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        (await response.Content.ReadAsStringAsync()).Should().Contain("text");
+        File.Exists(_media.Combine("Band/Album/Missing.lrc")).Should().BeFalse();
+    }
+
+    [Test]
+    public async Task UploadTrackLyrics_UnknownTrack_ReturnsNotFound()
+    {
+        await (await _admin.SendJsonAsync("PUT", $"/api/v1/tracks/{Guid.NewGuid()}/lyrics", """{ "text": "Line" }"""))
+            .ShouldBeProblemAsync(HttpStatusCode.NotFound, "track.not_found");
     }
 
     private int LookupsOf(string title)

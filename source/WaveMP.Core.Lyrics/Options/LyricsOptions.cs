@@ -49,7 +49,13 @@ public sealed class LyricsOptions
     public TimeSpan LookUpAgainAfter { get; set; } = TimeSpan.FromDays(30);
 
     /// <summary>
-    /// Largest lyrics file that is read, in bytes; larger files are skipped.
+    /// Largest lyrics file that is read, in bytes; larger files are skipped. Uploaded lyrics may not be longer.
     /// </summary>
     public long MaxFileBytes { get; set; } = 1024 * 1024;
+
+    /// <summary>
+    /// Longest time to solve the challenge LRCLIB asks for before it takes published lyrics (a proof of work that
+    /// usually takes a few seconds); publishing fails after it.
+    /// </summary>
+    public TimeSpan PublishChallengeTimeout { get; set; } = TimeSpan.FromMinutes(5);
 }

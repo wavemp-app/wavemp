@@ -18,9 +18,22 @@ public class LyricsDownload
 
     /// <summary>
     /// The lyrics in LRC format (synchronized lines with timestamps, or plain lines without), only for
-    /// <see cref="LyricsDownloadStatus.SavedToDatabase"/>.
+    /// <see cref="LyricsDownloadStatus.SavedToDatabase"/> and for <see cref="LyricsDownloadStatus.Uploaded"/> lyrics
+    /// that could not be saved as file.
     /// </summary>
     public string? Content { get; set; }
+
+    /// <summary>
+    /// Whether the saved lyrics belong to another version of the song (its duration differs too much), so only their
+    /// plain lines were kept, without the times, which would not fit the track.
+    /// </summary>
+    public bool OtherVersion { get; set; }
+
+    /// <summary>
+    /// The version of the rules that chose the lyrics (<c>LrclibMatcher.Version</c>); lookups that found no lyrics
+    /// with older rules are looked up again. 1 for lookups made before the version was stored.
+    /// </summary>
+    public int MatcherVersion { get; set; }
 
     /// <summary>
     /// When the track was looked up.

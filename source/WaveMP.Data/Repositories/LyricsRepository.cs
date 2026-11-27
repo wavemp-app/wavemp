@@ -16,6 +16,7 @@ internal sealed class LyricsRepository(WaveMpDbContext dbContext) : ILyricsRepos
         int limit,
         IReadOnlyCollection<Guid> excluded,
         DateTimeOffset? lookUpAgainBefore,
+        int matcherVersion,
         CancellationToken cancellationToken = default)
     {
         Guid[] skipped = [.. excluded];
@@ -29,6 +30,8 @@ internal sealed class LyricsRepository(WaveMpDbContext dbContext) : ILyricsRepos
                             && track.Files.Any(file => file.IsPrimary
                                 && (file.Kind == MediaFileKind.Audio || file.Kind == MediaFileKind.Video)
                                 && file.ScannedAt > download.CheckedAt))
+                        || (download.Status == LyricsDownloadStatus.NotFound
+                            && download.MatcherVersion < matcherVersion)
                         || (lookUpAgain
                             && (download.Status == LyricsDownloadStatus.NotFound
                                 || download.Status == LyricsDownloadStatus.Instrumental
@@ -66,6 +69,8 @@ internal sealed class LyricsRepository(WaveMpDbContext dbContext) : ILyricsRepos
         existing.Status = download.Status;
         existing.Content = download.Content;
         existing.CheckedAt = download.CheckedAt;
+        existing.OtherVersion = download.OtherVersion;
+        existing.MatcherVersion = download.MatcherVersion;
         try
         {
             await dbContext.SaveChangesAsync(cancellationToken);
@@ -138,7 +143,18 @@ internal sealed class LyricsRepository(WaveMpDbContext dbContext) : ILyricsRepos
                 .FirstOrDefault(),
             dbContext.LyricsDownloads
                 .Where(download => download.TrackId == track.Id)
-                .Select(download => new LyricsDownloadRow(download.Status, download.Content, download.CheckedAt))
-                .FirstOrDefault()));
+                .Select(download => new LyricsDownloadRow(
+                    download.Status,
+                    download.Content,
+                    download.CheckedAt,
+                    download.OtherVersion,
+                    download.MatcherVersion))
+                .FirstOrDefault())
+        {
+            Artists = track.ArtistCredits
+                .OrderBy(credit => credit.Position)
+                .Select(credit => new LyricsArtistRow(credit.Artist!.Name, credit.Role))
+                .ToList(),
+        });
     }
 }

@@ -40,16 +40,32 @@ internal sealed class LyricsService(
             && await files.ReadAsync(track.SourceId, path, cancellationToken) is { } text
             && LrcParser.Parse(text) is { IsEmpty: false } fromFile)
         {
-            return new TrackLyrics(fromFile, LyricsSource.File);
+            return new TrackLyrics(fromFile, LyricsSource.File, IsOtherVersion(track, fromFile));
         }
 
-        if (track.Download is { Status: LyricsDownloadStatus.SavedToDatabase, Content: { } stored }
+        if (track.Download is
+            {
+                Status: LyricsDownloadStatus.SavedToDatabase or LyricsDownloadStatus.Uploaded,
+                Content: { } stored,
+            }
             && LrcParser.Parse(stored) is { IsEmpty: false } downloaded)
         {
-            return new TrackLyrics(downloaded, LyricsSource.Download);
+            LyricsSource source = track.Download.Status == LyricsDownloadStatus.Uploaded
+                ? LyricsSource.Upload
+                : LyricsSource.Download;
+            return new TrackLyrics(downloaded, source, IsOtherVersion(track, downloaded));
         }
 
         return ReadTags(track) is { } tags ? new TrackLyrics(tags, LyricsSource.Tags) : null;
+    }
+
+    /// <summary>
+    /// Whether saved lyrics belong to another version of the song: the download marked them so, and they are still
+    /// lyrics without times (a lyrics file with times written since then is no longer the downloaded one).
+    /// </summary>
+    internal static bool IsOtherVersion(LyricsTrackRow track, LyricsDocument document)
+    {
+        return track.Download is { OtherVersion: true } && document.Type == LyricsType.Static;
     }
 
     /// <summary>

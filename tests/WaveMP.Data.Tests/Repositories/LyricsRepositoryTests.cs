@@ -11,6 +11,11 @@ namespace WaveMP.Data.Tests.Repositories;
 [Category("Integration")]
 public class LyricsRepositoryTests : LibraryDatabaseTests
 {
+    /// <summary>
+    /// The current version of the rules of the lookup.
+    /// </summary>
+    private const int MatcherVersion = 2;
+
     protected override string DatabaseName => "wavemp_tests_data_library_lyrics";
 
     [Test]
@@ -40,7 +45,8 @@ public class LyricsRepositoryTests : LibraryDatabaseTests
             $"Album/{track.BaseName}.lrc",
             $"Album/{track.BaseName}.mp3",
             $"Album/{track.BaseName}.mkv",
-            null));
+            null)
+        { Artists = [new LyricsArtistRow("Band", ArtistRole.Main)] });
         (await repository.FindTrackAsync(Guid.NewGuid())).Should().BeNull();
     }
 
@@ -60,8 +66,11 @@ public class LyricsRepositoryTests : LibraryDatabaseTests
             .Should().BeTrue();
 
         LyricsTrackRow row = (await new LyricsRepository(CreateDbContext()).FindTrackAsync(track.Id))!;
-        row.Download.Should().Be(
-            new LyricsDownloadRow(LyricsDownloadStatus.SavedToDatabase, "[00:01.00]Line", checkedAt.AddDays(1)));
+        row.Download.Should().Be(new LyricsDownloadRow(
+            LyricsDownloadStatus.SavedToDatabase,
+            "[00:01.00]Line",
+            checkedAt.AddDays(1),
+            MatcherVersion: MatcherVersion));
         await using WaveMpDbContext db = CreateDbContext();
         (await db.LyricsDownloads.CountAsync()).Should().Be(1);
     }
@@ -94,11 +103,55 @@ public class LyricsRepositoryTests : LibraryDatabaseTests
         await repository.SaveDownloadAsync(
             Download(lookedUp, LyricsDownloadStatus.NotFound, null, LibrarySeed.DefaultTime));
 
-        IReadOnlyList<LyricsTrackRow> rows = await repository.ListTracksToLookUpAsync(10, [excluded.Id], null);
-        IReadOnlyList<LyricsTrackRow> first = await repository.ListTracksToLookUpAsync(1, [excluded.Id], null);
+        IReadOnlyList<LyricsTrackRow> rows =
+            await repository.ListTracksToLookUpAsync(10, [excluded.Id], null, MatcherVersion);
+        IReadOnlyList<LyricsTrackRow> first =
+            await repository.ListTracksToLookUpAsync(1, [excluded.Id], null, MatcherVersion);
 
         rows.Select(row => row.TrackId).Should().Equal(older.Id, newer.Id);
         first.Select(row => row.TrackId).Should().Equal(older.Id);
+    }
+
+    [Test]
+    public async Task ListTracksToLookUpAsync_NotFoundWithOlderRules_AddsThemAtOnceAfterTheNewOnes()
+    {
+        LibrarySeed seed = new();
+        Track fresh = seed.Track("Fresh", firstSeenAt: LibrarySeed.DefaultTime.AddDays(5));
+        Track oldRules = seed.Track("Old rules", firstSeenAt: LibrarySeed.DefaultTime);
+        Track currentRules = seed.Track("Current rules");
+        Track instrumental = seed.Track("Instrumental");
+        await SaveAsync(seed);
+        LyricsRepository repository = new(CreateDbContext());
+        DateTimeOffset checkedAt = LibrarySeed.DefaultTime.AddDays(10);
+        await repository.SaveDownloadAsync(
+            Download(oldRules, LyricsDownloadStatus.NotFound, null, checkedAt, matcherVersion: 1));
+        await repository.SaveDownloadAsync(Download(currentRules, LyricsDownloadStatus.NotFound, null, checkedAt));
+        await repository.SaveDownloadAsync(
+            Download(instrumental, LyricsDownloadStatus.Instrumental, null, checkedAt, matcherVersion: 1));
+
+        IReadOnlyList<LyricsTrackRow> rows = await repository.ListTracksToLookUpAsync(10, [], null, MatcherVersion);
+
+        rows.Select(row => row.TrackId).Should().Equal(fresh.Id, oldRules.Id);
+    }
+
+    [Test]
+    public async Task SaveDownloadAsync_OtherVersion_KeepsTheMarkAndTheVersionOfTheRules()
+    {
+        LibrarySeed seed = new();
+        Track track = seed.Track("Song");
+        await SaveAsync(seed);
+        LyricsDownload download = Download(track, LyricsDownloadStatus.Uploaded, "Line", LibrarySeed.DefaultTime);
+        download.OtherVersion = true;
+
+        await new LyricsRepository(CreateDbContext()).SaveDownloadAsync(download);
+
+        (await new LyricsRepository(CreateDbContext()).FindTrackAsync(track.Id))!.Download.Should().Be(
+            new LyricsDownloadRow(
+                LyricsDownloadStatus.Uploaded,
+                "Line",
+                LibrarySeed.DefaultTime,
+                true,
+                MatcherVersion));
     }
 
     [Test]
@@ -130,11 +183,13 @@ public class LyricsRepositoryTests : LibraryDatabaseTests
         await repository.SaveDownloadAsync(Download(excluded, LyricsDownloadStatus.NotFound, null, longAgo));
 
         IReadOnlyList<LyricsTrackRow> rows =
-            await repository.ListTracksToLookUpAsync(10, [excluded.Id], now.AddDays(-30));
-        IReadOnlyList<LyricsTrackRow> withoutAgain = await repository.ListTracksToLookUpAsync(10, [excluded.Id], null);
+            await repository.ListTracksToLookUpAsync(10, [excluded.Id], now.AddDays(-30), MatcherVersion);
+        IReadOnlyList<LyricsTrackRow> withoutAgain =
+            await repository.ListTracksToLookUpAsync(10, [excluded.Id], null, MatcherVersion);
 
         rows.Select(row => row.TrackId).Should().Equal(fresh.Id, instrumental.Id, notFound.Id, notNeeded.Id);
-        rows[2].Download.Should().Be(new LyricsDownloadRow(LyricsDownloadStatus.NotFound, null, longAgo));
+        rows[2].Download.Should().Be(
+            new LyricsDownloadRow(LyricsDownloadStatus.NotFound, null, longAgo, MatcherVersion: MatcherVersion));
         withoutAgain.Select(row => row.TrackId).Should().Equal(fresh.Id);
     }
 
@@ -171,12 +226,13 @@ public class LyricsRepositoryTests : LibraryDatabaseTests
 
         await repository.SaveDownloadAsync(Download(notFound, LyricsDownloadStatus.NotFound, null, checkedAt));
 
-        IReadOnlyList<LyricsTrackRow> rows = await repository.ListTracksToLookUpAsync(10, [], null);
+        IReadOnlyList<LyricsTrackRow> rows = await repository.ListTracksToLookUpAsync(10, [], null, MatcherVersion);
         IReadOnlyList<LyricsTrackRow> withAgain =
-            await repository.ListTracksToLookUpAsync(10, [], checkedAt.AddDays(-30));
+            await repository.ListTracksToLookUpAsync(10, [], checkedAt.AddDays(-30), MatcherVersion);
 
         rows.Select(row => row.TrackId).Should().Equal(changedAudio.Id, changedVideo.Id);
-        rows[0].Download.Should().Be(new LyricsDownloadRow(LyricsDownloadStatus.NotNeeded, null, checkedAt));
+        rows[0].Download.Should().Be(
+            new LyricsDownloadRow(LyricsDownloadStatus.NotNeeded, null, checkedAt, MatcherVersion: MatcherVersion));
         withAgain.Select(row => row.TrackId).Should().Equal(changedAudio.Id, changedVideo.Id);
     }
 
@@ -226,17 +282,20 @@ public class LyricsRepositoryTests : LibraryDatabaseTests
         await repository.SaveDownloadAsync(
             Download(saved, LyricsDownloadStatus.SavedToDatabase, "[00:01.00]Line", checkedAt));
         await repository.SaveDownloadAsync(Download(notNeeded, LyricsDownloadStatus.NotNeeded, null, checkedAt));
-        (await repository.ListTracksToLookUpAsync(10, [], null)).Should().BeEmpty();
+        (await repository.ListTracksToLookUpAsync(10, [], null, MatcherVersion)).Should().BeEmpty();
 
         int removed = await new LyricsRepository(CreateDbContext()).DeleteDownloadsAsync(
             [LyricsDownloadStatus.NotFound, LyricsDownloadStatus.Instrumental]);
 
         removed.Should().Be(2);
         LyricsRepository reader = new(CreateDbContext());
-        (await reader.ListTracksToLookUpAsync(10, [], null)).Select(row => row.TrackId)
+        (await reader.ListTracksToLookUpAsync(10, [], null, MatcherVersion)).Select(row => row.TrackId)
             .Should().Equal(notFound.Id, instrumental.Id);
-        (await reader.FindTrackAsync(saved.Id))!.Download.Should().Be(
-            new LyricsDownloadRow(LyricsDownloadStatus.SavedToDatabase, "[00:01.00]Line", checkedAt));
+        (await reader.FindTrackAsync(saved.Id))!.Download.Should().Be(new LyricsDownloadRow(
+            LyricsDownloadStatus.SavedToDatabase,
+            "[00:01.00]Line",
+            checkedAt,
+            MatcherVersion: MatcherVersion));
         (await reader.FindTrackAsync(notNeeded.Id))!.Download!.Status.Should().Be(LyricsDownloadStatus.NotNeeded);
     }
 
@@ -284,8 +343,16 @@ public class LyricsRepositoryTests : LibraryDatabaseTests
         Track track,
         LyricsDownloadStatus status,
         string? content,
-        DateTimeOffset checkedAt)
+        DateTimeOffset checkedAt,
+        int matcherVersion = MatcherVersion)
     {
-        return new LyricsDownload { TrackId = track.Id, Status = status, Content = content, CheckedAt = checkedAt };
+        return new LyricsDownload
+        {
+            TrackId = track.Id,
+            Status = status,
+            Content = content,
+            CheckedAt = checkedAt,
+            MatcherVersion = matcherVersion,
+        };
     }
 }

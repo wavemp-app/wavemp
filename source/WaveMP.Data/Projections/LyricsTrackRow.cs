@@ -9,7 +9,7 @@ namespace WaveMP.Data.Projections;
 /// <param name="DirectoryPath">Folder of the track relative to the folder of its source.</param>
 /// <param name="BaseName">File name of the track without extension, as on disk.</param>
 /// <param name="Title">Title of the track.</param>
-/// <param name="ArtistName">Name of the artist, or <c>null</c> if unknown.</param>
+/// <param name="ArtistName">Name of the first artist, or <c>null</c> if unknown.</param>
 /// <param name="AlbumTitle">Title of the album, or <c>null</c> for tracks without album.</param>
 /// <param name="Duration">Duration of the track, or <c>null</c> if unknown.</param>
 /// <param name="LyricsFilePath">Path of the lyrics file of the track relative to the media folder, or
@@ -30,4 +30,10 @@ public sealed record LyricsTrackRow(
     string? LyricsFilePath,
     string? AudioFilePath,
     string? VideoFilePath,
-    LyricsDownloadRow? Download);
+    LyricsDownloadRow? Download)
+{
+    /// <summary>
+    /// All artists of the track in their order, with their roles; empty if unknown.
+    /// </summary>
+    public IReadOnlyList<LyricsArtistRow> Artists { get; init; } = [];
+}

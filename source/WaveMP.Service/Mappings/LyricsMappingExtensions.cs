@@ -1,5 +1,7 @@
 using WaveMP.Core.Lyrics.Documents;
 using WaveMP.Core.Lyrics.Lookups;
+using WaveMP.Core.Lyrics.Searches;
+using WaveMP.Core.Lyrics.Uploads;
 using WaveMP.Data.Entities;
 using WaveMP.Data.Projections;
 using WaveMP.Service.Dtos;
@@ -14,6 +16,7 @@ public static class LyricsMappingExtensions
         {
             Type = lyrics.Document.Type.ToDto(),
             Source = lyrics.Source.ToDto(),
+            FromOtherVersion = lyrics.OtherVersion,
             Lines = [.. lyrics.Document.Lines.Select(line => line.ToDto())],
         };
     }
@@ -51,6 +54,7 @@ public static class LyricsMappingExtensions
         {
             LyricsSource.File => LyricsSourceDto.File,
             LyricsSource.Download => LyricsSourceDto.Download,
+            LyricsSource.Upload => LyricsSourceDto.Upload,
             LyricsSource.Tags => LyricsSourceDto.Tags,
             _ => throw new ArgumentOutOfRangeException(nameof(source), source, "Unknown lyrics source."),
         };
@@ -75,6 +79,7 @@ public static class LyricsMappingExtensions
             LyricsDownloadStatus.NotFound => LyricsLookupStatusDto.NotFound,
             LyricsDownloadStatus.Instrumental => LyricsLookupStatusDto.Instrumental,
             LyricsDownloadStatus.NotNeeded => LyricsLookupStatusDto.NotNeeded,
+            LyricsDownloadStatus.Uploaded => LyricsLookupStatusDto.Uploaded,
             _ => throw new ArgumentOutOfRangeException(nameof(status), status, "Unknown lyrics lookup status."),
         };
     }
@@ -88,6 +93,40 @@ public static class LyricsMappingExtensions
             LookUpAgainAfterMinutes = summary.LookUpAgainAfter is { } wait
                 ? (int)Math.Min(int.MaxValue, Math.Ceiling(wait.TotalMinutes))
                 : null,
+        };
+    }
+
+    public static LyricsOnlineMatchesDto ToDto(this LyricsSearchResult result)
+    {
+        return new LyricsOnlineMatchesDto
+        {
+            Title = result.Title,
+            Artist = result.Artist,
+            Matches = [.. (result.Matches ?? []).Select(match => new LyricsOnlineMatchDto
+            {
+                Id = match.Id,
+                Title = match.Title,
+                Artist = match.Artist,
+                Album = match.Album,
+                DurationSeconds = match.Duration is { } duration ? Math.Round(duration.TotalSeconds, 1) : null,
+                Synchronized = match.Synchronized,
+                FitsDuration = match.FitsDuration,
+            })],
+        };
+    }
+
+    public static LyricsPublicationDto ToDto(this LyricsPublication publication)
+    {
+        return publication switch
+        {
+            LyricsPublication.NotRequested => LyricsPublicationDto.NotRequested,
+            LyricsPublication.Published => LyricsPublicationDto.Published,
+            LyricsPublication.Disabled => LyricsPublicationDto.Disabled,
+            LyricsPublication.MissingMetadata => LyricsPublicationDto.MissingMetadata,
+            LyricsPublication.Rejected => LyricsPublicationDto.Rejected,
+            LyricsPublication.RateLimited => LyricsPublicationDto.RateLimited,
+            LyricsPublication.Unavailable => LyricsPublicationDto.Unavailable,
+            _ => throw new ArgumentOutOfRangeException(nameof(publication), publication, "Unknown publication."),
         };
     }
 

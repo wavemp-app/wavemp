@@ -35,4 +35,9 @@ public enum LyricsLookupStatusDto
     /// The track already had lyrics, so nothing was downloaded.
     /// </summary>
     NotNeeded,
+
+    /// <summary>
+    /// An admin uploaded lyrics for the track; the download job never looks it up again.
+    /// </summary>
+    Uploaded,
 }

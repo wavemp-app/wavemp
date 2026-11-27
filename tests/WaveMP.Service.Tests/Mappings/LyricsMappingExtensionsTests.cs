@@ -35,6 +35,7 @@ public class LyricsMappingExtensionsTests
         {
             Type = LyricsTypeDto.WordSynchronized,
             Source = LyricsSourceDto.File,
+            FromOtherVersion = false,
             Lines =
             [
                 new LyricsLineDto

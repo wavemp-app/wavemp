@@ -1,7 +1,5 @@
-using Microsoft.Extensions.Logging;
-using WaveMP.Core.Lyrics.Files;
+using WaveMP.Core.Lyrics.Saving;
 using WaveMP.Core.Lyrics.Services;
-using WaveMP.Core.Scanning.Scans;
 using WaveMP.Core.Settings.Groups;
 using WaveMP.Core.Settings.Snapshots;
 using WaveMP.Data.Entities;
@@ -11,20 +9,19 @@ using WaveMP.Data.Repositories;
 namespace WaveMP.Core.Lyrics.Downloads;
 
 /// <summary>
-/// Looks up the lyrics of a track in LRCLIB: first exactly by title, artist, album and duration, then by a search for
-/// title and artist, preferring synchronized lyrics (see <see cref="LrclibMatcher"/>). Found lyrics become the file
-/// <c>Song.lrc</c> next to the track, which the folder is read again for at once, so the library knows the file; if the
-/// folder is not writable, they are stored in the database. An existing lyrics file is never replaced.
+/// Looks up the lyrics of a track in LRCLIB along its <see cref="LyricsLookupPlan"/>: first exactly by title, artist,
+/// album and duration, then by a search for title and artist and for the title without additions and the main artist,
+/// and if that finds no track with the names of the track, by the free-text search; synchronized lyrics are preferred
+/// (see <see cref="LrclibMatcher"/>). If no track fits the duration, the plain lyrics of another version of the song
+/// (same title and artist) are kept and marked. Found lyrics are saved by the <see cref="LyricsSaver"/>; an existing
+/// lyrics file is never replaced by the lookup, only by lyrics an admin chose.
 /// </summary>
 internal sealed class LyricsDownloader(
     ILyricsRepository repository,
     ILyricsService lyrics,
     ILrclibClient lrclib,
-    ILyricsFileStore files,
-    ILibraryScanner scanner,
-    ISettingsSnapshot<LibrarySettings> settings,
-    TimeProvider timeProvider,
-    ILogger<LyricsDownloader> logger) : ILyricsDownloader
+    LyricsSaver saver,
+    ISettingsSnapshot<LibrarySettings> settings) : ILyricsDownloader
 {
     public async Task<LyricsDownloadResult> DownloadAsync(
         Guid trackId,
@@ -50,142 +47,188 @@ internal sealed class LyricsDownloader(
         if (mode == LyricsDownloadMode.Automatic
             && (await lyrics.GetAsync(trackId, cancellationToken)).Status == LyricsStatus.Found)
         {
-            return await SaveResultAsync(track, LyricsDownloadStatus.NotNeeded, null, cancellationToken)
-                ?? new LyricsDownloadResult(LyricsDownloadOutcome.NotNeeded);
+            return await SaveResultAsync(track, LyricsDownloadStatus.NotNeeded, LyricsDownloadOutcome.NotNeeded);
         }
 
-        LrclibQuery query = new(track.Title, track.ArtistName, track.AlbumTitle, track.Duration);
-        (LrclibResponse response, LrclibRecord? record, bool instrumental) = await LookUpAsync(
-            query,
-            cancellationToken);
-        if (response.Status is LrclibStatus.RateLimited)
+        LookupResult lookup = await LookUpAsync(LyricsLookupPlan.Of(track), cancellationToken);
+        if (lookup.Response.Status is LrclibStatus.RateLimited)
         {
-            return new LyricsDownloadResult(LyricsDownloadOutcome.RateLimited, response.RetryAfter);
+            return new LyricsDownloadResult(LyricsDownloadOutcome.RateLimited, lookup.Response.RetryAfter);
         }
 
-        if (response.Status is LrclibStatus.Unavailable)
+        if (lookup.Response.Status is LrclibStatus.Unavailable)
         {
             return new LyricsDownloadResult(LyricsDownloadOutcome.Unavailable);
         }
 
-        if (record?.Lyrics is not { } text)
+        if (lookup.Record is not { } record
+            || LrclibMatcher.LyricsOf(record, lookup.OtherVersion) is not { } text)
         {
-            LyricsDownloadStatus status = instrumental
-                ? LyricsDownloadStatus.Instrumental
-                : LyricsDownloadStatus.NotFound;
-            return await SaveResultAsync(track, status, null, cancellationToken)
-                ?? new LyricsDownloadResult(instrumental
-                    ? LyricsDownloadOutcome.Instrumental
-                    : LyricsDownloadOutcome.NotFound);
+            return lookup.Instrumental
+                ? await SaveResultAsync(track, LyricsDownloadStatus.Instrumental, LyricsDownloadOutcome.Instrumental)
+                : await SaveResultAsync(track, LyricsDownloadStatus.NotFound, LyricsDownloadOutcome.NotFound);
         }
 
-        return await SaveLyricsAsync(track, text, cancellationToken);
+        return ToResult(
+            await saver.SaveAsync(
+                track,
+                text,
+                LyricsOrigin.Download,
+                lookup.OtherVersion,
+                replace: false,
+                cancellationToken),
+            lookup.OtherVersion);
+    }
+
+    public async Task<LyricsDownloadResult> DownloadMatchAsync(
+        Guid trackId,
+        long matchId,
+        CancellationToken cancellationToken = default)
+    {
+        if (!settings.Current.DownloadLyrics)
+        {
+            return new LyricsDownloadResult(LyricsDownloadOutcome.Disabled);
+        }
+
+        LyricsTrackRow? track = await repository.FindTrackAsync(trackId, cancellationToken);
+        if (track is null)
+        {
+            return new LyricsDownloadResult(LyricsDownloadOutcome.TrackNotFound);
+        }
+
+        LrclibResponse response = await lrclib.GetByIdAsync(matchId, cancellationToken);
+        switch (response.Status)
+        {
+            case LrclibStatus.RateLimited:
+                return new LyricsDownloadResult(LyricsDownloadOutcome.RateLimited, response.RetryAfter);
+            case LrclibStatus.Unavailable:
+                return new LyricsDownloadResult(LyricsDownloadOutcome.Unavailable);
+        }
+
+        if (response.Records.FirstOrDefault() is not { } record)
+        {
+            return new LyricsDownloadResult(LyricsDownloadOutcome.NotFound);
+        }
+
+        bool otherVersion = !LrclibMatcher.FitsDuration(record, track.Duration);
+        if (record.Instrumental || LrclibMatcher.LyricsOf(record, otherVersion) is not { } text)
+        {
+            return new LyricsDownloadResult(record.Instrumental
+                ? LyricsDownloadOutcome.Instrumental
+                : LyricsDownloadOutcome.NotFound);
+        }
+
+        return ToResult(
+            await saver.SaveAsync(track, text, LyricsOrigin.Download, otherVersion, replace: true, cancellationToken),
+            otherVersion);
+    }
+
+    private static LyricsDownloadResult ToResult(LyricsSaveOutcome outcome, bool otherVersion)
+    {
+        return new LyricsDownloadResult(
+            outcome switch
+            {
+                LyricsSaveOutcome.SavedToFile => LyricsDownloadOutcome.SavedToFile,
+                LyricsSaveOutcome.SavedToDatabase => LyricsDownloadOutcome.SavedToDatabase,
+                LyricsSaveOutcome.FileExists => LyricsDownloadOutcome.LyricsFileExists,
+                LyricsSaveOutcome.FileNotWritable => LyricsDownloadOutcome.FileNotWritable,
+                _ => LyricsDownloadOutcome.TrackNotFound,
+            })
+        {
+            OtherVersion = otherVersion
+                && outcome is LyricsSaveOutcome.SavedToFile or LyricsSaveOutcome.SavedToDatabase,
+        };
     }
 
     /// <summary>
-    /// The path of the lyrics file of a track relative to the media folder.
+    /// Asks LRCLIB along the plan. Returns the last answer, the chosen track, whether it belongs to another version
+    /// and whether a fitting track is instrumental.
     /// </summary>
-    internal static string LyricsFilePathOf(LyricsTrackRow track)
+    private async Task<LookupResult> LookUpAsync(LyricsLookupPlan plan, CancellationToken cancellationToken)
     {
-        string fileName = $"{track.BaseName}.{LibrarySettings.LyricsExtension}";
-        return track.DirectoryPath.Length == 0 ? fileName : $"{track.DirectoryPath}/{fileName}";
-    }
-
-    /// <summary>
-    /// Asks LRCLIB exactly if the query is complete, otherwise (or if nothing fits) searches. Returns the last
-    /// answer, the chosen track and whether a fitting track is instrumental.
-    /// </summary>
-    private async Task<(LrclibResponse Response, LrclibRecord? Record, bool Instrumental)> LookUpAsync(
-        LrclibQuery query,
-        CancellationToken cancellationToken)
-    {
+        List<LrclibRecord> seen = [];
         bool instrumental = false;
-        if (query.IsComplete)
+        LrclibResponse last = LrclibResponse.NotFound;
+        if (plan.Query.IsComplete)
         {
-            LrclibResponse exact = await lrclib.GetAsync(query, cancellationToken);
-            if (exact.Status is LrclibStatus.RateLimited or LrclibStatus.Unavailable)
+            last = await lrclib.GetAsync(plan.Query, cancellationToken);
+            if (Ask(last, plan.Query, seen, ref instrumental) is { } result)
             {
-                return (exact, null, false);
-            }
-
-            if (LrclibMatcher.Choose(exact.Records, query, out instrumental) is { } match)
-            {
-                return (exact, match, false);
+                return result;
             }
         }
 
-        LrclibResponse search = await lrclib.SearchAsync(query, cancellationToken);
-        LrclibRecord? found = LrclibMatcher.Choose(search.Records, query, out bool searchInstrumental);
-        return (search, found, found is null && (instrumental || searchInstrumental));
-    }
-
-    private async Task<LyricsDownloadResult> SaveLyricsAsync(
-        LyricsTrackRow track,
-        string text,
-        CancellationToken cancellationToken)
-    {
-        string path = LyricsFilePathOf(track);
-        LyricsFileWriteStatus written = await files.CreateAsync(track.SourceId, path, text, cancellationToken);
-        if (written == LyricsFileWriteStatus.Exists)
+        foreach (LrclibQuery query in plan.SearchQueries)
         {
-            return new LyricsDownloadResult(LyricsDownloadOutcome.LyricsFileExists);
+            last = await lrclib.SearchAsync(query, cancellationToken);
+            if (Ask(last, query, seen, ref instrumental) is { } result)
+            {
+                return result;
+            }
         }
 
-        if (written == LyricsFileWriteStatus.NotWritable)
+        // The free-text search finds tracks the search by fields misses; only those with the names of the track count.
+        if (!instrumental && !seen.Any(plan.Names.Matches))
         {
-            return await SaveResultAsync(track, LyricsDownloadStatus.SavedToDatabase, text, cancellationToken)
-                ?? new LyricsDownloadResult(LyricsDownloadOutcome.SavedToDatabase);
+            last = await lrclib.SearchTextAsync(plan.Text, cancellationToken);
+            LrclibResponse named = last.Status == LrclibStatus.Found
+                ? LrclibResponse.Found([.. last.Records.Where(plan.Names.Matches)])
+                : last;
+            if (Ask(named, plan.Query, seen, ref instrumental) is { } result)
+            {
+                return result;
+            }
         }
 
-        LyricsDownloadResult? missing =
-            await SaveResultAsync(track, LyricsDownloadStatus.SavedToFile, null, cancellationToken);
-        await RefreshFolderAsync(track, path);
-        logger.LogInformation("Lyrics of track {TrackId} saved as {File}", track.TrackId, path);
-        return missing ?? new LyricsDownloadResult(LyricsDownloadOutcome.SavedToFile);
+        if (instrumental)
+        {
+            return new LookupResult(last, null, OtherVersion: false, Instrumental: true);
+        }
+
+        LrclibRecord? other = LrclibMatcher.ChooseOtherVersion(seen, plan.Query, plan.Names);
+        return new LookupResult(last, other, OtherVersion: other is not null, Instrumental: false);
+
+        LookupResult? Ask(
+            LrclibResponse response,
+            LrclibQuery query,
+            List<LrclibRecord> records,
+            ref bool isInstrumental)
+        {
+            if (response.Status is LrclibStatus.RateLimited or LrclibStatus.Unavailable)
+            {
+                return new LookupResult(response, null, OtherVersion: false, Instrumental: false);
+            }
+
+            records.AddRange(response.Records);
+            if (LrclibMatcher.Choose(response.Records, query, plan.Names, out bool fittingInstrumental) is { } match)
+            {
+                return new LookupResult(response, match, OtherVersion: false, Instrumental: false);
+            }
+
+            isInstrumental |= fittingInstrumental;
+            return null;
+        }
     }
 
     /// <summary>
-    /// Stores the result of the lookup with the track. Returns <see cref="LyricsDownloadOutcome.TrackNotFound"/> if
-    /// the track is gone in the meantime, otherwise <c>null</c>.
+    /// Stores the result of the lookup with the track and returns the outcome, or
+    /// <see cref="LyricsDownloadOutcome.TrackNotFound"/> if the track is gone in the meantime.
     /// </summary>
-    private async Task<LyricsDownloadResult?> SaveResultAsync(
+    private async Task<LyricsDownloadResult> SaveResultAsync(
         LyricsTrackRow track,
         LyricsDownloadStatus status,
-        string? content,
-        CancellationToken cancellationToken)
+        LyricsDownloadOutcome outcome)
     {
-        bool saved = await repository.SaveDownloadAsync(
-            new LyricsDownload
-            {
-                TrackId = track.TrackId,
-                Status = status,
-                Content = content,
-                CheckedAt = timeProvider.GetUtcNow(),
-            },
-            cancellationToken);
-        return saved ? null : new LyricsDownloadResult(LyricsDownloadOutcome.TrackNotFound);
+        bool saved = await saver.SaveResultAsync(track, status, null, otherVersion: false, CancellationToken.None);
+        return new LyricsDownloadResult(saved ? outcome : LyricsDownloadOutcome.TrackNotFound);
     }
 
     /// <summary>
-    /// Reads the folder of the track again, so the new lyrics file becomes part of the library. If that fails, the
-    /// next scan finds the file.
+    /// The result of asking LRCLIB.
     /// </summary>
-    private async Task RefreshFolderAsync(LyricsTrackRow track, string path)
-    {
-        try
-        {
-            await scanner.RefreshFolderAsync(
-                track.SourceId,
-                track.DirectoryPath,
-                [path],
-                CancellationToken.None);
-        }
-        catch (Exception exception)
-        {
-            logger.LogWarning(
-                exception,
-                "The folder {Folder} could not be read again after saving lyrics; the next scan finds them",
-                track.DirectoryPath);
-        }
-    }
+    private sealed record LookupResult(
+        LrclibResponse Response,
+        LrclibRecord? Record,
+        bool OtherVersion,
+        bool Instrumental);
 }

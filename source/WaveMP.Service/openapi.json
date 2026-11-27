@@ -5360,6 +5360,113 @@
             "Bearer": [ ]
           }
         ]
+      },
+      "put": {
+        "tags": [
+          "Lyrics"
+        ],
+        "summary": "Uploads lyrics of an admin for a track, as LRC text (with times) or plain text, and returns the lyrics the track has afterwards. They replace the lyrics file of the track, or are saved as lyrics file with its base name, or in the database if its folder is not writable. With `publish` they are then also published to LRCLIB (while the download is switched on), with the title, artists, album and duration of the track; LRCLIB first asks for a proof of work, so the answer may take a while. A failed publication keeps the saved lyrics and is named in `publication`.",
+        "operationId": "UploadTrackLyrics",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Id of the track.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "The lyrics.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UploadLyrics"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UploadLyrics"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UploadLyrics"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "The lyrics of the track afterwards and what publishing did.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LyricsUpload"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The text is missing, too long or has no line with text (field `text`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The track does not exist (code `track.not_found`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The lyrics file of the track cannot be replaced (code `lyrics.file_not_writable`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
       }
     },
     "/api/v1/tracks/{id}/lyrics/download": {
@@ -5367,7 +5474,7 @@
         "tags": [
           "Lyrics"
         ],
-        "summary": "Downloads the lyrics of a track from LRCLIB, for admins only, and returns the lyrics the track has afterwards. LRCLIB is asked by title, artist, album and duration; synchronized lyrics are preferred. The lyrics are saved as lyrics file with the base name of the track if its folder is writable, otherwise in the database. Lyrics of the tags or the database are replaced; a lyrics file never is. Requests to LRCLIB are spaced, so the answer may take a moment.",
+        "summary": "Downloads the lyrics of a track from LRCLIB, for admins only, and returns the lyrics the track has afterwards. LRCLIB is asked by title, artist, album and duration, then searched by title and artist, by the title without additions such as \"(Remastered)\" or \"(Official Video)\" and the main artist, and by the free-text search; a track without artist takes artist and title from its file name (\"Artist - Title\"). Synchronized lyrics are preferred. If no track of LRCLIB fits the duration, the plain lyrics of another version of the song (same title and artist) are taken, marked with `fromOtherVersion`. The lyrics are saved as lyrics file with the base name of the track if its folder is writable, otherwise in the database. Lyrics of the tags or the database are replaced; a lyrics file never is. Requests to LRCLIB are spaced, so the answer may take a moment.",
         "operationId": "DownloadTrackLyrics",
         "parameters": [
           {
@@ -5434,6 +5541,229 @@
           },
           "503": {
             "description": "LRCLIB cannot be reached, e.g. without an internet connection (code `lyrics.service_unavailable`), or refuses requests for a while (code `lyrics.rate_limited`, with Retry-After if LRCLIB names a time).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/api/v1/tracks/{id}/lyrics/online-matches": {
+      "get": {
+        "tags": [
+          "Lyrics"
+        ],
+        "summary": "Searches LRCLIB for the lyrics of a track, for admins only, so they can choose the lyrics themselves. LRCLIB is searched by title and artist, and by its free-text search if that finds nothing. Without parameters the title without additions and the main artist of the track are used (for a track without artist those of its file name); the answer names what was searched for. Only tracks with lyrics are returned, at most 20.",
+        "operationId": "SearchTrackLyricsOnlineMatches",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Id of the track.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "title",
+            "in": "query",
+            "description": "The title to search for; empty for the title of the track.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "artist",
+            "in": "query",
+            "description": "The artist to search for; missing for the artist of the track, empty to search by title only.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "The tracks with lyrics, the best first.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LyricsOnlineMatches"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The track does not exist (code `track.not_found`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The download is switched off in the library settings (code `lyrics.download_disabled`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "LRCLIB cannot be reached (code `lyrics.service_unavailable`) or refuses requests for a while (code `lyrics.rate_limited`, with Retry-After if LRCLIB names a time).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/api/v1/tracks/{id}/lyrics/online-match": {
+      "put": {
+        "tags": [
+          "Lyrics"
+        ],
+        "summary": "Gives a track the lyrics of a track of LRCLIB an admin chose from the search, for admins only, and returns the lyrics the track has afterwards. They replace the lyrics file of the track, or are saved as lyrics file with its base name, or in the database if its folder is not writable. If the duration of the chosen track does not fit, only its plain lyrics are kept, marked with `fromOtherVersion`.",
+        "operationId": "ChooseTrackLyricsOnlineMatch",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Id of the track.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "The chosen track of LRCLIB.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChooseLyricsOnlineMatch"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChooseLyricsOnlineMatch"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChooseLyricsOnlineMatch"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "The lyrics of the track afterwards.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Lyrics"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The id of the chosen track is missing or invalid.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The track does not exist (code `track.not_found`), or the chosen track of LRCLIB does not exist or has no lyrics (code `lyrics.match_not_found`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The download is switched off in the library settings (code `lyrics.download_disabled`) or the lyrics file of the track cannot be replaced (code `lyrics.file_not_writable`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "LRCLIB cannot be reached (code `lyrics.service_unavailable`) or refuses requests for a while (code `lyrics.rate_limited`).",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -19188,6 +19518,22 @@
         },
         "description": "The space the cache uses, in total and per area, and its size limit."
       },
+      "ChooseLyricsOnlineMatch": {
+        "required": [
+          "matchId"
+        ],
+        "type": "object",
+        "properties": {
+          "matchId": {
+            "maximum": 9223372036854776000,
+            "minimum": 1,
+            "type": "integer",
+            "description": "Id of the track at LRCLIB, from the search (`GET /api/v1/tracks/{id}/lyrics/online-matches`).",
+            "format": "int64"
+          }
+        },
+        "description": "The track of the online lyrics service (LRCLIB) whose lyrics a track gets."
+      },
       "ConnectScrobblingService": {
         "required": [
           "token"
@@ -21353,6 +21699,7 @@
         "required": [
           "type",
           "source",
+          "fromOtherVersion",
           "lines"
         ],
         "type": "object",
@@ -21364,6 +21711,10 @@
           "source": {
             "description": "Where the lyrics come from.",
             "$ref": "#/components/schemas/LyricsSource"
+          },
+          "fromOtherVersion": {
+            "type": "boolean",
+            "description": "Whether the lyrics belong to another version of the song (its duration differs, e.g. the lyrics of the single for the longer music video), so they are static: their times would not fit the track."
           },
           "lines": {
             "type": "array",
@@ -21443,7 +21794,8 @@
           "SavedToDatabase",
           "NotFound",
           "Instrumental",
-          "NotNeeded"
+          "NotNeeded",
+          "Uploaded"
         ],
         "type": "string",
         "description": "What the last lookup of the lyrics of a track in the online lyrics service (LRCLIB) found."
@@ -21476,10 +21828,100 @@
         },
         "description": "The stored lookups of lyrics that found no lyrics, over all tracks."
       },
+      "LyricsOnlineMatch": {
+        "required": [
+          "id",
+          "title",
+          "synchronized",
+          "fitsDuration"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Id of the track at LRCLIB; choose it with `PUT /api/v1/tracks/{id}/lyrics/online-match`.",
+            "format": "int64"
+          },
+          "title": {
+            "type": "string"
+          },
+          "artist": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "album": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "durationSeconds": {
+            "type": [
+              "null",
+              "number"
+            ],
+            "description": "Duration in seconds, if known.",
+            "format": "double"
+          },
+          "synchronized": {
+            "type": "boolean",
+            "description": "Whether the track has synchronized lyrics."
+          },
+          "fitsDuration": {
+            "type": "boolean",
+            "description": "Whether its duration fits the track (at most 3 seconds apart, or one of them unknown). Lyrics of a track whose duration does not fit are kept without their times, as lyrics of another version."
+          }
+        },
+        "description": "A track of the online lyrics service (LRCLIB) with lyrics."
+      },
+      "LyricsOnlineMatches": {
+        "required": [
+          "title",
+          "matches"
+        ],
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "The title that was searched for."
+          },
+          "artist": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "The artist that was searched for, or `null` for a search by title only."
+          },
+          "matches": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LyricsOnlineMatch"
+            },
+            "description": "The tracks with lyrics: those with the searched names first, then those whose duration fits the track, then those with synchronized lyrics."
+          }
+        },
+        "description": "The tracks with lyrics a search in the online lyrics service (LRCLIB) found for a track, the best first, and what was searched for. LRCLIB returns at most 20 tracks, so the list is not paged."
+      },
+      "LyricsPublication": {
+        "enum": [
+          "NotRequested",
+          "Published",
+          "Disabled",
+          "MissingMetadata",
+          "Rejected",
+          "RateLimited",
+          "Unavailable"
+        ],
+        "type": "string",
+        "description": "What publishing uploaded lyrics to the online lyrics service (LRCLIB) did."
+      },
       "LyricsSource": {
         "enum": [
           "File",
           "Download",
+          "Upload",
           "Tags"
         ],
         "type": "string",
@@ -21493,6 +21935,24 @@
         ],
         "type": "string",
         "description": "How lyrics follow the music."
+      },
+      "LyricsUpload": {
+        "required": [
+          "lyrics",
+          "publication"
+        ],
+        "type": "object",
+        "properties": {
+          "lyrics": {
+            "description": "The lyrics of the track after the upload.",
+            "$ref": "#/components/schemas/Lyrics"
+          },
+          "publication": {
+            "description": "What publishing to LRCLIB did; the lyrics stay saved if it failed.",
+            "$ref": "#/components/schemas/LyricsPublication"
+          }
+        },
+        "description": "The result of uploading lyrics: the lyrics the track has now and what publishing them to LRCLIB did."
       },
       "LyricsWord": {
         "required": [
@@ -23721,6 +24181,8 @@
           "lyrics.rate_limited",
           "lyrics.lookup_not_found",
           "lyrics.lookup_found_lyrics",
+          "lyrics.file_not_writable",
+          "lyrics.match_not_found",
           "scrobbling.not_configured",
           "scrobbling.token_invalid",
           "scrobbling.service_unavailable",
@@ -28090,6 +28552,25 @@
         },
         "description": "Changes the visualization of the current profile. Missing or null values stay unchanged."
       },
+      "UploadLyrics": {
+        "required": [
+          "text"
+        ],
+        "type": "object",
+        "properties": {
+          "text": {
+            "maxLength": 262144,
+            "minLength": 0,
+            "type": "string",
+            "description": "The lyrics in the LRC format (lines with timestamps, also enhanced LRC with word timestamps) or as plain text, at most 262144 characters; at least one line has to have text."
+          },
+          "publish": {
+            "type": "boolean",
+            "description": "Whether the lyrics are also published to LRCLIB, with the title, artists, album and duration of the track."
+          }
+        },
+        "description": "Lyrics an admin uploads for a track."
+      },
       "User": {
         "required": [
           "id",
@@ -28352,6 +28833,51 @@
           }
         },
         "description": "Problem Details (RFC 9457) of a request that failed validation (400, code `request.invalid`). Instead of texts, every error names its field and a machine-readable code with its limits; clients translate them."
+      },
+      "ValidationProblemDetails": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "title": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "status": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "detail": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "instance": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "errors": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        }
       },
       "VideoCodec": {
         "enum": [

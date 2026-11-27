@@ -31,4 +31,10 @@ public enum LyricsDownloadStatus
     /// wait for tracks without lyrics, because the tags may have lost their lyrics in the meantime.
     /// </summary>
     NotNeeded,
+
+    /// <summary>
+    /// An admin uploaded lyrics for the track: saved as <c>.lrc</c> file with the base name of the track, or, if its
+    /// folder is not writable, in the database. The download job never looks such a track up again.
+    /// </summary>
+    Uploaded,
 }

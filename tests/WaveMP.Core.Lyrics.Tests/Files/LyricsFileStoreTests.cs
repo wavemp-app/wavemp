@@ -87,6 +87,28 @@ public class LyricsFileStoreTests
     }
 
     [Test]
+    public async Task ReplaceAsync_ExistingFile_ReplacesItWithoutLeavingATemporaryFile()
+    {
+        await File.WriteAllTextAsync(_media.Combine("Song.lrc"), "Old lyrics that are longer");
+
+        LyricsFileWriteStatus status = await _store.ReplaceAsync(MediaSource.DefaultId, "Song.lrc", "Grüße");
+
+        status.Should().Be(LyricsFileWriteStatus.Created);
+        (await File.ReadAllBytesAsync(_media.Combine("Song.lrc"))).Should().Equal(
+            new UTF8Encoding(false).GetBytes("Grüße"));
+        Directory.GetFiles(_media.Path).Should().ContainSingle();
+    }
+
+    [Test]
+    public async Task ReplaceAsync_MissingFolderOrPathOutsideTheMediaFolder_IsNotWritable()
+    {
+        (await _store.ReplaceAsync(MediaSource.DefaultId, "Gone/Song.lrc", "Lyrics")).Should().Be(
+            LyricsFileWriteStatus.NotWritable);
+        (await _store.ReplaceAsync(MediaSource.DefaultId, "../Song.lrc", "Lyrics")).Should().Be(
+            LyricsFileWriteStatus.NotWritable);
+    }
+
+    [Test]
     public async Task CreateAsync_MissingFolderOrPathOutsideTheMediaFolder_IsNotWritable()
     {
         (await _store.CreateAsync(MediaSource.DefaultId, "Gone/Song.lrc", "Lyrics")).Should().Be(

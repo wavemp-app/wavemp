@@ -82,6 +82,44 @@ public class LyricsServiceTests
     }
 
     [Test]
+    public async Task GetAsync_UploadedLyricsInTheDatabase_ComeFromTheUpload()
+    {
+        Track(Row(download: new LyricsDownloadRow(LyricsDownloadStatus.Uploaded, "Own line", DateTimeOffset.UtcNow)));
+
+        LyricsResult result = await _service.GetAsync(_trackId);
+
+        result.Lyrics!.Source.Should().Be(LyricsSource.Upload);
+        result.Lyrics.OtherVersion.Should().BeFalse();
+    }
+
+    [Test]
+    public async Task GetAsync_PlainLyricsOfAnotherVersion_AreMarked()
+    {
+        Track(Row(
+            lyricsFile: "Band/Song.lrc",
+            download: new LyricsDownloadRow(LyricsDownloadStatus.SavedToFile, null, DateTimeOffset.UtcNow, true)));
+        _files.ReadAsync(MediaSource.DefaultId, "Band/Song.lrc", Arg.Any<CancellationToken>()).Returns("Plain line");
+
+        LyricsResult result = await _service.GetAsync(_trackId);
+
+        result.Lyrics!.OtherVersion.Should().BeTrue();
+    }
+
+    [Test]
+    public async Task GetAsync_SynchronizedFileWrittenAfterTheMark_IsNoOtherVersion()
+    {
+        Track(Row(
+            lyricsFile: "Band/Song.lrc",
+            download: new LyricsDownloadRow(LyricsDownloadStatus.SavedToFile, null, DateTimeOffset.UtcNow, true)));
+        _files.ReadAsync(MediaSource.DefaultId, "Band/Song.lrc", Arg.Any<CancellationToken>())
+            .Returns("[00:01.00]Synced line");
+
+        LyricsResult result = await _service.GetAsync(_trackId);
+
+        result.Lyrics!.OtherVersion.Should().BeFalse();
+    }
+
+    [Test]
     public async Task GetAsync_DownloadWithoutContent_FallsBackToTheTags()
     {
         Track(Row(download: new LyricsDownloadRow(LyricsDownloadStatus.SavedToFile, null, DateTimeOffset.UtcNow)));

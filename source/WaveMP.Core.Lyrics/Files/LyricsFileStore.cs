@@ -15,6 +15,11 @@ internal sealed class LyricsFileStore(
     IOptions<LyricsOptions> options,
     ILogger<LyricsFileStore> logger) : ILyricsFileStore
 {
+    /// <summary>
+    /// Extension of the temporary file a replaced lyrics file is written to first; no media kind of the scan.
+    /// </summary>
+    internal const string TemporaryExtension = ".wavemp-tmp";
+
     private static readonly UTF8Encoding _utf8 = new(encoderShouldEmitUTF8Identifier: false);
 
     public async Task<string?> ReadAsync(
@@ -83,6 +88,37 @@ internal sealed class LyricsFileStore(
         {
             // No half written file stays behind.
             TryDelete(path);
+            if (exception is not (IOException or UnauthorizedAccessException))
+            {
+                throw;
+            }
+
+            logger.LogInformation(exception, "The lyrics file {File} cannot be written", relativePath);
+            return LyricsFileWriteStatus.NotWritable;
+        }
+    }
+
+    public async Task<LyricsFileWriteStatus> ReplaceAsync(
+        Guid sourceId,
+        string relativePath,
+        string text,
+        CancellationToken cancellationToken = default)
+    {
+        if (!locator.TryGetFullPath(sourceId, relativePath, out string path))
+        {
+            return LyricsFileWriteStatus.NotWritable;
+        }
+
+        string temporary = path + TemporaryExtension;
+        try
+        {
+            await File.WriteAllBytesAsync(temporary, _utf8.GetBytes(text), cancellationToken);
+            File.Move(temporary, path, overwrite: true);
+            return LyricsFileWriteStatus.Created;
+        }
+        catch (Exception exception)
+        {
+            TryDelete(temporary);
             if (exception is not (IOException or UnauthorizedAccessException))
             {
                 throw;

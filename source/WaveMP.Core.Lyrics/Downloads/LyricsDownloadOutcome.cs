@@ -16,7 +16,7 @@ public enum LyricsDownloadOutcome
     SavedToDatabase,
 
     /// <summary>
-    /// LRCLIB has no lyrics for the track.
+    /// LRCLIB has no lyrics for the track (or no track with the chosen id).
     /// </summary>
     NotFound,
 
@@ -34,6 +34,11 @@ public enum LyricsDownloadOutcome
     /// The track already has a lyrics file, which is never replaced.
     /// </summary>
     LyricsFileExists,
+
+    /// <summary>
+    /// The lyrics file of the track cannot be replaced by the chosen lyrics (read-only folder or file).
+    /// </summary>
+    FileNotWritable,
 
     /// <summary>
     /// The download is switched off in the library settings.

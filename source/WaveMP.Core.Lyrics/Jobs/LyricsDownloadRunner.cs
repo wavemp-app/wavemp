@@ -13,7 +13,8 @@ namespace WaveMP.Core.Lyrics.Jobs;
 
 /// <summary>
 /// Goes through the tracks without lyrics file that were never looked up, then those whose lookup found no lyrics
-/// longer than <see cref="LyricsOptions.LookUpAgainAfter"/> ago and those that had lyrics in their tags at the check
+/// longer than <see cref="LyricsOptions.LookUpAgainAfter"/> ago or with older rules than the current
+/// <see cref="LrclibMatcher.Version"/>, and those that had lyrics in their tags at the check
 /// (looked at again after that wait, or at once when a scan read their audio or video file after the check, because
 /// the tags may have lost their lyrics; if they still carry lyrics, LRCLIB is not asked), oldest first, in batches,
 /// and downloads their lyrics one after another (the requests are spaced by the request interval). If LRCLIB refuses
@@ -50,7 +51,12 @@ internal sealed class LyricsDownloadRunner(
         while (true)
         {
             IReadOnlyList<LyricsTrackRow> batch =
-                await repository.ListTracksToLookUpAsync(BatchSize, handled, lookUpAgainBefore, cancellationToken);
+                await repository.ListTracksToLookUpAsync(
+                    BatchSize,
+                    handled,
+                    lookUpAgainBefore,
+                    LrclibMatcher.Version,
+                    cancellationToken);
             if (batch.Count == 0)
             {
                 break;

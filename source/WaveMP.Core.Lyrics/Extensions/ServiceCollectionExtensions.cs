@@ -10,7 +10,10 @@ using WaveMP.Core.Lyrics.Files;
 using WaveMP.Core.Lyrics.Jobs;
 using WaveMP.Core.Lyrics.Lookups;
 using WaveMP.Core.Lyrics.Options;
+using WaveMP.Core.Lyrics.Saving;
+using WaveMP.Core.Lyrics.Searches;
 using WaveMP.Core.Lyrics.Services;
+using WaveMP.Core.Lyrics.Uploads;
 using WaveMP.Core.Settings.Groups;
 using WaveMP.Core.Settings.Handlers;
 
@@ -33,10 +36,18 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ILyricsService, LyricsService>();
 
         services.AddSingleton<LrclibRequestPacer>();
-        services.AddSingleton<ILrclibClient>(provider => new LrclibClient(
-            CreateHttpClient(provider.GetRequiredService<IOptions<LyricsOptions>>().Value),
-            provider.GetRequiredService<LrclibRequestPacer>(),
-            provider.GetRequiredService<ILogger<LrclibClient>>()));
+        services.AddSingleton<ILrclibClient>(provider =>
+        {
+            LyricsOptions options = provider.GetRequiredService<IOptions<LyricsOptions>>().Value;
+            return new LrclibClient(
+                CreateHttpClient(options),
+                provider.GetRequiredService<LrclibRequestPacer>(),
+                options.PublishChallengeTimeout,
+                provider.GetRequiredService<ILogger<LrclibClient>>());
+        });
+        services.AddScoped<LyricsSaver>();
+        services.AddScoped<ILyricsSearchService, LyricsSearchService>();
+        services.AddScoped<ILyricsUploader, LyricsUploader>();
         services.AddScoped<ILyricsDownloader, LyricsDownloader>();
         services.AddScoped<ILyricsDownloadRunner, LyricsDownloadRunner>();
         services.AddScoped<ILyricsLookupService, LyricsLookupService>();

@@ -279,6 +279,10 @@ public sealed class WaveMpWebApplicationFactory(
         ILrclibClient client = Substitute.For<ILrclibClient>();
         client.GetAsync(Arg.Any<LrclibQuery>(), Arg.Any<CancellationToken>()).Returns(LrclibResponse.NotFound);
         client.SearchAsync(Arg.Any<LrclibQuery>(), Arg.Any<CancellationToken>()).Returns(LrclibResponse.NotFound);
+        client.SearchTextAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(LrclibResponse.NotFound);
+        client.GetByIdAsync(Arg.Any<long>(), Arg.Any<CancellationToken>()).Returns(LrclibResponse.NotFound);
+        client.PublishAsync(Arg.Any<LrclibPublication>(), Arg.Any<CancellationToken>())
+            .Returns(new LrclibPublishResult(LrclibPublishStatus.Unavailable));
         return client;
     }
 

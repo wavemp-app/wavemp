@@ -14,6 +14,14 @@ namespace WaveMP.Core.Lyrics.Tests.Downloads;
 public class LrclibClientTests
 {
     private static readonly LrclibQuery _query = new("Sön g", "Band & Co", "Album", TimeSpan.FromSeconds(199.6));
+    private const string EasyTarget = "0FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF";
+    private static readonly LrclibPublication _publication = new(
+        "Song",
+        "Band",
+        "Album",
+        TimeSpan.FromSeconds(199.6),
+        "Line",
+        "[00:01.00]Line");
 
     private StubHandler _handler = null!;
     private HttpClient _http = null!;
@@ -29,6 +37,7 @@ public class LrclibClientTests
             new LrclibRequestPacer(
                 TimeProvider.System,
                 Microsoft.Extensions.Options.Options.Create(new LyricsOptions { RequestInterval = TimeSpan.Zero })),
+            TimeSpan.FromSeconds(30),
             NullLogger<LrclibClient>.Instance);
     }
 
@@ -75,6 +84,75 @@ public class LrclibClientTests
         _handler.Requests.Should().ContainSingle()
             .Which.Should().Be("https://lyrics.test/api/search?track_name=S%C3%B6n%20g");
         response.Records.Select(record => record.Id).Should().Equal(1, 2);
+    }
+
+    [Test]
+    public async Task SearchTextAsync_Text_SendsTheFreeTextQuery()
+    {
+        _handler.Respond(HttpStatusCode.OK, """[{"id":3,"plainLyrics":"A"}]""");
+
+        LrclibResponse response = await _client.SearchTextAsync("Kerli Diamond Hard");
+
+        _handler.Requests.Should().ContainSingle()
+            .Which.Should().Be("https://lyrics.test/api/search?q=Kerli%20Diamond%20Hard");
+        response.Records.Should().ContainSingle().Which.Id.Should().Be(3);
+    }
+
+    [Test]
+    public async Task GetByIdAsync_Id_AsksForTheTrackWithTheId()
+    {
+        _handler.Respond(HttpStatusCode.OK, """{"id":42,"plainLyrics":"A"}""");
+
+        LrclibResponse response = await _client.GetByIdAsync(42);
+
+        _handler.Requests.Should().ContainSingle().Which.Should().Be("https://lyrics.test/api/get/42");
+        response.Records.Should().ContainSingle().Which.Id.Should().Be(42);
+    }
+
+    [Test]
+    public async Task PublishAsync_Challenge_SolvesItAndSendsTheLyricsWithTheToken()
+    {
+        _handler.Enqueue(HttpStatusCode.OK, $$"""{"prefix":"abc","target":"{{EasyTarget}}"}""");
+        _handler.Enqueue(HttpStatusCode.Created, string.Empty);
+
+        LrclibPublishResult result = await _client.PublishAsync(_publication);
+
+        result.Status.Should().Be(LrclibPublishStatus.Published);
+        _handler.Requests.Should().Equal(
+            "https://lyrics.test/api/request-challenge",
+            "https://lyrics.test/api/publish");
+        string token = _handler.Tokens.Should().ContainSingle().Subject;
+        token.Should().StartWith("abc:");
+        long nonce = long.Parse(token["abc:".Length..], System.Globalization.CultureInfo.InvariantCulture);
+        LrclibChallenge.IsSolution("abc", EasyTarget, nonce).Should().BeTrue();
+        using var body = System.Text.Json.JsonDocument.Parse(_handler.Bodies[^1]);
+        body.RootElement.GetProperty("trackName").GetString().Should().Be("Song");
+        body.RootElement.GetProperty("artistName").GetString().Should().Be("Band");
+        body.RootElement.GetProperty("albumName").GetString().Should().Be("Album");
+        body.RootElement.GetProperty("duration").GetDouble().Should().Be(200);
+        body.RootElement.GetProperty("plainLyrics").GetString().Should().Be("Line");
+        body.RootElement.GetProperty("syncedLyrics").GetString().Should().Be("[00:01.00]Line");
+    }
+
+    [Test]
+    public async Task PublishAsync_TokenRefused_IsRejected()
+    {
+        _handler.Enqueue(HttpStatusCode.OK, """{"prefix":"abc","target":"FF"}""");
+        _handler.Enqueue(HttpStatusCode.BadRequest, """{"code":400,"name":"IncorrectPublishToken"}""");
+
+        (await _client.PublishAsync(_publication)).Status.Should().Be(LrclibPublishStatus.Rejected);
+    }
+
+    [Test]
+    public async Task PublishAsync_ChallengeRateLimitedOrBroken_PublishesNothing()
+    {
+        _handler.Enqueue(HttpStatusCode.TooManyRequests, string.Empty);
+        (await _client.PublishAsync(_publication)).Status.Should().Be(LrclibPublishStatus.RateLimited);
+
+        _handler.Enqueue(HttpStatusCode.OK, """{"prefix":"abc","target":"not hex"}""");
+        (await _client.PublishAsync(_publication)).Status.Should().Be(LrclibPublishStatus.Unavailable);
+
+        _handler.Requests.Should().NotContain("https://lyrics.test/api/publish");
     }
 
     [Test]
@@ -172,9 +250,31 @@ public class LrclibClientTests
     /// </summary>
     private sealed class StubHandler : HttpMessageHandler
     {
+        private readonly Queue<Func<HttpResponseMessage>> _queue = [];
         private Func<HttpResponseMessage> _respond = () => new HttpResponseMessage(HttpStatusCode.NotFound);
 
         public List<string> Requests { get; } = [];
+
+        /// <summary>
+        /// The publish tokens of the requests that sent one.
+        /// </summary>
+        public List<string> Tokens { get; } = [];
+
+        /// <summary>
+        /// The bodies of the requests that sent one.
+        /// </summary>
+        public List<string> Bodies { get; } = [];
+
+        /// <summary>
+        /// Answers the next request with the response; requests after the queued ones get the prepared response.
+        /// </summary>
+        public void Enqueue(HttpStatusCode status, string body)
+        {
+            _queue.Enqueue(() => new HttpResponseMessage(status)
+            {
+                Content = new StringContent(body, Encoding.UTF8, "application/json"),
+            });
+        }
 
         public void Respond(HttpStatusCode status, string body, int? retryAfterSeconds = null)
         {
@@ -199,12 +299,22 @@ public class LrclibClientTests
             _respond = () => throw exception;
         }
 
-        protected override Task<HttpResponseMessage> SendAsync(
+        protected override async Task<HttpResponseMessage> SendAsync(
             HttpRequestMessage request,
             CancellationToken cancellationToken)
         {
             Requests.Add(request.RequestUri!.AbsoluteUri);
-            return Task.FromResult(_respond());
+            if (request.Headers.TryGetValues(LrclibClient.PublishTokenHeader, out IEnumerable<string>? tokens))
+            {
+                Tokens.AddRange(tokens);
+            }
+
+            if (request.Content is { } content)
+            {
+                Bodies.Add(await content.ReadAsStringAsync(cancellationToken));
+            }
+
+            return _queue.TryDequeue(out Func<HttpResponseMessage>? next) ? next() : _respond();
         }
     }
 }

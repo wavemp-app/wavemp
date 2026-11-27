@@ -770,6 +770,14 @@ namespace WaveMP.Data.Migrations
                         .HasColumnType("text")
                         .HasColumnName("content");
 
+                    b.Property<int>("MatcherVersion")
+                        .HasColumnType("integer")
+                        .HasColumnName("matcher_version");
+
+                    b.Property<bool>("OtherVersion")
+                        .HasColumnType("boolean")
+                        .HasColumnName("other_version");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(32)
