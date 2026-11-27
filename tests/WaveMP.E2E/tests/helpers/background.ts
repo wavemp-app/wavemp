@@ -3,7 +3,9 @@ import { expect, type Locator, type Page } from '@playwright/test'
 // Helpers for the tests of playback in the background. A browser under test never really goes to
 // the background, so the tests let the page believe it: the visibility of the document is replaced
 // by one the test switches, and the events of the browser (visibilitychange, pagehide, pageshow)
-// are sent the way a switch to another app or a locked screen sends them.
+// are sent the way a switch to another app or a locked screen sends them. The buttons of the lock
+// screen are pressed by calling the handlers the app gave the media session, as the system does.
+// Nothing here depends on how fast the browser is: every switch happens when the test sends it.
 
 /** One sample of the recording: what the page showed and told the system at one moment. */
 export interface Sample {
@@ -29,6 +31,60 @@ export interface Sample {
 interface BackgroundWindow {
     e2eHidden: boolean
     e2eSamples: Sample[]
+    /** The handlers the app registered for the buttons of the lock screen, by action. */
+    e2eLockScreen: Record<string, MediaSessionActionHandler | null>
+}
+
+/** Buttons of the lock screen (actions of the media session) a test can press. */
+export type LockScreenButton = 'play' | 'pause' | 'nexttrack' | 'previoustrack'
+
+/**
+ * Notes the handlers the app registers for the buttons of the lock screen, so a test can press
+ * them (pressOnLockScreen) the way the system calls them: without a click in the page. The
+ * handlers still reach the browser as well.
+ */
+export async function controlLockScreen(page: Page): Promise<void> {
+    await page.addInitScript(() => {
+        const state = window as unknown as BackgroundWindow
+        state.e2eLockScreen = {}
+        if (!('mediaSession' in navigator)) {
+            return
+        }
+
+        const prototype = Object.getPrototypeOf(navigator.mediaSession) as MediaSession
+        const setActionHandler = prototype.setActionHandler
+        prototype.setActionHandler = function (
+            this: MediaSession,
+            action: MediaSessionAction,
+            handler: MediaSessionActionHandler | null,
+        ): void {
+            setActionHandler.call(this, action, handler)
+            state.e2eLockScreen[action] = handler
+        }
+    })
+}
+
+/**
+ * Presses a button of the lock screen: calls the handler the app registered for the action of the
+ * media session, once the app has registered it.
+ */
+export async function pressOnLockScreen(page: Page, button: LockScreenButton): Promise<void> {
+    await expect
+        .poll(
+            () =>
+                page.evaluate(
+                    (action) =>
+                        typeof (window as unknown as BackgroundWindow).e2eLockScreen[action] ===
+                        'function',
+                    button,
+                ),
+            { message: `the app handles "${button}" of the lock screen` },
+        )
+        .toBe(true)
+    await page.evaluate((action) => {
+        const handler = (window as unknown as BackgroundWindow).e2eLockScreen[action]
+        handler?.({ action })
+    }, button)
 }
 
 /**
