@@ -49,6 +49,7 @@ async function asCompilation(page: Page): Promise<void> {
         change(route, (album) => {
             album.isCompilation = true;
             album.artist = null;
+            album.artists = [];
         }),
     );
     await page.route(/\/api\/v1\/albums\/[^/?]+\/tracks(\?|$)/, (route) =>
@@ -59,9 +60,11 @@ async function asCompilation(page: Page): Promise<void> {
                 if (album) {
                     album.isCompilation = true;
                     album.artist = null;
+                    album.artists = [];
                 }
                 if (index === 1) {
                     track.artist = guest;
+                    track.artists = [{ ...guest, role: "Main" }];
                 }
             });
         }),

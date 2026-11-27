@@ -21,6 +21,13 @@ function field(dialog: Locator, name: string): Locator {
     return dialog.locator(`[data-part='field'][data-field='${name}'] input`)
 }
 
+/** The names of the artists a token input holds, in their order. */
+function artistTokens(dialog: Locator, name: string): Locator {
+    return dialog.locator(
+        `[data-part='field'][data-field='${name}'] [data-part='artist-token'] [data-field='name']`,
+    )
+}
+
 async function expectNoHorizontalScroll(page: Page): Promise<void> {
     const overflow = await page.evaluate(
         () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
@@ -66,7 +73,7 @@ test('edits the genre and year of a song', async ({ page, request }, testInfo) =
 
         const dialog = openDialog(page)
         await expect(field(dialog, 'title')).toHaveValue('Loose Song')
-        await expect(field(dialog, 'artist')).toHaveValue('Loose Artist')
+        await expect(artistTokens(dialog, 'artist')).toHaveText(['Loose Artist'])
         await expect(field(dialog, 'genre')).toBeEditable()
         await field(dialog, 'genre').fill('E2E Edited Genre')
         await field(dialog, 'year').fill('1999')
@@ -85,6 +92,40 @@ test('edits the genre and year of a song', async ({ page, request }, testInfo) =
         await updateTrackMetadata(request, id, { genre: null, year: null })
         await updateLibrarySettings(request, { fileWatcherEnabled: true })
     }
+})
+
+test('adds an artist of the library with the token input and removes it again', async ({
+    page,
+    request,
+    isMobile,
+}) => {
+    // Nothing is saved: the dialog is left open and the page closed with the test.
+    const id = await findTrackId(request, 'Loose Song')
+    await page.goto(`/library/tracks/${id}`)
+    await part(page, 'detail-actions').locator("[data-item='edit-metadata']").click()
+
+    const dialog = openDialog(page)
+    await expect(artistTokens(dialog, 'artist')).toHaveText(['Loose Artist'])
+    const input = field(dialog, 'artist')
+    await input.fill('e2e art')
+    const match = dialog.locator("[data-part='artist-suggestion'][data-state='known']", {
+        hasText: 'E2E Artist',
+    })
+    await expect(match).toBeVisible()
+    await expect(input).toHaveAttribute('aria-expanded', 'true')
+    await match.click()
+
+    await expect(artistTokens(dialog, 'artist')).toHaveText(['Loose Artist', 'E2E Artist'])
+    await expect(input).toHaveValue('')
+    if (isMobile) {
+        await expectNoHorizontalScroll(page)
+    }
+    await dialog
+        .locator("[data-part='field'][data-field='artist'] [data-part='artist-token']")
+        .nth(1)
+        .locator("[data-item='remove']")
+        .click()
+    await expect(artistTokens(dialog, 'artist')).toHaveText(['Loose Artist'])
 })
 
 test.describe('on the desktop', () => {
