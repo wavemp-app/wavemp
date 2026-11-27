@@ -314,16 +314,18 @@ export class PlaybackPathEngine implements PlayerEngine {
                     this.wantsPlay = false
                     this.cancelHandover()
                     this.events.ended?.()
+                    // The track stays on the path where it ended only while that path is wanted,
+                    // e.g. after a handover that failed (see handOver).
+                    this.sync()
                 }
             },
             advanced: () => {
                 if (active()) {
-                    // A handover of the previous track starts again with the new one.
-                    const restart = this.cancelHandover()
+                    // A handover of the previous track starts again with the new one, and one
+                    // that failed is tried again: the new track goes to the wanted path.
+                    this.cancelHandover()
                     this.events.advanced?.()
-                    if (restart) {
-                        this.sync()
-                    }
+                    this.sync()
                 }
             },
             error: (error) => {
@@ -393,7 +395,9 @@ export class PlaybackPathEngine implements PlayerEngine {
     /**
      * Hands a playing track over to the other path: it is loaded there at the position, starts once
      * it is ready and caught up, and only then the old path stops. Fails quietly (the old path plays
-     * on) when the new one does not start; ends when a command or a newer handover cancels it.
+     * on) when the new one does not start, e.g. when a short track reaches its end there while it
+     * catches up; the next track or the end of this one tries the wanted path again. Ends when a
+     * command or a newer handover cancels it.
      */
     private async handOver(target: PlaybackPath): Promise<void> {
         const handover: Handover = { generation: ++this.generation, target }

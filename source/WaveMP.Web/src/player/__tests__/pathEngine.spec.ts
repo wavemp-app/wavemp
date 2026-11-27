@@ -407,6 +407,68 @@ describe('PlaybackPathEngine', () => {
             expect(s.engine.position).toBe(60)
             expect(s.effectsA.play).not.toHaveBeenCalled()
         })
+
+        /**
+         * The handover back fails: the track reaches its end on the effects path while that one
+         * catches up (WebKit reports the position there ahead, a short song ends at once).
+         */
+        async function failedReturn(s: Setup): Promise<void> {
+            s.effectsA.play.mockImplementationOnce(() => Promise.resolve())
+
+            await visibility(s, false)
+
+            expect(s.engine.path).toBe('plain')
+            expect(s.engine.effectsPending).toBe(false)
+            expect(s.effectsA.src).toBe('')
+            expect(s.plainA.paused).toBe(false)
+        }
+
+        it('hands the next track over to the effects path after a handover that failed', async () => {
+            const s = await inBackground()
+            s.engine.prepare({ url: '/b', gain: 1 })
+            await failedReturn(s)
+
+            // The plain path changes to the next track without a gap, then hands it over.
+            s.plainA.advance(199.5, 200)
+            s.timers.at(-1)!()
+            await settle()
+
+            expect(s.events.advanced).toHaveBeenCalledOnce()
+            expect(s.engine.path).toBe('effects')
+            expect(s.paths).toEqual(['plain', 'effects'])
+            expect(s.engine.source?.url).toBe('/b')
+            expect(s.engine.paused).toBe(false)
+            expect(s.plainB.src).toBe('')
+        })
+
+        it('moves the track back to the effects path when it ends after a handover that failed', async () => {
+            const s = await inBackground()
+            await failedReturn(s)
+
+            s.plainA.paused = true
+            s.plainA.ended = true
+            s.plainA.dispatchEvent(new Event('ended'))
+            await settle()
+
+            expect(s.events.ended).toHaveBeenCalledOnce()
+            expect(s.engine.path).toBe('effects')
+            expect(s.effectsA.src).toBe('/a')
+            expect(s.effectsA.paused).toBe(true)
+            expect(s.plainA.src).toBe('')
+        })
+
+        it('keeps a track that ends in the background on the plain path', async () => {
+            const s = await inBackground()
+
+            s.plainA.paused = true
+            s.plainA.ended = true
+            s.plainA.dispatchEvent(new Event('ended'))
+            await settle()
+
+            expect(s.events.ended).toHaveBeenCalledOnce()
+            expect(s.engine.path).toBe('plain')
+            expect(s.plainA.src).toBe('/a')
+        })
     })
 
     describe('when the browser interrupts the audio graph in the foreground', () => {
