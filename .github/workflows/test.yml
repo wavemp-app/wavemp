@@ -1,7 +1,7 @@
 # Builds and tests everything: .NET with unit, media and integration tests, the web app, the line
-# length of the code, the license check, the templates of the app catalogs (deploy/), the Docker Hub
-# description, the text of the releases and the Docker image with the E2E tests. Called by
-# pull-request.yml and main.yml.
+# length of the code, the names of the test databases, the license check, the templates of the app
+# catalogs (deploy/), the Docker Hub description, the text of the releases and the Docker image
+# with the E2E tests. Called by pull-request.yml and main.yml.
 #
 # All Docker images are pinned by the digest of their multi-arch index (image:tag@sha256:...); the
 # tag only documents the version. Resolve a new digest with docker buildx imagetools inspect.
@@ -170,6 +170,31 @@ jobs:
 
       - name: Test the line length check
         run: node --test .github/scripts/check-line-length.test.mjs
+
+  test-databases:
+    name: Names of the test databases
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Check out
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      # dotnet test runs the test projects in parallel, and every fixture of the integration tests
+      # drops its database before and after its tests. So every fixture needs a database of its own,
+      # named wavemp_tests_<project>_<name> with the key of its test project; reports every name
+      # that is shared, lacks the key or is put together from parts.
+      - name: Check the names of the test databases
+        run: node .github/scripts/check-test-databases.mjs
+
+      - name: Test the check of the test databases
+        run: node --test .github/scripts/check-test-databases.test.mjs
 
   licenses:
     name: License check
