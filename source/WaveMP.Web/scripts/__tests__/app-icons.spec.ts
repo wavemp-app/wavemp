@@ -50,16 +50,23 @@ function maxDifference(a: Uint8Array, b: Uint8Array): number {
     return max
 }
 
-/** RGBA value of a pixel of a rendered SVG. */
-function pixelAt(svg: string, size: number, x: number, y: number): number[] {
-    const rendered = new Resvg(svg, { fitTo: { mode: 'width', value: size } }).render()
-    const index = (y * rendered.width + x) * 4
-    return [...rendered.pixels.subarray(index, index + 4)]
-}
+/**
+ * An SVG rendered once at the given width, to read several of its pixels. The logos contain no
+ * text, so no system fonts are loaded: loading them takes seconds on a busy machine.
+ */
+function render(svg: string, size: number) {
+    const rendered = new Resvg(svg, {
+        fitTo: { mode: 'width', value: size },
+        font: { loadSystemFonts: false },
+    }).render()
 
-/** Alpha value of a pixel of a rendered SVG. */
-function alphaAt(svg: string, size: number, x: number, y: number): number {
-    return pixelAt(svg, size, x, y)[3]!
+    /** RGBA value of a pixel. */
+    function pixel(x: number, y: number): number[] {
+        const index = (y * rendered.width + x) * 4
+        return [...rendered.pixels.subarray(index, index + 4)]
+    }
+
+    return { pixel, alpha: (x: number, y: number): number => pixel(x, y)[3]! }
 }
 
 function rootElement(svg: string): string {
@@ -166,14 +173,14 @@ describe('squareTileCorners', () => {
 
 describe('composeIconSvg', () => {
     it('keeps the transparent corners of the logo', () => {
-        const svg = composeIconSvg(logo, 'transparent')
+        const icon = render(composeIconSvg(logo, 'transparent'), 64)
 
-        expect(alphaAt(svg, 64, 0, 0)).toBe(0)
-        expect(alphaAt(svg, 64, 32, 32)).toBe(255)
+        expect(icon.alpha(0, 0)).toBe(0)
+        expect(icon.alpha(32, 32)).toBe(255)
     })
 
     it('fills the whole square for icons that the platform masks', () => {
-        const svg = composeIconSvg(logo, 'full-bleed')
+        const icon = render(composeIconSvg(logo, 'full-bleed'), 64)
 
         for (const [x, y] of [
             [0, 0],
@@ -182,12 +189,12 @@ describe('composeIconSvg', () => {
             [63, 63],
             [32, 32],
         ] as const) {
-            expect(alphaAt(svg, 64, x, y), `${x},${y}`).toBe(255)
+            expect(icon.alpha(x, y), `${x},${y}`).toBe(255)
         }
     })
 
     it('continues the tile and the water seamlessly into the corners', () => {
-        const svg = composeIconSvg(logo, 'full-bleed')
+        const icon = render(composeIconSvg(logo, 'full-bleed'), 64)
         // Each corner and a pixel further inside, which the round tile covers as well.
         const pairs = [
             [0, 0, 6, 6],
@@ -197,16 +204,16 @@ describe('composeIconSvg', () => {
         ] as const
 
         for (const [x, y, insideX, insideY] of pairs) {
-            const corner = pixelAt(svg, 64, x, y)
-            const inside = pixelAt(svg, 64, insideX, insideY)
+            const corner = icon.pixel(x, y)
+            const inside = icon.pixel(insideX, insideY)
             const difference = Math.max(...corner.map((value, i) => Math.abs(value - inside[i]!)))
             expect(difference, `${x},${y}`).toBeLessThanOrEqual(16)
         }
     })
 
     it('shows the tile of the logo unchanged inside its round corners', () => {
-        const fullBleed = pixelAt(composeIconSvg(logo, 'full-bleed'), 480, 240, 240)
-        const original = pixelAt(logo, 512, 256, 256)
+        const fullBleed = render(composeIconSvg(logo, 'full-bleed'), 480).pixel(240, 240)
+        const original = render(logo, 512).pixel(256, 256)
 
         expect(fullBleed).toEqual(original)
     })
