@@ -10,8 +10,8 @@ namespace WaveMP.Core.Metadata.Artists;
 /// the fields <c>ARTISTS</c> and <c>ALBUMARTISTS</c>) are taken over as they are. A single text is split only at
 /// unambiguous separators: "feat.", "ft." and "featuring" (the artists after them are featured artists) and ";".
 /// Commas, "&amp;", "and", "x" and "/" are never split automatically, since names such as "Earth, Wind &amp; Fire",
-/// "Simon &amp; Garfunkel" or "AC/DC" would break; <see cref="SuggestSplit(string?)"/> offers a split at them for the admin to
-/// confirm instead.
+/// "Simon &amp; Garfunkel" or "AC/DC" would break; <see cref="SuggestSplit(string?)"/> offers a split at them for the
+/// admin to confirm instead.
 /// </summary>
 public static partial class ArtistNames
 {
