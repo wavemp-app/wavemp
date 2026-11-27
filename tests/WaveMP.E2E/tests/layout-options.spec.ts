@@ -278,9 +278,11 @@ test.describe("with the view options", () => {
         expect(number.x - listBox.x).toBeLessThan(1);
         expect(Math.abs(cell.x - number.x)).toBeLessThan(1);
 
-        // Loading more pages keeps the plain list.
+        // Loading more pages keeps the plain list. A click without scrolling: the button loads the
+        // next page by itself as soon as it scrolls into view, so a scroll before the click could
+        // load the third page as well.
         await expect(rows).toHaveCount(100);
-        await page.locator("[data-part='load-more']").click();
+        await page.locator("[data-part='load-more']").dispatchEvent("click");
         await expect(rows).toHaveCount(200);
         await expect(list.locator("[data-part='list-group']")).toHaveCount(1);
         await expect(rows.filter({ hasText: "Long Song 150" })).toHaveCount(1);
