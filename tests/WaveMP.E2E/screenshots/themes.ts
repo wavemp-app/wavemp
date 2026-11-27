@@ -95,6 +95,9 @@ export function themeProfileName(target: ThemeTarget): string {
     return `${target.name} ${target.variant === 'dark' ? 'Dark' : 'Light'}`
 }
 
+/** Id of the <link> element that loads the theme (themeLinkId in src/themes/themes.ts of the app). */
+const themeLinkId = 'wavemp-theme'
+
 /** Color of the theme profiles, fixed so the screenshots stay the same. */
 const profileColor = '#2f6fd0'
 
@@ -369,7 +372,51 @@ async function openOrganizeTemplate(page: Page): Promise<void> {
         'folders',
     )
     await expectLibraryPageLoaded(page)
-    await section.evaluate((element) => element.scrollIntoView({ block: 'start' }))
+    await scrollToStart(section)
+}
+
+/**
+ * Scrolls the element to the start of its scroll area once the page has settled: the stylesheet of
+ * the theme and its fonts have loaded and the layout stays the same for a few frames.
+ *
+ * A page first shows the default theme and switches to the theme of the profile once its settings
+ * have loaded, which can take longer than the data of the view in a busy run. When the theme
+ * arrives after the scroll, every part above the element changes its size and the browser keeps
+ * the element in place (scroll anchoring), but at a scroll position rounded to another pixel, so
+ * the element sits one pixel higher and its texts and borders differ from the baseline.
+ */
+async function scrollToStart(element: Locator): Promise<void> {
+    const page = element.page()
+    await page.waitForFunction((id) => {
+        const link = document.querySelector<HTMLLinkElement>(`link#${id}`)
+        // A page without the theme link (e.g. a theme preview) has its stylesheet from the start.
+        return !link || link.sheet?.href === link.href
+    }, themeLinkId)
+    await element.evaluate(async (target) => {
+        const frame = () => new Promise((resolve) => requestAnimationFrame(resolve))
+        // The fonts of the theme start loading once the new styles apply to the texts.
+        await frame()
+        await frame()
+        await document.fonts.ready
+        const view = target.closest("[data-part='view']") ?? document.body
+        const layout = () => {
+            const box = target.getBoundingClientRect()
+            return `${box.top} ${box.height} ${view.getBoundingClientRect().height}`
+        }
+        const stableFrames = 10
+        let last = layout()
+        let stable = 0
+        for (let frames = 0; stable < stableFrames; frames++) {
+            if (frames > 600) {
+                throw new Error('The layout of the page did not settle before the scroll.')
+            }
+            await frame()
+            const current = layout()
+            stable = current === last ? stable + 1 : 0
+            last = current
+        }
+        target.scrollIntoView({ block: 'start' })
+    })
 }
 
 /**
@@ -448,9 +495,7 @@ async function openSmartPlaylist(page: Page, request: APIRequestContext): Promis
     await expect(part(page, 'smart-summary-note')).toBeVisible()
     await expect(part(page, 'list-row')).toHaveCount(2)
     // On the phone the rules lie below the cover and the buttons.
-    await part(page, 'smart-summary').evaluate((element) =>
-        element.scrollIntoView({ block: 'start' }),
-    )
+    await scrollToStart(part(page, 'smart-summary'))
 }
 
 /** Opens the editor of the smart playlist of mockSmartPlaylist, with the hint below the artist. */
