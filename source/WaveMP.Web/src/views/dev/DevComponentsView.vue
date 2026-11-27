@@ -425,6 +425,11 @@ const samplePictureCandidates = [
     { id: 'c1', provider: 'Wikimedia', author: 'Jane Doe', license: 'CC BY-SA 4.0', size: true },
     { id: 'c2', provider: 'FanartTv', author: null, license: null, size: false },
 ] as const
+/** Aliases of the alias editor (fixture): one entered by an admin, one from MusicBrainz. */
+const sampleArtistAliases = [
+    { name: 'Alecia Moore', source: 'admin' },
+    { name: 'Pink', source: 'musicbrainz' },
+] as const
 const sliders = ref([0, 0.5, 1])
 
 // Equalizer (fixture): on with the own curve, off without Web Audio
@@ -2230,14 +2235,19 @@ const sampleTranscodeJobs = computed<TranscodeJob[]>(() => {
             </div>
             <div data-part="artist-alias-editor" data-state="ready">
                 <ul data-part="alias-list" :aria-label="t('artistAliases.title')">
-                    <li data-part="alias" data-source="admin">
-                        <span data-part="alias-name">Alecia Moore</span>
-                        <span data-part="alias-source">{{ t('artistAliases.sources.admin') }}</span>
-                    </li>
-                    <li data-part="alias" data-source="musicbrainz">
-                        <span data-part="alias-name">Pink</span>
+                    <li
+                        v-for="alias in sampleArtistAliases"
+                        :key="alias.name"
+                        data-part="alias"
+                        :data-source="alias.source"
+                    >
+                        <span data-part="alias-name">{{ alias.name }}</span>
                         <span data-part="alias-source">
-                            {{ t('artistAliases.sources.musicbrainz') }}
+                            {{
+                                alias.source === 'admin'
+                                    ? t('artistAliases.sources.admin')
+                                    : t('artistAliases.sources.musicbrainz')
+                            }}
                         </span>
                     </li>
                 </ul>
