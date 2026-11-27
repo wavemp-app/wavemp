@@ -32,7 +32,8 @@ public class AlbumRepositoryTests : LibraryDatabaseTests
             3,
             TimeSpan.FromMinutes(9).TotalMilliseconds,
             true,
-            library.FirstAlbum.FirstSeenAt));
+            library.FirstAlbum.FirstSeenAt,
+            Artists: [new ArtistCreditRow(library.Alpha.Id, "Alpha Band")]));
         page.Items.Single(album => album.Id == library.SecondAlbum.Id).HasCover.Should().BeTrue();
         page.Items.Single(album => album.Id == library.Hits.Id).Should().BeEquivalentTo(new
         {
@@ -59,6 +60,28 @@ public class AlbumRepositoryTests : LibraryDatabaseTests
 
         page.Items.Single().Genre.Should().Be("Blues");
         page.Items.Single().DurationMilliseconds.Should().Be(0);
+    }
+
+    [Test]
+    public async Task ListAsync_SeveralAlbumArtists_ListsTheAlbumForEachOfThemWithAllOfThem()
+    {
+        LibrarySeed seed = new();
+        Artist first = seed.Artist("Bob Sinclar");
+        Artist second = seed.Artist("K.Flay");
+        Artist guest = seed.Artist("Guest");
+        Album album = seed.Album("Together", first, moreAlbumArtists: [second]);
+        seed.Track("Song", first, album, featuring: [guest]);
+        await SaveAsync(seed);
+
+        foreach (Artist artist in new[] { first, second, guest })
+        {
+            Page<AlbumRow> page = await ListAsync(Query(artistId: artist.Id));
+            page.Items.Select(row => row.Id).Should().Equal(album.Id);
+        }
+
+        (await ListAsync(Query(search: "K.Flay"))).Items.Single().AllArtists.Should().Equal(
+            new ArtistCreditRow(first.Id, "Bob Sinclar"),
+            new ArtistCreditRow(second.Id, "K.Flay"));
     }
 
     [Test]
@@ -213,9 +236,23 @@ public class AlbumRepositoryTests : LibraryDatabaseTests
         // The cover of the second album is embedded in its track.
         rows.Should().BeEquivalentTo(
         [
-            new GroupAlbumRow(library.FirstAlbum.Id, "First Album", library.Alpha.Id, "Alpha Band", false, true),
-            new GroupAlbumRow(library.SecondAlbum.Id, "Second Album", library.Beta.Id, "Beta Singer", false, true),
-            new GroupAlbumRow(library.Hits.Id, "Hits Collection", null, null, true, false),
+            new GroupAlbumRow(
+                library.FirstAlbum.Id,
+                "First Album",
+                library.Alpha.Id,
+                "Alpha Band",
+                false,
+                true,
+                [new ArtistCreditRow(library.Alpha.Id, "Alpha Band")]),
+            new GroupAlbumRow(
+                library.SecondAlbum.Id,
+                "Second Album",
+                library.Beta.Id,
+                "Beta Singer",
+                false,
+                true,
+                [new ArtistCreditRow(library.Beta.Id, "Beta Singer")]),
+            new GroupAlbumRow(library.Hits.Id, "Hits Collection", null, null, true, false, []),
         ]);
     }
 

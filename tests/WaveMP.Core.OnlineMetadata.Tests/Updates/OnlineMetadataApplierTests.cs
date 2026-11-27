@@ -1,6 +1,7 @@
 using AwesomeAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
+using WaveMP.Core.Metadata.Artists;
 using WaveMP.Core.Metadata.Tags;
 using WaveMP.Core.OnlineMetadata.Clients;
 using WaveMP.Core.OnlineMetadata.Covers;
@@ -262,6 +263,8 @@ public class OnlineMetadataApplierTests
             null,
             1,
             1,
-            null);
+            null,
+            [new ArtistName("Band")],
+            ["Band"]);
     }
 }

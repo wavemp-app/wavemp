@@ -112,7 +112,9 @@ internal sealed class NameKeyUpgradeRepository(WaveMpDbContext dbContext) : INam
             SELECT merge.from_id, merge.to_id, GREATEST(1, (
                 SELECT count(*) FROM tracks
                 LEFT JOIN albums ON albums.id = tracks.album_id
-                WHERE tracks.artist_id = merge.from_id OR albums.album_artist_id = merge.from_id)), {now}
+                WHERE tracks.artist_id = merge.from_id OR albums.album_artist_id = merge.from_id
+                    OR EXISTS (SELECT 1 FROM track_artist_credits AS credit
+                        WHERE credit.track_id = tracks.id AND credit.artist_id = merge.from_id))), {now}
             FROM unnest({fromIds}, {toIds}) AS merge(from_id, to_id)
             ON CONFLICT (from_artist_id, to_artist_id)
             DO UPDATE SET track_count = artist_moves.track_count + excluded.track_count, moved_at = excluded.moved_at
@@ -130,6 +132,33 @@ internal sealed class NameKeyUpgradeRepository(WaveMpDbContext dbContext) : INam
             UPDATE albums SET album_artist_id = merge.to_id
             FROM unnest({fromIds}, {toIds}) AS merge(from_id, to_id)
             WHERE albums.album_artist_id = merge.from_id
+            """,
+            token);
+
+        // The lists of artists of songs and albums name the artist that stays, in the place of the joined one; a song
+        // or album that names both keeps the artist that stays at its own place.
+        await dbContext.Database.ExecuteSqlAsync(
+            $"""
+            INSERT INTO track_artist_credits (track_id, artist_id, position, role)
+            SELECT credit.track_id, merge.to_id, credit.position, credit.role
+            FROM track_artist_credits AS credit
+            JOIN unnest({fromIds}, {toIds}) AS merge(from_id, to_id) ON credit.artist_id = merge.from_id
+            ON CONFLICT (track_id, artist_id) DO NOTHING;
+            DELETE FROM track_artist_credits AS credit
+            USING unnest({fromIds}) AS merge(from_id)
+            WHERE credit.artist_id = merge.from_id
+            """,
+            token);
+        await dbContext.Database.ExecuteSqlAsync(
+            $"""
+            INSERT INTO album_artist_credits (album_id, artist_id, position)
+            SELECT credit.album_id, merge.to_id, credit.position
+            FROM album_artist_credits AS credit
+            JOIN unnest({fromIds}, {toIds}) AS merge(from_id, to_id) ON credit.artist_id = merge.from_id
+            ON CONFLICT (album_id, artist_id) DO NOTHING;
+            DELETE FROM album_artist_credits AS credit
+            USING unnest({fromIds}) AS merge(from_id)
+            WHERE credit.artist_id = merge.from_id
             """,
             token);
     }

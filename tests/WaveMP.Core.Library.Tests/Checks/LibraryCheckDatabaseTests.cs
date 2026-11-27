@@ -74,6 +74,8 @@ public class LibraryCheckDatabaseTests
             160,
             120);
         await TestMediaGenerator.CreateImageAsync(_media.Combine("Covered/Album/cover.jpg"), 100, 100);
+        // An artist name that may stand for two artists, next to the album cover: a hint and no video.
+        await AudioAsync("Covered/Album/02 Duet.mp3", Tags("Duet", "Simon & Garfunkel", "Album"));
         // No album tag and no album folder: missing tag, unknown album, no cover, no video.
         await AudioAsync("Single.mp3", Tags("Single", "Lonely", null));
         // No tags at all; the album comes from the folders.
@@ -94,10 +96,12 @@ public class LibraryCheckDatabaseTests
 
         LibraryCheckJobResult result = await CheckAsync();
 
-        result.TracksChecked.Should().Be(8);
+        result.TracksChecked.Should().Be(9);
         List<LibraryIssueRow> issues = await ListAsync();
         Describe(issues).Should().BeEquivalentTo(
         [
+            (LibraryIssueType.PossibleMultipleArtists, "02 Duet", string.Empty),
+            (LibraryIssueType.AudioWithoutVideo, "02 Duet", string.Empty),
             (LibraryIssueType.MissingTags, "Single", "Album"),
             (LibraryIssueType.UnknownAlbum, "Single", string.Empty),
             (LibraryIssueType.MissingCover, "Single", string.Empty),
@@ -130,7 +134,7 @@ public class LibraryCheckDatabaseTests
         ILibraryIssueService service = _services.CreateScope().ServiceProvider
             .GetRequiredService<ILibraryIssueService>();
         LibraryIssueSummary summary = await service.GetSummaryAsync();
-        summary.TrackCount.Should().Be(8);
+        summary.TrackCount.Should().Be(9);
         summary.Counts.Should().AllSatisfy(count => count.Count.Should().BePositive(
             "every kind of problem has a file ({0})",
             count.Type));

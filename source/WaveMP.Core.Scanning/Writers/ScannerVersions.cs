@@ -11,9 +11,11 @@ public static class ScannerVersions
     /// <summary>
     /// Version of the metadata of audio files. Version 2 adds the compilation flag of the tags, which marks albums as
     /// compilations. Version 3 adds the MusicBrainz artists of the artist and album artist tags, by which the scan
-    /// finds artists before their names.
+    /// finds artists before their names. Version 4 adds the artists and album artists as separate values (several
+    /// values of the main field and the fields ARTISTS and ALBUMARTISTS), keeps an ID3v2.3 artist such as "AC/DC" as
+    /// one text, and adds all MusicBrainz artists of a song with several artists.
     /// </summary>
-    public const int AudioMetadata = 3;
+    public const int AudioMetadata = 4;
 
     /// <summary>
     /// Version of the metadata of videos. Version 2 adds the codec of the audio stream and the pixel format, which the
@@ -35,13 +37,16 @@ public static class ScannerVersions
     /// Version of the rules that form albums. Version 2 identifies an album by its artist (the album artist, otherwise
     /// the artist of the track) and title, wherever its tracks lie, instead of per folder with compilations of several
     /// artists. Version 3 identifies the album of tracks with the compilation flag and without album artist tag by its
-    /// title and album folder in the media source, whatever the artists of the tracks are. Raising it makes the next
+    /// title and album folder in the media source, whatever the artists of the tracks are. Version 4 gives songs and
+    /// albums lists of artists: a single artist text is split at unambiguous separators ("feat.", "ft.", "featuring"
+    /// and ";"), and an album is identified by all its album artists, otherwise by the main artists of its tracks
+    /// (featured artists no longer split an album without album artist tag). Raising it makes the next
     /// scan form the albums of all stored folders again, without reading files (see
     /// <see cref="MediaSource.AlbumGroupingVersion"/>). Songs that get another album this way are recorded as moves, so
     /// the favorites, cover rule, online cover and first seen date of an album left empty follow its songs (see
     /// <see cref="WaveMP.Data.Repositories.ILibraryScanRepository.DeleteOrphansAsync"/>).
     /// </summary>
-    public const int AlbumGrouping = 3;
+    public const int AlbumGrouping = 4;
 
     /// <summary>
     /// The current version of the metadata of a kind of file.

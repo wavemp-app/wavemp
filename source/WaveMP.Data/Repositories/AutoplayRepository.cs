@@ -26,7 +26,7 @@ internal sealed class AutoplayRepository(WaveMpDbContext dbContext) : IAutoplayR
             .Where(track => distinct.Contains(track.Id))
             .Select(track => new AutoplaySeedRow(
                 track.Id,
-                track.ArtistId,
+                track.ArtistCredits.OrderBy(credit => credit.Position).Select(credit => credit.ArtistId).ToList(),
                 track.Genre != null ? track.Genre.Name : null,
                 track.Year))
             .ToListAsync(cancellationToken);
@@ -48,7 +48,7 @@ internal sealed class AutoplayRepository(WaveMpDbContext dbContext) : IAutoplayR
         if (query.ArtistIds is { } artistIds)
         {
             Guid[] artists = [.. artistIds.Distinct()];
-            tracks = tracks.Where(track => track.ArtistId != null && artists.Contains(track.ArtistId.Value));
+            tracks = tracks.Where(track => track.ArtistCredits.Any(credit => artists.Contains(credit.ArtistId)));
         }
         else
         {
@@ -70,7 +70,7 @@ internal sealed class AutoplayRepository(WaveMpDbContext dbContext) : IAutoplayR
             .Take(query.Limit)
             .Select(track => new AutoplayCandidateRow(
                 track.Id,
-                track.ArtistId,
+                track.ArtistCredits.OrderBy(credit => credit.Position).Select(credit => credit.ArtistId).ToList(),
                 track.Genre != null ? track.Genre.Name : null,
                 track.Year,
                 track.HasAudio,

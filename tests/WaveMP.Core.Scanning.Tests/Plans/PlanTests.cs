@@ -132,7 +132,7 @@ public class PlanTests
         plan.FilesUnchanged.Should().Be(1);
     }
 
-    [TestCase(MediaFileKind.Audio, 3)]
+    [TestCase(MediaFileKind.Audio, 4)]
     [TestCase(MediaFileKind.Video, 2)]
     [TestCase(MediaFileKind.Image, 1)]
     public void MetadataOf_Kind_ReturnsTheVersionOfTheKind(MediaFileKind kind, int expected)

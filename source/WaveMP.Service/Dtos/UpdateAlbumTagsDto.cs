@@ -29,7 +29,7 @@ public sealed class UpdateAlbumTagsDto
     }
 
     /// <summary>
-    /// New album artist; replaces all album artists of the files.
+    /// New album artist as a single text; replaces all album artists of the files. AlbumArtists wins over it.
     /// </summary>
     [StringLength(LibraryLimits.NameMaxLength)]
     public string? AlbumArtist
@@ -70,8 +70,26 @@ public sealed class UpdateAlbumTagsDto
         }
     }
 
+    /// <summary>
+    /// New album artists in their order; replaces all album artists of the files (see the same member of the metadata
+    /// of a track). An empty list removes the album artists.
+    /// </summary>
+    [MaxLength(LibraryLimits.MaxArtists)]
+    public IReadOnlyList<AlbumArtistInputDto>? AlbumArtists
+    {
+        get;
+        init
+        {
+            field = value;
+            HasAlbumArtists = true;
+        }
+    }
+
     [JsonIgnore]
     public bool HasAlbum { get; private set; }
+
+    [JsonIgnore]
+    public bool HasAlbumArtists { get; private set; }
 
     [JsonIgnore]
     public bool HasAlbumArtist { get; private set; }

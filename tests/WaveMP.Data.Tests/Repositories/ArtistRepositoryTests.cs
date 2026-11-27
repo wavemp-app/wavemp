@@ -44,7 +44,11 @@ public class ArtistRepositoryTests : LibraryDatabaseTests
     [TestCase("alpa band", "Alpha Band")]
     [TestCase("SINGER", "Beta Singer")]
     [TestCase("gest star", "Guest Star")]
-    public async Task ListAsync_WithSearch_FindsTheArtistDespiteTypos(string search, string expected)
+    [TestCase("betasinger", "Beta Singer")]
+    [TestCase("GUEST-STAR", "Guest Star")]
+    public async Task ListAsync_WithSearch_FindsTheArtistDespiteTyposAndByItsNormalizedName(
+        string search,
+        string expected)
     {
         await SeedStandardLibraryAsync();
 
@@ -268,6 +272,24 @@ public class ArtistRepositoryTests : LibraryDatabaseTests
         seed.Track(title + " Song", artist, album, 1);
         seed.AlbumCover(album, seed.File($"{artist.Name}/{title}/cover.jpg", MediaFileKind.Image, isPrimary: false));
         return album;
+    }
+
+    [Test]
+    public async Task ListAsync_SongWithSeveralArtists_CountsForEachOfThem()
+    {
+        LibrarySeed seed = new();
+        Artist bob = seed.Artist("Bob Sinclar");
+        Artist kflay = seed.Artist("K.Flay");
+        Album album = seed.Album("Album", bob);
+        seed.Track("Together", bob, album, featuring: [kflay]);
+        seed.Track("Solo", bob, album);
+        await SaveAsync(seed);
+
+        Page<ArtistRow> page = await ListAsync(new ArtistListQuery(0, 100, ArtistSortField.Name, SortDirection.Asc));
+
+        page.Items.Select(artist => (artist.Name, artist.AlbumCount, artist.TrackCount)).Should().Equal(
+            ("Bob Sinclar", 1, 2),
+            ("K.Flay", 1, 1));
     }
 
     private async Task<Page<ArtistRow>> ListAsync(ArtistListQuery query)

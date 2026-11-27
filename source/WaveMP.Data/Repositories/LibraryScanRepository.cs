@@ -98,6 +98,7 @@ internal sealed class LibraryScanRepository(WaveMpDbContext dbContext) : ILibrar
         List<Track> tracks = await dbContext.Tracks
             .Include(track => track.Covers)
             .Include(track => track.FileSelections)
+            .Include(track => track.ArtistCredits)
             .Where(track => track.SourceId == sourceId && track.DirectoryPath == directoryPath)
             .ToListAsync(cancellationToken);
         return new StoredFolder(files, tracks);
@@ -117,6 +118,7 @@ internal sealed class LibraryScanRepository(WaveMpDbContext dbContext) : ILibrar
             .Include(track => track.Files)
             .Include(track => track.Covers)
             .Include(track => track.FileSelections)
+            .Include(track => track.ArtistCredits)
             .Where(track => ids.Contains(track.Id))
             .OrderBy(track => track.Id)
             .ToListAsync(cancellationToken);
@@ -131,7 +133,9 @@ internal sealed class LibraryScanRepository(WaveMpDbContext dbContext) : ILibrar
 
     public Task<Album?> FindAlbumAsync(string albumKey, CancellationToken cancellationToken = default)
     {
-        return dbContext.Albums.FirstOrDefaultAsync(album => album.AlbumKey == albumKey, cancellationToken);
+        return dbContext.Albums
+            .Include(album => album.ArtistCredits)
+            .FirstOrDefaultAsync(album => album.AlbumKey == albumKey, cancellationToken);
     }
 
     public Task<Artist?> FindArtistByMusicBrainzIdAsync(
@@ -150,6 +154,7 @@ internal sealed class LibraryScanRepository(WaveMpDbContext dbContext) : ILibrar
         CancellationToken cancellationToken = default)
     {
         return dbContext.Albums
+            .Include(album => album.ArtistCredits)
             .Where(album => album.MusicBrainzReleaseId == musicBrainzReleaseId)
             .OrderBy(album => album.FirstSeenAt)
             .ThenBy(album => album.Id)
@@ -161,19 +166,33 @@ internal sealed class LibraryScanRepository(WaveMpDbContext dbContext) : ILibrar
         return dbContext.Genres.FirstOrDefaultAsync(genre => genre.NormalizedName == normalizedName, cancellationToken);
     }
 
-    public async Task<IReadOnlyDictionary<Guid, Guid?>> GetAlbumArtistIdsAsync(
+    public async Task<IReadOnlyDictionary<Guid, IReadOnlyList<Guid>>> GetAlbumArtistIdsAsync(
         IReadOnlyCollection<Guid> albumIds,
         CancellationToken cancellationToken = default)
     {
         if (albumIds.Count == 0)
         {
-            return new Dictionary<Guid, Guid?>();
+            return new Dictionary<Guid, IReadOnlyList<Guid>>();
         }
 
         Guid[] ids = [.. albumIds.Distinct()];
-        return await dbContext.Albums.AsNoTracking()
+        var albums = await dbContext.Albums.AsNoTracking()
             .Where(album => ids.Contains(album.Id))
-            .ToDictionaryAsync(album => album.Id, album => album.AlbumArtistId, cancellationToken);
+            .Select(album => new
+            {
+                album.Id,
+                album.AlbumArtistId,
+                Credits = album.ArtistCredits
+                    .OrderBy(credit => credit.Position)
+                    .Select(credit => credit.ArtistId)
+                    .ToList(),
+            })
+            .ToListAsync(cancellationToken);
+        return albums.ToDictionary(
+            album => album.Id,
+            album => (IReadOnlyList<Guid>)(album.Credits.Count > 0
+                ? album.Credits
+                : album.AlbumArtistId is { } first ? [first] : []));
     }
 
     public void Add<TEntity>(TEntity entity)
@@ -382,22 +401,21 @@ internal sealed class LibraryScanRepository(WaveMpDbContext dbContext) : ILibrar
     public async Task<IReadOnlyList<ArtistFolder>> GetArtistFoldersAsync(
         CancellationToken cancellationToken = default)
     {
-        List<ArtistFolder> asTrackArtist = await dbContext.Tracks.AsNoTracking()
-            .Where(track => track.ArtistId != null)
-            .Select(track => new ArtistFolder(
-                track.ArtistId!.Value,
-                track.Artist!.Name,
-                track.SourceId,
-                track.DirectoryPath))
+        List<ArtistFolder> asTrackArtist = await dbContext.TrackArtistCredits.AsNoTracking()
+            .Select(credit => new ArtistFolder(
+                credit.ArtistId,
+                credit.Artist!.Name,
+                credit.Track!.SourceId,
+                credit.Track.DirectoryPath))
             .Distinct()
             .ToListAsync(cancellationToken);
         List<ArtistFolder> asAlbumArtist = await dbContext.Tracks.AsNoTracking()
-            .Where(track => track.Album != null && track.Album.AlbumArtistId != null)
-            .Select(track => new ArtistFolder(
-                track.Album!.AlbumArtistId!.Value,
-                track.Album.AlbumArtist!.Name,
+            .Where(track => track.Album != null)
+            .SelectMany(track => track.Album!.ArtistCredits.Select(credit => new ArtistFolder(
+                credit.ArtistId,
+                credit.Artist!.Name,
                 track.SourceId,
-                track.DirectoryPath))
+                track.DirectoryPath)))
             .Distinct()
             .ToListAsync(cancellationToken);
         return [.. asTrackArtist.Union(asAlbumArtist)];
@@ -504,7 +522,9 @@ internal sealed class LibraryScanRepository(WaveMpDbContext dbContext) : ILibrar
         // After the albums, so an artist whose last album was just deleted is left empty as well.
         List<Guid> emptyArtists = await dbContext.Artists
             .Where(artist => !dbContext.Tracks.Any(track => track.ArtistId == artist.Id)
-                && !dbContext.Albums.Any(album => album.AlbumArtistId == artist.Id))
+                && !dbContext.Albums.Any(album => album.AlbumArtistId == artist.Id)
+                && !dbContext.TrackArtistCredits.Any(credit => credit.ArtistId == artist.Id)
+                && !dbContext.AlbumArtistCredits.Any(credit => credit.ArtistId == artist.Id))
             .OrderBy(artist => artist.Id)
             .Select(artist => artist.Id)
             .ToListAsync(cancellationToken);
@@ -515,7 +535,9 @@ internal sealed class LibraryScanRepository(WaveMpDbContext dbContext) : ILibrar
             artists = await dbContext.Artists
                 .Where(artist => emptyArtists.Contains(artist.Id)
                     && !dbContext.Tracks.Any(track => track.ArtistId == artist.Id)
-                    && !dbContext.Albums.Any(album => album.AlbumArtistId == artist.Id))
+                    && !dbContext.Albums.Any(album => album.AlbumArtistId == artist.Id)
+                    && !dbContext.TrackArtistCredits.Any(credit => credit.ArtistId == artist.Id)
+                    && !dbContext.AlbumArtistCredits.Any(credit => credit.ArtistId == artist.Id))
                 .ExecuteDeleteAsync(cancellationToken);
             await SmartPlaylistReferences.RelinkAsync(
                 dbContext,
@@ -725,7 +747,9 @@ internal sealed class LibraryScanRepository(WaveMpDbContext dbContext) : ILibrar
             .Where(artist => ids.Contains(artist.Id))
             .Select(artist => new ArtistSuccessionArtist(
                 artist.Id,
-                dbContext.Tracks.Any(track => track.ArtistId == artist.Id)
+                dbContext.TrackArtistCredits.Any(credit => credit.ArtistId == artist.Id)
+                    || dbContext.AlbumArtistCredits.Any(credit => credit.ArtistId == artist.Id)
+                    || dbContext.Tracks.Any(track => track.ArtistId == artist.Id)
                     || dbContext.Albums.Any(album => album.AlbumArtistId == artist.Id),
                 artist.FirstSeenAt,
                 dbContext.ArtistPictures
@@ -839,12 +863,12 @@ internal sealed class LibraryScanRepository(WaveMpDbContext dbContext) : ILibrar
     /// of a renamed or moved folder (an album without artist is kept apart per folder) gives its data to the album of
     /// the new folder once it is left empty, and likewise an artist (an artist taken from the folder name, say) to the
     /// artist of the song found elsewhere. A song counts as moved when one of its primary files has the same kind, file
-    /// name and size as a primary file of a song outside the deleted folders. For artists, the track artist and the
-    /// album artist of its album are both roles of a song, as in the writer: a role that changed from one artist to
-    /// another counts only when the old artist has neither role on the song found elsewhere, and a pair counts once per
-    /// song. There is no time condition, so a scan that is repeated after an interruption still finds the folder
-    /// written by the interrupted run. The count of a pair is the number of songs of the deleted folders; it is added
-    /// to a stored move of the pair.
+    /// name and size as a primary file of a song outside the deleted folders. For artists, the first track artist and
+    /// the first album artist of its album are both roles of a song, as in the writer: a role that changed from one
+    /// artist to another counts only when the old artist is none of the artists of the song found elsewhere (neither of
+    /// the song nor of its album), and a pair counts once per song. There is no time condition, so a scan that is
+    /// repeated after an interruption still finds the folder written by the interrupted run. The count of a pair is the
+    /// number of songs of the deleted folders; it is added to a stored move of the pair.
     /// </summary>
     private async Task RecordFolderMovesAsync(
         Guid sourceId,
@@ -900,6 +924,10 @@ internal sealed class LibraryScanRepository(WaveMpDbContext dbContext) : ILibrar
                 AND role.to_artist_id IS NOT NULL
                 AND role.from_artist_id IS DISTINCT FROM new_track.artist_id
                 AND role.from_artist_id IS DISTINCT FROM new_album.album_artist_id
+                AND NOT EXISTS (SELECT 1 FROM track_artist_credits AS credit
+                    WHERE credit.track_id = new_track.id AND credit.artist_id = role.from_artist_id)
+                AND NOT EXISTS (SELECT 1 FROM album_artist_credits AS credit
+                    WHERE credit.album_id = new_track.album_id AND credit.artist_id = role.from_artist_id)
             GROUP BY role.from_artist_id, role.to_artist_id
             ON CONFLICT (from_artist_id, to_artist_id)
             DO UPDATE SET track_count = artist_moves.track_count + excluded.track_count, moved_at = excluded.moved_at

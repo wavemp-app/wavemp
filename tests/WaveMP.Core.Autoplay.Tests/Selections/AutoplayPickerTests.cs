@@ -33,6 +33,28 @@ public class AutoplayPickerTests
     }
 
     [Test]
+    public void Pick_SongOfSeveralArtistsInTheList_ChoosesSongsOfEachOfItsArtists()
+    {
+        AutoplaySeedRow[] seeds = [new AutoplaySeedRow(Guid.NewGuid(), [_alpha, _beta], null, null)];
+        AutoplayCandidateRow[] songs = [.. Songs(_alpha, 2), .. Songs(_beta, 2), .. Songs(_gamma, 2)];
+
+        IReadOnlyList<Guid> picked = AutoplayPicker.Pick(seeds, songs, [], _noPlays, 10, new Random(4));
+
+        picked.Should().BeEquivalentTo(songs.Take(4).Select(song => song.TrackId));
+    }
+
+    [Test]
+    public void Pick_CandidateOfSeveralArtists_IsChosenOnlyOnce()
+    {
+        AutoplaySeedRow[] seeds = Seeds(_alpha, _beta);
+        AutoplayCandidateRow duet = new(Guid.NewGuid(), [_alpha, _beta], null, null, true, false, 0);
+
+        IReadOnlyList<Guid> picked = AutoplayPicker.Pick(seeds, [duet], [], _noPlays, 5, new Random(5));
+
+        picked.Should().Equal(duet.TrackId);
+    }
+
+    [Test]
     public void Pick_ListOfSeveralArtists_ChoosesSongsOfAllOfThem()
     {
         AutoplaySeedRow[] seeds = Seeds(_alpha, _beta, _gamma);
@@ -49,7 +71,8 @@ public class AutoplayPickerTests
     {
         AutoplaySeedRow[] seeds = Seeds(_alpha, _alpha, _alpha, _beta);
         AutoplayCandidateRow[] songs = [.. Songs(_alpha, 3), .. Songs(_beta, 3)];
-        HashSet<Guid> alphaSongs = [.. songs.Where(song => song.ArtistId == _alpha).Select(song => song.TrackId)];
+        HashSet<Guid> alphaSongs =
+            [.. songs.Where(song => song.ArtistIds.Contains(_alpha)).Select(song => song.TrackId)];
         Random random = new(3);
         const int Draws = 4000;
 
@@ -194,7 +217,7 @@ public class AutoplayPickerTests
     [Test]
     public void Pick_ListWithoutArtists_ChoosesNoArtistSongs()
     {
-        AutoplaySeedRow[] seeds = [new AutoplaySeedRow(Guid.NewGuid(), null, null, null)];
+        AutoplaySeedRow[] seeds = [new AutoplaySeedRow(Guid.NewGuid(), [], null, null)];
 
         IReadOnlyList<Guid> picked = AutoplayPicker.Pick(seeds, Songs(_alpha, 2), [], _noPlays, 5, new Random(12));
 
@@ -208,7 +231,7 @@ public class AutoplayPickerTests
 
     private static AutoplaySeedRow Seed(Guid artist, string? genre, int? year)
     {
-        return new AutoplaySeedRow(Guid.NewGuid(), artist, genre, year);
+        return new AutoplaySeedRow(Guid.NewGuid(), [artist], genre, year);
     }
 
     private static AutoplayCandidateRow[] Songs(Guid artist, int count)
@@ -223,6 +246,6 @@ public class AutoplayPickerTests
         bool isFavorite = false,
         int rating = 0)
     {
-        return new AutoplayCandidateRow(Guid.NewGuid(), artist, genre, year, true, isFavorite, rating);
+        return new AutoplayCandidateRow(Guid.NewGuid(), [artist], genre, year, true, isFavorite, rating);
     }
 }

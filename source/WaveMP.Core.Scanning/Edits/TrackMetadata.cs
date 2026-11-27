@@ -1,3 +1,5 @@
+using WaveMP.Core.Metadata.Artists;
+
 namespace WaveMP.Core.Scanning.Edits;
 
 /// <summary>
@@ -16,6 +18,11 @@ namespace WaveMP.Core.Scanning.Edits;
 /// <param name="TrackNumber">Number of the track on its disc.</param>
 /// <param name="DiscNumber">Number of the disc.</param>
 /// <param name="Genre">Genre.</param>
+/// <param name="Artists">All artists in their order with their roles: the separate values of the tags, otherwise the
+/// artist field split at the unambiguous separators (see <see cref="ArtistNames.Resolve"/>).</param>
+/// <param name="AlbumArtists">All album artists in their order, read like the artists.</param>
+/// <param name="HasArtistValues">Whether the tags hold the artists as separate values, so the list is confirmed.
+/// </param>
 public sealed record TrackMetadata(
     Guid TrackId,
     TrackMetadataStatus Status,
@@ -27,4 +34,32 @@ public sealed record TrackMetadata(
     int? Year,
     int? TrackNumber,
     int? DiscNumber,
-    string? Genre);
+    string? Genre,
+    IReadOnlyList<ArtistName> Artists,
+    IReadOnlyList<string> AlbumArtists,
+    bool HasArtistValues = false)
+{
+    public bool Equals(TrackMetadata? other)
+    {
+        return other is not null
+            && TrackId == other.TrackId
+            && Status == other.Status
+            && AudioFilePath == other.AudioFilePath
+            && Title == other.Title
+            && Artist == other.Artist
+            && Album == other.Album
+            && AlbumArtist == other.AlbumArtist
+            && Year == other.Year
+            && TrackNumber == other.TrackNumber
+            && DiscNumber == other.DiscNumber
+            && Genre == other.Genre
+            && Artists.SequenceEqual(other.Artists)
+            && AlbumArtists.SequenceEqual(other.AlbumArtists)
+            && HasArtistValues == other.HasArtistValues;
+    }
+
+    public override int GetHashCode()
+    {
+        return HashCode.Combine(TrackId, Title, Artist, Album, AlbumArtist, Year, Artists.Count, AlbumArtists.Count);
+    }
+}

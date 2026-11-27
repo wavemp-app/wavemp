@@ -34,6 +34,7 @@ public class ListGroupMappingExtensionsTests
                 Id = albumId,
                 Title = "First Album",
                 Artist = new ArtistReferenceDto { Id = artistId, Name = "Alpha Band" },
+                Artists = [new ArtistCreditDto { Id = artistId, Name = "Alpha Band", Role = ArtistRoleDto.Main }],
                 IsCompilation = false,
             },
             Letter = "A",

@@ -1,6 +1,7 @@
 using AwesomeAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
+using WaveMP.Core.Metadata.Artists;
 using WaveMP.Core.Metadata.Files;
 using WaveMP.Core.Metadata.Tags;
 using WaveMP.Core.Scanning.Edits;
@@ -128,7 +129,9 @@ public class TrackMetadataEditorTests
             1999,
             3,
             2,
-            "Library Genre"));
+            "Library Genre",
+            [new ArtistName("Tag Artist")],
+            ["Library Album Artist"]));
         await _repository.DidNotReceiveWithAnyArgs().SetWritableAsync(default, default);
     }
 

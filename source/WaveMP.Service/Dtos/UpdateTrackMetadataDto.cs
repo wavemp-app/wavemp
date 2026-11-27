@@ -29,7 +29,7 @@ public sealed class UpdateTrackMetadataDto
     }
 
     /// <summary>
-    /// New artist; replaces all artists of the file.
+    /// New artist as a single text; replaces all artists of the file. Artists wins over it.
     /// </summary>
     [StringLength(LibraryLimits.NameMaxLength)]
     public string? Artist
@@ -57,7 +57,7 @@ public sealed class UpdateTrackMetadataDto
     }
 
     /// <summary>
-    /// New album artist; replaces all album artists of the file.
+    /// New album artist as a single text; replaces all album artists of the file. AlbumArtists wins over it.
     /// </summary>
     [StringLength(LibraryLimits.NameMaxLength)]
     public string? AlbumArtist
@@ -126,8 +126,46 @@ public sealed class UpdateTrackMetadataDto
         }
     }
 
+    /// <summary>
+    /// New artists in their order, each with its role; replaces all artists of the file. The file gets them as
+    /// separate values where its format supports it (ARTISTS) and as a readable text in the artist field, e.g.
+    /// "Bob Sinclar feat. K.Flay". An empty list removes the artists.
+    /// </summary>
+    [MaxLength(LibraryLimits.MaxArtists)]
+    public IReadOnlyList<ArtistCreditInputDto>? Artists
+    {
+        get;
+        init
+        {
+            field = value;
+            HasArtists = true;
+        }
+    }
+
+    /// <summary>
+    /// New album artists in their order; replaces all album artists of the file. The file gets them as separate
+    /// values where its format supports it (ALBUMARTISTS) and joined by "; " in the album artist field. An empty list
+    /// removes the album artists.
+    /// </summary>
+    [MaxLength(LibraryLimits.MaxArtists)]
+    public IReadOnlyList<AlbumArtistInputDto>? AlbumArtists
+    {
+        get;
+        init
+        {
+            field = value;
+            HasAlbumArtists = true;
+        }
+    }
+
     [JsonIgnore]
     public bool HasTitle { get; private set; }
+
+    [JsonIgnore]
+    public bool HasArtists { get; private set; }
+
+    [JsonIgnore]
+    public bool HasAlbumArtists { get; private set; }
 
     [JsonIgnore]
     public bool HasArtist { get; private set; }

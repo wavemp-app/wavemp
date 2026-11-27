@@ -117,6 +117,9 @@ public static class OnlineMetadataMappingExtensions
         {
             Album = request.HasAlbum ? new TagChange<string?>(request.Album) : null,
             AlbumArtist = request.HasAlbumArtist ? new TagChange<string?>(request.AlbumArtist) : null,
+            AlbumArtistCredits = request.HasAlbumArtists
+                ? TrackMetadataMappingExtensions.ToAlbumArtistChange(request.AlbumArtists)
+                : null,
             Year = request.HasYear ? new TagChange<int?>(request.Year) : null,
             Genre = request.HasGenre ? new TagChange<string?>(request.Genre) : null,
         };

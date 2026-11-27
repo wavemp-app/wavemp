@@ -72,8 +72,10 @@ internal sealed class FavoriteRepository(WaveMpDbContext dbContext) : IFavoriteR
             favorites = favorites.Where(favorite =>
                 (favorite.TrackId != null && tracks.Any(track => track.Id == favorite.TrackId))
                 || (favorite.AlbumId != null && tracks.Any(track => track.AlbumId == favorite.AlbumId))
-                || (favorite.ArtistId != null && tracks.Any(track => track.ArtistId == favorite.ArtistId
-                    || (track.Album != null && track.Album.AlbumArtistId == favorite.ArtistId))));
+                || (favorite.ArtistId != null && tracks.Any(track =>
+                    track.ArtistCredits.Any(credit => credit.ArtistId == favorite.ArtistId)
+                    || (track.Album != null
+                        && track.Album.ArtistCredits.Any(credit => credit.ArtistId == favorite.ArtistId)))));
         }
 
         return favorites

@@ -28,7 +28,7 @@ public static class SubsonicElements
             .Set("isDir", false)
             .Set("title", track.Title)
             .Set("album", track.AlbumTitle)
-            .Set("artist", track.ArtistName)
+            .Set("artist", DisplayText(track.AllArtists) ?? track.ArtistName)
             .Set("track", track.TrackNumber)
             .Set("year", track.Year)
             .Set("genre", track.Genre)
@@ -63,11 +63,11 @@ public static class SubsonicElements
             .Set("mediaType", "song")
             .Set("playCount", (long)(details?.PlayCount ?? 0))
             .Set("played", details?.LastPlayedAt)
-            .Set("displayArtist", track.ArtistName)
-            .Set("displayAlbumArtist", track.AlbumArtistName);
+            .Set("displayArtist", DisplayText(track.AllArtists) ?? track.ArtistName)
+            .Set("displayAlbumArtist", DisplayText(track.AllAlbumArtists) ?? track.AlbumArtistName);
         song.AddList("genres", Genres(track.Genre));
-        song.AddList("artists", References("artists", track.ArtistId, track.ArtistName));
-        song.AddList("albumArtists", References("albumArtists", track.AlbumArtistId, track.AlbumArtistName));
+        song.AddList("artists", References("artists", track.AllArtists));
+        song.AddList("albumArtists", References("albumArtists", track.AllAlbumArtists));
         return song;
     }
 
@@ -79,7 +79,7 @@ public static class SubsonicElements
         SubsonicElement element = new SubsonicElement(name)
             .Set("id", SubsonicIds.Format(album.Id))
             .Set("name", album.Title)
-            .Set("artist", album.ArtistName)
+            .Set("artist", DisplayText(album.AllArtists) ?? album.ArtistName)
             .Set("artistId", album.ArtistId is { } artistId ? SubsonicIds.Format(artistId) : null)
             .Set("coverArt", album.HasCover ? SubsonicIds.AlbumCover(album.Id) : null)
             .Set("songCount", album.TrackCount)
@@ -91,9 +91,9 @@ public static class SubsonicElements
             .Set("genre", album.Genre)
             .Set("played", details?.LastPlayedAt)
             .Set("isCompilation", album.IsCompilation)
-            .Set("displayArtist", album.ArtistName);
+            .Set("displayArtist", DisplayText(album.AllArtists) ?? album.ArtistName);
         element.AddList("genres", Genres(album.Genre));
-        element.AddList("artists", References("artists", album.ArtistId, album.ArtistName));
+        element.AddList("artists", References("artists", album.AllArtists));
         return element;
     }
 
@@ -184,10 +184,34 @@ public static class SubsonicElements
         return genre is null ? [] : [new SubsonicElement("genres").Set("name", genre)];
     }
 
-    private static IEnumerable<SubsonicElement> References(string name, Guid? id, string? artistName)
+    /// <summary>
+    /// The artists of a song or album as references (<c>ArtistID3</c> of OpenSubsonic), in their order.
+    /// </summary>
+    private static IEnumerable<SubsonicElement> References(string name, IReadOnlyList<ArtistCreditRow> artists)
     {
-        return id is { } artistId && artistName is not null
-            ? [new SubsonicElement(name).Set("id", SubsonicIds.Format(artistId)).Set("name", artistName)]
-            : [];
+        return artists.Select(artist => new SubsonicElement(name)
+            .Set("id", SubsonicIds.Format(artist.Id))
+            .Set("name", artist.Name));
+    }
+
+    /// <summary>
+    /// The artists as one text for the classic artist fields and the display fields of OpenSubsonic: the main artists
+    /// joined by ", ", then " feat. " and the featured artists, e.g. "Bob Sinclar feat. K.Flay"; <c>null</c> without
+    /// artists.
+    /// </summary>
+    internal static string? DisplayText(IReadOnlyList<ArtistCreditRow> artists)
+    {
+        string main = string.Join(
+            ", ",
+            artists.Where(artist => artist.Role == ArtistRole.Main).Select(artist => artist.Name));
+        string featured = string.Join(
+            ", ",
+            artists.Where(artist => artist.Role == ArtistRole.Featured).Select(artist => artist.Name));
+        if (main.Length == 0)
+        {
+            return featured.Length == 0 ? null : featured;
+        }
+
+        return featured.Length == 0 ? main : main + " feat. " + featured;
     }
 }

@@ -735,6 +735,8 @@ public class SmartPlaylistRepositoryTests : LibraryDatabaseTests
             await dbContext.SaveChangesAsync();
             await dbContext.Tracks.Where(track => track.ArtistId == library.Guest.Id)
                 .ExecuteUpdateAsync(setters => setters.SetProperty(track => track.ArtistId, library.Beta.Id));
+            await dbContext.TrackArtistCredits.Where(credit => credit.ArtistId == library.Guest.Id)
+                .ExecuteUpdateAsync(setters => setters.SetProperty(credit => credit.ArtistId, library.Beta.Id));
             await dbContext.Tracks.Where(track => track.AlbumId == library.Hits.Id)
                 .ExecuteUpdateAsync(setters => setters.SetProperty(track => track.AlbumId, (Guid?)null));
         }

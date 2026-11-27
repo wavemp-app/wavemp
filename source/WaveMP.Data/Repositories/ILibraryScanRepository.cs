@@ -104,10 +104,10 @@ public interface ILibraryScanRepository
     Task<Genre?> FindGenreAsync(string normalizedName, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// The album artist of each of the stored albums (<c>null</c> for an album without one), untracked; ids without a
-    /// stored album are left out. A scan asks for the albums its songs left, to see which artists they left.
+    /// The album artists of each of the stored albums in their order (empty for an album without one), untracked; ids
+    /// without a stored album are left out. A scan asks for the albums its songs left, to see which artists they left.
     /// </summary>
-    Task<IReadOnlyDictionary<Guid, Guid?>> GetAlbumArtistIdsAsync(
+    Task<IReadOnlyDictionary<Guid, IReadOnlyList<Guid>>> GetAlbumArtistIdsAsync(
         IReadOnlyCollection<Guid> albumIds,
         CancellationToken cancellationToken = default);
 

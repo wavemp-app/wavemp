@@ -3,8 +3,8 @@ using WaveMP.Data.Entities;
 namespace WaveMP.Data.Queries;
 
 /// <summary>
-/// The "my music" of a user: the tracks the user rated, marked as favorite (also through the favorite album or artist
-/// of the track or of its album) or added to one of the own playlists.
+/// The "my music" of a user: the tracks the user rated, marked as favorite (also through the favorite album or one of
+/// the favorite artists of the track or of its album) or added to one of the own playlists.
 /// </summary>
 internal static class MyMusicQueries
 {
@@ -19,13 +19,11 @@ internal static class MyMusicQueries
             || dbContext.Favorites.Any(favorite => favorite.UserId == userId && favorite.TrackId == track.Id)
             || (track.AlbumId != null
                 && dbContext.Favorites.Any(favorite => favorite.UserId == userId && favorite.AlbumId == track.AlbumId))
-            || (track.ArtistId != null
-                && dbContext.Favorites.Any(favorite =>
-                    favorite.UserId == userId && favorite.ArtistId == track.ArtistId))
+            || track.ArtistCredits.Any(credit => dbContext.Favorites.Any(favorite =>
+                favorite.UserId == userId && favorite.ArtistId == credit.ArtistId))
             || (track.Album != null
-                && track.Album.AlbumArtistId != null
-                && dbContext.Favorites.Any(favorite =>
-                    favorite.UserId == userId && favorite.ArtistId == track.Album.AlbumArtistId))
+                && track.Album.ArtistCredits.Any(credit => dbContext.Favorites.Any(favorite =>
+                    favorite.UserId == userId && favorite.ArtistId == credit.ArtistId)))
             || dbContext.PlaylistEntries.Any(entry => entry.TrackId == track.Id && entry.Playlist!.UserId == userId));
     }
 

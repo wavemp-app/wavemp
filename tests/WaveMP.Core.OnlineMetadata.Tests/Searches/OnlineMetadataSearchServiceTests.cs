@@ -1,5 +1,6 @@
 using AwesomeAssertions;
 using NSubstitute;
+using WaveMP.Core.Metadata.Artists;
 using WaveMP.Core.OnlineMetadata.Clients;
 using WaveMP.Core.OnlineMetadata.Matches;
 using WaveMP.Core.OnlineMetadata.Options;
@@ -262,7 +263,9 @@ public class OnlineMetadataSearchServiceTests
             null,
             null,
             null,
-            null);
+            null,
+            [new ArtistName("Band")],
+            ["Band"]);
     }
 
     private static MusicBrainzRecording Recording(string title, string artist, int score, long length)

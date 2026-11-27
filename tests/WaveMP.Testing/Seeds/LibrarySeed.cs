@@ -38,15 +38,24 @@ public sealed class LibrarySeed
         Artist? albumArtist = null,
         bool isCompilation = false,
         int? year = null,
-        DateTimeOffset? firstSeenAt = null)
+        DateTimeOffset? firstSeenAt = null,
+        IReadOnlyList<Artist>? moreAlbumArtists = null)
     {
+        var albumId = Guid.CreateVersion7();
+        Artist[] albumArtists = albumArtist is null ? [] : [albumArtist, .. moreAlbumArtists ?? []];
         Album album = new()
         {
-            Id = Guid.CreateVersion7(),
+            Id = albumId,
             Title = title,
             NormalizedTitle = NameKeys.Of(title) ?? string.Empty,
             AlbumKey = Guid.NewGuid().ToString("N") + Guid.NewGuid().ToString("N"),
             AlbumArtistId = albumArtist?.Id,
+            ArtistCredits = [.. albumArtists.Select((artist, position) => new AlbumArtistCredit
+            {
+                AlbumId = albumId,
+                ArtistId = artist.Id,
+                Position = position,
+            })],
             IsCompilation = isCompilation,
             Year = year,
             FirstSeenAt = firstSeenAt ?? DefaultTime,
@@ -68,18 +77,36 @@ public sealed class LibrarySeed
         bool hasAudio = true,
         bool hasVideo = false,
         DateTimeOffset? firstSeenAt = null,
-        MediaSource? source = null)
+        MediaSource? source = null,
+        IReadOnlyList<Artist>? moreArtists = null,
+        IReadOnlyList<Artist>? featuring = null)
     {
         string baseName = $"{++_counter:D4} {title}";
+        var trackId = Guid.CreateVersion7();
+        (Artist Artist, ArtistRole Role)[] credits = artist is null
+            ? []
+            :
+            [
+                (artist, ArtistRole.Main),
+                .. (moreArtists ?? []).Select(other => (other, ArtistRole.Main)),
+                .. (featuring ?? []).Select(other => (other, ArtistRole.Featured)),
+            ];
         Track track = new()
         {
-            Id = Guid.CreateVersion7(),
+            Id = trackId,
             SourceId = source?.Id ?? MediaSource.DefaultId,
             DirectoryPath = album?.Title ?? string.Empty,
             BaseName = baseName,
             NormalizedBaseName = baseName.ToUpperInvariant(),
             Title = title,
             ArtistId = artist?.Id,
+            ArtistCredits = [.. credits.Select((credit, position) => new TrackArtistCredit
+            {
+                TrackId = trackId,
+                ArtistId = credit.Artist.Id,
+                Position = position,
+                Role = credit.Role,
+            })],
             AlbumId = album?.Id,
             TrackNumber = number,
             DiscNumber = disc,

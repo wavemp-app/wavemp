@@ -36,6 +36,10 @@ public class LibraryIssuesApiTests
             _media.Combine("Band/Live/Twin.mp3"),
             AudioFormat.Mp3,
             new TestTags { Title = "Twin", Artist = "Band", Album = "Live" });
+        await TestMediaGenerator.CreateAudioAsync(
+            _media.Combine("Duo/Songs/Duet.mp3"),
+            AudioFormat.Mp3,
+            new TestTags { Title = "Duet", Artist = "Simon & Garfunkel", Album = "Songs" });
         await TestMediaGenerator.CreateAudioAsync(_media.Combine("Loose - Untagged.mp3"), AudioFormat.Mp3);
         TestMediaGenerator.CreateCorruptFile(_media.Combine("Broken/Broken.mp3"));
         await TestMediaGenerator.CreateVideoAsync(_media.Combine("Clips/Clip.mkv"), VideoFormat.Mkv, 160, 120);
@@ -88,7 +92,7 @@ public class LibraryIssuesApiTests
             "/api/v1/library/issues/summary");
 
         summary.CheckedAt.Should().NotBeNull();
-        summary.TrackCount.Should().Be(5);
+        summary.TrackCount.Should().Be(6);
         summary.Counts.Select(count => count.Type).Should().Equal(Enum.GetValues<LibraryIssueTypeDto>());
         summary.Counts.Should().AllSatisfy(count => count.Count.Should().BePositive(count.Type.ToString()));
         summary.ProblemCount.Should().Be(summary.Counts
@@ -141,6 +145,20 @@ public class LibraryIssuesApiTests
         ]);
         untagged.Items.Single(issue => issue.Type == LibraryIssueTypeDto.MissingTags).MissingTags
             .Should().Equal(MetadataTagDto.Title, MetadataTagDto.Artist, MetadataTagDto.Album);
+    }
+
+    [Test]
+    public async Task ListLibraryIssues_PossibleMultipleArtists_SuggestASplitOfTheName()
+    {
+        PageDto<LibraryIssueDto> page = await _admin.GetJsonAsync<PageDto<LibraryIssueDto>>(
+            "/api/v1/library/issues?type=PossibleMultipleArtists&limit=100");
+
+        LibraryIssueDto issue = page.Items.Should().ContainSingle().Which;
+        issue.Severity.Should().Be(LibraryIssueSeverityDto.Hint);
+        issue.Track!.Title.Should().Be("Duet");
+        issue.SuggestedArtists!.Select(artist => (artist.Name, artist.Role)).Should().Equal(
+            ("Simon", ArtistRoleDto.Main),
+            ("Garfunkel", ArtistRoleDto.Main));
     }
 
     [TestCase("type=Unknown")]

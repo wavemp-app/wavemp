@@ -660,13 +660,13 @@ public class LibraryScanRepositoryTests : LibraryDatabaseTests
         Album without = seed.Album("Without");
         await SaveAsync(seed);
 
-        IReadOnlyDictionary<Guid, Guid?> artists = await CreateRepository()
+        IReadOnlyDictionary<Guid, IReadOnlyList<Guid>> artists = await CreateRepository()
             .GetAlbumArtistIdsAsync([withArtist.Id, without.Id, Guid.NewGuid()]);
 
-        artists.Should().BeEquivalentTo(new Dictionary<Guid, Guid?>
+        artists.Should().BeEquivalentTo(new Dictionary<Guid, IReadOnlyList<Guid>>
         {
-            [withArtist.Id] = band.Id,
-            [without.Id] = null,
+            [withArtist.Id] = [band.Id],
+            [without.Id] = [],
         });
     }
 

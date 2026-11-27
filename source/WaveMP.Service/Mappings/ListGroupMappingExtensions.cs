@@ -18,6 +18,7 @@ public static class ListGroupMappingExtensions
                     Id = album.Id,
                     Title = album.Title,
                     Artist = LibraryMappingExtensions.ToReference(album.ArtistId, album.ArtistName),
+                    Artists = album.AllArtists.ToDtos(),
                     IsCompilation = album.IsCompilation,
                 }
                 : null,

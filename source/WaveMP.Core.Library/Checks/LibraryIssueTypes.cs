@@ -19,14 +19,18 @@ public static class LibraryIssueTypes
         LibraryIssueType.PossibleDuplicate,
         LibraryIssueType.VideoWithoutAudio,
         LibraryIssueType.AudioWithoutVideo,
+        LibraryIssueType.PossibleMultipleArtists,
     ];
 
     /// <summary>
-    /// How much a kind of problem matters: videos without audio and songs without video are hints only.
+    /// How much a kind of problem matters: videos without audio, songs without video and names that may name several
+    /// artists are hints only.
     /// </summary>
     public static LibraryIssueSeverity SeverityOf(LibraryIssueType type)
     {
-        return type is LibraryIssueType.VideoWithoutAudio or LibraryIssueType.AudioWithoutVideo
+        return type is LibraryIssueType.VideoWithoutAudio
+            or LibraryIssueType.AudioWithoutVideo
+            or LibraryIssueType.PossibleMultipleArtists
             ? LibraryIssueSeverity.Hint
             : LibraryIssueSeverity.Problem;
     }

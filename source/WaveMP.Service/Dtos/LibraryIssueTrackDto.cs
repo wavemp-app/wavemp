@@ -15,6 +15,11 @@ public sealed class LibraryIssueTrackDto
     public ArtistReferenceDto? Artist { get; init; }
 
     /// <summary>
+    /// All artists of the track in their order, each with its role; the first one is Artist.
+    /// </summary>
+    public required IReadOnlyList<ArtistCreditDto> Artists { get; init; }
+
+    /// <summary>
     /// Album of the track; null for tracks without album.
     /// </summary>
     public AlbumReferenceDto? Album { get; init; }

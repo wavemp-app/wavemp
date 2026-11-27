@@ -5,6 +5,7 @@ using WaveMP.Data.Projections;
 using WaveMP.Data.Queries;
 using WaveMP.Data.Repositories;
 using WaveMP.Testing.Databases;
+using WaveMP.Testing.Seeds;
 
 namespace WaveMP.Data.Tests.Repositories;
 
@@ -215,7 +216,8 @@ public class PlayHistoryRepositoryTests : LibraryDatabaseTests
         IReadOnlyList<PlayStatisticsRow> plays =
             await CreateRepository().ListPlaysAsync(user.Id, _start, _start.AddHours(1));
 
-        plays.Should().Equal(
+        plays.Should().BeEquivalentTo(
+            [
             new PlayStatisticsRow(
                 _start,
                 library.Ballad.Id,
@@ -228,7 +230,8 @@ public class PlayHistoryRepositoryTests : LibraryDatabaseTests
                 "Beta Singer",
                 library.Ballad.GenreId,
                 "Pop",
-                TimeSpan.FromMinutes(5)),
+                TimeSpan.FromMinutes(5),
+                [new ArtistCreditRow(library.Beta.Id, "Beta Singer")]),
             new PlayStatisticsRow(
                 _start.AddMinutes(30),
                 library.Opening.Id,
@@ -241,7 +244,10 @@ public class PlayHistoryRepositoryTests : LibraryDatabaseTests
                 "Alpha Band",
                 library.Opening.GenreId,
                 "Rock",
-                TimeSpan.FromMinutes(3)));
+                TimeSpan.FromMinutes(3),
+                [new ArtistCreditRow(library.Alpha.Id, "Alpha Band")]),
+            ],
+            options => options.WithStrictOrdering());
     }
 
     [Test]
@@ -276,6 +282,28 @@ public class PlayHistoryRepositoryTests : LibraryDatabaseTests
             [library.Alpha.Id, library.Guest.Id]);
 
         first.Should().BeEquivalentTo(new Dictionary<Guid, DateTimeOffset> { [library.Alpha.Id] = _start });
+    }
+
+    [Test]
+    public async Task ListPlaysAsync_SongWithSeveralArtists_CountsForEachOfThem()
+    {
+        LibrarySeed seed = new();
+        Artist bob = seed.Artist("Bob Sinclar");
+        Artist kflay = seed.Artist("K.Flay");
+        Track song = seed.Track("Together", bob, featuring: [kflay]);
+        await SaveAsync(seed);
+        User user = await AddUserAsync();
+        await AddEntryAsync(user, song, _start);
+
+        IPlayHistoryRepository repository = CreateRepository();
+        IReadOnlyList<PlayStatisticsRow> plays = await repository.ListPlaysAsync(user.Id, null, null);
+        IReadOnlyDictionary<Guid, DateTimeOffset> first =
+            await repository.FindFirstPlaysOfArtistsAsync(user.Id, [bob.Id, kflay.Id]);
+
+        plays.Single().AllArtists.Should().Equal(
+            new ArtistCreditRow(bob.Id, "Bob Sinclar"),
+            new ArtistCreditRow(kflay.Id, "K.Flay", ArtistRole.Featured));
+        first.Should().BeEquivalentTo(new Dictionary<Guid, DateTimeOffset> { [bob.Id] = _start, [kflay.Id] = _start });
     }
 
     [Test]

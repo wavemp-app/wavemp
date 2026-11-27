@@ -44,4 +44,10 @@ public enum LibraryIssueTypeDto
     /// The track has an audio file but no video. A hint only.
     /// </summary>
     AudioWithoutVideo,
+
+    /// <summary>
+    /// An artist name of the track may name several artists (a comma, a slash, or "&amp;", "and", "x" or "+" between
+    /// spaces) and the tags do not hold the artists as separate values; see suggestedArtists. A hint only.
+    /// </summary>
+    PossibleMultipleArtists,
 }

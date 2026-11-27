@@ -7,7 +7,8 @@ namespace WaveMP.Core.Autoplay.Selections;
 /// Chooses the songs of autoplay from the candidates, in random order:
 /// <list type="number">
 /// <item>Songs of the artists of the list. Each song first draws an artist, weighted by how often the artist appears in
-/// the list, then one of its songs, weighted by favorite and rating (see <see cref="AutoplayRules.WeightOf"/>).</item>
+/// the list, then one of its songs, weighted by favorite and rating (see <see cref="AutoplayRules.WeightOf"/>). A song
+/// with several artists counts for each of them, in the list as well as among the candidates.</item>
 /// <item>If they are not enough: songs of the same genres and similar decades (the fallback), weighted by how often
 /// their genre appears in the list and by favorite and rating.</item>
 /// <item>Songs the user played recently are left out. Only if no other song matches, they come back, those played
@@ -28,8 +29,8 @@ internal static class AutoplayPicker
     {
         ArgumentOutOfRangeException.ThrowIfNegative(count);
         var artistWeights = seeds
-            .Where(seed => seed.ArtistId is not null)
-            .GroupBy(seed => seed.ArtistId!.Value)
+            .SelectMany(seed => seed.ArtistIds.Distinct())
+            .GroupBy(artistId => artistId)
             .ToDictionary(group => group.Key, group => group.Count());
         var genreWeights = seeds
             .Where(seed => !string.IsNullOrWhiteSpace(seed.Genre))
@@ -37,7 +38,7 @@ internal static class AutoplayPicker
             .ToDictionary(group => group.Key, group => group.Count());
 
         List<AutoplayCandidateRow> artistPool = [.. Distinct(artistCandidates)
-            .Where(candidate => candidate.ArtistId is { } artist && artistWeights.ContainsKey(artist))];
+            .Where(candidate => candidate.ArtistIds.Any(artistWeights.ContainsKey))];
         HashSet<Guid> artistIds = [.. artistPool.Select(candidate => candidate.TrackId)];
         List<AutoplayCandidateRow> fallbackPool = [.. Distinct(fallbackCandidates)
             .Where(candidate => !artistIds.Contains(candidate.TrackId))];
@@ -64,8 +65,8 @@ internal static class AutoplayPicker
             int take = Math.Max(count, (rested.Count + 1) / 2);
             PickWeighted(
                 [.. rested.Take(take)],
-                candidate => candidate.ArtistId is { } artist && artistWeights.TryGetValue(artist, out int weight)
-                    ? weight
+                candidate => candidate.ArtistIds.Any(artistWeights.ContainsKey)
+                    ? candidate.ArtistIds.Where(artistWeights.ContainsKey).Max(artist => artistWeights[artist])
                     : GenreWeight(candidate, genreWeights),
                 count,
                 random,
@@ -88,19 +89,28 @@ internal static class AutoplayPicker
     {
         var byArtist = pool
             .Where(candidate => SongWeight(candidate) > 0)
-            .GroupBy(candidate => candidate.ArtistId!.Value)
+            .SelectMany(candidate => candidate.ArtistIds
+                .Distinct()
+                .Where(artistWeights.ContainsKey)
+                .Select(artistId => (ArtistId: artistId, Candidate: candidate)))
+            .GroupBy(item => item.ArtistId, item => item.Candidate)
             .ToDictionary(group => group.Key, group => group.ToList());
         while (picked.Count < count && byArtist.Count > 0)
         {
             List<Guid> artists = [.. byArtist.Keys.Order()];
             Guid artist = Draw(artists, candidate => artistWeights[candidate], random);
-            List<AutoplayCandidateRow> songs = byArtist[artist];
-            AutoplayCandidateRow song = Draw(songs, SongWeight, random);
-            songs.Remove(song);
+            AutoplayCandidateRow song = Draw(byArtist[artist], SongWeight, random);
             picked.Add(song.TrackId);
-            if (songs.Count == 0)
+
+            // A song with several artists leaves the songs of all of them.
+            foreach (Guid other in artists)
             {
-                byArtist.Remove(artist);
+                List<AutoplayCandidateRow> songs = byArtist[other];
+                songs.RemoveAll(candidate => candidate.TrackId == song.TrackId);
+                if (songs.Count == 0)
+                {
+                    byArtist.Remove(other);
+                }
             }
         }
     }

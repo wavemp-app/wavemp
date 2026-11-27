@@ -1,4 +1,5 @@
 using WaveMP.Core.Library.Checks;
+using WaveMP.Core.Metadata.Artists;
 using WaveMP.Data.Entities;
 using WaveMP.Data.Projections;
 using WaveMP.Data.Repositories;
@@ -30,6 +31,16 @@ public static class LibraryIssueMappingExtensions
             FileIssue = row.FileIssue?.ToDto(),
             MissingTags = [.. row.MissingTags.Select(tag => tag.ToDto())],
             RelatedTrack = row.RelatedTrack?.ToDto(),
+            SuggestedArtists = row.Type == LibraryIssueType.PossibleMultipleArtists
+                && row.Track is { } track
+                && ArtistNames.SuggestSplit(
+                    [.. track.AllArtists.Select(artist => new ArtistName(artist.Name, artist.Role))]) is { } suggestion
+                    ? [.. suggestion.Select(artist => new ArtistNameDto
+                    {
+                        Name = artist.Name,
+                        Role = artist.Role.ToDto(),
+                    })]
+                    : null,
         };
     }
 
@@ -40,12 +51,14 @@ public static class LibraryIssueMappingExtensions
             Id = track.Id,
             Title = track.Title,
             Artist = LibraryMappingExtensions.ToReference(track.ArtistId, track.ArtistName),
+            Artists = track.AllArtists.ToDtos(),
             Album = track.AlbumId is { } albumId && track.AlbumTitle is { } albumTitle
                 ? new AlbumReferenceDto
                 {
                     Id = albumId,
                     Title = albumTitle,
                     Artist = LibraryMappingExtensions.ToReference(track.AlbumArtistId, track.AlbumArtistName),
+                    Artists = LibraryMappingExtensions.ToCredits(track.AlbumArtistId, track.AlbumArtistName),
                     IsCompilation = track.AlbumIsCompilation,
                 }
                 : null,
@@ -94,6 +107,7 @@ public static class LibraryIssueMappingExtensions
             LibraryIssueType.PossibleDuplicate => LibraryIssueTypeDto.PossibleDuplicate,
             LibraryIssueType.VideoWithoutAudio => LibraryIssueTypeDto.VideoWithoutAudio,
             LibraryIssueType.AudioWithoutVideo => LibraryIssueTypeDto.AudioWithoutVideo,
+            LibraryIssueType.PossibleMultipleArtists => LibraryIssueTypeDto.PossibleMultipleArtists,
             _ => throw new ArgumentOutOfRangeException(nameof(type), type, "Unknown type."),
         };
     }
@@ -109,6 +123,7 @@ public static class LibraryIssueMappingExtensions
             LibraryIssueTypeDto.PossibleDuplicate => LibraryIssueType.PossibleDuplicate,
             LibraryIssueTypeDto.VideoWithoutAudio => LibraryIssueType.VideoWithoutAudio,
             LibraryIssueTypeDto.AudioWithoutVideo => LibraryIssueType.AudioWithoutVideo,
+            LibraryIssueTypeDto.PossibleMultipleArtists => LibraryIssueType.PossibleMultipleArtists,
             _ => throw new ArgumentOutOfRangeException(nameof(type), type, "Unknown type."),
         };
     }

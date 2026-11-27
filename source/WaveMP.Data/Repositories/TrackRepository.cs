@@ -222,9 +222,9 @@ internal sealed class TrackRepository(WaveMpDbContext dbContext) : ITrackReposit
             tracks = tracks.Where(track =>
                 EF.Functions.ILike(track.Title, pattern, LikePatterns.EscapeCharacter)
                 || EF.Functions.TrigramsAreWordSimilar(search, track.Title)
-                || (track.Artist != null
-                    && (EF.Functions.ILike(track.Artist.Name, pattern, LikePatterns.EscapeCharacter)
-                        || EF.Functions.TrigramsAreWordSimilar(search, track.Artist.Name)))
+                || track.ArtistCredits.Any(credit =>
+                    EF.Functions.ILike(credit.Artist!.Name, pattern, LikePatterns.EscapeCharacter)
+                    || EF.Functions.TrigramsAreWordSimilar(search, credit.Artist.Name))
                 || (track.Album != null
                     && (EF.Functions.ILike(track.Album.Title, pattern, LikePatterns.EscapeCharacter)
                         || EF.Functions.TrigramsAreWordSimilar(search, track.Album.Title))));
@@ -232,8 +232,10 @@ internal sealed class TrackRepository(WaveMpDbContext dbContext) : ITrackReposit
 
         if (query.ArtistId is { } artistId)
         {
+            // As one of the artists of the track or of its album.
             tracks = tracks.Where(track =>
-                track.ArtistId == artistId || (track.Album != null && track.Album.AlbumArtistId == artistId));
+                track.ArtistCredits.Any(credit => credit.ArtistId == artistId)
+                || (track.Album != null && track.Album.ArtistCredits.Any(credit => credit.ArtistId == artistId)));
         }
 
         if (query.AlbumId is { } albumId)
@@ -400,6 +402,16 @@ internal sealed class TrackRepository(WaveMpDbContext dbContext) : ITrackReposit
             dbContext.TrackRatings
                 .Where(rating => rating.UserId == user && rating.TrackId == track.Id)
                 .Select(rating => rating.Rating)
-                .FirstOrDefault()));
+                .FirstOrDefault(),
+            track.ArtistCredits
+                .OrderBy(credit => credit.Position)
+                .Select(credit => new ArtistCreditRow(credit.ArtistId, credit.Artist!.Name, credit.Role))
+                .ToList(),
+            track.Album != null
+                ? track.Album.ArtistCredits
+                    .OrderBy(credit => credit.Position)
+                    .Select(credit => new ArtistCreditRow(credit.ArtistId, credit.Artist!.Name, ArtistRole.Main))
+                    .ToList()
+                : null));
     }
 }

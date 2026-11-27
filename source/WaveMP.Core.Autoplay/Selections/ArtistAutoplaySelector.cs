@@ -51,8 +51,7 @@ internal sealed class ArtistAutoplaySelector : IAutoplaySelector
             _timeProvider.GetUtcNow() - AutoplayRules.RecentlyPlayedWindow,
             cancellationToken);
 
-        Guid[] artistIds = [.. seeds.Where(seed => seed.ArtistId is not null).Select(seed => seed.ArtistId!.Value)
-            .Distinct()];
+        Guid[] artistIds = [.. seeds.SelectMany(seed => seed.ArtistIds).Distinct()];
         IReadOnlyList<AutoplayCandidateRow> artistCandidates = artistIds.Length == 0
             ? []
             : await _repository.ListCandidatesAsync(

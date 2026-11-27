@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using WaveMP.Data.Entities;
 using WaveMP.Data.Projections;
 using WaveMP.Data.Queries;
+using WaveMP.Data.Texts;
 
 namespace WaveMP.Data.Repositories;
 
@@ -89,16 +90,20 @@ internal sealed class ArtistRepository(WaveMpDbContext dbContext) : IArtistRepos
     {
         if (query.Search is { } search)
         {
+            // Also by the normalized name, so "kflay" or "Beyonce" finds "K.Flay" and "Beyoncé".
             string pattern = LikePatterns.Contains(search);
+            string keyPattern = NameKeys.Of(search) is { } key ? LikePatterns.Contains(key) : pattern;
             artists = artists.Where(artist =>
                 EF.Functions.ILike(artist.Name, pattern, LikePatterns.EscapeCharacter)
+                || EF.Functions.Like(artist.NormalizedName, keyPattern, LikePatterns.EscapeCharacter)
                 || EF.Functions.TrigramsAreWordSimilar(search, artist.Name));
         }
 
         if (query.SourceId is { } sourceId)
         {
             artists = artists.Where(artist => dbContext.Tracks.Any(track => track.SourceId == sourceId
-                && (track.ArtistId == artist.Id || (track.Album != null && track.Album.AlbumArtistId == artist.Id))));
+                && (track.ArtistCredits.Any(credit => credit.ArtistId == artist.Id)
+                || (track.Album != null && track.Album.ArtistCredits.Any(credit => credit.ArtistId == artist.Id)))));
         }
 
         if (query.MyMusic)
@@ -108,7 +113,8 @@ internal sealed class ArtistRepository(WaveMpDbContext dbContext) : IArtistRepos
                 dbContext,
                 MyMusicQueries.RequireUser(query.UserId, "My music"));
             artists = artists.Where(artist => myTracks.Any(track =>
-                track.ArtistId == artist.Id || (track.Album != null && track.Album.AlbumArtistId == artist.Id)));
+                track.ArtistCredits.Any(credit => credit.ArtistId == artist.Id)
+                || (track.Album != null && track.Album.ArtistCredits.Any(credit => credit.ArtistId == artist.Id))));
         }
 
         return artists;
@@ -133,9 +139,10 @@ internal sealed class ArtistRepository(WaveMpDbContext dbContext) : IArtistRepos
     }
 
     /// <summary>
-    /// Albums count with the artist as album artist or with tracks of the artist, tracks with the artist or on albums
-    /// of the artist, like the artist filters of the album and track lists. Without a user, no artist is a favorite.
-    /// The albums of the collage are added afterwards by <see cref="WithCollagesAsync"/>.
+    /// Albums count with the artist as one of their album artists or with tracks of the artist, tracks with the artist
+    /// as one of their artists or on albums of the artist, like the artist filters of the album and track lists.
+    /// Without a user, no artist is a favorite. The albums of the collage are added afterwards by <see
+    /// cref="WithCollagesAsync"/>.
     /// </summary>
     private IQueryable<ArtistRow> Project(IQueryable<Artist> artists, Guid? userId)
     {
@@ -144,9 +151,11 @@ internal sealed class ArtistRepository(WaveMpDbContext dbContext) : IArtistRepos
             artist.Id,
             artist.Name,
             dbContext.Albums.Count(album =>
-                album.AlbumArtistId == artist.Id || album.Tracks.Any(track => track.ArtistId == artist.Id)),
+                album.ArtistCredits.Any(credit => credit.ArtistId == artist.Id)
+                || album.Tracks.Any(track => track.ArtistCredits.Any(credit => credit.ArtistId == artist.Id))),
             dbContext.Tracks.Count(track =>
-                track.ArtistId == artist.Id || (track.Album != null && track.Album.AlbumArtistId == artist.Id)),
+                track.ArtistCredits.Any(credit => credit.ArtistId == artist.Id)
+                || (track.Album != null && track.Album.ArtistCredits.Any(credit => credit.ArtistId == artist.Id))),
             artist.FirstSeenAt,
             dbContext.Favorites.Any(favorite => favorite.UserId == user && favorite.ArtistId == artist.Id),
             new ArtistPictureRow(
@@ -194,19 +203,21 @@ internal sealed class ArtistRepository(WaveMpDbContext dbContext) : IArtistRepos
                 || (cover.Source == CoverSource.Embedded && cover.Track != null && cover.Track.AlbumId == album.Id))
             || dbContext.OnlineCovers.Any(cover => cover.AlbumId == album.Id));
         List<CollageAlbum> asAlbumArtist = await withCover
-            .Where(album => album.AlbumArtistId != null && ids.Contains(album.AlbumArtistId.Value))
-            .Select(album => new CollageAlbum(
-                album.AlbumArtistId!.Value,
-                album.Id,
-                true,
-                album.Year,
-                album.NormalizedTitle))
+            .SelectMany(
+                album => album.ArtistCredits.Where(credit => ids.Contains(credit.ArtistId)),
+                (album, credit) => new CollageAlbum(
+                    credit.ArtistId,
+                    album.Id,
+                    true,
+                    album.Year,
+                    album.NormalizedTitle))
             .ToListAsync(cancellationToken);
         List<CollageAlbum> withTracks = await withCover
             .SelectMany(
-                album => album.Tracks.Where(track => track.ArtistId != null && ids.Contains(track.ArtistId.Value)),
-                (album, track) => new CollageAlbum(
-                    track.ArtistId!.Value,
+                album => album.Tracks.SelectMany(track => track.ArtistCredits)
+                    .Where(credit => ids.Contains(credit.ArtistId)),
+                (album, credit) => new CollageAlbum(
+                    credit.ArtistId,
                     album.Id,
                     false,
                     album.Year,

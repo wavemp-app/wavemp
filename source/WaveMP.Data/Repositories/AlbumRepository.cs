@@ -70,7 +70,11 @@ internal sealed class AlbumRepository(WaveMpDbContext dbContext) : IAlbumReposit
                 || dbContext.OnlineCovers.Any(cover => cover.AlbumId == album.Id)
                 || (album.CoverFallback != AlbumCoverFallback.None
                     && album.AlbumArtist != null
-                    && (album.AlbumArtist.LocalPictureFileId != null || album.AlbumArtist.Pictures.Any()))))
+                    && (album.AlbumArtist.LocalPictureFileId != null || album.AlbumArtist.Pictures.Any())),
+                album.ArtistCredits
+                    .OrderBy(credit => credit.Position)
+                    .Select(credit => new ArtistCreditRow(credit.ArtistId, credit.Artist!.Name, ArtistRole.Main))
+                    .ToList()))
             .ToListAsync(cancellationToken);
     }
 
@@ -108,15 +112,17 @@ internal sealed class AlbumRepository(WaveMpDbContext dbContext) : IAlbumReposit
             albums = albums.Where(album =>
                 EF.Functions.ILike(album.Title, pattern, LikePatterns.EscapeCharacter)
                 || EF.Functions.TrigramsAreWordSimilar(search, album.Title)
-                || (album.AlbumArtist != null
-                    && (EF.Functions.ILike(album.AlbumArtist.Name, pattern, LikePatterns.EscapeCharacter)
-                        || EF.Functions.TrigramsAreWordSimilar(search, album.AlbumArtist.Name))));
+                || album.ArtistCredits.Any(credit =>
+                    EF.Functions.ILike(credit.Artist!.Name, pattern, LikePatterns.EscapeCharacter)
+                    || EF.Functions.TrigramsAreWordSimilar(search, credit.Artist.Name)));
         }
 
         if (query.ArtistId is { } artistId)
         {
+            // As one of its album artists or of the artists of one of its tracks.
             albums = albums.Where(album =>
-                album.AlbumArtistId == artistId || album.Tracks.Any(track => track.ArtistId == artistId));
+                album.ArtistCredits.Any(credit => credit.ArtistId == artistId)
+                || album.Tracks.Any(track => track.ArtistCredits.Any(credit => credit.ArtistId == artistId)));
         }
 
         if (query.Genre is { } genre)
@@ -207,6 +213,10 @@ internal sealed class AlbumRepository(WaveMpDbContext dbContext) : IAlbumReposit
                 && album.AlbumArtist != null
                 && (album.AlbumArtist.LocalPictureFileId != null || album.AlbumArtist.Pictures.Any())),
             album.FirstSeenAt,
-            dbContext.Favorites.Any(favorite => favorite.UserId == user && favorite.AlbumId == album.Id)));
+            dbContext.Favorites.Any(favorite => favorite.UserId == user && favorite.AlbumId == album.Id),
+            album.ArtistCredits
+                .OrderBy(credit => credit.Position)
+                .Select(credit => new ArtistCreditRow(credit.ArtistId, credit.Artist!.Name, ArtistRole.Main))
+                .ToList()));
     }
 }

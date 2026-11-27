@@ -104,6 +104,29 @@ namespace WaveMP.Data.Migrations
                     b.ToTable("albums", (string)null);
                 });
 
+            modelBuilder.Entity("WaveMP.Data.Entities.AlbumArtistCredit", b =>
+                {
+                    b.Property<Guid>("AlbumId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("album_id");
+
+                    b.Property<Guid>("ArtistId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("artist_id");
+
+                    b.Property<int>("Position")
+                        .HasColumnType("integer")
+                        .HasColumnName("position");
+
+                    b.HasKey("AlbumId", "ArtistId")
+                        .HasName("pk_album_artist_credits");
+
+                    b.HasIndex("ArtistId")
+                        .HasDatabaseName("ix_album_artist_credits_artist_id");
+
+                    b.ToTable("album_artist_credits", (string)null);
+                });
+
             modelBuilder.Entity("WaveMP.Data.Entities.AlbumMove", b =>
                 {
                     b.Property<Guid>("FromAlbumId")
@@ -843,6 +866,11 @@ namespace WaveMP.Data.Migrations
                                 .HasColumnType("character varying(512)")
                                 .HasColumnName("tags_album_artist_sort");
 
+                            b1.PrimitiveCollection<List<string>>("AlbumArtistValues")
+                                .IsRequired()
+                                .HasColumnType("text[]")
+                                .HasColumnName("tags_album_artist_values");
+
                             b1.Property<string>("AlbumSort")
                                 .HasMaxLength(512)
                                 .HasColumnType("character varying(512)")
@@ -857,6 +885,11 @@ namespace WaveMP.Data.Migrations
                                 .HasMaxLength(512)
                                 .HasColumnType("character varying(512)")
                                 .HasColumnName("tags_artist_sort");
+
+                            b1.PrimitiveCollection<List<string>>("ArtistValues")
+                                .IsRequired()
+                                .HasColumnType("text[]")
+                                .HasColumnName("tags_artist_values");
 
                             b1.Property<string>("Artists")
                                 .HasMaxLength(512)
@@ -895,10 +928,20 @@ namespace WaveMP.Data.Migrations
                                 .HasColumnType("character varying(64)")
                                 .HasColumnName("tags_music_brainz_album_artist_id");
 
+                            b1.PrimitiveCollection<List<string>>("MusicBrainzAlbumArtistIds")
+                                .IsRequired()
+                                .HasColumnType("text[]")
+                                .HasColumnName("tags_music_brainz_album_artist_ids");
+
                             b1.Property<string>("MusicBrainzArtistId")
                                 .HasMaxLength(64)
                                 .HasColumnType("character varying(64)")
                                 .HasColumnName("tags_music_brainz_artist_id");
+
+                            b1.PrimitiveCollection<List<string>>("MusicBrainzArtistIds")
+                                .IsRequired()
+                                .HasColumnType("text[]")
+                                .HasColumnName("tags_music_brainz_artist_ids");
 
                             b1.Property<string>("MusicBrainzReleaseId")
                                 .HasMaxLength(64)
@@ -2253,6 +2296,35 @@ namespace WaveMP.Data.Migrations
                     b.ToTable("tracks", (string)null);
                 });
 
+            modelBuilder.Entity("WaveMP.Data.Entities.TrackArtistCredit", b =>
+                {
+                    b.Property<Guid>("TrackId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("track_id");
+
+                    b.Property<Guid>("ArtistId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("artist_id");
+
+                    b.Property<int>("Position")
+                        .HasColumnType("integer")
+                        .HasColumnName("position");
+
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("role");
+
+                    b.HasKey("TrackId", "ArtistId")
+                        .HasName("pk_track_artist_credits");
+
+                    b.HasIndex("ArtistId")
+                        .HasDatabaseName("ix_track_artist_credits_artist_id");
+
+                    b.ToTable("track_artist_credits", (string)null);
+                });
+
             modelBuilder.Entity("WaveMP.Data.Entities.TrackFileSelection", b =>
                 {
                     b.Property<Guid>("TrackId")
@@ -2567,6 +2639,27 @@ namespace WaveMP.Data.Migrations
                         .HasConstraintName("fk_albums_artists_album_artist_id");
 
                     b.Navigation("AlbumArtist");
+                });
+
+            modelBuilder.Entity("WaveMP.Data.Entities.AlbumArtistCredit", b =>
+                {
+                    b.HasOne("WaveMP.Data.Entities.Album", "Album")
+                        .WithMany("ArtistCredits")
+                        .HasForeignKey("AlbumId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_album_artist_credits_albums_album_id");
+
+                    b.HasOne("WaveMP.Data.Entities.Artist", "Artist")
+                        .WithMany()
+                        .HasForeignKey("ArtistId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_album_artist_credits_artists_artist_id");
+
+                    b.Navigation("Album");
+
+                    b.Navigation("Artist");
                 });
 
             modelBuilder.Entity("WaveMP.Data.Entities.AlbumMove", b =>
@@ -3114,6 +3207,27 @@ namespace WaveMP.Data.Migrations
                     b.Navigation("Source");
                 });
 
+            modelBuilder.Entity("WaveMP.Data.Entities.TrackArtistCredit", b =>
+                {
+                    b.HasOne("WaveMP.Data.Entities.Artist", "Artist")
+                        .WithMany()
+                        .HasForeignKey("ArtistId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_track_artist_credits_artists_artist_id");
+
+                    b.HasOne("WaveMP.Data.Entities.Track", "Track")
+                        .WithMany("ArtistCredits")
+                        .HasForeignKey("TrackId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_track_artist_credits_tracks_track_id");
+
+                    b.Navigation("Artist");
+
+                    b.Navigation("Track");
+                });
+
             modelBuilder.Entity("WaveMP.Data.Entities.TrackFileSelection", b =>
                 {
                     b.HasOne("WaveMP.Data.Entities.Track", "Track")
@@ -3161,6 +3275,8 @@ namespace WaveMP.Data.Migrations
 
             modelBuilder.Entity("WaveMP.Data.Entities.Album", b =>
                 {
+                    b.Navigation("ArtistCredits");
+
                     b.Navigation("Covers");
 
                     b.Navigation("Tracks");
@@ -3193,6 +3309,8 @@ namespace WaveMP.Data.Migrations
 
             modelBuilder.Entity("WaveMP.Data.Entities.Track", b =>
                 {
+                    b.Navigation("ArtistCredits");
+
                     b.Navigation("Covers");
 
                     b.Navigation("FileSelections");

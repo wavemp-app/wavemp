@@ -47,8 +47,13 @@ internal static class ListeningStatisticsCalculator
         List<CountedTrack> tracks = CountTracks(plays);
         var trackById = tracks.ToDictionary(track => track.TrackId);
 
+        // A play counts for every artist of its track.
         List<CountedGroup> artists = CountGroups(
-            plays.Where(play => play.ArtistId is not null),
+            plays.SelectMany(play => play.AllArtists.Select(artist => play with
+            {
+                ArtistId = artist.Id,
+                ArtistName = artist.Name,
+            })),
             play => play.ArtistId!.Value.ToString(),
             group => group.First().ArtistName ?? string.Empty,
             trackById,

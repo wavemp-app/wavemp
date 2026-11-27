@@ -566,6 +566,49 @@ public class TrackRepositoryTests : LibraryDatabaseTests
             library.Hits.Id);
     }
 
+    [Test]
+    public async Task ListAsync_SongWithSeveralArtists_IsListedForEachOfThemWithAllItsArtists()
+    {
+        LibrarySeed seed = new();
+        Artist bob = seed.Artist("Bob Sinclar");
+        Artist simon = seed.Artist("Simon & Garfunkel");
+        Artist kflay = seed.Artist("K.Flay");
+        Artist other = seed.Artist("Other");
+        Track song = seed.Track("Together", bob, moreArtists: [simon], featuring: [kflay]);
+        seed.Track("Alone", other);
+        await SaveAsync(seed);
+
+        foreach (Artist artist in new[] { bob, simon, kflay })
+        {
+            Page<TrackRow> page = await ListAsync(Query(artistId: artist.Id));
+            page.Items.Select(track => track.Id).Should().Equal(song.Id);
+        }
+
+        TrackRow row = (await ListAsync(Query(search: "K.Flay"))).Items.Single();
+        row.Id.Should().Be(song.Id);
+        (row.ArtistId, row.ArtistName).Should().Be((bob.Id, "Bob Sinclar"));
+        row.AllArtists.Should().Equal(
+            new ArtistCreditRow(bob.Id, "Bob Sinclar"),
+            new ArtistCreditRow(simon.Id, "Simon & Garfunkel"),
+            new ArtistCreditRow(kflay.Id, "K.Flay", ArtistRole.Featured));
+    }
+
+    [Test]
+    public async Task ListAsync_AlbumWithSeveralAlbumArtists_ListsItsSongsForEachOfThem()
+    {
+        LibrarySeed seed = new();
+        Artist first = seed.Artist("First");
+        Artist second = seed.Artist("Second");
+        Album album = seed.Album("Shared", first, moreAlbumArtists: [second]);
+        Track song = seed.Track("Song", first, album);
+        await SaveAsync(seed);
+
+        TrackRow row = (await ListAsync(Query(artistId: second.Id))).Items.Single();
+
+        row.Id.Should().Be(song.Id);
+        row.AllAlbumArtists.Select(artist => artist.Name).Should().Equal("First", "Second");
+    }
+
     private static TrackListQuery Query(
         string? search = null,
         Guid? artistId = null,

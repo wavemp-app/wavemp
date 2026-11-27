@@ -1,5 +1,6 @@
 using AwesomeAssertions;
 using WaveMP.Core.Recaps.Statistics;
+using WaveMP.Data.Entities;
 using WaveMP.Data.Projections;
 
 namespace WaveMP.Core.Recaps.Tests.Statistics;
@@ -74,6 +75,29 @@ public class ListeningStatisticsCalculatorTests
         result.TopGenres.Select(genre => (genre.Name, genre.Plays, genre.Tracks)).Should().Equal(
             ("Pop", 3, 2),
             ("Rock", 1, 1));
+    }
+
+    [Test]
+    public void Calculate_SongWithSeveralArtists_CountsForEachOfThem()
+    {
+        PlayStatisticsRow duet = Plays.Of(Plays.Ballad, _day) with
+        {
+            Artists =
+            [
+                new ArtistCreditRow(Plays.Aurora, "Aurora"),
+                new ArtistCreditRow(Plays.Breeze, "Breeze", ArtistRole.Featured),
+            ],
+        };
+        List<PlayStatisticsRow> plays =
+            [duet, duet with { PlayedAt = _day.AddHours(1) }, Plays.Of(Plays.Closing, _day)];
+
+        StatisticsCalculation result = Calculate(plays);
+
+        result.TopArtists.Select(artist => (artist.Name, artist.Plays, artist.Tracks)).Should().Equal(
+            ("Breeze", 3, 2),
+            ("Aurora", 2, 1));
+        result.Totals.Artists.Should().Be(2);
+        result.Totals.Plays.Should().Be(3);
     }
 
     [Test]

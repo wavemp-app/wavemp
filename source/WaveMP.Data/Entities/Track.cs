@@ -39,9 +39,19 @@ public class Track
 
     public required string Title { get; set; }
 
+    /// <summary>
+    /// The first artist of the track (position 0 of <see cref="ArtistCredits"/>), kept with the track: it sorts and
+    /// groups the songs and serves the fields that name one artist. The scan and the editor keep it equal to the first
+    /// credit.
+    /// </summary>
     public Guid? ArtistId { get; set; }
 
     public Artist? Artist { get; set; }
+
+    /// <summary>
+    /// All artists of the track in their order, each with its role (main or featured artist).
+    /// </summary>
+    public ICollection<TrackArtistCredit> ArtistCredits { get; set; } = [];
 
     public Guid? AlbumId { get; set; }
 

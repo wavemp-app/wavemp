@@ -31,4 +31,9 @@ public static class LibraryLimits
     /// Highest track or disc number.
     /// </summary>
     public const int MaxNumber = 9999;
+
+    /// <summary>
+    /// Most artists or album artists the metadata editor writes for one song or album.
+    /// </summary>
+    public const int MaxArtists = 50;
 }

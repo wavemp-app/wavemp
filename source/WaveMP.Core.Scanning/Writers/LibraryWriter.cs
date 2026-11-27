@@ -1,3 +1,4 @@
+using WaveMP.Core.Metadata.Artists;
 using WaveMP.Core.Metadata.Readers;
 using WaveMP.Core.Metadata.Resolutions;
 using WaveMP.Core.Metadata.Tags;
@@ -19,15 +20,17 @@ namespace WaveMP.Core.Scanning.Writers;
 /// <summary>
 /// Writes the result of the scan of a folder into the library: files, tracks with their primary files and covers,
 /// artists and albums. All changes of a folder are saved together. Album covers and the pictures in the folders of
-/// artists are written after all folders. The files the admin selected for a track win over the quality rule as long
-/// as they exist; whether they do is stored with each selection. A song that moves from one album or artist to another
-/// one is recorded with the changes of its folder (see <see cref="ILibraryScanRepository.RecordAlbumMovesAsync"/> and
-/// <see cref="ILibraryScanRepository.RecordArtistMovesAsync"/>). A song counts for an artist as its track artist and
-/// as the album artist of its album, and leaves an artist only when that artist has neither role on it any more; a
-/// song that loses its album or artist or gets its first one records nothing. A song whose folder was renamed or moved
-/// or whose files were renamed (see <see cref="TrackMovePlanner"/>) keeps its track, with its id and all its data, at
-/// the new place, and its album and artist moves are recorded like those of any other song. Titles are cleaned as the
-/// current layout template asks for (see <see cref="TitleCleaningModes"/>).
+/// artists are written after all folders. The files the admin selected for a track win over the quality rule as long as
+/// they exist; whether they do is stored with each selection. A song that moves from one album or artist to another one
+/// is recorded with the changes of its folder (see <see cref="ILibraryScanRepository.RecordAlbumMovesAsync"/> and <see
+/// cref="ILibraryScanRepository.RecordArtistMovesAsync"/>). A song has a list of artists with their roles and its album
+/// a list of album artists (see <see cref="TrackArtistCredit"/> and <see cref="AlbumArtistCredit"/>); the first of each
+/// is also stored as the artist of the track and the album artist of the album. A song counts for an artist as one of
+/// its artists and as one of the album artists of its album, and leaves an artist only when that artist is none of them
+/// any more; a song that loses its album or artist or gets its first one records nothing. A song whose folder was
+/// renamed or moved or whose files were renamed (see <see cref="TrackMovePlanner"/>) keeps its track, with its id and
+/// all its data, at the new place, and its album and artist moves are recorded like those of any other song. Titles are
+/// cleaned as the current layout template asks for (see <see cref="TitleCleaningModes"/>).
 /// </summary>
 public sealed class LibraryWriter(
     ILibraryScanRepository library,
@@ -404,9 +407,8 @@ public sealed class LibraryWriter(
 
         foreach (ProcessedTrack processed in folder.Tracks)
         {
-            Guid? artistId = await GetArtistIdAsync(
-                processed.Metadata.Artist,
-                processed.Metadata.MusicBrainzArtistId,
+            IReadOnlyList<ArtistCreditId> artists = await GetArtistIdsAsync(
+                processed.Metadata.Artists,
                 cache,
                 now,
                 cancellationToken);
@@ -431,13 +433,17 @@ public sealed class LibraryWriter(
                 };
                 library.Add(track);
                 added++;
-                Update(track, processed, artistId, albumId, genreId);
+                Update(track, processed, artists, albumId, genreId);
             }
             else
             {
                 Guid? previousAlbumId = track.AlbumId;
-                written.Add(new WrittenSong(track.ArtistId, previousAlbumId, artistId, albumId));
-                if (Update(track, processed, artistId, albumId, genreId) | adopted.Contains(track.Id))
+                written.Add(new WrittenSong(
+                    ArtistIdsOf(track),
+                    previousAlbumId,
+                    [.. artists.Select(artist => artist.ArtistId)],
+                    albumId));
+                if (Update(track, processed, artists, albumId, genreId) | adopted.Contains(track.Id))
                 {
                     track.UpdatedAt = now;
                     updated++;
@@ -499,11 +505,13 @@ public sealed class LibraryWriter(
 
     /// <summary>
     /// The artists the stored songs of a folder left, per pair of artists, so the data of an old artist can follow its
-    /// songs once it has none left. A song belongs to an artist as its track artist and as the album artist of its
-    /// album. Each role that changed from one artist to another counts, but only when the old artist has neither role
-    /// on the song any more (it still has the song otherwise), and a pair counts once per song. Songs that lose an
-    /// artist or get their first one are no move. The album artists of the albums the songs left are queried once,
-    /// and only when some song changed its album: an album never changes its album artist, which is part of its key.
+    /// songs once it has none left. A song belongs to an artist as one of its artists and as one of the album artists
+    /// of its album. An artist at a place of either list that changed to another artist counts, but only when the old
+    /// artist is none of the artists of the song any more (it still has the song otherwise), and a pair counts once per
+    /// song; e.g. "Bob Sinclar feat. K.Flay" as one artist that became the artists "Bob Sinclar" and "K.Flay" gives
+    /// its data to "Bob Sinclar". Songs that lose an artist or get their first one are no move. The album artists of
+    /// the albums the songs left are queried once, and only when some song changed its album: an album never changes
+    /// its album artists, which are part of its key.
     /// </summary>
     private async Task<Dictionary<(Guid FromArtistId, Guid ToArtistId), int>> ArtistMovesOfAsync(
         IReadOnlyList<WrittenSong> songs,
@@ -516,34 +524,41 @@ public sealed class LibraryWriter(
                 && !cache.AlbumArtists.ContainsKey(previous))
             .Select(song => song.PreviousAlbumId!.Value)
             .Distinct()];
-        IReadOnlyDictionary<Guid, Guid?> leftAlbumArtists = leftAlbums.Length == 0
-            ? new Dictionary<Guid, Guid?>()
+        IReadOnlyDictionary<Guid, IReadOnlyList<Guid>> leftAlbumArtists = leftAlbums.Length == 0
+            ? new Dictionary<Guid, IReadOnlyList<Guid>>()
             : await library.GetAlbumArtistIdsAsync(leftAlbums, cancellationToken);
 
         foreach (WrittenSong song in songs)
         {
-            Guid? previousAlbumArtistId = song.PreviousAlbumId is { } previousAlbumId
-                ? cache.AlbumArtists.TryGetValue(previousAlbumId, out Guid? cached)
+            IReadOnlyList<Guid> previousAlbumArtists = song.PreviousAlbumId is { } previousAlbumId
+                ? cache.AlbumArtists.TryGetValue(previousAlbumId, out IReadOnlyList<Guid>? cached)
                     ? cached
-                    : leftAlbumArtists.GetValueOrDefault(previousAlbumId)
-                : null;
-            Guid? albumArtistId = song.AlbumId is { } albumId ? cache.AlbumArtists.GetValueOrDefault(albumId) : null;
+                    : leftAlbumArtists.GetValueOrDefault(previousAlbumId, [])
+                : [];
+            IReadOnlyList<Guid> albumArtists = song.AlbumId is { } albumId
+                ? cache.AlbumArtists.GetValueOrDefault(albumId, [])
+                : [];
+            HashSet<Guid> current = [.. song.ArtistIds, .. albumArtists];
             HashSet<(Guid, Guid)> pairs = [];
-            foreach ((Guid? from, Guid? to) in new[]
+            foreach ((Guid from, Guid to) in Pairs(song.PreviousArtistIds, song.ArtistIds)
+                .Concat(Pairs(previousAlbumArtists, albumArtists)))
             {
-                (song.PreviousArtistId, song.ArtistId),
-                (previousAlbumArtistId, albumArtistId),
-            })
-            {
-                if (from is { } fromId && to is { } toId && fromId != toId
-                    && fromId != song.ArtistId && fromId != albumArtistId && pairs.Add((fromId, toId)))
+                if (from != to && !current.Contains(from) && pairs.Add((from, to)))
                 {
-                    moves[(fromId, toId)] = moves.GetValueOrDefault((fromId, toId)) + 1;
+                    moves[(from, to)] = moves.GetValueOrDefault((from, to)) + 1;
                 }
             }
         }
 
         return moves;
+
+        static IEnumerable<(Guid From, Guid To)> Pairs(IReadOnlyList<Guid> before, IReadOnlyList<Guid> after)
+        {
+            // An artist at a place that is gone goes to the last artist of the new list.
+            return after.Count == 0
+                ? []
+                : before.Select((from, index) => (from, after[Math.Min(index, after.Count - 1)]));
+        }
     }
 
     /// <summary>
@@ -567,18 +582,21 @@ public sealed class LibraryWriter(
     /// <summary>
     /// Applies the processed values to the track. Returns whether anything changed.
     /// </summary>
-    private static bool Update(
+    private bool Update(
         Track track,
         ProcessedTrack processed,
-        Guid? artistId,
+        IReadOnlyList<ArtistCreditId> artists,
         Guid? albumId,
         Guid? genreId)
     {
         ResolvedTrackMetadata metadata = processed.Metadata;
+        Guid? artistId = artists.Count > 0 ? artists[0].ArtistId : null;
+        bool creditsChanged = SyncCredits(track, artists);
         bool hasAudio = processed.PrimaryAudio is not null;
         bool hasVideo = processed.PrimaryVideo is not null;
 
-        bool changed = track.BaseName != processed.Group.BaseName
+        bool changed = creditsChanged
+            || track.BaseName != processed.Group.BaseName
             || track.Title != metadata.Title
             || track.MetadataSource != metadata.TitleSource
             || track.ArtistId != artistId
@@ -604,6 +622,93 @@ public sealed class LibraryWriter(
         track.HasAudio = hasAudio;
         track.HasVideo = hasVideo;
         return changed;
+    }
+
+    /// <summary>
+    /// Makes the list of artists of the track match the wanted one, keeping the credits of artists that stay. Returns
+    /// whether anything changed.
+    /// </summary>
+    private bool SyncCredits(Track track, IReadOnlyList<ArtistCreditId> artists)
+    {
+        bool changed = false;
+        HashSet<Guid> wanted = [.. artists.Select(artist => artist.ArtistId)];
+        foreach (TrackArtistCredit removed in track.ArtistCredits.Where(credit => !wanted.Contains(credit.ArtistId))
+            .ToList())
+        {
+            track.ArtistCredits.Remove(removed);
+            library.Remove(removed);
+            changed = true;
+        }
+
+        for (int position = 0; position < artists.Count; position++)
+        {
+            ArtistCreditId artist = artists[position];
+            TrackArtistCredit? credit = track.ArtistCredits.FirstOrDefault(item => item.ArtistId == artist.ArtistId);
+            if (credit is null)
+            {
+                credit = new TrackArtistCredit
+                {
+                    TrackId = track.Id,
+                    ArtistId = artist.ArtistId,
+                    Position = position,
+                    Role = artist.Role,
+                };
+                track.ArtistCredits.Add(credit);
+                library.Add(credit);
+                changed = true;
+            }
+            else if (credit.Position != position || credit.Role != artist.Role)
+            {
+                credit.Position = position;
+                credit.Role = artist.Role;
+                changed = true;
+            }
+        }
+
+        return changed;
+    }
+
+    /// <summary>
+    /// The artists of a stored track in their order; the artist of the track if it has no list.
+    /// </summary>
+    private static IReadOnlyList<Guid> ArtistIdsOf(Track track)
+    {
+        return track.ArtistCredits.Count > 0
+            ? [.. track.ArtistCredits.OrderBy(credit => credit.Position).Select(credit => credit.ArtistId)]
+            : track.ArtistId is { } artistId ? [artistId] : [];
+    }
+
+    /// <summary>
+    /// The ids of the artists of a list of names (see <see cref="GetArtistIdAsync"/>), in their order. Names that lead
+    /// to the same artist (e.g. by their MusicBrainz artist) appear once, as main artist if one of them is.
+    /// </summary>
+    private async Task<IReadOnlyList<ArtistCreditId>> GetArtistIdsAsync(
+        IReadOnlyList<ArtistName> names,
+        EntityCache cache,
+        DateTimeOffset now,
+        CancellationToken cancellationToken)
+    {
+        List<ArtistCreditId> artists = [];
+        foreach (ArtistName name in names)
+        {
+            Guid? found = await GetArtistIdAsync(name.Name, name.MusicBrainzArtistId, cache, now, cancellationToken);
+            if (found is not { } id)
+            {
+                continue;
+            }
+
+            int index = artists.FindIndex(artist => artist.ArtistId == id);
+            if (index < 0)
+            {
+                artists.Add(new ArtistCreditId(id, name.Role));
+            }
+            else if (name.Role == ArtistRole.Main)
+            {
+                artists[index] = artists[index] with { Role = ArtistRole.Main };
+            }
+        }
+
+        return artists;
     }
 
     /// <summary>
@@ -747,18 +852,22 @@ public sealed class LibraryWriter(
         album ??= await library.FindAlbumAsync(assignment.Key, cancellationToken);
         if (album is null)
         {
+            Guid[] albumArtists = [.. (await GetArtistIdsAsync(assignment.AlbumArtists, cache, now, cancellationToken))
+                .Select(artist => artist.ArtistId)];
+            var albumId = Guid.CreateVersion7(now);
             album = new Album
             {
-                Id = Guid.CreateVersion7(now),
+                Id = albumId,
                 Title = assignment.Title,
                 NormalizedTitle = NameKeys.Of(assignment.Title)!,
                 AlbumKey = assignment.Key,
-                AlbumArtistId = await GetArtistIdAsync(
-                    assignment.AlbumArtist,
-                    assignment.AlbumArtistMusicBrainzId,
-                    cache,
-                    now,
-                    cancellationToken),
+                AlbumArtistId = albumArtists.Length > 0 ? albumArtists[0] : null,
+                ArtistCredits = [.. albumArtists.Select((artistId, position) => new AlbumArtistCredit
+                {
+                    AlbumId = albumId,
+                    ArtistId = artistId,
+                    Position = position,
+                })],
                 // Set over all its tracks once every folder is written (see UpdateAlbumCompilationsAsync).
                 IsCompilation = false,
                 Year = assignment.Year,
@@ -774,7 +883,9 @@ public sealed class LibraryWriter(
         }
 
         cache.Albums[assignment.Key] = album.Id;
-        cache.AlbumArtists[album.Id] = album.AlbumArtistId;
+        cache.AlbumArtists[album.Id] = album.ArtistCredits.Count > 0
+            ? [.. album.ArtistCredits.OrderBy(credit => credit.Position).Select(credit => credit.ArtistId)]
+            : album.AlbumArtistId is { } first ? [first] : [];
         return album.Id;
     }
 
@@ -929,8 +1040,10 @@ public sealed class LibraryWriter(
             TitleSort = tags.TitleSort,
             Artist = tags.Artist,
             Artists = tags.Artists,
+            ArtistValues = [.. tags.ArtistValues],
             ArtistSort = tags.ArtistSort,
             AlbumArtist = tags.AlbumArtist,
+            AlbumArtistValues = [.. tags.AlbumArtistValues],
             AlbumArtistSort = tags.AlbumArtistSort,
             Album = tags.Album,
             AlbumSort = tags.AlbumSort,
@@ -950,6 +1063,8 @@ public sealed class LibraryWriter(
             MusicBrainzReleaseId = Truncate(tags.MusicBrainzReleaseId, 64),
             MusicBrainzArtistId = tags.MusicBrainzArtistId,
             MusicBrainzAlbumArtistId = tags.MusicBrainzAlbumArtistId,
+            MusicBrainzArtistIds = [.. tags.MusicBrainzArtistIds],
+            MusicBrainzAlbumArtistIds = [.. tags.MusicBrainzAlbumArtistIds],
             IsCompilation = tags.IsCompilation,
         };
     }
@@ -967,7 +1082,16 @@ public sealed class LibraryWriter(
     /// <summary>
     /// The artists and album of a stored song before and after it was written.
     /// </summary>
-    private sealed record WrittenSong(Guid? PreviousArtistId, Guid? PreviousAlbumId, Guid? ArtistId, Guid? AlbumId);
+    private sealed record WrittenSong(
+        IReadOnlyList<Guid> PreviousArtistIds,
+        Guid? PreviousAlbumId,
+        IReadOnlyList<Guid> ArtistIds,
+        Guid? AlbumId);
+
+    /// <summary>
+    /// An artist of a song by id, with its role.
+    /// </summary>
+    private sealed record ArtistCreditId(Guid ArtistId, ArtistRole Role);
 
     /// <summary>
     /// Artists and albums found or created while writing one folder, and the album artist of each of these albums.
@@ -978,7 +1102,7 @@ public sealed class LibraryWriter(
 
         public Dictionary<string, Guid> Albums { get; } = new(StringComparer.Ordinal);
 
-        public Dictionary<Guid, Guid?> AlbumArtists { get; } = [];
+        public Dictionary<Guid, IReadOnlyList<Guid>> AlbumArtists { get; } = [];
 
         public Dictionary<Guid, Guid> MusicBrainzArtists { get; } = [];
 

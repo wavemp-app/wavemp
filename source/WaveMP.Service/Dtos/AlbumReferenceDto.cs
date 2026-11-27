@@ -10,10 +10,15 @@ public sealed class AlbumReferenceDto
     public required string Title { get; init; }
 
     /// <summary>
-    /// Artist of the album: the album artist of its tracks, otherwise their artist; null for albums without a known
-    /// artist and for compilations formed by the compilation flag without an album artist tag.
+    /// The first artist of the album: the first album artist of its tracks, otherwise their first main artist; null for
+    /// albums without a known artist and for compilations formed by the compilation flag without an album artist tag.
     /// </summary>
     public ArtistReferenceDto? Artist { get; init; }
+
+    /// <summary>
+    /// All album artists in their order; the first one is Artist. Empty for albums without a known artist.
+    /// </summary>
+    public required IReadOnlyList<ArtistCreditDto> Artists { get; init; }
 
     /// <summary>
     /// Whether the album is a compilation: at least one of its tracks is marked as part of a compilation in its tags

@@ -1,4 +1,5 @@
 using AwesomeAssertions;
+using WaveMP.Core.Metadata.Artists;
 using WaveMP.Core.Metadata.Resolutions;
 using WaveMP.Data.Entities;
 
@@ -18,7 +19,7 @@ public class AlbumResolverTests
 
         result.Should().AllSatisfy(album => album.Should().Be(new AlbumAssignment(
             "Album",
-            "Band",
+            [new ArtistName("Band")],
             2001,
             AlbumKeys.Create("Album", "Band"))));
     }
@@ -48,7 +49,7 @@ public class AlbumResolverTests
 
         result.Should().AllSatisfy(album => album.Should().Be(new AlbumAssignment(
             "Hits",
-            "Various Artists",
+            [new ArtistName("Various Artists")],
             null,
             AlbumKeys.Create("Hits", "Various Artists"))));
     }
@@ -74,7 +75,7 @@ public class AlbumResolverTests
         IReadOnlyList<AlbumAssignment?> second = AlbumResolver.Resolve([Track(null, album: "Hits")], "a/Two");
         IReadOnlyList<AlbumAssignment?> again = AlbumResolver.Resolve([Track(null, album: "HITS")], "a/One");
 
-        first[0].Should().Be(new AlbumAssignment("Hits", null, null, AlbumKeys.Create("Hits", null, "a/One")));
+        first[0].Should().Be(new AlbumAssignment("Hits", [], null, AlbumKeys.Create("Hits", null, "a/One")));
         second[0]!.Key.Should().NotBe(first[0]!.Key);
         again[0]!.Key.Should().Be(first[0]!.Key);
     }
@@ -102,7 +103,7 @@ public class AlbumResolverTests
 
         result.Should().AllSatisfy(album => album.Should().Be(new AlbumAssignment(
             "Hits",
-            null,
+            [],
             null,
             AlbumKeys.Create("Hits", null, "a/Hits"))));
     }
@@ -132,7 +133,7 @@ public class AlbumResolverTests
         IReadOnlyList<AlbumAssignment?> first = AlbumResolver.Resolve(tracks, "a/One");
         IReadOnlyList<AlbumAssignment?> second = AlbumResolver.Resolve(tracks, "b/Two");
 
-        first[0].Should().Be(new AlbumAssignment("Mix", "DJ", null, AlbumKeys.Create("Mix", "DJ")));
+        first[0].Should().Be(new AlbumAssignment("Mix", [new ArtistName("DJ")], null, AlbumKeys.Create("Mix", "DJ")));
         second[0].Should().Be(first[0]);
     }
 
@@ -163,7 +164,7 @@ public class AlbumResolverTests
             [Track("A", albumArtist, "Hits", isCompilation: true)],
             "a/Hits");
 
-        result[0].Should().Be(new AlbumAssignment("Hits", null, null, AlbumKeys.Create("Hits", null, "a/Hits")));
+        result[0].Should().Be(new AlbumAssignment("Hits", [], null, AlbumKeys.Create("Hits", null, "a/Hits")));
     }
 
     [Test]

@@ -42,4 +42,12 @@ public enum LibraryIssueType
     /// The track has an audio file but no video. A hint only.
     /// </summary>
     AudioWithoutVideo,
+
+    /// <summary>
+    /// An artist name of the track may name several artists: it contains a comma, a slash, or "&amp;", "and", "x" or
+    /// "+" between spaces (e.g. "Simon &amp; Garfunkel" or "Bob Sinclar &amp; K.Flay"), which the scan never splits,
+    /// and the tags do not hold the artists as separate values. A hint only; the admin confirms the suggested split or
+    /// keeps the name, both by writing the artists as separate values.
+    /// </summary>
+    PossibleMultipleArtists,
 }

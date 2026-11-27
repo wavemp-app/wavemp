@@ -3,8 +3,10 @@ using AwesomeAssertions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using WaveMP.Core.Metadata.Artists;
 using WaveMP.Core.Metadata.Tags;
 using WaveMP.Core.Scanning.Edits;
+using WaveMP.Data.Entities;
 using WaveMP.Service.Dtos;
 using WaveMP.Service.Extensions;
 using WaveMP.Service.Mappings;
@@ -78,6 +80,32 @@ public class TrackMetadataMappingExtensionsTests
     }
 
     [Test]
+    public void ToChanges_Artists_BecomeCreditsInTheirOrderWithRoles()
+    {
+        TagChanges changes = Read("""
+            {
+              "artists": [{ "name": "Bob Sinclar" }, { "name": "K.Flay", "role": "Featured" }],
+              "albumArtists": [{ "name": "Simon & Garfunkel" }, { "name": "AC/DC" }]
+            }
+            """).ToChanges();
+
+        changes.ArtistCredits!.Value.Value.Should().Equal(
+            new ArtistName("Bob Sinclar"),
+            new ArtistName("K.Flay", ArtistRole.Featured));
+        changes.AlbumArtistCredits!.Value.Value.Should().Equal("Simon & Garfunkel", "AC/DC");
+        changes.Artist.Should().BeNull();
+    }
+
+    [Test]
+    public void ToChanges_EmptyArtists_RemoveTheArtists()
+    {
+        TagChanges changes = Read("""{ "artists": [], "albumArtists": null }""").ToChanges();
+
+        changes.ArtistCredits!.Value.Value.Should().BeEmpty();
+        changes.AlbumArtistCredits!.Value.Value.Should().BeEmpty();
+    }
+
+    [Test]
     public void ToChanges_EmptyObject_HasNoChanges()
     {
         Read("{}").ToChanges().IsEmpty.Should().BeTrue();
@@ -106,7 +134,9 @@ public class TrackMetadataMappingExtensionsTests
             2001,
             1,
             2,
-            "Rock");
+            "Rock",
+            [new ArtistName("Band"), new ArtistName("Guest", ArtistRole.Featured)],
+            ["Band"]);
 
         TrackMetadataDto dto = metadata.ToDto();
 
@@ -123,6 +153,12 @@ public class TrackMetadataMappingExtensionsTests
             TrackNumber = 1,
             DiscNumber = 2,
             Genre = "Rock",
+            Artists = new[]
+            {
+                new { Name = "Band", Role = ArtistRoleDto.Main },
+                new { Name = "Guest", Role = ArtistRoleDto.Featured },
+            },
+            AlbumArtists = new[] { "Band" },
         });
     }
 

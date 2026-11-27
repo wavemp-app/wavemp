@@ -25,6 +25,31 @@ public static class MusicBrainzIds
     }
 
     /// <summary>
+    /// All ids of the text in their order, e.g. the artists of a song with several artists; ids that cannot be read
+    /// and repeated ids are left out.
+    /// </summary>
+    public static IReadOnlyList<Guid> All(string? text)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            return [];
+        }
+
+        return [.. text.Split(_separators, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Select(part => Guid.TryParse(part, out Guid id) ? id : Guid.Empty)
+            .Where(id => id != Guid.Empty)
+            .Distinct()];
+    }
+
+    /// <summary>
+    /// All ids of the texts in their order, in their usual form (lower case, with hyphens).
+    /// </summary>
+    public static List<string> AllTexts(IEnumerable<string?> texts)
+    {
+        return [.. texts.SelectMany(All).Distinct().Select(id => id.ToString("D"))];
+    }
+
+    /// <summary>
     /// The id in its usual form (lower case, with hyphens) if the text names exactly one; otherwise <c>null</c>.
     /// </summary>
     public static string? SingleText(string? text)

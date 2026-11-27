@@ -29,6 +29,23 @@ public sealed class TrackMetadataDto
 
     public string? AlbumArtist { get; init; }
 
+    /// <summary>
+    /// All artists of the track in their order, each with its role: the separate values of the tags, otherwise the
+    /// artist field split at "feat.", "ft.", "featuring" and ";".
+    /// </summary>
+    public required IReadOnlyList<ArtistNameDto> Artists { get; init; }
+
+    /// <summary>
+    /// All album artists in their order, read like Artists.
+    /// </summary>
+    public required IReadOnlyList<string> AlbumArtists { get; init; }
+
+    /// <summary>
+    /// Whether the tags hold the artists as separate values (ARTISTS, several values of the artist field), so the
+    /// list of artists is confirmed and not split from a single text.
+    /// </summary>
+    public required bool HasArtistValues { get; init; }
+
     public int? Year { get; init; }
 
     /// <summary>

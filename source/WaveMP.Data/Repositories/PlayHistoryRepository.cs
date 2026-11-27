@@ -113,7 +113,11 @@ internal sealed class PlayHistoryRepository(WaveMpDbContext dbContext) : IPlayHi
                     : null,
                 entry.Track.GenreId,
                 entry.Track.Genre != null ? entry.Track.Genre.Name : null,
-                entry.Track.Duration))
+                entry.Track.Duration,
+                entry.Track.ArtistCredits
+                    .OrderBy(credit => credit.Position)
+                    .Select(credit => new ArtistCreditRow(credit.ArtistId, credit.Artist!.Name, credit.Role))
+                    .ToList()))
             .ToListAsync(cancellationToken);
     }
 
@@ -128,12 +132,14 @@ internal sealed class PlayHistoryRepository(WaveMpDbContext dbContext) : IPlayHi
         }
 
         Guid[] ids = [.. artistIds.Distinct()];
+        // A play counts for every artist of its track.
         return await dbContext.PlayHistory.AsNoTracking()
-            .Where(entry => entry.UserId == userId
-                && entry.Track!.ArtistId != null
-                && ids.Contains(entry.Track.ArtistId.Value))
-            .GroupBy(entry => entry.Track!.ArtistId!.Value)
-            .Select(group => new { ArtistId = group.Key, FirstPlayedAt = group.Min(entry => entry.PlayedAt) })
+            .Where(entry => entry.UserId == userId)
+            .SelectMany(
+                entry => entry.Track!.ArtistCredits.Where(credit => ids.Contains(credit.ArtistId)),
+                (entry, credit) => new { credit.ArtistId, entry.PlayedAt })
+            .GroupBy(play => play.ArtistId)
+            .Select(group => new { ArtistId = group.Key, FirstPlayedAt = group.Min(play => play.PlayedAt) })
             .ToDictionaryAsync(row => row.ArtistId, row => row.FirstPlayedAt, cancellationToken);
     }
 

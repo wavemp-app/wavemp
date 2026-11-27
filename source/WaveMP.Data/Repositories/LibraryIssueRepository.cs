@@ -53,6 +53,10 @@ internal sealed class LibraryIssueRepository(WaveMpDbContext dbContext) : ILibra
                 track.Duration,
                 track.HasAudio,
                 track.HasVideo,
+                Artists = track.ArtistCredits
+                    .OrderBy(credit => credit.Position)
+                    .Select(credit => credit.Artist!.Name)
+                    .ToList(),
             })
             .ToListAsync(cancellationToken);
 
@@ -68,12 +72,18 @@ internal sealed class LibraryIssueRepository(WaveMpDbContext dbContext) : ILibra
                 Title = file.Tags.Title != null,
                 Artist = file.Tags.Artist != null,
                 Album = file.Tags.Album != null,
+                ArtistValues = file.Tags.ArtistValues.Count > 0 || file.Tags.MusicBrainzArtistIds.Count > 0,
             })
             .ToListAsync(cancellationToken);
         Dictionary<(Guid, MediaFileKind), (bool Title, bool Artist, bool Album)> tags = [];
+        HashSet<(Guid, MediaFileKind)> withArtistValues = [];
         foreach (var file in files)
         {
             tags[(file.TrackId, file.Kind)] = (file.Title, file.Artist, file.Album);
+            if (file.ArtistValues)
+            {
+                withArtistValues.Add((file.TrackId, file.Kind));
+            }
         }
 
         HashSet<Guid> tracksWithCover = await TracksWithOwnCoverAsync(cancellationToken);
@@ -95,7 +105,10 @@ internal sealed class LibraryIssueRepository(WaveMpDbContext dbContext) : ILibra
                     (track.Id, track.HasAudio ? MediaFileKind.Audio : MediaFileKind.Video),
                     out (bool Title, bool Artist, bool Album) presence)
                     ? presence
-                    : null))),
+                    : null),
+                track.Artists,
+                withArtistValues.Contains(
+                    (track.Id, track.HasAudio ? MediaFileKind.Audio : MediaFileKind.Video)))),
         ];
     }
 
@@ -181,7 +194,11 @@ internal sealed class LibraryIssueRepository(WaveMpDbContext dbContext) : ILibra
                         issue.Track.BaseName,
                         issue.Track.Duration,
                         issue.Track.HasAudio,
-                        issue.Track.HasVideo),
+                        issue.Track.HasVideo,
+                        issue.Track.ArtistCredits
+                            .OrderBy(credit => credit.Position)
+                            .Select(credit => new ArtistCreditRow(credit.ArtistId, credit.Artist!.Name, credit.Role))
+                            .ToList()),
                 issue.MediaFile == null
                     ? null
                     : new LibraryIssueFileRow(

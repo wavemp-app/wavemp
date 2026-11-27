@@ -19,6 +19,7 @@ public static class TrackReviewMappingExtensions
                     Id = albumId,
                     Title = albumTitle,
                     Artist = LibraryMappingExtensions.ToReference(row.AlbumArtistId, row.AlbumArtistName),
+                    Artists = LibraryMappingExtensions.ToCredits(row.AlbumArtistId, row.AlbumArtistName),
                     IsCompilation = row.AlbumIsCompilation,
                 }
                 : null,

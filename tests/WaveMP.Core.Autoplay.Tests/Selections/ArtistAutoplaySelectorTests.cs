@@ -54,8 +54,8 @@ public class ArtistAutoplaySelectorTests
         var first = Guid.NewGuid();
         var second = Guid.NewGuid();
         var waiting = Guid.NewGuid();
-        GivenSeeds(new AutoplaySeedRow(first, _alpha, null, null), new AutoplaySeedRow(second, _alpha, null, null));
-        AutoplayCandidateRow song = new(Guid.NewGuid(), _alpha, null, null, true, false, 0);
+        GivenSeeds(new AutoplaySeedRow(first, [_alpha], null, null), new AutoplaySeedRow(second, [_alpha], null, null));
+        AutoplayCandidateRow song = new(Guid.NewGuid(), [_alpha], null, null, true, false, 0);
         _repository.ListCandidatesAsync(Arg.Is<AutoplayCandidateQuery>(query => query.ArtistIds != null), default)
             .ReturnsForAnyArgs([song]);
 
@@ -78,7 +78,7 @@ public class ArtistAutoplaySelectorTests
     [Test]
     public async Task SelectAsync_Always_ReadsThePlaysOfTheLastDay()
     {
-        GivenSeeds(new AutoplaySeedRow(Guid.NewGuid(), _alpha, null, null));
+        GivenSeeds(new AutoplaySeedRow(Guid.NewGuid(), [_alpha], null, null));
 
         await _selector.SelectAsync(Request([Guid.NewGuid()]));
 
@@ -89,10 +89,10 @@ public class ArtistAutoplaySelectorTests
     public async Task SelectAsync_TooFewSongsOfTheArtists_AsksForSongsOfTheGenresAndSimilarDecades()
     {
         GivenSeeds(
-            new AutoplaySeedRow(Guid.NewGuid(), _alpha, "Rock", 1997),
-            new AutoplaySeedRow(Guid.NewGuid(), _alpha, "rock ", 2001),
-            new AutoplaySeedRow(Guid.NewGuid(), _alpha, "Pop", null));
-        AutoplayCandidateRow fallback = new(Guid.NewGuid(), Guid.NewGuid(), "Pop", 2005, true, false, 0);
+            new AutoplaySeedRow(Guid.NewGuid(), [_alpha], "Rock", 1997),
+            new AutoplaySeedRow(Guid.NewGuid(), [_alpha], "rock ", 2001),
+            new AutoplaySeedRow(Guid.NewGuid(), [_alpha], "Pop", null));
+        AutoplayCandidateRow fallback = new(Guid.NewGuid(), [Guid.NewGuid()], "Pop", 2005, true, false, 0);
         _repository.ListCandidatesAsync(Arg.Is<AutoplayCandidateQuery>(query => query.Genres != null), default)
             .ReturnsForAnyArgs([fallback]);
 
@@ -110,11 +110,11 @@ public class ArtistAutoplaySelectorTests
     [Test]
     public async Task SelectAsync_EnoughSongsOfTheArtists_AsksForNoOtherSongs()
     {
-        GivenSeeds(new AutoplaySeedRow(Guid.NewGuid(), _alpha, "Rock", 2001));
+        GivenSeeds(new AutoplaySeedRow(Guid.NewGuid(), [_alpha], "Rock", 2001));
         _repository.ListCandidatesAsync(Arg.Is<AutoplayCandidateQuery>(query => query.ArtistIds != null), default)
             .ReturnsForAnyArgs([
-                new AutoplayCandidateRow(Guid.NewGuid(), _alpha, "Rock", 2001, true, false, 0),
-                new AutoplayCandidateRow(Guid.NewGuid(), _alpha, "Rock", 2001, true, false, 0),
+                new AutoplayCandidateRow(Guid.NewGuid(), [_alpha], "Rock", 2001, true, false, 0),
+                new AutoplayCandidateRow(Guid.NewGuid(), [_alpha], "Rock", 2001, true, false, 0),
             ]);
 
         IReadOnlyList<Guid> picked = await _selector.SelectAsync(Request([Guid.NewGuid()], count: 2));
@@ -128,7 +128,7 @@ public class ArtistAutoplaySelectorTests
     [Test]
     public async Task SelectAsync_ListWithoutGenres_AsksForNoOtherSongs()
     {
-        GivenSeeds(new AutoplaySeedRow(Guid.NewGuid(), _alpha, null, 2001));
+        GivenSeeds(new AutoplaySeedRow(Guid.NewGuid(), [_alpha], null, 2001));
 
         IReadOnlyList<Guid> picked = await _selector.SelectAsync(Request([Guid.NewGuid()]));
 

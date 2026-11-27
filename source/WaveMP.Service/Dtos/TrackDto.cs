@@ -10,9 +10,14 @@ public sealed class TrackDto
     public required string Title { get; init; }
 
     /// <summary>
-    /// Artist of the track; null if unknown.
+    /// The first artist of the track; null if unknown. All artists are in Artists.
     /// </summary>
     public ArtistReferenceDto? Artist { get; init; }
+
+    /// <summary>
+    /// All artists of the track in their order, each with its role (main or featured artist); empty if unknown.
+    /// </summary>
+    public required IReadOnlyList<ArtistCreditDto> Artists { get; init; }
 
     /// <summary>
     /// Album of the track; null for tracks without album.

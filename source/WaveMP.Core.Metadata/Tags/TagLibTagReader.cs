@@ -16,7 +16,7 @@ internal sealed class TagLibTagReader : ITagReader
             TagLib.Tag tag = file.Tag;
             return new TagReadResult(
                 TagReadStatus.Read,
-                ToTags(tag) with { IsCompilation = IsCompilation(file) },
+                WithArtists(ToTags(tag), file) with { IsCompilation = IsCompilation(file) },
                 ToPicture(tag.Pictures));
         }
         catch (TagLib.UnsupportedFormatException)
@@ -65,6 +65,24 @@ internal sealed class TagLibTagReader : ITagReader
             MusicBrainzReleaseId = MetadataText.Normalize(tag.MusicBrainzReleaseId),
             MusicBrainzArtistId = MusicBrainzIds.SingleText(tag.MusicBrainzArtistId),
             MusicBrainzAlbumArtistId = MusicBrainzIds.SingleText(tag.MusicBrainzReleaseArtistId),
+        };
+    }
+
+    /// <summary>
+    /// The artists and album artists of the file with their multi-values (see <see cref="ArtistFields"/>).
+    /// </summary>
+    private static MediaTags WithArtists(MediaTags tags, TagLib.File file)
+    {
+        ArtistFields.FieldValues artists = ArtistFields.Read(file, ArtistFields.Kind.Artist);
+        ArtistFields.FieldValues albumArtists = ArtistFields.Read(file, ArtistFields.Kind.AlbumArtist);
+        return tags with
+        {
+            Artist = artists.Text ?? tags.Artist,
+            ArtistValues = artists.Values,
+            AlbumArtist = albumArtists.Text ?? tags.AlbumArtist,
+            AlbumArtistValues = albumArtists.Values,
+            MusicBrainzArtistIds = artists.MusicBrainzIds,
+            MusicBrainzAlbumArtistIds = albumArtists.MusicBrainzIds,
         };
     }
 

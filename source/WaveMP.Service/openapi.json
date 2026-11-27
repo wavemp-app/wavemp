@@ -17581,6 +17581,7 @@
         "required": [
           "id",
           "title",
+          "artists",
           "isCompilation",
           "trackCount",
           "durationMilliseconds",
@@ -17603,10 +17604,17 @@
                 "type": "null"
               },
               {
-                "description": "Artist of the album: the album artist of its tracks, otherwise their artist; null for albums without a known artist and for compilations formed by the compilation flag without an album artist tag.",
+                "description": "The first artist of the album: the first album artist of its tracks, otherwise their first main artist; null for albums without a known artist and for compilations formed by the compilation flag without an album artist tag.",
                 "$ref": "#/components/schemas/ArtistReference"
               }
             ]
+          },
+          "artists": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ArtistCredit"
+            },
+            "description": "All album artists in their order; the first one is Artist. Empty for albums without a known artist."
           },
           "isCompilation": {
             "type": "boolean",
@@ -17650,6 +17658,21 @@
           }
         },
         "description": "An album of the library."
+      },
+      "AlbumArtistInput": {
+        "required": [
+          "name"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "maxLength": 512,
+            "minLength": 0,
+            "type": "string",
+            "description": "Name of the artist; a name whose normalized form matches an artist of the library refers to that artist."
+          }
+        },
+        "description": "An album artist as the metadata editor writes it: an artist of the library or a new name."
       },
       "AlbumCoverFallback": {
         "enum": [
@@ -17729,6 +17752,7 @@
         "required": [
           "id",
           "title",
+          "artists",
           "isCompilation"
         ],
         "type": "object",
@@ -17746,10 +17770,17 @@
                 "type": "null"
               },
               {
-                "description": "Artist of the album: the album artist of its tracks, otherwise their artist; null for albums without a known artist and for compilations formed by the compilation flag without an album artist tag.",
+                "description": "The first artist of the album: the first album artist of its tracks, otherwise their first main artist; null for albums without a known artist and for compilations formed by the compilation flag without an album artist tag.",
                 "$ref": "#/components/schemas/ArtistReference"
               }
             ]
+          },
+          "artists": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ArtistCredit"
+            },
+            "description": "All album artists in their order; the first one is Artist. Empty for albums without a known artist."
           },
           "isCompilation": {
             "type": "boolean",
@@ -17884,6 +17915,64 @@
           }
         },
         "description": "An artist of the library."
+      },
+      "ArtistCredit": {
+        "required": [
+          "id",
+          "name",
+          "role"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "role": {
+            "description": "Main or featured artist; always Main for album artists.",
+            "$ref": "#/components/schemas/ArtistRole"
+          }
+        },
+        "description": "An artist of a song or album, in the order of its artists, with its role."
+      },
+      "ArtistCreditInput": {
+        "required": [
+          "name"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "maxLength": 512,
+            "minLength": 0,
+            "type": "string",
+            "description": "Name of the artist; a name whose normalized form matches an artist of the library refers to that artist."
+          },
+          "role": {
+            "description": "Main or featured artist; Main if missing.",
+            "$ref": "#/components/schemas/ArtistRole"
+          }
+        },
+        "description": "An artist of a song as the metadata editor writes it: an artist of the library or a new name."
+      },
+      "ArtistName": {
+        "required": [
+          "name",
+          "role"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "role": {
+            "description": "Main or featured artist.",
+            "$ref": "#/components/schemas/ArtistRole"
+          }
+        },
+        "description": "An artist of a song as its tags name it, with its role."
       },
       "ArtistPage": {
         "required": [
@@ -18216,6 +18305,14 @@
           }
         },
         "description": "An artist referred to by a track or an album."
+      },
+      "ArtistRole": {
+        "enum": [
+          "Main",
+          "Featured"
+        ],
+        "type": "string",
+        "description": "Role of an artist on a song: a main artist or a featured artist (e.g. K.Flay in \"Bob Sinclar feat. K.Flay\"). Album artists are always main artists."
       },
       "ArtistSort": {
         "enum": [
@@ -20215,6 +20312,16 @@
                 "$ref": "#/components/schemas/LibraryIssueTrack"
               }
             ]
+          },
+          "suggestedArtists": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/ArtistName"
+            },
+            "description": "The artists of the track split as suggested, for PossibleMultipleArtists only: each name that may name several artists is replaced by its parts. Confirming writes them as the artists of the track; keeping writes the current artists as they are. Both mark the artists as confirmed, and the hint is gone after the next check."
           }
         },
         "description": "A problem of the library found by the library check, with its track, file and details. Clients show their own text for the type and the codes of the details."
@@ -20371,6 +20478,7 @@
         "required": [
           "id",
           "title",
+          "artists",
           "sourceId",
           "sourceName",
           "directoryPath",
@@ -20397,6 +20505,13 @@
                 "$ref": "#/components/schemas/ArtistReference"
               }
             ]
+          },
+          "artists": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ArtistCredit"
+            },
+            "description": "All artists of the track in their order, each with its role; the first one is Artist."
           },
           "album": {
             "oneOf": [
@@ -20450,7 +20565,8 @@
           "MissingCover",
           "PossibleDuplicate",
           "VideoWithoutAudio",
-          "AudioWithoutVideo"
+          "AudioWithoutVideo",
+          "PossibleMultipleArtists"
         ],
         "type": "string",
         "description": "Kind of a problem of the library found by the library check. Clients translate it."
@@ -25136,6 +25252,7 @@
         "required": [
           "id",
           "title",
+          "artists",
           "hasAudio",
           "hasVideo",
           "hasCover",
@@ -25158,10 +25275,17 @@
                 "type": "null"
               },
               {
-                "description": "Artist of the track; null if unknown.",
+                "description": "The first artist of the track; null if unknown. All artists are in Artists.",
                 "$ref": "#/components/schemas/ArtistReference"
               }
             ]
+          },
+          "artists": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ArtistCredit"
+            },
+            "description": "All artists of the track in their order, each with its role (main or featured artist); empty if unknown."
           },
           "album": {
             "oneOf": [
@@ -25382,7 +25506,10 @@
         "required": [
           "trackId",
           "status",
-          "title"
+          "title",
+          "artists",
+          "albumArtists",
+          "hasArtistValues"
         ],
         "type": "object",
         "properties": {
@@ -25422,6 +25549,24 @@
               "null",
               "string"
             ]
+          },
+          "artists": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ArtistName"
+            },
+            "description": "All artists of the track in their order, each with its role: the separate values of the tags, otherwise the artist field split at \"feat.\", \"ft.\", \"featuring\" and \";\"."
+          },
+          "albumArtists": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "All album artists in their order, read like Artists."
+          },
+          "hasArtistValues": {
+            "type": "boolean",
+            "description": "Whether the tags hold the artists as separate values (ARTISTS, several values of the artist field), so the list of artists is confirmed and not split from a single text."
           },
           "year": {
             "type": [
@@ -26203,7 +26348,7 @@
               "null",
               "string"
             ],
-            "description": "New album artist; replaces all album artists of the files."
+            "description": "New album artist as a single text; replaces all album artists of the files. AlbumArtists wins over it."
           },
           "year": {
             "maximum": 9999,
@@ -26223,6 +26368,17 @@
               "string"
             ],
             "description": "New genre; replaces all genres of the files."
+          },
+          "albumArtists": {
+            "maxItems": 50,
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/AlbumArtistInput"
+            },
+            "description": "New album artists in their order; replaces all album artists of the files (see the same member of the metadata of a track). An empty list removes the album artists."
           }
         },
         "description": "Changes the album tags of the songs of an album. Missing members stay unchanged; null or an empty text removes the value from the tags."
@@ -26946,7 +27102,7 @@
               "null",
               "string"
             ],
-            "description": "New artist; replaces all artists of the file."
+            "description": "New artist as a single text; replaces all artists of the file. Artists wins over it."
           },
           "album": {
             "maxLength": 512,
@@ -26964,7 +27120,7 @@
               "null",
               "string"
             ],
-            "description": "New album artist; replaces all album artists of the file."
+            "description": "New album artist as a single text; replaces all album artists of the file. AlbumArtists wins over it."
           },
           "year": {
             "maximum": 9999,
@@ -27004,6 +27160,28 @@
               "string"
             ],
             "description": "New genre; replaces all genres of the file."
+          },
+          "artists": {
+            "maxItems": 50,
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/ArtistCreditInput"
+            },
+            "description": "New artists in their order, each with its role; replaces all artists of the file. The file gets them as separate values where its format supports it (ARTISTS) and as a readable text in the artist field, e.g. \"Bob Sinclar feat. K.Flay\". An empty list removes the artists."
+          },
+          "albumArtists": {
+            "maxItems": 50,
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/AlbumArtistInput"
+            },
+            "description": "New album artists in their order; replaces all album artists of the file. The file gets them as separate values where its format supports it (ALBUMARTISTS) and joined by \"; \" in the album artist field. An empty list removes the album artists."
           }
         },
         "description": "Changes the metadata of a track. Missing members stay unchanged; null or an empty text removes the value from the tags, and the library derives it from the folder and file name again."

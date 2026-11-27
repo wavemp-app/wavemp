@@ -24,8 +24,8 @@ public class AutoplayRepositoryTests : LibraryDatabaseTests
 
         seeds.Should().BeEquivalentTo(
         [
-            new AutoplaySeedRow(library.Opening.Id, library.Alpha.Id, "Rock", 2001),
-            new AutoplaySeedRow(library.Ballad.Id, library.Beta.Id, "Pop", 2010),
+            new AutoplaySeedRow(library.Opening.Id, [library.Alpha.Id], "Rock", 2001),
+            new AutoplaySeedRow(library.Ballad.Id, [library.Beta.Id], "Pop", 2010),
         ]);
     }
 
@@ -45,8 +45,8 @@ public class AutoplayRepositoryTests : LibraryDatabaseTests
 
         candidates.Should().BeEquivalentTo(
         [
-            new AutoplayCandidateRow(library.Closing.Id, library.Alpha.Id, "Rock", 2001, true, false, 3),
-            new AutoplayCandidateRow(library.HitOne.Id, library.Alpha.Id, "Pop", 2005, true, true, 5),
+            new AutoplayCandidateRow(library.Closing.Id, [library.Alpha.Id], "Rock", 2001, true, false, 3),
+            new AutoplayCandidateRow(library.HitOne.Id, [library.Alpha.Id], "Pop", 2005, true, true, 5),
         ]);
     }
 
@@ -123,7 +123,7 @@ public class AutoplayRepositoryTests : LibraryDatabaseTests
             new AutoplayCandidateQuery(user.Id, 2, true, [], ArtistIds: [library.Alpha.Id, library.Beta.Id]));
 
         candidates.Should().HaveCount(2);
-        candidates.Select(row => row.ArtistId).Should().OnlyContain(
+        candidates.SelectMany(row => row.ArtistIds).Should().OnlyContain(
             id => id == library.Alpha.Id || id == library.Beta.Id);
     }
 

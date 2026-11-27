@@ -162,9 +162,9 @@ internal static class SmartPlaylistQueries
     }
 
     /// <summary>
-    /// Artist (of the track or the album), album or genre. A rule with a reference compares the id of the entry it
-    /// names, so it follows a new spelling of the name; a rule "is" or "is not" without one compares the normalized
-    /// name (see <see cref="NameKeys"/>); "contains" looks for the text without regard to case.
+    /// Artist (one of the artists of the track or of its album), album or genre. A rule with a reference compares the
+    /// id of the entry it names, so it follows a new spelling of the name; a rule "is" or "is not" without one compares
+    /// the normalized name (see <see cref="NameKeys"/>); "contains" looks for the text without regard to case.
     /// </summary>
     private static Expression<Func<Track, bool>> Text(SmartPlaylistRule rule)
     {
@@ -173,7 +173,8 @@ internal static class SmartPlaylistQueries
             return rule.Field switch
             {
                 SmartPlaylistField.Artist => track =>
-                    track.ArtistId == id || (track.Album != null && track.Album.AlbumArtistId == id),
+                    track.ArtistCredits.Any(credit => credit.ArtistId == id)
+                    || (track.Album != null && track.Album.ArtistCredits.Any(credit => credit.ArtistId == id)),
                 SmartPlaylistField.Album => track => track.AlbumId == id,
                 _ => track => track.GenreId == id,
             };
@@ -187,10 +188,9 @@ internal static class SmartPlaylistQueries
                 return rule.Field switch
                 {
                     SmartPlaylistField.Artist => track =>
-                        (track.Artist != null && track.Artist.NormalizedName == key)
+                        track.ArtistCredits.Any(credit => credit.Artist!.NormalizedName == key)
                         || (track.Album != null
-                            && track.Album.AlbumArtist != null
-                            && track.Album.AlbumArtist.NormalizedName == key),
+                            && track.Album.ArtistCredits.Any(credit => credit.Artist!.NormalizedName == key)),
                     SmartPlaylistField.Album => track => track.Album != null && track.Album.NormalizedTitle == key,
                     _ => track => track.Genre != null && track.Genre.NormalizedName == key,
                 };
@@ -199,14 +199,11 @@ internal static class SmartPlaylistQueries
                 return rule.Field switch
                 {
                     SmartPlaylistField.Artist => track =>
-                        (track.Artist != null
-                            && EF.Functions.ILike(track.Artist.Name, pattern, LikePatterns.EscapeCharacter))
+                        track.ArtistCredits.Any(credit =>
+                            EF.Functions.ILike(credit.Artist!.Name, pattern, LikePatterns.EscapeCharacter))
                         || (track.Album != null
-                            && track.Album.AlbumArtist != null
-                            && EF.Functions.ILike(
-                                track.Album.AlbumArtist.Name,
-                                pattern,
-                                LikePatterns.EscapeCharacter)),
+                            && track.Album.ArtistCredits.Any(credit =>
+                                EF.Functions.ILike(credit.Artist!.Name, pattern, LikePatterns.EscapeCharacter))),
                     SmartPlaylistField.Album => track =>
                         track.Album != null
                         && EF.Functions.ILike(track.Album.Title, pattern, LikePatterns.EscapeCharacter),

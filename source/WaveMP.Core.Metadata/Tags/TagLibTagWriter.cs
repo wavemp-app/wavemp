@@ -1,3 +1,4 @@
+using WaveMP.Core.Metadata.Artists;
 using WaveMP.Data.Entities;
 using WaveMP.Data.Texts;
 
@@ -62,7 +63,7 @@ internal sealed class TagLibTagWriter : ITagWriter
             // Pictures are read completely (no PictureLazy), so they are written back unchanged.
             using var file = TagLib.File.Create(path);
             PrepareTags(file);
-            Apply(file.Tag, changes);
+            Apply(file, changes);
             file.Save();
             return TagWriteStatus.Written;
         }
@@ -117,26 +118,45 @@ internal sealed class TagLibTagWriter : ITagWriter
         };
     }
 
-    private static void Apply(TagLib.Tag tag, TagChanges changes)
+    /// <summary>
+    /// Writes the changes. Artists and album artists get a display text in the main field and, from a list, separate
+    /// values in the field ARTISTS or ALBUMARTISTS (see <see cref="ArtistFields"/>); a text written alone removes
+    /// that field, so old values do not overrule it.
+    /// </summary>
+    private static void Apply(TagLib.File file, TagChanges changes)
     {
+        TagLib.Tag tag = file.Tag;
         RemoveStaleMusicBrainzIds(tag, changes);
         if (changes.Title is { } title)
         {
             tag.Title = title.Value;
         }
 
-        if (changes.Artist is { } artist)
+        if (changes.ArtistCredits is { } credits)
+        {
+            tag.Performers = ToArray(ArtistNames.DisplayText(credits.Value));
+            ArtistFields.Write(file, ArtistFields.Kind.Artist, [.. credits.Value.Select(artist => artist.Name)]);
+        }
+        else if (changes.Artist is { } artist)
         {
             tag.Performers = ToArray(artist.Value);
+            ArtistFields.Write(file, ArtistFields.Kind.Artist, []);
         }
 
-        if (changes.AlbumArtists is { } albumArtists)
+        if (changes.AlbumArtistCredits is { } albumArtistCredits)
+        {
+            tag.AlbumArtists = ToArray(AlbumArtistText(albumArtistCredits.Value));
+            ArtistFields.Write(file, ArtistFields.Kind.AlbumArtist, albumArtistCredits.Value);
+        }
+        else if (changes.AlbumArtists is { } albumArtists)
         {
             tag.AlbumArtists = [.. albumArtists.Value];
+            ArtistFields.Write(file, ArtistFields.Kind.AlbumArtist, []);
         }
         else if (changes.AlbumArtist is { } albumArtist)
         {
             tag.AlbumArtists = ToArray(albumArtist.Value);
+            ArtistFields.Write(file, ArtistFields.Kind.AlbumArtist, []);
         }
 
         if (changes.Album is { } album)
@@ -199,18 +219,26 @@ internal sealed class TagLibTagWriter : ITagWriter
     private static void RemoveStaleMusicBrainzIds(TagLib.Tag tag, TagChanges changes)
     {
         // TagLib# removes a field set to an empty text; some kinds of tags fail on null.
-        if (changes.Artist is { } artist
-            && !NameKeys.AreEqual(artist.Value, tag.FirstPerformer)
+        string? artist = changes.ArtistCredits is { } credits
+            ? ArtistNames.DisplayText(credits.Value)
+            : changes.Artist?.Value;
+        if ((changes.ArtistCredits is not null || changes.Artist is not null)
+            && !NameKeys.AreEqual(artist, tag.JoinedPerformers)
             && !string.IsNullOrEmpty(tag.MusicBrainzArtistId))
         {
             tag.MusicBrainzArtistId = string.Empty;
         }
 
-        string? albumArtist = changes.AlbumArtists is { } albumArtists
-            ? albumArtists.Value.FirstOrDefault()
-            : changes.AlbumArtist?.Value;
-        bool albumArtistChanged = (changes.AlbumArtists is not null || changes.AlbumArtist is not null)
-            && !NameKeys.AreEqual(albumArtist, tag.FirstAlbumArtist);
+        string? albumArtist = changes.AlbumArtistCredits is { } albumArtistCredits
+            ? AlbumArtistText(albumArtistCredits.Value)
+            : changes.AlbumArtists is { } albumArtists
+                ? albumArtists.Value.FirstOrDefault()
+                : changes.AlbumArtist?.Value;
+        string? currentAlbumArtist = changes.AlbumArtistCredits is null ? tag.FirstAlbumArtist : tag.JoinedAlbumArtists;
+        bool albumArtistChanged = (changes.AlbumArtistCredits is not null
+                || changes.AlbumArtists is not null
+                || changes.AlbumArtist is not null)
+            && !NameKeys.AreEqual(albumArtist, currentAlbumArtist);
         if (albumArtistChanged && !string.IsNullOrEmpty(tag.MusicBrainzReleaseArtistId))
         {
             tag.MusicBrainzReleaseArtistId = string.Empty;
@@ -222,6 +250,11 @@ internal sealed class TagLibTagWriter : ITagWriter
         {
             tag.MusicBrainzReleaseId = string.Empty;
         }
+    }
+
+    private static string? AlbumArtistText(IReadOnlyList<string> names)
+    {
+        return names.Count == 0 ? null : string.Join(ArtistNames.Separator, names);
     }
 
     private static string[] ToArray(string? value)

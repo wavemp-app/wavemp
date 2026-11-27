@@ -20,9 +20,21 @@ public class MediaFileTags
     /// </summary>
     public string? Artists { get; set; }
 
+    /// <summary>
+    /// The artists of the file as separate values, where the tags hold several (e.g. several values of the ID3v2.4
+    /// frame TPE1 or the field ARTISTS); empty if the tags hold the artist as one text only.
+    /// </summary>
+    public List<string> ArtistValues { get; set; } = [];
+
     public string? ArtistSort { get; set; }
 
     public string? AlbumArtist { get; set; }
+
+    /// <summary>
+    /// The album artists of the file as separate values, where the tags hold several (e.g. several values of the
+    /// ID3v2.4 frame TPE2 or the field ALBUMARTISTS); empty if the tags hold the album artist as one text only.
+    /// </summary>
+    public List<string> AlbumArtistValues { get; set; } = [];
 
     public string? AlbumArtistSort { get; set; }
 
@@ -73,6 +85,16 @@ public class MediaFileTags
     /// The MusicBrainz artist of the album artist tag, only if the tag names exactly one.
     /// </summary>
     public string? MusicBrainzAlbumArtistId { get; set; }
+
+    /// <summary>
+    /// The MusicBrainz artists of the artist tag in their order, where it names several (the artist credit).
+    /// </summary>
+    public List<string> MusicBrainzArtistIds { get; set; } = [];
+
+    /// <summary>
+    /// The MusicBrainz artists of the album artist tag in their order, where it names several.
+    /// </summary>
+    public List<string> MusicBrainzAlbumArtistIds { get; set; } = [];
 
     /// <summary>
     /// Whether the file is marked as part of a compilation (ID3 <c>TCMP</c>, MP4 <c>cpil</c>, Vorbis comment

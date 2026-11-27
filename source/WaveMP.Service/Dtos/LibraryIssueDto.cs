@@ -44,4 +44,11 @@ public sealed class LibraryIssueDto
     /// Another track of the group of possible duplicates, for PossibleDuplicate only.
     /// </summary>
     public LibraryIssueTrackDto? RelatedTrack { get; init; }
+
+    /// <summary>
+    /// The artists of the track split as suggested, for PossibleMultipleArtists only: each name that may name several
+    /// artists is replaced by its parts. Confirming writes them as the artists of the track; keeping writes the
+    /// current artists as they are. Both mark the artists as confirmed, and the hint is gone after the next check.
+    /// </summary>
+    public IReadOnlyList<ArtistNameDto>? SuggestedArtists { get; init; }
 }

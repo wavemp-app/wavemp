@@ -4,7 +4,7 @@ namespace WaveMP.Data.Projections;
 /// A track autoplay may choose, with what the choice weighs for the user.
 /// </summary>
 /// <param name="TrackId">Id of the track.</param>
-/// <param name="ArtistId">Id of the artist of the track; <c>null</c> if unknown.</param>
+/// <param name="ArtistIds">Ids of all artists of the track in their order; empty if unknown.</param>
 /// <param name="Genre">Genre of the track; <c>null</c> if unknown.</param>
 /// <param name="Year">Year of the track; <c>null</c> if unknown.</param>
 /// <param name="HasAudio">Whether the track has an audio file; <c>false</c> for songs with a music video only.</param>
@@ -13,7 +13,7 @@ namespace WaveMP.Data.Projections;
 /// with 1 star are never candidates.</param>
 public sealed record AutoplayCandidateRow(
     Guid TrackId,
-    Guid? ArtistId,
+    IReadOnlyList<Guid> ArtistIds,
     string? Genre,
     int? Year,
     bool HasAudio,

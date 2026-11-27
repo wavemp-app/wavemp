@@ -55,7 +55,9 @@ public class LibraryIssueRepositoryTests : LibraryDatabaseTests
             true,
             false,
             true,
-            []));
+            [],
+            ["Artist"],
+            false));
         Row(rows, sibling).HasCover.Should().BeFalse("a track never shows the cover of another track");
         Row(rows, ownCover).HasCover.Should().BeTrue();
         Row(rows, sibling).MissingTags.Should().Equal(MetadataTag.Artist, MetadataTag.Album);

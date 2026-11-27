@@ -65,6 +65,7 @@ public class TrackMetadataApiTests
         await AudioAsync("Genre.mp3", new TestTags { Title = "Genre Song", Genre = "Pop" });
         await AudioAsync("Empty.mp3", new TestTags { Title = "Empty" });
         await AudioAsync("Loose.mp3", null);
+        await AudioAsync("Duet.mp3", new TestTags { Title = "Duet", Artist = "Bob Sinclar & K.Flay" });
         File.SetAttributes(_media.Combine("Locked.mp3"), FileAttributes.ReadOnly);
         File.SetAttributes(_media.Combine("Unlocked.mp3"), FileAttributes.ReadOnly);
 
@@ -369,6 +370,55 @@ public class TrackMetadataApiTests
     }
 
     [Test]
+    public async Task UpdateTrackMetadata_Artists_WritesThemAsSeparateValuesAndCreditsEachArtist()
+    {
+        HttpResponseMessage response = await PatchAsync("Duet", """
+            {
+              "artists": [{ "name": "Bob Sinclar" }, { "name": "K.Flay", "role": "Featured" }],
+              "albumArtists": [{ "name": "Bob Sinclar" }]
+            }
+            """);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK, await response.Content.ReadAsStringAsync());
+        TrackMetadataDto metadata = (await response.Content.ReadFromJsonAsync<TrackMetadataDto>(
+            HttpClientExtensions.JsonOptions))!;
+        metadata.Artist.Should().Be("Bob Sinclar feat. K.Flay");
+        metadata.Artists.Select(artist => (artist.Name, artist.Role)).Should().Equal(
+            ("Bob Sinclar", ArtistRoleDto.Main),
+            ("K.Flay", ArtistRoleDto.Featured));
+        metadata.AlbumArtists.Should().Equal("Bob Sinclar");
+        metadata.HasArtistValues.Should().BeTrue();
+
+        TrackDto track = await _admin.GetJsonAsync<TrackDto>($"/api/v1/tracks/{Track("Duet").Id}");
+        track.Artists.Select(artist => (artist.Name, artist.Role)).Should().Equal(
+            ("Bob Sinclar", ArtistRoleDto.Main),
+            ("K.Flay", ArtistRoleDto.Featured));
+        foreach (ArtistCreditDto artist in track.Artists)
+        {
+            PageDto<TrackDto> tracks =
+                await _admin.GetJsonAsync<PageDto<TrackDto>>($"/api/v1/tracks?artistId={artist.Id}&limit=100");
+            tracks.Items.Select(item => item.Id).Should().Contain(track.Id);
+        }
+
+        using var file = TagLib.File.Create(_media.Combine("Duet.mp3"));
+        var id3 = (TagLib.Id3v2.Tag)file.GetTag(TagLib.TagTypes.Id3v2, false);
+        TagLib.Id3v2.UserTextInformationFrame.Get(id3, "ARTISTS", false)!.Text
+            .Should().Equal("Bob Sinclar", "K.Flay");
+    }
+
+    [Test]
+    public async Task UpdateTrackMetadata_TooManyArtists_ReturnsAValidationProblem()
+    {
+        string artists = string.Join(",", Enumerable.Range(0, 51).Select(index => $$"""{ "name": "A{{index}}" }"""));
+
+        HttpResponseMessage response = await PatchAsync("Empty", $$"""{ "artists": [{{artists}}] }""");
+
+        IReadOnlyList<ValidationErrorDto> errors = await response.ShouldBeValidationProblemAsync();
+        errors.Should().ContainSingle(error =>
+            error.Field == "artists" && error.Code == ValidationErrorCodeDto.MaxItems);
+    }
+
+    [Test]
     public async Task OpenApi_TrackMetadata_IsDescribedWithItsConflicts()
     {
         JsonNode document = JsonNode.Parse(await _anonymous.GetStringAsync("/openapi/v1.json"))!;
@@ -389,7 +439,9 @@ public class TrackMetadataApiTests
                 "year",
                 "trackNumber",
                 "discNumber",
-                "genre");
+                "genre",
+                "artists",
+                "albumArtists");
     }
 
     private TrackDto Track(string title)

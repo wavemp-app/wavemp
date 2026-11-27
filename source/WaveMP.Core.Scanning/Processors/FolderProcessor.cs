@@ -169,8 +169,10 @@ public static class FolderProcessor
             TitleSort = tags.TitleSort,
             Artist = tags.Artist,
             Artists = tags.Artists,
+            ArtistValues = tags.ArtistValues,
             ArtistSort = tags.ArtistSort,
             AlbumArtist = tags.AlbumArtist,
+            AlbumArtistValues = tags.AlbumArtistValues,
             AlbumArtistSort = tags.AlbumArtistSort,
             Album = tags.Album,
             AlbumSort = tags.AlbumSort,
@@ -190,6 +192,8 @@ public static class FolderProcessor
             MusicBrainzReleaseId = tags.MusicBrainzReleaseId,
             MusicBrainzArtistId = tags.MusicBrainzArtistId,
             MusicBrainzAlbumArtistId = tags.MusicBrainzAlbumArtistId,
+            MusicBrainzArtistIds = tags.MusicBrainzArtistIds,
+            MusicBrainzAlbumArtistIds = tags.MusicBrainzAlbumArtistIds,
             IsCompilation = tags.IsCompilation,
         };
     }

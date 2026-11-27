@@ -320,7 +320,7 @@ internal sealed class SubsonicRepository(WaveMpDbContext dbContext) : ISubsonicR
         CancellationToken cancellationToken = default)
     {
         return await dbContext.Tracks.AsNoTracking()
-            .Where(track => track.ArtistId == artistId && track.AlbumId == null)
+            .Where(track => track.AlbumId == null && track.ArtistCredits.Any(credit => credit.ArtistId == artistId))
             .OrderBy(track => track.Title)
             .ThenBy(track => track.Id)
             .Select(track => track.Id)

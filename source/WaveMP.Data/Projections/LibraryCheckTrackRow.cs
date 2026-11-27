@@ -14,6 +14,9 @@ namespace WaveMP.Data.Projections;
 /// both.</param>
 /// <param name="MissingTags">Which of title, artist and album the tags of its file lack: of the audio file the track
 /// plays, for tracks with a video only of the video; all three without such a file.</param>
+/// <param name="ArtistNames">Names of all artists of the track in their order.</param>
+/// <param name="HasArtistValues">Whether the tags of the file the track plays hold its artists as separate values
+/// (several values or MusicBrainz artists), so their names are confirmed.</param>
 public sealed record LibraryCheckTrackRow(
     Guid TrackId,
     string Title,
@@ -23,4 +26,6 @@ public sealed record LibraryCheckTrackRow(
     bool HasAudio,
     bool HasVideo,
     bool HasCover,
-    IReadOnlyList<MetadataTag> MissingTags);
+    IReadOnlyList<MetadataTag> MissingTags,
+    IReadOnlyList<string>? ArtistNames = null,
+    bool HasArtistValues = false);

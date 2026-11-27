@@ -450,7 +450,7 @@ public class LibraryScannerTests
     }
 
     [Test]
-    public async Task Scan_SeveralArtistIdsInATag_FindsTheArtistByItsName()
+    public async Task Scan_FeaturingWithSeveralArtistIdsInATag_SplitsTheArtistsAndFindsThemByTheirNames()
     {
         await AudioAsync("Duet/01.mp3", tags: new TestTags
         {
@@ -462,8 +462,87 @@ public class LibraryScannerTests
         await ScanAsync();
 
         await using WaveMpDbContext db = _database.CreateDbContext();
-        Artist artist = await db.Artists.SingleAsync();
-        (artist.NormalizedName, artist.MusicBrainzArtistId).Should().Be(("singerfeatrapper", null));
+        (await db.Artists.Select(artist => new { artist.NormalizedName, artist.MusicBrainzArtistId }).ToListAsync())
+            .Should().BeEquivalentTo([
+                new { NormalizedName = "singer", MusicBrainzArtistId = (Guid?)null },
+                new { NormalizedName = "rapper", MusicBrainzArtistId = (Guid?)null },
+            ]);
+        (await db.TrackArtistCredits.OrderBy(credit => credit.Position)
+                .Select(credit => new { credit.Artist!.Name, credit.Role })
+                .ToListAsync())
+            .Should().Equal(
+                new { Name = "Singer", Role = ArtistRole.Main },
+                new { Name = "Rapper", Role = ArtistRole.Featured });
+    }
+
+    [Test]
+    public async Task Scan_ArtistsFieldWithSeveralValues_CreditsEveryArtistInItsOrder()
+    {
+        await AudioAsync("Duet/01.flac", AudioFormat.Flac, new TestTags { Title = "Duet", Artist = "Display Text" });
+        SetXiphField("Duet/01.flac", "ARTISTS", "Simon & Garfunkel", "AC/DC");
+
+        await ScanAsync();
+
+        await using WaveMpDbContext db = _database.CreateDbContext();
+        Track track = await db.Tracks.Include(track => track.Artist).SingleAsync();
+        track.Artist!.Name.Should().Be("Simon & Garfunkel");
+        (await CreditsAsync(db, track.Id)).Should().Equal(
+            ("Simon & Garfunkel", ArtistRole.Main),
+            ("AC/DC", ArtistRole.Main));
+        (await db.Artists.CountAsync(artist => artist.Name == "Display Text")).Should().Be(0);
+    }
+
+    [Test]
+    public async Task Scan_NamesWithAmbiguousSeparators_AreNeverSplit()
+    {
+        await AudioAsync("Mix/01.mp3", tags: new TestTags { Title = "One", Artist = "Earth, Wind & Fire" });
+        await AudioAsync("Mix/02.mp3", tags: new TestTags { Title = "Two", Artist = "AC/DC" });
+        await AudioAsync("Mix/03.mp3", tags: new TestTags { Title = "Three", Artist = "Simon & Garfunkel" });
+        await AudioAsync("Mix/04.mp3", tags: new TestTags { Title = "Four", Artist = "Marshmello x Anne-Marie" });
+
+        await ScanAsync();
+
+        await using WaveMpDbContext db = _database.CreateDbContext();
+        (await db.Artists.Select(artist => artist.Name).ToListAsync()).Should().BeEquivalentTo(
+            ["Earth, Wind & Fire", "AC/DC", "Simon & Garfunkel", "Marshmello x Anne-Marie"]);
+        (await db.TrackArtistCredits.CountAsync()).Should().Be(4);
+    }
+
+    [Test]
+    public async Task Scan_AlbumWithSeveralAlbumArtists_IsOneAlbumOfAllOfThem()
+    {
+        TestTags tags = new() { Album = "Together", Artist = "Bob Sinclar" };
+        await AudioAsync("Together/01.flac", AudioFormat.Flac, tags with { Title = "One" });
+        await AudioAsync("Together/02.flac", AudioFormat.Flac, tags with { Title = "Two", Artist = "K.Flay" });
+        SetXiphField("Together/01.flac", "ALBUMARTISTS", "Bob Sinclar", "K.Flay");
+        SetXiphField("Together/02.flac", "ALBUMARTISTS", "Bob Sinclar", "K.Flay");
+
+        await ScanAsync();
+
+        await using WaveMpDbContext db = _database.CreateDbContext();
+        Album album = await db.Albums
+            .Include(album => album.Tracks)
+            .Include(album => album.ArtistCredits.OrderBy(credit => credit.Position))
+            .ThenInclude(credit => credit.Artist)
+            .SingleAsync();
+        album.Tracks.Should().HaveCount(2);
+        album.ArtistCredits.Select(credit => credit.Artist!.Name).Should().Equal("Bob Sinclar", "K.Flay");
+        album.AlbumArtistId.Should().Be(album.ArtistCredits.First().ArtistId);
+    }
+
+    [Test]
+    public async Task Rescan_FeaturedArtistRemoved_DropsItsCreditAndTheArtist()
+    {
+        await AudioAsync("Song/01.mp3", tags: new TestTags { Title = "Song", Artist = "Bob Sinclar feat. K.Flay" });
+        await ScanAsync();
+
+        await ChangeAudioAsync("Song/01.mp3", new TestTags { Title = "Song", Artist = "Bob Sinclar" });
+        await ScanAsync();
+
+        await using WaveMpDbContext db = _database.CreateDbContext();
+        Track track = await db.Tracks.SingleAsync();
+        (await CreditsAsync(db, track.Id)).Should().Equal(("Bob Sinclar", ArtistRole.Main));
+        (await db.Artists.Select(artist => artist.Name).ToListAsync()).Should().Equal("Bob Sinclar");
     }
 
     [Test]
@@ -1026,6 +1105,12 @@ public class LibraryScannerTests
             await db.Albums.ExecuteUpdateAsync(setters => setters
                 .SetProperty(album => album.AlbumKey, "older rules")
                 .SetProperty(album => album.AlbumArtistId, collection.Id));
+            await db.AlbumArtistCredits.ExecuteDeleteAsync();
+            await db.Database.ExecuteSqlAsync(
+                $"""
+                INSERT INTO album_artist_credits (album_id, artist_id, position)
+                SELECT id, {collection.Id}, 0 FROM albums
+                """);
             await db.MediaSources.ExecuteUpdateAsync(setters =>
                 setters.SetProperty(source => source.AlbumGroupingVersion, 2));
             trackIds = await db.Tracks.ToDictionaryAsync(track => track.Title, track => track.Id);
@@ -1427,7 +1512,7 @@ public class LibraryScannerTests
     }
 
     [Test]
-    public async Task Rescan_TrackArtistRenamedWhileTheAlbumArtistStays_CarriesNothingSinceTheOldArtistKeepsTheSongs()
+    public async Task Rescan_FeaturedArtistAddedWhileTheAlbumArtistStays_CarriesNothingSinceTheOldArtistKeepsTheSongs()
     {
         TestTags tags = new() { Artist = "Band", AlbumArtist = "Band", Album = "Record" };
         await AudioAsync("Band/Record/01.mp3", tags: tags with { Title = "One" });
@@ -1444,8 +1529,12 @@ public class LibraryScannerTests
         using AssertionScope scope = new();
         Album album = await LoadAlbumAsync(db, "Record");
         (album.AlbumArtistId, album.Tracks.Count).Should().Be((data.OldArtistId, 2));
-        album.Tracks.Select(track => track.ArtistId).Distinct()
-            .Should().Equal(await ArtistIdAsync(db, "Band feat. Guest"));
+        album.Tracks.Select(track => track.ArtistId).Distinct().Should().Equal(data.OldArtistId);
+        (await db.TrackArtistCredits.Where(credit => credit.Role == ArtistRole.Featured)
+                .Select(credit => credit.ArtistId)
+                .Distinct()
+                .ToListAsync())
+            .Should().Equal(await ArtistIdAsync(db, "Guest"));
         (await db.Artists.SingleAsync(artist => artist.Id == data.OldArtistId)).FirstSeenAt
             .Should().Be(_day.AddDays(-5));
         (await ArtistFavoritesAsync(db, data.First, data.Second)).Should().BeEquivalentTo([
@@ -3351,6 +3440,26 @@ public class LibraryScannerTests
             bitrate,
             sampleRate,
             bitDepth);
+    }
+
+    /// <summary>
+    /// Sets a field of the Vorbis comment of a FLAC file with TagLib#, e.g. the several values of ARTISTS.
+    /// </summary>
+    private void SetXiphField(string relativePath, string name, params string[] values)
+    {
+        using var file = TagLib.File.Create(_media.Combine(relativePath));
+        ((TagLib.Ogg.XiphComment)file.GetTag(TagLib.TagTypes.Xiph, true)).SetField(name, values);
+        file.Save();
+    }
+
+    private static async Task<List<(string Name, ArtistRole Role)>> CreditsAsync(WaveMpDbContext db, Guid trackId)
+    {
+        var credits = await db.TrackArtistCredits
+            .Where(credit => credit.TrackId == trackId)
+            .OrderBy(credit => credit.Position)
+            .Select(credit => new { credit.Artist!.Name, credit.Role })
+            .ToListAsync();
+        return [.. credits.Select(credit => (credit.Name, credit.Role))];
     }
 
     /// <summary>

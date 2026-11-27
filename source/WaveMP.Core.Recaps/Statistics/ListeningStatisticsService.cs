@@ -30,8 +30,8 @@ internal sealed class ListeningStatisticsService(
             StatisticsTimeZones.StartOfDay(to.AddDays(1), timeZone),
             cancellationToken);
         Guid[] artistIds = [.. plays
-            .Where(play => play.ArtistId is not null)
-            .Select(play => play.ArtistId!.Value)
+            .SelectMany(play => play.AllArtists)
+            .Select(artist => artist.Id)
             .Distinct()];
         IReadOnlyDictionary<Guid, DateTimeOffset> firstArtistPlays =
             await history.FindFirstPlaysOfArtistsAsync(query.UserId, artistIds, cancellationToken);

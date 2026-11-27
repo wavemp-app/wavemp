@@ -1,3 +1,4 @@
+using WaveMP.Core.Metadata.Artists;
 using WaveMP.Core.Metadata.Texts;
 using WaveMP.Data.Entities;
 using WaveMP.Data.Projections;
@@ -15,7 +16,9 @@ namespace WaveMP.Core.Library.Checks;
 /// do not matter) whose durations differ by at most the tolerance; tracks without known artist or duration are not
 /// compared,</item>
 /// <item>files that cannot be read completely,</item>
-/// <item>videos without audio file and songs without video (hints only).</item>
+/// <item>videos without audio file and songs without video (hints only),</item>
+/// <item>artist names that may name several artists, unless the tags hold the artists as separate values (a hint
+/// only, see <see cref="ArtistNames.SuggestSplit(string?)"/>).</item>
 /// </list>
 /// </summary>
 internal static class LibraryIssueDetector
@@ -66,6 +69,12 @@ internal static class LibraryIssueDetector
             else if (track.HasAudio && !track.HasVideo)
             {
                 issues.Add(new DetectedLibraryIssue(LibraryIssueType.AudioWithoutVideo, track.TrackId));
+            }
+
+            if (!track.HasArtistValues
+                && (track.ArtistNames ?? []).Any(name => ArtistNames.SuggestSplit(name) is not null))
+            {
+                issues.Add(new DetectedLibraryIssue(LibraryIssueType.PossibleMultipleArtists, track.TrackId));
             }
         }
 

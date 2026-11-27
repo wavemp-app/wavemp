@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using WaveMP.Core.Jobs.Extensions;
+using WaveMP.Core.Metadata.Artists;
 using WaveMP.Core.Metadata.Extensions;
 using WaveMP.Core.Metadata.Tags;
 using WaveMP.Core.Scanning.Edits;
@@ -94,7 +95,9 @@ public class TrackMetadataEditorDatabaseTests
             2020,
             5,
             1,
-            "Jazz"));
+            "Jazz",
+            [new ArtistName("Solo Artist")],
+            ["Solo Artist"]));
 
         using (var file = TagLib.File.Create(_media.Combine("Band/Album/01 - One.mp3")))
         {

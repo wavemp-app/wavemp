@@ -29,6 +29,7 @@ public static class LibraryMappingExtensions
             Id = album.Id,
             Title = album.Title,
             Artist = ToReference(album.ArtistId, album.ArtistName),
+            Artists = album.AllArtists.ToDtos(),
             IsCompilation = album.IsCompilation,
             Year = album.Year,
             Genre = album.Genre,
@@ -47,12 +48,14 @@ public static class LibraryMappingExtensions
             Id = track.Id,
             Title = track.Title,
             Artist = ToReference(track.ArtistId, track.ArtistName),
+            Artists = track.AllArtists.ToDtos(),
             Album = track.AlbumId is { } albumId && track.AlbumTitle is { } albumTitle
                 ? new AlbumReferenceDto
                 {
                     Id = albumId,
                     Title = albumTitle,
                     Artist = ToReference(track.AlbumArtistId, track.AlbumArtistName),
+                    Artists = track.AllAlbumArtists.ToDtos(),
                     IsCompilation = track.AlbumIsCompilation,
                 }
                 : null,
@@ -139,6 +142,39 @@ public static class LibraryMappingExtensions
             MediaFileIssue.ProbeFailed => ScanIssueCodeDto.FileProbeFailed,
             MediaFileIssue.Unreadable => ScanIssueCodeDto.FileUnreadable,
             _ => throw new ArgumentOutOfRangeException(nameof(issue), issue, "Unknown issue."),
+        };
+    }
+
+    /// <summary>
+    /// The artists of a song or album in their order.
+    /// </summary>
+    public static IReadOnlyList<ArtistCreditDto> ToDtos(this IReadOnlyList<ArtistCreditRow> artists)
+    {
+        return [.. artists.Select(artist => new ArtistCreditDto
+        {
+            Id = artist.Id,
+            Name = artist.Name,
+            Role = artist.Role.ToDto(),
+        })];
+    }
+
+    public static ArtistRoleDto ToDto(this ArtistRole role)
+    {
+        return role switch
+        {
+            ArtistRole.Main => ArtistRoleDto.Main,
+            ArtistRole.Featured => ArtistRoleDto.Featured,
+            _ => throw new ArgumentOutOfRangeException(nameof(role), role, "Unknown role."),
+        };
+    }
+
+    public static ArtistRole ToEntity(this ArtistRoleDto role)
+    {
+        return role switch
+        {
+            ArtistRoleDto.Main => ArtistRole.Main,
+            ArtistRoleDto.Featured => ArtistRole.Featured,
+            _ => throw new ArgumentOutOfRangeException(nameof(role), role, "Unknown role."),
         };
     }
 
@@ -235,6 +271,16 @@ public static class LibraryMappingExtensions
     internal static ArtistReferenceDto? ToReference(Guid? id, string? name)
     {
         return id is { } artistId && name is not null ? new ArtistReferenceDto { Id = artistId, Name = name } : null;
+    }
+
+    /// <summary>
+    /// The list of artists of an entry whose query loads the first artist only.
+    /// </summary>
+    internal static IReadOnlyList<ArtistCreditDto> ToCredits(Guid? id, string? name)
+    {
+        return id is { } artistId && name is not null
+            ? [new ArtistCreditDto { Id = artistId, Name = name, Role = ArtistRoleDto.Main }]
+            : [];
     }
 
     internal static long? ToMilliseconds(TimeSpan? duration)

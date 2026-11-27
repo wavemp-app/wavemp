@@ -19,6 +19,7 @@ namespace WaveMP.Data.Projections;
 /// <param name="Duration">Duration of the track.</param>
 /// <param name="HasAudio">Whether an audio file exists.</param>
 /// <param name="HasVideo">Whether a video file exists.</param>
+/// <param name="Artists">All artists of the track in their order; <c>null</c> where a query does not load them.</param>
 public sealed record LibraryIssueTrackRow(
     Guid Id,
     string Title,
@@ -35,4 +36,13 @@ public sealed record LibraryIssueTrackRow(
     string BaseName,
     TimeSpan? Duration,
     bool HasAudio,
-    bool HasVideo);
+    bool HasVideo,
+    IReadOnlyList<ArtistCreditRow>? Artists = null)
+{
+    /// <summary>
+    /// All artists of the track in their order: the loaded list, otherwise the first artist alone.
+    /// </summary>
+    public IReadOnlyList<ArtistCreditRow> AllArtists => Artists is { Count: > 0 } artists
+        ? artists
+        : ArtistId is { } id && ArtistName is { } name ? [new ArtistCreditRow(id, name)] : [];
+}

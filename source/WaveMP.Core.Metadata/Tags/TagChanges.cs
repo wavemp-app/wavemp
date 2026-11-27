@@ -1,3 +1,5 @@
+using WaveMP.Core.Metadata.Artists;
+
 namespace WaveMP.Core.Metadata.Tags;
 
 /// <summary>
@@ -54,6 +56,20 @@ public sealed record TagChanges
     public TagChange<IReadOnlyList<string>>? Genres { get; init; }
 
     /// <summary>
+    /// All artists with their roles; wins over <see cref="Artist"/>. Written as a display text into the main field
+    /// (see <see cref="ArtistNames.DisplayText"/>) and as separate values into the field ARTISTS where the format
+    /// has one. An empty list removes the artists.
+    /// </summary>
+    public TagChange<IReadOnlyList<ArtistName>>? ArtistCredits { get; init; }
+
+    /// <summary>
+    /// All album artists; wins over <see cref="AlbumArtist"/> and <see cref="AlbumArtists"/>. Written as a display
+    /// text into the main field (the names joined by <see cref="ArtistNames.Separator"/>) and as separate values into
+    /// the field ALBUMARTISTS where the format has one. An empty list removes the album artists.
+    /// </summary>
+    public TagChange<IReadOnlyList<string>>? AlbumArtistCredits { get; init; }
+
+    /// <summary>
     /// The number of tracks; written after <see cref="TrackNumber"/>.
     /// </summary>
     public TagChange<int?>? TrackCount { get; init; }
@@ -77,5 +93,7 @@ public sealed record TagChanges
         && AlbumArtists is null
         && Genres is null
         && TrackCount is null
-        && DiscCount is null;
+        && DiscCount is null
+        && ArtistCredits is null
+        && AlbumArtistCredits is null;
 }

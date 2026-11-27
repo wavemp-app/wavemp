@@ -118,7 +118,8 @@ public class LibraryIssueServiceTests
             new LibraryIssueCount(LibraryIssueType.MissingCover, LibraryIssueSeverity.Problem, 3),
             new LibraryIssueCount(LibraryIssueType.PossibleDuplicate, LibraryIssueSeverity.Problem, 0),
             new LibraryIssueCount(LibraryIssueType.VideoWithoutAudio, LibraryIssueSeverity.Hint, 0),
-            new LibraryIssueCount(LibraryIssueType.AudioWithoutVideo, LibraryIssueSeverity.Hint, 7));
+            new LibraryIssueCount(LibraryIssueType.AudioWithoutVideo, LibraryIssueSeverity.Hint, 7),
+            new LibraryIssueCount(LibraryIssueType.PossibleMultipleArtists, LibraryIssueSeverity.Hint, 0));
     }
 
     [Test]

@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging;
+using WaveMP.Core.Metadata.Artists;
 using WaveMP.Core.Metadata.Files;
 using WaveMP.Core.Metadata.Tags;
 using WaveMP.Core.Metadata.Texts;
@@ -43,6 +44,13 @@ internal sealed class TrackMetadataEditor(
 
         (TrackMetadataStatus status, _) = await EvaluateAsync(target.AudioFile, cancellationToken);
         MediaFileTags? tags = target.AudioFile?.Tags;
+        IReadOnlyList<ArtistName> artists = tags is not null && (tags.Artist is not null || tags.ArtistValues.Count > 0)
+            ? ArtistNames.Resolve(tags.ArtistValues, tags.Artist, [])
+            : [.. row.AllArtists.Select(artist => new ArtistName(artist.Name, artist.Role))];
+        IReadOnlyList<string> albumArtists = tags is not null
+            && (tags.AlbumArtist is not null || tags.AlbumArtistValues.Count > 0)
+                ? [.. ArtistNames.Resolve(tags.AlbumArtistValues, tags.AlbumArtist, []).Select(artist => artist.Name)]
+                : [.. row.AllAlbumArtists.Select(artist => artist.Name)];
         return new TrackMetadata(
             trackId,
             status,
@@ -54,7 +62,10 @@ internal sealed class TrackMetadataEditor(
             tags?.Year ?? row.Year,
             tags?.TrackNumber ?? row.TrackNumber,
             tags?.DiscNumber ?? row.DiscNumber,
-            tags?.Genre ?? row.Genre);
+            tags?.Genre ?? row.Genre,
+            artists,
+            albumArtists,
+            tags?.ArtistValues.Count > 0);
     }
 
     public async Task<TrackMetadataResult> UpdateAsync(
@@ -99,6 +110,15 @@ internal sealed class TrackMetadataEditor(
                 CancellationToken.None);
             await TakeOverSpellingAsync(normalized.Artist);
             await TakeOverSpellingAsync(normalized.AlbumArtist);
+            foreach (ArtistName artist in normalized.ArtistCredits?.Value ?? [])
+            {
+                await TakeOverSpellingAsync(new TagChange<string?>(artist.Name));
+            }
+
+            foreach (string albumArtist in normalized.AlbumArtistCredits?.Value ?? [])
+            {
+                await TakeOverSpellingAsync(new TagChange<string?>(albumArtist));
+            }
             if (normalized.Genre?.Value is { } genre && NameKeys.Of(genre) is { } genreKey)
             {
                 await repository.RenameGenreAsync(genreKey, genre, CancellationToken.None);
@@ -113,7 +133,8 @@ internal sealed class TrackMetadataEditor(
 
     /// <summary>
     /// The changes as the scan would store them: texts normalized (an empty text removes the field), the genre cut to
-    /// the length of the library, numbers below 1 removed.
+    /// the length of the library, numbers below 1 removed. Lists of artists lose empty names and names that repeat an
+    /// earlier one apart from case, accents and punctuation (see <see cref="NameKeys"/>).
     /// </summary>
     internal static TagChanges Normalize(TagChanges changes)
     {
@@ -123,6 +144,19 @@ internal sealed class TrackMetadataEditor(
             Artist = Text(changes.Artist),
             Album = Text(changes.Album),
             AlbumArtist = Text(changes.AlbumArtist),
+            ArtistCredits = changes.ArtistCredits is { } credits
+                ? new TagChange<IReadOnlyList<ArtistName>>([.. credits.Value
+                    .Select(artist => artist with { Name = Text(new TagChange<string?>(artist.Name))?.Value ?? "" })
+                    .Where(artist => NameKeys.Of(artist.Name) is not null)
+                    .DistinctBy(artist => NameKeys.Of(artist.Name), StringComparer.Ordinal)])
+                : null,
+            AlbumArtistCredits = changes.AlbumArtistCredits is { } albumArtists
+                ? new TagChange<IReadOnlyList<string>>([.. albumArtists.Value
+                    .Select(name => Text(new TagChange<string?>(name))?.Value)
+                    .OfType<string>()
+                    .Where(name => NameKeys.Of(name) is not null)
+                    .DistinctBy(name => NameKeys.Of(name), StringComparer.Ordinal)])
+                : null,
             Year = Number(changes.Year),
             TrackNumber = Number(changes.TrackNumber),
             DiscNumber = Number(changes.DiscNumber),

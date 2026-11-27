@@ -1,13 +1,13 @@
 namespace WaveMP.Data.Entities;
 
 /// <summary>
-/// An album, unique by its artist and title as the metadata names them: the album artist of its tracks, otherwise
-/// their artist. Albums without artist (tracks without any artist, and tracks with the compilation flag but without
-/// album artist tag) are unique by their title and album folder in the media source instead. Created by the scan and
-/// removed once it has no tracks. The spelling of the title and the year follow the folder of the album that was
-/// written last. When its tracks moved to other albums (see <see cref="AlbumMove"/>), its favorites, cover rule, online
-/// cover and <see cref="FirstSeenAt"/> go to those albums before it is removed
-/// (<see cref="Repositories.ILibraryScanRepository.DeleteOrphansAsync"/>).
+/// An album, unique by its artists and title as the metadata names them: the album artists of its tracks, otherwise
+/// their main artists. Albums without artist (tracks without any artist, and tracks with the compilation flag but
+/// without album artist tag) are unique by their title and album folder in the media source instead. Created by the
+/// scan and removed once it has no tracks. The spelling of the title and the year follow the folder of the album that
+/// was written last. When its tracks moved to other albums (see <see cref="AlbumMove"/>), its favorites, cover rule,
+/// online cover and <see cref="FirstSeenAt"/> go to those albums before it is removed (<see
+/// cref="Repositories.ILibraryScanRepository.DeleteOrphansAsync"/>).
 /// </summary>
 public class Album
 {
@@ -27,12 +27,19 @@ public class Album
     public required string AlbumKey { get; set; }
 
     /// <summary>
-    /// Artist of the album: the album artist of its tracks, otherwise their artist; <c>null</c> for albums without a
-    /// known artist and for compilations formed by the compilation flag without an album artist tag.
+    /// The first artist of the album (see <see cref="ArtistCredits"/>): the first album artist of its tracks, otherwise
+    /// their first main artist; <c>null</c> for albums without a known artist and for compilations formed by the
+    /// compilation flag without an album artist tag.
     /// </summary>
     public Guid? AlbumArtistId { get; set; }
 
     public Artist? AlbumArtist { get; set; }
+
+    /// <summary>
+    /// All album artists in their order; the first one is <see cref="AlbumArtistId"/>. Empty for albums without a
+    /// known artist.
+    /// </summary>
+    public ICollection<AlbumArtistCredit> ArtistCredits { get; set; } = [];
 
     /// <summary>
     /// The MusicBrainz release of the album, from the tags of its songs. A scan finds an album by it before its artist

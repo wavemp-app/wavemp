@@ -157,11 +157,44 @@ public class LibraryIssueDetectorTests
     }
 
     [Test]
-    public void LibraryIssueTypes_Hints_AreTheVideosWithoutAudioAndTheSongsWithoutVideo()
+    public void LibraryIssueTypes_Hints_AreTheVideosWithoutAudioTheSongsWithoutVideoAndPossibleSeveralArtists()
     {
-        LibraryIssueTypes.OfSeverity(LibraryIssueSeverity.Hint)
-            .Should().Equal(LibraryIssueType.VideoWithoutAudio, LibraryIssueType.AudioWithoutVideo);
+        LibraryIssueTypes.OfSeverity(LibraryIssueSeverity.Hint).Should().Equal(
+            LibraryIssueType.VideoWithoutAudio,
+            LibraryIssueType.AudioWithoutVideo,
+            LibraryIssueType.PossibleMultipleArtists);
         LibraryIssueTypes.All.Should().OnlyHaveUniqueItems().And.HaveCount(Enum.GetValues<LibraryIssueType>().Length);
+    }
+
+    [TestCase("Simon & Garfunkel")]
+    [TestCase("Earth, Wind & Fire")]
+    [TestCase("AC/DC")]
+    public void Detect_AmbiguousArtistNameWithoutValues_IsAHintForSeveralArtists(string name)
+    {
+        LibraryCheckTrackRow track = Track("Song", hasVideo: true) with { ArtistNames = [name] };
+
+        LibraryIssueDetector.Detect([track], [], _tolerance).Should().Equal(
+            new DetectedLibraryIssue(LibraryIssueType.PossibleMultipleArtists, track.TrackId));
+    }
+
+    [Test]
+    public void Detect_AmbiguousArtistNameWithConfirmedValues_IsNoHint()
+    {
+        LibraryCheckTrackRow track = Track("Song", hasVideo: true) with
+        {
+            ArtistNames = ["Simon & Garfunkel"],
+            HasArtistValues = true,
+        };
+
+        LibraryIssueDetector.Detect([track], [], _tolerance).Should().BeEmpty();
+    }
+
+    [Test]
+    public void Detect_UnambiguousArtistNames_AreNoHint()
+    {
+        LibraryCheckTrackRow track = Track("Song", hasVideo: true) with { ArtistNames = ["K.Flay", "Lil Nas X"] };
+
+        LibraryIssueDetector.Detect([track], [], _tolerance).Should().BeEmpty();
     }
 
     private static LibraryCheckTrackRow Track(

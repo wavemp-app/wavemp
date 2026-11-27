@@ -48,6 +48,7 @@ public static class RecapMappingExtensions
                     Artist = album.ArtistId is { } artistId && album.ArtistName is { } artistName
                         ? new ArtistReferenceDto { Id = artistId, Name = artistName }
                         : null,
+                    Artists = LibraryMappingExtensions.ToCredits(album.ArtistId, album.ArtistName),
                     IsCompilation = album.IsCompilation,
                 },
                 Plays = album.Plays,
