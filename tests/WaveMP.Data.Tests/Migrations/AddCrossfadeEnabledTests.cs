@@ -19,7 +19,7 @@ public class AddCrossfadeEnabledTests
     public async Task Migrate_ExistingSettings_KeepTheCrossfadeOfEachProfile()
     {
         await using TestDatabase database = await TestDatabase.CreateMigratedAsync(
-            "wavemp_tests_migration_crossfade",
+            "wavemp_tests_data_migration_crossfade",
             PreviousMigration);
         var withCrossfade = Guid.NewGuid();
         var withoutCrossfade = Guid.NewGuid();

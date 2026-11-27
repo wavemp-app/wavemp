@@ -52,7 +52,7 @@ public class CastingApiTests
             TestVideoCodec.H264);
 
         _factory = new WaveMpWebApplicationFactory(
-            WaveMpWebApplicationFactory.TestDatabaseName + "_casting",
+            "wavemp_tests_service_casting",
             freshDatabase: true,
             mediaPath: _media.Path);
         _anonymous = _factory.CreateClient();

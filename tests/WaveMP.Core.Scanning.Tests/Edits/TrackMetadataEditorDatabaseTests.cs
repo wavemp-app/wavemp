@@ -27,7 +27,7 @@ namespace WaveMP.Core.Scanning.Tests.Edits;
 [Category("Integration")]
 public class TrackMetadataEditorDatabaseTests
 {
-    private const string DatabaseName = "wavemp_tests_metadata_editor";
+    private const string DatabaseName = "wavemp_tests_scanning_metadata_editor";
 
     private TestDatabase _database = null!;
     private TemporaryDirectory _media = null!;

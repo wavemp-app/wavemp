@@ -38,7 +38,7 @@ public class HistoryApiTests
             new TestTags { Title = "Second" });
 
         _factory = new WaveMpWebApplicationFactory(
-            WaveMpWebApplicationFactory.TestDatabaseName + "_history",
+            "wavemp_tests_service_history",
             freshDatabase: true,
             mediaPath: _media.Path);
         _anonymous = _factory.CreateClient();

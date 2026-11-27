@@ -38,7 +38,7 @@ public class FileSelectionApiTests
         await AudioAsync("Band/Album/Plain.mp3", AudioFormat.Mp3, "Plain");
 
         _factory = new WaveMpWebApplicationFactory(
-            WaveMpWebApplicationFactory.TestDatabaseName + "_file_selection",
+            "wavemp_tests_service_file_selection",
             freshDatabase: true,
             mediaPath: _media.Path);
         _anonymous = _factory.CreateClient();

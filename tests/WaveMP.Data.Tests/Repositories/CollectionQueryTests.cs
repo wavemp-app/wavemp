@@ -16,7 +16,7 @@ public class CollectionQueryTests : LibraryDatabaseTests
 {
     private static readonly DateTimeOffset _start = new(2026, 11, 1, 20, 0, 0, TimeSpan.Zero);
 
-    protected override string DatabaseName => "wavemp_tests_collection_queries";
+    protected override string DatabaseName => "wavemp_tests_data_collection_queries";
 
     [Test]
     public async Task TrackRows_Always_CarryTheFavoriteAndRatingOfTheUser()

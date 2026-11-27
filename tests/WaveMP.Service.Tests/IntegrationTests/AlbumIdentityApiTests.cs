@@ -39,7 +39,7 @@ public class AlbumIdentityApiTests
         _folderPicture = await File.ReadAllBytesAsync(_media.Combine("Various/Hits/cover.jpg"));
 
         _factory = new WaveMpWebApplicationFactory(
-            WaveMpWebApplicationFactory.TestDatabaseName + "_album_identity",
+            "wavemp_tests_service_album_identity",
             freshDatabase: true,
             mediaPath: _media.Path);
         _admin = await _factory.CreateAdminClientAsync();

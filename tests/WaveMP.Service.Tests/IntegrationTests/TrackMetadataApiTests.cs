@@ -70,7 +70,7 @@ public class TrackMetadataApiTests
         File.SetAttributes(_media.Combine("Unlocked.mp3"), FileAttributes.ReadOnly);
 
         _factory = new WaveMpWebApplicationFactory(
-            WaveMpWebApplicationFactory.TestDatabaseName + "_track_metadata",
+            "wavemp_tests_service_track_metadata",
             freshDatabase: true,
             mediaPath: _media.Path);
         _anonymous = _factory.CreateClient();

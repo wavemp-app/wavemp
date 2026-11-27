@@ -45,7 +45,7 @@ public class PlaylistsApiTests
         }
 
         _factory = new WaveMpWebApplicationFactory(
-            WaveMpWebApplicationFactory.TestDatabaseName + "_playlists",
+            "wavemp_tests_service_playlists",
             freshDatabase: true,
             mediaPath: _media.Path);
         _anonymous = _factory.CreateClient();

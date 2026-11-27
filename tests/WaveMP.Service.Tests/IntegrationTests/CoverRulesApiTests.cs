@@ -62,7 +62,7 @@ public class CoverRulesApiTests
         _songPicture = await File.ReadAllBytesAsync(_media.Combine("Band/Album/01 Song.jpg"));
 
         _factory = new WaveMpWebApplicationFactory(
-            WaveMpWebApplicationFactory.TestDatabaseName + "_cover_rules",
+            "wavemp_tests_service_cover_rules",
             freshDatabase: true,
             mediaPath: _media.Path);
         _anonymous = _factory.CreateClient();

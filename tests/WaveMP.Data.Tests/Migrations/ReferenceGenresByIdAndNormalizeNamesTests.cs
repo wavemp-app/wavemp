@@ -26,7 +26,7 @@ public class ReferenceGenresByIdAndNormalizeNamesTests
     public async Task Migrate_TracksWithGenreTexts_ReferenceGenresAndKeepTheUserData()
     {
         await using TestDatabase database = await TestDatabase.CreateMigratedAsync(
-            "wavemp_tests_migration_genres",
+            "wavemp_tests_data_migration_genres",
             PreviousMigration);
         await SeedAsync(database);
 
@@ -56,7 +56,7 @@ public class ReferenceGenresByIdAndNormalizeNamesTests
     public async Task Revert_MigratedTracks_GetTheirGenreTextsBack()
     {
         await using TestDatabase database = await TestDatabase.CreateMigratedAsync(
-            "wavemp_tests_migration_genres_down",
+            "wavemp_tests_data_migration_genres_down",
             PreviousMigration);
         await SeedAsync(database);
         await database.MigrateAsync(Migration);

@@ -19,7 +19,7 @@ public class AddMediaSourcesTests
     public async Task Migrate_ExistingLibrary_BelongsToTheFirstSourceThatFollowsMediaPath()
     {
         await using TestDatabase database = await TestDatabase.CreateMigratedAsync(
-            "wavemp_tests_migration_media_sources",
+            "wavemp_tests_data_migration_media_sources",
             PreviousMigration);
         var trackId = Guid.NewGuid();
         var fileId = Guid.NewGuid();
@@ -58,7 +58,7 @@ public class AddMediaSourcesTests
     public async Task Migrate_EmptyDatabase_CreatesTheFirstSource()
     {
         await using TestDatabase database = await TestDatabase.CreateMigratedAsync(
-            "wavemp_tests_migration_media_sources_empty");
+            "wavemp_tests_data_migration_media_sources_empty");
 
         await using WaveMpDbContext dbContext = database.CreateDbContext();
         (await dbContext.MediaSources.Select(source => source.Id).ToListAsync())

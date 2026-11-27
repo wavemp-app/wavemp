@@ -7,7 +7,10 @@ namespace WaveMP.Testing.Databases;
 /// <summary>
 /// Connection settings of the test databases on the PostgreSQL instance of the tests (local: docker-compose.dev.yml,
 /// CI: service container). <c>DB_HOST</c>, <c>DB_PORT</c>, <c>DB_USER</c> and <c>DB_PASSWORD</c> come from the
-/// environment or, if not set there, from the repository's .env file.
+/// environment or, if not set there, from the repository's .env file. Every fixture uses a database of its own,
+/// named <c>wavemp_tests_&lt;project&gt;_&lt;name&gt;</c> with the key of its test project (e.g. <c>data</c> for
+/// WaveMP.Data.Tests), because the test projects run in parallel and the fixtures drop their databases;
+/// <c>.github/scripts/check-test-databases.mjs</c> checks the names.
 /// </summary>
 public static class TestDatabaseSettings
 {

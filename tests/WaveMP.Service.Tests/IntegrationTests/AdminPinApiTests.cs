@@ -14,7 +14,8 @@ namespace WaveMP.Service.Tests.IntegrationTests;
 public class AdminPinApiTests
 {
     private const string AdminPin = "246810";
-    private const string DatabaseName = WaveMpWebApplicationFactory.TestDatabaseName + "_admin_pin";
+    private const string DatabaseName = "wavemp_tests_service_admin_pin";
+    private const string RestartDatabaseName = "wavemp_tests_service_admin_pin_restart";
 
     private WaveMpWebApplicationFactory _factory = null!;
     private HttpClient _anonymous = null!;
@@ -86,7 +87,6 @@ public class AdminPinApiTests
     [Test]
     public async Task Restart_WithAnotherAdminPin_OverridesThePinAndEndsTheAdminSessions()
     {
-        const string RestartDatabaseName = DatabaseName + "_restart";
         string token;
         await using (WaveMpWebApplicationFactory first = CreateFactory(null, freshDatabase: true, RestartDatabaseName))
         {

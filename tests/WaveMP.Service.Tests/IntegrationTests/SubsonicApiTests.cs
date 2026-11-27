@@ -68,7 +68,7 @@ public class SubsonicApiTests
             new TestTags { Title = "Third", Artist = "The Beta", Album = "Two", Genre = "Pop", Date = "2005" });
 
         _factory = new WaveMpWebApplicationFactory(
-            WaveMpWebApplicationFactory.TestDatabaseName + "_subsonic",
+            "wavemp_tests_service_subsonic",
             freshDatabase: true,
             mediaPath: _media.Path);
         _anonymous = _factory.CreateClient();

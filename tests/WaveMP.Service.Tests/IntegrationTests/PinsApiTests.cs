@@ -27,7 +27,7 @@ public class PinsApiTests
     public async Task OneTimeSetUp()
     {
         _factory = new WaveMpWebApplicationFactory(
-            WaveMpWebApplicationFactory.TestDatabaseName + "_pins",
+            "wavemp_tests_service_pins",
             freshDatabase: true,
             settings: new Dictionary<string, string?>
             {

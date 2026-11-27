@@ -21,7 +21,7 @@ public class SmartPlaylistRepositoryTests : LibraryDatabaseTests
     /// </summary>
     private static readonly DateTimeOffset _now = LibrarySeed.DefaultTime.AddDays(10);
 
-    protected override string DatabaseName => "wavemp_tests_smart_playlists";
+    protected override string DatabaseName => "wavemp_tests_data_smart_playlists";
 
     [Test]
     public async Task ListTrackIdsAsync_WithoutRules_ReturnsEveryTrack()

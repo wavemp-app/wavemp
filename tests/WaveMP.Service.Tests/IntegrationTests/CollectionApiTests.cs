@@ -34,7 +34,7 @@ public class CollectionApiTests
         await CreateTrackAsync("Gamma", "Three", "Fourth", "Jazz", "2010");
 
         _factory = new WaveMpWebApplicationFactory(
-            WaveMpWebApplicationFactory.TestDatabaseName + "_collection",
+            "wavemp_tests_service_collection",
             freshDatabase: true,
             mediaPath: _media.Path);
         _anonymous = _factory.CreateClient();

@@ -34,7 +34,7 @@ public class AddArtistCreditsTests
     public async Task Migrate_SongsAndAlbums_KeepTheirArtistAsOnlyArtistAndTheUserDataStays()
     {
         await using TestDatabase database = await TestDatabase.CreateMigratedAsync(
-            "wavemp_tests_migration_artist_credits",
+            "wavemp_tests_data_migration_artist_credits",
             PreviousMigration);
         await SeedAsync(database);
         Counts before = await CountAsync(database);
@@ -82,7 +82,7 @@ public class AddArtistCreditsTests
     public async Task Revert_MigratedLibrary_DropsTheListsAndKeepsEverythingElse()
     {
         await using TestDatabase database = await TestDatabase.CreateMigratedAsync(
-            "wavemp_tests_migration_artist_credits_down",
+            "wavemp_tests_data_migration_artist_credits_down",
             PreviousMigration);
         await SeedAsync(database);
         Counts before = await CountAsync(database);

@@ -15,7 +15,7 @@ namespace WaveMP.Service.Tests.IntegrationTests;
 [Category("Integration")]
 public class MigrationBackupApiTests
 {
-    private const string DatabaseName = WaveMpWebApplicationFactory.TestDatabaseName + "_migration_backup";
+    private const string DatabaseName = "wavemp_tests_service_migration_backup";
     private const string UndoneMigration = "20261116113354_AddVisualizationQuality";
 
     [TearDown]

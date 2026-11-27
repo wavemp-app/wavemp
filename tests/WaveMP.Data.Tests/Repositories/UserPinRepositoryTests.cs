@@ -19,7 +19,7 @@ public class UserPinRepositoryTests : LibraryDatabaseTests
     private static readonly DateTimeOffset _now = new(2026, 11, 17, 10, 0, 0, TimeSpan.Zero);
     private static readonly DateTimeOffset _lockoutEnd = _now.AddMinutes(5);
 
-    protected override string DatabaseName => "wavemp_tests_user_pins";
+    protected override string DatabaseName => "wavemp_tests_data_user_pins";
 
     [Test]
     public async Task BeginPinAttemptAsync_BelowTheLimit_CountsWithoutLockout()

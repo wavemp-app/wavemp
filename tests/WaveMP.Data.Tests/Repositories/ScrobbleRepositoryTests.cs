@@ -11,7 +11,7 @@ public class ScrobbleRepositoryTests : LibraryDatabaseTests
 {
     private static readonly DateTimeOffset _now = new(2026, 11, 18, 12, 0, 0, TimeSpan.Zero);
 
-    protected override string DatabaseName => "wavemp_tests_scrobbles";
+    protected override string DatabaseName => "wavemp_tests_data_scrobbles";
 
     [Test]
     public async Task SaveConnectionAsync_NewService_AddsTheConnection()

@@ -24,7 +24,7 @@ public class ArtistPictureSettingsApiTests
     public async Task OneTimeSetUp()
     {
         _factory = new WaveMpWebApplicationFactory(
-            WaveMpWebApplicationFactory.TestDatabaseName + "_artist_picture_settings",
+            "wavemp_tests_service_artist_picture_settings",
             freshDatabase: true);
         _anonymous = _factory.CreateClient();
         _admin = await _factory.CreateAdminClientAsync();

@@ -12,7 +12,7 @@ namespace WaveMP.Data.Tests.Repositories;
 [Category("Integration")]
 public class TrackRepositoryTests : LibraryDatabaseTests
 {
-    protected override string DatabaseName => "wavemp_tests_library_tracks";
+    protected override string DatabaseName => "wavemp_tests_data_library_tracks";
 
     [Test]
     public async Task ListAsync_ByAlbumArtist_KeepsAlbumsTogetherAndPutsCompilationsLast()

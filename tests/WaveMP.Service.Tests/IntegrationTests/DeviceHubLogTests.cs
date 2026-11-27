@@ -26,7 +26,7 @@ public class DeviceHubLogTests
     public async Task OneTimeSetUp()
     {
         _factory = new WaveMpWebApplicationFactory(
-            WaveMpWebApplicationFactory.TestDatabaseName + "_device_hub_log",
+            "wavemp_tests_service_device_hub_log",
             freshDatabase: true,
             settings: new Dictionary<string, string?>
             {

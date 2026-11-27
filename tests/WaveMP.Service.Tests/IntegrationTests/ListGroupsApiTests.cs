@@ -27,7 +27,7 @@ public class ListGroupsApiTests
     public async Task OneTimeSetUp()
     {
         _factory = new WaveMpWebApplicationFactory(
-            WaveMpWebApplicationFactory.TestDatabaseName + "_groups",
+            "wavemp_tests_service_groups",
             freshDatabase: true);
         _anonymous = _factory.CreateClient();
         _admin = await _factory.CreateAdminClientAsync();

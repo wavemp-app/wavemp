@@ -49,7 +49,7 @@ public class RecapsApiTests
             new TestTags { Title = "Third", Artist = "Breeze", Album = "Evening", Genre = "Rock" });
 
         _factory = new WaveMpWebApplicationFactory(
-            WaveMpWebApplicationFactory.TestDatabaseName + "_recaps",
+            "wavemp_tests_service_recaps",
             freshDatabase: true,
             mediaPath: _media.Path);
         _anonymous = _factory.CreateClient();

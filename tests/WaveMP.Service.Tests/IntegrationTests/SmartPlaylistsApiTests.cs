@@ -34,7 +34,7 @@ public class SmartPlaylistsApiTests
         await CreateTrackAsync("Gamma", "Three", "Fourth", "Pop", withCover: false);
 
         _factory = new WaveMpWebApplicationFactory(
-            WaveMpWebApplicationFactory.TestDatabaseName + "_smart_playlists",
+            "wavemp_tests_service_smart_playlists",
             freshDatabase: true,
             mediaPath: _media.Path);
         _anonymous = _factory.CreateClient();

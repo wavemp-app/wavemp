@@ -13,7 +13,7 @@ public class ArtistPictureRepositoryTests : LibraryDatabaseTests
 {
     private static readonly DateTimeOffset _later = LibrarySeed.DefaultTime.AddDays(3);
 
-    protected override string DatabaseName => "wavemp_tests_library_artist_pictures";
+    protected override string DatabaseName => "wavemp_tests_data_library_artist_pictures";
 
     [Test]
     public async Task FindSourcesAsync_AllSources_NamesTheFileAndBothStoredPictures()

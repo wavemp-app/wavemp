@@ -19,7 +19,7 @@ public class AddTrackReviewsTests
     public async Task Migrate_ExistingTracks_StartUnreviewed()
     {
         await using TestDatabase database = await TestDatabase.CreateMigratedAsync(
-            "wavemp_tests_migration_track_reviews",
+            "wavemp_tests_data_migration_track_reviews",
             PreviousMigration);
         var trackId = Guid.NewGuid();
         await using (WaveMpDbContext dbContext = database.CreateDbContext())

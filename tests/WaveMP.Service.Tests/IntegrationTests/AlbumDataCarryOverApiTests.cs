@@ -37,7 +37,7 @@ public class AlbumDataCarryOverApiTests
         await AudioAsync("Duo/Late/01.mp3", "Duo", "Late", "Late One");
 
         _factory = new WaveMpWebApplicationFactory(
-            WaveMpWebApplicationFactory.TestDatabaseName + "_album_carry_over",
+            "wavemp_tests_service_album_carry_over",
             freshDatabase: true,
             mediaPath: _media.Path);
         _anonymous = _factory.CreateClient();

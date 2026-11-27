@@ -78,7 +78,7 @@ public class LibraryApiTests
         await TestMediaGenerator.CreateAudioAsync(_media.Combine("Loose - Song.mp3"), AudioFormat.Mp3);
 
         _factory = new WaveMpWebApplicationFactory(
-            WaveMpWebApplicationFactory.TestDatabaseName + "_library",
+            "wavemp_tests_service_library",
             freshDatabase: true,
             mediaPath: _media.Path);
         _anonymous = _factory.CreateClient();

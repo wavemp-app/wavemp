@@ -75,7 +75,7 @@ public class StreamingApiTests
             new TestTags { Title = "Vanished" });
 
         _factory = new WaveMpWebApplicationFactory(
-            WaveMpWebApplicationFactory.TestDatabaseName + "_streaming",
+            "wavemp_tests_service_streaming",
             freshDatabase: true,
             mediaPath: _media.Path);
         _anonymous = _factory.CreateClient();

@@ -14,7 +14,7 @@ namespace WaveMP.Core.Organizing.Tests.Databases;
 [TestFixture]
 public sealed class OwnAlbumServiceDatabaseTests : OrganizingDatabaseTestBase
 {
-    protected override string DatabaseName => "wavemp_tests_own_albums";
+    protected override string DatabaseName => "wavemp_tests_organizing_own_albums";
 
     protected override IDictionary<string, string?> ExtraSettings { get; } = new Dictionary<string, string?>
     {

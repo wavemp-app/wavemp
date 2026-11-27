@@ -11,7 +11,7 @@ namespace WaveMP.Data.Tests.Repositories;
 [Category("Integration")]
 public class MediaSourceRepositoryTests : LibraryDatabaseTests
 {
-    protected override string DatabaseName => "wavemp_tests_media_sources";
+    protected override string DatabaseName => "wavemp_tests_data_media_sources";
 
     [Test]
     public async Task ListAsync_Always_StartsWithTheFirstSourceOfTheMigrationAndSortsByName()

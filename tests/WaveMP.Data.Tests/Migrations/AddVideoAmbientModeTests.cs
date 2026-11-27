@@ -18,7 +18,7 @@ public class AddVideoAmbientModeTests
     public async Task Migrate_ExistingSettings_TurnTheAmbientModeOn()
     {
         await using TestDatabase database = await TestDatabase.CreateMigratedAsync(
-            "wavemp_tests_migration_video_ambient",
+            "wavemp_tests_data_migration_video_ambient",
             PreviousMigration);
         var userId = Guid.NewGuid();
         await using (WaveMpDbContext dbContext = database.CreateDbContext())

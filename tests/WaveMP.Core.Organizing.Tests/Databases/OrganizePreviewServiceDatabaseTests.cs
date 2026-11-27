@@ -20,7 +20,7 @@ namespace WaveMP.Core.Organizing.Tests.Databases;
 [TestFixture]
 public sealed class OrganizePreviewServiceDatabaseTests : OrganizingDatabaseTestBase
 {
-    protected override string DatabaseName => "wavemp_tests_organize_previews";
+    protected override string DatabaseName => "wavemp_tests_organizing_previews";
 
     [Test]
     public async Task The_preview_of_an_own_album_plans_tags_and_moves_without_touching_a_file()

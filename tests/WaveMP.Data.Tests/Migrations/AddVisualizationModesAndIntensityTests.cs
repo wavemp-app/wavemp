@@ -20,7 +20,7 @@ public class AddVisualizationModesAndIntensityTests
     public async Task Migrate_ExistingSettings_MoveThePresetsOfTheOwnModulesIntoTheColorSchemes()
     {
         await using TestDatabase database = await TestDatabase.CreateMigratedAsync(
-            "wavemp_tests_migration_visualization_modes",
+            "wavemp_tests_data_migration_visualization_modes",
             PreviousMigration);
         var aforce = Guid.NewGuid();
         var blackCap = Guid.NewGuid();

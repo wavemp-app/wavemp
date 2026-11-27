@@ -37,7 +37,7 @@ public class PlaybackStateApiTests
         }
 
         _factory = new WaveMpWebApplicationFactory(
-            WaveMpWebApplicationFactory.TestDatabaseName + "_playback_state",
+            "wavemp_tests_service_playback_state",
             freshDatabase: true,
             mediaPath: _media.Path);
         _anonymous = _factory.CreateClient();

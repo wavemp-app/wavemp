@@ -18,7 +18,7 @@ public class SessionsApiTests
     public async Task OneTimeSetUp()
     {
         _factory = new WaveMpWebApplicationFactory(
-            WaveMpWebApplicationFactory.TestDatabaseName + "_sessions",
+            "wavemp_tests_service_sessions",
             freshDatabase: true);
         _client = _factory.CreateClient();
         _admin = await _client.GetBuiltInAdminAsync();

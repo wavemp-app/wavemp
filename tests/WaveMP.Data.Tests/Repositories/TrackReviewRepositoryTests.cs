@@ -14,7 +14,7 @@ public class TrackReviewRepositoryTests : LibraryDatabaseTests
 {
     private static readonly DateTimeOffset _reviewedAt = new(2026, 11, 17, 18, 0, 0, TimeSpan.Zero);
 
-    protected override string DatabaseName => "wavemp_tests_library_track_reviews";
+    protected override string DatabaseName => "wavemp_tests_data_library_track_reviews";
 
     [Test]
     public async Task MarkReviewedAsync_UnreviewedTracks_StoresTimeAndProfileAndChangesTheCounts()

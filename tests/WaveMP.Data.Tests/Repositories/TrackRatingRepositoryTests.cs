@@ -13,7 +13,7 @@ public class TrackRatingRepositoryTests : LibraryDatabaseTests
 {
     private static readonly DateTimeOffset _start = new(2026, 11, 1, 20, 0, 0, TimeSpan.Zero);
 
-    protected override string DatabaseName => "wavemp_tests_track_ratings";
+    protected override string DatabaseName => "wavemp_tests_data_track_ratings";
 
     [Test]
     public async Task SetAsync_NewRating_AddsIt()

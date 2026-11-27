@@ -19,7 +19,7 @@ public class ChangeLanguageToTagTests
     public async Task Migrate_ExistingSettings_KeepTheLanguageOfEachProfileAsTag()
     {
         await using TestDatabase database = await TestDatabase.CreateMigratedAsync(
-            "wavemp_tests_migration_language_tag",
+            "wavemp_tests_data_migration_language_tag",
             PreviousMigration);
         var english = Guid.NewGuid();
         var german = Guid.NewGuid();

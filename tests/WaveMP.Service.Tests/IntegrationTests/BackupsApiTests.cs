@@ -30,7 +30,7 @@ public class BackupsApiTests
     public async Task OneTimeSetUp()
     {
         _factory = new WaveMpWebApplicationFactory(
-            WaveMpWebApplicationFactory.TestDatabaseName + "_backups",
+            "wavemp_tests_service_backups",
             freshDatabase: true);
         _anonymous = _factory.CreateClient();
         _admin = await _factory.CreateAdminClientAsync();

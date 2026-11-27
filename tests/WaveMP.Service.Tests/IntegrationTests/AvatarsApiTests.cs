@@ -32,7 +32,7 @@ public class AvatarsApiTests
         }
 
         _factory = new WaveMpWebApplicationFactory(
-            WaveMpWebApplicationFactory.TestDatabaseName + "_avatars",
+            "wavemp_tests_service_avatars",
             freshDatabase: true);
         _anonymous = _factory.CreateClient();
         _admin = await _factory.CreateAdminClientAsync();

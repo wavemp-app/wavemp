@@ -57,7 +57,7 @@ public class ArtistDataCarryOverApiTests
         await AudioAsync("Hosts/Night Mix/02.mp3", hosted with { Artist = "Singer B", Title = "Mix Two" });
 
         _factory = new WaveMpWebApplicationFactory(
-            WaveMpWebApplicationFactory.TestDatabaseName + "_artist_carry_over",
+            "wavemp_tests_service_artist_carry_over",
             freshDatabase: true,
             mediaPath: _media.Path);
         _anonymous = _factory.CreateClient();

@@ -49,7 +49,7 @@ public class TrackReviewsApiTests
         await TestMediaGenerator.CreateAudioAsync(_media.Combine("Loose - Untagged.mp3"), AudioFormat.Mp3);
 
         _factory = new WaveMpWebApplicationFactory(
-            WaveMpWebApplicationFactory.TestDatabaseName + "_track_reviews",
+            "wavemp_tests_service_track_reviews",
             freshDatabase: true,
             mediaPath: _media.Path);
         _anonymous = _factory.CreateClient();

@@ -13,7 +13,7 @@ public class RecapShareRepositoryTests : LibraryDatabaseTests
 {
     private static readonly DateTimeOffset _start = new(2026, 11, 1, 20, 0, 0, TimeSpan.Zero);
 
-    protected override string DatabaseName => "wavemp_tests_recap_shares";
+    protected override string DatabaseName => "wavemp_tests_data_recap_shares";
 
     [SetUp]
     public async Task ClearSharesAsync()

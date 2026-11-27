@@ -23,7 +23,9 @@ namespace WaveMP.Service.Tests.IntegrationTests;
 public class ScrobblingApiTests
 {
     private const string Path = "/api/v1/me/scrobbling";
-    private const string DatabaseName = WaveMpWebApplicationFactory.TestDatabaseName + "_scrobbling";
+    private const string DatabaseName = "wavemp_tests_service_scrobbling";
+    private const string NoKeyDatabaseName = "wavemp_tests_service_scrobbling_nokey";
+    private const string RestartDatabaseName = "wavemp_tests_service_scrobbling_restart";
 
     private static readonly TimeSpan _timeout = TimeSpan.FromSeconds(20);
 
@@ -295,7 +297,7 @@ public class ScrobblingApiTests
     public async Task ConnectMyScrobblingService_LastFmWithoutApiAccount_ReturnsNotConfigured()
     {
         await using WaveMpWebApplicationFactory factory = new(
-            DatabaseName + "_nokey",
+            NoKeyDatabaseName,
             freshDatabase: true,
             settings: Settings(lastFm: false));
         using HttpClient client = await factory.CreateAdminClientAsync();
@@ -316,10 +318,9 @@ public class ScrobblingApiTests
         using TemporaryDirectory data = new();
         Dictionary<string, string?> settings = Settings(lastFm: false);
         settings["DATA_PATH"] = data.Path;
-        string database = DatabaseName + "_restart";
         string sessionToken;
         await using (WaveMpWebApplicationFactory first = new(
-            database,
+            RestartDatabaseName,
             freshDatabase: true,
             mediaPath: media.Path,
             settings: settings))
@@ -345,7 +346,7 @@ public class ScrobblingApiTests
             .SubmitListensAsync("restart-token", Arg.Any<IReadOnlyList<ScrobblePlay>>(), Arg.Any<CancellationToken>())
             .Returns(ScrobbleSendStatus.Accepted);
         await using WaveMpWebApplicationFactory second = new(
-            database,
+            RestartDatabaseName,
             mediaPath: media.Path,
             settings: settings,
             listenBrainz: listenBrainz);

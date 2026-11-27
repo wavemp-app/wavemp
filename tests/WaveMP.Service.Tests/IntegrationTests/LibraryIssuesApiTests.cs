@@ -45,7 +45,7 @@ public class LibraryIssuesApiTests
         await TestMediaGenerator.CreateVideoAsync(_media.Combine("Clips/Clip.mkv"), VideoFormat.Mkv, 160, 120);
 
         _factory = new WaveMpWebApplicationFactory(
-            WaveMpWebApplicationFactory.TestDatabaseName + "_library_issues",
+            "wavemp_tests_service_library_issues",
             freshDatabase: true,
             mediaPath: _media.Path);
         _anonymous = _factory.CreateClient();

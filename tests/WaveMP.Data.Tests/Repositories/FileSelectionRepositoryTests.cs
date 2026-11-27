@@ -12,7 +12,7 @@ namespace WaveMP.Data.Tests.Repositories;
 [Category("Integration")]
 public class FileSelectionRepositoryTests : LibraryDatabaseTests
 {
-    protected override string DatabaseName => "wavemp_tests_library_file_selections";
+    protected override string DatabaseName => "wavemp_tests_data_library_file_selections";
 
     [Test]
     public async Task ReplaceAsync_NewSelection_AddsUpdatesAndRemovesRows()

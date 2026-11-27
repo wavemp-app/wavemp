@@ -38,7 +38,7 @@ public class SongDataCarryOverApiTests
         await AudioAsync("Stays/Here.mp3", "Other", "Other", "Stays Here", "1");
 
         _factory = new WaveMpWebApplicationFactory(
-            WaveMpWebApplicationFactory.TestDatabaseName + "_song_carry_over",
+            "wavemp_tests_service_song_carry_over",
             freshDatabase: true,
             mediaPath: _media.Path);
         _anonymous = _factory.CreateClient();

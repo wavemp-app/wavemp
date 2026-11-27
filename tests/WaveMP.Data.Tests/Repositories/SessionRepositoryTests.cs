@@ -12,7 +12,7 @@ public class SessionRepositoryTests : LibraryDatabaseTests
 {
     private static readonly DateTimeOffset _start = new(2026, 11, 1, 20, 0, 0, TimeSpan.Zero);
 
-    protected override string DatabaseName => "wavemp_tests_sessions";
+    protected override string DatabaseName => "wavemp_tests_data_sessions";
 
     [Test]
     public async Task AddAsync_ExistingUser_AddsTheSession()

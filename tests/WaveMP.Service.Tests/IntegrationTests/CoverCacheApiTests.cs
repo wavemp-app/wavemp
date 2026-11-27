@@ -35,7 +35,7 @@ public class CoverCacheApiTests
         await CreateAlbumAsync("Gamma", "Change Album", "cover.jpg", 400, 400);
 
         _factory = new WaveMpWebApplicationFactory(
-            WaveMpWebApplicationFactory.TestDatabaseName + "_covers",
+            "wavemp_tests_service_covers",
             freshDatabase: true,
             mediaPath: _media.Path);
         _admin = await _factory.CreateAdminClientAsync();

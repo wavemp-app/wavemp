@@ -25,7 +25,7 @@ namespace WaveMP.Core.Playlists.Tests.SmartPlaylists;
 [Category("Integration")]
 public class SmartPlaylistTemplatesDatabaseTests
 {
-    private const string DatabaseName = "wavemp_tests_smart_playlist_templates";
+    private const string DatabaseName = "wavemp_tests_playlists_smart_playlist_templates";
 
     private static readonly DateTimeOffset _now = new(2026, 11, 19, 12, 0, 0, TimeSpan.Zero);
 

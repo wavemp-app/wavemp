@@ -63,7 +63,7 @@ public class VideoStreamingApiTests
             durationSeconds: 5);
 
         _factory = new WaveMpWebApplicationFactory(
-            WaveMpWebApplicationFactory.TestDatabaseName + "_video",
+            "wavemp_tests_service_video",
             freshDatabase: true,
             mediaPath: _media.Path);
         _anonymous = _factory.CreateClient();

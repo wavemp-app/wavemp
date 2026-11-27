@@ -28,7 +28,7 @@ public class ListGroupKeysBulkTests : LibraryDatabaseTests
 
     private static readonly string?[] _genres = ["Rock", "rock", "Pop", "Jazz", "\u00c9lectro", "80s", null];
 
-    protected override string DatabaseName => "wavemp_tests_library_group_keys";
+    protected override string DatabaseName => "wavemp_tests_data_library_group_keys";
 
     private static IEnumerable<TestCaseData> TrackQueries()
     {

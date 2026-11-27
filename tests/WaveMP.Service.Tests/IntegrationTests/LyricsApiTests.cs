@@ -67,7 +67,7 @@ public class LyricsApiTests
         Answer("Tagged Busy", LrclibResponse.RateLimited(TimeSpan.FromSeconds(30)));
 
         _factory = new WaveMpWebApplicationFactory(
-            WaveMpWebApplicationFactory.TestDatabaseName + "_lyrics",
+            "wavemp_tests_service_lyrics",
             freshDatabase: true,
             mediaPath: _media.Path,
             settings: new Dictionary<string, string?>

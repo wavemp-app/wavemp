@@ -24,7 +24,7 @@ public class ApiIntegrationTests
     [OneTimeSetUp]
     public void OneTimeSetUp()
     {
-        _factory = new WaveMpWebApplicationFactory();
+        _factory = new WaveMpWebApplicationFactory("wavemp_tests_service_api");
         _client = _factory.CreateClient();
     }
 
@@ -51,8 +51,7 @@ public class ApiIntegrationTests
     public async Task GetHealth_WithMissingDatabase_ReturnsServiceUnavailableProblemWithCode()
     {
         // The startup creates and migrates the database like in production, so the test drops it afterwards.
-        await using WaveMpWebApplicationFactory factory =
-            new(WaveMpWebApplicationFactory.TestDatabaseName + "_missing");
+        await using WaveMpWebApplicationFactory factory = new("wavemp_tests_service_missing");
         using HttpClient client = factory.CreateClient();
         await factory.DeleteDatabaseAsync();
 

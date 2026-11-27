@@ -15,7 +15,7 @@ public class LibraryIssueRepositoryTests : LibraryDatabaseTests
     private static readonly DateTimeOffset _firstRun = new(2026, 11, 19, 8, 0, 0, TimeSpan.Zero);
     private static readonly DateTimeOffset _secondRun = _firstRun.AddHours(1);
 
-    protected override string DatabaseName => "wavemp_tests_library_issues";
+    protected override string DatabaseName => "wavemp_tests_data_library_issues";
 
     [Test]
     public async Task ListTracksAsync_Tracks_ReportCoversAndTheMissingTagsOfTheFileTheTrackPlays()

@@ -50,7 +50,7 @@ public class ArtistPicturesApiTests
         }
 
         _factory = new WaveMpWebApplicationFactory(
-            WaveMpWebApplicationFactory.TestDatabaseName + "_artist_pictures",
+            "wavemp_tests_service_artist_pictures",
             freshDatabase: true,
             mediaPath: _media.Path);
         _anonymous = _factory.CreateClient();

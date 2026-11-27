@@ -37,7 +37,7 @@ namespace WaveMP.Core.Scanning.Tests.Scans;
 [Category("Integration")]
 public class LibraryScannerTests
 {
-    private const string DatabaseName = "wavemp_tests_scanning";
+    private const string DatabaseName = "wavemp_tests_scanning_library_scanner";
 
     private static readonly DateTimeOffset _day = LibrarySeed.DefaultTime;
 

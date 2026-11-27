@@ -12,7 +12,7 @@ public class LibraryScanRepositoryTests : LibraryDatabaseTests
 {
     private static readonly DateTimeOffset _day = LibrarySeed.DefaultTime;
 
-    protected override string DatabaseName => "wavemp_tests_library_scan";
+    protected override string DatabaseName => "wavemp_tests_data_library_scan";
 
     [Test]
     public async Task GetFolderSnapshotsAsync_Folder_ReturnsOnlyItsOwnFiles()

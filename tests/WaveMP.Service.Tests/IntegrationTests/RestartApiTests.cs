@@ -13,7 +13,8 @@ namespace WaveMP.Service.Tests.IntegrationTests;
 [Category("Integration")]
 public class RestartApiTests
 {
-    private const string DatabaseName = WaveMpWebApplicationFactory.TestDatabaseName + "_restart";
+    private const string DatabaseName = "wavemp_tests_service_restart";
+    private const string JobsDatabaseName = "wavemp_tests_service_restart_jobs";
 
     [Test]
     public async Task Restart_WithExistingDatabase_KeepsSessionsAndTheSingleBuiltInAdmin()
@@ -43,7 +44,7 @@ public class RestartApiTests
     public async Task Restart_WithRunThatWasRunning_MarksItAsInterrupted()
     {
         var runId = Guid.CreateVersion7();
-        await using (WaveMpWebApplicationFactory first = new(DatabaseName + "_jobs", freshDatabase: true))
+        await using (WaveMpWebApplicationFactory first = new(JobsDatabaseName, freshDatabase: true))
         {
             await using AsyncServiceScope scope = first.Services.CreateAsyncScope();
             WaveMpDbContext db = scope.ServiceProvider.GetRequiredService<WaveMpDbContext>();
@@ -59,7 +60,7 @@ public class RestartApiTests
             await db.SaveChangesAsync();
         }
 
-        await using WaveMpWebApplicationFactory second = new(DatabaseName + "_jobs");
+        await using WaveMpWebApplicationFactory second = new(JobsDatabaseName);
         using HttpClient admin = await second.CreateAdminClientAsync();
 
         JobRunDto run = await admin.GetJsonAsync<JobRunDto>($"/api/v1/jobs/library-scan/runs/{runId}");

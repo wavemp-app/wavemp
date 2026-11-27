@@ -10,7 +10,7 @@ namespace WaveMP.Data.Tests.Repositories;
 [Category("Integration")]
 public class TrackMetadataRepositoryTests : LibraryDatabaseTests
 {
-    protected override string DatabaseName => "wavemp_tests_library_track_metadata";
+    protected override string DatabaseName => "wavemp_tests_data_library_track_metadata";
 
     [Test]
     public async Task FindEditTargetAsync_Duplicates_ReturnsThePrimaryAudioFile()

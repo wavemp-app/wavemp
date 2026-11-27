@@ -54,7 +54,7 @@ public class AutoplayApiTests
             new TestTags { Title = "Clip", Artist = "Alpha", Genre = "Rock", Date = "2001" });
 
         _factory = new WaveMpWebApplicationFactory(
-            WaveMpWebApplicationFactory.TestDatabaseName + "_autoplay",
+            "wavemp_tests_service_autoplay",
             freshDatabase: true,
             mediaPath: _media.Path);
         _anonymous = _factory.CreateClient();

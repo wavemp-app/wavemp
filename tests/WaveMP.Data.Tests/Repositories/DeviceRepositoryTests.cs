@@ -11,7 +11,7 @@ public class DeviceRepositoryTests : LibraryDatabaseTests
 {
     private static readonly DateTimeOffset _start = new(2026, 11, 25, 8, 0, 0, TimeSpan.Zero);
 
-    protected override string DatabaseName => "wavemp_tests_devices";
+    protected override string DatabaseName => "wavemp_tests_data_devices";
 
     [Test]
     public async Task RegisterAsync_NewDevice_AddsItWithAllValues()

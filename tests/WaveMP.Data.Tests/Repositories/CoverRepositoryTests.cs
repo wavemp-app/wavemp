@@ -10,7 +10,7 @@ namespace WaveMP.Data.Tests.Repositories;
 [Category("Integration")]
 public class CoverRepositoryTests : LibraryDatabaseTests
 {
-    protected override string DatabaseName => "wavemp_tests_library_covers";
+    protected override string DatabaseName => "wavemp_tests_data_library_covers";
 
     [Test]
     public async Task GetTrackCandidatesAsync_TrackOfAnAlbum_ReturnsItsOwnAndTheAlbumCoversButNotPicturesOfOtherTracks()

@@ -19,7 +19,7 @@ public class AddAutoplaySettingsTests
     public async Task Migrate_ExistingSettings_TurnAutoplayOn()
     {
         await using TestDatabase database = await TestDatabase.CreateMigratedAsync(
-            "wavemp_tests_migration_autoplay",
+            "wavemp_tests_data_migration_autoplay",
             PreviousMigration);
         var userId = Guid.NewGuid();
         await using (WaveMpDbContext dbContext = database.CreateDbContext())

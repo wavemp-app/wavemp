@@ -32,7 +32,7 @@ public class MediaSourcesApiTests
         await TestMediaGenerator.CreateAudioAsync(_media.Combine("Band/Song.mp3"), AudioFormat.Mp3);
 
         _factory = new WaveMpWebApplicationFactory(
-            WaveMpWebApplicationFactory.TestDatabaseName + "_sources",
+            "wavemp_tests_service_sources",
             freshDatabase: true,
             mediaPath: _media.Path);
         _anonymous = _factory.CreateClient();

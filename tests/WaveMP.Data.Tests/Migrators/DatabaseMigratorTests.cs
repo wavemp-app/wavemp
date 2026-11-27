@@ -16,7 +16,7 @@ namespace WaveMP.Data.Tests.Migrators;
 [Category("Integration")]
 public class DatabaseMigratorTests
 {
-    private const string DatabaseName = "wavemp_tests_migrator";
+    private const string DatabaseName = "wavemp_tests_data_migrator";
 
     private ErrorLogCollector _errorLog = null!;
     private ILoggerFactory _loggerFactory = null!;

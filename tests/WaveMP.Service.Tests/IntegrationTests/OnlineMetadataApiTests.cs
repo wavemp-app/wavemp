@@ -76,7 +76,7 @@ public class OnlineMetadataApiTests
             .Returns(OnlineResponse<byte[]>.Found(_png));
 
         _factory = new WaveMpWebApplicationFactory(
-            WaveMpWebApplicationFactory.TestDatabaseName + "_online_metadata",
+            "wavemp_tests_service_online_metadata",
             freshDatabase: true,
             mediaPath: _media.Path,
             musicBrainz: _musicBrainz,
@@ -112,7 +112,7 @@ public class OnlineMetadataApiTests
     public async Task GetOnlineMetadataSettings_Defaults_AreOffWithTheOfficialServices()
     {
         await using WaveMpWebApplicationFactory fresh = new(
-            WaveMpWebApplicationFactory.TestDatabaseName + "_online_metadata_defaults",
+            "wavemp_tests_service_online_metadata_defaults",
             freshDatabase: true);
         using HttpClient admin = await fresh.CreateAdminClientAsync();
 

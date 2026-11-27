@@ -12,7 +12,7 @@ public class PlaybackStateRepositoryTests : LibraryDatabaseTests
 {
     private static readonly DateTimeOffset _start = new(2026, 11, 19, 20, 0, 0, TimeSpan.Zero);
 
-    protected override string DatabaseName => "wavemp_tests_playback_states";
+    protected override string DatabaseName => "wavemp_tests_data_playback_states";
 
     [Test]
     public async Task FindAsync_NothingSaved_ReturnsNull()

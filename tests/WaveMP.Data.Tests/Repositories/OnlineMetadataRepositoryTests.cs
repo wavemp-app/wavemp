@@ -11,7 +11,7 @@ namespace WaveMP.Data.Tests.Repositories;
 [Category("Integration")]
 public class OnlineMetadataRepositoryTests : LibraryDatabaseTests
 {
-    protected override string DatabaseName => "wavemp_tests_library_online_metadata";
+    protected override string DatabaseName => "wavemp_tests_data_library_online_metadata";
 
     [Test]
     public async Task FindTrackAsync_TrackOfAnAlbum_ReturnsItsFolderAndCoverRules()

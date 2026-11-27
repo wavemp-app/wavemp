@@ -25,7 +25,7 @@ namespace WaveMP.Core.Scanning.Tests.Upgrades;
 [Category("Integration")]
 public class NameKeyUpgraderDatabaseTests
 {
-    private const string DatabaseName = "wavemp_tests_name_key_upgrade";
+    private const string DatabaseName = "wavemp_tests_scanning_name_key_upgrade";
     private const string PreviousMigration = "20261126093256_AddAlbumCoverFallback";
 
     private TestDatabase _database = null!;

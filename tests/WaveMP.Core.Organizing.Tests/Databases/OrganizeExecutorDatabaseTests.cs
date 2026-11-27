@@ -34,7 +34,7 @@ public sealed class OrganizeExecutorDatabaseTests : OrganizingDatabaseTestBase
 
     private Func<string, bool> _isWritable = _ => true;
 
-    protected override string DatabaseName => "wavemp_tests_organize_executor";
+    protected override string DatabaseName => "wavemp_tests_organizing_executor";
 
     [SetUp]
     public void SetUpWriteAccess()

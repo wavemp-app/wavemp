@@ -9,7 +9,8 @@ namespace WaveMP.Service.Tests.IntegrationTests;
 [Category("Integration")]
 public class ProfilesApiTests
 {
-    private const string DatabaseName = WaveMpWebApplicationFactory.TestDatabaseName + "_profiles";
+    private const string DatabaseName = "wavemp_tests_service_profiles";
+    private const string NewDatabaseName = "wavemp_tests_service_profiles_new";
 
     private WaveMpWebApplicationFactory _factory = null!;
     private HttpClient _client = null!;
@@ -35,7 +36,7 @@ public class ProfilesApiTests
     [Test]
     public async Task ListProfiles_OnNewInstallation_ReturnsOnlyTheBuiltInAdmin()
     {
-        await using WaveMpWebApplicationFactory factory = new(DatabaseName + "_new", freshDatabase: true);
+        await using WaveMpWebApplicationFactory factory = new(NewDatabaseName, freshDatabase: true);
         using HttpClient client = factory.CreateClient();
 
         PageDto<ProfileDto> page = await client.GetJsonAsync<PageDto<ProfileDto>>("/api/v1/profiles");

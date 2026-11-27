@@ -10,7 +10,12 @@ namespace WaveMP.Service.Tests.IntegrationTests;
 [Category("Integration")]
 public class SettingsApiTests
 {
-    private const string DatabaseName = WaveMpWebApplicationFactory.TestDatabaseName + "_settings";
+    private const string DatabaseName = "wavemp_tests_service_settings";
+    private const string InvalidDatabaseName = "wavemp_tests_service_settings_invalid";
+    private const string CacheDatabaseName = "wavemp_tests_service_settings_cache";
+    private const string InvalidCacheDatabaseName = "wavemp_tests_service_settings_cache_invalid";
+    private const string TranscodingDatabaseName = "wavemp_tests_service_settings_transcoding";
+    private const string InvalidTranscodingDatabaseName = "wavemp_tests_service_settings_transcoding_invalid";
 
     [Test]
     public async Task LibrarySettings_OfANewInstallation_AreTheDefaults()
@@ -80,7 +85,7 @@ public class SettingsApiTests
     [TestCase("{\"audioExtensions\":[],\"videoExtensions\":[]}", "audioExtensions")]
     public async Task UpdateLibrarySettings_WithInvalidValues_ReportsTheField(string body, string field)
     {
-        await using WaveMpWebApplicationFactory factory = new(DatabaseName + "_invalid", freshDatabase: true);
+        await using WaveMpWebApplicationFactory factory = new(InvalidDatabaseName, freshDatabase: true);
         using HttpClient admin = await factory.CreateAdminClientAsync();
 
         HttpResponseMessage response = await admin.SendJsonAsync("PATCH", "/api/v1/settings/library", body);
@@ -96,7 +101,7 @@ public class SettingsApiTests
     [Test]
     public async Task CacheSettings_OfANewInstallation_AreTheDefaults()
     {
-        await using WaveMpWebApplicationFactory factory = new(DatabaseName + "_cache", freshDatabase: true);
+        await using WaveMpWebApplicationFactory factory = new(CacheDatabaseName, freshDatabase: true);
         using HttpClient admin = await factory.CreateAdminClientAsync();
 
         CacheSettingsDto settings = await admin.GetJsonAsync<CacheSettingsDto>("/api/v1/settings/cache");
@@ -110,7 +115,7 @@ public class SettingsApiTests
     {
         CacheSettingsDto updated;
         CacheSettingsDto unchanged;
-        await using (WaveMpWebApplicationFactory first = new(DatabaseName + "_cache", freshDatabase: true))
+        await using (WaveMpWebApplicationFactory first = new(CacheDatabaseName, freshDatabase: true))
         {
             using HttpClient admin = await first.CreateAdminClientAsync();
             HttpResponseMessage response = await admin.PatchAsJsonAsync(
@@ -123,7 +128,7 @@ public class SettingsApiTests
             unchanged = (await empty.Content.ReadFromJsonAsync<CacheSettingsDto>(HttpClientExtensions.JsonOptions))!;
         }
 
-        await using WaveMpWebApplicationFactory second = new(DatabaseName + "_cache");
+        await using WaveMpWebApplicationFactory second = new(CacheDatabaseName);
         using HttpClient restarted = await second.CreateAdminClientAsync();
         CacheSettingsDto loaded = await restarted.GetJsonAsync<CacheSettingsDto>("/api/v1/settings/cache");
         CacheUsageDto usage = await restarted.GetJsonAsync<CacheUsageDto>("/api/v1/cache");
@@ -140,7 +145,7 @@ public class SettingsApiTests
     [TestCase("{\"maxSizeMegabytes\":\"big\"}")]
     public async Task UpdateCacheSettings_WithInvalidValue_ReportsTheField(string body)
     {
-        await using WaveMpWebApplicationFactory factory = new(DatabaseName + "_cache_invalid", freshDatabase: true);
+        await using WaveMpWebApplicationFactory factory = new(InvalidCacheDatabaseName, freshDatabase: true);
         using HttpClient admin = await factory.CreateAdminClientAsync();
 
         HttpResponseMessage response = await admin.SendJsonAsync("PATCH", "/api/v1/settings/cache", body);
@@ -155,7 +160,7 @@ public class SettingsApiTests
     [Test]
     public async Task TranscodingSettings_OfANewInstallation_AreTheDefaults()
     {
-        await using WaveMpWebApplicationFactory factory = new(DatabaseName + "_transcoding", freshDatabase: true);
+        await using WaveMpWebApplicationFactory factory = new(TranscodingDatabaseName, freshDatabase: true);
         using HttpClient admin = await factory.CreateAdminClientAsync();
 
         HttpResponseMessage response = await admin.GetAsync("/api/v1/settings/transcoding");
@@ -179,7 +184,7 @@ public class SettingsApiTests
     public async Task UpdateTranscodingSettings_WithValidValues_KeepsThemOverARestart()
     {
         TranscodingSettingsDto updated;
-        await using (WaveMpWebApplicationFactory first = new(DatabaseName + "_transcoding", freshDatabase: true))
+        await using (WaveMpWebApplicationFactory first = new(TranscodingDatabaseName, freshDatabase: true))
         {
             using HttpClient admin = await first.CreateAdminClientAsync();
             HttpResponseMessage response = await admin.SendJsonAsync(
@@ -191,7 +196,7 @@ public class SettingsApiTests
                 HttpClientExtensions.JsonOptions))!;
         }
 
-        await using WaveMpWebApplicationFactory second = new(DatabaseName + "_transcoding");
+        await using WaveMpWebApplicationFactory second = new(TranscodingDatabaseName);
         using HttpClient restarted = await second.CreateAdminClientAsync();
         TranscodingSettingsDto loaded =
             await restarted.GetJsonAsync<TranscodingSettingsDto>("/api/v1/settings/transcoding");
@@ -216,7 +221,7 @@ public class SettingsApiTests
     public async Task UpdateTranscodingSettings_WithInvalidValue_ReportsTheField(string body, string field)
     {
         await using WaveMpWebApplicationFactory factory =
-            new(DatabaseName + "_transcoding_invalid", freshDatabase: true);
+            new(InvalidTranscodingDatabaseName, freshDatabase: true);
         using HttpClient admin = await factory.CreateAdminClientAsync();
 
         HttpResponseMessage response = await admin.SendJsonAsync("PATCH", "/api/v1/settings/transcoding", body);

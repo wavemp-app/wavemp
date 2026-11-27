@@ -12,7 +12,7 @@ public class AutoplayRepositoryTests : LibraryDatabaseTests
 {
     private static readonly DateTimeOffset _now = new(2026, 11, 19, 20, 0, 0, TimeSpan.Zero);
 
-    protected override string DatabaseName => "wavemp_tests_autoplay";
+    protected override string DatabaseName => "wavemp_tests_data_autoplay";
 
     [Test]
     public async Task ListSeedsAsync_TracksOfTheList_ReturnsTheirArtistGenreAndYear()

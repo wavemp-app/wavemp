@@ -24,14 +24,16 @@ namespace WaveMP.Service.Tests.IntegrationTests;
 /// <summary>
 /// Hosts WaveMP in memory through the real startup in <c>Program.cs</c>, including the validation of the database
 /// configuration, the migrations and the creation of the built-in admin profile, against a real PostgreSQL instance
-/// (local: docker-compose.dev.yml, CI: service container). Uses its own database, by default <c>wavemp_tests</c>.
+/// (local: docker-compose.dev.yml, CI: service container), in the database the test names.
 /// The connection settings come from <see cref="TestDatabaseSettings"/>. The media folder is an empty temporary
 /// folder unless the test passes its own, the data folder (with the cache) is a temporary folder of its own, and no
 /// periodic scan runs during the tests. <c>Program</c> is public without a declaration of its own: since .NET 10,
 /// ASP.NET Core generates it for apps with top-level statements.
 /// </summary>
 /// <param name="databaseName">
-/// Name of the database. If <c>null</c>, <c>DB_NAME</c> from the environment or <see cref="TestDatabaseName"/>.
+/// Name of the database, <c>wavemp_tests_service_&lt;name&gt;</c>. Every fixture uses a database of its own, which no
+/// other fixture of any test project uses: the fixtures drop their databases, and the test projects run in parallel
+/// (checked by <c>.github/scripts/check-test-databases.mjs</c>).
 /// </param>
 /// <param name="freshDatabase">
 /// Drops the database before the start, so the service starts like a new installation.
@@ -67,7 +69,7 @@ namespace WaveMP.Service.Tests.IntegrationTests;
 /// cannot be reached.
 /// </param>
 public sealed class WaveMpWebApplicationFactory(
-    string? databaseName = null,
+    string databaseName,
     bool freshDatabase = false,
     string? mediaPath = null,
     FakeDatabaseExporter? exporter = null,
@@ -78,8 +80,6 @@ public sealed class WaveMpWebApplicationFactory(
     IMusicBrainzClient? musicBrainz = null,
     ICoverArtArchiveClient? coverArtArchive = null) : WebApplicationFactory<Program>
 {
-    public const string TestDatabaseName = "wavemp_tests";
-
     private const string EnvironmentName = "Testing";
 
     private readonly TemporaryDirectory? _emptyMedia = mediaPath is null ? new TemporaryDirectory() : null;
@@ -141,13 +141,10 @@ public sealed class WaveMpWebApplicationFactory(
     /// <summary>
     /// Connection string of the database of the service, for tests that change the database next to the service.
     /// </summary>
-    public string ConnectionString => TestDatabaseSettings.BuildConnectionString(DatabaseName);
-
-    private string DatabaseName => databaseName ?? Environment.GetEnvironmentVariable("DB_NAME") ?? TestDatabaseName;
+    public string ConnectionString => TestDatabaseSettings.BuildConnectionString(databaseName);
 
     /// <summary>
     /// Drops the database of the running service, e.g. to test how the service behaves without it or to clean up.
-    /// Only for factories created with a database name of their own.
     /// </summary>
     public async Task DeleteDatabaseAsync()
     {
@@ -158,7 +155,7 @@ public sealed class WaveMpWebApplicationFactory(
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment(EnvironmentName);
-        Dictionary<string, string?> values = TestDatabaseSettings.ToConfiguration(DatabaseName);
+        Dictionary<string, string?> values = TestDatabaseSettings.ToConfiguration(databaseName);
         values["MEDIA_PATH"] = mediaPath ?? _emptyMedia!.Path;
         values["DATA_PATH"] = _data.Path;
         // The periodic scan would start one minute after the start; tests start scans themselves.
@@ -210,7 +207,7 @@ public sealed class WaveMpWebApplicationFactory(
     {
         if (freshDatabase)
         {
-            TestDatabaseSettings.DropDatabase(DatabaseName);
+            TestDatabaseSettings.DropDatabase(databaseName);
         }
 
         IHost host = base.CreateHost(builder);

@@ -24,6 +24,7 @@ namespace WaveMP.Service.Tests.IntegrationTests;
 public class ThemesApiTests
 {
     private const int MaxUploadBytes = 64 * 1024;
+    private const string RestartDatabaseName = "wavemp_tests_service_themes_restart";
 
     private WaveMpWebApplicationFactory _factory = null!;
     private HttpClient _anonymous = null!;
@@ -34,7 +35,7 @@ public class ThemesApiTests
     public async Task OneTimeSetUp()
     {
         _factory = new WaveMpWebApplicationFactory(
-            WaveMpWebApplicationFactory.TestDatabaseName + "_themes",
+            "wavemp_tests_service_themes",
             freshDatabase: true,
             settings: new Dictionary<string, string?> { ["Themes:MaxUploadBytes"] = $"{MaxUploadBytes}" });
         _anonymous = _factory.CreateClient();
@@ -321,7 +322,7 @@ public class ThemesApiTests
     {
         using TemporaryDirectory data = new();
         Dictionary<string, string?> settings = new() { ["DATA_PATH"] = data.Path };
-        await using (WaveMpWebApplicationFactory first = new(settings: settings))
+        await using (WaveMpWebApplicationFactory first = new(RestartDatabaseName, settings: settings))
         {
             using HttpClient admin = await first.CreateAdminClientAsync();
             HttpResponseMessage installed = await admin.PostAsync(
@@ -338,7 +339,7 @@ public class ThemesApiTests
             svg,
             """<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>""");
 
-        await using WaveMpWebApplicationFactory second = new(settings: settings);
+        await using WaveMpWebApplicationFactory second = new(RestartDatabaseName, settings: settings);
         using HttpClient restarted = await second.CreateAdminClientAsync();
         using HttpClient anonymous = second.CreateClient();
         PageDto<ThemeDto> list = await restarted.GetJsonAsync<PageDto<ThemeDto>>("/api/v1/themes");
@@ -372,7 +373,7 @@ public class ThemesApiTests
     {
         using TemporaryDirectory data = new();
         Dictionary<string, string?> settings = new() { ["DATA_PATH"] = data.Path };
-        await using (WaveMpWebApplicationFactory first = new(settings: settings))
+        await using (WaveMpWebApplicationFactory first = new(RestartDatabaseName, settings: settings))
         {
             using HttpClient admin = await first.CreateAdminClientAsync();
             HttpResponseMessage installed = await admin.PostAsync(
@@ -387,7 +388,7 @@ public class ThemesApiTests
         json["themeApi"] = 0;
         await File.WriteAllTextAsync(description, json.ToJsonString());
 
-        await using WaveMpWebApplicationFactory second = new(settings: settings);
+        await using WaveMpWebApplicationFactory second = new(RestartDatabaseName, settings: settings);
         using HttpClient restarted = await second.CreateAdminClientAsync();
         using HttpClient anonymous = second.CreateClient();
         ThemeDto theme = (await restarted.GetJsonAsync<PageDto<ThemeDto>>("/api/v1/themes")).Items

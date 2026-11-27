@@ -10,7 +10,7 @@ namespace WaveMP.Data.Tests.Repositories;
 [Category("Integration")]
 public class UserSettingsRepositoryTests : LibraryDatabaseTests
 {
-    protected override string DatabaseName => "wavemp_tests_user_settings";
+    protected override string DatabaseName => "wavemp_tests_data_user_settings";
 
     [Test]
     public async Task UpdateAsync_PlaybackSettings_AreReadBackUnchanged()

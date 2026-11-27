@@ -33,7 +33,7 @@ public class CacheApiTests
             new TestTags { Title = "Song", Artist = "Band", Album = "Album", Track = "1" });
 
         _factory = new WaveMpWebApplicationFactory(
-            WaveMpWebApplicationFactory.TestDatabaseName + "_cache",
+            "wavemp_tests_service_cache",
             freshDatabase: true,
             mediaPath: _media.Path);
         _anonymous = _factory.CreateClient();

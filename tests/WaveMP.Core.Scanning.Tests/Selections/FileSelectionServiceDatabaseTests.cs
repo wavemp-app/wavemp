@@ -29,7 +29,7 @@ namespace WaveMP.Core.Scanning.Tests.Selections;
 [Category("Integration")]
 public class FileSelectionServiceDatabaseTests
 {
-    private const string DatabaseName = "wavemp_tests_file_selection";
+    private const string DatabaseName = "wavemp_tests_scanning_file_selection";
 
     private TestDatabase _database = null!;
     private TemporaryDirectory _media = null!;

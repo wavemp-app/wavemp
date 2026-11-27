@@ -59,7 +59,7 @@ public class SubsonicMusicFoldersApiTests
             new TestTags { Title = "Fifth", Artist = "Delta", Album = "Four", Genre = "Rock", Date = "2001" });
 
         _factory = new WaveMpWebApplicationFactory(
-            WaveMpWebApplicationFactory.TestDatabaseName + "_subsonic_folders",
+            "wavemp_tests_service_subsonic_folders",
             freshDatabase: true,
             mediaPath: _media.Path);
         _anonymous = _factory.CreateClient();

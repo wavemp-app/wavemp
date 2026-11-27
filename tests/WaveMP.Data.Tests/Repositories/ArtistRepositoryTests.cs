@@ -11,7 +11,7 @@ namespace WaveMP.Data.Tests.Repositories;
 [Category("Integration")]
 public class ArtistRepositoryTests : LibraryDatabaseTests
 {
-    protected override string DatabaseName => "wavemp_tests_library_artists";
+    protected override string DatabaseName => "wavemp_tests_data_library_artists";
 
     [Test]
     public async Task ListAsync_ByName_CountsAlbumsAndTracksOfEachArtist()
