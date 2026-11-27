@@ -43,8 +43,8 @@ public sealed class TracksController(
     /// default.</param>
     /// <param name="direction">Sort direction of the key; descending by default for FirstSeenAt, Relevance and Rating,
     /// otherwise ascending. Disc and track number always ascend.</param>
-    /// <param name="q">Search text: only tracks whose title, artist or album contains it or is similar to it (small
-    /// typos).</param>
+    /// <param name="q">Search text: only tracks whose title, artist or album contains it or is similar to it,
+    /// tolerant like SearchLibrary.</param>
     /// <param name="artistId">Only tracks of this artist or on albums of this album artist.</param>
     /// <param name="albumId">Only tracks of this album.</param>
     /// <param name="genre">Only tracks of this genre, without regard to case.</param>

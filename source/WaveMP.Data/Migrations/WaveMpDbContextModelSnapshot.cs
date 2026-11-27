@@ -68,6 +68,12 @@ namespace WaveMP.Data.Migrations
                         .HasColumnType("character varying(512)")
                         .HasColumnName("normalized_title");
 
+                    b.Property<string>("SearchKey")
+                        .IsRequired()
+                        .HasMaxLength(1025)
+                        .HasColumnType("character varying(1025)")
+                        .HasColumnName("search_key");
+
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasMaxLength(512)
@@ -94,6 +100,12 @@ namespace WaveMP.Data.Migrations
 
                     b.HasIndex("MusicBrainzReleaseId")
                         .HasDatabaseName("ix_albums_music_brainz_release_id");
+
+                    b.HasIndex("SearchKey")
+                        .HasDatabaseName("ix_albums_search_key_trgm");
+
+                    NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex("SearchKey"), "gin");
+                    NpgsqlIndexBuilderExtensions.HasOperators(b.HasIndex("SearchKey"), new[] { "gin_trgm_ops" });
 
                     b.HasIndex("Title")
                         .HasDatabaseName("ix_albums_title_trgm");
@@ -187,6 +199,12 @@ namespace WaveMP.Data.Migrations
                         .HasColumnType("character varying(512)")
                         .HasColumnName("normalized_name");
 
+                    b.Property<string>("SearchKey")
+                        .IsRequired()
+                        .HasMaxLength(1025)
+                        .HasColumnType("character varying(1025)")
+                        .HasColumnName("search_key");
+
                     b.HasKey("Id")
                         .HasName("pk_artists");
 
@@ -206,7 +224,77 @@ namespace WaveMP.Data.Migrations
                         .IsUnique()
                         .HasDatabaseName("ix_artists_normalized_name");
 
+                    b.HasIndex("SearchKey")
+                        .HasDatabaseName("ix_artists_search_key_trgm");
+
+                    NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex("SearchKey"), "gin");
+                    NpgsqlIndexBuilderExtensions.HasOperators(b.HasIndex("SearchKey"), new[] { "gin_trgm_ops" });
+
                     b.ToTable("artists", (string)null);
+                });
+
+            modelBuilder.Entity("WaveMP.Data.Entities.ArtistAlias", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("ArtistId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("artist_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<bool>("IsRemoved")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_removed");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)")
+                        .HasColumnName("name");
+
+                    b.Property<string>("NormalizedName")
+                        .IsRequired()
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)")
+                        .HasColumnName("normalized_name");
+
+                    b.Property<string>("SearchKey")
+                        .IsRequired()
+                        .HasMaxLength(1025)
+                        .HasColumnType("character varying(1025)")
+                        .HasColumnName("search_key");
+
+                    b.Property<string>("Source")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("source");
+
+                    b.HasKey("Id")
+                        .HasName("pk_artist_aliases");
+
+                    b.HasIndex("Name")
+                        .HasDatabaseName("ix_artist_aliases_name_trgm");
+
+                    NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex("Name"), "gin");
+                    NpgsqlIndexBuilderExtensions.HasOperators(b.HasIndex("Name"), new[] { "gin_trgm_ops" });
+
+                    b.HasIndex("SearchKey")
+                        .HasDatabaseName("ix_artist_aliases_search_key_trgm");
+
+                    NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex("SearchKey"), "gin");
+                    NpgsqlIndexBuilderExtensions.HasOperators(b.HasIndex("SearchKey"), new[] { "gin_trgm_ops" });
+
+                    b.HasIndex("ArtistId", "NormalizedName")
+                        .IsUnique()
+                        .HasDatabaseName("ix_artist_aliases_artist_id_normalized_name");
+
+                    b.ToTable("artist_aliases", (string)null);
                 });
 
             modelBuilder.Entity("WaveMP.Data.Entities.ArtistMove", b =>
@@ -2236,6 +2324,12 @@ namespace WaveMP.Data.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("reviewed_by_user_id");
 
+                    b.Property<string>("SearchKey")
+                        .IsRequired()
+                        .HasMaxLength(1025)
+                        .HasColumnType("character varying(1025)")
+                        .HasColumnName("search_key");
+
                     b.Property<Guid>("SourceId")
                         .HasColumnType("uuid")
                         .HasColumnName("source_id");
@@ -2282,6 +2376,12 @@ namespace WaveMP.Data.Migrations
 
                     b.HasIndex("ReviewedByUserId")
                         .HasDatabaseName("ix_tracks_reviewed_by_user_id");
+
+                    b.HasIndex("SearchKey")
+                        .HasDatabaseName("ix_tracks_search_key_trgm");
+
+                    NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex("SearchKey"), "gin");
+                    NpgsqlIndexBuilderExtensions.HasOperators(b.HasIndex("SearchKey"), new[] { "gin_trgm_ops" });
 
                     b.HasIndex("Title")
                         .HasDatabaseName("ix_tracks_title_trgm");
@@ -2692,6 +2792,18 @@ namespace WaveMP.Data.Migrations
                         .HasConstraintName("fk_artists_media_files_local_picture_file_id");
 
                     b.Navigation("LocalPictureFile");
+                });
+
+            modelBuilder.Entity("WaveMP.Data.Entities.ArtistAlias", b =>
+                {
+                    b.HasOne("WaveMP.Data.Entities.Artist", "Artist")
+                        .WithMany("Aliases")
+                        .HasForeignKey("ArtistId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_artist_aliases_artists_artist_id");
+
+                    b.Navigation("Artist");
                 });
 
             modelBuilder.Entity("WaveMP.Data.Entities.ArtistMove", b =>
@@ -3284,6 +3396,8 @@ namespace WaveMP.Data.Migrations
 
             modelBuilder.Entity("WaveMP.Data.Entities.Artist", b =>
                 {
+                    b.Navigation("Aliases");
+
                     b.Navigation("Pictures");
                 });
 

@@ -2,7 +2,6 @@ using Microsoft.EntityFrameworkCore;
 using WaveMP.Data.Entities;
 using WaveMP.Data.Projections;
 using WaveMP.Data.Queries;
-using WaveMP.Data.Texts;
 
 namespace WaveMP.Data.Repositories;
 
@@ -90,13 +89,9 @@ internal sealed class ArtistRepository(WaveMpDbContext dbContext) : IArtistRepos
     {
         if (query.Search is { } search)
         {
-            // Also by the normalized name, so "kflay" or "Beyonce" finds "K.Flay" and "Beyoncé".
-            string pattern = LikePatterns.Contains(search);
-            string keyPattern = NameKeys.Of(search) is { } key ? LikePatterns.Contains(key) : pattern;
-            artists = artists.Where(artist =>
-                EF.Functions.ILike(artist.Name, pattern, LikePatterns.EscapeCharacter)
-                || EF.Functions.Like(artist.NormalizedName, keyPattern, LikePatterns.EscapeCharacter)
-                || EF.Functions.TrigramsAreWordSimilar(search, artist.Name));
+            // Also by the search key and the aliases, so "kflay", "Beyonce" or "pink" find "K.Flay", "Beyoncé"
+            // and "P!nk".
+            artists = artists.Where(LibrarySearch.Of(search).ArtistMatches());
         }
 
         if (query.SourceId is { } sourceId)
@@ -144,7 +139,7 @@ internal sealed class ArtistRepository(WaveMpDbContext dbContext) : IArtistRepos
                 .OrderBy(artist => artist.FirstSeenAt, query.Direction)
                 .ThenBy(artist => artist.NormalizedName),
             ArtistSortField.Relevance when search is not null => artists
-                .OrderBy(artist => EF.Functions.TrigramsWordSimilarity(search, artist.Name), query.Direction)
+                .OrderBy(LibrarySearch.Of(search).ArtistScore(), query.Direction)
                 .ThenBy(artist => artist.NormalizedName),
             _ => artists.OrderBy(artist => artist.NormalizedName, query.Direction),
         };

@@ -22,11 +22,14 @@ internal sealed class ArtistPictureLookupService(
     IWikimediaCommonsClient commons,
     IFanartTvClient fanartTv,
     ICoverImageEncoder encoder,
+    IArtistAliasLookupService aliasLookup,
     ISettingsSnapshot<ArtistPictureSettings> settings,
     ISettingsSnapshot<OnlineMetadataSettings> onlineSettings,
     TimeProvider timeProvider,
     ILogger<ArtistPictureLookupService> logger) : IArtistPictureLookupService
 {
+    private readonly MusicBrainzArtistDetailsLoader _details = new(cache, musicBrainz, onlineSettings);
+
     /// <summary>
     /// The sizes of the previews; a request is rounded up to the next one.
     /// </summary>
@@ -266,6 +269,7 @@ internal sealed class ArtistPictureLookupService(
         }
 
         await pictures.RememberMusicBrainzArtistAsync(artistId, candidate.MusicBrainzArtistId, CancellationToken.None);
+        await TakeOverAliasesAsync(artistId);
         return ArtistLookupStatus.Found;
     }
 
@@ -279,6 +283,29 @@ internal sealed class ArtistPictureLookupService(
     }
 
     private bool IsEnabled => settings.Current.OnlineLookupEnabled;
+
+    /// <summary>
+    /// The MusicBrainz artist of the picture is the one of the artist now; its aliases (mostly from the cache of the
+    /// lookup) become aliases of the artist. The picture is taken over in any case.
+    /// </summary>
+    private async Task TakeOverAliasesAsync(Guid artistId)
+    {
+        try
+        {
+            ArtistAliasLookupResult result = await aliasLookup.LookUpAsync(artistId, CancellationToken.None);
+            if (result.Status != ArtistLookupStatus.Found)
+            {
+                logger.LogInformation(
+                    "The aliases of the artist {ArtistId} were not taken from MusicBrainz: {Status}",
+                    artistId,
+                    result.Status);
+            }
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            logger.LogWarning(exception, "The aliases of the artist {ArtistId} cannot be saved", artistId);
+        }
+    }
 
     private static ArtistLookupStatus StatusOf(OnlineStatus status)
     {
@@ -328,25 +355,14 @@ internal sealed class ArtistPictureLookupService(
         List<ArtistCandidateRecord> candidates,
         CancellationToken cancellationToken)
     {
-        string linkName = "musicbrainz/wikidata-"
-            + ArtistLookupCache.Hash(onlineSettings.Current.MusicBrainzUrl, musicBrainzArtistId.ToString("N"))
-            + ".json";
-        WikidataLink? link = await cache.ReadAsync<WikidataLink>(linkName, cancellationToken);
-        if (link is null)
+        (OnlineStatus status, MusicBrainzArtistDetails? details) =
+            await _details.LoadAsync(musicBrainzArtistId, cancellationToken);
+        if (details is null)
         {
-            OnlineResponse<string> response = await musicBrainz.GetWikidataItemAsync(
-                musicBrainzArtistId,
-                cancellationToken);
-            if (response.Status is not (OnlineStatus.Found or OnlineStatus.NotFound))
-            {
-                return new Source(response.Status);
-            }
-
-            link = new WikidataLink(response.Value);
-            await cache.WriteAsync(linkName, link, cancellationToken);
+            return new Source(status);
         }
 
-        if (link.ItemId is not { } itemId)
+        if (details.WikidataItemId is not { } itemId)
         {
             return new Source(OnlineStatus.Found);
         }
@@ -596,11 +612,6 @@ internal sealed class ArtistPictureLookupService(
     {
         return new DateTimeOffset(value.UtcTicks - (value.UtcTicks % TimeSpan.TicksPerMicrosecond), TimeSpan.Zero);
     }
-
-    /// <summary>
-    /// The Wikidata item of a MusicBrainz artist as cached; <c>null</c> if it has none.
-    /// </summary>
-    internal sealed record WikidataLink(string? ItemId);
 
     /// <summary>
     /// How asking one service went.

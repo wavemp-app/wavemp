@@ -56,6 +56,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IArtistPictureService, ArtistPictureService>();
         services.AddScoped<IAlbumCoverFallback, ArtistPictureAlbumCoverFallback>();
         services.AddSingleton<ArtistLookupCache>();
+        services.AddScoped<IArtistAliasLookupService, ArtistAliasLookupService>();
         services.AddScoped<IArtistPictureLookupService, ArtistPictureLookupService>();
 
         return services;

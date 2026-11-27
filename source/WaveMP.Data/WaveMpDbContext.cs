@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 using WaveMP.Data.Configurations;
 using WaveMP.Data.Entities;
+using WaveMP.Data.Texts;
 
 namespace WaveMP.Data;
 
@@ -28,6 +30,8 @@ public class WaveMpDbContext(DbContextOptions<WaveMpDbContext> options) : DbCont
     public DbSet<ArtistMove> ArtistMoves => Set<ArtistMove>();
 
     public DbSet<ArtistPicture> ArtistPictures => Set<ArtistPicture>();
+
+    public DbSet<ArtistAlias> ArtistAliases => Set<ArtistAlias>();
 
     public DbSet<Album> Albums => Set<Album>();
 
@@ -116,6 +120,7 @@ public class WaveMpDbContext(DbContextOptions<WaveMpDbContext> options) : DbCont
         modelBuilder.ApplyConfiguration(new ArtistConfiguration());
         modelBuilder.ApplyConfiguration(new ArtistMoveConfiguration());
         modelBuilder.ApplyConfiguration(new ArtistPictureConfiguration());
+        modelBuilder.ApplyConfiguration(new ArtistAliasConfiguration());
         modelBuilder.ApplyConfiguration(new AlbumConfiguration());
         modelBuilder.ApplyConfiguration(new AlbumMoveConfiguration());
         modelBuilder.ApplyConfiguration(new GenreConfiguration());
@@ -148,5 +153,56 @@ public class WaveMpDbContext(DbContextOptions<WaveMpDbContext> options) : DbCont
         modelBuilder.ApplyConfiguration(new OrganizeItemConfiguration());
         modelBuilder.ApplyConfiguration(new OrganizeFileMoveConfiguration());
         modelBuilder.ApplyConfiguration(new DataUpgradeConfiguration());
+    }
+
+    public override int SaveChanges(bool acceptAllChangesOnSuccess)
+    {
+        SetSearchKeys();
+        return base.SaveChanges(acceptAllChangesOnSuccess);
+    }
+
+    public override Task<int> SaveChangesAsync(
+        bool acceptAllChangesOnSuccess,
+        CancellationToken cancellationToken = default)
+    {
+        SetSearchKeys();
+        return base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
+    }
+
+    /// <summary>
+    /// Sets the search keys (see <see cref="Texts.SearchKeys"/>) of the new artists, albums, tracks and aliases and of
+    /// those whose name or title changed, so every way of saving them keeps the keys right. Bulk updates that change a
+    /// name set the key themselves.
+    /// </summary>
+    private void SetSearchKeys()
+    {
+        foreach (EntityEntry entry in ChangeTracker.Entries())
+        {
+            if (entry.State is not (EntityState.Added or EntityState.Modified))
+            {
+                continue;
+            }
+
+            switch (entry.Entity)
+            {
+                case Artist artist when NeedsKey(entry, nameof(Artist.Name)):
+                    artist.SearchKey = SearchKeys.Of(artist.Name) ?? string.Empty;
+                    break;
+                case Album album when NeedsKey(entry, nameof(Album.Title)):
+                    album.SearchKey = SearchKeys.Of(album.Title) ?? string.Empty;
+                    break;
+                case Track track when NeedsKey(entry, nameof(Track.Title)):
+                    track.SearchKey = SearchKeys.Of(track.Title) ?? string.Empty;
+                    break;
+                case ArtistAlias alias when NeedsKey(entry, nameof(ArtistAlias.Name)):
+                    alias.SearchKey = SearchKeys.Of(alias.Name) ?? string.Empty;
+                    break;
+            }
+        }
+
+        static bool NeedsKey(EntityEntry entry, string nameProperty)
+        {
+            return entry.State == EntityState.Added || entry.Property(nameProperty).IsModified;
+        }
     }
 }

@@ -40,6 +40,12 @@ public class Track
     public required string Title { get; set; }
 
     /// <summary>
+    /// The key the library search finds the track by (see <see cref="Texts.SearchKeys"/>). Set from
+    /// <see cref="Title"/> whenever the track is saved; never shown.
+    /// </summary>
+    public string SearchKey { get; set; } = string.Empty;
+
+    /// <summary>
     /// The first artist of the track (position 0 of <see cref="ArtistCredits"/>), kept with the track: it sorts and
     /// groups the songs and serves the fields that name one artist. The scan and the editor keep it equal to the first
     /// credit.

@@ -38,6 +38,7 @@ public static class ServiceCollectionExtensions
         services.AddOptions<LibraryCheckOptions>().BindConfiguration(LibraryCheckOptions.SectionName);
 
         services.AddScoped<IArtistService, ArtistService>();
+        services.AddScoped<IArtistAliasService, ArtistAliasService>();
         services.AddScoped<IAlbumService, AlbumService>();
         services.AddScoped<ITrackService, TrackService>();
         services.AddScoped<ISearchService, SearchService>();

@@ -152,7 +152,7 @@ public class ApiIntegrationTests
         // history entries, Subsonic app passwords, themes, media sources, recap shares, own albums and the previews
         // of organize operations and of their undos; scans, job runs, backups and the confirmed and canceled organize
         // operations.
-        responses.Should().HaveCount(19);
+        responses.Should().HaveCount(20);
         responses.Should().AllSatisfy(response =>
         {
             JsonNode location = response["headers"]!["Location"]!;

@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using WaveMP.Data.Entities;
+using WaveMP.Data.Texts;
 
 namespace WaveMP.Data.Configurations;
 
@@ -11,6 +12,11 @@ internal sealed class ArtistConfiguration : IEntityTypeConfiguration<Artist>
     /// </summary>
     public const string NameTrigramIndex = "ix_artists_name_trgm";
 
+    /// <summary>
+    /// Trigram index of the search key (see <see cref="Texts.SearchKeys"/>) for the fault-tolerant search (pg_trgm).
+    /// </summary>
+    public const string SearchKeyTrigramIndex = "ix_artists_search_key_trgm";
+
     public void Configure(EntityTypeBuilder<Artist> builder)
     {
         builder.ToTable("artists");
@@ -19,11 +25,16 @@ internal sealed class ArtistConfiguration : IEntityTypeConfiguration<Artist>
         builder.Property(artist => artist.Id).ValueGeneratedNever();
         builder.Property(artist => artist.Name).HasMaxLength(LibraryColumns.TextMaxLength);
         builder.Property(artist => artist.NormalizedName).HasMaxLength(LibraryColumns.TextMaxLength);
+        builder.Property(artist => artist.SearchKey).HasMaxLength(SearchKeys.MaxLength);
 
         builder.HasIndex(artist => artist.NormalizedName).IsUnique();
         builder.HasIndex(artist => artist.MusicBrainzArtistId);
         builder.HasIndex(artist => artist.Name)
             .HasDatabaseName(NameTrigramIndex)
+            .HasMethod(LibraryColumns.TrigramIndexMethod)
+            .HasOperators(LibraryColumns.TrigramOperators);
+        builder.HasIndex(artist => artist.SearchKey)
+            .HasDatabaseName(SearchKeyTrigramIndex)
             .HasMethod(LibraryColumns.TrigramIndexMethod)
             .HasOperators(LibraryColumns.TrigramOperators);
 

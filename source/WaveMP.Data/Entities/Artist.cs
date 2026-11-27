@@ -24,6 +24,12 @@ public class Artist
     /// </summary>
     public required string NormalizedName { get; set; }
 
+    /// <summary>
+    /// The key the library search finds the artist by (see <see cref="Texts.SearchKeys"/>), e.g. <c>pnk pink</c> for
+    /// "P!nk". Set from <see cref="Name"/> whenever the artist is saved; never shown.
+    /// </summary>
+    public string SearchKey { get; set; } = string.Empty;
+
     public required DateTimeOffset FirstSeenAt { get; set; }
 
     /// <summary>
@@ -46,4 +52,9 @@ public class Artist
     /// The uploaded and the online picture, at most one of each kind.
     /// </summary>
     public List<ArtistPicture> Pictures { get; set; } = [];
+
+    /// <summary>
+    /// The further names the search finds the artist by (see <see cref="ArtistAlias"/>).
+    /// </summary>
+    public List<ArtistAlias> Aliases { get; set; } = [];
 }

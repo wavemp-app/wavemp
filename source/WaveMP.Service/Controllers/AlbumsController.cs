@@ -36,8 +36,8 @@ public sealed class AlbumsController(
     /// </param>
     /// <param name="direction">Sort direction; descending by default for FirstSeenAt and Relevance, otherwise
     /// ascending.</param>
-    /// <param name="q">Search text: only albums whose title or album artist contains it or is similar to it (small
-    /// typos).</param>
+    /// <param name="q">Search text: only albums whose title or album artist contains it or is similar to it, tolerant
+    /// like SearchLibrary.</param>
     /// <param name="artistId">Only albums with this album artist or with tracks of this artist.</param>
     /// <param name="genre">Only albums with tracks of this genre, without regard to case.</param>
     /// <param name="year">Only albums of this year.</param>

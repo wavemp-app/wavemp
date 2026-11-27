@@ -20,12 +20,24 @@ public interface IMusicBrainzArtistClient
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// The id of the Wikidata item of an artist (e.g. <c>Q11649</c>) from its links
-    /// (<c>GET ws/2/artist/{id}?inc=url-rels</c>); <see cref="OnlineStatus.NotFound"/> if MusicBrainz does not know the
-    /// artist or it has no Wikidata link.
+    /// The details of an artist that the online lookup uses, with one request
+    /// (<c>GET ws/2/artist/{id}?inc=url-rels+aliases</c>): the id of its Wikidata item (e.g. <c>Q11649</c>) from its
+    /// links, its sort name and its aliases; <see cref="OnlineStatus.NotFound"/> if MusicBrainz does not know the
+    /// artist.
     /// </summary>
-    Task<OnlineResponse<string>> GetWikidataItemAsync(Guid artistId, CancellationToken cancellationToken = default);
+    Task<OnlineResponse<MusicBrainzArtistDetails>> GetArtistAsync(
+        Guid artistId,
+        CancellationToken cancellationToken = default);
 }
+
+/// <summary>
+/// What the online lookup uses of a MusicBrainz artist. All texts are plain text.
+/// </summary>
+/// <param name="WikidataItemId">The id of its Wikidata item; <c>null</c> without a Wikidata link.</param>
+/// <param name="SortName">Name for sorting, e.g. "Beatles, The".</param>
+/// <param name="Aliases">Further names of the artist: other spellings, names in other languages, legal names and
+/// earlier names, each once.</param>
+public sealed record MusicBrainzArtistDetails(string? WikidataItemId, string? SortName, IReadOnlyList<string> Aliases);
 
 /// <summary>
 /// A page of the artist search of MusicBrainz.

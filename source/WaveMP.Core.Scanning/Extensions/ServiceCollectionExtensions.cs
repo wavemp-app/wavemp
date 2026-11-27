@@ -39,6 +39,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IFileSelectionService, FileSelectionService>();
         services.AddScoped<IMediaSourceService, MediaSourceService>();
         services.AddScoped<NameKeyUpgrader>();
+        services.AddScoped<SearchKeyUpgrader>();
 
         services.AddWaveMpJob<LibraryScanJob>(JobIds.LibraryScan);
         services.AddSingleton<IJobScheduleProvider, LibraryScanScheduleProvider>();

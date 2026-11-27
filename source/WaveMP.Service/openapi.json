@@ -57,7 +57,7 @@
           {
             "name": "q",
             "in": "query",
-            "description": "Search text: only albums whose title or album artist contains it or is similar to it (small typos).",
+            "description": "Search text: only albums whose title or album artist contains it or is similar to it, tolerant like SearchLibrary.",
             "schema": {
               "maxLength": 200,
               "minLength": 0,
@@ -578,6 +578,435 @@
           },
           "404": {
             "description": "The album does not exist (code `album.not_found`) or has no cover (code `cover.not_found`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/api/v1/artists/{id}/aliases": {
+      "get": {
+        "tags": [
+          "ArtistAliases"
+        ],
+        "summary": "Lists the aliases of an artist, sorted by their normalized forms.",
+        "operationId": "ListArtistAliases",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Id of the artist.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "description": "Number of aliases to skip.",
+            "schema": {
+              "maximum": 2147483647,
+              "minimum": 0,
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Maximum number of aliases of the page.",
+            "schema": {
+              "maximum": 100,
+              "minimum": 1,
+              "type": "integer",
+              "format": "int32",
+              "default": 50
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "One page of aliases.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArtistAliasPage"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid query parameters (code `request.invalid`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The artist does not exist (code `artist.not_found`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "ArtistAliases"
+        ],
+        "summary": "Adds an alias to an artist, for admins only. An alias of MusicBrainz that an admin removed comes back as an alias of the admin.",
+        "operationId": "CreateArtistAlias",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Id of the artist.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "The alias.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateArtistAlias"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateArtistAlias"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "The new alias; Location points to it.",
+            "headers": {
+              "Location": {
+                "description": "Address of the created resource.",
+                "required": true,
+                "schema": {
+                  "type": "string",
+                  "format": "uri-reference"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArtistAlias"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "No name or one of spaces only (code `request.invalid`, `name`: `required`) or a name that is too long.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The profile of the session is not an admin.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The artist does not exist (code `artist.not_found`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The artist has the alias already or it is its name (code `artist.alias_exists`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/api/v1/artists/{id}/aliases/{aliasId}": {
+      "get": {
+        "tags": [
+          "ArtistAliases"
+        ],
+        "summary": "Returns an alias of an artist.",
+        "operationId": "GetArtistAlias",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Id of the artist.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "aliasId",
+            "in": "path",
+            "description": "Id of the alias.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "The alias.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArtistAlias"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The artist has no such alias (code `artist.alias_not_found`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "ArtistAliases"
+        ],
+        "summary": "Removes an alias of an artist, for admins only. A removed alias of MusicBrainz is remembered, so taking the aliases from MusicBrainz again does not bring it back.",
+        "operationId": "DeleteArtistAlias",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Id of the artist.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "aliasId",
+            "in": "path",
+            "description": "Id of the alias.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "The alias is removed."
+          },
+          "403": {
+            "description": "The profile of the session is not an admin.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The artist has no such alias (code `artist.alias_not_found`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/api/v1/artists/{id}/aliases/musicbrainz-imports": {
+      "post": {
+        "tags": [
+          "ArtistAliases"
+        ],
+        "summary": "Takes the aliases of an artist from MusicBrainz, for admins only: the aliases and the sort name of its MusicBrainz artist (from the tags of its songs or chosen in the online lookup of pictures) replace the aliases MusicBrainz named before; aliases of admins and aliases an admin removed stay as they are. Part of the online lookup of artists, so it only works while that is switched on. The MusicBrainz id is sent to MusicBrainz; the request waits in the queue that keeps the shortest time between two requests, and the answer is kept in the cache. Taking over an online picture also takes the aliases.",
+        "operationId": "ImportArtistAliasesFromMusicBrainz",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Id of the artist.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "The first page of the aliases of the artist afterwards.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArtistAliasPage"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The profile of the session is not an admin.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The artist does not exist (code `artist.not_found`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The online lookup is switched off (code `artist.picture_lookup_disabled`) or the artist has no MusicBrainz artist (code `artist.musicbrainz_artist_missing`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "MusicBrainz cannot be reached or failed (code `artist.picture_lookup_unavailable`).",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -1694,7 +2123,7 @@
           {
             "name": "q",
             "in": "query",
-            "description": "Search text: only artists whose name contains it or is similar to it (small typos).",
+            "description": "Search text: only artists whose name or one of whose aliases contains it or is similar to it, tolerant like SearchLibrary.",
             "schema": {
               "maxLength": 200,
               "minLength": 0,
@@ -11087,7 +11516,7 @@
         "tags": [
           "Search"
         ],
-        "summary": "Searches artists, albums and tracks at once and returns the best matches of each, sorted by relevance. Finds texts that contain the search text or are similar to it, so small typos are fine. Tracks are also found by their artist and album. To see more of a group, use the parameter q of its list.",
+        "summary": "Searches artists, albums and tracks at once and returns the best matches of each, sorted by relevance. The search is tolerant: it finds names that contain the search text (without regard to case, accents and punctuation), names with symbols that stand for letters in both directions (\"pink\" finds \"P!nk\", \"kesha\" \"Ke$ha\"; \"!\" as i, \"$\" as s, \"@\" as a, \"0\" as o, \"3\" as e, \"&amp;\" and \"+\" as \"and\"), artists by their aliases (results show the name of the artist) and names similar to it, so typos are fine (\"rihana\" finds \"Rihanna\"). Exact matches come first, then names that start with the text, names that contain it, artists found by an alias and similar names. Albums are also found by their artists, tracks by their artists and album. The lists of artists, albums and tracks with q and the Subsonic search use the same search. To see more of a group, use the parameter q of its list.",
         "operationId": "SearchLibrary",
         "parameters": [
           {
@@ -14650,7 +15079,7 @@
           {
             "name": "q",
             "in": "query",
-            "description": "Search text: only tracks whose title, artist or album contains it or is similar to it (small typos).",
+            "description": "Search text: only tracks whose title, artist or album contains it or is similar to it, tolerant like SearchLibrary.",
             "schema": {
               "maxLength": 200,
               "minLength": 0,
@@ -17916,6 +18345,69 @@
         },
         "description": "An artist of the library."
       },
+      "ArtistAlias": {
+        "required": [
+          "id",
+          "name",
+          "source"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "source": {
+            "$ref": "#/components/schemas/ArtistAliasSource"
+          }
+        },
+        "description": "A further name of an artist that the search finds it by, e.g. \"Alecia Moore\" for \"P!nk\". Search results always show the name of the artist."
+      },
+      "ArtistAliasPage": {
+        "required": [
+          "items",
+          "offset",
+          "limit",
+          "total"
+        ],
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ArtistAlias"
+            },
+            "description": "Items of the page, at most limit."
+          },
+          "offset": {
+            "type": "integer",
+            "description": "Number of items skipped before this page.",
+            "format": "int32"
+          },
+          "limit": {
+            "type": "integer",
+            "description": "Maximum number of items of the page, as requested.",
+            "format": "int32"
+          },
+          "total": {
+            "type": "integer",
+            "description": "Number of items of the whole collection.",
+            "format": "int32"
+          }
+        },
+        "description": "One page of a collection."
+      },
+      "ArtistAliasSource": {
+        "enum": [
+          "Admin",
+          "MusicBrainz"
+        ],
+        "type": "string",
+        "description": "Where an alias of an artist came from."
+      },
       "ArtistCredit": {
         "required": [
           "id",
@@ -18752,6 +19244,21 @@
         ],
         "type": "string",
         "description": "The cover rule of a song or of the songs of an album, as an exception from the library settings: a rule of its own (see CoverPriorityDto) or the rule of the next level."
+      },
+      "CreateArtistAlias": {
+        "required": [
+          "name"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "maxLength": 512,
+            "minLength": 0,
+            "type": "string",
+            "description": "The alias, 1 to 512 characters; white space is joined and removed at the ends."
+          }
+        },
+        "description": "Adds an alias to an artist."
       },
       "CreatedSession": {
         "required": [
@@ -23202,6 +23709,9 @@
           "artist.picture_lookup_disabled",
           "artist.picture_lookup_unavailable",
           "artist.picture_candidate_not_found",
+          "artist.alias_not_found",
+          "artist.alias_exists",
+          "artist.musicbrainz_artist_missing",
           "lyrics.not_found",
           "lyrics.download_disabled",
           "lyrics.file_exists",
@@ -28035,6 +28545,9 @@
   "tags": [
     {
       "name": "Albums"
+    },
+    {
+      "name": "ArtistAliases"
     },
     {
       "name": "ArtistPictureLookups"

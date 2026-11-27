@@ -357,6 +357,29 @@ public sealed class LibrarySeed
     }
 
     /// <summary>
+    /// An alias of an artist that the search finds it by.
+    /// </summary>
+    public ArtistAlias Alias(
+        Artist artist,
+        string name,
+        ArtistAliasSource source = ArtistAliasSource.Admin,
+        bool isRemoved = false)
+    {
+        ArtistAlias alias = new()
+        {
+            Id = Guid.CreateVersion7(),
+            ArtistId = artist.Id,
+            Name = name,
+            NormalizedName = NameKeys.Of(name)!,
+            Source = source,
+            IsRemoved = isRemoved,
+            CreatedAt = DefaultTime,
+        };
+        _entities.Add(alias);
+        return alias;
+    }
+
+    /// <summary>
     /// Adds everything built so far to the database. A genre whose normalized name is stored already, e.g. by an
     /// earlier seed, is not added again; the tracks get the stored one.
     /// </summary>

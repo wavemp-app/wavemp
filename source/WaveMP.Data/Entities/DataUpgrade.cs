@@ -15,6 +15,12 @@ public class DataUpgrade
     /// </summary>
     public const string NameKeys = "name-keys";
 
+    /// <summary>
+    /// Name of the search keys of artists, albums, tracks and aliases (see <see cref="Texts.SearchKeys"/>): every
+    /// existing entry gets its key from its name or title.
+    /// </summary>
+    public const string SearchKeys = "search-keys";
+
     public required string Name { get; set; }
 
     /// <summary>

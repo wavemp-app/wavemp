@@ -1,3 +1,4 @@
+using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using WaveMP.Data.Entities;
 using WaveMP.Data.Projections;
@@ -218,16 +219,20 @@ internal sealed class TrackRepository(WaveMpDbContext dbContext) : ITrackReposit
     {
         if (query.Search is { } search)
         {
-            string pattern = LikePatterns.Contains(search);
-            tracks = tracks.Where(track =>
-                EF.Functions.ILike(track.Title, pattern, LikePatterns.EscapeCharacter)
-                || EF.Functions.TrigramsAreWordSimilar(search, track.Title)
-                || track.ArtistCredits.Any(credit =>
-                    EF.Functions.ILike(credit.Artist!.Name, pattern, LikePatterns.EscapeCharacter)
-                    || EF.Functions.TrigramsAreWordSimilar(search, credit.Artist.Name))
-                || (track.Album != null
-                    && (EF.Functions.ILike(track.Album.Title, pattern, LikePatterns.EscapeCharacter)
-                        || EF.Functions.TrigramsAreWordSimilar(search, track.Album.Title))));
+            // By the title, by one of the artists (like the artist list finds them) or by the album title.
+            var librarySearch = LibrarySearch.Of(search);
+            IQueryable<Guid> artistIds = dbContext.Artists
+                .Where(librarySearch.ArtistMatches())
+                .Select(artist => artist.Id);
+            IQueryable<Guid> albumIds = dbContext.Albums
+                .Where(librarySearch.Matches<Album>(album => album.Title, album => album.SearchKey))
+                .Select(album => album.Id);
+            Expression<Func<Track, bool>> byTitle = librarySearch.Matches<Track>(
+                track => track.Title,
+                track => track.SearchKey);
+            tracks = tracks.Where(byTitle.OrElse(track =>
+                track.ArtistCredits.Any(credit => artistIds.Contains(credit.ArtistId))
+                || (track.AlbumId != null && albumIds.Contains(track.AlbumId.Value))));
         }
 
         if (query.ArtistId is { } artistId)
@@ -289,6 +294,23 @@ internal sealed class TrackRepository(WaveMpDbContext dbContext) : ITrackReposit
     }
 
     /// <summary>
+    /// The relevance of a track: the score of its title or, a little lower, of its first artist or of its album title.
+    /// </summary>
+    private static Expression<Func<Track, double>> Relevance(LibrarySearch search)
+    {
+        Expression<Func<Track, double>> artist = LibrarySearch.Apply<Track, Artist, double>(
+            search.ArtistScore(),
+            track => track.Artist!);
+        Expression<Func<Track, double>> album = LibrarySearch.Apply<Track, Album, double>(
+            search.Score<Album>(album => album.Title, album => album.SearchKey),
+            track => track.Album!);
+        return LibrarySearch.Best(
+            search.Score<Track>(track => track.Title, track => track.SearchKey),
+            (artist, ArtistWeight),
+            (album, AlbumWeight));
+    }
+
+    /// <summary>
     /// Sorts by the key in the direction; keys that group by album keep the tracks of an album together in the order
     /// of disc and track number, which always ascends.
     /// </summary>
@@ -332,13 +354,7 @@ internal sealed class TrackRepository(WaveMpDbContext dbContext) : ITrackReposit
             // Tracks of one folder are found at the same time, so albums stay together.
             TrackSortField.FirstSeenAt => ThenByAlbum(tracks.OrderBy(track => track.FirstSeenAt, direction)),
             TrackSortField.Relevance when search is not null => tracks
-                .OrderBy(
-                    track => Math.Max(
-                        EF.Functions.TrigramsWordSimilarity(search, track.Title),
-                        Math.Max(
-                            ArtistWeight * EF.Functions.TrigramsWordSimilarity(search, track.Artist!.Name),
-                            AlbumWeight * EF.Functions.TrigramsWordSimilarity(search, track.Album!.Title))),
-                    direction)
+                .OrderBy(Relevance(LibrarySearch.Of(search)), direction)
                 .ThenBy(track => track.Title),
             // Album artist; tracks without album by their own artist. Unknown artists come last.
             _ => ThenByAlbum(tracks

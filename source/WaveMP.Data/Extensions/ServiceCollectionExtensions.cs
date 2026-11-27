@@ -62,6 +62,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IOrganizeRepository, OrganizeRepository>();
         services.AddScoped<IOwnAlbumRepository, OwnAlbumRepository>();
         services.AddScoped<INameKeyUpgradeRepository, NameKeyUpgradeRepository>();
+        services.AddScoped<ISearchKeyUpgradeRepository, SearchKeyUpgradeRepository>();
+        services.AddScoped<IArtistAliasRepository, ArtistAliasRepository>();
 
         return services;
     }

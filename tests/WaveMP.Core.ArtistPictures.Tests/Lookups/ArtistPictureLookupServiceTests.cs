@@ -1,6 +1,7 @@
 using AwesomeAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
+using NSubstitute.ExceptionExtensions;
 using WaveMP.Core.ArtistPictures.Lookups;
 using WaveMP.Core.ArtistPictures.Options;
 using WaveMP.Core.ArtistPictures.Stores;
@@ -46,6 +47,7 @@ public class ArtistPictureLookupServiceTests
     private IFanartTvClient _fanartTv = null!;
     private ICoverImageEncoder _encoder = null!;
     private ISettingsSnapshot<ArtistPictureSettings> _settings = null!;
+    private IArtistAliasLookupService _aliasLookup = null!;
     private ArtistPictureLookupService _service = null!;
 
     [SetUp]
@@ -79,8 +81,8 @@ public class ArtistPictureLookupServiceTests
                         null,
                         98),
                 ])));
-        _musicBrainz.GetWikidataItemAsync(_musicBrainzId, Arg.Any<CancellationToken>())
-            .Returns(OnlineResponse<string>.Found(ItemId));
+        _musicBrainz.GetArtistAsync(_musicBrainzId, Arg.Any<CancellationToken>())
+            .Returns(OnlineResponse<MusicBrainzArtistDetails>.Found(new MusicBrainzArtistDetails(ItemId, null, [])));
         _wikidata = Substitute.For<IWikidataClient>();
         _wikidata.GetImageFileNamesAsync(ItemId, Arg.Any<CancellationToken>())
             .Returns(OnlineResponse<IReadOnlyList<string>>.Found(["Band.jpg"]));
@@ -106,6 +108,9 @@ public class ArtistPictureLookupServiceTests
             });
         _settings = Substitute.For<ISettingsSnapshot<ArtistPictureSettings>>();
         GivenSettings(enabled: true);
+        _aliasLookup = Substitute.For<IArtistAliasLookupService>();
+        _aliasLookup.LookUpAsync(default, default)
+            .ReturnsForAnyArgs(new ArtistAliasLookupResult(ArtistLookupStatus.Found, []));
         ISettingsSnapshot<OnlineMetadataSettings> onlineSettings =
             Substitute.For<ISettingsSnapshot<OnlineMetadataSettings>>();
         onlineSettings.Current.Returns(new OnlineMetadataSettings());
@@ -120,6 +125,7 @@ public class ArtistPictureLookupServiceTests
             _commons,
             _fanartTv,
             _encoder,
+            _aliasLookup,
             _settings,
             onlineSettings,
             _clock,
@@ -252,7 +258,7 @@ public class ArtistPictureLookupServiceTests
         ArtistCandidatesResult result = await _service.FindCandidatesAsync(_artistId, null);
 
         result.Candidates.Should().ContainSingle();
-        await _musicBrainz.Received(1).GetWikidataItemAsync(_musicBrainzId, Arg.Any<CancellationToken>());
+        await _musicBrainz.Received(1).GetArtistAsync(_musicBrainzId, Arg.Any<CancellationToken>());
     }
 
     [Test]
@@ -299,7 +305,7 @@ public class ArtistPictureLookupServiceTests
         second.Candidates.Should().HaveCount(2);
         second.Candidates.Select(candidate => candidate.Id).Should().NotIntersectWith(
             first.Candidates.Select(candidate => candidate.Id));
-        await _musicBrainz.ReceivedWithAnyArgs(1).GetWikidataItemAsync(default, default);
+        await _musicBrainz.ReceivedWithAnyArgs(1).GetArtistAsync(default, default);
         await _wikidata.ReceivedWithAnyArgs(1).GetImageFileNamesAsync(default!, default);
         await _commons.ReceivedWithAnyArgs(1).GetImagesAsync(default!, default, default);
         await _fanartTv.ReceivedWithAnyArgs(1).GetArtistPicturesAsync(default, default!, default);
@@ -308,8 +314,8 @@ public class ArtistPictureLookupServiceTests
     [Test]
     public async Task FindCandidatesAsync_NoWikidataLinkAndNoKey_IsAnEmptyList()
     {
-        _musicBrainz.GetWikidataItemAsync(_musicBrainzId, Arg.Any<CancellationToken>())
-            .Returns(OnlineResponse<string>.Failed(OnlineStatus.NotFound));
+        _musicBrainz.GetArtistAsync(_musicBrainzId, Arg.Any<CancellationToken>())
+            .Returns(OnlineResponse<MusicBrainzArtistDetails>.Failed(OnlineStatus.NotFound));
 
         ArtistCandidatesResult result = await _service.FindCandidatesAsync(_artistId, _musicBrainzId);
 
@@ -334,8 +340,8 @@ public class ArtistPictureLookupServiceTests
     [Test]
     public async Task FindCandidatesAsync_ServicesFailWithoutPictures_IsUnavailable()
     {
-        _musicBrainz.GetWikidataItemAsync(_musicBrainzId, Arg.Any<CancellationToken>())
-            .Returns(OnlineResponse<string>.Failed(OnlineStatus.Unavailable));
+        _musicBrainz.GetArtistAsync(_musicBrainzId, Arg.Any<CancellationToken>())
+            .Returns(OnlineResponse<MusicBrainzArtistDetails>.Failed(OnlineStatus.Unavailable));
 
         ArtistCandidatesResult result = await _service.FindCandidatesAsync(_artistId, _musicBrainzId);
 
@@ -489,6 +495,45 @@ public class ArtistPictureLookupServiceTests
                 picture.Provider == ArtistPictureProvider.FanartTv
                 && picture.SourceUrl == $"https://fanart.tv/artist/{_musicBrainzId:D}"),
             Arg.Any<CancellationToken>());
+    }
+
+    [Test]
+    public async Task TakeOverAsync_PictureTaken_TakesTheAliasesOfTheArtist()
+    {
+        string id = await FirstCandidateIdAsync();
+
+        ArtistLookupStatus status = await _service.TakeOverAsync(_artistId, id, null);
+
+        status.Should().Be(ArtistLookupStatus.Found);
+        Received.InOrder(() =>
+        {
+            _repository.RememberMusicBrainzArtistAsync(_artistId, _musicBrainzId, Arg.Any<CancellationToken>());
+            _aliasLookup.LookUpAsync(_artistId, Arg.Any<CancellationToken>());
+        });
+    }
+
+    [Test]
+    public async Task TakeOverAsync_AliasesFail_StillTakesThePicture()
+    {
+        _aliasLookup.LookUpAsync(default, default).ThrowsAsyncForAnyArgs(new InvalidOperationException("broken"));
+        string id = await FirstCandidateIdAsync();
+
+        ArtistLookupStatus status = await _service.TakeOverAsync(_artistId, id, null);
+
+        status.Should().Be(ArtistLookupStatus.Found);
+        await _repository.ReceivedWithAnyArgs(1).ReplaceAsync(default!, default);
+    }
+
+    [Test]
+    public async Task TakeOverAsync_PictureNotTaken_LeavesTheAliasesAlone()
+    {
+        _store.SaveAsync(Arg.Any<Guid>(), Arg.Any<Stream>(), Arg.Any<CoverCrop?>(), Arg.Any<CancellationToken>())
+            .Returns(new ArtistPictureSaveResult(ArtistPictureSaveStatus.Unreadable, 0, 0));
+        string id = await FirstCandidateIdAsync();
+
+        await _service.TakeOverAsync(_artistId, id, null);
+
+        await _aliasLookup.DidNotReceiveWithAnyArgs().LookUpAsync(default, default);
     }
 
     [TestCase(ArtistPictureSaveStatus.UnsupportedFormat, ArtistLookupStatus.Unavailable)]

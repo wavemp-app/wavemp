@@ -1,3 +1,4 @@
+using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using WaveMP.Data.Entities;
 using WaveMP.Data.Projections;
@@ -108,13 +109,16 @@ internal sealed class AlbumRepository(WaveMpDbContext dbContext) : IAlbumReposit
     {
         if (query.Search is { } search)
         {
-            string pattern = LikePatterns.Contains(search);
-            albums = albums.Where(album =>
-                EF.Functions.ILike(album.Title, pattern, LikePatterns.EscapeCharacter)
-                || EF.Functions.TrigramsAreWordSimilar(search, album.Title)
-                || album.ArtistCredits.Any(credit =>
-                    EF.Functions.ILike(credit.Artist!.Name, pattern, LikePatterns.EscapeCharacter)
-                    || EF.Functions.TrigramsAreWordSimilar(search, credit.Artist.Name)));
+            // By the title or by one of the album artists, each like the artist list finds it.
+            var librarySearch = LibrarySearch.Of(search);
+            IQueryable<Guid> artistIds = dbContext.Artists
+                .Where(librarySearch.ArtistMatches())
+                .Select(artist => artist.Id);
+            Expression<Func<Album, bool>> byTitle = librarySearch.Matches<Album>(
+                album => album.Title,
+                album => album.SearchKey);
+            albums = albums.Where(byTitle.OrElse(album =>
+                album.ArtistCredits.Any(credit => artistIds.Contains(credit.ArtistId))));
         }
 
         if (query.ArtistId is { } artistId)
@@ -170,16 +174,25 @@ internal sealed class AlbumRepository(WaveMpDbContext dbContext) : IAlbumReposit
                 .OrderBy(album => album.FirstSeenAt, direction)
                 .ThenBy(album => album.NormalizedTitle),
             AlbumSortField.Relevance when search is not null => albums
-                .OrderBy(
-                    album => Math.Max(
-                        EF.Functions.TrigramsWordSimilarity(search, album.Title),
-                        ArtistWeight * EF.Functions.TrigramsWordSimilarity(search, album.AlbumArtist!.Name)),
-                    direction)
+                .OrderBy(Relevance(LibrarySearch.Of(search)), direction)
                 .ThenBy(album => album.NormalizedTitle),
             _ => albums
                 .OrderBy(album => album.AlbumArtist!.NormalizedName, direction)
                 .ThenBy(album => album.NormalizedTitle),
         };
+    }
+
+    /// <summary>
+    /// The relevance of an album: the score of its title or, a little lower, of its first album artist.
+    /// </summary>
+    private static Expression<Func<Album, double>> Relevance(LibrarySearch search)
+    {
+        Expression<Func<Album, double>> artist = LibrarySearch.Apply<Album, Artist, double>(
+            search.ArtistScore(),
+            album => album.AlbumArtist!);
+        return LibrarySearch.Best(
+            search.Score<Album>(album => album.Title, album => album.SearchKey),
+            (artist, ArtistWeight));
     }
 
     /// <summary>

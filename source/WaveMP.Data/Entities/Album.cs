@@ -21,6 +21,12 @@ public class Album
     public required string NormalizedTitle { get; set; }
 
     /// <summary>
+    /// The key the library search finds the album by (see <see cref="Texts.SearchKeys"/>). Set from
+    /// <see cref="Title"/> whenever the album is saved; never shown.
+    /// </summary>
+    public string SearchKey { get; set; } = string.Empty;
+
+    /// <summary>
     /// SHA-256 (hex) of the normalized artist (the album folder for albums without artist) and the normalized title
     /// (see <see cref="Texts.NameKeys"/>); carries the unique index.
     /// </summary>

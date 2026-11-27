@@ -75,7 +75,8 @@ public class NameKeyUpgraderDatabaseTests
 
         await using WaveMpDbContext db = _database.CreateDbContext();
         (await db.Genres.CountAsync()).Should().Be(19);
-        (await db.DataUpgrades.SingleAsync()).CompletedAt.Should().NotBeNull();
+        (await db.DataUpgrades.SingleAsync(upgrade => upgrade.Name == DataUpgrade.NameKeys)).CompletedAt
+            .Should().NotBeNull();
         (await db.ArtistMoves.CountAsync(), await db.AlbumMoves.CountAsync()).Should().Be((0, 0));
     }
 
@@ -237,6 +238,7 @@ public class NameKeyUpgraderDatabaseTests
         services.AddSingleton(TimeProvider.System);
         services.AddWaveMpData();
         services.AddScoped<NameKeyUpgrader>();
+        services.AddScoped<SearchKeyUpgrader>();
         return services.BuildServiceProvider();
     }
 

@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using WaveMP.Data.Entities;
+using WaveMP.Data.Texts;
 
 namespace WaveMP.Data.Configurations;
 
@@ -11,6 +12,11 @@ internal sealed class TrackConfiguration : IEntityTypeConfiguration<Track>
     /// </summary>
     public const string TitleTrigramIndex = "ix_tracks_title_trgm";
 
+    /// <summary>
+    /// Trigram index of the search key (see <see cref="Texts.SearchKeys"/>) for the fault-tolerant search (pg_trgm).
+    /// </summary>
+    public const string SearchKeyTrigramIndex = "ix_tracks_search_key_trgm";
+
     public void Configure(EntityTypeBuilder<Track> builder)
     {
         builder.ToTable("tracks");
@@ -18,6 +24,7 @@ internal sealed class TrackConfiguration : IEntityTypeConfiguration<Track>
 
         builder.Property(track => track.Id).ValueGeneratedNever();
         builder.Property(track => track.Title).HasMaxLength(LibraryColumns.TextMaxLength);
+        builder.Property(track => track.SearchKey).HasMaxLength(SearchKeys.MaxLength);
         builder.Property(track => track.MetadataSource)
             .HasConversion<string>()
             .HasMaxLength(LibraryColumns.EnumMaxLength);
@@ -33,6 +40,10 @@ internal sealed class TrackConfiguration : IEntityTypeConfiguration<Track>
         builder.HasIndex(track => track.ReviewedAt);
         builder.HasIndex(track => track.Title)
             .HasDatabaseName(TitleTrigramIndex)
+            .HasMethod(LibraryColumns.TrigramIndexMethod)
+            .HasOperators(LibraryColumns.TrigramOperators);
+        builder.HasIndex(track => track.SearchKey)
+            .HasDatabaseName(SearchKeyTrigramIndex)
             .HasMethod(LibraryColumns.TrigramIndexMethod)
             .HasOperators(LibraryColumns.TrigramOperators);
 

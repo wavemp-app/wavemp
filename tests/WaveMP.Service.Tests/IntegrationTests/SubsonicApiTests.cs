@@ -430,6 +430,20 @@ public class SubsonicApiTests
     }
 
     [Test]
+    public async Task Search3_NamesTypedDifferently_FindsThemLikeTheSearchOfTheApp()
+    {
+        JsonElement song = (await JsonAsync("search3", $"{_profile.PasswordAuth}&query=thirdd"))
+            .GetProperty("searchResult3");
+        JsonElement artist = (await JsonAsync("search3", $"{_profile.PasswordAuth}&query=%40lpha"))
+            .GetProperty("searchResult3");
+
+        song.GetProperty("song").EnumerateArray().Select(item => item.GetProperty("title").GetString())
+            .Should().Equal("Third");
+        artist.GetProperty("artist").EnumerateArray().Select(item => item.GetProperty("name").GetString())
+            .Should().StartWith("Alpha");
+    }
+
+    [Test]
     public async Task StarAndRating_AreTheFavoritesAndRatingsOfTheProfile()
     {
         SubsonicProfile profile = await CreateProfileAsync();

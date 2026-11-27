@@ -23,6 +23,11 @@ internal sealed class MusicBrainzArtistClient(
     /// </summary>
     internal const int MaxLimit = 100;
 
+    /// <summary>
+    /// Most aliases taken of one artist; well-known artists have many names in other languages.
+    /// </summary>
+    internal const int MaxAliases = 100;
+
     private const string WikidataItemPrefix = "https://www.wikidata.org/wiki/";
 
     private static readonly JsonSerializerOptions _jsonOptions = new(JsonSerializerDefaults.Web)
@@ -64,7 +69,7 @@ internal sealed class MusicBrainzArtistClient(
             new MusicBrainzArtistPage(Math.Max(response.Value.Count, offset + artists.Length), artists));
     }
 
-    public async Task<OnlineResponse<string>> GetWikidataItemAsync(
+    public async Task<OnlineResponse<MusicBrainzArtistDetails>> GetArtistAsync(
         Guid artistId,
         CancellationToken cancellationToken = default)
     {
@@ -72,14 +77,23 @@ internal sealed class MusicBrainzArtistClient(
         OnlineResponse<ArtistWithRelations> response = await GetAsync<ArtistWithRelations>(url, cancellationToken);
         if (!response.IsFound)
         {
-            return OnlineResponse<string>.Failed(response.Status);
+            return OnlineResponse<MusicBrainzArtistDetails>.Failed(response.Status);
         }
 
         string? item = response.Value.Relations
             .Where(relation => string.Equals(relation.Type, "wikidata", StringComparison.OrdinalIgnoreCase))
             .Select(relation => WikidataItemOf(relation.Url?.Resource))
             .FirstOrDefault(id => id is not null);
-        return item is null ? OnlineResponse<string>.Failed(OnlineStatus.NotFound) : OnlineResponse<string>.Found(item);
+        string[] aliases =
+        [
+            .. response.Value.Aliases
+                .Select(alias => Text(alias.Name))
+                .OfType<string>()
+                .Distinct(StringComparer.Ordinal)
+                .Take(MaxAliases),
+        ];
+        return OnlineResponse<MusicBrainzArtistDetails>.Found(
+            new MusicBrainzArtistDetails(item, Text(response.Value.SortName), aliases));
     }
 
     /// <summary>
@@ -96,13 +110,14 @@ internal sealed class MusicBrainzArtistClient(
     }
 
     /// <summary>
-    /// The address of an artist with its links: <c>{base}/ws/2/artist/{id}?inc=url-rels&amp;fmt=json</c>.
+    /// The address of an artist with its links and aliases:
+    /// <c>{base}/ws/2/artist/{id}?inc=url-rels+aliases&amp;fmt=json</c>.
     /// </summary>
     internal static Uri ArtistUrl(string baseUrl, Guid artistId)
     {
         return new Uri(string.Create(
             CultureInfo.InvariantCulture,
-            $"{baseUrl.TrimEnd('/')}/ws/2/artist/{artistId:D}?inc=url-rels&fmt=json"));
+            $"{baseUrl.TrimEnd('/')}/ws/2/artist/{artistId:D}?inc=url-rels+aliases&fmt=json"));
     }
 
     /// <summary>
@@ -197,8 +212,20 @@ internal sealed class MusicBrainzArtistClient(
 
     private sealed class ArtistWithRelations
     {
+        [JsonPropertyName("sort-name")]
+        public string? SortName { get; init; }
+
         [JsonPropertyName("relations")]
         public IReadOnlyList<Relation> Relations { get; init; } = [];
+
+        [JsonPropertyName("aliases")]
+        public IReadOnlyList<Alias> Aliases { get; init; } = [];
+    }
+
+    private sealed class Alias
+    {
+        [JsonPropertyName("name")]
+        public string? Name { get; init; }
     }
 
     private sealed class Relation

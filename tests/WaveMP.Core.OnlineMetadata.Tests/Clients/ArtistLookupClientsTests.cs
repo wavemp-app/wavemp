@@ -97,36 +97,56 @@ public class ArtistLookupClientsTests
     }
 
     [Test]
-    public async Task GetWikidataItemAsync_ArtistWithWikidataLink_ReturnsTheItem()
+    public async Task GetArtistAsync_ArtistWithWikidataLinkAndAliases_ReturnsThemWithOneRequest()
     {
         _clients.Handler.Respond(HttpStatusCode.OK, """
             {
-              "id": "5b11f4ce-a62d-471e-81fc-a69a8278c7da", "name": "Nirvana",
+              "id": "5b11f4ce-a62d-471e-81fc-a69a8278c7da", "name": "P!nk", "sort-name": " P!nk ",
               "relations": [
                 { "type": "official homepage", "url": { "resource": "https://www.nirvana.example/" } },
                 { "type": "wikidata", "url": { "resource": "https://www.wikidata.org/wiki/Q11649" } }
+              ],
+              "aliases": [
+                { "name": "Pink", "sort-name": "Pink", "type": "Search hint", "primary": null },
+                { "name": "Alecia Moore", "sort-name": "Moore, Alecia", "type": "Legal name" },
+                { "name": "Pink", "sort-name": "Pink", "type": "Artist name", "locale": "en" },
+                { "name": "  ", "sort-name": "" }
               ]
             }
             """);
 
-        OnlineResponse<string> response = await _clients.MusicBrainzArtists.GetWikidataItemAsync(_artist);
+        OnlineResponse<MusicBrainzArtistDetails> response = await _clients.MusicBrainzArtists.GetArtistAsync(_artist);
 
-        response.Value.Should().Be("Q11649");
+        response.Value!.WikidataItemId.Should().Be("Q11649");
+        response.Value.SortName.Should().Be("P!nk");
+        response.Value.Aliases.Should().Equal("Pink", "Alecia Moore");
         _clients.Handler.Requests.Should().ContainSingle().Which.Url.Should().Be(
-            "https://musicbrainz.org/ws/2/artist/5b11f4ce-a62d-471e-81fc-a69a8278c7da?inc=url-rels&fmt=json");
+            "https://musicbrainz.org/ws/2/artist/5b11f4ce-a62d-471e-81fc-a69a8278c7da?inc=url-rels+aliases&fmt=json");
+    }
+
+    [Test]
+    public async Task GetArtistAsync_UnknownArtist_IsNotFound()
+    {
+        _clients.Handler.Respond(HttpStatusCode.NotFound, """{ "error": "Not Found" }""");
+
+        OnlineResponse<MusicBrainzArtistDetails> response = await _clients.MusicBrainzArtists.GetArtistAsync(_artist);
+
+        response.Status.Should().Be(OnlineStatus.NotFound);
     }
 
     [TestCase("""{ "relations": [] }""")]
     [TestCase("""{ "relations": [ { "type": "wikidata", "url": { "resource": "https://evil.example/wiki/Q1" } } ] }""")]
     [TestCase(
         """{ "relations": [ { "type": "wikidata", "url": { "resource": "https://www.wikidata.org/wiki/Q1&x" } } ] }""")]
-    public async Task GetWikidataItemAsync_WithoutValidLink_IsNotFound(string answer)
+    public async Task GetArtistAsync_WithoutValidLink_HasNoWikidataItem(string answer)
     {
         _clients.Handler.Respond(HttpStatusCode.OK, answer);
 
-        OnlineResponse<string> response = await _clients.MusicBrainzArtists.GetWikidataItemAsync(_artist);
+        OnlineResponse<MusicBrainzArtistDetails> response = await _clients.MusicBrainzArtists.GetArtistAsync(_artist);
 
-        response.Status.Should().Be(OnlineStatus.NotFound);
+        response.Status.Should().Be(OnlineStatus.Found);
+        response.Value!.WikidataItemId.Should().BeNull();
+        response.Value.Aliases.Should().BeEmpty();
     }
 
     [Test]

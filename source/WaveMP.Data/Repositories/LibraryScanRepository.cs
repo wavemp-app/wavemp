@@ -838,6 +838,25 @@ internal sealed class LibraryScanRepository(WaveMpDbContext dbContext) : ILibrar
             """,
             cancellationToken);
 
+        // The aliases go to the main successor, each normalized name once; those it has already go with the artist.
+        await dbContext.Database.ExecuteSqlAsync(
+            $"""
+            UPDATE artist_aliases SET artist_id = moved.successor_id
+            FROM (
+                SELECT DISTINCT ON (successor.main_successor_id, alias.normalized_name)
+                    alias.id, successor.main_successor_id AS successor_id
+                FROM artist_aliases AS alias
+                JOIN unnest({orphanIds}, {mainSuccessorIds}) AS successor(artist_id, main_successor_id)
+                    ON alias.artist_id = successor.artist_id
+                WHERE NOT EXISTS (SELECT 1 FROM artist_aliases AS other
+                    WHERE other.artist_id = successor.main_successor_id
+                        AND other.normalized_name = alias.normalized_name)
+                ORDER BY successor.main_successor_id, alias.normalized_name, alias.is_removed, alias.created_at
+            ) AS moved
+            WHERE artist_aliases.id = moved.id
+            """,
+            cancellationToken);
+
         if (plan.PassedOnMoves.Count > 0)
         {
             Guid[] fromArtistIds = [.. plan.PassedOnMoves.Select(move => move.FromArtistId)];

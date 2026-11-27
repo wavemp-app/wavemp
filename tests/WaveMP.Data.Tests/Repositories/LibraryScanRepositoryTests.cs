@@ -950,6 +950,30 @@ public class LibraryScanRepositoryTests : LibraryDatabaseTests
     }
 
     [Test]
+    public async Task DeleteOrphansAsync_ArtistRenamed_CarriesItsAliasesToTheNewArtistOncePerName()
+    {
+        LibrarySeed seed = new();
+        Artist old = seed.Artist("Band", _day);
+        seed.Alias(old, "Die Band");
+        seed.Alias(old, "Group", ArtistAliasSource.MusicBrainz, isRemoved: true);
+        seed.Alias(old, "Shared");
+        Artist renamed = ArtistWithTrack(seed, "The Band", _day.AddDays(1));
+        seed.Alias(renamed, "SHARED", ArtistAliasSource.MusicBrainz);
+        await SaveAsync(seed);
+        await AddArtistMovesAsync((old, renamed, 2));
+
+        await CreateRepository().DeleteOrphansAsync(_day.AddDays(30));
+
+        WaveMpDbContext db = CreateDbContext();
+        (await db.ArtistAliases.OrderBy(alias => alias.NormalizedName).ToListAsync())
+            .Select(alias => (alias.ArtistId, alias.Name, alias.IsRemoved))
+            .Should().Equal(
+                (renamed.Id, "Die Band", false),
+                (renamed.Id, "Group", true),
+                (renamed.Id, "SHARED", false));
+    }
+
+    [Test]
     public async Task DeleteOrphansAsync_ArtistLeftEmptyWithoutMoves_IsDeletedWithItsPictures()
     {
         LibrarySeed seed = new();

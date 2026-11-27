@@ -48,7 +48,8 @@ public class ReferenceGenresByIdAndNormalizeNamesTests
         (await db.Favorites.CountAsync(), await db.TrackRatings.CountAsync(), await db.PlayHistory.CountAsync())
             .Should().Be((2, 6, 6));
         (await db.Artists.SingleAsync()).Name.Should().Be("K.Flay");
-        DataUpgrade upgrade = await db.DataUpgrades.SingleAsync();
+        // Later migrations add upgrades of their own.
+        DataUpgrade upgrade = await db.DataUpgrades.SingleAsync(upgrade => upgrade.Name == DataUpgrade.NameKeys);
         (upgrade.Name, upgrade.CompletedAt).Should().Be((DataUpgrade.NameKeys, null));
     }
 

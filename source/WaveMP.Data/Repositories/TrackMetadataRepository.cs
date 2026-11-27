@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using WaveMP.Data.Entities;
+using WaveMP.Data.Texts;
 
 namespace WaveMP.Data.Repositories;
 
@@ -50,9 +51,14 @@ internal sealed class TrackMetadataRepository(WaveMpDbContext dbContext) : ITrac
         string name,
         CancellationToken cancellationToken = default)
     {
+        string searchKey = SearchKeys.Of(name) ?? string.Empty;
         return dbContext.Artists
             .Where(artist => artist.NormalizedName == normalizedName && artist.Name != name)
-            .ExecuteUpdateAsync(setters => setters.SetProperty(artist => artist.Name, name), cancellationToken);
+            .ExecuteUpdateAsync(
+                setters => setters
+                    .SetProperty(artist => artist.Name, name)
+                    .SetProperty(artist => artist.SearchKey, searchKey),
+                cancellationToken);
     }
 
     public Task<int> RenameGenreAsync(

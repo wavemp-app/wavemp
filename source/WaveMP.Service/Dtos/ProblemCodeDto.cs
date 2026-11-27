@@ -379,6 +379,26 @@ public enum ProblemCodeDto
     ArtistPictureCandidateNotFound,
 
     /// <summary>
+    /// The artist has no alias with this id (404).
+    /// </summary>
+    [JsonStringEnumMemberName("artist.alias_not_found")]
+    ArtistAliasNotFound,
+
+    /// <summary>
+    /// The artist has the alias already, or it is the name of the artist; names count as equal when their normalized
+    /// forms are (409).
+    /// </summary>
+    [JsonStringEnumMemberName("artist.alias_exists")]
+    ArtistAliasExists,
+
+    /// <summary>
+    /// The artist has no MusicBrainz artist (from the tags of its songs or chosen in the online lookup of pictures), so
+    /// its aliases cannot be taken from MusicBrainz (409).
+    /// </summary>
+    [JsonStringEnumMemberName("artist.musicbrainz_artist_missing")]
+    ArtistMusicBrainzArtistMissing,
+
+    /// <summary>
     /// The track has no lyrics: no lyrics file, no downloaded lyrics and none in its tags (404).
     /// </summary>
     [JsonStringEnumMemberName("lyrics.not_found")]

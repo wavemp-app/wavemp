@@ -7,7 +7,8 @@ public static class ServiceProviderExtensions
 {
     /// <summary>
     /// Carries out the changes of the library that the migrations left to the service (see
-    /// <see cref="NameKeyUpgrader"/>). Call it right after the migrations, before anything reads the library.
+    /// <see cref="NameKeyUpgrader"/> and <see cref="SearchKeyUpgrader"/>). Call it right after the migrations, before
+    /// anything reads the library.
     /// </summary>
     public static async Task UpgradeWaveMpLibraryAsync(
         this IServiceProvider services,
@@ -15,5 +16,6 @@ public static class ServiceProviderExtensions
     {
         await using AsyncServiceScope scope = services.CreateAsyncScope();
         await scope.ServiceProvider.GetRequiredService<NameKeyUpgrader>().RunAsync(cancellationToken);
+        await scope.ServiceProvider.GetRequiredService<SearchKeyUpgrader>().RunAsync(cancellationToken);
     }
 }

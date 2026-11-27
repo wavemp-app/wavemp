@@ -76,7 +76,7 @@ public class ArtistLookupSenderTests
         OnlineStatus[] statuses =
         [
             (await _clients.MusicBrainzArtists.SearchAsync("Band", 0, 10)).Status,
-            (await _clients.MusicBrainzArtists.GetWikidataItemAsync(artist)).Status,
+            (await _clients.MusicBrainzArtists.GetArtistAsync(artist)).Status,
             (await _clients.Wikidata.GetImageFileNamesAsync("Q1")).Status,
             (await _clients.Commons.GetImagesAsync(["Picture.jpg"], 500)).Status,
             (await _clients.Commons.DownloadAsync(picture)).Status,

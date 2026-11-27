@@ -31,7 +31,8 @@ public sealed class ArtistsController(IArtistService artists, IListGroupService 
     /// </param>
     /// <param name="direction">Sort direction; descending by default for FirstSeenAt and Relevance, otherwise
     /// ascending.</param>
-    /// <param name="q">Search text: only artists whose name contains it or is similar to it (small typos).</param>
+    /// <param name="q">Search text: only artists whose name or one of whose aliases contains it or is similar to it,
+    /// tolerant like SearchLibrary.</param>
     /// <param name="myMusic">Only artists of the "my music" of the current profile, as track or album artist.</param>
     /// <param name="sourceId">Only artists with tracks of this media source, as track or album artist.</param>
     /// <param name="cancellationToken">Aborts the request.</param>
