@@ -2,6 +2,7 @@ import { expect, test, type APIRequestContext, type Page } from '@playwright/tes
 import { send, sessionHeaders } from '../../screenshots/helpers'
 import { createUser, deleteUser, findTrackId, uniqueSuffix, type TestUser } from '../helpers/api'
 import {
+    attachRecording,
     controlLockScreen,
     controlVisibility,
     expectContinuous,
@@ -12,6 +13,7 @@ import {
     recordedSamples,
     setHidden,
     startRecording,
+    traceMediaElements,
     transport,
 } from '../helpers/background'
 import { homeUrl, profileTile } from '../helpers/navigation'
@@ -59,6 +61,9 @@ const deviceIdKey = 'wavemp.device-id'
  * longer than an assertion waits by default.
  */
 const pathChange = { timeout: 15_000 }
+
+/** How long to wait for the page to load the profile and its queue. */
+const loadTime = { timeout: 15_000 }
 
 /**
  * Seconds the seek bar may move ahead of the time that passed. WebKit of Linux reports the position
@@ -147,11 +152,13 @@ async function startWith(
     ] as const)
     await page.goto('/profiles', { waitUntil: 'domcontentloaded' })
     await profileTile(page, profile.name).click()
-    await expect(page).toHaveURL(homeUrl)
+    // Selecting the profile creates its session and loads its settings and its saved queue, which
+    // takes a while in a busy container.
+    await expect(page).toHaveURL(homeUrl, loadTime)
     if (titles.length > 0) {
-        await expect(part(page, 'now-playing-title')).toHaveText(titles[0]!)
+        await expect(part(page, 'now-playing-title')).toHaveText(titles[0]!, loadTime)
         await expect(part(page, 'btn-play')).toHaveAttribute('data-state', 'paused')
-        await expect(transport(page)).not.toHaveAttribute('data-state', /\bloading\b/)
+        await expect(transport(page)).not.toHaveAttribute('data-state', /\bloading\b/, loadTime)
     }
 }
 
@@ -162,6 +169,7 @@ test.beforeEach(async ({ page, request }) => {
     await emulateAppleDevice(page)
     await controlVisibility(page)
     await controlLockScreen(page)
+    await traceMediaElements(page)
 
     // The pages are opened without waiting for their load event: WebKit in a busy container
     // sometimes fired it only after half a minute (pictures still loading) although the app was
@@ -181,7 +189,8 @@ test.beforeEach(async ({ page, request }) => {
     listener = await createUser(request, `Background ${uniqueSuffix()}`)
 })
 
-test.afterEach(async ({ request }) => {
+test.afterEach(async ({ page, request }, testInfo) => {
+    await attachRecording(page, testInfo)
     if (listener) {
         await deleteUser(request, listener.id)
         listener = null

@@ -1,4 +1,5 @@
-import { expect, type Locator, type Page } from '@playwright/test'
+import { writeFile } from 'node:fs/promises'
+import { expect, type Locator, type Page, type TestInfo } from '@playwright/test'
 
 // Helpers for the tests of playback in the background. A browser under test never really goes to
 // the background, so the tests let the page believe it: the visibility of the document is replaced
@@ -33,6 +34,65 @@ interface BackgroundWindow {
     e2eSamples: Sample[]
     /** The handlers the app registered for the buttons of the lock screen, by action. */
     e2eLockScreen: Record<string, MediaSessionActionHandler | null>
+    /** Every audio and video element the page loaded or played, in the order of their first use. */
+    e2eMediaElements: HTMLMediaElement[]
+}
+
+/** What an audio or video element of the page reports, for the report of a failed test. */
+export interface MediaElementState {
+    readonly src: string
+    readonly paused: boolean
+    readonly ended: boolean
+    readonly readyState: number
+    readonly networkState: number
+    readonly currentTime: number
+    readonly duration: number
+    readonly error: number | null
+}
+
+/**
+ * Notes every audio and video element the page loads or plays, also those the player never puts
+ * into the document, so a failed test can report what each of them did (mediaElementStates).
+ */
+export async function traceMediaElements(page: Page): Promise<void> {
+    await page.addInitScript(() => {
+        const state = window as unknown as BackgroundWindow
+        state.e2eMediaElements = []
+        const prototype = HTMLMediaElement.prototype
+        const note = (element: HTMLMediaElement): void => {
+            if (!state.e2eMediaElements.includes(element)) {
+                state.e2eMediaElements.push(element)
+            }
+        }
+        const play = prototype.play
+        prototype.play = function (this: HTMLMediaElement): Promise<void> {
+            note(this)
+            return play.call(this)
+        }
+        const load = prototype.load
+        prototype.load = function (this: HTMLMediaElement): void {
+            note(this)
+            load.call(this)
+        }
+    })
+}
+
+/** The state of every element traceMediaElements noted; empty when the page is gone. */
+export async function mediaElementStates(page: Page): Promise<MediaElementState[]> {
+    return page
+        .evaluate(() =>
+            ((window as unknown as BackgroundWindow).e2eMediaElements ?? []).map((element) => ({
+                src: element.currentSrc.replace(/\?.*$/, ''),
+                paused: element.paused,
+                ended: element.ended,
+                readyState: element.readyState,
+                networkState: element.networkState,
+                currentTime: element.currentTime,
+                duration: element.duration,
+                error: element.error?.code ?? null,
+            })),
+        )
+        .catch(() => [])
 }
 
 /** Buttons of the lock screen (actions of the media session) a test can press. */
@@ -203,6 +263,28 @@ export async function startRecording(page: Page): Promise<void> {
 
 export function recordedSamples(page: Page): Promise<Sample[]> {
     return page.evaluate(() => (window as unknown as BackgroundWindow).e2eSamples)
+}
+
+/**
+ * Adds what the page recorded (the samples of startRecording, the media elements of
+ * traceMediaElements) to the report of a test that failed, so the report shows where it got stuck.
+ */
+export async function attachRecording(page: Page, testInfo: TestInfo): Promise<void> {
+    if (testInfo.status === testInfo.expectedStatus) {
+        return
+    }
+
+    const samples = await page
+        .evaluate(() => (window as unknown as BackgroundWindow).e2eSamples ?? [])
+        .catch(() => [])
+    const elements = await mediaElementStates(page)
+    // A file in the output folder of the test, so it is kept with every reporter.
+    const file = testInfo.outputPath('background-recording.json')
+    await writeFile(file, JSON.stringify({ samples, elements }, null, 2))
+    await testInfo.attach('background-recording.json', {
+        path: file,
+        contentType: 'application/json',
+    })
 }
 
 /** Whether the state tokens of a sample contain a token. */
