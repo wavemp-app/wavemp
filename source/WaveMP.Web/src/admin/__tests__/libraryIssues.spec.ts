@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { LibraryIssue, LibraryIssueTrack } from '@/api/generated/models'
 import {
+    artistSplitChanges,
     isLibraryIssueFilter,
     isLibraryIssueSort,
     issueActions,
@@ -11,6 +12,7 @@ import {
     issueTypeToken,
     libraryIssueTypes,
     severityToken,
+    suggestedArtists,
     trackContext,
     typeParameter,
 } from '../libraryIssues'
@@ -47,6 +49,7 @@ describe('kinds of problem', () => {
             'possible-duplicate',
             'video-without-audio',
             'audio-without-video',
+            'possible-multiple-artists',
         ])
         expect(issueTypeLabelKey('PossibleDuplicate')).toBe('adminChecks.types.possibleDuplicate')
         // A newer server may know more kinds than this app.
@@ -73,6 +76,7 @@ describe('kinds of problem', () => {
             ['possible-duplicate', 0, 'problem'],
             ['video-without-audio', 0, 'problem'],
             ['audio-without-video', 2, 'hint'],
+            ['possible-multiple-artists', 0, 'problem'],
         ])
         expect(issueTypeOptions(null).every((option) => option.count === 0)).toBe(true)
     })
@@ -107,6 +111,50 @@ describe('a problem', () => {
         ).toBe('Band/Album/01 Song.flac')
         expect(trackContext(track)).toEqual(['Band', 'Album'])
         expect(trackContext({ ...track, artist: null, album: null })).toEqual([])
+        expect(
+            trackContext({
+                ...track,
+                artists: [
+                    { id: 'bob', name: 'Bob Sinclar', role: 'Main' },
+                    { id: 'kflay', name: 'K.Flay', role: 'Featured' },
+                ],
+            }),
+        ).toEqual(['Bob Sinclar feat. K.Flay', 'Album'])
+    })
+
+    it('suggests the split of an artist name and writes the answer as list of artists', () => {
+        const duo = issue({
+            type: 'PossibleMultipleArtists',
+            severity: 'Hint',
+            track: {
+                ...track,
+                artist: { id: 'duo', name: 'Simon & Garfunkel' },
+                artists: [{ id: 'duo', name: 'Simon & Garfunkel', role: 'Main' }],
+            },
+            suggestedArtists: [
+                { name: 'Simon', role: 'Main' },
+                { name: 'Garfunkel', role: 'Main' },
+            ],
+        })
+
+        expect(suggestedArtists(duo).map((artist) => artist.name)).toEqual(['Simon', 'Garfunkel'])
+        expect(artistSplitChanges(duo, 'split')).toEqual({
+            artists: [
+                { name: 'Simon', role: 'Main' },
+                { name: 'Garfunkel', role: 'Main' },
+            ],
+        })
+        expect(artistSplitChanges(duo, 'keep')).toEqual({
+            artists: [{ name: 'Simon & Garfunkel', role: 'Main' }],
+        })
+        expect(issueDetail(duo).key).toBe('adminChecks.details.possibleMultipleArtists')
+        expect(issueActions(duo).map((action) => action.item)).toEqual([
+            'edit-metadata',
+            'show-files',
+        ])
+        // Only audio files are written; other kinds of problem have no suggestion.
+        expect(suggestedArtists({ ...duo, track: { ...duo.track, hasAudio: false } })).toEqual([])
+        expect(suggestedArtists({ ...duo, type: 'MissingCover' })).toEqual([])
     })
 
     it('tells what is wrong', () => {

@@ -8,10 +8,12 @@ import BaseLink from '@/components/base/BaseLink.vue'
 import BaseList, { type ListGroup, type ListRowBase } from '@/components/base/BaseList.vue'
 import FavoriteButton from '@/components/collection/FavoriteButton.vue'
 import RatingStars from '@/components/collection/RatingStars.vue'
+import ArtistNames from './ArtistNames.vue'
 import LibraryCover from './LibraryCover.vue'
 import MetaItem from './MetaItem.vue'
 import ItemMenuButton from '@/components/menus/ItemMenuButton.vue'
 import { useFormat } from '@/composables/useFormat'
+import { artistsOf } from '@/library/artists'
 import type { TrackGroup } from '@/library/grouping'
 import {
     artistLabelKey,
@@ -129,11 +131,6 @@ function artistName(group: TrackGroup): string {
     return key ? t(key) : (group.artist?.name ?? '')
 }
 
-function trackArtist(track: Track): string {
-    const key = artistLabelKey(track.artist)
-    return key ? t(key) : (track.artist?.name ?? '')
-}
-
 const allTracks = computed(() => props.groups.flatMap((group) => group.tracks))
 /** A plain list (the view "List"): its group has no heading, cover or details. */
 const ungrouped = computed(
@@ -221,16 +218,10 @@ function activate(rowId: string): void {
                         </BaseLink>
                     </MetaItem>
                     <MetaItem field="artist" :label="t('list.artist')">
-                        <BaseLink
-                            v-if="infoOf(group)!.artist?.id"
-                            :to="{
-                                name: 'library-artist',
-                                params: { id: infoOf(group)!.artist!.id },
-                            }"
-                        >
-                            {{ artistName(infoOf(group)!) }}
-                        </BaseLink>
-                        <template v-else>{{ artistName(infoOf(group)!) }}</template>
+                        <ArtistNames
+                            :artists="infoOf(group)!.artists"
+                            :fallback="artistName(infoOf(group)!)"
+                        />
                     </MetaItem>
                     <MetaItem v-if="infoOf(group)!.genre" field="genre" :label="t('list.genre')">
                         <BaseLink
@@ -273,7 +264,14 @@ function activate(rowId: string): void {
                     data-part="list-subtitle"
                     :data-state="row.otherArtist ? 'other-artist' : undefined"
                 >
-                    <span data-part="label">{{ trackArtist(row.track) }}</span>
+                    <span data-part="label">
+                        <ArtistNames
+                            :artists="artistsOf(row.track)"
+                            :fallback="t('library.unknownArtist')"
+                            part="artist-link"
+                            in-row
+                        />
+                    </span>
                 </span>
             </template>
             <template v-else-if="column.id === 'duration'">
@@ -283,7 +281,14 @@ function activate(rowId: string): void {
                         : format.duration(durationSeconds(row.track.durationMilliseconds)!)
                 }}
             </template>
-            <template v-else-if="column.id === 'artist'">{{ trackArtist(row.track) }}</template>
+            <template v-else-if="column.id === 'artist'">
+                <ArtistNames
+                    :artists="artistsOf(row.track)"
+                    :fallback="t('library.unknownArtist')"
+                    part="artist-link"
+                    in-row
+                />
+            </template>
             <RatingStars
                 v-else-if="column.id === 'rating'"
                 :track-id="row.track.id ?? ''"

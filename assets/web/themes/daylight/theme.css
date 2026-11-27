@@ -1429,6 +1429,7 @@ a[data-part='breadcrumb-link']:hover {
 /* --- Forms and messages ----------------------------------------------------------------------- */
 
 [data-part='field'] > [data-part='input'],
+[data-part='field'] > [data-part='artist-tokens'],
 [data-part='select'] {
     border: 1px solid #a8c1da;
     border-radius: var(--wmp-radius-s);
@@ -1443,6 +1444,7 @@ a[data-part='breadcrumb-link']:hover {
 }
 
 [data-part='field'] > [data-part='input']:focus,
+[data-part='field'] > [data-part='artist-tokens']:focus-within,
 [data-part='select']:focus {
     border-color: var(--daylight-azure);
     outline: none;
@@ -1451,7 +1453,8 @@ a[data-part='breadcrumb-link']:hover {
         0 0 0 2px rgb(74 163 234 / 35%);
 }
 
-[data-part='field'][data-state~='invalid'] > :is([data-part='input'], [data-part='select']) {
+[data-part='field'][data-state~='invalid']
+    > :is([data-part='input'], [data-part='select'], [data-part='artist-tokens']) {
     border-color: #c63a3a;
 }
 
@@ -1464,7 +1467,8 @@ a[data-part='breadcrumb-link']:hover {
     color: var(--daylight-slate);
 }
 
-[data-part='field'] > [data-part='input']:disabled {
+[data-part='field'] > [data-part='input']:disabled,
+[data-part='field'][data-state~='disabled'] > [data-part='artist-tokens'] {
     border-color: #cbd8e5;
     background: #f3f6fa;
     box-shadow: none;

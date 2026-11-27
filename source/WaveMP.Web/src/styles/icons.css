@@ -299,6 +299,18 @@
         --_icon: var(--wmp-icon-drag-handle);
     }
 
+    [data-icon='artist-remove'] {
+        --_icon: var(--wmp-icon-artist-remove);
+    }
+
+    [data-icon='artist-match'] {
+        --_icon: var(--wmp-icon-artist-match);
+    }
+
+    [data-icon='artist-new'] {
+        --_icon: var(--wmp-icon-artist-new);
+    }
+
     [data-icon='track'] {
         --_icon: var(--wmp-icon-track);
     }

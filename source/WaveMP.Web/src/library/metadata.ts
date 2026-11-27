@@ -1,14 +1,22 @@
-// Form logic of the metadata editor: the form holds every field as text, the request contains
-// only the fields the admin changed. Empty fields remove the value from the tags (null).
+// Form logic of the metadata editor: the form holds every field as text and the artists as
+// lists, the request contains only the fields the admin changed. Empty fields remove the value
+// from the tags (null), an empty list of artists removes the artists.
 
-import type { TrackMetadata, UpdateTrackMetadata } from '@/api/generated/models'
+import {
+    ArtistRoleObject,
+    type TrackMetadata,
+    type UpdateTrackMetadata,
+} from '@/api/generated/models'
+import type { ArtistEntry } from './artists'
 
-export type MetadataTextField = 'title' | 'artist' | 'album' | 'albumArtist' | 'genre'
+export type MetadataTextField = 'title' | 'album' | 'genre'
 export type MetadataNumberField = 'year' | 'trackNumber' | 'discNumber'
-export type MetadataField = MetadataTextField | MetadataNumberField
+export type MetadataArtistField = 'artists' | 'albumArtists'
+export type MetadataField = MetadataTextField | MetadataNumberField | MetadataArtistField
 
-/** The values of the form, all as entered. */
-export type MetadataForm = Record<MetadataField, string>
+/** The values of the form: the texts as entered, the artists in their order. */
+export type MetadataForm = Record<MetadataTextField | MetadataNumberField, string> &
+    Record<MetadataArtistField, ArtistEntry[]>
 
 /** Errors of the form by field; "number" stands for a value that is no number from 1 to the maximum. */
 export type MetadataFormErrors = Partial<Record<MetadataField, 'number'>>
@@ -17,18 +25,14 @@ export type MetadataFormErrors = Partial<Record<MetadataField, 'number'>>
 export const metadataLimits = {
     text: 512,
     genre: 128,
+    /** Most artists of a song, and most album artists. */
+    artists: 50,
     numberDigits: 4,
     minNumber: 1,
     maxNumber: 9999,
 } as const
 
-export const metadataTextFields: readonly MetadataTextField[] = [
-    'title',
-    'artist',
-    'album',
-    'albumArtist',
-    'genre',
-]
+export const metadataTextFields: readonly MetadataTextField[] = ['title', 'album', 'genre']
 
 export const metadataNumberFields: readonly MetadataNumberField[] = [
     'year',
@@ -39,9 +43,9 @@ export const metadataNumberFields: readonly MetadataNumberField[] = [
 /** data-field of each field in the theme API. */
 export const metadataDataFields: Readonly<Record<MetadataField, string>> = {
     title: 'title',
-    artist: 'artist',
+    artists: 'artist',
     album: 'album',
-    albumArtist: 'album-artist',
+    albumArtists: 'album-artist',
     year: 'year',
     trackNumber: 'number',
     discNumber: 'disc',
@@ -51,9 +55,9 @@ export const metadataDataFields: Readonly<Record<MetadataField, string>> = {
 export function emptyMetadataForm(): MetadataForm {
     return {
         title: '',
-        artist: '',
+        artists: [],
         album: '',
-        albumArtist: '',
+        albumArtists: [],
         year: '',
         trackNumber: '',
         discNumber: '',
@@ -65,14 +69,56 @@ export function emptyMetadataForm(): MetadataForm {
 export function toMetadataForm(metadata: TrackMetadata): MetadataForm {
     return {
         title: metadata.title ?? '',
-        artist: metadata.artist ?? '',
+        artists: artistEntries(metadata),
         album: metadata.album ?? '',
-        albumArtist: metadata.albumArtist ?? '',
+        albumArtists: albumArtistEntries(metadata),
         year: numberText(metadata.year),
         trackNumber: numberText(metadata.trackNumber),
         discNumber: numberText(metadata.discNumber),
         genre: metadata.genre ?? '',
     }
+}
+
+/**
+ * The artists of the form: the list the server read (separate values of the tags, or the artist
+ * field split at "feat." and ";"), else the artist field as one artist.
+ */
+function artistEntries(metadata: TrackMetadata): ArtistEntry[] {
+    const artists = (metadata.artists ?? [])
+        .filter((artist) => !!artist.name)
+        .map((artist) => ({ name: artist.name!, role: artist.role ?? ArtistRoleObject.Main }))
+    if (artists.length > 0) {
+        return artists
+    }
+
+    return metadata.artist ? [{ name: metadata.artist, role: ArtistRoleObject.Main }] : []
+}
+
+function albumArtistEntries(metadata: TrackMetadata): ArtistEntry[] {
+    const names = (metadata.albumArtists ?? []).filter((name) => !!name)
+    if (names.length > 0) {
+        return names.map((name) => ({ name, role: ArtistRoleObject.Main }))
+    }
+
+    return metadata.albumArtist ? [{ name: metadata.albumArtist, role: ArtistRoleObject.Main }] : []
+}
+
+/** Whether two lists name the same artists in the same order, with the same roles. */
+export function sameArtistEntries(
+    first: readonly ArtistEntry[],
+    second: readonly ArtistEntry[],
+    roles = true,
+): boolean {
+    return (
+        first.length === second.length &&
+        first.every((entry, index) => {
+            const other = second[index]!
+            return (
+                normalizeText(entry.name) === normalizeText(other.name) &&
+                (!roles || entry.role === other.role)
+            )
+        })
+    )
 }
 
 /** A text as the server stores it: trimmed, white space joined to single spaces. */
@@ -108,7 +154,8 @@ export function validateMetadataForm(form: MetadataForm): MetadataFormErrors {
 
 /**
  * The changed fields of the form compared with the loaded values; empty fields become null.
- * Unchanged fields are left out, so values the admin did not touch are never written.
+ * Unchanged fields are left out, so values the admin did not touch are never written. Changed
+ * artists are sent as the whole list in its order (artists, albumArtists), never as text.
  */
 export function metadataChanges(original: MetadataForm, form: MetadataForm): UpdateTrackMetadata {
     const changes: UpdateTrackMetadata = {}
@@ -123,6 +170,17 @@ export function metadataChanges(original: MetadataForm, form: MetadataForm): Upd
         if (value !== undefined && value !== parseMetadataNumber(original[field])) {
             changes[field] = value
         }
+    }
+    if (!sameArtistEntries(original.artists, form.artists)) {
+        changes.artists = form.artists.map((entry) => ({
+            name: normalizeText(entry.name),
+            role: entry.role,
+        }))
+    }
+    if (!sameArtistEntries(original.albumArtists, form.albumArtists, false)) {
+        changes.albumArtists = form.albumArtists.map((entry) => ({
+            name: normalizeText(entry.name),
+        }))
     }
     return changes
 }

@@ -115,6 +115,7 @@ describe('AdminChecksView', () => {
             'Duplicates2',
             'Video only0',
             'Audio only1',
+            'Several artists?0',
         ])
         expect(segments[1]!.get('[data-part="badge"]').attributes('data-state')).toBe(
             'count problem empty',

@@ -156,6 +156,18 @@ export const parts = [
     'artist-credit-license',
     'artist-credit-source',
 
+    // Several artists of songs and albums: the names and the token input of the metadata editor
+    'artist-link',
+    'artist-name',
+    'artist-separator',
+    'artist-tokens',
+    'artist-token-list',
+    'artist-token',
+    'artist-role',
+    'artist-suggestions',
+    'artist-suggestion',
+    'artist-tokens-status',
+
     // Playlists
     'playlist-cover',
     'playlist-cover-tile',
@@ -494,6 +506,8 @@ export const parts = [
     'library-issue-title',
     'library-issue-detail',
     'library-issue-actions',
+    'artist-split',
+    'artist-split-names',
 
     // Organization of the media files and own albums of the administration
     'organize-availability',

@@ -26,6 +26,7 @@ import type {
     TrackReviewSort,
 } from '@/api/generated/models'
 import {
+    ArtistRoleObject,
     PlayerViewModeObject,
     RecapPeriodObject,
     SmartPlaylistFieldObject,
@@ -86,6 +87,7 @@ import BaseSelect from '@/components/base/BaseSelect.vue'
 import BaseSlider from '@/components/base/BaseSlider.vue'
 import BaseTabs from '@/components/base/BaseTabs.vue'
 import BaseTextField from '@/components/base/BaseTextField.vue'
+import ArtistTokenField from '@/components/library/ArtistTokenField.vue'
 import BaseTree from '@/components/base/BaseTree.vue'
 import type { TreeNode } from '@/components/base/BaseTreeItem.vue'
 import UserList, { type UserListItem } from '@/components/admin/UserList.vue'
@@ -157,6 +159,7 @@ import type { DeviceEntry } from '@/devices/presentation'
 import { useFormat } from '@/composables/useFormat'
 import { setLocale } from '@/i18n'
 import { languageName, supportedLocales } from '@/i18n/locales'
+import type { ArtistEntry } from '@/library/artists'
 import { coverPriorityKey, coverRuleOptions, coverRuleToken } from '@/library/coverRules'
 import { groupTracksByAlbum } from '@/library/grouping'
 import { sortItemId, sortLabelKey, sortOptions } from '@/library/sorting'
@@ -435,6 +438,22 @@ const searchEmpty = ref('')
 const searchFilled = ref('')
 const textInvalid = ref('')
 const yearSample = ref('2006')
+const sampleArtist = (number: number) => t('placeholders.artist', { number })
+const artistsSample = ref<ArtistEntry[]>([
+    { name: sampleArtist(1), role: ArtistRoleObject.Main, id: 'artist-1' },
+    { name: sampleArtist(2), role: ArtistRoleObject.Featured },
+])
+const albumArtistsSample = ref<ArtistEntry[]>([
+    { name: sampleArtist(1), role: ArtistRoleObject.Main, id: 'artist-1' },
+])
+/** The suggestions of the token input for a typed text: two artists of the library and the text. */
+const artistPreview = computed(() => ({
+    text: sampleArtist(3).slice(0, -2),
+    matches: [
+        { id: 'artist-3', name: sampleArtist(3) },
+        { id: 'artist-4', name: sampleArtist(4) },
+    ],
+}))
 const numberSample = ref('1')
 const selected = ref('one')
 const selectOptions = computed(() => [
@@ -1809,6 +1828,26 @@ const sampleTranscodeJobs = computed<TranscodeJob[]>(() => {
                     v-model="color"
                     :label="t('dev.samples.colorLabel')"
                     :options="colorOptions"
+                />
+                <ArtistTokenField
+                    v-model="artistsSample"
+                    data-field="artist"
+                    :label="t('trackMetadata.fields.artists')"
+                    :hint="t('trackMetadata.artistsHint')"
+                    :preview="artistPreview"
+                    roles
+                />
+                <ArtistTokenField
+                    v-model="albumArtistsSample"
+                    data-field="album-artist"
+                    :label="t('trackMetadata.fields.albumArtists')"
+                    :error="t('dev.samples.error')"
+                />
+                <ArtistTokenField
+                    v-model="albumArtistsSample"
+                    data-field="album-artist"
+                    :label="t('trackMetadata.fields.albumArtists')"
+                    disabled
                 />
                 <div data-part="field-row">
                     <BaseTextField

@@ -9,6 +9,7 @@ import BaseButton from '@/components/base/BaseButton.vue'
 import BaseLink from '@/components/base/BaseLink.vue'
 import FavoriteButton from '@/components/collection/FavoriteButton.vue'
 import AlbumMetadataDialog from '@/components/library/AlbumMetadataDialog.vue'
+import ArtistNames from '@/components/library/ArtistNames.vue'
 import DetailHeader from '@/components/library/DetailHeader.vue'
 import GroupOverview from '@/components/library/GroupOverview.vue'
 import LibraryCover from '@/components/library/LibraryCover.vue'
@@ -21,6 +22,7 @@ import { useGroupJump } from '@/composables/useGroupJump'
 import { getAlbum, listAlbumTracks } from '@/library/api'
 import { groupTracksByDisc } from '@/library/grouping'
 import { discOverviewGroups } from '@/library/groupOverview'
+import { artistsOf } from '@/library/artists'
 import { artistLabelKey, durationSeconds } from '@/library/presentation'
 import { usePlayerStore } from '@/stores/player'
 import { useSessionStore } from '@/stores/session'
@@ -52,6 +54,7 @@ let generation = 0
 const groups = computed(() =>
     album.value ? groupTracksByDisc(tracks.value, album.value.title ?? '', album.value) : [],
 )
+const albumArtists = computed(() => artistsOf(album.value))
 const artistKey = computed(() =>
     artistLabelKey(album.value?.artist, album.value?.isCompilation ?? false),
 )
@@ -144,14 +147,14 @@ useDetailTitle(() => (status.value === 'ready' ? album.value?.title : null))
                         :available="album.hasCover ?? false"
                     />
                 </template>
-                <MetaItem field="artist" :label="t('list.artist')">
-                    <BaseLink
-                        v-if="album.artist?.id"
-                        :to="{ name: 'library-artist', params: { id: album.artist.id } }"
-                    >
-                        {{ album.artist.name }}
-                    </BaseLink>
-                    <template v-else>{{ t(artistKey ?? 'library.unknownArtist') }}</template>
+                <MetaItem
+                    field="artist"
+                    :label="albumArtists.length > 1 ? t('list.artists') : t('list.artist')"
+                >
+                    <ArtistNames
+                        :artists="albumArtists"
+                        :fallback="t(artistKey ?? 'library.unknownArtist')"
+                    />
                 </MetaItem>
                 <MetaItem v-if="album.year" field="year" :label="t('list.year')">
                     <BaseLink :to="{ name: 'library-year', params: { year: String(album.year) } }">

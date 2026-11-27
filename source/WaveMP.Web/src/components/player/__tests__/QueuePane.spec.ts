@@ -1,4 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
+import { createMemoryHistory, createRouter } from 'vue-router'
+import { createRoutes } from '@/router/routes'
 import { mount } from '@vue/test-utils'
 import { createPinia } from 'pinia'
 import type { Track } from '@/api/generated/models'
@@ -6,6 +8,11 @@ import { createWaveMpI18n } from '@/i18n'
 import type { TrackLyrics } from '@/lyrics/timing'
 import type { QueueItem } from '@/player/queue'
 import QueuePane from '../QueuePane.vue'
+
+/** The artists of the song are links, so the component needs a router. */
+function testRouter() {
+    return createRouter({ history: createMemoryHistory(), routes: createRoutes() })
+}
 
 vi.mock('@/library/api', () => ({ fetchAlbumCover: vi.fn(), fetchTrackCover: vi.fn() }))
 
@@ -41,7 +48,7 @@ function mountPane(
 ) {
     return mount(QueuePane, {
         props: { items, currentIndex: 1, ...props },
-        global: { plugins: [createPinia(), createWaveMpI18n(locale)] },
+        global: { plugins: [createPinia(), createWaveMpI18n(locale), testRouter()] },
         attachTo: document.body,
     })
 }

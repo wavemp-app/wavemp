@@ -245,6 +245,7 @@
 [data-part='dialog'],
 [data-part='group-overview'],
 [data-part='context-menu'],
+[data-part='artist-suggestions'],
 [data-part='cast-hint'] {
     -webkit-backdrop-filter: var(--acc-blur);
     backdrop-filter: var(--acc-blur);
@@ -312,6 +313,7 @@
     [data-part='dialog'],
     [data-part='group-overview'],
     [data-part='context-menu'],
+    [data-part='artist-suggestions'],
     [data-part='cast-hint'] {
         -webkit-backdrop-filter: none;
         backdrop-filter: none;
@@ -328,6 +330,11 @@
 :focus-visible {
     outline: 2px solid var(--wmp-color-focus);
     outline-offset: 2px;
+}
+
+/* The entry of the token input shows its focus on the box around it, like a text field. */
+[data-part='artist-tokens'] > [data-part='input']:focus-visible {
+    outline: none;
 }
 
 [data-part='tree-item']:focus-visible,
@@ -855,6 +862,7 @@ a[data-part='breadcrumb-link']:hover {
 /* Text fields: flat, with a firmer base line that turns to full ink while typing. */
 [data-part='search'] > [data-part='input'],
 [data-part='field'] > [data-part='input'],
+[data-part='field'] > [data-part='artist-tokens'],
 [data-part='select'] {
     border: 1px solid var(--wmp-color-border);
     border-block-end-color: rgb(22 27 32 / 38%);
@@ -866,6 +874,7 @@ a[data-part='breadcrumb-link']:hover {
 :root[data-theme-variant='dark'] :is(
         [data-part='search'] > [data-part='input'],
         [data-part='field'] > [data-part='input'],
+        [data-part='field'] > [data-part='artist-tokens'],
         [data-part='select']
     ) {
     border-block-end-color: rgb(255 255 255 / 36%);
@@ -873,12 +882,14 @@ a[data-part='breadcrumb-link']:hover {
 
 [data-part='search'] > [data-part='input']:hover,
 [data-part='field'] > [data-part='input']:hover:not(:disabled),
+[data-part='field']:not([data-state~='disabled']) > [data-part='artist-tokens']:hover,
 [data-part='select']:hover:not(:disabled) {
     background: var(--wmp-image-default-button-hover);
 }
 
 [data-part='search'] > [data-part='input']:focus,
 [data-part='field'] > [data-part='input']:focus,
+[data-part='field'] > [data-part='artist-tokens']:focus-within,
 [data-part='select']:focus {
     outline: none;
     border-block-end-color: var(--wmp-color-text);
@@ -888,6 +899,7 @@ a[data-part='breadcrumb-link']:hover {
 
 [data-part='search'] > [data-part='input']:focus-visible,
 [data-part='field'] > [data-part='input']:focus-visible,
+[data-part='field'] > [data-part='artist-tokens']:has(> [data-part='input']:focus-visible),
 [data-part='select']:focus-visible {
     outline: 2px solid var(--wmp-color-focus);
     outline-offset: 1px;
@@ -898,13 +910,15 @@ a[data-part='breadcrumb-link']:hover {
 }
 
 [data-part='field'] > [data-part='input']:disabled,
+[data-part='field'][data-state~='disabled'] > [data-part='artist-tokens'],
 [data-part='select']:disabled {
     border-color: var(--acc-hairline);
     background: var(--wmp-color-surface-raised);
     color: var(--wmp-color-text-disabled);
 }
 
-[data-part='field'][data-state~='invalid'] > :is([data-part='input'], [data-part='select']) {
+[data-part='field'][data-state~='invalid']
+    > :is([data-part='input'], [data-part='select'], [data-part='artist-tokens']) {
     border-color: var(--wmp-color-danger);
 }
 
@@ -1879,7 +1893,8 @@ a[data-part='breadcrumb-link']:hover {
     padding-block-start: var(--wmp-space-m);
 }
 
-[data-part='context-menu'] {
+[data-part='context-menu'],
+[data-part='artist-suggestions'] {
     border-color: var(--acc-hairline);
     border-radius: var(--wmp-radius-l);
     box-shadow:

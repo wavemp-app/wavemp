@@ -1382,6 +1382,7 @@ a[data-part='breadcrumb-link']:hover {
 }
 
 [data-part='field'] > [data-part='input'],
+[data-part='field'] > [data-part='artist-tokens'],
 [data-part='select'] {
     border: 1px solid #7f9fdc;
     border-radius: var(--wmp-radius-s);
@@ -1398,6 +1399,7 @@ a[data-part='breadcrumb-link']:hover {
 }
 
 [data-part='field'] > [data-part='input']:focus,
+[data-part='field'] > [data-part='artist-tokens']:focus-within,
 [data-part='select']:focus {
     border-color: #0a48c2;
     outline: none;
@@ -1406,7 +1408,8 @@ a[data-part='breadcrumb-link']:hover {
         0 0 0 3px rgb(10 72 194 / 28%);
 }
 
-[data-part='field'][data-state~='invalid'] > :is([data-part='input'], [data-part='select']) {
+[data-part='field'][data-state~='invalid']
+    > :is([data-part='input'], [data-part='select'], [data-part='artist-tokens']) {
     border-color: #c0262d;
 }
 
@@ -1420,7 +1423,8 @@ a[data-part='breadcrumb-link']:hover {
     font-weight: 700;
 }
 
-[data-part='field'] > [data-part='input']:disabled {
+[data-part='field'] > [data-part='input']:disabled,
+[data-part='field'][data-state~='disabled'] > [data-part='artist-tokens'] {
     border-color: #c3cfe6;
     background: #f1f4fa;
     box-shadow: none;

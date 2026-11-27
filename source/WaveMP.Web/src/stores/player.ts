@@ -26,6 +26,7 @@ import { getHandoverState } from '@/devices/api'
 import { runCommand, type CommandTarget, type RemoteAction } from '@/devices/commands'
 import { PlaybackPublisher } from '@/devices/publisher'
 import { livePositionMilliseconds } from '@/devices/remote'
+import { artistsOf, artistText, plainArtistSeparators } from '@/library/artists'
 import { getLyrics } from '@/lyrics/api'
 import type { TrackLyrics } from '@/lyrics/timing'
 import {
@@ -234,8 +235,9 @@ function seconds(milliseconds: number | null | undefined): number {
     return typeof milliseconds === 'number' && milliseconds > 0 ? milliseconds / 1000 : 0
 }
 
+/** All artists of the track as one text, e.g. "Bob Sinclar feat. K.Flay"; undefined without one. */
 function artistOf(track: Track | undefined): string | undefined {
-    return track?.artist?.name ?? undefined
+    return artistText(artistsOf(track), plainArtistSeparators) || undefined
 }
 
 /**

@@ -31,14 +31,42 @@ describe('toMetadataForm', () => {
     it('turns every value into text and missing values into empty fields', () => {
         expect(toMetadataForm(metadata)).toEqual({
             title: 'Song',
-            artist: 'Band',
+            artists: [{ name: 'Band', role: 'Main' }],
             album: 'Album',
-            albumArtist: '',
+            albumArtists: [],
             year: '2001',
             trackNumber: '1',
             discNumber: '',
             genre: 'Rock',
         })
+    })
+
+    it('takes the artists as the server read them, with their roles', () => {
+        const values = toMetadataForm({
+            ...metadata,
+            artist: 'Bob Sinclar feat. K.Flay',
+            artists: [
+                { name: 'Bob Sinclar', role: 'Main' },
+                { name: 'K.Flay', role: 'Featured' },
+            ],
+            albumArtist: 'Simon & Garfunkel; AC/DC',
+            albumArtists: ['Simon & Garfunkel', 'AC/DC'],
+        })
+
+        expect(values.artists).toEqual([
+            { name: 'Bob Sinclar', role: 'Main' },
+            { name: 'K.Flay', role: 'Featured' },
+        ])
+        expect(values.albumArtists).toEqual([
+            { name: 'Simon & Garfunkel', role: 'Main' },
+            { name: 'AC/DC', role: 'Main' },
+        ])
+    })
+
+    it('keeps an album artist field without values as one artist', () => {
+        expect(
+            toMetadataForm({ ...metadata, albumArtist: 'Earth, Wind & Fire' }).albumArtists,
+        ).toEqual([{ name: 'Earth, Wind & Fire', role: 'Main' }])
     })
 })
 
@@ -101,12 +129,11 @@ describe('metadataChanges', () => {
                 form(),
                 form({
                     title: ' New   Title ',
-                    albumArtist: 'Band',
                     year: '1999',
                     discNumber: '2',
                 }),
             ),
-        ).toEqual({ title: 'New Title', albumArtist: 'Band', year: 1999, discNumber: 2 })
+        ).toEqual({ title: 'New Title', year: 1999, discNumber: 2 })
     })
 
     it('removes cleared values with null', () => {
@@ -119,5 +146,85 @@ describe('metadataChanges', () => {
 
     it('leaves out invalid numbers', () => {
         expect(metadataChanges(form(), form({ year: 'abc' }))).toEqual({})
+    })
+
+    it('sends the whole list of artists in its order once one changed', () => {
+        const changed = form({
+            artists: [
+                { name: 'Band', role: 'Main' },
+                { name: ' K.Flay ', role: 'Featured', id: 'kflay' },
+            ],
+        })
+
+        expect(metadataChanges(form(), changed)).toEqual({
+            artists: [
+                { name: 'Band', role: 'Main' },
+                { name: 'K.Flay', role: 'Featured' },
+            ],
+        })
+    })
+
+    it('sees a new order and a new role as a change, white space not', () => {
+        const original = form({
+            artists: [
+                { name: 'A', role: 'Main' },
+                { name: 'B', role: 'Main' },
+            ],
+        })
+
+        expect(
+            metadataChanges(
+                original,
+                form({
+                    artists: [
+                        { name: 'B', role: 'Main' },
+                        { name: 'A', role: 'Main' },
+                    ],
+                }),
+            ).artists,
+        ).toEqual([
+            { name: 'B', role: 'Main' },
+            { name: 'A', role: 'Main' },
+        ])
+        expect(
+            metadataChanges(
+                original,
+                form({
+                    artists: [
+                        { name: 'A', role: 'Main' },
+                        { name: 'B', role: 'Featured' },
+                    ],
+                }),
+            ).artists,
+        ).toHaveLength(2)
+        expect(
+            metadataChanges(
+                original,
+                form({
+                    artists: [
+                        { name: ' A ', role: 'Main' },
+                        { name: 'B', role: 'Main' },
+                    ],
+                }),
+            ),
+        ).toEqual({})
+    })
+
+    it('sends album artists by name and an empty list to remove all artists', () => {
+        const changes = metadataChanges(
+            form(),
+            form({
+                artists: [],
+                albumArtists: [
+                    { name: 'Simon & Garfunkel', role: 'Main' },
+                    { name: 'AC/DC', role: 'Main' },
+                ],
+            }),
+        )
+
+        expect(changes).toEqual({
+            artists: [],
+            albumArtists: [{ name: 'Simon & Garfunkel' }, { name: 'AC/DC' }],
+        })
     })
 })

@@ -1,7 +1,8 @@
 // Groups of tracks for the list grouped by album. Pure functions only; the views translate the
 // texts (unknown album, discs).
 
-import type { Album, ArtistReference, Track } from '@/api/generated/models'
+import type { Album, ArtistCredit, ArtistReference, Track } from '@/api/generated/models'
+import { artistsOf } from './artists'
 
 /** Cover shown for a group: the cover of its album, or of one of its tracks without album. */
 export interface GroupCover {
@@ -28,6 +29,8 @@ export interface TrackGroup {
     readonly untitled?: boolean
     /** Album artist, for tracks without album the artist of the first track. */
     readonly artist: ArtistReference | null
+    /** All album artists, for tracks without album all artists of the first track. */
+    readonly artists: readonly ArtistCredit[]
     readonly isCompilation: boolean
     readonly year: number | null
     readonly genre: string | null
@@ -52,6 +55,7 @@ function createGroup(key: string, track: Track, position: number): TrackGroup {
         albumId: album?.id ?? undefined,
         title: album?.title ?? null,
         artist: album ? (album.artist ?? null) : (track.artist ?? null),
+        artists: artistsOf(album ?? track),
         isCompilation: album?.isCompilation ?? false,
         year: track.year ?? null,
         genre: track.genre ?? null,
@@ -111,12 +115,13 @@ export function groupTracksByAlbum(tracks: readonly Track[], start = 0): TrackGr
 export function groupTracksByDisc(
     tracks: readonly Track[],
     albumTitle: string,
-    album?: Pick<Album, 'artist' | 'isCompilation'>,
+    album?: Pick<Album, 'artist' | 'artists' | 'isCompilation'>,
 ): TrackGroup[] {
     const discs = [...new Set(tracks.map((track) => track.discNumber ?? 1))]
     const base: Omit<TrackGroup, 'id' | 'position' | 'tracks'> = {
         title: albumTitle,
         artist: album?.artist ?? null,
+        artists: artistsOf(album),
         isCompilation: album?.isCompilation ?? false,
         year: null,
         genre: null,
@@ -156,6 +161,7 @@ export function groupTracksAsList(tracks: readonly Track[], start = 0): TrackGro
             title: null,
             untitled: true,
             artist: null,
+            artists: [],
             isCompilation: false,
             year: null,
             genre: null,

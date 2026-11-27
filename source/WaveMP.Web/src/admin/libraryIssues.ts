@@ -3,17 +3,21 @@
 // admin can fix it. Pure functions only.
 
 import {
+    ArtistRoleObject,
     LibraryIssueSeverityObject,
     LibraryIssueSortObject,
     LibraryIssueTypeObject,
+    type ArtistCredit,
     type LibraryIssue,
     type LibraryIssueSort,
     type LibraryIssueSummary,
     type LibraryIssueTrack,
     type LibraryIssueType,
+    type UpdateTrackMetadata,
 } from '@/api/generated/models'
 import type { RouteLocationRaw } from 'vue-router'
 import { issueLabelKey } from '@/admin/presentation'
+import { artistsOf, artistText, plainArtistSeparators } from '@/library/artists'
 import { missingTagHints } from '@/review/inbox'
 
 /** Filter of the list: every kind of problem, or one kind. */
@@ -63,6 +67,11 @@ const types: Readonly<Record<LibraryIssueType, LibraryIssueTypePresentation>> = 
         token: 'audio-without-video',
         labelKey: 'adminChecks.types.audioWithoutVideo',
         filterKey: 'adminChecks.filters.audioWithoutVideo',
+    },
+    [LibraryIssueTypeObject.PossibleMultipleArtists]: {
+        token: 'possible-multiple-artists',
+        labelKey: 'adminChecks.types.possibleMultipleArtists',
+        filterKey: 'adminChecks.filters.possibleMultipleArtists',
     },
 }
 
@@ -168,9 +177,11 @@ export function issueLocation(issue: LibraryIssue): string {
     return issue.file?.relativePath || trackLocation(issue.track)
 }
 
-/** Artist and album of the song, as far as they are known. */
+/** Artists and album of the song, as far as they are known. */
 export function trackContext(track: LibraryIssueTrack | null | undefined): string[] {
-    return [track?.artist?.name, track?.album?.title].filter((part): part is string => !!part)
+    return [artistText(artistsOf(track), plainArtistSeparators), track?.album?.title].filter(
+        (part): part is string => !!part,
+    )
 }
 
 export interface LibraryIssueDetail {
@@ -202,6 +213,8 @@ export function issueDetail(issue: LibraryIssue): LibraryIssueDetail {
             return { key: 'adminChecks.details.videoWithoutAudio', tagKeys: [] }
         case LibraryIssueTypeObject.AudioWithoutVideo:
             return { key: 'adminChecks.details.audioWithoutVideo', tagKeys: [] }
+        case LibraryIssueTypeObject.PossibleMultipleArtists:
+            return { key: 'adminChecks.details.possibleMultipleArtists', tagKeys: [] }
         default:
             return { key: 'adminChecks.details.unknown', tagKeys: [] }
     }
@@ -220,6 +233,7 @@ const metadataFixes: readonly LibraryIssueType[] = [
     LibraryIssueTypeObject.UnknownAlbum,
     LibraryIssueTypeObject.MissingCover,
     LibraryIssueTypeObject.PossibleDuplicate,
+    LibraryIssueTypeObject.PossibleMultipleArtists,
 ]
 
 /** Kinds of problem the online search can fix (it finds tags, albums and covers). */
@@ -264,4 +278,40 @@ export function issueActions(issue: LibraryIssue): LibraryIssueAction[] {
         to: { name: 'admin-track-files', params: { id } },
     })
     return actions
+}
+
+/** How the admin answers the hint that the artist name of a song may stand for several artists. */
+export type ArtistSplitAnswer = 'split' | 'keep'
+
+/**
+ * The suggested artists of a song whose artist name may stand for several artists, each with its
+ * role, e.g. "Simon" and "Garfunkel" for "Simon & Garfunkel"; empty for other kinds of problem.
+ * Only songs with an audio file can take the answer, since only audio files are written.
+ */
+export function suggestedArtists(issue: LibraryIssue): ArtistCredit[] {
+    if (issue.type !== LibraryIssueTypeObject.PossibleMultipleArtists || !issue.track?.hasAudio) {
+        return []
+    }
+
+    return (issue.suggestedArtists ?? [])
+        .filter((artist) => !!artist.name)
+        .map((artist) => ({ name: artist.name, role: artist.role ?? ArtistRoleObject.Main }))
+}
+
+/**
+ * The artists the metadata editor writes for the answer: the suggested split, or the current
+ * artists as they are, each name confirmed as one artist (the tags then hold them as separate
+ * values and the hint goes away with the next check).
+ */
+export function artistSplitChanges(
+    issue: LibraryIssue,
+    answer: ArtistSplitAnswer,
+): UpdateTrackMetadata {
+    const artists = answer === 'split' ? suggestedArtists(issue) : artistsOf(issue.track)
+    return {
+        artists: artists.map((artist) => ({
+            name: artist.name ?? '',
+            role: artist.role ?? ArtistRoleObject.Main,
+        })),
+    }
 }

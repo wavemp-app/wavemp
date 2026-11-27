@@ -8,7 +8,8 @@ import LibraryCover from '@/components/library/LibraryCover.vue'
 import LyricsStage from './LyricsStage.vue'
 import PlayQueue from './PlayQueue.vue'
 import { useFormat } from '@/composables/useFormat'
-import { artistLabelKey } from '@/library/presentation'
+import ArtistNames from '@/components/library/ArtistNames.vue'
+import { artistsOf } from '@/library/artists'
 import type { TrackLyrics } from '@/lyrics/timing'
 import { queueSummary, type QueueItem } from '@/player/queue'
 
@@ -59,15 +60,7 @@ const views = computed<SegmentOption[]>(() => [
 const current = computed(() =>
     props.currentIndex >= 0 ? props.items[props.currentIndex] : undefined,
 )
-const artist = computed(() => {
-    const track = current.value?.track
-    if (!track) {
-        return ''
-    }
 
-    const key = artistLabelKey(track.artist)
-    return key ? t(key) : (track.artist?.name ?? '')
-})
 const hasLyrics = computed(
     () =>
         props.lyrics !== null &&
@@ -112,7 +105,13 @@ function chooseView(value: string): void {
                     :available="current.track.hasCover ?? false"
                 />
                 <p data-part="queue-pane-title">{{ current.track.title }}</p>
-                <p data-part="queue-pane-subtitle">{{ artist }}</p>
+                <p data-part="queue-pane-subtitle">
+                    <ArtistNames
+                        :artists="artistsOf(current.track)"
+                        :fallback="t('library.unknownArtist')"
+                        part="artist-link"
+                    />
+                </p>
             </template>
             <p v-else data-part="queue-pane-title">{{ t('nowPlaying.emptyTitle') }}</p>
         </div>

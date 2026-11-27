@@ -12,6 +12,7 @@ const api = vi.hoisted(() => ({
     fetchCoverRulePreview: vi.fn(),
     getAlbumCoverFallback: vi.fn(),
     setAlbumCoverFallback: vi.fn(),
+    listArtists: vi.fn(),
 }))
 
 vi.mock('@/library/api', () => api)
@@ -48,6 +49,13 @@ type Wrapper = Awaited<ReturnType<typeof mountDialog>>
 
 function input(wrapper: Wrapper, field: string) {
     return wrapper.get(`[data-part="field"][data-field="${field}"] input`)
+}
+
+/** The names of the chips of a token input of artists. */
+function chips(wrapper: Wrapper, field: string): string[] {
+    return wrapper
+        .findAll(`[data-field="${field}"] [data-part="artist-token"] [data-field="name"]`)
+        .map((chip) => chip.text())
 }
 
 function value(wrapper: Wrapper, field: string): string {
@@ -91,9 +99,10 @@ describe('TrackMetadataDialog', () => {
         expect(api.getTrackMetadata).toHaveBeenCalledWith('song')
         expect(wrapper.get('[data-part="dialog-title"]').text()).toBe('Edit metadata')
         expect(value(wrapper, 'title')).toBe('Song')
-        expect(value(wrapper, 'artist')).toBe('Band')
+        expect(chips(wrapper, 'artist')).toEqual(['Band'])
+        expect(value(wrapper, 'artist')).toBe('')
         expect(value(wrapper, 'album')).toBe('Album')
-        expect(value(wrapper, 'album-artist')).toBe('Band')
+        expect(chips(wrapper, 'album-artist')).toEqual(['Band'])
         expect(value(wrapper, 'year')).toBe('2001')
         expect(value(wrapper, 'number')).toBe('1')
         expect(value(wrapper, 'disc')).toBe('')
@@ -149,9 +158,14 @@ describe('TrackMetadataDialog', () => {
         const wrapper = await mountDialog()
         const invalidate = vi.spyOn(useCoversStore(), 'invalidate')
 
+        await wrapper.get('[data-field="artist"] [data-item="remove"]').trigger('click')
         await input(wrapper, 'artist').setValue('Other Band')
+        await input(wrapper, 'artist').trigger('keydown', { key: 'Enter' })
         await submit(wrapper)
 
+        expect(api.updateTrackMetadata).toHaveBeenCalledWith('song', {
+            artists: [{ name: 'Other Band', role: 'Main' }],
+        })
         expect(invalidate).toHaveBeenCalledTimes(1)
         expect(invalidate).toHaveBeenCalledWith()
         wrapper.unmount()
@@ -161,7 +175,10 @@ describe('TrackMetadataDialog', () => {
         const wrapper = await mountDialog()
         const invalidate = vi.spyOn(useCoversStore(), 'invalidate')
 
-        await input(wrapper, 'artist').setValue(' Band ')
+        // The same name again adds nothing.
+        await input(wrapper, 'artist').setValue(' band ')
+        await input(wrapper, 'artist').trigger('keydown', { key: 'Enter' })
+        await input(wrapper, 'album').setValue(' Album ')
         await submit(wrapper)
 
         expect(api.updateTrackMetadata).not.toHaveBeenCalled()

@@ -12,6 +12,7 @@ import BaseAlert from '@/components/base/BaseAlert.vue'
 import BaseButton from '@/components/base/BaseButton.vue'
 import BaseProgress from '@/components/base/BaseProgress.vue'
 import BaseTextField from '@/components/base/BaseTextField.vue'
+import ArtistTokenField from './ArtistTokenField.vue'
 import { validationMessagesByField } from '@/i18n/validation'
 import { getTrackMetadata, updateTrackMetadata } from '@/library/api'
 import {
@@ -23,12 +24,14 @@ import {
     validateMetadataForm,
     type MetadataField,
     type MetadataForm,
+    type MetadataNumberField,
 } from '@/library/metadata'
 import { useCoversStore } from '@/stores/covers'
 
 /**
  * The metadata editor of a track for admins, used in the dialog of a song and in the review
- * inbox: title, artist, album, album artist, year, track and disc number and genre. The values
+ * inbox: title, artists (each a main or featured artist), album, album artists, year, track and
+ * disc number and genre; the artists are token inputs that search the library (ArtistTokenField). The values
  * are written into the tags of the audio file of the track; without an audio file or if it cannot
  * be written, the fields are disabled with a hint. Only changed fields are sent; empty fields
  * remove the value from the tags. The buttons belong to the page or dialog around it: a submit
@@ -88,23 +91,22 @@ const hint = computed(() => {
 
 const labels = computed<Record<MetadataField, string>>(() => ({
     title: t('trackMetadata.fields.title'),
-    artist: t('trackMetadata.fields.artist'),
+    artists: t('trackMetadata.fields.artists'),
     album: t('trackMetadata.fields.album'),
-    albumArtist: t('trackMetadata.fields.albumArtist'),
+    albumArtists: t('trackMetadata.fields.albumArtists'),
     year: t('trackMetadata.fields.year'),
     trackNumber: t('trackMetadata.fields.trackNumber'),
     discNumber: t('trackMetadata.fields.discNumber'),
     genre: t('trackMetadata.fields.genre'),
 }))
 
-const textFields: readonly MetadataField[] = ['title', 'artist', 'album', 'albumArtist']
-const numberFields: readonly MetadataField[] = ['year', 'trackNumber', 'discNumber']
+const numberFields: readonly MetadataNumberField[] = ['year', 'trackNumber', 'discNumber']
 
 function apply(metadata: TrackMetadata): void {
     status.value = metadata.status ?? null
     audioFilePath.value = metadata.audioFilePath ?? null
     original.value = toMetadataForm(metadata)
-    Object.assign(form, original.value)
+    Object.assign(form, toMetadataForm(metadata))
 }
 
 async function load(): Promise<void> {
@@ -228,15 +230,43 @@ defineExpose({ state, editable, saving, dirty, save, load })
         <BaseAlert v-if="error" tone="error" :message="error" />
         <BaseAlert v-if="hint" tone="info" :message="hint" />
         <BaseTextField
-            v-for="field in textFields"
-            :key="field"
-            v-model="form[field]"
-            :data-field="metadataDataFields[field]"
-            :label="labels[field]"
-            :error="fieldErrors[field]"
+            v-model="form.title"
+            :data-field="metadataDataFields.title"
+            :label="labels.title"
+            :error="fieldErrors.title"
             :maxlength="metadataLimits.text"
             :disabled="fieldsDisabled"
             autocomplete="off"
+        />
+        <ArtistTokenField
+            v-model="form.artists"
+            :data-field="metadataDataFields.artists"
+            :label="labels.artists"
+            :hint="t('trackMetadata.artistsHint')"
+            :error="fieldErrors.artists"
+            :maxlength="metadataLimits.text"
+            :max="metadataLimits.artists"
+            :disabled="fieldsDisabled"
+            roles
+        />
+        <BaseTextField
+            v-model="form.album"
+            :data-field="metadataDataFields.album"
+            :label="labels.album"
+            :error="fieldErrors.album"
+            :maxlength="metadataLimits.text"
+            :disabled="fieldsDisabled"
+            autocomplete="off"
+        />
+        <ArtistTokenField
+            v-model="form.albumArtists"
+            :data-field="metadataDataFields.albumArtists"
+            :label="labels.albumArtists"
+            :hint="t('trackMetadata.albumArtistsHint')"
+            :error="fieldErrors.albumArtists"
+            :maxlength="metadataLimits.text"
+            :max="metadataLimits.artists"
+            :disabled="fieldsDisabled"
         />
         <div data-part="field-row">
             <BaseTextField

@@ -11,6 +11,7 @@ import FavoriteButton from '@/components/collection/FavoriteButton.vue'
 import RatingStars from '@/components/collection/RatingStars.vue'
 import DetailHeader from '@/components/library/DetailHeader.vue'
 import LibraryCover from '@/components/library/LibraryCover.vue'
+import ArtistNames from '@/components/library/ArtistNames.vue'
 import MetaItem from '@/components/library/MetaItem.vue'
 import OnlineMetadataDialog from '@/components/library/OnlineMetadataDialog.vue'
 import TrackFileList from '@/components/library/TrackFileList.vue'
@@ -20,7 +21,8 @@ import TrackVideoOffsetForm from '@/components/library/TrackVideoOffsetForm.vue'
 import { useDetailTitle } from '@/composables/useDetailTitle'
 import { useFormat } from '@/composables/useFormat'
 import { getTrack, listTrackFiles } from '@/library/api'
-import { artistLabelKey, durationSeconds, mediaKey } from '@/library/presentation'
+import { artistsOf, sameArtists } from '@/library/artists'
+import { durationSeconds, mediaKey } from '@/library/presentation'
 import { usePlayerStore } from '@/stores/player'
 import { useSessionStore } from '@/stores/session'
 
@@ -51,6 +53,8 @@ const files = ref<MediaFile[]>([])
 const filesStatus = ref<'idle' | 'loading' | 'ready' | 'error'>('idle')
 const editing = ref(false)
 const searchingOnline = ref(false)
+const artists = computed(() => artistsOf(track.value))
+const albumArtists = computed(() => artistsOf(track.value?.album))
 let generation = 0
 let editRequestHandled = false
 
@@ -184,16 +188,20 @@ useDetailTitle(() => (status.value === 'ready' ? track.value?.title : null))
                         :available="track.hasCover ?? false"
                     />
                 </template>
-                <MetaItem field="artist" :label="t('list.artist')">
-                    <BaseLink
-                        v-if="track.artist?.id"
-                        :to="{ name: 'library-artist', params: { id: track.artist.id } }"
-                    >
-                        {{ track.artist.name }}
-                    </BaseLink>
-                    <template v-else>{{
-                        t(artistLabelKey(track.artist) ?? 'library.unknownArtist')
-                    }}</template>
+                <MetaItem
+                    field="artist"
+                    :label="artists.length > 1 ? t('list.artists') : t('list.artist')"
+                >
+                    <ArtistNames :artists="artists" :fallback="t('library.unknownArtist')" />
+                </MetaItem>
+                <MetaItem
+                    v-if="albumArtists.length > 0 && !sameArtists(albumArtists, artists)"
+                    field="album-artist"
+                    :label="
+                        albumArtists.length > 1 ? t('list.albumArtists') : t('list.albumArtist')
+                    "
+                >
+                    <ArtistNames :artists="albumArtists" />
                 </MetaItem>
                 <MetaItem field="album" :label="t('list.album')">
                     <BaseLink

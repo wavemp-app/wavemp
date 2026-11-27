@@ -7,7 +7,7 @@ import ItemMenuButton from '@/components/menus/ItemMenuButton.vue'
 import { useContextMenuTrigger } from '@/composables/useContextMenuTrigger'
 import { useFormat } from '@/composables/useFormat'
 import { useKeepInView } from '@/composables/useKeepInView'
-import { artistLabelKey, durationSeconds } from '@/library/presentation'
+import { artistLine, durationSeconds } from '@/library/presentation'
 import type { Track } from '@/api/generated/models'
 import { visibleQueueEntries, type QueueItem } from '@/player/queue'
 import { useContextMenuStore } from '@/stores/contextMenu'
@@ -71,8 +71,7 @@ function stateOf(item: QueueItem, state: 'played' | 'current' | undefined): stri
 }
 
 function artistName(track: Track): string {
-    const key = artistLabelKey(track.artist)
-    return key ? t(key) : (track.artist?.name ?? '')
+    return artistLine(track, t)
 }
 
 function duration(track: Track): string {

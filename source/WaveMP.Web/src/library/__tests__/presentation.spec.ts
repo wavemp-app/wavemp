@@ -5,6 +5,7 @@ import {
     fileKindKey,
     fileKindToken,
     mediaKey,
+    artistLine,
     namesTrackArtist,
     trackListState,
     trackRowState,
@@ -19,6 +20,37 @@ describe('artistLabelKey', () => {
         expect(artistLabelKey(null, true)).toBe('library.variousArtists')
         expect(artistLabelKey(undefined)).toBe('library.unknownArtist')
         expect(artistLabelKey({ id: 'a', name: '' })).toBe('library.unknownArtist')
+    })
+})
+
+describe('artistLine', () => {
+    const translate = (key: string) =>
+        ({
+            'artists.separator': ', ',
+            'artists.featuring': ' feat. ',
+            'library.unknownArtist': 'Unknown artist',
+            'library.variousArtists': 'Various artists',
+        })[key] ?? key
+
+    it('names every artist, the guests after "feat."', () => {
+        expect(
+            artistLine(
+                {
+                    artists: [
+                        { id: 'b', name: 'Bob Sinclar', role: 'Main' },
+                        { id: 's', name: 'Simon & Garfunkel', role: 'Main' },
+                        { id: 'k', name: 'K.Flay', role: 'Featured' },
+                    ],
+                },
+                translate,
+            ),
+        ).toBe('Bob Sinclar, Simon & Garfunkel feat. K.Flay')
+    })
+
+    it('falls back to the first artist and to the texts for unknown artists', () => {
+        expect(artistLine({ artist: { id: 'a', name: 'AC/DC' } }, translate)).toBe('AC/DC')
+        expect(artistLine({ artists: [] }, translate)).toBe('Unknown artist')
+        expect(artistLine(null, translate, true)).toBe('Various artists')
     })
 })
 
@@ -41,6 +73,33 @@ describe('namesTrackArtist', () => {
             true,
         )
         expect(namesTrackArtist({ artist: null }, album)).toBe(true)
+    })
+
+    it('names the artists of a song with a guest or with other album artists', () => {
+        const guest = {
+            artist: alpha,
+            artists: [
+                { ...alpha, role: 'Main' as const },
+                { ...beta, role: 'Featured' as const },
+            ],
+        }
+        expect(namesTrackArtist(guest, album)).toBe(true)
+        expect(
+            namesTrackArtist(guest, {
+                artist: alpha,
+                artists: [
+                    { ...alpha, role: 'Main' },
+                    { ...beta, role: 'Main' },
+                ],
+                isCompilation: false,
+            }),
+        ).toBe(false)
+        expect(
+            namesTrackArtist(
+                { artist: alpha },
+                { artist: alpha, artists: [alpha, beta], isCompilation: false },
+            ),
+        ).toBe(true)
     })
 
     it('names every artist of a compilation and of a plain list', () => {

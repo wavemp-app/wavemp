@@ -1,4 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { createMemoryHistory, createRouter } from 'vue-router'
+import { createRoutes } from '@/router/routes'
 import { flushPromises, mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { useContextMenuStore } from '@/stores/contextMenu'
@@ -9,6 +11,11 @@ import type { StageView, VideoState } from '@/player/videoSync'
 import { visualizationDependencies } from '@/visualization/modules'
 import { FakeClock, FakeModule, fakeAnalyser } from '@/visualization/__tests__/fakes'
 import NowPlayingStage from '../NowPlayingStage.vue'
+
+/** The artists of the song are links, so the component needs a router. */
+function testRouter() {
+    return createRouter({ history: createMemoryHistory(), routes: createRoutes() })
+}
 
 vi.mock('@/library/api', () => ({ fetchAlbumCover: vi.fn(), fetchTrackCover: vi.fn() }))
 
@@ -40,7 +47,7 @@ function mountStage(
     return mount(NowPlayingStage, {
         props,
         attrs,
-        global: { plugins: [createPinia(), createWaveMpI18n('en')] },
+        global: { plugins: [createPinia(), createWaveMpI18n('en'), testRouter()] },
         attachTo: document.body,
     })
 }
@@ -98,7 +105,7 @@ describe('NowPlayingStage', () => {
         setActivePinia(pinia)
         const wrapper = mount(NowPlayingStage, {
             props: { track: track(true), mode: 'Video', view: 'cover' },
-            global: { plugins: [pinia, createWaveMpI18n('en')] },
+            global: { plugins: [pinia, createWaveMpI18n('en'), testRouter()] },
             attachTo: document.body,
         })
         const menu = useContextMenuStore()

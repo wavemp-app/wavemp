@@ -2,18 +2,19 @@
 // come from the messages (placeholders.*), so they are recognizable as samples in every language.
 // Covers are marked as missing, so the overview never calls the API.
 
-import type {
-    LayoutTemplatePath,
-    LibraryIssue,
-    LibraryIssueSummary,
-    MediaFile,
-    OrganizeItem,
-    OrganizeOperation,
-    OwnAlbum,
-    Track,
-    TrackFileSelection,
-    TrackFileSummary,
-    TrackReview,
+import {
+    ArtistRoleObject,
+    type LayoutTemplatePath,
+    type LibraryIssue,
+    type LibraryIssueSummary,
+    type MediaFile,
+    type OrganizeItem,
+    type OrganizeOperation,
+    type OwnAlbum,
+    type Track,
+    type TrackFileSelection,
+    type TrackFileSummary,
+    type TrackReview,
 } from '@/api/generated/models'
 import type { Tile } from '@/components/library/TileList.vue'
 import type { OverviewGroup } from '@/library/groupOverview'
@@ -73,10 +74,23 @@ export function sampleTracks(t: Translate): Track[] {
                 id: `sample-track-${track.title}`,
                 title: t('placeholders.track', { number: track.title }),
                 artist,
+                // The second song of every album has a guest, so the lists show several artists.
+                artists:
+                    index === 1
+                        ? [
+                              { ...artist, role: ArtistRoleObject.Main },
+                              {
+                                  id: 'sample-artist-guest',
+                                  name: t('placeholders.artist', { number: 9 }),
+                                  role: ArtistRoleObject.Featured,
+                              },
+                          ]
+                        : [{ ...artist, role: ArtistRoleObject.Main }],
                 album: {
                     id: `sample-album-${album.number}`,
                     title: t('placeholders.album', { number: album.number }),
                     artist,
+                    artists: [{ ...artist, role: ArtistRoleObject.Main }],
                     isCompilation: false,
                 },
                 trackNumber: index + 1,
@@ -314,6 +328,7 @@ export function sampleLibraryIssueSummary(): LibraryIssueSummary {
             { type: 'PossibleDuplicate', severity: 'Problem', count: 2 },
             { type: 'VideoWithoutAudio', severity: 'Hint', count: 0 },
             { type: 'AudioWithoutVideo', severity: 'Hint', count: 31 },
+            { type: 'PossibleMultipleArtists', severity: 'Hint', count: 2 },
         ],
     }
 }
@@ -321,6 +336,7 @@ export function sampleLibraryIssueSummary(): LibraryIssueSummary {
 export function sampleLibraryIssues(t: Translate): LibraryIssue[] {
     const artist = { id: 'artist-1', name: t('placeholders.artist', { number: 1 }) }
     const album = { id: 'album-1', title: t('placeholders.album', { number: 1 }) }
+    const duo = [1, 2].map((number) => t('placeholders.artist', { number })).join(' & ')
     const track = (number: number, directoryPath: string, values = {}) => ({
         id: `sample-track-${number}`,
         title: t('placeholders.track', { number }),
@@ -369,6 +385,21 @@ export function sampleLibraryIssues(t: Translate): LibraryIssue[] {
             },
             fileIssue: 'file.probe_failed',
             missingTags: [],
+        },
+        {
+            id: 'sample-issue-artists',
+            type: 'PossibleMultipleArtists',
+            severity: 'Hint',
+            detectedAt,
+            track: track(6, 'Artist/Album', {
+                artist: { id: 'artist-duo', name: duo },
+                artists: [{ id: 'artist-duo', name: duo, role: ArtistRoleObject.Main }],
+            }),
+            missingTags: [],
+            suggestedArtists: [
+                { name: t('placeholders.artist', { number: 1 }), role: ArtistRoleObject.Main },
+                { name: t('placeholders.artist', { number: 2 }), role: ArtistRoleObject.Main },
+            ],
         },
         {
             id: 'sample-issue-hint',

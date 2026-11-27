@@ -603,6 +603,207 @@
         border-color: var(--wmp-color-danger);
     }
 
+    /* --- Artists of songs and albums -------------------------------------------------------- */
+
+    /* Names in lists and the player read like the text around them; hover shows the link. */
+    [data-part='artist-link'] {
+        color: inherit;
+        text-decoration: none;
+    }
+
+    [data-part='artist-link']:hover {
+        color: var(--wmp-color-accent);
+        text-decoration: underline;
+    }
+
+    [data-part='artist-link']:focus-visible {
+        outline: 2px solid var(--wmp-color-focus);
+        outline-offset: 1px;
+    }
+
+    /* ", " and " feat. " keep their spaces, also between the items of a flex container. */
+    [data-part='artist-separator'] {
+        white-space: pre;
+    }
+
+    /*
+     * Token input of the artists: the box looks like an input and holds the chips and the input
+     * itself, which wraps to the next line when the chips fill the line. The suggestions open below
+     * the box.
+     */
+    [data-part='artist-tokens'] {
+        position: relative;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: var(--wmp-space-xs);
+        min-inline-size: 0;
+        min-block-size: var(--wmp-field-height);
+        padding: calc(var(--wmp-space-xs) / 2);
+        border: 1px solid var(--wmp-color-border);
+        border-radius: var(--wmp-radius-s);
+        background: var(--wmp-color-surface);
+        color: var(--wmp-color-text);
+    }
+
+    [data-part='artist-tokens']:focus-within {
+        border-color: var(--wmp-color-focus);
+    }
+
+    [data-part='field'][data-state~='invalid'] > [data-part='artist-tokens'] {
+        border-color: var(--wmp-color-danger);
+    }
+
+    [data-part='field'][data-state~='disabled'] > [data-part='artist-tokens'] {
+        background: var(--wmp-color-surface-raised);
+        color: var(--wmp-color-text-disabled);
+    }
+
+    [data-part='artist-token-list'] {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--wmp-space-xs);
+        min-inline-size: 0;
+        max-inline-size: 100%;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
+    [data-part='artist-token'] {
+        display: inline-flex;
+        align-items: center;
+        gap: calc(var(--wmp-space-xs) / 2);
+        min-inline-size: 0;
+        max-inline-size: 100%;
+        padding-inline: calc(var(--wmp-space-xs) / 2);
+        border: 1px solid var(--wmp-color-border);
+        border-radius: var(--wmp-radius-s);
+        background: var(--wmp-color-surface-raised);
+        color: var(--wmp-color-text);
+    }
+
+    /* A featured artist is set apart by its outline; its toggle shows the state as well. */
+    [data-part='artist-token'][data-role='featured'] {
+        border-style: dashed;
+    }
+
+    [data-part='artist-token'] > [data-field='name'] {
+        min-inline-size: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    [data-part='artist-token'] > [data-part='drag-handle'] {
+        display: inline-grid;
+        place-items: center;
+        align-self: stretch;
+        padding: 0;
+        border: 0;
+        background: none;
+        color: var(--wmp-color-text-muted);
+        cursor: grab;
+        touch-action: none;
+    }
+
+    /* A single artist has nothing to move; a disabled field nothing to change. */
+    [data-part='artist-token'] > [data-part='drag-handle']:disabled {
+        display: none;
+    }
+
+    [data-part='artist-token'] > [data-part='drag-handle']:focus-visible {
+        outline: 2px solid var(--wmp-color-focus);
+        outline-offset: -2px;
+    }
+
+    [data-part='artist-token'] > [data-part='artist-role'] {
+        min-block-size: auto;
+        padding: 0 var(--wmp-space-xs);
+        font-size: var(--wmp-font-size-xs);
+    }
+
+    [data-part='artist-token'] > [data-part='artist-role'][aria-pressed='true'] {
+        background: var(--wmp-color-accent);
+        color: var(--wmp-color-accent-contrast);
+    }
+
+    [data-part='artist-token'] > [data-variant='icon'] {
+        min-block-size: 1.5rem;
+        min-inline-size: 1.5rem;
+        padding: 0;
+    }
+
+    [data-part='artist-tokens'] > [data-part='input'] {
+        flex: 1 1 8rem;
+        min-inline-size: 6rem;
+        min-block-size: calc(var(--wmp-field-height) - var(--wmp-space-xs) - 2px);
+        padding-inline: var(--wmp-space-xs);
+        border: 0;
+        background: transparent;
+        color: inherit;
+        outline: none;
+        box-shadow: none;
+    }
+
+    [data-part='artist-suggestions'] {
+        position: absolute;
+        inset-inline: -1px;
+        inset-block-start: calc(100% + 2px);
+        z-index: 20;
+        max-block-size: 16rem;
+        margin: 0;
+        padding: var(--wmp-space-xs);
+        overflow-y: auto;
+        border: 1px solid var(--wmp-color-border);
+        border-radius: var(--wmp-radius-s);
+        background: var(--wmp-menu-background);
+        color: var(--wmp-menu-color);
+        box-shadow: 0 0.5rem 1.5rem rgb(0 0 0 / 25%);
+        list-style: none;
+    }
+
+    [data-part='artist-suggestion'] {
+        display: flex;
+        align-items: center;
+        gap: var(--wmp-space-s);
+        min-block-size: var(--wmp-button-height);
+        padding-inline: var(--wmp-space-s);
+        border-radius: var(--wmp-radius-s);
+        cursor: pointer;
+    }
+
+    [data-part='artist-suggestion'] > [data-part='label'] {
+        min-inline-size: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    [data-part='artist-suggestion']:hover,
+    [data-part='artist-suggestion'][aria-selected='true'] {
+        background: var(--wmp-color-hover);
+    }
+
+    [data-part='artist-suggestion'][aria-selected='true'] {
+        outline: 2px solid var(--wmp-color-focus);
+        outline-offset: -2px;
+    }
+
+    [data-part='artist-suggestion'][data-state~='new'] {
+        color: var(--wmp-color-text-muted);
+    }
+
+    /* Announcements of the token input, for screen readers only. */
+    [data-part='artist-tokens-status'] {
+        position: absolute;
+        inline-size: 1px;
+        block-size: 1px;
+        overflow: hidden;
+        clip-path: inset(50%);
+        white-space: nowrap;
+    }
+
     [data-part='form'] {
         display: grid;
         align-content: start;
@@ -2627,6 +2828,24 @@
         color: var(--wmp-color-text-muted);
         font-size: var(--wmp-font-size-s);
         font-weight: normal;
+    }
+
+    /* The suggested split of an artist name: the names stand out after the label. */
+    [data-part='artist-split'] {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        gap: 0 var(--wmp-space-xs);
+        min-inline-size: 0;
+        margin: 0;
+    }
+
+    [data-part='artist-split'] > [data-part='label'] {
+        color: var(--wmp-color-text-muted);
+    }
+
+    [data-part='artist-split-names'] {
+        font-weight: var(--wmp-font-weight-bold);
     }
 
     [data-part='library-issue-actions'] {

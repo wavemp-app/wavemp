@@ -594,6 +594,41 @@ a[data-part='breadcrumb-link']:hover {
         var(--c9-sunken);
 }
 
+/* The token input of the artists is one well with the chips and the entry; the entry has none. */
+[data-part='field'] > [data-part='artist-tokens'] {
+    border: 0;
+    border-radius: 0;
+    background-color: #ffffff;
+    box-shadow: var(--c9-sunken);
+    color: #000000;
+}
+
+[data-part='field'][data-state~='disabled'] > [data-part='artist-tokens'] {
+    background-color: #c3c3c3;
+    color: #808080;
+}
+
+[data-part='field'][data-state~='invalid'] > [data-part='artist-tokens'] {
+    box-shadow:
+        inset 0 0 0 1px #8b0000,
+        var(--c9-sunken);
+}
+
+[data-part='artist-tokens'] > [data-part='input'],
+[data-part='artist-tokens'] > [data-part='input']:is(:disabled, [aria-invalid='true']) {
+    background-color: transparent;
+    box-shadow: none;
+}
+
+[data-part='artist-tokens'] > [data-part='input']:focus-visible {
+    outline: none;
+}
+
+[data-part='field'] > [data-part='artist-tokens']:has(> [data-part='input']:focus-visible) {
+    outline: 2px dotted #000000;
+    outline-offset: 1px;
+}
+
 [data-part='search'] > [data-part='icon'] {
     --wmp-icon-fill: #000000;
 

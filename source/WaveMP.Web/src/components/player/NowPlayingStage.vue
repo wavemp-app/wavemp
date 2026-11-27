@@ -15,7 +15,8 @@ import StageVisualization from './StageVisualization.vue'
 import VideoStage from './VideoStage.vue'
 import type { VideoDiagnosticsSnapshot } from '@/player/videoDiagnostics'
 import VisualizationControls from './VisualizationControls.vue'
-import { artistLabelKey } from '@/library/presentation'
+import ArtistNames from '@/components/library/ArtistNames.vue'
+import { artistsOf } from '@/library/artists'
 import type { TrackLyrics } from '@/lyrics/timing'
 import { PlayerViewModeObject, type PlayerViewMode, type Track } from '@/api/generated/models'
 import type { StageView, VideoState } from '@/player/videoSync'
@@ -258,12 +259,6 @@ useShortcut('fullscreen', () => {
 
     void shown.toggleFullscreen()
 })
-
-const subtitle = computed(() => {
-    const key = artistLabelKey(props.track?.artist)
-    const artist = key ? t(key) : (props.track?.artist?.name ?? '')
-    return [artist, props.track?.album?.title ?? ''].filter((part) => part !== '').join(' – ')
-})
 </script>
 
 <template>
@@ -367,7 +362,15 @@ const subtitle = computed(() => {
         </p>
         <div v-if="track" data-part="stage-info">
             <p data-part="stage-title">{{ track.title }}</p>
-            <p data-part="stage-subtitle">{{ subtitle }}</p>
+            <p data-part="stage-subtitle">
+                <ArtistNames
+                    :artists="artistsOf(track)"
+                    :fallback="t('library.unknownArtist')"
+                    part="artist-link"
+                /><template v-if="track.album?.title"
+                    >{{ t('nowPlaying.albumSeparator') }}{{ track.album.title }}</template
+                >
+            </p>
         </div>
         <div v-else data-part="empty-state">
             <p data-part="empty-state-title">{{ t('nowPlaying.emptyTitle') }}</p>

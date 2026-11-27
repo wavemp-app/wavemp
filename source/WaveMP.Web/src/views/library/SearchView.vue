@@ -47,6 +47,7 @@ const songs = computed<TrackGroup[]>(() => {
                       count: format.number(result.value?.tracks?.total ?? tracks.length),
                   }),
                   artist: null,
+                  artists: [],
                   isCompilation: false,
                   year: null,
                   genre: null,

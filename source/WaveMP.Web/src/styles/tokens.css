@@ -171,6 +171,9 @@
         --wmp-icon-smart-playlist: url('/icons/phosphor/fill/magic-wand-fill.svg');
         --wmp-icon-recently-played: url('/icons/phosphor/fill/headphones-fill.svg');
         --wmp-icon-drag-handle: url('/icons/phosphor/regular/dots-six-vertical.svg');
+        --wmp-icon-artist-remove: url('/icons/phosphor/regular/x.svg');
+        --wmp-icon-artist-match: url('/icons/phosphor/regular/microphone-stage.svg');
+        --wmp-icon-artist-new: url('/icons/phosphor/regular/plus.svg');
         --wmp-icon-track: url('/icons/phosphor/fill/music-note-fill.svg');
         --wmp-icon-favorite: url('/icons/phosphor/fill/heart-fill.svg');
         --wmp-icon-favorite-off: url('/icons/phosphor/regular/heart.svg');

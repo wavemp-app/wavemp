@@ -111,7 +111,29 @@
     "number": "Nr.",
     "disc": "CD",
     "media": "Verfügbar als",
-    "groupJump": "Alle Gruppen anzeigen"
+    "groupJump": "Alle Gruppen anzeigen",
+    "artists": "Interpreten",
+    "albumArtist": "Albuminterpret",
+    "albumArtists": "Albuminterpreten"
+  },
+  "artists": {
+    "separator": ", ",
+    "featuring": " feat. "
+  },
+  "artistTokens": {
+    "placeholder": "Interpret hinzufügen",
+    "full": "Es können keine weiteren Interpreten hinzugefügt werden",
+    "hint": "In der Bibliothek suchen oder einen neuen Namen eingeben, dann Enter drücken.",
+    "addNew": "„{name}“ als neuen Interpreten hinzufügen",
+    "added": "{name} hinzugefügt",
+    "removed": "{name} entfernt",
+    "move": "{name} verschieben, Position {position} von {count}",
+    "moved": "{name} an Position {position} von {count} verschoben",
+    "remove": "{name} entfernen",
+    "featured": "feat.",
+    "featuredNamed": "{name} als Gastinterpret",
+    "nowFeatured": "{name} ist Gastinterpret",
+    "nowMain": "{name} ist Hauptinterpret"
   },
   "placeholders": {
     "album": "Platzhalter-Album {number}",
@@ -258,7 +280,8 @@
     "exitFullscreen": "Vollbild beenden",
     "viewLyrics": "Songtext",
     "lyricsLabel": "Songtext des Titels",
-    "lyricsBreak": "Instrumentaler Teil"
+    "lyricsBreak": "Instrumentaler Teil",
+    "albumSeparator": " – "
   },
   "queuePane": {
     "label": "Warteschlange",
@@ -1689,7 +1712,8 @@
       "missingCover": "Ohne Cover",
       "possibleDuplicate": "Duplikate",
       "videoWithoutAudio": "Nur Video",
-      "audioWithoutVideo": "Nur Audio"
+      "audioWithoutVideo": "Nur Audio",
+      "possibleMultipleArtists": "Mehrere Interpreten?"
     },
     "types": {
       "unreadableFile": "Unlesbare Datei",
@@ -1699,7 +1723,8 @@
       "possibleDuplicate": "Mögliches Duplikat",
       "videoWithoutAudio": "Video ohne Audio",
       "audioWithoutVideo": "Audio ohne Video",
-      "unknown": "Anderes Problem"
+      "unknown": "Anderes Problem",
+      "possibleMultipleArtists": "Evtl. mehrere Interpreten"
     },
     "details": {
       "missingTags": "Fehlende Tags: {tags}",
@@ -1708,7 +1733,8 @@
       "possibleDuplicate": "Gleicher Interpret und Titel, ähnliche Länge wie",
       "videoWithoutAudio": "Nur ein Video, keine Audiodatei mit gleichem Namen.",
       "audioWithoutVideo": "Nur eine Audiodatei, kein Video mit gleichem Namen.",
-      "unknown": "Diese App kennt dieses Problem noch nicht."
+      "unknown": "Diese App kennt dieses Problem noch nicht.",
+      "possibleMultipleArtists": "Der Name kann für mehrere Interpreten stehen. Wie vorgeschlagen aufteilen oder als einen Interpreten behalten."
     },
     "sorts": {
       "path": "Ordner",
@@ -1720,6 +1746,15 @@
       "editMetadata": "Metadaten bearbeiten",
       "searchOnline": "Online suchen",
       "showFiles": "Dateien anzeigen"
+    },
+    "artistSplit": {
+      "suggestion": "Vorgeschlagene Interpreten:",
+      "splitAction": "Aufteilen",
+      "keepAction": "Als einen Interpreten behalten",
+      "split": "Die Interpreten sind in die Datei geschrieben. Der Hinweis verschwindet mit der nächsten Prüfung.",
+      "kept": "Der Name ist als ein Interpret in die Datei geschrieben. Der Hinweis verschwindet mit der nächsten Prüfung.",
+      "notWritable": "Die Audiodatei kann nicht geschrieben werden.",
+      "failed": "Die Interpreten konnten nicht gespeichert werden."
     }
   },
   "reviewInbox": {
@@ -2160,7 +2195,9 @@
       "year": "Jahr",
       "trackNumber": "Track-Nr.",
       "discNumber": "CD-Nr.",
-      "genre": "Genre"
+      "genre": "Genre",
+      "artists": "Interpreten",
+      "albumArtists": "Albuminterpreten"
     },
     "file": "Die Tags werden in {path} geschrieben.",
     "emptyRemoves": "Leere Felder entfernen den Wert aus den Tags; WaveMP nutzt dann wieder Ordner- und Dateinamen.",
@@ -2175,7 +2212,9 @@
       "invalid": "Bitte prüfe die markierten Felder.",
       "number": "Gib eine ganze Zahl von 1 bis {max} ein.",
       "saveFailed": "Die Änderungen konnten nicht gespeichert werden."
-    }
+    },
+    "artistsHint": "In der Bibliothek suchen oder einen neuen Namen eingeben, dann Enter drücken. Für Gäste „feat.“ einschalten. Die Reihenfolge ändert sich durch Ziehen am Griff oder mit den Pfeiltasten darauf.",
+    "albumArtistsHint": "Die Interpreten, zu denen das Album gehört. Leer nimmt die Interpreten des Titels."
   },
   "onlineMetadata": {
     "search": "Online suchen",

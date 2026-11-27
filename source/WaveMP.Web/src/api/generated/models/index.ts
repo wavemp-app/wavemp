@@ -39,6 +39,10 @@ export interface Album extends AdditionalDataHolder, Parsable {
      */
     artist?: ArtistReference | null;
     /**
+     * All album artists in their order; the first one is Artist. Empty for albums without a known artist.
+     */
+    artists?: ArtistCredit[] | null;
+    /**
      * Sum of the durations of the tracks in milliseconds.
      */
     durationMilliseconds?: number | null;
@@ -78,6 +82,15 @@ export interface Album extends AdditionalDataHolder, Parsable {
      * The year property
      */
     year?: number | null;
+}
+/**
+ * An album artist as the metadata editor writes it: an artist of the library or a new name.
+ */
+export interface AlbumArtistInput extends AdditionalDataHolder, Parsable {
+    /**
+     * Name of the artist; a name whose normalized form matches an artist of the library refers to that artist.
+     */
+    name?: string | null;
 }
 export type AlbumCoverFallback = (typeof AlbumCoverFallbackObject)[keyof typeof AlbumCoverFallbackObject];
 export type AlbumCoverFallbackOption = (typeof AlbumCoverFallbackOptionObject)[keyof typeof AlbumCoverFallbackOptionObject];
@@ -127,6 +140,10 @@ export interface AlbumReference extends AdditionalDataHolder, Parsable {
      * The artist property
      */
     artist?: ArtistReference | null;
+    /**
+     * All album artists in their order; the first one is Artist. Empty for albums without a known artist.
+     */
+    artists?: ArtistCredit[] | null;
     /**
      * The id property
      */
@@ -212,6 +229,49 @@ export interface Artist extends AdditionalDataHolder, Parsable {
      * Tracks of the artist or on albums of the artist.
      */
     trackCount?: number | null;
+}
+/**
+ * An artist of a song or album, in the order of its artists, with its role.
+ */
+export interface ArtistCredit extends AdditionalDataHolder, Parsable {
+    /**
+     * The id property
+     */
+    id?: Guid | null;
+    /**
+     * The name property
+     */
+    name?: string | null;
+    /**
+     * Main or featured artist; always Main for album artists.
+     */
+    role?: ArtistRole | null;
+}
+/**
+ * An artist of a song as the metadata editor writes it: an artist of the library or a new name.
+ */
+export interface ArtistCreditInput extends AdditionalDataHolder, Parsable {
+    /**
+     * Name of the artist; a name whose normalized form matches an artist of the library refers to that artist.
+     */
+    name?: string | null;
+    /**
+     * Main or featured artist; Main if missing.
+     */
+    role?: ArtistRole | null;
+}
+/**
+ * An artist of a song as its tags name it, with its role.
+ */
+export interface ArtistName extends AdditionalDataHolder, Parsable {
+    /**
+     * The name property
+     */
+    name?: string | null;
+    /**
+     * Main or featured artist.
+     */
+    role?: ArtistRole | null;
 }
 /**
  * One page of a collection.
@@ -403,6 +463,7 @@ export interface ArtistReference extends AdditionalDataHolder, Parsable {
      */
     name?: string | null;
 }
+export type ArtistRole = (typeof ArtistRoleObject)[keyof typeof ArtistRoleObject];
 export type ArtistSort = (typeof ArtistSortObject)[keyof typeof ArtistSortObject];
 export type AudioCodec = (typeof AudioCodecObject)[keyof typeof AudioCodecObject];
 export type AudioFormat = (typeof AudioFormatObject)[keyof typeof AudioFormatObject];
@@ -669,6 +730,15 @@ export function createAddPlaylistEntriesFromDiscriminatorValue(parseNode: ParseN
 /**
  * Creates a new instance of the appropriate class based on discriminator value
  * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {AlbumArtistInput}
+ */
+// @ts-ignore
+export function createAlbumArtistInputFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoAlbumArtistInput;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
  * @returns {AlbumCoverFallbackRule}
  */
 // @ts-ignore
@@ -732,11 +802,38 @@ export function createApplyTrackOnlineMetadataFromDiscriminatorValue(parseNode: 
 /**
  * Creates a new instance of the appropriate class based on discriminator value
  * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {ArtistCredit}
+ */
+// @ts-ignore
+export function createArtistCreditFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoArtistCredit;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {ArtistCreditInput}
+ */
+// @ts-ignore
+export function createArtistCreditInputFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoArtistCreditInput;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
  * @returns {Artist}
  */
 // @ts-ignore
 export function createArtistFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
     return deserializeIntoArtist;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {ArtistName}
+ */
+// @ts-ignore
+export function createArtistNameFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoArtistName;
 }
 /**
  * Creates a new instance of the appropriate class based on discriminator value
@@ -2921,6 +3018,7 @@ export function deserializeIntoAddPlaylistEntries(addPlaylistEntries: Partial<Ad
 export function deserializeIntoAlbum(album: Partial<Album> | undefined = {}) : Record<string, (node: ParseNode) => void> {
     return {
         "artist": n => { album.artist = n.getObjectValue<ArtistReference>(createArtistReferenceFromDiscriminatorValue); },
+        "artists": n => { album.artists = n.getCollectionOfObjectValues<ArtistCredit>(createArtistCreditFromDiscriminatorValue); },
         "durationMilliseconds": n => { album.durationMilliseconds = n.getNumberValue(); },
         "firstSeenAt": n => { album.firstSeenAt = n.getDateValue(); },
         "genre": n => { album.genre = n.getStringValue(); },
@@ -2931,6 +3029,17 @@ export function deserializeIntoAlbum(album: Partial<Album> | undefined = {}) : R
         "title": n => { album.title = n.getStringValue(); },
         "trackCount": n => { album.trackCount = n.getNumberValue(); },
         "year": n => { album.year = n.getNumberValue(); },
+    }
+}
+/**
+ * The deserialization information for the current model
+ * @param AlbumArtistInput The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoAlbumArtistInput(albumArtistInput: Partial<AlbumArtistInput> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "name": n => { albumArtistInput.name = n.getStringValue(); },
     }
 }
 /**
@@ -2969,6 +3078,7 @@ export function deserializeIntoAlbumPage(albumPage: Partial<AlbumPage> | undefin
 export function deserializeIntoAlbumReference(albumReference: Partial<AlbumReference> | undefined = {}) : Record<string, (node: ParseNode) => void> {
     return {
         "artist": n => { albumReference.artist = n.getObjectValue<ArtistReference>(createArtistReferenceFromDiscriminatorValue); },
+        "artists": n => { albumReference.artists = n.getCollectionOfObjectValues<ArtistCredit>(createArtistCreditFromDiscriminatorValue); },
         "id": n => { albumReference.id = n.getGuidValue(); },
         "isCompilation": n => { albumReference.isCompilation = n.getBooleanValue(); },
         "title": n => { albumReference.title = n.getStringValue(); },
@@ -3025,6 +3135,43 @@ export function deserializeIntoArtist(artist: Partial<Artist> | undefined = {}) 
         "name": n => { artist.name = n.getStringValue(); },
         "picture": n => { artist.picture = n.getObjectValue<ArtistPicture>(createArtistPictureFromDiscriminatorValue); },
         "trackCount": n => { artist.trackCount = n.getNumberValue(); },
+    }
+}
+/**
+ * The deserialization information for the current model
+ * @param ArtistCredit The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoArtistCredit(artistCredit: Partial<ArtistCredit> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "id": n => { artistCredit.id = n.getGuidValue(); },
+        "name": n => { artistCredit.name = n.getStringValue(); },
+        "role": n => { artistCredit.role = n.getEnumValue<ArtistRole>(ArtistRoleObject); },
+    }
+}
+/**
+ * The deserialization information for the current model
+ * @param ArtistCreditInput The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoArtistCreditInput(artistCreditInput: Partial<ArtistCreditInput> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "name": n => { artistCreditInput.name = n.getStringValue(); },
+        "role": n => { artistCreditInput.role = n.getEnumValue<ArtistRole>(ArtistRoleObject); },
+    }
+}
+/**
+ * The deserialization information for the current model
+ * @param ArtistName The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoArtistName(artistName: Partial<ArtistName> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "name": n => { artistName.name = n.getStringValue(); },
+        "role": n => { artistName.role = n.getEnumValue<ArtistRole>(ArtistRoleObject); },
     }
 }
 /**
@@ -3835,6 +3982,7 @@ export function deserializeIntoLibraryIssue(libraryIssue: Partial<LibraryIssue> 
         "missingTags": n => { libraryIssue.missingTags = n.getCollectionOfEnumValues<MetadataTag>(MetadataTagObject); },
         "relatedTrack": n => { libraryIssue.relatedTrack = n.getObjectValue<LibraryIssueTrack>(createLibraryIssueTrackFromDiscriminatorValue); },
         "severity": n => { libraryIssue.severity = n.getEnumValue<LibraryIssueSeverity>(LibraryIssueSeverityObject); },
+        "suggestedArtists": n => { libraryIssue.suggestedArtists = n.getCollectionOfObjectValues<ArtistName>(createArtistNameFromDiscriminatorValue); },
         "track": n => { libraryIssue.track = n.getObjectValue<LibraryIssueTrack>(createLibraryIssueTrackFromDiscriminatorValue); },
         "type": n => { libraryIssue.type = n.getEnumValue<LibraryIssueType>(LibraryIssueTypeObject); },
     }
@@ -3906,6 +4054,7 @@ export function deserializeIntoLibraryIssueTrack(libraryIssueTrack: Partial<Libr
     return {
         "album": n => { libraryIssueTrack.album = n.getObjectValue<AlbumReference>(createAlbumReferenceFromDiscriminatorValue); },
         "artist": n => { libraryIssueTrack.artist = n.getObjectValue<ArtistReference>(createArtistReferenceFromDiscriminatorValue); },
+        "artists": n => { libraryIssueTrack.artists = n.getCollectionOfObjectValues<ArtistCredit>(createArtistCreditFromDiscriminatorValue); },
         "baseName": n => { libraryIssueTrack.baseName = n.getStringValue(); },
         "directoryPath": n => { libraryIssueTrack.directoryPath = n.getStringValue(); },
         "durationMilliseconds": n => { libraryIssueTrack.durationMilliseconds = n.getNumberValue(); },
@@ -5406,6 +5555,7 @@ export function deserializeIntoTrack(track: Partial<Track> | undefined = {}) : R
     return {
         "album": n => { track.album = n.getObjectValue<AlbumReference>(createAlbumReferenceFromDiscriminatorValue); },
         "artist": n => { track.artist = n.getObjectValue<ArtistReference>(createArtistReferenceFromDiscriminatorValue); },
+        "artists": n => { track.artists = n.getCollectionOfObjectValues<ArtistCredit>(createArtistCreditFromDiscriminatorValue); },
         "discNumber": n => { track.discNumber = n.getNumberValue(); },
         "durationMilliseconds": n => { track.durationMilliseconds = n.getNumberValue(); },
         "firstSeenAt": n => { track.firstSeenAt = n.getDateValue(); },
@@ -5481,10 +5631,13 @@ export function deserializeIntoTrackMetadata(trackMetadata: Partial<TrackMetadat
     return {
         "album": n => { trackMetadata.album = n.getStringValue(); },
         "albumArtist": n => { trackMetadata.albumArtist = n.getStringValue(); },
+        "albumArtists": n => { trackMetadata.albumArtists = n.getCollectionOfPrimitiveValues<string>("string"); },
         "artist": n => { trackMetadata.artist = n.getStringValue(); },
+        "artists": n => { trackMetadata.artists = n.getCollectionOfObjectValues<ArtistName>(createArtistNameFromDiscriminatorValue); },
         "audioFilePath": n => { trackMetadata.audioFilePath = n.getStringValue(); },
         "discNumber": n => { trackMetadata.discNumber = n.getNumberValue(); },
         "genre": n => { trackMetadata.genre = n.getStringValue(); },
+        "hasArtistValues": n => { trackMetadata.hasArtistValues = n.getBooleanValue(); },
         "status": n => { trackMetadata.status = n.getEnumValue<TrackMetadataStatus>(TrackMetadataStatusObject); },
         "title": n => { trackMetadata.title = n.getStringValue(); },
         "trackId": n => { trackMetadata.trackId = n.getGuidValue(); },
@@ -5717,6 +5870,7 @@ export function deserializeIntoUpdateAlbumTags(updateAlbumTags: Partial<UpdateAl
     return {
         "album": n => { updateAlbumTags.album = n.getStringValue(); },
         "albumArtist": n => { updateAlbumTags.albumArtist = n.getStringValue(); },
+        "albumArtists": n => { updateAlbumTags.albumArtists = n.getCollectionOfObjectValues<AlbumArtistInput>(createAlbumArtistInputFromDiscriminatorValue); },
         "genre": n => { updateAlbumTags.genre = n.getStringValue(); },
         "year": n => { updateAlbumTags.year = n.getNumberValue(); },
     }
@@ -6022,7 +6176,9 @@ export function deserializeIntoUpdateTrackMetadata(updateTrackMetadata: Partial<
     return {
         "album": n => { updateTrackMetadata.album = n.getStringValue(); },
         "albumArtist": n => { updateTrackMetadata.albumArtist = n.getStringValue(); },
+        "albumArtists": n => { updateTrackMetadata.albumArtists = n.getCollectionOfObjectValues<AlbumArtistInput>(createAlbumArtistInputFromDiscriminatorValue); },
         "artist": n => { updateTrackMetadata.artist = n.getStringValue(); },
+        "artists": n => { updateTrackMetadata.artists = n.getCollectionOfObjectValues<ArtistCreditInput>(createArtistCreditInputFromDiscriminatorValue); },
         "discNumber": n => { updateTrackMetadata.discNumber = n.getNumberValue(); },
         "genre": n => { updateTrackMetadata.genre = n.getStringValue(); },
         "title": n => { updateTrackMetadata.title = n.getStringValue(); },
@@ -6927,6 +7083,10 @@ export interface LibraryIssue extends AdditionalDataHolder, Parsable {
      */
     severity?: LibraryIssueSeverity | null;
     /**
+     * The artists of the track split as suggested, for PossibleMultipleArtists only: each name that may name several artists is replaced by its parts. Confirming writes them as the artists of the track; keeping writes the current artists as they are. Both mark the artists as confirmed, and the hint is gone after the next check.
+     */
+    suggestedArtists?: ArtistName[] | null;
+    /**
      * The track property
      */
     track?: LibraryIssueTrack | null;
@@ -7037,6 +7197,10 @@ export interface LibraryIssueTrack extends AdditionalDataHolder, Parsable {
      * The artist property
      */
     artist?: ArtistReference | null;
+    /**
+     * All artists of the track in their order, each with its role; the first one is Artist.
+     */
+    artists?: ArtistCredit[] | null;
     /**
      * File name of the track without extension, shared by all its files.
      */
@@ -9115,6 +9279,7 @@ export function serializeAddPlaylistEntries(writer: SerializationWriter, addPlay
 export function serializeAlbum(writer: SerializationWriter, album: Partial<Album> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
     if (!album || isSerializingDerivedType) { return; }
     writer.writeObjectValue<ArtistReference>("artist", album.artist, serializeArtistReference);
+    writer.writeCollectionOfObjectValues<ArtistCredit>("artists", album.artists, serializeArtistCredit);
     writer.writeNumberValue("durationMilliseconds", album.durationMilliseconds);
     writer.writeDateValue("firstSeenAt", album.firstSeenAt);
     writer.writeStringValue("genre", album.genre);
@@ -9126,6 +9291,18 @@ export function serializeAlbum(writer: SerializationWriter, album: Partial<Album
     writer.writeNumberValue("trackCount", album.trackCount);
     writer.writeNumberValue("year", album.year);
     writer.writeAdditionalData(album.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param AlbumArtistInput The instance to serialize from.
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeAlbumArtistInput(writer: SerializationWriter, albumArtistInput: Partial<AlbumArtistInput> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!albumArtistInput || isSerializingDerivedType) { return; }
+    writer.writeStringValue("name", albumArtistInput.name);
+    writer.writeAdditionalData(albumArtistInput.additionalData);
 }
 /**
  * Serializes information the current object
@@ -9166,6 +9343,7 @@ export function serializeAlbumPage(writer: SerializationWriter, albumPage: Parti
 export function serializeAlbumReference(writer: SerializationWriter, albumReference: Partial<AlbumReference> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
     if (!albumReference || isSerializingDerivedType) { return; }
     writer.writeObjectValue<ArtistReference>("artist", albumReference.artist, serializeArtistReference);
+    writer.writeCollectionOfObjectValues<ArtistCredit>("artists", albumReference.artists, serializeArtistCredit);
     writer.writeGuidValue("id", albumReference.id);
     writer.writeBooleanValue("isCompilation", albumReference.isCompilation);
     writer.writeStringValue("title", albumReference.title);
@@ -9227,6 +9405,46 @@ export function serializeArtist(writer: SerializationWriter, artist: Partial<Art
     writer.writeObjectValue<ArtistPicture>("picture", artist.picture, serializeArtistPicture);
     writer.writeNumberValue("trackCount", artist.trackCount);
     writer.writeAdditionalData(artist.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param ArtistCredit The instance to serialize from.
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeArtistCredit(writer: SerializationWriter, artistCredit: Partial<ArtistCredit> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!artistCredit || isSerializingDerivedType) { return; }
+    writer.writeGuidValue("id", artistCredit.id);
+    writer.writeStringValue("name", artistCredit.name);
+    writer.writeEnumValue<ArtistRole>("role", artistCredit.role);
+    writer.writeAdditionalData(artistCredit.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param ArtistCreditInput The instance to serialize from.
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeArtistCreditInput(writer: SerializationWriter, artistCreditInput: Partial<ArtistCreditInput> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!artistCreditInput || isSerializingDerivedType) { return; }
+    writer.writeStringValue("name", artistCreditInput.name);
+    writer.writeEnumValue<ArtistRole>("role", artistCreditInput.role);
+    writer.writeAdditionalData(artistCreditInput.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param ArtistName The instance to serialize from.
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeArtistName(writer: SerializationWriter, artistName: Partial<ArtistName> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!artistName || isSerializingDerivedType) { return; }
+    writer.writeStringValue("name", artistName.name);
+    writer.writeEnumValue<ArtistRole>("role", artistName.role);
+    writer.writeAdditionalData(artistName.additionalData);
 }
 /**
  * Serializes information the current object
@@ -10096,6 +10314,7 @@ export function serializeLibraryIssue(writer: SerializationWriter, libraryIssue:
     writer.writeCollectionOfEnumValues<MetadataTag>("missingTags", libraryIssue.missingTags);
     writer.writeObjectValue<LibraryIssueTrack>("relatedTrack", libraryIssue.relatedTrack, serializeLibraryIssueTrack);
     writer.writeEnumValue<LibraryIssueSeverity>("severity", libraryIssue.severity);
+    writer.writeCollectionOfObjectValues<ArtistName>("suggestedArtists", libraryIssue.suggestedArtists, serializeArtistName);
     writer.writeObjectValue<LibraryIssueTrack>("track", libraryIssue.track, serializeLibraryIssueTrack);
     writer.writeEnumValue<LibraryIssueType>("type", libraryIssue.type);
     writer.writeAdditionalData(libraryIssue.additionalData);
@@ -10172,6 +10391,7 @@ export function serializeLibraryIssueTrack(writer: SerializationWriter, libraryI
     if (!libraryIssueTrack || isSerializingDerivedType) { return; }
     writer.writeObjectValue<AlbumReference>("album", libraryIssueTrack.album, serializeAlbumReference);
     writer.writeObjectValue<ArtistReference>("artist", libraryIssueTrack.artist, serializeArtistReference);
+    writer.writeCollectionOfObjectValues<ArtistCredit>("artists", libraryIssueTrack.artists, serializeArtistCredit);
     writer.writeStringValue("baseName", libraryIssueTrack.baseName);
     writer.writeStringValue("directoryPath", libraryIssueTrack.directoryPath);
     writer.writeNumberValue("durationMilliseconds", libraryIssueTrack.durationMilliseconds);
@@ -11772,6 +11992,7 @@ export function serializeTrack(writer: SerializationWriter, track: Partial<Track
     if (!track || isSerializingDerivedType) { return; }
     writer.writeObjectValue<AlbumReference>("album", track.album, serializeAlbumReference);
     writer.writeObjectValue<ArtistReference>("artist", track.artist, serializeArtistReference);
+    writer.writeCollectionOfObjectValues<ArtistCredit>("artists", track.artists, serializeArtistCredit);
     writer.writeNumberValue("discNumber", track.discNumber);
     writer.writeNumberValue("durationMilliseconds", track.durationMilliseconds);
     writer.writeDateValue("firstSeenAt", track.firstSeenAt);
@@ -11851,10 +12072,13 @@ export function serializeTrackMetadata(writer: SerializationWriter, trackMetadat
     if (!trackMetadata || isSerializingDerivedType) { return; }
     writer.writeStringValue("album", trackMetadata.album);
     writer.writeStringValue("albumArtist", trackMetadata.albumArtist);
+    writer.writeCollectionOfPrimitiveValues<string>("albumArtists", trackMetadata.albumArtists);
     writer.writeStringValue("artist", trackMetadata.artist);
+    writer.writeCollectionOfObjectValues<ArtistName>("artists", trackMetadata.artists, serializeArtistName);
     writer.writeStringValue("audioFilePath", trackMetadata.audioFilePath);
     writer.writeNumberValue("discNumber", trackMetadata.discNumber);
     writer.writeStringValue("genre", trackMetadata.genre);
+    writer.writeBooleanValue("hasArtistValues", trackMetadata.hasArtistValues);
     writer.writeEnumValue<TrackMetadataStatus>("status", trackMetadata.status);
     writer.writeStringValue("title", trackMetadata.title);
     writer.writeGuidValue("trackId", trackMetadata.trackId);
@@ -12102,6 +12326,7 @@ export function serializeUpdateAlbumTags(writer: SerializationWriter, updateAlbu
     if (!updateAlbumTags || isSerializingDerivedType) { return; }
     writer.writeStringValue("album", updateAlbumTags.album);
     writer.writeStringValue("albumArtist", updateAlbumTags.albumArtist);
+    writer.writeCollectionOfObjectValues<AlbumArtistInput>("albumArtists", updateAlbumTags.albumArtists, serializeAlbumArtistInput);
     writer.writeStringValue("genre", updateAlbumTags.genre);
     writer.writeNumberValue("year", updateAlbumTags.year);
     writer.writeAdditionalData(updateAlbumTags.additionalData);
@@ -12431,7 +12656,9 @@ export function serializeUpdateTrackMetadata(writer: SerializationWriter, update
     if (!updateTrackMetadata || isSerializingDerivedType) { return; }
     writer.writeStringValue("album", updateTrackMetadata.album);
     writer.writeStringValue("albumArtist", updateTrackMetadata.albumArtist);
+    writer.writeCollectionOfObjectValues<AlbumArtistInput>("albumArtists", updateTrackMetadata.albumArtists, serializeAlbumArtistInput);
     writer.writeStringValue("artist", updateTrackMetadata.artist);
+    writer.writeCollectionOfObjectValues<ArtistCreditInput>("artists", updateTrackMetadata.artists, serializeArtistCreditInput);
     writer.writeNumberValue("discNumber", updateTrackMetadata.discNumber);
     writer.writeStringValue("genre", updateTrackMetadata.genre);
     writer.writeStringValue("title", updateTrackMetadata.title);
@@ -13337,6 +13564,10 @@ export interface Track extends AdditionalDataHolder, Parsable {
      */
     artist?: ArtistReference | null;
     /**
+     * All artists of the track in their order, each with its role (main or featured artist); empty if unknown.
+     */
+    artists?: ArtistCredit[] | null;
+    /**
      * The discNumber property
      */
     discNumber?: number | null;
@@ -13497,9 +13728,17 @@ export interface TrackMetadata extends AdditionalDataHolder, Parsable {
      */
     albumArtist?: string | null;
     /**
+     * All album artists in their order, read like Artists.
+     */
+    albumArtists?: string[] | null;
+    /**
      * The artist property
      */
     artist?: string | null;
+    /**
+     * All artists of the track in their order, each with its role: the separate values of the tags, otherwise the artist field split at "feat.", "ft.", "featuring" and ";".
+     */
+    artists?: ArtistName[] | null;
     /**
      * Path of the audio file the editor writes, relative to the media folder; null without audio file.
      */
@@ -13512,6 +13751,10 @@ export interface TrackMetadata extends AdditionalDataHolder, Parsable {
      * The genre property
      */
     genre?: string | null;
+    /**
+     * Whether the tags hold the artists as separate values (ARTISTS, several values of the artist field), so the list of artists is confirmed and not split from a single text.
+     */
+    hasArtistValues?: boolean | null;
     /**
      * Whether the editor can write the tags.
      */
@@ -13952,9 +14195,13 @@ export interface UpdateAlbumTags extends AdditionalDataHolder, Parsable {
      */
     album?: string | null;
     /**
-     * New album artist; replaces all album artists of the files.
+     * New album artist as a single text; replaces all album artists of the files. AlbumArtists wins over it.
      */
     albumArtist?: string | null;
+    /**
+     * New album artists in their order; replaces all album artists of the files (see the same member of the metadata of a track). An empty list removes the album artists.
+     */
+    albumArtists?: AlbumArtistInput[] | null;
     /**
      * New genre; replaces all genres of the files.
      */
@@ -14332,13 +14579,21 @@ export interface UpdateTrackMetadata extends AdditionalDataHolder, Parsable {
      */
     album?: string | null;
     /**
-     * New album artist; replaces all album artists of the file.
+     * New album artist as a single text; replaces all album artists of the file. AlbumArtists wins over it.
      */
     albumArtist?: string | null;
     /**
-     * New artist; replaces all artists of the file.
+     * New album artists in their order; replaces all album artists of the file. The file gets them as separate values where its format supports it (ALBUMARTISTS) and joined by "; " in the album artist field. An empty list removes the album artists.
+     */
+    albumArtists?: AlbumArtistInput[] | null;
+    /**
+     * New artist as a single text; replaces all artists of the file. Artists wins over it.
      */
     artist?: string | null;
+    /**
+     * New artists in their order, each with its role; replaces all artists of the file. The file gets them as separate values where its format supports it (ARTISTS) and as a readable text in the artist field, e.g. "Bob Sinclar feat. K.Flay". An empty list removes the artists.
+     */
+    artists?: ArtistCreditInput[] | null;
     /**
      * New number of the disc; the number of discs in the file stays.
      */
@@ -14794,7 +15049,7 @@ export interface YearPage extends AdditionalDataHolder, Parsable {
     total?: number | null;
 }
 /**
- * What albums without a cover of their own show: the picture of their album artist (ArtistPicture, the default) or nothing (None). Albums with an exception (GetAlbumCoverFallback) override it.
+ * The global rule of the library settings.
  */
 export const AlbumCoverFallbackObject = {
     ArtistPicture: "ArtistPicture",
@@ -14831,6 +15086,13 @@ export const ArtistPictureKindObject = {
 export const ArtistPictureProviderObject = {
     Wikimedia: "Wikimedia",
     FanartTv: "FanartTv",
+} as const;
+/**
+ * Main or featured artist; always Main for album artists.
+ */
+export const ArtistRoleObject = {
+    Main: "Main",
+    Featured: "Featured",
 } as const;
 export const ArtistSortObject = {
     Name: "Name",
@@ -14999,7 +15261,7 @@ export const HealthStatusObject = {
     Unhealthy: "Unhealthy",
 } as const;
 /**
- * Video with sound or sound only.
+ * What an HLS stream of a track carries.
  */
 export const HlsMediaObject = {
     Audio: "Audio",
@@ -15106,6 +15368,7 @@ export const LibraryIssueTypeObject = {
     PossibleDuplicate: "PossibleDuplicate",
     VideoWithoutAudio: "VideoWithoutAudio",
     AudioWithoutVideo: "AudioWithoutVideo",
+    PossibleMultipleArtists: "PossibleMultipleArtists",
 } as const;
 /**
  * What the entries of a group of a list have in common: Album (tracks of one album, with album), Artist (tracks without album of one artist, or albums of one album artist, with artist), Letter (the index letter of the text the list is sorted by, with letter), Year (albums of one year, with year) or Unknown (tracks without album and artist, albums without album artist or without year). Clients show their own texts for each kind.

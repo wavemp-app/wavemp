@@ -17,15 +17,12 @@ import BaseIcon from '@/components/base/BaseIcon.vue'
 import BaseList, { type ListGroup, type ListRowBase } from '@/components/base/BaseList.vue'
 import FavoriteButton from '@/components/collection/FavoriteButton.vue'
 import RatingStars from '@/components/collection/RatingStars.vue'
+import ArtistNames from '@/components/library/ArtistNames.vue'
 import ItemMenuButton from '@/components/menus/ItemMenuButton.vue'
 import { useFormat } from '@/composables/useFormat'
 import { useSortableList } from '@/composables/useSortableList'
-import {
-    artistLabelKey,
-    durationSeconds,
-    trackListState,
-    trackRowState,
-} from '@/library/presentation'
+import { artistsOf } from '@/library/artists'
+import { durationSeconds, trackListState, trackRowState } from '@/library/presentation'
 import type { PlaylistEntryContext } from '@/menus/targets'
 import type { PlayerSource } from '@/player/resume'
 import { useContextMenuStore } from '@/stores/contextMenu'
@@ -133,11 +130,6 @@ useSortableList(rowsElement, {
     disabled: computed(() => !props.sortable || busy.value),
     onMove: (from, to) => emit('move', from, to),
 })
-
-function artistOf(track: Track): string {
-    const key = artistLabelKey(track.artist)
-    return key ? t(key) : (track.artist?.name ?? '')
-}
 
 /** Plays the list from the row on; video-only tracks are left out. */
 function playFrom(index: number): void {
@@ -270,7 +262,14 @@ function openRowMenu(rowId: string, x: number, y: number): void {
                 </span>
                 <span data-part="label">{{ row.entry.track.title }}</span>
                 <span data-part="list-subtitle" data-state="other-artist">
-                    <span data-part="label">{{ artistOf(row.entry.track) }}</span>
+                    <span data-part="label">
+                        <ArtistNames
+                            :artists="artistsOf(row.entry.track)"
+                            :fallback="t('library.unknownArtist')"
+                            part="artist-link"
+                            in-row
+                        />
+                    </span>
                 </span>
             </template>
             <template v-else-if="column.id === 'duration'">
@@ -281,7 +280,12 @@ function openRowMenu(rowId: string, x: number, y: number): void {
                 }}
             </template>
             <template v-else-if="column.id === 'artist'">
-                {{ artistOf(row.entry.track) }}
+                <ArtistNames
+                    :artists="artistsOf(row.entry.track)"
+                    :fallback="t('library.unknownArtist')"
+                    part="artist-link"
+                    in-row
+                />
             </template>
             <template v-else-if="column.id === 'album'">
                 {{ row.entry.track.album?.title ?? '' }}

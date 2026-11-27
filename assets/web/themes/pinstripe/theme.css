@@ -1234,6 +1234,7 @@ a[data-part='breadcrumb-link']:hover {
 /* --- Forms and messages ------------------------------------------------------------------------- */
 
 [data-part='field'] > [data-part='input'],
+[data-part='field'] > [data-part='artist-tokens'],
 [data-part='select'] {
     border: 1px solid #959ca4;
     border-radius: var(--wmp-radius-s);
@@ -1247,6 +1248,7 @@ a[data-part='breadcrumb-link']:hover {
 }
 
 [data-part='field'] > [data-part='input']:focus,
+[data-part='field'] > [data-part='artist-tokens']:focus-within,
 [data-part='select']:focus {
     border-color: #0b6b75;
     outline: none;
@@ -1255,7 +1257,8 @@ a[data-part='breadcrumb-link']:hover {
         0 0 0 3px rgb(26 150 163 / 45%);
 }
 
-[data-part='field'][data-state~='invalid'] > :is([data-part='input'], [data-part='select']) {
+[data-part='field'][data-state~='invalid']
+    > :is([data-part='input'], [data-part='select'], [data-part='artist-tokens']) {
     border-color: #b3261e;
 }
 
@@ -1263,7 +1266,8 @@ a[data-part='breadcrumb-link']:hover {
     color: #b3261e;
 }
 
-[data-part='field'] > [data-part='input']:disabled {
+[data-part='field'] > [data-part='input']:disabled,
+[data-part='field'][data-state~='disabled'] > [data-part='artist-tokens'] {
     border-color: #c3c8ce;
     background: #eef0f2;
     box-shadow: none;

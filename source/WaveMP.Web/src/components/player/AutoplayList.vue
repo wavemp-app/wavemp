@@ -6,7 +6,7 @@ import LibraryCover from '@/components/library/LibraryCover.vue'
 import ItemMenuButton from '@/components/menus/ItemMenuButton.vue'
 import { useContextMenuTrigger } from '@/composables/useContextMenuTrigger'
 import { useFormat } from '@/composables/useFormat'
-import { artistLabelKey, durationSeconds } from '@/library/presentation'
+import { artistLine, durationSeconds } from '@/library/presentation'
 import type { Track } from '@/api/generated/models'
 import type { AutoplayEntry } from '@/player/autoplay'
 import { useContextMenuStore } from '@/stores/contextMenu'
@@ -54,8 +54,7 @@ function openMenu(entry: AutoplayEntry, x: number, y: number): void {
 const trigger = useContextMenuTrigger(openMenu)
 
 function artistName(track: Track): string {
-    const key = artistLabelKey(track.artist)
-    return key ? t(key) : (track.artist?.name ?? '')
+    return artistLine(track, t)
 }
 
 function duration(track: Track): string {

@@ -1,8 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
+import { createMemoryHistory, createRouter } from 'vue-router'
 import type { Track } from '@/api/generated/models'
 import { createWaveMpI18n } from '@/i18n'
+import { createRoutes } from '@/router/routes'
 import { getPlayback } from '@/player/api'
 import { playerDependencies, usePlayerStore } from '@/stores/player'
 import { useSessionStore } from '@/stores/session'
@@ -47,7 +49,9 @@ const engine = {
 }
 
 function mountView() {
-    return mount(NowPlayingView, { global: { plugins: [createWaveMpI18n('en')] } })
+    // The artists of the song are links, so the view needs a router.
+    const router = createRouter({ history: createMemoryHistory(), routes: createRoutes() })
+    return mount(NowPlayingView, { global: { plugins: [createWaveMpI18n('en'), router] } })
 }
 
 function queueIds(wrapper: ReturnType<typeof mountView>): string[] {

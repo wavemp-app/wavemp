@@ -111,7 +111,29 @@
     "number": "Track",
     "disc": "Disc",
     "media": "Available as",
-    "groupJump": "Show all groups"
+    "groupJump": "Show all groups",
+    "artists": "Artists",
+    "albumArtist": "Album artist",
+    "albumArtists": "Album artists"
+  },
+  "artists": {
+    "separator": ", ",
+    "featuring": " feat. "
+  },
+  "artistTokens": {
+    "placeholder": "Add an artist",
+    "full": "No more artists can be added",
+    "hint": "Search the library or type a new name, then press Enter.",
+    "addNew": "Add “{name}” as a new artist",
+    "added": "{name} added",
+    "removed": "{name} removed",
+    "move": "Move {name}, position {position} of {count}",
+    "moved": "{name} moved to position {position} of {count}",
+    "remove": "Remove {name}",
+    "featured": "feat.",
+    "featuredNamed": "{name} as featured artist",
+    "nowFeatured": "{name} is a featured artist",
+    "nowMain": "{name} is a main artist"
   },
   "placeholders": {
     "album": "Placeholder Album {number}",
@@ -258,7 +280,8 @@
     "exitFullscreen": "Exit full screen",
     "viewLyrics": "Lyrics",
     "lyricsLabel": "Lyrics of the song",
-    "lyricsBreak": "Instrumental part"
+    "lyricsBreak": "Instrumental part",
+    "albumSeparator": " – "
   },
   "queuePane": {
     "label": "Play queue",
@@ -1689,7 +1712,8 @@
       "missingCover": "No cover",
       "possibleDuplicate": "Duplicates",
       "videoWithoutAudio": "Video only",
-      "audioWithoutVideo": "Audio only"
+      "audioWithoutVideo": "Audio only",
+      "possibleMultipleArtists": "Several artists?"
     },
     "types": {
       "unreadableFile": "Unreadable file",
@@ -1699,7 +1723,8 @@
       "possibleDuplicate": "Possible duplicate",
       "videoWithoutAudio": "Video without audio",
       "audioWithoutVideo": "Audio without video",
-      "unknown": "Other problem"
+      "unknown": "Other problem",
+      "possibleMultipleArtists": "May have several artists"
     },
     "details": {
       "missingTags": "Missing tags: {tags}",
@@ -1708,7 +1733,8 @@
       "possibleDuplicate": "Same artist and title, similar length as",
       "videoWithoutAudio": "Only a video, no audio file with the same name.",
       "audioWithoutVideo": "Only an audio file, no video with the same name.",
-      "unknown": "This app does not know this problem yet."
+      "unknown": "This app does not know this problem yet.",
+      "possibleMultipleArtists": "The artist name may stand for several artists. Split it as suggested or keep it as one artist."
     },
     "sorts": {
       "path": "Folder",
@@ -1720,6 +1746,15 @@
       "editMetadata": "Edit metadata",
       "searchOnline": "Search online",
       "showFiles": "Show files"
+    },
+    "artistSplit": {
+      "suggestion": "Suggested artists:",
+      "splitAction": "Split",
+      "keepAction": "Keep as one artist",
+      "split": "The artists are written to the file. The hint goes away with the next check.",
+      "kept": "The name is written to the file as one artist. The hint goes away with the next check.",
+      "notWritable": "The audio file cannot be written.",
+      "failed": "The artists could not be saved."
     }
   },
   "reviewInbox": {
@@ -2160,7 +2195,9 @@
       "year": "Year",
       "trackNumber": "Track no.",
       "discNumber": "Disc no.",
-      "genre": "Genre"
+      "genre": "Genre",
+      "artists": "Artists",
+      "albumArtists": "Album artists"
     },
     "file": "The tags are written to {path}.",
     "emptyRemoves": "Empty fields remove the value from the tags; WaveMP then uses the folder and file name again.",
@@ -2175,7 +2212,9 @@
       "invalid": "Please check the marked fields.",
       "number": "Enter a whole number from 1 to {max}.",
       "saveFailed": "The changes could not be saved."
-    }
+    },
+    "artistsHint": "Search the library or type a new name, then press Enter. Switch on “feat.” for guests. Drag a handle, or use the arrow keys on it, to change the order.",
+    "albumArtistsHint": "The artists the album belongs to. Empty uses the artists of the song."
   },
   "onlineMetadata": {
     "search": "Search online",

@@ -1,4 +1,6 @@
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
+import { createMemoryHistory, createRouter } from 'vue-router'
+import { createRoutes } from '@/router/routes'
 import { flushPromises, mount } from '@vue/test-utils'
 import { createPinia } from 'pinia'
 import type { Track } from '@/api/generated/models'
@@ -9,6 +11,11 @@ import { defaultVisualizationSettings, type VisualizationSettings } from '@/visu
 import { FakeClock, FakeModule, fakeAnalyser } from '@/visualization/__tests__/fakes'
 import NowPlayingStage from '../NowPlayingStage.vue'
 import { minimumRoomAbove, presetMenuPlacement } from '../visualizationControls'
+
+/** The artists of the song are links, so the component needs a router. */
+function testRouter() {
+    return createRouter({ history: createMemoryHistory(), routes: createRoutes() })
+}
 
 vi.mock('@/library/api', () => ({ fetchAlbumCover: vi.fn(), fetchTrackCover: vi.fn() }))
 
@@ -70,7 +77,7 @@ describe('VisualizationControls', () => {
                 audio: fakeAnalyser(),
                 visualization: { ...defaultVisualizationSettings, ...visualization },
             },
-            global: { plugins: [createPinia(), createWaveMpI18n('en')] },
+            global: { plugins: [createPinia(), createWaveMpI18n('en'), testRouter()] },
             attachTo: document.body,
         })
     }
