@@ -101,9 +101,8 @@ internal sealed class ArtistRepository(WaveMpDbContext dbContext) : IArtistRepos
 
         if (query.SourceId is { } sourceId)
         {
-            artists = artists.Where(artist => dbContext.Tracks.Any(track => track.SourceId == sourceId
-                && (track.ArtistCredits.Any(credit => credit.ArtistId == artist.Id)
-                || (track.Album != null && track.Album.ArtistCredits.Any(credit => credit.ArtistId == artist.Id)))));
+            IQueryable<Guid> sourceArtists = ArtistIdsOf(dbContext.Tracks.Where(track => track.SourceId == sourceId));
+            artists = artists.Where(artist => sourceArtists.Contains(artist.Id));
         }
 
         if (query.MyMusic)
@@ -112,12 +111,25 @@ internal sealed class ArtistRepository(WaveMpDbContext dbContext) : IArtistRepos
             IQueryable<Track> myTracks = MyMusicQueries.Tracks(
                 dbContext,
                 MyMusicQueries.RequireUser(query.UserId, "My music"));
-            artists = artists.Where(artist => myTracks.Any(track =>
-                track.ArtistCredits.Any(credit => credit.ArtistId == artist.Id)
-                || (track.Album != null && track.Album.ArtistCredits.Any(credit => credit.ArtistId == artist.Id))));
+            IQueryable<Guid> myArtists = ArtistIdsOf(myTracks);
+            artists = artists.Where(artist => myArtists.Contains(artist.Id));
         }
 
         return artists;
+    }
+
+    /// <summary>
+    /// The ids of the artists of the tracks or of their albums. Not correlated with the artist, so the database forms
+    /// the set once instead of searching the tracks again for every artist of the list.
+    /// </summary>
+    private IQueryable<Guid> ArtistIdsOf(IQueryable<Track> tracks)
+    {
+        return dbContext.TrackArtistCredits
+            .Where(credit => tracks.Any(track => track.Id == credit.TrackId))
+            .Select(credit => credit.ArtistId)
+            .Union(dbContext.AlbumArtistCredits
+                .Where(credit => tracks.Any(track => track.AlbumId == credit.AlbumId))
+                .Select(credit => credit.ArtistId));
     }
 
     /// <summary>
@@ -142,7 +154,8 @@ internal sealed class ArtistRepository(WaveMpDbContext dbContext) : IArtistRepos
     /// Albums count with the artist as one of their album artists or with tracks of the artist, tracks with the artist
     /// as one of their artists or on albums of the artist, like the artist filters of the album and track lists.
     /// Without a user, no artist is a favorite. The albums of the collage are added afterwards by <see
-    /// cref="WithCollagesAsync"/>.
+    /// cref="WithCollagesAsync"/>. Both counts start from the credits of the artist (index on the artist) and count
+    /// the union of both ways, so a count reads only the rows of the artist instead of every album or track.
     /// </summary>
     private IQueryable<ArtistRow> Project(IQueryable<Artist> artists, Guid? userId)
     {
@@ -150,12 +163,21 @@ internal sealed class ArtistRepository(WaveMpDbContext dbContext) : IArtistRepos
         return artists.Select(artist => new ArtistRow(
             artist.Id,
             artist.Name,
-            dbContext.Albums.Count(album =>
-                album.ArtistCredits.Any(credit => credit.ArtistId == artist.Id)
-                || album.Tracks.Any(track => track.ArtistCredits.Any(credit => credit.ArtistId == artist.Id))),
-            dbContext.Tracks.Count(track =>
-                track.ArtistCredits.Any(credit => credit.ArtistId == artist.Id)
-                || (track.Album != null && track.Album.ArtistCredits.Any(credit => credit.ArtistId == artist.Id))),
+            dbContext.AlbumArtistCredits
+                .Where(credit => credit.ArtistId == artist.Id)
+                .Select(credit => credit.AlbumId)
+                .Union(dbContext.TrackArtistCredits
+                    .Where(credit => credit.ArtistId == artist.Id && credit.Track!.AlbumId != null)
+                    .Select(credit => credit.Track!.AlbumId!.Value))
+                .Count(),
+            dbContext.TrackArtistCredits
+                .Where(credit => credit.ArtistId == artist.Id)
+                .Select(credit => credit.TrackId)
+                .Union(dbContext.AlbumArtistCredits
+                    .Where(credit => credit.ArtistId == artist.Id)
+                    .SelectMany(credit => credit.Album!.Tracks)
+                    .Select(track => track.Id))
+                .Count(),
             artist.FirstSeenAt,
             dbContext.Favorites.Any(favorite => favorite.UserId == user && favorite.ArtistId == artist.Id),
             new ArtistPictureRow(

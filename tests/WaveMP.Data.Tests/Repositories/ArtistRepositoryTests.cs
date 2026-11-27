@@ -292,6 +292,56 @@ public class ArtistRepositoryTests : LibraryDatabaseTests
             ("K.Flay", 1, 1));
     }
 
+    [Test]
+    public async Task ListAsync_ArtistCreditedOnAlbumAndOnItsSongs_CountsEachAlbumAndSongOnce()
+    {
+        LibrarySeed seed = new();
+        Artist simon = seed.Artist("Simon & Garfunkel");
+        Artist acdc = seed.Artist("AC/DC");
+        Artist beyonce = seed.Artist("Beyoncé");
+        Album duets = seed.Album("Duets", simon, moreAlbumArtists: [acdc]);
+        seed.Track("Both", simon, duets, moreArtists: [acdc]);
+        seed.Track("Guest", simon, duets, featuring: [beyonce]);
+        seed.Track("Single", beyonce, featuring: [acdc]);
+        await SaveAsync(seed);
+
+        Page<ArtistRow> page = await ListAsync(new ArtistListQuery(0, 100, ArtistSortField.Name, SortDirection.Asc));
+
+        // AC/DC: the album as album artist and with its song, the two songs of the album and the single.
+        page.Items.Select(artist => (artist.Name, artist.AlbumCount, artist.TrackCount)).Should().Equal(
+            ("AC/DC", 1, 3),
+            ("Beyoncé", 1, 2),
+            ("Simon & Garfunkel", 1, 2));
+    }
+
+    [Test]
+    public async Task ListAsync_MyMusicAndSource_FindTheFurtherArtistsOfSongsAndAlbums()
+    {
+        LibrarySeed seed = new();
+        User user = seed.User();
+        MediaSource source = seed.Source();
+        Artist kflay = seed.Artist("K.Flay");
+        Artist kda = seed.Artist("K/DA");
+        Artist guns = seed.Artist("Guns N' Roses");
+        Artist outside = seed.Artist("Outside");
+        Album album = seed.Album("Shared", kflay, moreAlbumArtists: [kda]);
+        Track song = seed.Track("Song", kflay, album, source: source, featuring: [guns]);
+        seed.Track("Elsewhere", outside);
+        seed.Favorite(user, song);
+        await SaveAsync(seed);
+
+        Page<ArtistRow> mine = await ListAsync(
+            new ArtistListQuery(0, 100, ArtistSortField.Name, SortDirection.Asc, UserId: user.Id, MyMusic: true));
+        Page<ArtistRow> ofSource = await ListAsync(
+            new ArtistListQuery(0, 100, ArtistSortField.Name, SortDirection.Asc, SourceId: source.Id));
+
+        // By the normalized name: "gunsnroses", "kda", "kflay".
+        string[] expected = ["Guns N' Roses", "K/DA", "K.Flay"];
+        mine.Items.Select(artist => artist.Name).Should().Equal(expected);
+        mine.Total.Should().Be(3);
+        ofSource.Items.Select(artist => artist.Name).Should().Equal(expected);
+    }
+
     private async Task<Page<ArtistRow>> ListAsync(ArtistListQuery query)
     {
         return await new ArtistRepository(CreateDbContext()).ListAsync(query);
