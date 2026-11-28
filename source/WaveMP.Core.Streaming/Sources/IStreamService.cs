@@ -42,7 +42,9 @@ public interface IStreamService
 
     /// <summary>
     /// The video of the track (see <see cref="GetVideoSourceAsync"/>) and whether a client with the
-    /// <paramref name="capabilities"/> plays it directly or needs it transcoded.
+    /// <paramref name="capabilities"/> plays it directly or needs it transcoded. A video with sound carries the gain
+    /// that brings its sound to the loudness of the audio file of the track (see
+    /// <see cref="VideoSource.LoudnessMatchDb"/>).
     /// </summary>
     Task<VideoPlaybackResult> DecideVideoAsync(
         Guid trackId,

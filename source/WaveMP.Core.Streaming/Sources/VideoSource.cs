@@ -28,6 +28,9 @@ namespace WaveMP.Core.Streaming.Sources;
 /// <param name="Segment">Where the song lies in the video (see <see cref="SongSegment"/>); the whole file if
 /// unknown.</param>
 /// <param name="LoudnessLufs">Integrated loudness of the sound of the video in LUFS, if measured.</param>
+/// <param name="LoudnessMatchDb">Gain in dB that brings the sound of the video to the loudness of the audio file of the
+/// same track (see <see cref="LoudnessMatch"/>); <c>null</c> without an audio file or sound, while a loudness is
+/// unknown and before <see cref="IStreamService.DecideVideoAsync"/> looked it up.</param>
 public sealed record VideoSource(
     Guid TrackId,
     Guid FileId,
@@ -47,7 +50,8 @@ public sealed record VideoSource(
     TimeSpan? Duration,
     bool MetadataComplete,
     SongSegment? Segment = null,
-    double? LoudnessLufs = null)
+    double? LoudnessLufs = null,
+    double? LoudnessMatchDb = null)
 {
     /// <summary>
     /// The former offset of the video against the audio in milliseconds (position of the video = position of the

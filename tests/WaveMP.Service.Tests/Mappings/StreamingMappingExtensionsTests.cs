@@ -184,6 +184,16 @@ public class StreamingMappingExtensionsTests
     }
 
     [Test]
+    public void ToDto_VideoWithLoudnessMatch_CarriesIt()
+    {
+        VideoSource source = Video() with { LoudnessLufs = -8.5, LoudnessMatchDb = -5.5 };
+
+        TrackVideoPlaybackDto dto = source.ToDto(VideoPlaybackDecision.DirectPlay, null);
+
+        (dto.LoudnessLufs, dto.LoudnessMatchDb).Should().Be(((double?)-8.5, (double?)-5.5));
+    }
+
+    [Test]
     public void ToDto_VideoOffset_CarriesTrackAndOffset()
     {
         var trackId = Guid.NewGuid();

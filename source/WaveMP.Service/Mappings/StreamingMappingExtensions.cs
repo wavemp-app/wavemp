@@ -76,6 +76,7 @@ public static class StreamingMappingExtensions
             CoverUrl = cover?.Url,
             SongSegment = (source.Segment ?? SongSegment.WholeFile).ToDto(),
             LoudnessLufs = source.LoudnessLufs,
+            LoudnessMatchDb = source.LoudnessMatchDb,
         };
     }
 

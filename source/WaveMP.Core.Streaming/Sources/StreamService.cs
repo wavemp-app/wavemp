@@ -132,12 +132,27 @@ internal sealed class StreamService(ITrackRepository tracks, IMediaFileLocator l
         CancellationToken cancellationToken = default)
     {
         VideoSourceResult result = await GetVideoSourceAsync(trackId, cancellationToken);
-        return result.IsFound
-            ? new VideoPlaybackResult(
-                result.Status,
-                result.Source,
-                VideoPlaybackDecider.Decide(result.Source, capabilities))
-            : new VideoPlaybackResult(result.Status, null, null);
+        if (!result.IsFound)
+        {
+            return new VideoPlaybackResult(result.Status, null, null);
+        }
+
+        VideoSource source = result.Source;
+        if (source.HasAudio)
+        {
+            TrackFileRow? audioRow = await tracks.FindPrimaryFileAsync(
+                trackId,
+                MediaFileKind.Audio,
+                cancellationToken);
+            source = source with
+            {
+                LoudnessMatchDb = LoudnessMatch.Between(
+                    audioRow?.File?.Analysis?.LoudnessLufs,
+                    source.LoudnessLufs),
+            };
+        }
+
+        return new VideoPlaybackResult(result.Status, source, VideoPlaybackDecider.Decide(source, capabilities));
     }
 
     private StreamSourceResult FromAudioFile(Guid trackId, MediaFile file, SongSegment segment)

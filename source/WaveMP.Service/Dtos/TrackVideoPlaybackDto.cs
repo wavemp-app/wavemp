@@ -102,4 +102,12 @@ public sealed class TrackVideoPlaybackDto
     /// Integrated loudness of the sound of the video in LUFS (EBU R 128), if measured.
     /// </summary>
     public double? LoudnessLufs { get; init; }
+
+    /// <summary>
+    /// For a video with sound of a track that also has an audio file: the gain in dB (at most 12 either way) that
+    /// brings the sound of the video to the loudness of the audio file. Clients that play the video with its sound
+    /// (e.g. on a casting device) play it at the level of the audio file with it. Null without an audio file or sound
+    /// and while a loudness is unknown.
+    /// </summary>
+    public double? LoudnessMatchDb { get; init; }
 }

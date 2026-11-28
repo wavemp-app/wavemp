@@ -332,6 +332,53 @@ public class StreamServiceTests
     }
 
     [Test]
+    public async Task DecideVideoAsync_VideoWithSoundAndAudioFile_CarriesTheLoudnessMatch()
+    {
+        var trackId = Guid.NewGuid();
+        MediaFile audio = AudioFile("Song.mp3", "mp3", "mp3", "mp3");
+        audio.Analysis = Analysis(audio, -14);
+        Track(trackId, audio);
+        MediaFile video = VideoFile("Song.mp4", "mov,mp4,m4a,3gp,3g2,mj2", "h264", "aac", "mp4");
+        video.Analysis = Analysis(video, -8.5);
+        Video(trackId, video);
+        WriteFile("Song.mp4", 10);
+
+        VideoPlaybackResult result = await _service.DecideVideoAsync(trackId, VideoCapabilities.None);
+
+        result.Source!.LoudnessLufs.Should().Be(-8.5);
+        result.Source.LoudnessMatchDb.Should().Be(-5.5);
+    }
+
+    [Test]
+    public async Task DecideVideoAsync_VideoWithoutAudioFile_HasNoLoudnessMatch()
+    {
+        var trackId = Guid.NewGuid();
+        Track(trackId, null);
+        MediaFile video = VideoFile("Song.mp4", "mov,mp4,m4a,3gp,3g2,mj2", "h264", "aac", "mp4");
+        video.Analysis = Analysis(video, -8.5);
+        Video(trackId, video);
+        WriteFile("Song.mp4", 10);
+
+        VideoPlaybackResult result = await _service.DecideVideoAsync(trackId, VideoCapabilities.None);
+
+        result.Source!.LoudnessMatchDb.Should().BeNull();
+    }
+
+    [Test]
+    public async Task DecideVideoAsync_VideoWithoutSound_DoesNotLookUpTheAudioFile()
+    {
+        var trackId = Guid.NewGuid();
+        Video(trackId, VideoFile("Song.mp4", "mov,mp4,m4a,3gp,3g2,mj2", "h264", null, "mp4"));
+        WriteFile("Song.mp4", 10);
+
+        VideoPlaybackResult result = await _service.DecideVideoAsync(trackId, VideoCapabilities.None);
+
+        result.Source!.LoudnessMatchDb.Should().BeNull();
+        await _tracks.DidNotReceive()
+            .FindPrimaryFileAsync(trackId, MediaFileKind.Audio, Arg.Any<CancellationToken>());
+    }
+
+    [Test]
     public async Task DecideAsync_TrackWithVideoOnly_TranscodesTheSoundOfTheVideo()
     {
         var trackId = Guid.NewGuid();
@@ -529,6 +576,21 @@ public class StreamServiceTests
             MetadataVersion = 1,
             FirstSeenAt = DateTimeOffset.UnixEpoch,
             ScannedAt = DateTimeOffset.UnixEpoch,
+        };
+    }
+
+    private static MediaFileAnalysis Analysis(MediaFile file, double loudnessLufs)
+    {
+        return new MediaFileAnalysis
+        {
+            MediaFileId = file.Id,
+            Version = 1,
+            FileSize = file.Size,
+            FileModifiedAt = file.ModifiedAt,
+            AnalyzedAt = DateTimeOffset.UnixEpoch,
+            Status = SongAnalysisStatus.Analyzed,
+            Method = SongSegmentMethod.WholeFile,
+            LoudnessLufs = loudnessLufs,
         };
     }
 }

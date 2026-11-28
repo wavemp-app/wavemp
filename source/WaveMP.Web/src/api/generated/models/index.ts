@@ -6128,6 +6128,7 @@ export function deserializeIntoTrackVideoPlayback(trackVideoPlayback: Partial<Tr
         "hasAudio": n => { trackVideoPlayback.hasAudio = n.getBooleanValue(); },
         "height": n => { trackVideoPlayback.height = n.getNumberValue(); },
         "loudnessLufs": n => { trackVideoPlayback.loudnessLufs = n.getNumberValue(); },
+        "loudnessMatchDb": n => { trackVideoPlayback.loudnessMatchDb = n.getNumberValue(); },
         "method": n => { trackVideoPlayback.method = n.getEnumValue<PlaybackMethod>(PlaybackMethodObject); },
         "offsetMilliseconds": n => { trackVideoPlayback.offsetMilliseconds = n.getNumberValue(); },
         "protocol": n => { trackVideoPlayback.protocol = n.getEnumValue<StreamProtocol>(StreamProtocolObject); },
@@ -12903,6 +12904,7 @@ export function serializeTrackVideoPlayback(writer: SerializationWriter, trackVi
     writer.writeBooleanValue("hasAudio", trackVideoPlayback.hasAudio);
     writer.writeNumberValue("height", trackVideoPlayback.height);
     writer.writeNumberValue("loudnessLufs", trackVideoPlayback.loudnessLufs);
+    writer.writeNumberValue("loudnessMatchDb", trackVideoPlayback.loudnessMatchDb);
     writer.writeEnumValue<PlaybackMethod>("method", trackVideoPlayback.method);
     writer.writeNumberValue("offsetMilliseconds", trackVideoPlayback.offsetMilliseconds);
     writer.writeEnumValue<StreamProtocol>("protocol", trackVideoPlayback.protocol);
@@ -14833,6 +14835,10 @@ export interface TrackVideoPlayback extends AdditionalDataHolder, Parsable {
      * Integrated loudness of the sound of the video in LUFS (EBU R 128), if measured.
      */
     loudnessLufs?: number | null;
+    /**
+     * For a video with sound of a track that also has an audio file: the gain in dB (at most 12 either way) that brings the sound of the video to the loudness of the audio file. Clients that play the video with its sound (e.g. on a casting device) play it at the level of the audio file with it. Null without an audio file or sound and while a loudness is unknown.
+     */
+    loudnessMatchDb?: number | null;
     /**
      * Direct play, remux or transcoding.
      */

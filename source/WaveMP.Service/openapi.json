@@ -27765,6 +27765,14 @@
             ],
             "description": "Integrated loudness of the sound of the video in LUFS (EBU R 128), if measured.",
             "format": "double"
+          },
+          "loudnessMatchDb": {
+            "type": [
+              "null",
+              "number"
+            ],
+            "description": "For a video with sound of a track that also has an audio file: the gain in dB (at most 12 either way) that brings the sound of the video to the loudness of the audio file. Clients that play the video with its sound (e.g. on a casting device) play it at the level of the audio file with it. Null without an audio file or sound and while a loudness is unknown.",
+            "format": "double"
           }
         },
         "description": "How the client plays the video of a track, and the signed URL of its stream."
