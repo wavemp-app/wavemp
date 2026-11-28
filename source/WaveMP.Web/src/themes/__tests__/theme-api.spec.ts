@@ -225,6 +225,44 @@ describe('breakpoint', () => {
     })
 })
 
+// Safari on iOS zooms into fields with text below 16 px; the base keeps them at least that large on
+// touch devices instead of locking the zoom of the page (THEMING.md, "Form fields on touch devices").
+describe('form fields on touch devices', () => {
+    it('are at least 16 pixels in the base, which no theme rule can undercut', () => {
+        const components = readCss(path.join(stylesDirectory, 'components.css'))
+        const block = /@media \(pointer: coarse\) \{([\s\S]*?)\n {4}\}/.exec(components)?.[1] ?? ''
+        expect(block).toMatch(/\binput:not\(/)
+        expect(block).toMatch(/\bselect,/)
+        expect(block).toMatch(/\btextarea \{/)
+        for (const type of ['checkbox', 'radio', 'range', 'file']) {
+            expect(block).toContain(`[type='${type}']`)
+        }
+        expect(block).toMatch(
+            /font-size: max\(16px, var\(--wmp-font-size-field-touch\)\) !important;/,
+        )
+        expect(tokens).toMatch(/--wmp-font-size-field-touch: 1rem;/)
+    })
+
+    it('are not shrunk below 16 pixels through the variable by a shipped theme', () => {
+        for (const theme of themes) {
+            const css = readCss(path.join(webAssets, theme.stylesheet))
+            for (const [, value] of css.matchAll(/--wmp-font-size-field-touch:\s*([^;]+);/g)) {
+                const rem = /^([\d.]+)rem$/.exec(value?.trim() ?? '')?.[1]
+                const px = /^([\d.]+)px$/.exec(value?.trim() ?? '')?.[1]
+                const pixels = rem ? Number(rem) * 16 : Number(px)
+                expect(pixels, `${theme.id}: ${value}`).toBeGreaterThanOrEqual(16)
+            }
+        }
+    })
+
+    it('keep the zoom of the page free', () => {
+        const html = read(path.join(sourceDirectory, '..', 'index.html'))
+        const viewport = /<meta name="viewport" content="([^"]*)"/.exec(html)?.[1]
+        expect(viewport).toBeDefined()
+        expect(viewport).not.toMatch(/maximum-scale|minimum-scale|user-scalable/)
+    })
+})
+
 /** Media features a theme may use besides the desktop breakpoint. */
 const themeMediaFeatures = [
     '(prefers-reduced-motion: reduce)',

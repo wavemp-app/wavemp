@@ -614,6 +614,34 @@
         border-color: var(--wmp-color-danger);
     }
 
+    /*
+     * Safari on iOS zooms the page into a field that gets the focus while its text is smaller than
+     * 16 pixels, and the page stays zoomed in afterwards. On touch devices every field a keyboard
+     * or picker opens for (text, search, password, numbers, dates, select lists, text areas, also
+     * the hidden field of the PIN pad) therefore takes --wmp-font-size-field-touch and never less
+     * than 16 pixels. The size is !important inside this layer, so no theme rule makes it smaller;
+     * a theme changes it through the variable. Desktops keep the sizes of the theme, and the zoom
+     * of the page stays free: no maximum-scale, no user-scalable=no.
+     */
+    @media (pointer: coarse) {
+        input:not(
+            [type='checkbox'],
+            [type='radio'],
+            [type='range'],
+            [type='color'],
+            [type='file'],
+            [type='hidden'],
+            [type='button'],
+            [type='submit'],
+            [type='reset'],
+            [type='image']
+        ),
+        select,
+        textarea {
+            font-size: max(16px, var(--wmp-font-size-field-touch)) !important;
+        }
+    }
+
     /* --- Artists of songs and albums -------------------------------------------------------- */
 
     /* Names in lists and the player read like the text around them; hover shows the link. */

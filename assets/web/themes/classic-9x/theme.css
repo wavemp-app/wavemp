@@ -63,6 +63,8 @@
      * One pixel face for the whole window, on phones and on the desktop: the native size for
      * every text, twice the native size only for the titles of pages. "Bold" is the one weight
      * of the font; 1.28 makes lines of 16 px at the native size and of 32 px at twice it.
+     * Fields on touch devices keep the 16 px of the base (--wmp-font-size-field-touch), so Safari
+     * on iOS does not zoom into them; there the face is a little less crisp than at 25 px.
      */
     --wmp-font-family: "W95FA", system-ui, sans-serif;
     --wmp-font-size-xs: 0.78125rem;

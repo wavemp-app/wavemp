@@ -309,6 +309,8 @@
         --wmp-font-weight-normal: 400;
         --wmp-font-weight-bold: 600;
         --wmp-line-height: 1.4;
+        /* Fields on touch devices; below 16 px Safari on iOS zooms into them (components.css). */
+        --wmp-font-size-field-touch: 1rem;
 
         /*
          * Layout options (desktop only): the app reads them from :root and changes the DOM; the
