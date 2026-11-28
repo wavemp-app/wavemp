@@ -404,6 +404,21 @@ public class LyricsApiTests
     }
 
     [Test]
+    public async Task SearchTrackLyricsOnlineMatches_EmptyArtist_SearchesByTitleOnly()
+    {
+        await SwitchOnAsync();
+
+        LyricsOnlineMatchesDto found = await _admin.GetJsonAsync<LyricsOnlineMatchesDto>(
+            $"/api/v1/tracks/{Track("Chosen").Id}/lyrics/online-matches?title=Other%20title&artist=");
+
+        found.Title.Should().Be("Other title");
+        found.Artist.Should().BeNull();
+        await _lrclib.Received().SearchAsync(
+            Arg.Is<LrclibQuery>(query => query.TrackName == "Other title" && query.ArtistName == null),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Test]
     public async Task SearchTrackLyricsOnlineMatches_SwitchedOffOrUnknownTrack_SaysWhy()
     {
         await PatchSettingsAsync("""{ "downloadLyrics": false }""");

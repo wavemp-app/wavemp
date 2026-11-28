@@ -114,7 +114,9 @@ public sealed class LyricsController(
         [FromQuery] string? artist,
         CancellationToken cancellationToken)
     {
-        LyricsSearchResult result = await searches.SearchAsync(id, title, artist, cancellationToken);
+        // Model binding turns an empty value into null, but an empty artist means searching by title only.
+        string? searchedArtist = artist ?? (Request.Query.ContainsKey("artist") ? string.Empty : null);
+        LyricsSearchResult result = await searches.SearchAsync(id, title, searchedArtist, cancellationToken);
         return result.Status switch
         {
             LyricsSearchStatus.Searched => Ok(result.ToDto()),
@@ -148,7 +150,7 @@ public sealed class LyricsController(
     [HttpPut("online-match", Name = "ChooseTrackLyricsOnlineMatch")]
     [Authorize(Policy = AuthorizationPolicies.Admin)]
     [ProducesResponseType<LyricsDto>(StatusCodes.Status200OK, "application/json")]
-    [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest, "application/problem+json")]
+    [ProducesResponseType<ValidationProblemDto>(StatusCodes.Status400BadRequest, "application/problem+json")]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status403Forbidden, "application/problem+json")]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound, "application/problem+json")]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict, "application/problem+json")]
@@ -183,7 +185,7 @@ public sealed class LyricsController(
     [HttpPut(Name = "UploadTrackLyrics")]
     [Authorize(Policy = AuthorizationPolicies.Admin)]
     [ProducesResponseType<LyricsUploadDto>(StatusCodes.Status200OK, "application/json")]
-    [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest, "application/problem+json")]
+    [ProducesResponseType<ValidationProblemDto>(StatusCodes.Status400BadRequest, "application/problem+json")]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status403Forbidden, "application/problem+json")]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound, "application/problem+json")]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict, "application/problem+json")]
