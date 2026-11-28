@@ -721,6 +721,15 @@ export interface CacheUsage extends AdditionalDataHolder, Parsable {
     transcodes?: CacheAreaUsage | null;
 }
 /**
+ * The track of the online lyrics service (LRCLIB) whose lyrics a track gets.
+ */
+export interface ChooseLyricsOnlineMatch extends AdditionalDataHolder, Parsable {
+    /**
+     * Id of the track at LRCLIB, from the search (`GET /api/v1/tracks/{id}/lyrics/online-matches`).
+     */
+    matchId?: number | null;
+}
+/**
  * Connects a scrobbling service to the current profile.
  */
 export interface ConnectScrobblingService extends AdditionalDataHolder, Parsable {
@@ -1089,6 +1098,15 @@ export function createCacheSettingsFromDiscriminatorValue(parseNode: ParseNode |
 // @ts-ignore
 export function createCacheUsageFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
     return deserializeIntoCacheUsage;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {ChooseLyricsOnlineMatch}
+ */
+// @ts-ignore
+export function createChooseLyricsOnlineMatchFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoChooseLyricsOnlineMatch;
 }
 /**
  * Creates a new instance of the appropriate class based on discriminator value
@@ -1561,6 +1579,33 @@ export function createLyricsLookupFromDiscriminatorValue(parseNode: ParseNode | 
 // @ts-ignore
 export function createLyricsLookupSummaryFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
     return deserializeIntoLyricsLookupSummary;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {LyricsOnlineMatches}
+ */
+// @ts-ignore
+export function createLyricsOnlineMatchesFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoLyricsOnlineMatches;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {LyricsOnlineMatch}
+ */
+// @ts-ignore
+export function createLyricsOnlineMatchFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoLyricsOnlineMatch;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {LyricsUpload}
+ */
+// @ts-ignore
+export function createLyricsUploadFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoLyricsUpload;
 }
 /**
  * Creates a new instance of the appropriate class based on discriminator value
@@ -2942,6 +2987,15 @@ export function createUpdateVisualizationSettingsFromDiscriminatorValue(parseNod
     return deserializeIntoUpdateVisualizationSettings;
 }
 /**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {UploadLyrics}
+ */
+// @ts-ignore
+export function createUploadLyricsFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoUploadLyrics;
+}
+/**
  * Creates a user (profile).
  */
 export interface CreateUser extends AdditionalDataHolder, Parsable {
@@ -3558,6 +3612,17 @@ export function deserializeIntoCacheUsage(cacheUsage: Partial<CacheUsage> | unde
         "maxSizeBytes": n => { cacheUsage.maxSizeBytes = n.getNumberValue(); },
         "sizeBytes": n => { cacheUsage.sizeBytes = n.getNumberValue(); },
         "transcodes": n => { cacheUsage.transcodes = n.getObjectValue<CacheAreaUsage>(createCacheAreaUsageFromDiscriminatorValue); },
+    }
+}
+/**
+ * The deserialization information for the current model
+ * @param ChooseLyricsOnlineMatch The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoChooseLyricsOnlineMatch(chooseLyricsOnlineMatch: Partial<ChooseLyricsOnlineMatch> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "matchId": n => { chooseLyricsOnlineMatch.matchId = n.getNumberValue(); },
     }
 }
 /**
@@ -4261,6 +4326,7 @@ export function deserializeIntoListGroupPage(listGroupPage: Partial<ListGroupPag
 // @ts-ignore
 export function deserializeIntoLyrics(lyrics: Partial<Lyrics> | undefined = {}) : Record<string, (node: ParseNode) => void> {
     return {
+        "fromOtherVersion": n => { lyrics.fromOtherVersion = n.getBooleanValue(); },
         "lines": n => { lyrics.lines = n.getCollectionOfObjectValues<LyricsLine>(createLyricsLineFromDiscriminatorValue); },
         "source": n => { lyrics.source = n.getEnumValue<LyricsSource>(LyricsSourceObject); },
         "type": n => { lyrics.type = n.getEnumValue<LyricsType>(LyricsTypeObject); },
@@ -4304,6 +4370,48 @@ export function deserializeIntoLyricsLookupSummary(lyricsLookupSummary: Partial<
         "instrumentalCount": n => { lyricsLookupSummary.instrumentalCount = n.getNumberValue(); },
         "lookUpAgainAfterMinutes": n => { lyricsLookupSummary.lookUpAgainAfterMinutes = n.getNumberValue(); },
         "notFoundCount": n => { lyricsLookupSummary.notFoundCount = n.getNumberValue(); },
+    }
+}
+/**
+ * The deserialization information for the current model
+ * @param LyricsOnlineMatch The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoLyricsOnlineMatch(lyricsOnlineMatch: Partial<LyricsOnlineMatch> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "album": n => { lyricsOnlineMatch.album = n.getStringValue(); },
+        "artist": n => { lyricsOnlineMatch.artist = n.getStringValue(); },
+        "durationSeconds": n => { lyricsOnlineMatch.durationSeconds = n.getNumberValue(); },
+        "fitsDuration": n => { lyricsOnlineMatch.fitsDuration = n.getBooleanValue(); },
+        "id": n => { lyricsOnlineMatch.id = n.getNumberValue(); },
+        "synchronized": n => { lyricsOnlineMatch.synchronized = n.getBooleanValue(); },
+        "title": n => { lyricsOnlineMatch.title = n.getStringValue(); },
+    }
+}
+/**
+ * The deserialization information for the current model
+ * @param LyricsOnlineMatches The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoLyricsOnlineMatches(lyricsOnlineMatches: Partial<LyricsOnlineMatches> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "artist": n => { lyricsOnlineMatches.artist = n.getStringValue(); },
+        "matches": n => { lyricsOnlineMatches.matches = n.getCollectionOfObjectValues<LyricsOnlineMatch>(createLyricsOnlineMatchFromDiscriminatorValue); },
+        "title": n => { lyricsOnlineMatches.title = n.getStringValue(); },
+    }
+}
+/**
+ * The deserialization information for the current model
+ * @param LyricsUpload The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoLyricsUpload(lyricsUpload: Partial<LyricsUpload> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "lyrics": n => { lyricsUpload.lyrics = n.getObjectValue<Lyrics>(createLyricsFromDiscriminatorValue); },
+        "publication": n => { lyricsUpload.publication = n.getEnumValue<LyricsPublication>(LyricsPublicationObject); },
     }
 }
 /**
@@ -6424,6 +6532,18 @@ export function deserializeIntoUpdateVisualizationSettings(updateVisualizationSe
 }
 /**
  * The deserialization information for the current model
+ * @param UploadLyrics The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoUploadLyrics(uploadLyrics: Partial<UploadLyrics> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "publish": n => { uploadLyrics.publish = n.getBooleanValue(); },
+        "text": n => { uploadLyrics.text = n.getStringValue(); },
+    }
+}
+/**
+ * The deserialization information for the current model
  * @param User The instance to deserialize into.
  * @returns {Record<string, (node: ParseNode) => void>}
  */
@@ -7514,6 +7634,10 @@ export interface ListGroupPage extends AdditionalDataHolder, Parsable {
  */
 export interface Lyrics extends AdditionalDataHolder, Parsable {
     /**
+     * Whether the lyrics belong to another version of the song (its duration differs, e.g. the lyrics of the single for the longer music video), so they are static: their times would not fit the track.
+     */
+    fromOtherVersion?: boolean | null;
+    /**
      * The lines; synchronized lines are sorted by the time they start.
      */
     lines?: LyricsLine[] | null;
@@ -7582,8 +7706,72 @@ export interface LyricsLookupSummary extends AdditionalDataHolder, Parsable {
      */
     notFoundCount?: number | null;
 }
+/**
+ * A track of the online lyrics service (LRCLIB) with lyrics.
+ */
+export interface LyricsOnlineMatch extends AdditionalDataHolder, Parsable {
+    /**
+     * The album property
+     */
+    album?: string | null;
+    /**
+     * The artist property
+     */
+    artist?: string | null;
+    /**
+     * Duration in seconds, if known.
+     */
+    durationSeconds?: number | null;
+    /**
+     * Whether its duration fits the track (at most 3 seconds apart, or one of them unknown). Lyrics of a track whose duration does not fit are kept without their times, as lyrics of another version.
+     */
+    fitsDuration?: boolean | null;
+    /**
+     * Id of the track at LRCLIB; choose it with `PUT /api/v1/tracks/{id}/lyrics/online-match`.
+     */
+    id?: number | null;
+    /**
+     * Whether the track has synchronized lyrics.
+     */
+    synchronized?: boolean | null;
+    /**
+     * The title property
+     */
+    title?: string | null;
+}
+/**
+ * The tracks with lyrics a search in the online lyrics service (LRCLIB) found for a track, the best first, and what was searched for. LRCLIB returns at most 20 tracks, so the list is not paged.
+ */
+export interface LyricsOnlineMatches extends AdditionalDataHolder, Parsable {
+    /**
+     * The artist that was searched for, or `null` for a search by title only.
+     */
+    artist?: string | null;
+    /**
+     * The tracks with lyrics: those with the searched names first, then those whose duration fits the track, then those with synchronized lyrics.
+     */
+    matches?: LyricsOnlineMatch[] | null;
+    /**
+     * The title that was searched for.
+     */
+    title?: string | null;
+}
+export type LyricsPublication = (typeof LyricsPublicationObject)[keyof typeof LyricsPublicationObject];
 export type LyricsSource = (typeof LyricsSourceObject)[keyof typeof LyricsSourceObject];
 export type LyricsType = (typeof LyricsTypeObject)[keyof typeof LyricsTypeObject];
+/**
+ * The result of uploading lyrics: the lyrics the track has now and what publishing them to LRCLIB did.
+ */
+export interface LyricsUpload extends AdditionalDataHolder, Parsable {
+    /**
+     * The lyrics of the track after the upload.
+     */
+    lyrics?: Lyrics | null;
+    /**
+     * What publishing to LRCLIB did; the lyrics stay saved if it failed.
+     */
+    publication?: LyricsPublication | null;
+}
 /**
  * A word or syllable of a word-synchronized line. Its text keeps the spaces around it, so the words of a line put together give the text of the line.
  */
@@ -9896,6 +10084,18 @@ export function serializeCacheUsage(writer: SerializationWriter, cacheUsage: Par
 }
 /**
  * Serializes information the current object
+ * @param ChooseLyricsOnlineMatch The instance to serialize from.
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeChooseLyricsOnlineMatch(writer: SerializationWriter, chooseLyricsOnlineMatch: Partial<ChooseLyricsOnlineMatch> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!chooseLyricsOnlineMatch || isSerializingDerivedType) { return; }
+    writer.writeNumberValue("matchId", chooseLyricsOnlineMatch.matchId);
+    writer.writeAdditionalData(chooseLyricsOnlineMatch.additionalData);
+}
+/**
+ * Serializes information the current object
  * @param ConnectScrobblingService The instance to serialize from.
  * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
  * @param writer Serialization writer to use to serialize this model
@@ -10644,6 +10844,7 @@ export function serializeListGroupPage(writer: SerializationWriter, listGroupPag
 // @ts-ignore
 export function serializeLyrics(writer: SerializationWriter, lyrics: Partial<Lyrics> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
     if (!lyrics || isSerializingDerivedType) { return; }
+    writer.writeBooleanValue("fromOtherVersion", lyrics.fromOtherVersion);
     writer.writeCollectionOfObjectValues<LyricsLine>("lines", lyrics.lines, serializeLyricsLine);
     writer.writeEnumValue<LyricsSource>("source", lyrics.source);
     writer.writeEnumValue<LyricsType>("type", lyrics.type);
@@ -10691,6 +10892,51 @@ export function serializeLyricsLookupSummary(writer: SerializationWriter, lyrics
     writer.writeNumberValue("lookUpAgainAfterMinutes", lyricsLookupSummary.lookUpAgainAfterMinutes);
     writer.writeNumberValue("notFoundCount", lyricsLookupSummary.notFoundCount);
     writer.writeAdditionalData(lyricsLookupSummary.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param LyricsOnlineMatch The instance to serialize from.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeLyricsOnlineMatch(writer: SerializationWriter, lyricsOnlineMatch: Partial<LyricsOnlineMatch> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!lyricsOnlineMatch || isSerializingDerivedType) { return; }
+    writer.writeStringValue("album", lyricsOnlineMatch.album);
+    writer.writeStringValue("artist", lyricsOnlineMatch.artist);
+    writer.writeNumberValue("durationSeconds", lyricsOnlineMatch.durationSeconds);
+    writer.writeBooleanValue("fitsDuration", lyricsOnlineMatch.fitsDuration);
+    writer.writeNumberValue("id", lyricsOnlineMatch.id);
+    writer.writeBooleanValue("synchronized", lyricsOnlineMatch.synchronized);
+    writer.writeStringValue("title", lyricsOnlineMatch.title);
+    writer.writeAdditionalData(lyricsOnlineMatch.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param LyricsOnlineMatches The instance to serialize from.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeLyricsOnlineMatches(writer: SerializationWriter, lyricsOnlineMatches: Partial<LyricsOnlineMatches> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!lyricsOnlineMatches || isSerializingDerivedType) { return; }
+    writer.writeStringValue("artist", lyricsOnlineMatches.artist);
+    writer.writeCollectionOfObjectValues<LyricsOnlineMatch>("matches", lyricsOnlineMatches.matches, serializeLyricsOnlineMatch);
+    writer.writeStringValue("title", lyricsOnlineMatches.title);
+    writer.writeAdditionalData(lyricsOnlineMatches.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param LyricsUpload The instance to serialize from.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeLyricsUpload(writer: SerializationWriter, lyricsUpload: Partial<LyricsUpload> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!lyricsUpload || isSerializingDerivedType) { return; }
+    writer.writeObjectValue<Lyrics>("lyrics", lyricsUpload.lyrics, serializeLyrics);
+    writer.writeEnumValue<LyricsPublication>("publication", lyricsUpload.publication);
+    writer.writeAdditionalData(lyricsUpload.additionalData);
 }
 /**
  * Serializes information the current object
@@ -12955,6 +13201,19 @@ export function serializeUpdateVisualizationSettings(writer: SerializationWriter
 /**
  * Serializes information the current object
  * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param UploadLyrics The instance to serialize from.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeUploadLyrics(writer: SerializationWriter, uploadLyrics: Partial<UploadLyrics> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!uploadLyrics || isSerializingDerivedType) { return; }
+    writer.writeBooleanValue("publish", uploadLyrics.publish);
+    writer.writeStringValue("text", uploadLyrics.text);
+    writer.writeAdditionalData(uploadLyrics.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
  * @param User The instance to serialize from.
  * @param writer Serialization writer to use to serialize this model
  */
@@ -14947,6 +15206,19 @@ export interface UpdateVisualizationSettings extends AdditionalDataHolder, Parsa
     quality?: VisualizationQuality | null;
 }
 /**
+ * Lyrics an admin uploads for a track.
+ */
+export interface UploadLyrics extends AdditionalDataHolder, Parsable {
+    /**
+     * Whether the lyrics are also published to LRCLIB, with the title, artists, album and duration of the track.
+     */
+    publish?: boolean | null;
+    /**
+     * The lyrics in the LRC format (lines with timestamps, also enhanced LRC with word timestamps) or as plain text, at most 262144 characters; at least one line has to have text.
+     */
+    text?: string | null;
+}
+/**
  * A user (profile) as managed by admins.
  */
 export interface User extends AdditionalDataHolder, Parsable {
@@ -15550,6 +15822,19 @@ export const LyricsLookupStatusObject = {
     NotFound: "NotFound",
     Instrumental: "Instrumental",
     NotNeeded: "NotNeeded",
+    Uploaded: "Uploaded",
+} as const;
+/**
+ * What publishing to LRCLIB did; the lyrics stay saved if it failed.
+ */
+export const LyricsPublicationObject = {
+    NotRequested: "NotRequested",
+    Published: "Published",
+    Disabled: "Disabled",
+    MissingMetadata: "MissingMetadata",
+    Rejected: "Rejected",
+    RateLimited: "RateLimited",
+    Unavailable: "Unavailable",
 } as const;
 /**
  * Where the lyrics come from.
@@ -15557,6 +15842,7 @@ export const LyricsLookupStatusObject = {
 export const LyricsSourceObject = {
     File: "File",
     Download: "Download",
+    Upload: "Upload",
     Tags: "Tags",
 } as const;
 /**
@@ -15874,6 +16160,8 @@ export const ProblemCodeObject = {
     LyricsRate_limited: "lyrics.rate_limited",
     LyricsLookup_not_found: "lyrics.lookup_not_found",
     LyricsLookup_found_lyrics: "lyrics.lookup_found_lyrics",
+    LyricsFile_not_writable: "lyrics.file_not_writable",
+    LyricsMatch_not_found: "lyrics.match_not_found",
     ScrobblingNot_configured: "scrobbling.not_configured",
     ScrobblingToken_invalid: "scrobbling.token_invalid",
     ScrobblingService_unavailable: "scrobbling.service_unavailable",

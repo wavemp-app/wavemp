@@ -281,6 +281,7 @@
     "viewLyrics": "Songtext",
     "lyricsLabel": "Songtext des Titels",
     "lyricsBreak": "Instrumentaler Teil",
+    "lyricsOtherVersion": "Aus einer anderen Version des Titels, nicht zu dieser synchronisiert",
     "albumSeparator": " – "
   },
   "queuePane": {
@@ -2592,6 +2593,7 @@
     "downloading": "Songtext wird heruntergeladen",
     "downloaded": "Der Songtext ist heruntergeladen.",
     "loadError": "Der Songtext konnte nicht geladen werden.",
+    "otherVersion": "Dieser Songtext stammt aus einer anderen Version des Titels mit anderer Länge und ist deshalb nicht zu dieser synchronisiert.",
     "types": {
       "lineSynchronized": "Zeilenweise synchronisiert",
       "wordSynchronized": "Wortweise synchronisiert",
@@ -2600,6 +2602,7 @@
     "sources": {
       "file": "aus der Songtext-Datei",
       "download": "heruntergeladen und in der Datenbank gespeichert",
+      "upload": "hochgeladen und in der Datenbank gespeichert",
       "tags": "aus den Tags der Datei"
     },
     "errors": {
@@ -2609,7 +2612,10 @@
       "instrumental": "LRCLIB führt diesen Titel als instrumental.",
       "serviceUnavailable": "LRCLIB ist nicht erreichbar. Prüfe die Internetverbindung des Servers.",
       "rateLimited": "LRCLIB lehnt Anfragen gerade ab. Versuche es später noch einmal.",
-      "failed": "Der Songtext konnte nicht heruntergeladen werden."
+      "failed": "Der Songtext konnte nicht heruntergeladen werden.",
+      "fileNotWritable": "Die Songtext-Datei des Titels kann nicht ersetzt werden. Prüfe die Berechtigungen des Medienordners.",
+      "matchNotFound": "LRCLIB hat für diesen Eintrag keinen Songtext mehr. Suche erneut.",
+      "trackNotFound": "Den Titel gibt es nicht mehr."
     },
     "lookup": {
       "notFound": "LRCLIB hatte am {date} keinen Songtext für diesen Titel.",
@@ -2620,6 +2626,56 @@
       "errors": {
         "foundLyrics": "Die letzte Suche hat einen Songtext gefunden. Nur Ergebnisse ohne Songtext lassen sich vergessen.",
         "failed": "Das Ergebnis konnte nicht vergessen werden."
+      }
+    },
+    "search": {
+      "open": "Songtext suchen",
+      "title": "Songtext auf LRCLIB suchen",
+      "formLabel": "Suchbegriffe",
+      "titleLabel": "Titel",
+      "artistLabel": "Interpret",
+      "artistHint": "Leer lassen, um nur nach dem Titel zu suchen.",
+      "titleRequired": "Gib einen Titel ein.",
+      "search": "Suchen",
+      "searching": "LRCLIB wird durchsucht",
+      "matches": "Ergebnisse",
+      "noMatches": "LRCLIB hat keinen Songtext für diesen Titel und Interpreten. Ändere die Suchbegriffe und suche erneut.",
+      "synchronized": "Synchronisiert",
+      "static": "Nur Text",
+      "otherVersion": "Andere Länge",
+      "otherVersionHint": "Dieser Eintrag ist anders lang als der Titel. Übernommen wird nur sein Text, ohne Zeiten.",
+      "source": "Die Songtexte stammen von LRCLIB, einer freien Datenbank für Songtexte. Der gewählte Songtext ersetzt den des Titels.",
+      "apply": "Songtext übernehmen",
+      "applying": "Songtext wird gespeichert",
+      "saved": "Der Songtext ist gespeichert.",
+      "failed": "Die Suche hat nicht geklappt. Versuche es erneut."
+    },
+    "upload": {
+      "open": "Songtext hochladen",
+      "title": "Songtext hochladen",
+      "hint": "Füge den Songtext ein oder wähle eine Datei. Zeilen mit Zeiten wie [01:23.45] (LRC) folgen der Musik. Der Songtext ersetzt den des Titels.",
+      "chooseFile": "Datei wählen",
+      "fileChosen": "Aus {name} gelesen",
+      "fileUnreadable": "Die Datei konnte nicht gelesen werden.",
+      "textLabel": "Songtext",
+      "placeholder": "[00:12.00]Erste Zeile\n[00:15.50]Zweite Zeile",
+      "synchronized": "Synchronisiert: Die Zeilen haben Zeiten.",
+      "static": "Nur Text: Die Zeilen haben keine Zeiten.",
+      "empty": "Gib den Songtext ein oder wähle eine Datei.",
+      "tooLong": "Der Songtext ist zu lang.",
+      "publish": "Auch auf LRCLIB veröffentlichen",
+      "publishHint": "Teilt den Songtext über LRCLIB mit allen. Braucht Titel, Interpret, Album und Länge des Titels und kann einige Minuten dauern.",
+      "save": "Songtext speichern",
+      "saving": "Songtext wird gespeichert",
+      "publishing": "Songtext wird gespeichert und veröffentlicht",
+      "saved": "Der Songtext ist gespeichert.",
+      "publication": {
+        "published": "Der Songtext ist auf LRCLIB veröffentlicht.",
+        "disabled": "Der Songtext wurde nicht veröffentlicht, weil der Download von Songtexten in den Bibliothekseinstellungen ausgeschaltet ist.",
+        "missingMetadata": "Der Songtext wurde nicht veröffentlicht, weil LRCLIB Titel, Interpret, Album und Länge des Titels braucht.",
+        "rejected": "LRCLIB hat den Songtext nicht angenommen.",
+        "rateLimited": "LRCLIB lehnt Anfragen eine Weile ab. Der Songtext wurde nicht veröffentlicht.",
+        "unavailable": "LRCLIB ist nicht erreichbar. Der Songtext wurde nicht veröffentlicht."
       }
     }
   },

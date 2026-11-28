@@ -23,6 +23,7 @@ import {
  * only sets states and runtime variables; how they look is up to the theme. With
  * prefers-reduced-motion the view jumps instead of scrolling smoothly and static lyrics do not move
  * on their own. After the listener scrolls, the view waits a moment before it follows again.
+ * Lyrics of another version of the song carry a note (lyrics-note) that they do not follow it.
  */
 const props = withDefaults(
     defineProps<{
@@ -285,6 +286,13 @@ onBeforeUnmount(stop)
         :data-state="synchronized ? 'synchronized' : 'static'"
         :data-words="words ? 'true' : undefined"
     >
+        <p
+            v-if="lyrics?.fromOtherVersion && !synchronized"
+            data-part="lyrics-note"
+            data-item="other-version"
+        >
+            <span data-part="label">{{ t('nowPlaying.lyricsOtherVersion') }}</span>
+        </p>
         <ol
             ref="list"
             data-part="lyrics-lines"

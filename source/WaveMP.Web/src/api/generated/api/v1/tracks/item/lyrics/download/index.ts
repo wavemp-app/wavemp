@@ -11,7 +11,7 @@ import { type BaseRequestBuilder, type Parsable, type ParsableFactory, type Requ
  */
 export interface DownloadRequestBuilder extends BaseRequestBuilder<DownloadRequestBuilder> {
     /**
-     * Downloads the lyrics of a track from LRCLIB, for admins only, and returns the lyrics the track has afterwards. LRCLIB is asked by title, artist, album and duration; synchronized lyrics are preferred. The lyrics are saved as lyrics file with the base name of the track if its folder is writable, otherwise in the database. Lyrics of the tags or the database are replaced; a lyrics file never is. Requests to LRCLIB are spaced, so the answer may take a moment.
+     * Downloads the lyrics of a track from LRCLIB, for admins only, and returns the lyrics the track has afterwards. LRCLIB is asked by title, artist, album and duration, then searched by title and artist, by the title without additions such as "(Remastered)" or "(Official Video)" and the main artist, and by the free-text search; a track without artist takes artist and title from its file name ("Artist - Title"). Synchronized lyrics are preferred. If no track of LRCLIB fits the duration, the plain lyrics of another version of the song (same title and artist) are taken, marked with `fromOtherVersion`. The lyrics are saved as lyrics file with the base name of the track if its folder is writable, otherwise in the database. Lyrics of the tags or the database are replaced; a lyrics file never is. Requests to LRCLIB are spaced, so the answer may take a moment.
      * @param requestConfiguration Configuration for the request such as headers, query parameters, and middleware options.
      * @returns {Promise<Lyrics>}
      * @throws {ProblemDetails} error when the service returns a 401 status code
@@ -22,7 +22,7 @@ export interface DownloadRequestBuilder extends BaseRequestBuilder<DownloadReque
      */
      post(requestConfiguration?: RequestConfiguration<object> | undefined) : Promise<Lyrics | undefined>;
     /**
-     * Downloads the lyrics of a track from LRCLIB, for admins only, and returns the lyrics the track has afterwards. LRCLIB is asked by title, artist, album and duration; synchronized lyrics are preferred. The lyrics are saved as lyrics file with the base name of the track if its folder is writable, otherwise in the database. Lyrics of the tags or the database are replaced; a lyrics file never is. Requests to LRCLIB are spaced, so the answer may take a moment.
+     * Downloads the lyrics of a track from LRCLIB, for admins only, and returns the lyrics the track has afterwards. LRCLIB is asked by title, artist, album and duration, then searched by title and artist, by the title without additions such as "(Remastered)" or "(Official Video)" and the main artist, and by the free-text search; a track without artist takes artist and title from its file name ("Artist - Title"). Synchronized lyrics are preferred. If no track of LRCLIB fits the duration, the plain lyrics of another version of the song (same title and artist) are taken, marked with `fromOtherVersion`. The lyrics are saved as lyrics file with the base name of the track if its folder is writable, otherwise in the database. Lyrics of the tags or the database are replaced; a lyrics file never is. Requests to LRCLIB are spaced, so the answer may take a moment.
      * @param requestConfiguration Configuration for the request such as headers, query parameters, and middleware options.
      * @returns {RequestInformation}
      */

@@ -589,6 +589,17 @@
         color: var(--wmp-color-text);
     }
 
+    /* Text over several lines (a textarea): as wide as its field, higher on request. */
+    [data-part='input'][data-variant='multiline'] {
+        box-sizing: border-box;
+        inline-size: 100%;
+        min-block-size: calc(var(--wmp-field-height) * 4);
+        padding-block: var(--wmp-space-xs);
+        font: inherit;
+        line-height: 1.45;
+        resize: vertical;
+    }
+
     [data-part='field-hint'] {
         color: var(--wmp-color-text-muted);
         font-size: var(--wmp-font-size-s);
@@ -2915,6 +2926,18 @@
         inline-size: min(46rem, calc(100vw - 2rem));
     }
 
+    [data-part='dialog'][data-item='lyrics-search'] {
+        inline-size: min(46rem, calc(100vw - 2rem));
+    }
+
+    [data-part='dialog'][data-item='lyrics-upload'] {
+        inline-size: min(40rem, calc(100vw - 2rem));
+    }
+
+    [data-part='form'][data-item='lyrics-upload'] {
+        max-inline-size: none;
+    }
+
     [data-part='online-search'] {
         container: wavemp-online-search / inline-size;
         display: grid;
@@ -2926,6 +2949,20 @@
         display: grid;
         gap: var(--wmp-space-s);
         min-inline-size: 0;
+    }
+
+    /* Search terms side by side with the button at the bottom; the note spans the row below. */
+    [data-part='online-search-form'] {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+        align-items: end;
+        gap: var(--wmp-space-s) var(--wmp-space-m);
+        min-inline-size: 0;
+    }
+
+    [data-part='online-search-form'] > [data-part='form-note'] {
+        grid-column: 1 / -1;
+        margin: 0;
     }
 
     [data-part='online-section-title'] {
@@ -3079,6 +3116,19 @@
     [data-part='online-compare-row'][data-field='cover'] [data-part='online-compare-suggested'] {
         color: var(--wmp-color-text-muted);
         font-weight: var(--wmp-font-weight-normal);
+    }
+
+    /* Narrow: the search terms one below the other. */
+    @container wavemp-online-search (width < 30rem) {
+        [data-part='online-search-form'] {
+            grid-template-columns: minmax(0, 1fr);
+        }
+
+        /* The note on the artist follows its field, the button comes last. */
+        [data-part='online-search-form'] > [data-part='button'] {
+            order: 1;
+            justify-self: start;
+        }
     }
 
     /* Narrow: the field with its checkbox spans the row, current and suggested values below. */
@@ -4337,6 +4387,30 @@
 
     [data-part='lyrics'][data-state~='static'] > [data-part='lyrics-lines'] {
         padding-block: var(--wmp-space-xl);
+    }
+
+    /*
+     * A quiet caption above the lines, e.g. for lyrics of another version of the song: the view
+     * stacks it and the lines, which keep the rest of the height and scroll below it.
+     */
+    [data-part='lyrics']:has(> [data-part='lyrics-note']) {
+        display: flex;
+        flex-direction: column;
+    }
+
+    [data-part='lyrics-note'] {
+        flex: none;
+        margin: 0;
+        padding: var(--wmp-space-s) var(--wmp-space-m) 0;
+        color: var(--wmp-lyrics-muted-color);
+        font-size: var(--wmp-font-size-s);
+        text-align: center;
+    }
+
+    [data-part='lyrics']:has(> [data-part='lyrics-note']) > [data-part='lyrics-lines'] {
+        flex: 1;
+        block-size: auto;
+        min-block-size: 0;
     }
 
     [data-part='lyrics-line'] {

@@ -50,6 +50,7 @@ describe('toTrackLyrics', () => {
                     ],
                 },
             ],
+            fromOtherVersion: false,
         })
         expect(isSynchronized(lyrics)).toBe(true)
     })
@@ -65,6 +66,17 @@ describe('toTrackLyrics', () => {
         expect(isSynchronized(lyrics)).toBe(false)
         expect(isSynchronized(null)).toBe(false)
         expect(toTrackLyrics('track-1', { type: LyricsTypeObject.Static, lines: [] })).toBeNull()
+    })
+
+    it('keeps the mark of lyrics of another version of the song', () => {
+        const lyrics = toTrackLyrics('track-1', {
+            type: LyricsTypeObject.Static,
+            source: LyricsSourceObject.Download,
+            fromOtherVersion: true,
+            lines: [{ text: 'Plain' }],
+        })
+
+        expect(lyrics?.fromOtherVersion).toBe(true)
     })
 })
 

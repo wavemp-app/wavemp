@@ -281,6 +281,7 @@
     "viewLyrics": "Lyrics",
     "lyricsLabel": "Lyrics of the song",
     "lyricsBreak": "Instrumental part",
+    "lyricsOtherVersion": "From another version of the song, not synced to this one",
     "albumSeparator": " – "
   },
   "queuePane": {
@@ -2592,6 +2593,7 @@
     "downloading": "Downloading lyrics",
     "downloaded": "The lyrics are downloaded.",
     "loadError": "The lyrics could not be loaded.",
+    "otherVersion": "These lyrics come from another version of the song with a different length, so they are not synced to this one.",
     "types": {
       "lineSynchronized": "Synchronized line by line",
       "wordSynchronized": "Synchronized word by word",
@@ -2600,6 +2602,7 @@
     "sources": {
       "file": "from the lyrics file",
       "download": "downloaded and stored in the database",
+      "upload": "uploaded and stored in the database",
       "tags": "from the tags of the file"
     },
     "errors": {
@@ -2609,7 +2612,10 @@
       "instrumental": "LRCLIB lists this song as instrumental.",
       "serviceUnavailable": "LRCLIB cannot be reached. Check the internet connection of the server.",
       "rateLimited": "LRCLIB refuses requests for a while. Try again later.",
-      "failed": "The lyrics could not be downloaded."
+      "failed": "The lyrics could not be downloaded.",
+      "fileNotWritable": "The lyrics file of the song cannot be replaced. Check the permissions of the media folder.",
+      "matchNotFound": "LRCLIB no longer has lyrics for this entry. Search again.",
+      "trackNotFound": "The song no longer exists."
     },
     "lookup": {
       "notFound": "LRCLIB had no lyrics for this song on {date}.",
@@ -2620,6 +2626,56 @@
       "errors": {
         "foundLyrics": "The last lookup found lyrics. Only results without lyrics can be forgotten.",
         "failed": "The result could not be forgotten."
+      }
+    },
+    "search": {
+      "open": "Search lyrics",
+      "title": "Search lyrics on LRCLIB",
+      "formLabel": "Search terms",
+      "titleLabel": "Title",
+      "artistLabel": "Artist",
+      "artistHint": "Leave empty to search by title only.",
+      "titleRequired": "Enter a title.",
+      "search": "Search",
+      "searching": "Searching LRCLIB",
+      "matches": "Results",
+      "noMatches": "LRCLIB has no lyrics for this title and artist. Change the search terms and search again.",
+      "synchronized": "Synced",
+      "static": "Text only",
+      "otherVersion": "Other length",
+      "otherVersionHint": "This entry has a different length than the song. Only its text is kept, without times.",
+      "source": "Lyrics come from LRCLIB, a free database of lyrics. The chosen lyrics replace those of the song.",
+      "apply": "Use lyrics",
+      "applying": "Saving lyrics",
+      "saved": "The lyrics are saved.",
+      "failed": "The search did not work. Try again."
+    },
+    "upload": {
+      "open": "Upload lyrics",
+      "title": "Upload lyrics",
+      "hint": "Paste the lyrics or choose a file. Lines with times like [01:23.45] (LRC) follow the music. The lyrics replace those of the song.",
+      "chooseFile": "Choose file",
+      "fileChosen": "Read from {name}",
+      "fileUnreadable": "The file could not be read.",
+      "textLabel": "Lyrics",
+      "placeholder": "[00:12.00]First line\n[00:15.50]Second line",
+      "synchronized": "Synced: the lines have times.",
+      "static": "Text only: the lines have no times.",
+      "empty": "Enter the lyrics or choose a file.",
+      "tooLong": "The lyrics are too long.",
+      "publish": "Also publish to LRCLIB",
+      "publishHint": "Shares the lyrics with everyone through LRCLIB. Needs title, artist, album and length of the song and can take a few minutes.",
+      "save": "Save lyrics",
+      "saving": "Saving lyrics",
+      "publishing": "Saving and publishing lyrics",
+      "saved": "The lyrics are saved.",
+      "publication": {
+        "published": "The lyrics are published to LRCLIB.",
+        "disabled": "The lyrics were not published, because the download of lyrics is switched off in the library settings.",
+        "missingMetadata": "The lyrics were not published, because LRCLIB needs title, artist, album and length of the song.",
+        "rejected": "LRCLIB did not accept the lyrics.",
+        "rateLimited": "LRCLIB refuses requests for a while. The lyrics were not published.",
+        "unavailable": "LRCLIB cannot be reached. The lyrics were not published."
       }
     }
   },

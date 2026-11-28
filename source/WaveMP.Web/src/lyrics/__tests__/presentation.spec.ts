@@ -6,6 +6,7 @@ import {
     lookupNoteKey,
     lyricsSourceKey,
     lyricsTypeKey,
+    publicationMessageOf,
 } from '../presentation'
 
 describe('lyrics presentation', () => {
@@ -42,6 +43,7 @@ describe('lyrics presentation', () => {
         expect(lyricsTypeKey(undefined)).toBe('trackLyrics.types.static')
         expect(lyricsSourceKey('Tags')).toBe('trackLyrics.sources.tags')
         expect(lyricsSourceKey('Download')).toBe('trackLyrics.sources.download')
+        expect(lyricsSourceKey('Upload')).toBe('trackLyrics.sources.upload')
         expect(lyricsSourceKey(null)).toBe('trackLyrics.sources.file')
     })
 
@@ -59,8 +61,32 @@ describe('lyrics presentation', () => {
             'trackLyrics.errors.downloadDisabled',
         )
         expect(downloadFailureOf('track.not_found')).toEqual({
-            labelKey: 'trackLyrics.errors.failed',
+            labelKey: 'trackLyrics.errors.trackNotFound',
             tone: 'error',
         })
+        expect(downloadFailureOf('lyrics.file_not_writable').labelKey).toBe(
+            'trackLyrics.errors.fileNotWritable',
+        )
+        expect(downloadFailureOf('lyrics.match_not_found').labelKey).toBe(
+            'trackLyrics.errors.matchNotFound',
+        )
+        expect(downloadFailureOf(undefined).labelKey).toBe('trackLyrics.errors.failed')
+    })
+
+    it('reports what publishing uploaded lyrics did', () => {
+        expect(publicationMessageOf('NotRequested')).toBeNull()
+        expect(publicationMessageOf(undefined)).toBeNull()
+        expect(publicationMessageOf('Published')).toEqual({
+            labelKey: 'trackLyrics.upload.publication.published',
+            tone: 'success',
+        })
+        expect(publicationMessageOf('MissingMetadata')).toEqual({
+            labelKey: 'trackLyrics.upload.publication.missingMetadata',
+            tone: 'error',
+        })
+        expect(publicationMessageOf('Rejected')?.tone).toBe('error')
+        expect(publicationMessageOf('RateLimited')?.tone).toBe('error')
+        expect(publicationMessageOf('Unavailable')?.tone).toBe('error')
+        expect(publicationMessageOf('Disabled')?.tone).toBe('error')
     })
 })

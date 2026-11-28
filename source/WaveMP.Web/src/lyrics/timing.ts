@@ -34,6 +34,11 @@ export interface TrackLyrics {
     readonly type: LyricsType
     readonly source: LyricsSource | undefined
     readonly lines: readonly LyricsLineTiming[]
+    /**
+     * Whether the lyrics belong to another version of the song (another duration), so they are not
+     * synchronized to this one.
+     */
+    readonly fromOtherVersion?: boolean
 }
 
 /** How long the last line counts as sung when neither it nor the track has an end, in seconds. */
@@ -77,6 +82,7 @@ export function toTrackLyrics(trackId: string, lyrics: Lyrics): TrackLyrics | nu
         trackId,
         type,
         source: lyrics.source ?? undefined,
+        fromOtherVersion: lyrics.fromOtherVersion === true,
         lines:
             type === LyricsTypeObject.Static
                 ? lines.map((line) => ({ ...line, start: null, end: null, words: [] }))

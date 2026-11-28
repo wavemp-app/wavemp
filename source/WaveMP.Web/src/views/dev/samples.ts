@@ -20,6 +20,7 @@ import type { Tile } from '@/components/library/TileList.vue'
 import type { OverviewGroup } from '@/library/groupOverview'
 import type { OnlineMatch, OnlineValues } from '@/library/onlineMetadata'
 import type { TileGroup } from '@/library/tileGrouping'
+import type { LyricsMatch } from '@/lyrics/api'
 import type { LyricsLineTiming, TrackLyrics } from '@/lyrics/timing'
 import type { VideoDiagnosticsSnapshot } from '@/player/videoDiagnostics'
 
@@ -519,6 +520,52 @@ export function sampleLyrics(t: Translate, trackId: string): TrackLyrics {
         }
     })
     return { trackId, type: 'WordSynchronized', source: 'File', lines }
+}
+
+/** Plain lyrics of another version of the song: they carry the note and do not follow it. */
+export function sampleOtherVersionLyrics(t: Translate, trackId: string): TrackLyrics {
+    const lines = [1, 2, null, 3, 4].map((number) => ({
+        start: null,
+        end: null,
+        text: number === null ? '' : t('placeholders.lyricsLine', { number }),
+        words: [],
+    }))
+    return { trackId, type: 'Static', source: 'Download', lines, fromOtherVersion: true }
+}
+
+/** Three tracks of the search of lyrics: synced and fitting, plain text, and another version. */
+export function sampleLyricsMatches(t: Translate): LyricsMatch[] {
+    const title = t('placeholders.track', { number: 2 })
+    const artist = t('placeholders.artist', { number: 1 })
+    return [
+        {
+            id: 1,
+            title,
+            artist,
+            album: t('placeholders.album', { number: 1 }),
+            duration: 203,
+            synchronized: true,
+            fitsDuration: true,
+        },
+        {
+            id: 2,
+            title,
+            artist,
+            album: null,
+            duration: 204,
+            synchronized: false,
+            fitsDuration: true,
+        },
+        {
+            id: 3,
+            title,
+            artist,
+            album: t('placeholders.album', { number: 2 }),
+            duration: 251,
+            synchronized: true,
+            fitsDuration: false,
+        },
+    ]
 }
 
 /** Position of the music in the lyrics sample, in seconds. */

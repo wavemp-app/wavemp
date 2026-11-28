@@ -7,6 +7,9 @@ import TrackLyricsPanel from '../TrackLyricsPanel.vue'
 const api = vi.hoisted(() => ({
     getLyrics: vi.fn(),
     downloadLyrics: vi.fn(),
+    searchLyrics: vi.fn(),
+    chooseLyrics: vi.fn(),
+    uploadLyrics: vi.fn(),
 }))
 
 vi.mock('@/lyrics/api', () => api)
@@ -187,6 +190,59 @@ describe('TrackLyricsPanel', () => {
         expect(status(failed).attributes('data-state')).toBe('found')
         expect(failed.find('[data-item="lyrics-lookup"]').exists()).toBe(false)
         failed.unmount()
+    })
+
+    it('marks lyrics of another version of the song', async () => {
+        api.getLyrics.mockResolvedValue({
+            ...found,
+            type: 'Static',
+            source: 'Download',
+            fromOtherVersion: true,
+        })
+        const wrapper = await mountPanel()
+
+        expect(wrapper.get('[data-item="lyrics-other-version"]').text()).toBe(
+            'These lyrics come from another version of the song with a different length, ' +
+                'so they are not synced to this one.',
+        )
+        wrapper.unmount()
+
+        api.getLyrics.mockResolvedValue(found)
+        const synced = await mountPanel()
+        expect(synced.find('[data-item="lyrics-other-version"]').exists()).toBe(false)
+        synced.unmount()
+    })
+
+    it('opens the search and hands on the chosen lyrics', async () => {
+        api.getLyrics.mockResolvedValue(null)
+        api.searchLyrics.mockResolvedValue({
+            title: 'Song',
+            artist: 'Band',
+            matches: [
+                {
+                    id: 7,
+                    title: 'Song',
+                    artist: 'Band',
+                    album: 'Album',
+                    duration: 180,
+                    synchronized: true,
+                    fitsDuration: true,
+                },
+            ],
+        })
+        api.chooseLyrics.mockResolvedValue({ ...found, source: 'File' })
+        const wrapper = await mountPanel()
+
+        await wrapper.get('[data-part="button"][data-item="search-lyrics"]').trigger('click')
+        await flushPromises()
+        expect(api.searchLyrics).toHaveBeenCalledWith('a', undefined)
+        await wrapper.get('[data-part="dialog-footer"] [data-item="apply"]').trigger('click')
+        await flushPromises()
+
+        expect(api.chooseLyrics).toHaveBeenCalledWith('a', 7)
+        expect(status(wrapper).attributes('data-state')).toBe('found')
+        expect(wrapper.emitted('downloaded')?.[0]).toEqual([{ ...found, source: 'File' }])
+        wrapper.unmount()
     })
 
     it('reports lyrics that cannot be loaded', async () => {

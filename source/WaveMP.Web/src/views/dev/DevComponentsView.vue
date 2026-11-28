@@ -104,6 +104,8 @@ import ArtistCredit from '@/components/library/ArtistCredit.vue'
 import ArtistMatchList from '@/components/library/ArtistMatchList.vue'
 import OnlineCompareTable from '@/components/library/OnlineCompareTable.vue'
 import OnlineMatchList from '@/components/library/OnlineMatchList.vue'
+import LyricsMatchList from '@/components/library/LyricsMatchList.vue'
+import BaseTextArea from '@/components/base/BaseTextArea.vue'
 import { compareRows, defaultSelection, onlineTrackFields } from '@/library/onlineMetadata'
 import TileGroupList from '@/components/library/TileGroupList.vue'
 import GroupOverview from '@/components/library/GroupOverview.vue'
@@ -190,7 +192,9 @@ import {
     sampleLibraryIssueSummary,
     sampleFiles,
     sampleLyrics,
+    sampleLyricsMatches,
     sampleLyricsPosition,
+    sampleOtherVersionLyrics,
     sampleVideoDiagnostics,
     sampleOnlineCurrent,
     sampleOnlineMatches,
@@ -294,6 +298,9 @@ const sampleVisualizationColorSchemes = computed(() =>
     aforceColorSchemes.map((scheme) => ({ id: scheme.id, label: t(scheme.labelKey) })),
 )
 const sampleVisualizationColorScheme = ref('aurora')
+const sampleOtherLyrics = computed(() =>
+    sampleLyricsTrack.value ? sampleOtherVersionLyrics(t, sampleLyricsTrack.value.id ?? '') : null,
+)
 const sampleTrackLyrics = computed(() =>
     sampleLyricsTrack.value ? sampleLyrics(t, sampleLyricsTrack.value.id ?? '') : null,
 )
@@ -338,6 +345,9 @@ const fileSelection = sampleFileSelection()
 const onlineMatches = computed(() => sampleOnlineMatches(t))
 const onlineCurrent = computed(() => sampleOnlineCurrent(t))
 const onlineSelected = ref<string | null>('sample-match-1')
+const lyricsMatches = computed(() => sampleLyricsMatches(t))
+const lyricsSelected = ref<number | null>(3)
+const sampleLyricsText = ref('[00:12.00]Line 1\n[00:15.50]Line 2')
 const onlineValues = computed(
     () =>
         onlineMatches.value.find((match) => match.key === onlineSelected.value)?.values ??
@@ -2138,6 +2148,62 @@ const sampleTranscodeJobs = computed<TranscodeJob[]>(() => {
                     />
                 </section>
             </div>
+            <div data-part="online-search" data-owner="lyrics" data-state="ready">
+                <form
+                    data-part="online-search-form"
+                    :aria-label="t('trackLyrics.search.formLabel')"
+                    @submit.prevent
+                >
+                    <BaseTextField
+                        data-field="title"
+                        :label="t('trackLyrics.search.titleLabel')"
+                        :model-value="t('placeholders.track', { number: 2 })"
+                    />
+                    <BaseTextField
+                        data-field="artist"
+                        :label="t('trackLyrics.search.artistLabel')"
+                        :model-value="t('placeholders.artist', { number: 1 })"
+                    />
+                    <BaseButton
+                        type="submit"
+                        data-item="search"
+                        icon="search-online"
+                        :label="t('trackLyrics.search.search')"
+                    />
+                    <p data-part="form-note" data-item="artist-hint">
+                        {{ t('trackLyrics.search.artistHint') }}
+                    </p>
+                </form>
+                <section data-part="online-section" data-item="matches">
+                    <h3 id="dev-lyrics-matches" data-part="online-section-title">
+                        {{ t('trackLyrics.search.matches') }}
+                    </h3>
+                    <LyricsMatchList
+                        v-model="lyricsSelected"
+                        :matches="lyricsMatches"
+                        labelledby="dev-lyrics-matches"
+                    />
+                    <p data-part="form-note" data-item="other-version">
+                        {{ t('trackLyrics.search.otherVersionHint') }}
+                    </p>
+                </section>
+            </div>
+            <div data-part="form" data-item="lyrics-upload">
+                <BaseTextArea
+                    v-model="sampleLyricsText"
+                    data-field="lyrics-text"
+                    :label="t('trackLyrics.upload.textLabel')"
+                    :hint="t('trackLyrics.upload.synchronized')"
+                    :rows="4"
+                />
+                <BaseTextArea
+                    data-field="lyrics-text-disabled"
+                    :label="t('trackLyrics.upload.textLabel')"
+                    :error="t('trackLyrics.upload.empty')"
+                    :rows="3"
+                    disabled
+                />
+            </div>
             <div data-part="artist-picture-editor" data-state="online">
                 <section data-part="online-section" data-item="sources">
                     <h3 data-part="online-section-title">
@@ -2622,6 +2688,18 @@ const sampleTranscodeJobs = computed<TranscodeJob[]>(() => {
                             :position="sampleLyricsPosition"
                             :duration="24"
                             @select-mode="sampleLyricsMode = $event"
+                        />
+                    </div>
+                </div>
+                <div data-part="dev-sample">
+                    <div data-part="view" data-view="now-playing">
+                        <NowPlayingStage
+                            :track="sampleLyricsTrack"
+                            mode="Lyrics"
+                            :view="stageViewOf('Lyrics', false, 'ready', true)"
+                            :lyrics="sampleOtherLyrics"
+                            :position="4"
+                            :duration="24"
                         />
                     </div>
                 </div>

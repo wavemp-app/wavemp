@@ -68,6 +68,7 @@ export const parts = [
     'lyrics-line',
     'lyrics-line-button',
     'lyrics-word',
+    'lyrics-note',
     'visualization',
     'visualization-canvas',
     'visualization-message',
@@ -450,6 +451,7 @@ export const parts = [
 
     // Online search for album info
     'online-search',
+    'online-search-form',
     'online-section',
     'online-section-title',
     'online-matches',

@@ -16,13 +16,16 @@ import {
     lyricsTypeKey,
 } from '@/lyrics/presentation'
 import type { TrackLyrics } from '@/lyrics/timing'
+import LyricsSearchDialog from './LyricsSearchDialog.vue'
+import LyricsUploadDialog from './LyricsUploadDialog.vue'
 
 /**
  * The lyrics of a song for admins: which lyrics it has (how they follow the music and where they
- * come from), a button that downloads them from the online lyrics service, while the download is
- * switched on in the library settings, and, if the last lookup found no lyrics, when that was and a
- * button that forgets the result, so the next lyrics download looks the song up again at once. A
- * lyrics file next to the song is never replaced.
+ * come from, and whether they belong to another version of the song), a button that downloads them
+ * from the online lyrics service, while the download is switched on in the library settings, and,
+ * if the last lookup found no lyrics, when that was and a button that forgets the result, so the
+ * next lyrics download looks the song up again at once. The download never replaces a lyrics file
+ * next to the song; choosing lyrics in the search of the service or uploading own lyrics does.
  */
 const props = defineProps<{
     trackId: string
@@ -43,6 +46,8 @@ const downloading = ref(false)
 const downloaded = ref(false)
 const forgetting = ref(false)
 const forgotten = ref(false)
+const searchOpen = ref(false)
+const uploadOpen = ref(false)
 const failure = ref<{ labelKey: string; tone: 'info' | 'error' } | null>(null)
 let generation = 0
 
@@ -136,6 +141,18 @@ async function download(): Promise<void> {
     }
 }
 
+/** Lyrics chosen in the search or uploaded: the song shows them, the lookup is stored anew. */
+async function onSaved(result: TrackLyrics | null): Promise<void> {
+    const current = generation
+    resetMessages()
+    lyrics.value = result
+    emit('downloaded', result)
+    const loadedLookup = await loadLookup()
+    if (current === generation) {
+        lookup.value = loadedLookup
+    }
+}
+
 async function forget(): Promise<void> {
     if (busy.value) {
         return
@@ -185,6 +202,13 @@ onMounted(load)
         >
             {{ lookupNote }}
         </p>
+        <p
+            v-if="lyrics?.fromOtherVersion && lyrics.type === 'Static'"
+            data-part="form-note"
+            data-item="lyrics-other-version"
+        >
+            {{ t('trackLyrics.otherVersion') }}
+        </p>
         <p data-part="form-note">{{ t('trackLyrics.hint') }}</p>
         <BaseAlert v-if="downloaded" tone="success" :message="t('trackLyrics.downloaded')" />
         <BaseAlert v-if="forgotten" tone="success" :message="t('trackLyrics.lookup.forgotten')" />
@@ -198,6 +222,20 @@ onMounted(load)
                 @click="download"
             />
             <BaseButton
+                data-item="search-lyrics"
+                icon="search-online"
+                :label="t('trackLyrics.search.open')"
+                :disabled="status !== 'ready' || busy"
+                @click="searchOpen = true"
+            />
+            <BaseButton
+                data-item="upload-lyrics"
+                icon="upload"
+                :label="t('trackLyrics.upload.open')"
+                :disabled="status !== 'ready' || busy"
+                @click="uploadOpen = true"
+            />
+            <BaseButton
                 v-if="lookupNote"
                 data-item="forget-lyrics-lookup"
                 icon="forget-lyrics-lookup"
@@ -208,5 +246,18 @@ onMounted(load)
                 @click="forget"
             />
         </div>
+        <!-- The dialogs exist only while they are open, so the page holds no hidden second form. -->
+        <LyricsSearchDialog
+            v-if="searchOpen"
+            v-model:open="searchOpen"
+            :track-id="trackId"
+            @saved="onSaved"
+        />
+        <LyricsUploadDialog
+            v-if="uploadOpen"
+            v-model:open="uploadOpen"
+            :track-id="trackId"
+            @saved="onSaved"
+        />
     </div>
 </template>
