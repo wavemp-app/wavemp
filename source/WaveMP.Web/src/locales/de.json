@@ -860,6 +860,8 @@
     "autoplayVideoOnly": "Titel einbeziehen, die nur ein Musikvideo haben",
     "videoAmbient": "Umgebungslicht um Videos",
     "videoAmbientHint": "Füllt die dunkle Fläche um ein Video mit weichem Licht in den Farben des Bildes.",
+    "videoSkipIntroAndOutro": "Intro und Outro von Musikvideos ohne Audiodatei überspringen",
+    "videoSkipIntroAndOutroHint": "Mit dem Cover, der Visualisierung oder dem Songtext beginnt ein Titel, der nur ein Musikvideo hat, dort, wo der Song beginnt, und endet, wo er endet. Nur wo die Analyse sich sicher ist; die Videoansicht spielt immer das ganze Video.",
     "sleepTimerFade": "Ausblenden des Sleep-Timers",
     "sleepTimerFadeHint": "Wie lange die Musik ausgeblendet wird, bevor der Sleep-Timer sie stoppt.",
     "sleepTimerFadeSeconds": "{seconds} Sekunden",
@@ -1788,6 +1790,8 @@
       "genre": "Genre"
     },
     "missingTags": "Fehlende Tags:",
+    "songSegmentLowConfidence": "Songbeginn unsicher",
+    "songSegmentMismatch": "Video passt nicht zum Titel",
     "select": "{title} auswählen",
     "selectAll": "Alle auswählen",
     "selectedCount": "{count} ausgewählt",
@@ -1830,7 +1834,8 @@
       "databaseBackup": "Datenbanksicherung",
       "lyricsDownload": "Songtexte herunterladen",
       "libraryCheck": "Bibliothekskontrolle",
-      "libraryOrganize": "Dateien ordnen"
+      "libraryOrganize": "Dateien ordnen",
+      "songAnalysis": "Titel analysieren"
     },
     "lastRun": "Zuletzt {date}",
     "duration": "Dauer {duration}",
@@ -1845,7 +1850,10 @@
     "loadError": "Die Jobs konnten nicht geladen werden.",
     "runError": "Der Job konnte nicht gestartet werden.",
     "afterScanWhenLyricsOn": "Läuft nach Scans, solange das Herunterladen von Songtexten eingeschaltet ist",
-    "whenOrganizing": "Läuft, wenn Dateien geordnet werden oder eine Neuordnung in der Vorschau geplant wird"
+    "whenOrganizing": "Läuft, wenn Dateien geordnet werden oder eine Neuordnung in der Vorschau geplant wird",
+    "analyzeAll": "Alle Titel neu analysieren",
+    "analyzeAllStarted": "Alle Titel werden im Hintergrund neu analysiert ({count} Dateien).",
+    "analyzeAllError": "Die Analyse konnte nicht gestartet werden."
   },
   "adminCache": {
     "title": "Cache",
@@ -2145,15 +2153,43 @@
     "filesError": "Die Dateien konnten nicht geladen werden.",
     "openFiles": "Dateien auswählen"
   },
-  "trackVideo": {
-    "title": "Video-Synchronisation",
-    "offset": "Video-Versatz (Millisekunden)",
-    "offsetHint": "Positiver Wert, wenn die Musik im Video später einsetzt als im Titel, zum Beispiel nach einem Intro; negativer Wert, wenn sie früher einsetzt.",
-    "offsetRange": "Gib ganze Millisekunden von {min} bis {max} ein.",
-    "save": "Speichern",
-    "saved": "Gespeichert.",
-    "loadError": "Die Video-Synchronisation konnte nicht geladen werden.",
-    "saveError": "Der Video-Versatz konnte nicht gespeichert werden."
+  "trackSongSegments": {
+    "title": "Beginn und Ende des Songs",
+    "hint": "Wo der Song in jeder Datei beginnt und endet, zum Beispiel nach dem Intro eines Musikvideos. Der Player wechselt damit zur selben Stelle zwischen Audiodatei und Video, zeigt den Songtext passend an und überspringt Intro und Outro.",
+    "audio": "Audiodatei",
+    "video": "Video",
+    "start": "Song beginnt bei (Sekunden)",
+    "end": "Song endet bei (Sekunden)",
+    "fieldsHint": "Leer lassen, um die Analyse zu verwenden (Beginn {start} s, Ende {end} s). Ein negativer Beginn bedeutet, dass der Song vor der Datei beginnt.",
+    "fieldsHintPending": "Leer lassen, um die Analyse zu verwenden, sobald sie die Datei angesehen hat. Ein negativer Beginn bedeutet, dass der Song vor der Datei beginnt.",
+    "startRange": "Gib Sekunden von {min} bis kurz vor {max} ein.",
+    "endRange": "Gib Sekunden von {min} bis {max} ein.",
+    "invalidNumber": "Gib die Sekunden als Zahl ein, zum Beispiel 12,5.",
+    "summary": "Song von {start} s bis {end} s von {duration} s",
+    "states": {
+      "pending": "Noch nicht analysiert",
+      "corrected": "Von einem Admin korrigiert",
+      "wholeFile": "Die ganze Datei ist der Song",
+      "sure": "Gefunden über {method}, zu {percent} % sicher",
+      "unsure": "Gefunden über {method}, nur zu {percent} % sicher: bitte prüfen",
+      "mismatch": "Das Video passt nicht zur Audiodatei: bitte prüfen",
+      "noSound": "Die Datei hat keinen Ton",
+      "failed": "Die Datei konnte nicht analysiert werden"
+    },
+    "methods": {
+      "alignment": "den Vergleich mit der Audiodatei",
+      "lyrics": "den synchronisierten Songtext",
+      "structure": "die Pausen im Ton",
+      "wholeFile": "die ganze Datei"
+    },
+    "previewStart": "Beginn anhören",
+    "previewEnd": "Ende anhören",
+    "useAnalysis": "Analyse verwenden",
+    "analyzeAgain": "Neu analysieren",
+    "analysisQueued": "Der Titel wird im Hintergrund neu analysiert.",
+    "analysisError": "Die Analyse konnte nicht gestartet werden.",
+    "loadError": "Beginn und Ende des Songs konnten nicht geladen werden.",
+    "saveError": "Beginn und Ende des Songs konnten nicht gespeichert werden."
   },
   "coverRule": {
     "title": "Cover",

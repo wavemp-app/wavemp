@@ -11,7 +11,7 @@ const props = withDefaults(
         maxlength?: number
         autocomplete?: string
         /** Keyboard on touch devices, e.g. numeric for numbers entered as text. */
-        inputmode?: 'text' | 'numeric'
+        inputmode?: 'text' | 'numeric' | 'decimal'
         /** Help text below the input. */
         hint?: string
         /** Error message; marks the field as invalid. */

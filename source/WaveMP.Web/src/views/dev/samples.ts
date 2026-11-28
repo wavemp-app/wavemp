@@ -477,6 +477,7 @@ export function sampleTrackReviews(t: Translate): TrackReview[] {
             hasCover: false,
             firstSeenAt: new Date(Date.UTC(2026, 10, 15, 9, 0)),
             missingTags: [],
+            songSegmentNotice: 'LowConfidence',
             status: 'Unreviewed',
         },
         {

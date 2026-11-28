@@ -276,4 +276,24 @@ describe('JobList', () => {
         expect(wrapper.get('button').attributes('disabled')).toBeDefined()
         expect(wrapper.text()).toContain('Not run yet')
     })
+
+    it('lets the song analysis analyze all songs again', async () => {
+        const jobs: Job[] = [
+            { id: 'song-analysis', state: 'Running', lastRun: null },
+            { id: 'library-scan', state: 'Idle', lastRun: null },
+        ]
+
+        const wrapper = await mountWithRouter(JobList, { jobs })
+
+        const items = wrapper.findAll('[data-part="job-item"]')
+        expect(items[0]!.get('[data-part="job-name"]').text()).toBe('Analyze songs')
+        expect(items[0]!.get('[data-part="job-meta"]').text()).toContain('Runs after scans')
+        const renew = items[0]!.get('[data-item="renew"]')
+        expect(renew.text()).toBe('Analyze all songs again')
+        // Also while it runs: the files are queued for the next run.
+        expect(renew.attributes('disabled')).toBeUndefined()
+        await renew.trigger('click')
+        expect(wrapper.emitted('renew')).toEqual([['song-analysis']])
+        expect(items[1]!.find('[data-item="renew"]').exists()).toBe(false)
+    })
 })

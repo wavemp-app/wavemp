@@ -286,14 +286,14 @@ onUnmounted(() => {
             :current-index="player.queue.index"
             :lyrics="player.lyrics"
             :playing="player.playback === 'playing'"
-            :position="player.position"
-            :duration="player.duration"
-            :clock="player.livePosition"
+            :position="player.lyricsPosition"
+            :duration="player.songDuration"
+            :clock="player.lyricsClock"
             @play="player.playItem"
             @move="player.moveItem"
             @remove="player.removeItem"
             @clear="player.clearQueue"
-            @seek="player.seek"
+            @seek="player.seekSong"
         />
         <AppTransport
             :state="player.state"

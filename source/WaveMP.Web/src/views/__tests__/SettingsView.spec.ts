@@ -427,7 +427,10 @@ describe('SettingsView playback', () => {
     it('switches the ambient light of videos off and on at once', async () => {
         const { wrapper, session } = mountView()
         const update = vi.spyOn(session, 'updateVideo').mockImplementation(async (change) => {
-            session.video = { ambientMode: change.ambientMode ?? session.video.ambientMode }
+            session.video = {
+                ambientMode: change.ambientMode ?? session.video.ambientMode,
+                skipIntroAndOutro: change.skipIntroAndOutro ?? session.video.skipIntroAndOutro,
+            }
         })
         const ambient = field<HTMLInputElement>(wrapper, 'video-ambient', 'input')
         expect(ambient.element.checked).toBe(true)
@@ -445,6 +448,30 @@ describe('SettingsView playback', () => {
         await ambient.setValue(true)
         await flushPromises()
         expect(update).toHaveBeenLastCalledWith({ ambientMode: true })
+    })
+
+    it('switches skipping intro and outro of music videos off and on', async () => {
+        const { wrapper, session } = mountView()
+        const update = vi.spyOn(session, 'updateVideo').mockImplementation(async (change) => {
+            session.video = {
+                ambientMode: change.ambientMode ?? session.video.ambientMode,
+                skipIntroAndOutro: change.skipIntroAndOutro ?? session.video.skipIntroAndOutro,
+            }
+        })
+        const skip = field<HTMLInputElement>(wrapper, 'video-skip-intro-outro', 'input')
+        expect(skip.element.checked).toBe(true)
+        expect(wrapper.get('[data-field="video-skip-intro-outro"]').text()).toContain(
+            'Skip intro and outro of music videos without an audio file',
+        )
+
+        await skip.setValue(false)
+        await flushPromises()
+        expect(update).toHaveBeenCalledWith({ skipIntroAndOutro: false })
+        expect(session.video.skipIntroAndOutro).toBe(false)
+
+        await skip.setValue(true)
+        await flushPromises()
+        expect(update).toHaveBeenLastCalledWith({ skipIntroAndOutro: true })
     })
 
     it('follows the switch of the transport bar', async () => {

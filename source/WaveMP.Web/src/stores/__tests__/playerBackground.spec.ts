@@ -337,7 +337,7 @@ describe('player store in the background', () => {
             await show()
 
             expect(requests).toBe(2)
-            expect(getPlayback).toHaveBeenLastCalledWith('a', ['Mp3'])
+            expect(getPlayback).toHaveBeenLastCalledWith('a', ['Mp3'], 'Audio')
             expect(player.state.playback).toBe('paused')
             expect(player.state.loading).toBe(false)
             expect(player.position).toBe(42)

@@ -369,6 +369,47 @@ const sampleCoverRuleOptions = computed(() =>
         label: option === 'Inherit' ? t('coverRule.inherit') : t(coverPriorityKey(option)),
     })),
 )
+/** The song segments of a song with a music video: an audio file and a video with an intro. */
+const sampleSongSegments = computed(
+    () =>
+        [
+            {
+                kind: 'audio',
+                icon: 'song-audio',
+                titleKey: 'trackSongSegments.audio',
+                state: 'sure',
+                methodKey: 'trackSongSegments.methods.wholeFile',
+                percent: 100,
+                pieces: [{ start: 0, length: 1 }],
+                playhead: null,
+                start: '',
+                summary: t('trackSongSegments.summary', {
+                    start: format.number(0, { minimumFractionDigits: 1 }),
+                    end: format.number(214.6, { minimumFractionDigits: 1 }),
+                    duration: format.number(214.6, { minimumFractionDigits: 1 }),
+                }),
+            },
+            {
+                kind: 'video',
+                icon: 'song-video',
+                titleKey: 'trackSongSegments.video',
+                state: 'unsure',
+                methodKey: 'trackSongSegments.methods.alignment',
+                percent: 54,
+                pieces: [
+                    { start: 0.12, length: 0.5 },
+                    { start: 0.66, length: 0.24 },
+                ],
+                playhead: 0.14,
+                start: '31.4',
+                summary: t('trackSongSegments.summary', {
+                    start: format.number(31.4, { minimumFractionDigits: 1 }),
+                    end: format.number(241.3, { minimumFractionDigits: 1 }),
+                    duration: format.number(262, { minimumFractionDigits: 1 }),
+                }),
+            },
+        ] as const,
+)
 const fileFilter = ref<FileSelectionFilter>('Choices')
 const fileSort = ref<FileSelectionSort>('Path')
 const reviewSamples = computed(() => sampleTrackReviews(t))
@@ -1009,6 +1050,8 @@ const sampleRunningJob: Job[] = [
         lastRun: { ...sampleIdleJob[0]!.lastRun, status: 'Running', durationMilliseconds: null },
     },
 ]
+const sampleSongAnalysisJob: Job[] = [{ id: 'song-analysis', state: 'Idle' }]
+
 const sampleCoverJob: Job[] = [
     {
         id: 'cover-cache',
@@ -1457,6 +1500,89 @@ const sampleTranscodeJobs = computed<TranscodeJob[]>(() => {
                             t('coverRule.trackHint', { rule: t(coverPriorityKey('TrackFirst')) })
                         "
                     />
+                </section>
+                <section data-part="section" data-item="song-segments">
+                    <h3 data-part="section-title">{{ t('trackSongSegments.title') }}</h3>
+                    <div data-part="song-segments" data-state="ready">
+                        <p data-part="form-note">{{ t('trackSongSegments.hint') }}</p>
+                        <div
+                            v-for="sample in sampleSongSegments"
+                            :key="sample.kind"
+                            data-part="song-segment"
+                            :data-kind="sample.kind"
+                            :data-state="sample.state"
+                            role="group"
+                        >
+                            <div data-part="song-segment-header">
+                                <BaseIcon :name="sample.icon" />
+                                <h4 data-part="song-segment-title">{{ t(sample.titleKey) }}</h4>
+                                <span data-part="song-segment-status" :data-state="sample.state">
+                                    <BaseIcon
+                                        v-if="sample.state === 'unsure'"
+                                        name="song-segment-notice"
+                                    />
+                                    <span data-part="label">{{
+                                        t(`trackSongSegments.states.${sample.state}`, {
+                                            method: t(sample.methodKey),
+                                            percent: format.number(sample.percent),
+                                        })
+                                    }}</span>
+                                </span>
+                            </div>
+                            <div data-part="song-strip" role="img" :aria-label="sample.summary">
+                                <span
+                                    v-for="(piece, index) in sample.pieces"
+                                    :key="index"
+                                    data-part="song-strip-piece"
+                                    :style="{
+                                        '--wmp-piece-start': piece.start,
+                                        '--wmp-piece-length': piece.length,
+                                    }"
+                                ></span>
+                                <span
+                                    v-if="sample.playhead !== null"
+                                    data-part="song-strip-playhead"
+                                    :style="{ '--wmp-playhead': sample.playhead }"
+                                ></span>
+                            </div>
+                            <p data-part="song-strip-legend">{{ sample.summary }}</p>
+                            <div data-part="field-row">
+                                <BaseTextField
+                                    :model-value="sample.start"
+                                    data-field="song-start"
+                                    :label="t('trackSongSegments.start')"
+                                    inputmode="decimal"
+                                />
+                                <BaseTextField
+                                    :model-value="''"
+                                    data-field="song-end"
+                                    :label="t('trackSongSegments.end')"
+                                    :placeholder="format.number(241.3)"
+                                    inputmode="decimal"
+                                />
+                            </div>
+                            <div data-part="view-actions">
+                                <BaseButton
+                                    icon="preview"
+                                    data-item="preview-song-start"
+                                    :label="t('trackSongSegments.previewStart')"
+                                    :pressed="sample.playhead !== null"
+                                />
+                                <BaseButton
+                                    icon="preview"
+                                    data-item="preview-song-end"
+                                    :label="t('trackSongSegments.previewEnd')"
+                                />
+                            </div>
+                        </div>
+                        <div data-part="view-actions">
+                            <BaseButton
+                                icon="analyze-again"
+                                data-item="analyze-song"
+                                :label="t('trackSongSegments.analyzeAgain')"
+                            />
+                        </div>
+                    </div>
                 </section>
             </div>
             <div data-part="view" data-view="library-artist">
@@ -1955,6 +2081,7 @@ const sampleTranscodeJobs = computed<TranscodeJob[]>(() => {
                 <JobList :jobs="sampleIdleJob" />
                 <JobList :jobs="sampleRunningJob" />
                 <JobList :jobs="sampleCoverJob" />
+                <JobList :jobs="sampleSongAnalysisJob" />
             </div>
             <div data-part="view" data-view="admin-cache">
                 <section data-part="section" data-item="usage">

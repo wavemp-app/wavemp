@@ -154,14 +154,18 @@ function updateProgress(position: number): void {
     }
 }
 
-/** Brings the view to a position of the music. */
+/**
+ * Brings the view to a position of the music. The position is NaN outside of the song (intro or
+ * outro of a music video): no line is active then and plain lyrics keep their scroll position.
+ */
 function update(smooth: boolean): void {
     const position = currentPosition()
     if (!synchronized.value) {
         activeIndex.value = -1
         activeWord.value = -1
         const element = list.value
-        if (element && props.playing && !reducedMotion.value && followsMusic()) {
+        const inSong = Number.isFinite(position)
+        if (element && inSong && props.playing && !reducedMotion.value && followsMusic()) {
             const share = staticScrollShare(position, props.duration)
             element.scrollTop = share * Math.max(0, element.scrollHeight - element.clientHeight)
         }

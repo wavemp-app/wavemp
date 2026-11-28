@@ -136,6 +136,16 @@ export class PlaybackPathEngine implements PlayerEngine {
         this.current.prepare(source)
     }
 
+    /** Switches the source of the current track on the active path (see AudioEngine.switchTo). */
+    switchTo(
+        source: DeckSource,
+        mapPosition: (position: number) => number,
+        crossfadeSeconds?: number,
+    ): Promise<boolean> {
+        this.cancelHandover()
+        return this.current.switchTo(source, mapPosition, crossfadeSeconds)
+    }
+
     async play(): Promise<void> {
         this.wantsPlay = true
         // Within the gesture of this play: the plain path may start later without one.

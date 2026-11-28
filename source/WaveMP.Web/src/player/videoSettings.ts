@@ -5,10 +5,15 @@
 export interface VideoSettings {
     /** Whether videos show the ambient light in the free area around their picture. */
     readonly ambientMode: boolean
+    /**
+     * Whether the cover and the visualization skip intro and outro of a music video whose sound
+     * plays because the track has no audio file (only where the song analysis is sure of them).
+     */
+    readonly skipIntroAndOutro: boolean
 }
 
 /** On, like on the server, until the settings are loaded. */
-export const defaultVideoSettings: VideoSettings = { ambientMode: true }
+export const defaultVideoSettings: VideoSettings = { ambientMode: true, skipIntroAndOutro: true }
 
 /** The video settings from an answer of the server, or null if they are incomplete. */
 export function toVideoSettings(value: unknown): VideoSettings | null {
@@ -17,12 +22,18 @@ export function toVideoSettings(value: unknown): VideoSettings | null {
         return null
     }
 
-    return { ambientMode: settings.ambientMode }
+    return {
+        ambientMode: settings.ambientMode,
+        // An older server does not know the setting yet: on, like its default.
+        skipIntroAndOutro:
+            typeof settings.skipIntroAndOutro === 'boolean' ? settings.skipIntroAndOutro : true,
+    }
 }
 
 /** A change of the video settings, as the API takes it: missing or null values stay unchanged. */
 export interface VideoSettingsChange {
     readonly ambientMode?: boolean | null
+    readonly skipIntroAndOutro?: boolean | null
 }
 
 /** The settings after a change, as the server applies it. */
@@ -30,5 +41,8 @@ export function applyVideoSettingsChange(
     settings: VideoSettings,
     change: VideoSettingsChange,
 ): VideoSettings {
-    return { ambientMode: change.ambientMode ?? settings.ambientMode }
+    return {
+        ambientMode: change.ambientMode ?? settings.ambientMode,
+        skipIntroAndOutro: change.skipIntroAndOutro ?? settings.skipIntroAndOutro,
+    }
 }

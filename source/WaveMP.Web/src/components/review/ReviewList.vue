@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
-import type { TrackReview } from '@/api/generated/models'
+import { SongSegmentNoticeObject, type TrackReview } from '@/api/generated/models'
 import BaseIcon from '@/components/base/BaseIcon.vue'
 import BaseLink from '@/components/base/BaseLink.vue'
 import LibraryCover from '@/components/library/LibraryCover.vue'
@@ -11,8 +11,9 @@ import { isReviewed } from '@/review/inbox'
 /**
  * Songs of the review inbox: a checkbox for the bulk action, the cover, the title (opens the song
  * in the editor of the inbox), artist and album, the folder and base name of the files, when the
- * song was added and which tags its file lacks. Songs reviewed since the list was loaded stay in
- * the list, marked as reviewed, so the list keeps its position.
+ * song was added, which tags its file lacks and whether the analysis is unsure where the song lies
+ * in its files (or its video does not match the audio file). Songs reviewed since the list was
+ * loaded stay in the list, marked as reviewed, so the list keeps its position.
  */
 const props = defineProps<{
     items: readonly TrackReview[]
@@ -49,7 +50,21 @@ function stateOf(item: TrackReview): string {
         isReviewed(item, props.reviewed) ? 'reviewed' : 'unreviewed',
         ...(props.selected.has(idOf(item)) ? ['selected'] : []),
         ...((item.missingTags?.length ?? 0) > 0 ? ['missing-tags'] : []),
+        ...(item.songSegmentNotice ? ['song-segment'] : []),
     ].join(' ')
+}
+
+/** Badge state of an unsure or mismatching song analysis. */
+function songSegmentState(item: TrackReview): string {
+    return item.songSegmentNotice === SongSegmentNoticeObject.Mismatch
+        ? 'song-segment-mismatch'
+        : 'song-segment-unsure'
+}
+
+function songSegmentLabelKey(item: TrackReview): string {
+    return item.songSegmentNotice === SongSegmentNoticeObject.Mismatch
+        ? 'reviewInbox.songSegmentMismatch'
+        : 'reviewInbox.songSegmentLowConfidence'
 }
 
 function onChange(item: TrackReview, event: Event): void {
@@ -100,6 +115,14 @@ function onChange(item: TrackReview, event: Event): void {
                         {{ t('reviewInbox.added', { date: format.date(item.firstSeenAt) }) }}
                     </span>
                     <ReviewTagHints :tags="item.missingTags" />
+                    <span
+                        v-if="item.songSegmentNotice"
+                        data-part="badge"
+                        :data-state="songSegmentState(item)"
+                    >
+                        <BaseIcon name="song-segment-notice" />
+                        <span data-part="label">{{ t(songSegmentLabelKey(item)) }}</span>
+                    </span>
                 </span>
             </div>
         </li>

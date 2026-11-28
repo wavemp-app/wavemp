@@ -567,6 +567,26 @@
         --_icon: var(--wmp-icon-go-to-album);
     }
 
+    [data-icon='song-audio'] {
+        --_icon: var(--wmp-icon-song-audio);
+    }
+
+    [data-icon='song-video'] {
+        --_icon: var(--wmp-icon-song-video);
+    }
+
+    [data-icon='song-segment-notice'] {
+        --_icon: var(--wmp-icon-song-segment-notice);
+    }
+
+    [data-icon='preview'] {
+        --_icon: var(--wmp-icon-preview);
+    }
+
+    [data-icon='analyze-again'] {
+        --_icon: var(--wmp-icon-analyze-again);
+    }
+
     [data-icon='go-to-artist'] {
         --_icon: var(--wmp-icon-go-to-artist);
     }

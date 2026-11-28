@@ -2,13 +2,19 @@ import { describe, expect, it } from 'vitest'
 import { applyVideoSettingsChange, defaultVideoSettings, toVideoSettings } from '../videoSettings'
 
 describe('video settings', () => {
-    it('show the ambient light until the settings are loaded, like the server', () => {
-        expect(defaultVideoSettings).toEqual({ ambientMode: true })
+    it('show the ambient light and skip intro and outro until loaded, like the server', () => {
+        expect(defaultVideoSettings).toEqual({ ambientMode: true, skipIntroAndOutro: true })
     })
 
     it('are read from an answer of the server', () => {
-        expect(toVideoSettings({ ambientMode: false })).toEqual({ ambientMode: false })
-        expect(toVideoSettings({ ambientMode: true, other: 1 })).toEqual({ ambientMode: true })
+        expect(toVideoSettings({ ambientMode: false, skipIntroAndOutro: false })).toEqual({
+            ambientMode: false,
+            skipIntroAndOutro: false,
+        })
+        expect(toVideoSettings({ ambientMode: true, other: 1 })).toEqual({
+            ambientMode: true,
+            skipIntroAndOutro: true,
+        })
     })
 
     it('are left out when the answer is incomplete', () => {
@@ -19,14 +25,20 @@ describe('video settings', () => {
     })
 
     it('apply a change like the server: missing values stay', () => {
-        expect(applyVideoSettingsChange({ ambientMode: true }, { ambientMode: false })).toEqual({
+        const settings = { ambientMode: true, skipIntroAndOutro: true }
+        expect(applyVideoSettingsChange(settings, { ambientMode: false })).toEqual({
             ambientMode: false,
+            skipIntroAndOutro: true,
         })
-        expect(applyVideoSettingsChange({ ambientMode: false }, {})).toEqual({
-            ambientMode: false,
+        expect(applyVideoSettingsChange(settings, { skipIntroAndOutro: false })).toEqual({
+            ambientMode: true,
+            skipIntroAndOutro: false,
         })
-        expect(applyVideoSettingsChange({ ambientMode: false }, { ambientMode: null })).toEqual({
-            ambientMode: false,
-        })
+        expect(
+            applyVideoSettingsChange(
+                { ambientMode: false, skipIntroAndOutro: false },
+                { ambientMode: null, skipIntroAndOutro: null },
+            ),
+        ).toEqual({ ambientMode: false, skipIntroAndOutro: false })
     })
 })

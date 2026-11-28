@@ -375,6 +375,12 @@ async function changeVideoAmbient(value: boolean): Promise<void> {
     }
 }
 
+async function changeSkipIntroAndOutro(value: boolean): Promise<void> {
+    if (value !== session.video.skipIntroAndOutro) {
+        await save(() => session.updateVideo({ skipIntroAndOutro: value }))
+    }
+}
+
 /**
  * "Off" turns the automatic change off and keeps its interval (the button of the visualization turns
  * it on again); an interval turns it on with that interval.
@@ -537,6 +543,13 @@ async function changeSleepTimerFade(value: string): Promise<void> {
                 :label="t('settings.videoAmbient')"
                 :hint="t('settings.videoAmbientHint')"
                 @update:model-value="changeVideoAmbient"
+            />
+            <BaseCheckbox
+                :model-value="session.video.skipIntroAndOutro"
+                data-field="video-skip-intro-outro"
+                :label="t('settings.videoSkipIntroAndOutro')"
+                :hint="t('settings.videoSkipIntroAndOutroHint')"
+                @update:model-value="changeSkipIntroAndOutro"
             />
             <BaseSelect
                 :model-value="sleepTimerFade"

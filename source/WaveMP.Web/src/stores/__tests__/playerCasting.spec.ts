@@ -101,7 +101,9 @@ describe('player store while casting', () => {
         window.localStorage.clear()
         vi.mocked(getPlayback)
             .mockReset()
-            .mockImplementation((id, _formats, target) => Promise.resolve(playbackOf(id, target)))
+            .mockImplementation((id, _formats, _sound, target) =>
+                Promise.resolve(playbackOf(id, target)),
+            )
         vi.mocked(getVideoPlayback)
             .mockReset()
             .mockImplementation((id) => Promise.resolve(videoOf(id)))
@@ -137,7 +139,7 @@ describe('player store while casting', () => {
         await flushPromises()
 
         expect(engine.stop).toHaveBeenCalled()
-        expect(getPlayback).toHaveBeenLastCalledWith('a', ['Mp3', 'Flac'], 'Cast')
+        expect(getPlayback).toHaveBeenLastCalledWith('a', ['Mp3', 'Flac'], undefined, 'Cast')
         expect(layer.loads).toEqual([
             {
                 media: {

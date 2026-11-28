@@ -3,7 +3,7 @@
 // sync. Changing or removing an existing part increases the version, adding a new part does not.
 
 /** Version of the theme API (data-theme-api on <html>). */
-export const themeApiVersion = 9
+export const themeApiVersion = 10
 
 export const parts = [
     // App
@@ -95,6 +95,15 @@ export const parts = [
     'cover',
     'cover-image',
     'cover-preview',
+    'song-segments',
+    'song-segment',
+    'song-segment-header',
+    'song-segment-title',
+    'song-segment-status',
+    'song-strip',
+    'song-strip-piece',
+    'song-strip-playhead',
+    'song-strip-legend',
 
     // List
     'list',

@@ -238,6 +238,11 @@
         --wmp-icon-review-previous: url('/icons/phosphor/regular/caret-left.svg');
         --wmp-icon-review-next: url('/icons/phosphor/regular/caret-right.svg');
         --wmp-icon-go-to-album: url('/icons/phosphor/regular/vinyl-record.svg');
+        --wmp-icon-song-audio: url('/icons/phosphor/regular/waveform.svg');
+        --wmp-icon-song-video: url('/icons/phosphor/regular/film-strip.svg');
+        --wmp-icon-song-segment-notice: url('/icons/phosphor/regular/warning.svg');
+        --wmp-icon-preview: url('/icons/phosphor/regular/play.svg');
+        --wmp-icon-analyze-again: url('/icons/phosphor/regular/arrows-clockwise.svg');
         --wmp-icon-go-to-artist: url('/icons/phosphor/regular/microphone-stage.svg');
         --wmp-icon-watch-video: url('/icons/phosphor/regular/monitor-play.svg');
         --wmp-icon-show-files: url('/icons/phosphor/regular/files.svg');

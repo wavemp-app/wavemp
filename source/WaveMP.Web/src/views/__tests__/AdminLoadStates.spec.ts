@@ -12,6 +12,7 @@ const api = vi.hoisted(() => ({
     jobs: vi.fn(),
     users: vi.fn(),
     cacheSettings: vi.fn(),
+    analyzeAll: vi.fn(),
 }))
 
 vi.mock('@/api/client', () => ({
@@ -19,6 +20,7 @@ vi.mock('@/api/client', () => ({
         api: {
             v1: {
                 jobs: { get: () => api.jobs() },
+                songAnalyses: { post: () => api.analyzeAll() },
                 users: { get: () => api.users() },
                 settings: { cache: { get: () => api.cacheSettings() } },
             },
@@ -99,6 +101,25 @@ describe('loading and error states of the administration', () => {
         expect(api.jobs).toHaveBeenCalledTimes(2)
         expect(wrapper.find('[data-part="alert"]').exists()).toBe(false)
         expect(wrapper.find('[data-item="retry"]').exists()).toBe(false)
+    })
+
+    it('lets the song analysis analyze all songs again and tells how many files', async () => {
+        api.jobs.mockResolvedValue({ items: [{ id: 'song-analysis', state: 'Idle' }], total: 1 })
+        api.analyzeAll.mockResolvedValueOnce({ renewed: 42 })
+        api.analyzeAll.mockRejectedValueOnce(new TypeError('Failed to fetch'))
+        const wrapper = await mountPage(AdminJobsView)
+        await flushPromises()
+
+        await wrapper.get('[data-item="renew"]').trigger('click')
+        await flushPromises()
+        expect(api.analyzeAll).toHaveBeenCalledOnce()
+        expect(wrapper.get('[data-part="alert"]').text()).toBe(
+            'All songs are analyzed again in the background (42 files).',
+        )
+
+        await wrapper.get('[data-item="renew"]').trigger('click')
+        await flushPromises()
+        expect(wrapper.get('[data-part="alert"]').text()).toBe('The analysis could not be started.')
     })
 
     it('marks the profiles page as busy and loads it again after an error', async () => {

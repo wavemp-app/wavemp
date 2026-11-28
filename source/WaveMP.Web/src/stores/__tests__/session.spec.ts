@@ -637,13 +637,13 @@ describe('session store', () => {
             api.createSession.mockResolvedValue(created('a'))
             api.getSettings.mockResolvedValue({ language: 'en', video: { ambientMode: false } })
             const session = useSessionStore()
-            expect(session.video).toEqual({ ambientMode: true })
+            expect(session.video).toEqual({ ambientMode: true, skipIntroAndOutro: true })
 
             await session.select('a')
-            expect(session.video).toEqual({ ambientMode: false })
+            expect(session.video).toEqual({ ambientMode: false, skipIntroAndOutro: true })
 
             session.clear()
-            expect(session.video).toEqual({ ambientMode: true })
+            expect(session.video).toEqual({ ambientMode: true, skipIntroAndOutro: true })
         })
 
         it('switches the ambient light off at once and back when saving fails', async () => {
@@ -660,7 +660,7 @@ describe('session store', () => {
             expect(api.updateSettings).toHaveBeenCalledWith({ video: { ambientMode: false } })
 
             await expect(session.updateVideo({ ambientMode: true })).rejects.toThrow('offline')
-            expect(session.video).toEqual({ ambientMode: false })
+            expect(session.video).toEqual({ ambientMode: false, skipIntroAndOutro: true })
         })
 
         it('saves the fade-out of the sleep timer and passes errors on', async () => {

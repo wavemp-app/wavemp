@@ -17,7 +17,6 @@ import OnlineMetadataDialog from '@/components/library/OnlineMetadataDialog.vue'
 import TrackFileList from '@/components/library/TrackFileList.vue'
 import TrackLyricsPanel from '@/components/library/TrackLyricsPanel.vue'
 import TrackMetadataDialog from '@/components/library/TrackMetadataDialog.vue'
-import TrackVideoOffsetForm from '@/components/library/TrackVideoOffsetForm.vue'
 import { useDetailTitle } from '@/composables/useDetailTitle'
 import { useFormat } from '@/composables/useFormat'
 import { getTrack, listTrackFiles } from '@/library/api'
@@ -44,7 +43,6 @@ const format = useFormat()
 const session = useSessionStore()
 const player = usePlayerStore()
 const filesTitleId = useId()
-const videoSyncTitleId = useId()
 const lyricsTitleId = useId()
 
 const track = ref<Track | null>(null)
@@ -298,26 +296,13 @@ useDetailTitle(() => (status.value === 'ready' ? track.value?.title : null))
                 <h2 :id="lyricsTitleId" data-part="section-title">{{ t('trackLyrics.title') }}</h2>
                 <TrackLyricsPanel :track-id="track.id ?? id" @downloaded="onLyricsDownloaded" />
             </section>
-            <section
-                v-if="session.isAdmin && track.hasVideo"
-                data-part="section"
-                data-item="video-sync"
-                :aria-labelledby="videoSyncTitleId"
-            >
-                <h2 :id="videoSyncTitleId" data-part="section-title">
-                    {{ t('trackVideo.title') }}
-                </h2>
-                <TrackVideoOffsetForm
-                    :track-id="track.id ?? id"
-                    @saved="(offset) => player.applyVideoOffset(track?.id ?? id, offset)"
-                />
-            </section>
             <TrackMetadataDialog
                 v-if="session.isAdmin"
                 v-model:open="editing"
                 :track-id="id"
                 :return-to-previous="editRequested"
                 @saved="reload"
+                @song-segments-saved="(segments) => player.applySongSegments(id, segments)"
             />
             <OnlineMetadataDialog
                 v-if="session.isAdmin"

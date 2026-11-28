@@ -119,7 +119,10 @@ test('shows the ambient light around a playing video and switches it off', async
     const settings = await request.get('/api/v1/me/settings', {
         headers: { Authorization: `Bearer ${(await session.json()).token}` },
     })
-    expect((await settings.json()).video).toEqual({ ambientMode: false })
+    expect((await settings.json()).video).toEqual({
+        ambientMode: false,
+        skipIntroAndOutro: true,
+    })
 })
 
 test('keeps one static color for reduced motion', async ({ page, request }) => {

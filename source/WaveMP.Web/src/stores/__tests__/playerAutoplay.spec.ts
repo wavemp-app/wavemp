@@ -229,7 +229,7 @@ describe('player store: autoplay', () => {
         engine.events.ended?.()
         await flushPromises()
 
-        expect(getPlayback).toHaveBeenCalledWith('x', ['Mp3'])
+        expect(getPlayback).toHaveBeenCalledWith('x', ['Mp3'], 'Audio')
         expect(engine.lastUrl).toBe('/stream/x')
     })
 

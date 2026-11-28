@@ -5,10 +5,14 @@ import {
     PlaybackTargetObject,
     PlayerViewModeObject,
     StreamProtocolObject,
+    SoundSourceObject,
     type AudioFormat,
     type PlayerViewMode,
+    type SongSegment,
+    type SoundSource,
     type Track,
     type TrackPlayback,
+    type TrackSongSegments,
     type TrackVideoPlayback,
 } from '@/api/generated/models'
 import { statusOf } from '@/api/problems'
@@ -96,6 +100,14 @@ import { replayGainFactor } from '@/player/replayGain'
 import { fromSavedState, type PlayerSource, type RestoredState } from '@/player/resume'
 import { shouldPreload, shouldRestart } from '@/player/scheduling'
 import {
+    filePosition,
+    loudnessMatchFactor,
+    mapPosition,
+    skipWindow,
+    songPosition,
+    soundForView,
+} from '@/player/songSegments'
+import {
     browserSleepTimerClock,
     SleepTimer,
     sleepTimerOff,
@@ -108,6 +120,7 @@ import {
     type FollowerClock,
     type VideoFollowerEvents,
     type VideoFollowerSource,
+    type VideoMapping,
 } from '@/player/videoFollower'
 import { browserVideoFormats, type VideoFormats } from '@/player/videoFormats'
 import { stageViewOf, type StageView, type VideoState } from '@/player/videoSync'
@@ -156,6 +169,12 @@ export type PlayerEngine = Pick<
     resumeEffects?(): void
     /** Unlocks playback within a gesture of the user without playing anything. */
     unlock?(): void
+    /** Switches the current track to another source of the song (see AudioEngine.switchTo). */
+    switchTo?(
+        source: DeckSource,
+        mapPosition: (position: number) => number,
+        crossfadeSeconds?: number,
+    ): Promise<boolean>
 }
 
 /** What the store tells the engine of the browser about its playback paths. */
@@ -219,6 +238,22 @@ interface Loaded {
     /** The audio playback; for a casting device also the video playback. */
     readonly playback: TrackPlayback | TrackVideoPlayback
     readonly source: DeckSource
+    /** The sound the player asked for (the server plays the other one when it is missing). */
+    readonly sound: SoundSource
+}
+
+/** The sound a playback plays: the audio file unless it says otherwise. */
+function soundOf(value: TrackPlayback | TrackVideoPlayback): SoundSource {
+    return 'sound' in value && value.sound === SoundSourceObject.Video
+        ? SoundSourceObject.Video
+        : SoundSourceObject.Audio
+}
+
+/** Where the song lies in the file of a playback; the whole file without an analysis. */
+function segmentOf(
+    value: TrackPlayback | TrackVideoPlayback | null | undefined,
+): SongSegment | null {
+    return value?.songSegment ?? null
 }
 
 /** Where the music plays: in the browser or on a casting device. */
@@ -345,6 +380,11 @@ export const usePlayerStore = defineStore('player', () => {
     /** The sleep timer and the seconds until a timer with a duration ends. */
     const sleepTimer = ref<SleepTimerState>(sleepTimerOff)
     const sleepRemaining = ref(0)
+    /**
+     * Where the song lies in the file the engine plays for the current track (an intro and outro of
+     * a music video, parts it lacks or adds); null for the whole file. The lyrics follow the song.
+     */
+    const soundSegment = shallowRef<SongSegment | null>(null)
     /** The lyrics of the current track; null while they load and for tracks without lyrics. */
     const lyrics = shallowRef<TrackLyrics | null>(null)
     /** The songs autoplay plays after the list, in their order. */
@@ -425,6 +465,10 @@ export const usePlayerStore = defineStore('player', () => {
     let videoGeneration = 0
     /** The entry whose failed video was already requested once more. */
     let videoRetried: string | null = null
+    /** Where the song lies in the loaded video; null for the whole file. */
+    let videoSegment: SongSegment | null = null
+    /** Increases with every switch of the sound, so late answers are ignored. */
+    let soundGeneration = 0
     /** The loaded track and its playback; null while loading or idle. */
     let loaded: Loaded | null = null
     /** Where the user moved the track while it was still loading; it starts there once loaded. */
@@ -684,20 +728,59 @@ export const usePlayerStore = defineStore('player', () => {
         }
     }
 
+    /**
+     * The gain of a playback: its ReplayGain, and for the sound of a video the difference to the
+     * loudness of the audio file of the track, so both sources play at the same level.
+     */
     function gainOf(value: TrackPlayback | TrackVideoPlayback | null | undefined): number {
-        return replayGainFactor(
+        const replayGain = replayGainFactor(
             session.replayGain,
             value && 'replayGain' in value ? value.replayGain : undefined,
         )
+        const match = value && 'loudnessMatchDb' in value ? value.loudnessMatchDb : undefined
+        return replayGain * loudnessMatchFactor(match)
     }
 
-    function sourceOf(value: TrackPlayback): DeckSource | null {
+    /**
+     * Whether a playback skips intro and outro: the sound of a video played for the cover, the
+     * visualization or the lyrics (the track has no audio file), with the setting of the profile.
+     */
+    function skipsIntroAndOutro(value: TrackPlayback, wanted: SoundSource): boolean {
+        return (
+            wanted === SoundSourceObject.Audio &&
+            soundOf(value) === SoundSourceObject.Video &&
+            session.video.skipIntroAndOutro
+        )
+    }
+
+    function sourceOf(
+        value: TrackPlayback,
+        wanted: SoundSource = SoundSourceObject.Audio,
+    ): DeckSource | null {
         if (!value.streamUrl) {
             return null
         }
 
-        const source = { url: value.streamUrl, gain: gainOf(value) }
-        return isHls(value) ? { ...source, hls: true } : source
+        const window = skipWindow(segmentOf(value), skipsIntroAndOutro(value, wanted))
+        const source: DeckSource = {
+            url: value.streamUrl,
+            gain: gainOf(value),
+            ...(isHls(value) ? { hls: true } : {}),
+            ...(window && window.start > 0 ? { start: window.start } : {}),
+            ...(window?.end !== undefined ? { end: window.end } : {}),
+        }
+        return source
+    }
+
+    /** Sets the loaded track and the segment of its sound, which the lyrics follow. */
+    function setLoaded(value: Loaded | null): void {
+        loaded = value
+        soundSegment.value = value ? segmentOf(value.playback) : null
+    }
+
+    /** The sound the player wants for an entry in the current view. */
+    function soundWantedFor(item: QueueItem): SoundSource {
+        return soundForView(viewMode.value, item.track.hasVideo === true)
     }
 
     function videoSourceOf(value: TrackVideoPlayback | undefined): VideoFollowerSource | null {
@@ -721,13 +804,22 @@ export const usePlayerStore = defineStore('player', () => {
     }
 
     async function fetchLocalPlayback(item: QueueItem): Promise<Loaded | PlayerMessage> {
+        const sound = soundWantedFor(item)
         const known = autoplayPlaybacks.get(item.key)
         autoplayPlaybacks.delete(item.key)
-        const result = isPlaybackFresh(known, playerDependencies.now())
-            ? known
-            : await getPlayback(item.track.id ?? '', playerDependencies.audioFormats())
-        const source = result ? sourceOf(result) : null
-        return result && source ? { key: item.key, playback: result, source } : 'unsupported'
+        // Autoplay brings the playback of the audio file (of the video for songs without one); the
+        // video view asks for the sound of the video when the song has both.
+        const fits =
+            !!known &&
+            (sound === SoundSourceObject.Audio ||
+                soundOf(known) === sound ||
+                item.track.hasAudio === false)
+        const result =
+            fits && isPlaybackFresh(known, playerDependencies.now())
+                ? known
+                : await getPlayback(item.track.id ?? '', playerDependencies.audioFormats(), sound)
+        const source = result ? sourceOf(result, sound) : null
+        return result && source ? { key: item.key, playback: result, source, sound } : 'unsupported'
     }
 
     /**
@@ -741,13 +833,23 @@ export const usePlayerStore = defineStore('player', () => {
         const result =
             kind === 'video'
                 ? await getVideoPlayback(track.id ?? '', formats.video, PlaybackTargetObject.Cast)
-                : await getPlayback(track.id ?? '', formats.audio, PlaybackTargetObject.Cast)
+                : await getPlayback(
+                      track.id ?? '',
+                      formats.audio,
+                      undefined,
+                      PlaybackTargetObject.Cast,
+                  )
         const media = result ? castMediaOf(result, kind, track, playerDependencies.origin()) : null
         if (!result || !media) {
             return 'unsupported'
         }
 
-        return { key: item.key, playback: result, source: { url: media.url, gain: 1, cast: media } }
+        return {
+            key: item.key,
+            playback: result,
+            source: { url: media.url, gain: 1, cast: media },
+            sound: SoundSourceObject.Audio,
+        }
     }
 
     function forgetPrepared(): void {
@@ -766,7 +868,7 @@ export const usePlayerStore = defineStore('player', () => {
         }
 
         forgetPrepared()
-        loaded = null
+        setLoaded(null)
         seekWhileLoading = null
         history.stop()
         if (!item) {
@@ -791,10 +893,11 @@ export const usePlayerStore = defineStore('player', () => {
             return
         }
 
-        loaded = result
+        setLoaded(result)
         duration.value = seconds(result.playback.durationMilliseconds) || duration.value
-        // A seek of the user while the track loaded wins over the position it was started at.
-        const at = seekWhileLoading ?? startPosition
+        // A seek of the user while the track loaded wins over the position it was started at; a
+        // skipped intro moves the start of the track.
+        const at = seekWhileLoading ?? (startPosition || result.source.start || 0)
         seekWhileLoading = null
         position.value = at
         const player = activeEngine()
@@ -840,7 +943,7 @@ export const usePlayerStore = defineStore('player', () => {
      */
     function waitAtRestored(): void {
         forgetPrepared()
-        loaded = null
+        setLoaded(null)
         history.stop()
         runningEngine()?.stop()
         loading.value = false
@@ -923,10 +1026,10 @@ export const usePlayerStore = defineStore('player', () => {
 
         generation++
         queue.value = withIndex(queue.value, index)
-        loaded = next
+        setLoaded(next)
         retried = null
         message.value = null
-        position.value = 0
+        position.value = next.source.start ?? 0
         duration.value = seconds(next.playback.durationMilliseconds)
         history.start(queue.value.items[index]?.track.id ?? '')
     }
@@ -1027,7 +1130,7 @@ export const usePlayerStore = defineStore('player', () => {
     function stopPlayback(): void {
         generation++
         forgetPrepared()
-        loaded = null
+        setLoaded(null)
         history.stop()
         runningEngine()?.stop()
         reset()
@@ -1635,12 +1738,132 @@ export const usePlayerStore = defineStore('player', () => {
         }
     }
 
-    /** Applies a new offset to the video of a track at once, if it is the current one. */
-    function applyVideoOffset(trackId: string, offsetMilliseconds: number): void {
-        if (current.value?.track.id === trackId) {
-            follower?.setOffset(offsetMilliseconds)
-            follower?.sync()
+    /**
+     * Applies new song segments of a track (a correction of the admin) at once, if it is the current
+     * one: the video follows them and the lyrics move along; a skipped intro or outro changes with
+     * the next start of the track.
+     */
+    function applySongSegments(trackId: string, segments: TrackSongSegments): void {
+        if (current.value?.track.id !== trackId) {
+            return
         }
+
+        if (segments.video?.effective) {
+            videoSegment = segments.video.effective
+        }
+
+        const now = loaded
+        if (now && output === 'local') {
+            const file =
+                soundOf(now.playback) === SoundSourceObject.Video ? segments.video : segments.audio
+            if (file?.effective) {
+                setLoaded({ ...now, playback: { ...now.playback, songSegment: file.effective } })
+            }
+        }
+
+        follower?.sync()
+    }
+
+    /**
+     * The position of the video for a position of the engine: the same while the engine plays the
+     * sound of the video, otherwise the moment of the song the audio file plays.
+     */
+    const videoMapping: VideoMapping = {
+        toVideo: (position) =>
+            loaded && soundOf(loaded.playback) !== SoundSourceObject.Video
+                ? mapPosition(segmentOf(loaded.playback), videoSegment, position)
+                : position,
+        toClock: (videoPosition) =>
+            loaded && soundOf(loaded.playback) !== SoundSourceObject.Video
+                ? mapPosition(videoSegment, segmentOf(loaded.playback), videoPosition)
+                : videoPosition,
+    }
+
+    /**
+     * The view changed between the video and the cover or visualization (or the setting to skip
+     * intro and outro): the current track switches to the sound for it without a gap, at the same
+     * moment of the song. A track that has only one of both sources keeps it and only skips intro
+     * and outro or not.
+     */
+    async function switchSound(): Promise<void> {
+        const item = current.value
+        const now = loaded
+        if (output !== 'local' || remote.value || !item || !now || now.key !== item.key) {
+            return
+        }
+
+        const wanted = soundWantedFor(item)
+        const token = generation
+        const request = ++soundGeneration
+        let result: TrackPlayback | undefined = now.playback as TrackPlayback
+        if (wanted !== now.sound) {
+            try {
+                result = await getPlayback(
+                    item.track.id ?? '',
+                    playerDependencies.audioFormats(),
+                    wanted,
+                )
+            } catch {
+                return
+            }
+        }
+
+        if (token !== generation || request !== soundGeneration || loaded !== now || !result) {
+            return
+        }
+
+        const source = sourceOf(result, wanted)
+        if (!source) {
+            return
+        }
+
+        const next: Loaded = { key: now.key, playback: result, source, sound: wanted }
+        const sameFile = soundOf(result) === soundOf(now.playback)
+        if (sameFile && source.start === now.source.start && source.end === now.source.end) {
+            // Nothing to hear differently (e.g. a video without sound in the video view).
+            setLoaded(next)
+            return
+        }
+
+        const from = segmentOf(now.playback)
+        const to = segmentOf(result)
+        const map = (position: number): number => {
+            const target = sameFile ? position : mapPosition(from, to, position)
+            return source.start !== undefined && target < source.start ? source.start : target
+        }
+        const player = getEngine()
+        const switched = player.switchTo
+            ? await player.switchTo(source, map)
+            : (player.load(source, map(player.position)), true)
+        if (!switched || token !== generation || loaded !== now) {
+            return
+        }
+
+        setLoaded(next)
+        follower?.sync()
+    }
+
+    /** The position of the song for the lyrics: NaN during an intro or outro (no line is sung). */
+    const lyricsPosition = computed(() => songPosition(soundSegment.value, position.value))
+
+    /** The length of the song for the lyrics; the duration of the file without an analysis. */
+    const songDuration = computed(() => {
+        const segment = soundSegment.value
+        const pieces = segment?.pieces ?? []
+        const last = pieces.at(-1)
+        return last
+            ? ((last.songStartMilliseconds ?? 0) + (last.durationMilliseconds ?? 0)) / 1000
+            : duration.value
+    })
+
+    /** The exact position of the song right now, for the lyrics (see livePosition). */
+    function lyricsClock(): number {
+        return songPosition(soundSegment.value, livePosition())
+    }
+
+    /** Moves the music to a position of the song (a line of the lyrics). */
+    function seekSong(songSeconds: number): void {
+        seek(filePosition(soundSegment.value, songSeconds))
     }
 
     function onVideoState(state: VideoState): void {
@@ -1675,7 +1898,8 @@ export const usePlayerStore = defineStore('player', () => {
             return
         }
 
-        follower.load(source, result?.offsetMilliseconds ?? 0)
+        videoSegment = segmentOf(result)
+        follower.load(source, videoMapping)
         follower.setActive(videoWanted.value)
     }
 
@@ -1759,7 +1983,7 @@ export const usePlayerStore = defineStore('player', () => {
         forgetPrepared()
         runningEngine()?.stop()
         output = next
-        loaded = null
+        setLoaded(null)
         analyser.value = null
         history.stop()
         if (current.value && playback.value !== 'idle') {
@@ -1883,6 +2107,21 @@ export const usePlayerStore = defineStore('player', () => {
     // A new entry, view mode, stage or visibility: the video follows; the audio is not touched.
     watch([() => current.value?.key ?? null, videoWanted], ([key], [previousKey]) =>
         updateVideo(key !== previousKey),
+    )
+
+    // The video view is chosen or left, or the setting to skip intro and outro changes: the current
+    // track switches to the sound for the view (see switchSound).
+    watch(
+        () =>
+            [
+                current.value ? soundWantedFor(current.value) : null,
+                session.video.skipIntroAndOutro,
+            ] as const,
+        ([sound, skip], [previousSound, previousSkip]) => {
+            if (sound !== null && (sound !== previousSound || skip !== previousSkip)) {
+                void switchSound()
+            }
+        },
     )
 
     // The audio starts, pauses or waits for data: the video does the same at once.
@@ -2294,6 +2533,10 @@ export const usePlayerStore = defineStore('player', () => {
         lyrics,
         hasLyrics,
         livePosition,
+        lyricsPosition,
+        lyricsClock,
+        songDuration,
+        seekSong,
         refreshLyrics,
         equalizerAvailable,
         casting,
@@ -2336,7 +2579,7 @@ export const usePlayerStore = defineStore('player', () => {
         selectViewMode,
         attachVideo,
         detachVideo,
-        applyVideoOffset,
+        applySongSegments,
         setVideoDiagnostics,
         startSleepTimer,
         cancelSleepTimer,

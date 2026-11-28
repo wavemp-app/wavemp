@@ -10,6 +10,7 @@ import type {
     PlaybackState,
     PlaybackTarget,
     PlayHistoryEntry,
+    SoundSource,
     TrackPlayback,
     TrackVideoPlayback,
     UpdatePlaybackState,
@@ -19,15 +20,20 @@ import type { VideoFormats } from './videoFormats'
 /**
  * How the client plays a track, with the signed stream URL for direct play. With the target Cast,
  * the formats are those of a casting device; the URLs then stay valid longer and the cover is
- * signed as well.
+ * signed as well. With the sound Video, the sound of the video plays (the audio file without one).
  */
 export function getPlayback(
     trackId: string,
     audioFormats: readonly AudioFormat[],
+    sound?: SoundSource,
     target?: PlaybackTarget,
 ): Promise<TrackPlayback | undefined> {
     return apiClient.api.v1.tracks.byId(trackId).playback.get({
-        queryParameters: { audioFormats: [...audioFormats], ...(target ? { target } : {}) },
+        queryParameters: {
+            audioFormats: [...audioFormats],
+            ...(target ? { target } : {}),
+            ...(sound ? { sound } : {}),
+        },
     })
 }
 

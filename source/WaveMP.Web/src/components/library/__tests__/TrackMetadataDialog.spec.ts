@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
-import type { TrackMetadata } from '@/api/generated/models'
+import type { TrackMetadata, TrackSongSegments } from '@/api/generated/models'
 import { createWaveMpI18n } from '@/i18n'
 
 const api = vi.hoisted(() => ({
@@ -13,6 +13,10 @@ const api = vi.hoisted(() => ({
     getAlbumCoverFallback: vi.fn(),
     setAlbumCoverFallback: vi.fn(),
     listArtists: vi.fn(),
+    getTrackSongSegments: vi.fn(),
+    setTrackSongSegment: vi.fn(),
+    resetTrackSongSegment: vi.fn(),
+    analyzeTrackSong: vi.fn(),
 }))
 
 vi.mock('@/library/api', () => api)
@@ -32,6 +36,20 @@ const metadata: TrackMetadata = {
     trackNumber: 1,
     discNumber: null,
     genre: 'Rock',
+}
+
+const wholeFile = {
+    method: 'WholeFile' as const,
+    confidence: 1,
+    confident: true,
+    startMilliseconds: 0,
+    endMilliseconds: 200_000,
+    pieces: [],
+}
+
+const songSegments: TrackSongSegments = {
+    trackId: 'song',
+    audio: { durationMilliseconds: 200_000, detected: wholeFile, effective: wholeFile },
 }
 
 async function mountDialog() {
@@ -91,6 +109,7 @@ describe('TrackMetadataDialog', () => {
             effectivePriority: 'TrackFirst',
         })
         api.fetchCoverRulePreview.mockResolvedValue(undefined)
+        api.getTrackSongSegments.mockResolvedValue(songSegments)
     })
 
     it('loads the metadata into the fields and names the file', async () => {
@@ -108,7 +127,8 @@ describe('TrackMetadataDialog', () => {
         expect(value(wrapper, 'disc')).toBe('')
         expect(value(wrapper, 'genre')).toBe('Rock')
         expect(input(wrapper, 'year').attributes('inputmode')).toBe('numeric')
-        expect(wrapper.findAll('[data-part="field-row"] [data-part="field"]')).toHaveLength(3)
+        const tagRows = wrapper.findAll('form [data-part="field-row"] [data-part="field"]')
+        expect(tagRows).toHaveLength(3)
         expect(wrapper.text()).toContain('The tags are written to Band/Album/01 - Song.mp3.')
         expect(saveButton(wrapper).attributes('disabled')).toBeUndefined()
         wrapper.unmount()
@@ -334,6 +354,46 @@ describe('TrackMetadataDialog', () => {
         expect(wrapper.get('[data-item="cover-rule"] [data-part="alert"]').text()).toBe(
             'The cover rule could not be saved.',
         )
+        expect(wrapper.emitted('update:open')).toBeUndefined()
+        wrapper.unmount()
+    })
+
+    it('saves a corrected start of the song with the tags and reports it to the player', async () => {
+        const corrected: TrackSongSegments = {
+            trackId: 'song',
+            audio: {
+                ...songSegments.audio,
+                manualStartMilliseconds: 1_500,
+                effective: { ...wholeFile, manual: true, startMilliseconds: 1_500 },
+            },
+        }
+        api.updateTrackMetadata.mockResolvedValue(metadata)
+        api.setTrackSongSegment.mockResolvedValue(corrected)
+        const wrapper = await mountDialog()
+        expect(wrapper.find('[data-item="song-segments"] [data-kind="audio"]').exists()).toBe(true)
+
+        await wrapper
+            .get('[data-item="song-segments"] [data-field="song-start"] input')
+            .setValue('1.5')
+        await saveButton(wrapper).trigger('click')
+        await flushPromises()
+
+        expect(api.setTrackSongSegment).toHaveBeenCalledWith('song', 'audio', 1_500, null)
+        expect(wrapper.emitted('songSegmentsSaved')).toEqual([[corrected]])
+        expect(wrapper.emitted('update:open')?.at(-1)).toEqual([false])
+        wrapper.unmount()
+    })
+
+    it('stays open while a song segment holds no valid value', async () => {
+        const wrapper = await mountDialog()
+
+        await wrapper
+            .get('[data-item="song-segments"] [data-field="song-start"] input')
+            .setValue('abc')
+        await saveButton(wrapper).trigger('click')
+        await flushPromises()
+
+        expect(api.setTrackSongSegment).not.toHaveBeenCalled()
         expect(wrapper.emitted('update:open')).toBeUndefined()
         wrapper.unmount()
     })

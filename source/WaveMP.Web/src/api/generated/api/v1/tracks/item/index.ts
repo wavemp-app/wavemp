@@ -28,6 +28,10 @@ import { RatingRequestBuilderRequestsMetadata, type RatingRequestBuilder } from 
 // @ts-ignore
 import { ReviewRequestBuilderRequestsMetadata, type ReviewRequestBuilder } from './review/index.js';
 // @ts-ignore
+import { SongAnalysesRequestBuilderRequestsMetadata, type SongAnalysesRequestBuilder } from './songAnalyses/index.js';
+// @ts-ignore
+import { SongSegmentsRequestBuilderNavigationMetadata, SongSegmentsRequestBuilderRequestsMetadata, type SongSegmentsRequestBuilder } from './songSegments/index.js';
+// @ts-ignore
 import { StreamRequestBuilderRequestsMetadata, type StreamRequestBuilder } from './stream/index.js';
 // @ts-ignore
 import { type VideoRequestBuilder, VideoRequestBuilderNavigationMetadata, VideoRequestBuilderRequestsMetadata } from './video/index.js';
@@ -86,6 +90,14 @@ export interface TracksItemRequestBuilder extends BaseRequestBuilder<TracksItemR
      * The review property
      */
     get review(): ReviewRequestBuilder;
+    /**
+     * The songAnalyses property
+     */
+    get songAnalyses(): SongAnalysesRequestBuilder;
+    /**
+     * The songSegments property
+     */
+    get songSegments(): SongSegmentsRequestBuilder;
     /**
      * The stream property
      */
@@ -154,6 +166,13 @@ export const TracksItemRequestBuilderNavigationMetadata: Record<Exclude<keyof Tr
     },
     review: {
         requestsMetadata: ReviewRequestBuilderRequestsMetadata,
+    },
+    songAnalyses: {
+        requestsMetadata: SongAnalysesRequestBuilderRequestsMetadata,
+    },
+    songSegments: {
+        requestsMetadata: SongSegmentsRequestBuilderRequestsMetadata,
+        navigationMetadata: SongSegmentsRequestBuilderNavigationMetadata,
     },
     stream: {
         requestsMetadata: StreamRequestBuilderRequestsMetadata,

@@ -25,8 +25,10 @@ const api = vi.hoisted(() => ({
     listTrackFiles: vi.fn(),
     getTrackMetadata: vi.fn(),
     updateTrackMetadata: vi.fn(),
-    getTrackVideoOffset: vi.fn(),
-    setTrackVideoOffset: vi.fn(),
+    getTrackSongSegments: vi.fn(),
+    setTrackSongSegment: vi.fn(),
+    resetTrackSongSegment: vi.fn(),
+    analyzeTrackSong: vi.fn(),
     searchLibrary: vi.fn(),
     fetchAlbumCover: vi.fn(),
     fetchTrackCover: vi.fn(),
@@ -685,52 +687,6 @@ describe('TrackView', () => {
         wrapper.unmount()
     })
 
-    describe('video sync', () => {
-        beforeEach(() => {
-            api.getTrackVideoOffset.mockResolvedValue({ trackId: 'Closing', offsetMilliseconds: 0 })
-            api.setTrackVideoOffset.mockImplementation((id: string, offsetMilliseconds: number) =>
-                Promise.resolve({ trackId: id, offsetMilliseconds }),
-            )
-        })
-
-        it('is offered to admins for songs with a video only', async () => {
-            signIn('User')
-            const user = await mountView(TrackView, '/library/tracks/Closing', { id: 'Closing' })
-            expect(user.wrapper.find('[data-item="video-sync"]').exists()).toBe(false)
-            expect(api.getTrackVideoOffset).not.toHaveBeenCalled()
-            user.wrapper.unmount()
-
-            signIn('Admin')
-            api.getTrack.mockResolvedValueOnce(track('Opening', { hasVideo: false }))
-            const audio = await mountView(TrackView, '/library/tracks/Opening', { id: 'Opening' })
-            expect(audio.wrapper.find('[data-item="video-sync"]').exists()).toBe(false)
-            audio.wrapper.unmount()
-
-            const admin = await mountView(TrackView, '/library/tracks/Closing', { id: 'Closing' })
-            const title = admin.wrapper.get('[data-item="video-sync"] [data-part="section-title"]')
-            expect(title.text()).toBe('Video sync')
-            expect(api.getTrackVideoOffset).toHaveBeenCalledWith('Closing')
-            admin.wrapper.unmount()
-        })
-
-        it('applies a saved offset to the playing video at once', async () => {
-            signIn('Admin')
-            const player = usePlayerStore()
-            const apply = vi.spyOn(player, 'applyVideoOffset')
-            const { wrapper } = await mountView(TrackView, '/library/tracks/Closing', {
-                id: 'Closing',
-            })
-
-            await wrapper.get('[data-field="video-offset"] input').setValue('1500')
-            await wrapper.get('[data-item="video-sync"] form').trigger('submit')
-            await flushPromises()
-
-            expect(api.setTrackVideoOffset).toHaveBeenCalledWith('Closing', 1500)
-            expect(apply).toHaveBeenCalledWith('Closing', 1500)
-            wrapper.unmount()
-        })
-    })
-
     describe('metadata editor', () => {
         const metadata = {
             trackId: 'Closing',
@@ -784,6 +740,43 @@ describe('TrackView', () => {
             expect(api.updateTrackMetadata).toHaveBeenCalledWith('Closing', { title: 'Renamed' })
             expect(api.getTrack).toHaveBeenCalledTimes(2)
             expect(api.listTrackFiles).toHaveBeenCalledTimes(2)
+            wrapper.unmount()
+        })
+
+        it('sets where the song starts and applies it to the player at once', async () => {
+            const whole = { method: 'WholeFile', confident: true, pieces: [] }
+            const corrected = {
+                trackId: 'Closing',
+                audio: {
+                    durationMilliseconds: 200_000,
+                    manualStartMilliseconds: 2_000,
+                    detected: whole,
+                    effective: { ...whole, manual: true, startMilliseconds: 2_000 },
+                },
+            }
+            api.getTrackSongSegments.mockResolvedValue({
+                trackId: 'Closing',
+                audio: { durationMilliseconds: 200_000, detected: whole, effective: whole },
+            })
+            api.setTrackSongSegment.mockResolvedValue(corrected)
+            api.updateTrackMetadata.mockResolvedValue(metadata)
+            signIn('Admin')
+            const apply = vi.spyOn(usePlayerStore(), 'applySongSegments')
+            const { wrapper } = await mountView(TrackView, '/library/tracks/Closing', {
+                id: 'Closing',
+            })
+
+            await wrapper.get('[data-item="edit-metadata"]').trigger('click')
+            await flushPromises()
+            expect(api.getTrackSongSegments).toHaveBeenCalledWith('Closing')
+            await wrapper
+                .get('[data-item="song-segments"] [data-field="song-start"] input')
+                .setValue('2')
+            await wrapper.get('[data-part="dialog"] form').trigger('submit')
+            await flushPromises()
+
+            expect(api.setTrackSongSegment).toHaveBeenCalledWith('Closing', 'audio', 2_000, null)
+            expect(apply).toHaveBeenCalledWith('Closing', corrected)
             wrapper.unmount()
         })
 

@@ -860,6 +860,8 @@
     "autoplayVideoOnly": "Include songs that only have a music video",
     "videoAmbient": "Ambient light around videos",
     "videoAmbientHint": "Fills the dark area around a video with soft light in the colors of the picture.",
+    "videoSkipIntroAndOutro": "Skip intro and outro of music videos without an audio file",
+    "videoSkipIntroAndOutroHint": "With the cover, the visualization or the lyrics, a song that only has a music video starts where the song starts and ends where it ends. Only where the analysis is sure of them; the video view always plays the whole video.",
     "sleepTimerFade": "Sleep timer fade-out",
     "sleepTimerFadeHint": "How long the music fades out before the sleep timer stops it.",
     "sleepTimerFadeSeconds": "{seconds} seconds",
@@ -1788,6 +1790,8 @@
       "genre": "Genre"
     },
     "missingTags": "Missing tags:",
+    "songSegmentLowConfidence": "Song start unsure",
+    "songSegmentMismatch": "Video does not match the song",
     "select": "Select {title}",
     "selectAll": "Select all",
     "selectedCount": "{count} selected",
@@ -1830,7 +1834,8 @@
       "databaseBackup": "Database backup",
       "lyricsDownload": "Download lyrics",
       "libraryCheck": "Library check",
-      "libraryOrganize": "Organize files"
+      "libraryOrganize": "Organize files",
+      "songAnalysis": "Analyze songs"
     },
     "lastRun": "Last run {date}",
     "duration": "took {duration}",
@@ -1845,7 +1850,10 @@
     "loadError": "The jobs could not be loaded.",
     "runError": "The job could not be started.",
     "afterScanWhenLyricsOn": "Runs after scans while the download of lyrics is on",
-    "whenOrganizing": "Runs when files are organized or a reorganization is previewed"
+    "whenOrganizing": "Runs when files are organized or a reorganization is previewed",
+    "analyzeAll": "Analyze all songs again",
+    "analyzeAllStarted": "All songs are analyzed again in the background ({count} files).",
+    "analyzeAllError": "The analysis could not be started."
   },
   "adminCache": {
     "title": "Cache",
@@ -2145,15 +2153,43 @@
     "filesError": "The files could not be loaded.",
     "openFiles": "Choose files"
   },
-  "trackVideo": {
-    "title": "Video sync",
-    "offset": "Video offset (milliseconds)",
-    "offsetHint": "Use a positive value if the music in the video starts later than in the song, for example after an intro, and a negative value if it starts earlier.",
-    "offsetRange": "Enter whole milliseconds from {min} to {max}.",
-    "save": "Save",
-    "saved": "Saved.",
-    "loadError": "The video sync could not be loaded.",
-    "saveError": "The video offset could not be saved."
+  "trackSongSegments": {
+    "title": "Song start and end",
+    "hint": "Where the song starts and ends in each file, for example after the intro of a music video. The player uses it to switch between audio file and video at the same moment, to show the lyrics in time and to skip intro and outro.",
+    "audio": "Audio file",
+    "video": "Video",
+    "start": "Song starts at (seconds)",
+    "end": "Song ends at (seconds)",
+    "fieldsHint": "Leave empty to use the analysis (start {start} s, end {end} s). A negative start means the song starts before the file.",
+    "fieldsHintPending": "Leave empty to use the analysis once it has looked at this file. A negative start means the song starts before the file.",
+    "startRange": "Enter seconds from {min} to just before {max}.",
+    "endRange": "Enter seconds from {min} to {max}.",
+    "invalidNumber": "Enter seconds as a number, for example 12.5.",
+    "summary": "Song from {start} s to {end} s of {duration} s",
+    "states": {
+      "pending": "Not analyzed yet",
+      "corrected": "Corrected by an admin",
+      "wholeFile": "The whole file is the song",
+      "sure": "Found by {method}, {percent} % sure",
+      "unsure": "Found by {method}, only {percent} % sure: please check",
+      "mismatch": "The video does not match the audio file: please check",
+      "noSound": "The file has no sound",
+      "failed": "The file could not be analyzed"
+    },
+    "methods": {
+      "alignment": "comparing it with the audio file",
+      "lyrics": "the synchronized lyrics",
+      "structure": "the pauses in the sound",
+      "wholeFile": "the whole file"
+    },
+    "previewStart": "Play the start",
+    "previewEnd": "Play the end",
+    "useAnalysis": "Use the analysis",
+    "analyzeAgain": "Analyze again",
+    "analysisQueued": "The song is analyzed again in the background.",
+    "analysisError": "The analysis could not be started.",
+    "loadError": "Start and end of the song could not be loaded.",
+    "saveError": "Start and end of the song could not be saved."
   },
   "coverRule": {
     "title": "Cover",

@@ -427,10 +427,10 @@ test.describe('on a phone', () => {
     })
 })
 
-test.describe('video sync', () => {
+test.describe('song start and end', () => {
     test.use({ storageState: adminStorageState, locale: 'en-US' })
 
-    test('sets the video offset of a song through the API and the song page', async ({
+    test('sets the start of the song in the video through the API and the metadata editor', async ({
         page,
         request,
     }, testInfo) => {
@@ -465,14 +465,32 @@ test.describe('video sync', () => {
             expect(playback.status()).toBe(200)
             expect((await playback.json()).offsetMilliseconds).toBe(1500)
 
-            await page.goto(`/library/tracks/${id}`)
-            const section = page.locator("[data-part='app'] [data-item='video-sync']")
-            await expect(section.locator("[data-part='section-title']")).toHaveText('Video sync')
-            const field = section.locator("[data-field='video-offset'] input")
-            await expect(field).toHaveValue('1500')
-            await field.fill('500')
-            await section.locator("[data-item='save-video-offset']").click()
-            await expect(section.locator("[data-part='alert']")).toHaveText('Saved.')
+            // The offset is the corrected start of the song in the video.
+            const segments = await request.get(`/api/v1/tracks/${id}/song-segments`, { headers })
+            expect(segments.status()).toBe(200)
+            expect((await segments.json()).video).toMatchObject({ manualStartMilliseconds: 1500 })
+
+            await page.goto(`/library/tracks/${id}?edit=metadata`)
+            const dialog = page
+                .locator("[data-part='dialog']")
+                .filter({ has: page.locator("[data-item='song-segments']") })
+            const section = dialog.locator("[data-item='song-segments']")
+            await expect(section.locator("[data-part='section-title']")).toHaveText(
+                'Song start and end',
+            )
+            const video = section.locator("[data-part='song-segment'][data-kind='video']")
+            await expect(video).toHaveAttribute('data-state', 'corrected')
+            const field = video.locator("[data-field='song-start'] input")
+            await expect(field).toHaveValue('1.5')
+            await field.fill('0.5')
+            const saved = page.waitForResponse(
+                (response) =>
+                    response.request().method() === 'PUT' &&
+                    new URL(response.url()).pathname.endsWith('/song-segments/video'),
+            )
+            await dialog.locator("[data-part='dialog-footer'] button[type='submit']").click()
+            expect((await saved).status()).toBe(200)
+            await expect(dialog).toBeHidden()
 
             const response = await request.get(offsetUrl, { headers })
             expect(response.status()).toBe(200)
@@ -483,7 +501,7 @@ test.describe('video sync', () => {
         }
     })
 
-    test('keeps the video offset to admins', async ({ request }) => {
+    test('keeps the video offset and the song segments to admins', async ({ request }) => {
         const id = await findTrackId(request, 'Second Song')
         const user = await createUser(request, `Listener ${uniqueSuffix()}`)
         try {
@@ -495,6 +513,10 @@ test.describe('video sync', () => {
                 headers,
             })
             expect(write.status()).toBe(403)
+            const segments = await request.get(`/api/v1/tracks/${id}/song-segments`, { headers })
+            expect(segments.status()).toBe(403)
+            const analysis = await request.post(`/api/v1/tracks/${id}/song-analyses`, { headers })
+            expect(analysis.status()).toBe(403)
         } finally {
             await deleteUser(request, user.id)
         }

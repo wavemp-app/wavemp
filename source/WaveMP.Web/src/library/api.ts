@@ -28,12 +28,16 @@ import type {
     SearchResult,
     Track,
     TrackMetadata,
+    SongAnalysesStarted,
     TrackPage,
-    TrackVideoOffset,
+    TrackSongSegments,
     UpdateTrackMetadata,
     YearPage,
 } from '@/api/generated/models'
 import type { CoverSize } from './covers'
+
+/** The file of a track whose song segment is meant. */
+export type SongSegmentKind = 'audio' | 'video'
 
 export type TrackQuery = TracksRequestBuilderGetQueryParameters
 export type AlbumQuery = AlbumsRequestBuilderGetQueryParameters
@@ -84,17 +88,46 @@ export function updateTrackMetadata(
     return apiClient.api.v1.tracks.byId(id).metadata.patch(changes)
 }
 
-/** The offset of the video against the audio of a track (admins only). */
-export function getTrackVideoOffset(id: string): Promise<TrackVideoOffset | undefined> {
-    return apiClient.api.v1.tracks.byId(id).video.offset.get()
+/**
+ * Where the song lies in the audio file and the video of a track: what the song analysis found,
+ * the corrections of the admin and what the players use (admins only).
+ */
+export function getTrackSongSegments(id: string): Promise<TrackSongSegments | undefined> {
+    return apiClient.api.v1.tracks.byId(id).songSegments.get()
 }
 
-/** Sets the offset of the video of a track in milliseconds; 0 removes it (admins only). */
-export function setTrackVideoOffset(
+/**
+ * Corrects where the song starts and ends in a file of a track, in milliseconds of the file; null
+ * leaves the value to the analysis (admins only).
+ */
+export function setTrackSongSegment(
     id: string,
-    offsetMilliseconds: number,
-): Promise<TrackVideoOffset | undefined> {
-    return apiClient.api.v1.tracks.byId(id).video.offset.put({ offsetMilliseconds })
+    kind: SongSegmentKind,
+    startMilliseconds: number | null,
+    endMilliseconds: number | null,
+): Promise<TrackSongSegments | undefined> {
+    return apiClient.api.v1.tracks
+        .byId(id)
+        .songSegments.byKind(kind)
+        .put({ startMilliseconds, endMilliseconds })
+}
+
+/** Removes the correction of a file of a track; the analysis decides again (admins only). */
+export function resetTrackSongSegment(
+    id: string,
+    kind: SongSegmentKind,
+): Promise<TrackSongSegments | undefined> {
+    return apiClient.api.v1.tracks.byId(id).songSegments.byKind(kind).delete()
+}
+
+/** Lets the song analysis look at the files of a track again in the background (admins only). */
+export function analyzeTrackSong(id: string): Promise<void> {
+    return apiClient.api.v1.tracks.byId(id).songAnalyses.post()
+}
+
+/** Lets the song analysis look at every file of the library again (admins only). */
+export function analyzeAllSongs(): Promise<SongAnalysesStarted | undefined> {
+    return apiClient.api.v1.songAnalyses.post()
 }
 
 export function listAlbums(query: AlbumQuery): Promise<AlbumPage | undefined> {

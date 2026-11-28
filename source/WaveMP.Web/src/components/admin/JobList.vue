@@ -8,13 +8,17 @@ import {
     errorLabelKey,
     jobNameKey,
     jobScheduleKey,
+    renewableJobs,
     runDateTimeFormat,
     statusPresentation,
 } from '@/admin/presentation'
 import BaseButton from '@/components/base/BaseButton.vue'
 import { useFormat } from '@/composables/useFormat'
 
-/** Background jobs with their last and next run and a button to run them now. */
+/**
+ * Background jobs with their last and next run and a button to run them now; jobs that can do all
+ * their work again (the song analysis) have a second button for that.
+ */
 withDefaults(
     defineProps<{
         jobs: readonly Job[]
@@ -26,6 +30,8 @@ withDefaults(
 
 const emit = defineEmits<{
     run: [id: string]
+    /** Run the job again for the whole library. */
+    renew: [id: string]
 }>()
 
 const { t } = useI18n()
@@ -111,6 +117,14 @@ function dateTime(date: Date): string {
                     :label="t('adminJobs.runNow')"
                     :disabled="state(job) !== 'idle' || starting === job.id"
                     @click="emit('run', job.id ?? '')"
+                />
+                <BaseButton
+                    v-if="renewableJobs.has(job.id ?? '')"
+                    icon="analyze-again"
+                    data-item="renew"
+                    :label="t('adminJobs.analyzeAll')"
+                    :disabled="starting === job.id"
+                    @click="emit('renew', job.id ?? '')"
                 />
             </div>
         </li>

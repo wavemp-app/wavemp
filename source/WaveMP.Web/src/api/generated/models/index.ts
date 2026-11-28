@@ -1331,6 +1331,15 @@ export function createFileSelectionFromDiscriminatorValue(parseNode: ParseNode |
 /**
  * Creates a new instance of the appropriate class based on discriminator value
  * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {FileSongSegment}
+ */
+// @ts-ignore
+export function createFileSongSegmentFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoFileSongSegment;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
  * @returns {Genre}
  */
 // @ts-ignore
@@ -2368,6 +2377,33 @@ export function createSmartPlaylistTemplatePageFromDiscriminatorValue(parseNode:
 /**
  * Creates a new instance of the appropriate class based on discriminator value
  * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {SongAnalysesStarted}
+ */
+// @ts-ignore
+export function createSongAnalysesStartedFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoSongAnalysesStarted;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {SongPiece}
+ */
+// @ts-ignore
+export function createSongPieceFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoSongPiece;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {SongSegment}
+ */
+// @ts-ignore
+export function createSongSegmentFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoSongSegment;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
  * @returns {SourceAvailability}
  */
 // @ts-ignore
@@ -2616,6 +2652,15 @@ export function createTrackReviewStateFromDiscriminatorValue(parseNode: ParseNod
 // @ts-ignore
 export function createTrackReviewSummaryFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
     return deserializeIntoTrackReviewSummary;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {TrackSongSegments}
+ */
+// @ts-ignore
+export function createTrackSongSegmentsFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoTrackSongSegments;
 }
 /**
  * Creates a new instance of the appropriate class based on discriminator value
@@ -2931,6 +2976,15 @@ export function createUpdateTrackReviewFromDiscriminatorValue(parseNode: ParseNo
 // @ts-ignore
 export function createUpdateTrackReviewsFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
     return deserializeIntoUpdateTrackReviews;
+}
+/**
+ * Creates a new instance of the appropriate class based on discriminator value
+ * @param parseNode The parse node to use to read the discriminator value and create the object
+ * @returns {UpdateTrackSongSegment}
+ */
+// @ts-ignore
+export function createUpdateTrackSongSegmentFromDiscriminatorValue(parseNode: ParseNode | undefined) : ((instance?: Parsable) => Record<string, (node: ParseNode) => void>) {
+    return deserializeIntoUpdateTrackSongSegment;
 }
 /**
  * Creates a new instance of the appropriate class based on discriminator value
@@ -3933,6 +3987,26 @@ export function deserializeIntoFileSelection(fileSelection: Partial<FileSelectio
         "selectedFileId": n => { fileSelection.selectedFileId = n.getGuidValue(); },
         "selectedPath": n => { fileSelection.selectedPath = n.getStringValue(); },
         "state": n => { fileSelection.state = n.getEnumValue<FileSelectionState>(FileSelectionStateObject); },
+    }
+}
+/**
+ * The deserialization information for the current model
+ * @param FileSongSegment The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoFileSongSegment(fileSongSegment: Partial<FileSongSegment> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "analyzedAt": n => { fileSongSegment.analyzedAt = n.getDateValue(); },
+        "detected": n => { fileSongSegment.detected = n.getObjectValue<SongSegment>(createSongSegmentFromDiscriminatorValue); },
+        "durationMilliseconds": n => { fileSongSegment.durationMilliseconds = n.getNumberValue(); },
+        "effective": n => { fileSongSegment.effective = n.getObjectValue<SongSegment>(createSongSegmentFromDiscriminatorValue); },
+        "fileId": n => { fileSongSegment.fileId = n.getGuidValue(); },
+        "loudnessLufs": n => { fileSongSegment.loudnessLufs = n.getNumberValue(); },
+        "manualEndMilliseconds": n => { fileSongSegment.manualEndMilliseconds = n.getNumberValue(); },
+        "manualStartMilliseconds": n => { fileSongSegment.manualStartMilliseconds = n.getNumberValue(); },
+        "pending": n => { fileSongSegment.pending = n.getBooleanValue(); },
+        "status": n => { fileSongSegment.status = n.getEnumValue<SongAnalysisStatus>(SongAnalysisStatusObject); },
     }
 }
 /**
@@ -5523,6 +5597,48 @@ export function deserializeIntoSmartPlaylistTemplatePage(smartPlaylistTemplatePa
 }
 /**
  * The deserialization information for the current model
+ * @param SongAnalysesStarted The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoSongAnalysesStarted(songAnalysesStarted: Partial<SongAnalysesStarted> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "renewed": n => { songAnalysesStarted.renewed = n.getNumberValue(); },
+    }
+}
+/**
+ * The deserialization information for the current model
+ * @param SongPiece The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoSongPiece(songPiece: Partial<SongPiece> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "durationMilliseconds": n => { songPiece.durationMilliseconds = n.getNumberValue(); },
+        "fileStartMilliseconds": n => { songPiece.fileStartMilliseconds = n.getNumberValue(); },
+        "songStartMilliseconds": n => { songPiece.songStartMilliseconds = n.getNumberValue(); },
+    }
+}
+/**
+ * The deserialization information for the current model
+ * @param SongSegment The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoSongSegment(songSegment: Partial<SongSegment> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "confidence": n => { songSegment.confidence = n.getNumberValue(); },
+        "confident": n => { songSegment.confident = n.getBooleanValue(); },
+        "endMilliseconds": n => { songSegment.endMilliseconds = n.getNumberValue(); },
+        "manual": n => { songSegment.manual = n.getBooleanValue(); },
+        "method": n => { songSegment.method = n.getEnumValue<SongSegmentMethod>(SongSegmentMethodObject); },
+        "mismatch": n => { songSegment.mismatch = n.getBooleanValue(); },
+        "pieces": n => { songSegment.pieces = n.getCollectionOfObjectValues<SongPiece>(createSongPieceFromDiscriminatorValue); },
+        "startMilliseconds": n => { songSegment.startMilliseconds = n.getNumberValue(); },
+    }
+}
+/**
+ * The deserialization information for the current model
  * @param SourceAvailability The instance to deserialize into.
  * @returns {Record<string, (node: ParseNode) => void>}
  */
@@ -5893,9 +6009,13 @@ export function deserializeIntoTrackPlayback(trackPlayback: Partial<TrackPlaybac
         "durationMilliseconds": n => { trackPlayback.durationMilliseconds = n.getNumberValue(); },
         "expiresAt": n => { trackPlayback.expiresAt = n.getDateValue(); },
         "format": n => { trackPlayback.format = n.getEnumValue<AudioFormat>(AudioFormatObject); },
+        "loudnessLufs": n => { trackPlayback.loudnessLufs = n.getNumberValue(); },
+        "loudnessMatchDb": n => { trackPlayback.loudnessMatchDb = n.getNumberValue(); },
         "method": n => { trackPlayback.method = n.getEnumValue<PlaybackMethod>(PlaybackMethodObject); },
         "protocol": n => { trackPlayback.protocol = n.getEnumValue<StreamProtocol>(StreamProtocolObject); },
         "replayGain": n => { trackPlayback.replayGain = n.getObjectValue<ReplayGain>(createReplayGainFromDiscriminatorValue); },
+        "songSegment": n => { trackPlayback.songSegment = n.getObjectValue<SongSegment>(createSongSegmentFromDiscriminatorValue); },
+        "sound": n => { trackPlayback.sound = n.getEnumValue<SoundSource>(SoundSourceObject); },
         "streamUrl": n => { trackPlayback.streamUrl = n.getStringValue(); },
         "trackId": n => { trackPlayback.trackId = n.getGuidValue(); },
         "transcodeReason": n => { trackPlayback.transcodeReason = n.getEnumValue<TranscodeReason>(TranscodeReasonObject); },
@@ -5920,6 +6040,7 @@ export function deserializeIntoTrackReview(trackReview: Partial<TrackReview> | u
         "missingTags": n => { trackReview.missingTags = n.getCollectionOfEnumValues<MetadataTag>(MetadataTagObject); },
         "reviewedAt": n => { trackReview.reviewedAt = n.getDateValue(); },
         "reviewedBy": n => { trackReview.reviewedBy = n.getObjectValue<ProfileReference>(createProfileReferenceFromDiscriminatorValue); },
+        "songSegmentNotice": n => { trackReview.songSegmentNotice = n.getEnumValue<SongSegmentNotice>(SongSegmentNoticeObject); },
         "status": n => { trackReview.status = n.getEnumValue<TrackReviewStatus>(TrackReviewStatusObject); },
         "title": n => { trackReview.title = n.getStringValue(); },
         "trackId": n => { trackReview.trackId = n.getGuidValue(); },
@@ -5967,6 +6088,19 @@ export function deserializeIntoTrackReviewSummary(trackReviewSummary: Partial<Tr
 }
 /**
  * The deserialization information for the current model
+ * @param TrackSongSegments The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoTrackSongSegments(trackSongSegments: Partial<TrackSongSegments> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "audio": n => { trackSongSegments.audio = n.getObjectValue<FileSongSegment>(createFileSongSegmentFromDiscriminatorValue); },
+        "trackId": n => { trackSongSegments.trackId = n.getGuidValue(); },
+        "video": n => { trackSongSegments.video = n.getObjectValue<FileSongSegment>(createFileSongSegmentFromDiscriminatorValue); },
+    }
+}
+/**
+ * The deserialization information for the current model
  * @param TrackVideoOffset The instance to deserialize into.
  * @returns {Record<string, (node: ParseNode) => void>}
  */
@@ -5993,9 +6127,11 @@ export function deserializeIntoTrackVideoPlayback(trackVideoPlayback: Partial<Tr
         "expiresAt": n => { trackVideoPlayback.expiresAt = n.getDateValue(); },
         "hasAudio": n => { trackVideoPlayback.hasAudio = n.getBooleanValue(); },
         "height": n => { trackVideoPlayback.height = n.getNumberValue(); },
+        "loudnessLufs": n => { trackVideoPlayback.loudnessLufs = n.getNumberValue(); },
         "method": n => { trackVideoPlayback.method = n.getEnumValue<PlaybackMethod>(PlaybackMethodObject); },
         "offsetMilliseconds": n => { trackVideoPlayback.offsetMilliseconds = n.getNumberValue(); },
         "protocol": n => { trackVideoPlayback.protocol = n.getEnumValue<StreamProtocol>(StreamProtocolObject); },
+        "songSegment": n => { trackVideoPlayback.songSegment = n.getObjectValue<SongSegment>(createSongSegmentFromDiscriminatorValue); },
         "streamUrl": n => { trackVideoPlayback.streamUrl = n.getStringValue(); },
         "trackId": n => { trackVideoPlayback.trackId = n.getGuidValue(); },
         "transcodeReason": n => { trackVideoPlayback.transcodeReason = n.getEnumValue<TranscodeReason>(TranscodeReasonObject); },
@@ -6443,6 +6579,18 @@ export function deserializeIntoUpdateTrackReviews(updateTrackReviews: Partial<Up
 }
 /**
  * The deserialization information for the current model
+ * @param UpdateTrackSongSegment The instance to deserialize into.
+ * @returns {Record<string, (node: ParseNode) => void>}
+ */
+// @ts-ignore
+export function deserializeIntoUpdateTrackSongSegment(updateTrackSongSegment: Partial<UpdateTrackSongSegment> | undefined = {}) : Record<string, (node: ParseNode) => void> {
+    return {
+        "endMilliseconds": n => { updateTrackSongSegment.endMilliseconds = n.getNumberValue(); },
+        "startMilliseconds": n => { updateTrackSongSegment.startMilliseconds = n.getNumberValue(); },
+    }
+}
+/**
+ * The deserialization information for the current model
  * @param UpdateTrackVideoOffset The instance to deserialize into.
  * @returns {Record<string, (node: ParseNode) => void>}
  */
@@ -6510,6 +6658,7 @@ export function deserializeIntoUpdateUserSettings(updateUserSettings: Partial<Up
 export function deserializeIntoUpdateVideoSettings(updateVideoSettings: Partial<UpdateVideoSettings> | undefined = {}) : Record<string, (node: ParseNode) => void> {
     return {
         "ambientMode": n => { updateVideoSettings.ambientMode = n.getBooleanValue(); },
+        "skipIntroAndOutro": n => { updateVideoSettings.skipIntroAndOutro = n.getBooleanValue(); },
     }
 }
 /**
@@ -6636,6 +6785,7 @@ export function deserializeIntoValidationProblem(validationProblem: Partial<Vali
 export function deserializeIntoVideoSettings(videoSettings: Partial<VideoSettings> | undefined = {}) : Record<string, (node: ParseNode) => void> {
     return {
         "ambientMode": n => { videoSettings.ambientMode = n.getBooleanValue(); },
+        "skipIntroAndOutro": n => { videoSettings.skipIntroAndOutro = n.getBooleanValue(); },
     }
 }
 /**
@@ -6920,6 +7070,51 @@ export interface FileSelection extends AdditionalDataHolder, Parsable {
 export type FileSelectionFilter = (typeof FileSelectionFilterObject)[keyof typeof FileSelectionFilterObject];
 export type FileSelectionSort = (typeof FileSelectionSortObject)[keyof typeof FileSelectionSortObject];
 export type FileSelectionState = (typeof FileSelectionStateObject)[keyof typeof FileSelectionStateObject];
+/**
+ * The song segment of a file of a track with the result of the analysis and the corrections of the admin.
+ */
+export interface FileSongSegment extends AdditionalDataHolder, Parsable {
+    /**
+     * When the file was analyzed; null while it was never analyzed.
+     */
+    analyzedAt?: Date | null;
+    /**
+     * The segment the analysis found, without the corrections of the admin.
+     */
+    detected?: SongSegment | null;
+    /**
+     * Duration of the file in milliseconds, if known.
+     */
+    durationMilliseconds?: number | null;
+    /**
+     * The segment the players use.
+     */
+    effective?: SongSegment | null;
+    /**
+     * Id of the file.
+     */
+    fileId?: Guid | null;
+    /**
+     * Integrated loudness of the sound in LUFS (EBU R 128), if measured. Clients play the audio file and the sound of the video at the same loudness with it.
+     */
+    loudnessLufs?: number | null;
+    /**
+     * End of the song as the admin corrected it, in milliseconds of the file; null without correction.
+     */
+    manualEndMilliseconds?: number | null;
+    /**
+     * Start of the song as the admin corrected it, in milliseconds of the file; null without correction.
+     */
+    manualStartMilliseconds?: number | null;
+    /**
+     * Whether the file waits for a (new) analysis.
+     */
+    pending?: boolean | null;
+    /**
+     * The status property
+     */
+    status?: SongAnalysisStatus | null;
+}
 /**
  * A genre of the tracks; genres whose names differ only in case, diacritics, spaces or punctuation are one genre.
  */
@@ -10429,6 +10624,27 @@ export function serializeFileSelection(writer: SerializationWriter, fileSelectio
 }
 /**
  * Serializes information the current object
+ * @param FileSongSegment The instance to serialize from.
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeFileSongSegment(writer: SerializationWriter, fileSongSegment: Partial<FileSongSegment> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!fileSongSegment || isSerializingDerivedType) { return; }
+    writer.writeDateValue("analyzedAt", fileSongSegment.analyzedAt);
+    writer.writeObjectValue<SongSegment>("detected", fileSongSegment.detected, serializeSongSegment);
+    writer.writeNumberValue("durationMilliseconds", fileSongSegment.durationMilliseconds);
+    writer.writeObjectValue<SongSegment>("effective", fileSongSegment.effective, serializeSongSegment);
+    writer.writeGuidValue("fileId", fileSongSegment.fileId);
+    writer.writeNumberValue("loudnessLufs", fileSongSegment.loudnessLufs);
+    writer.writeNumberValue("manualEndMilliseconds", fileSongSegment.manualEndMilliseconds);
+    writer.writeNumberValue("manualStartMilliseconds", fileSongSegment.manualStartMilliseconds);
+    writer.writeBooleanValue("pending", fileSongSegment.pending);
+    writer.writeEnumValue<SongAnalysisStatus>("status", fileSongSegment.status);
+    writer.writeAdditionalData(fileSongSegment.additionalData);
+}
+/**
+ * Serializes information the current object
  * @param Genre The instance to serialize from.
  * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
  * @param writer Serialization writer to use to serialize this model
@@ -12121,6 +12337,51 @@ export function serializeSmartPlaylistTemplatePage(writer: SerializationWriter, 
 /**
  * Serializes information the current object
  * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param SongAnalysesStarted The instance to serialize from.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeSongAnalysesStarted(writer: SerializationWriter, songAnalysesStarted: Partial<SongAnalysesStarted> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!songAnalysesStarted || isSerializingDerivedType) { return; }
+    writer.writeNumberValue("renewed", songAnalysesStarted.renewed);
+    writer.writeAdditionalData(songAnalysesStarted.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param SongPiece The instance to serialize from.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeSongPiece(writer: SerializationWriter, songPiece: Partial<SongPiece> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!songPiece || isSerializingDerivedType) { return; }
+    writer.writeNumberValue("durationMilliseconds", songPiece.durationMilliseconds);
+    writer.writeNumberValue("fileStartMilliseconds", songPiece.fileStartMilliseconds);
+    writer.writeNumberValue("songStartMilliseconds", songPiece.songStartMilliseconds);
+    writer.writeAdditionalData(songPiece.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param SongSegment The instance to serialize from.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeSongSegment(writer: SerializationWriter, songSegment: Partial<SongSegment> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!songSegment || isSerializingDerivedType) { return; }
+    writer.writeNumberValue("confidence", songSegment.confidence);
+    writer.writeBooleanValue("confident", songSegment.confident);
+    writer.writeNumberValue("endMilliseconds", songSegment.endMilliseconds);
+    writer.writeBooleanValue("manual", songSegment.manual);
+    writer.writeEnumValue<SongSegmentMethod>("method", songSegment.method);
+    writer.writeBooleanValue("mismatch", songSegment.mismatch);
+    writer.writeCollectionOfObjectValues<SongPiece>("pieces", songSegment.pieces, serializeSongPiece);
+    writer.writeNumberValue("startMilliseconds", songSegment.startMilliseconds);
+    writer.writeAdditionalData(songSegment.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
  * @param SourceAvailability The instance to serialize from.
  * @param writer Serialization writer to use to serialize this model
  */
@@ -12515,9 +12776,13 @@ export function serializeTrackPlayback(writer: SerializationWriter, trackPlaybac
     writer.writeNumberValue("durationMilliseconds", trackPlayback.durationMilliseconds);
     writer.writeDateValue("expiresAt", trackPlayback.expiresAt);
     writer.writeEnumValue<AudioFormat>("format", trackPlayback.format);
+    writer.writeNumberValue("loudnessLufs", trackPlayback.loudnessLufs);
+    writer.writeNumberValue("loudnessMatchDb", trackPlayback.loudnessMatchDb);
     writer.writeEnumValue<PlaybackMethod>("method", trackPlayback.method);
     writer.writeEnumValue<StreamProtocol>("protocol", trackPlayback.protocol);
     writer.writeObjectValue<ReplayGain>("replayGain", trackPlayback.replayGain, serializeReplayGain);
+    writer.writeObjectValue<SongSegment>("songSegment", trackPlayback.songSegment, serializeSongSegment);
+    writer.writeEnumValue<SoundSource>("sound", trackPlayback.sound);
     writer.writeStringValue("streamUrl", trackPlayback.streamUrl);
     writer.writeGuidValue("trackId", trackPlayback.trackId);
     writer.writeEnumValue<TranscodeReason>("transcodeReason", trackPlayback.transcodeReason);
@@ -12544,6 +12809,7 @@ export function serializeTrackReview(writer: SerializationWriter, trackReview: P
     writer.writeCollectionOfEnumValues<MetadataTag>("missingTags", trackReview.missingTags);
     writer.writeDateValue("reviewedAt", trackReview.reviewedAt);
     writer.writeObjectValue<ProfileReference>("reviewedBy", trackReview.reviewedBy, serializeProfileReference);
+    writer.writeEnumValue<SongSegmentNotice>("songSegmentNotice", trackReview.songSegmentNotice);
     writer.writeEnumValue<TrackReviewStatus>("status", trackReview.status);
     writer.writeStringValue("title", trackReview.title);
     writer.writeGuidValue("trackId", trackReview.trackId);
@@ -12595,6 +12861,20 @@ export function serializeTrackReviewSummary(writer: SerializationWriter, trackRe
 /**
  * Serializes information the current object
  * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param TrackSongSegments The instance to serialize from.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeTrackSongSegments(writer: SerializationWriter, trackSongSegments: Partial<TrackSongSegments> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!trackSongSegments || isSerializingDerivedType) { return; }
+    writer.writeObjectValue<FileSongSegment>("audio", trackSongSegments.audio, serializeFileSongSegment);
+    writer.writeGuidValue("trackId", trackSongSegments.trackId);
+    writer.writeObjectValue<FileSongSegment>("video", trackSongSegments.video, serializeFileSongSegment);
+    writer.writeAdditionalData(trackSongSegments.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
  * @param TrackVideoOffset The instance to serialize from.
  * @param writer Serialization writer to use to serialize this model
  */
@@ -12622,9 +12902,11 @@ export function serializeTrackVideoPlayback(writer: SerializationWriter, trackVi
     writer.writeDateValue("expiresAt", trackVideoPlayback.expiresAt);
     writer.writeBooleanValue("hasAudio", trackVideoPlayback.hasAudio);
     writer.writeNumberValue("height", trackVideoPlayback.height);
+    writer.writeNumberValue("loudnessLufs", trackVideoPlayback.loudnessLufs);
     writer.writeEnumValue<PlaybackMethod>("method", trackVideoPlayback.method);
     writer.writeNumberValue("offsetMilliseconds", trackVideoPlayback.offsetMilliseconds);
     writer.writeEnumValue<StreamProtocol>("protocol", trackVideoPlayback.protocol);
+    writer.writeObjectValue<SongSegment>("songSegment", trackVideoPlayback.songSegment, serializeSongSegment);
     writer.writeStringValue("streamUrl", trackVideoPlayback.streamUrl);
     writer.writeGuidValue("trackId", trackVideoPlayback.trackId);
     writer.writeEnumValue<TranscodeReason>("transcodeReason", trackVideoPlayback.transcodeReason);
@@ -13106,6 +13388,19 @@ export function serializeUpdateTrackReviews(writer: SerializationWriter, updateT
 /**
  * Serializes information the current object
  * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
+ * @param UpdateTrackSongSegment The instance to serialize from.
+ * @param writer Serialization writer to use to serialize this model
+ */
+// @ts-ignore
+export function serializeUpdateTrackSongSegment(writer: SerializationWriter, updateTrackSongSegment: Partial<UpdateTrackSongSegment> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
+    if (!updateTrackSongSegment || isSerializingDerivedType) { return; }
+    writer.writeNumberValue("endMilliseconds", updateTrackSongSegment.endMilliseconds);
+    writer.writeNumberValue("startMilliseconds", updateTrackSongSegment.startMilliseconds);
+    writer.writeAdditionalData(updateTrackSongSegment.additionalData);
+}
+/**
+ * Serializes information the current object
+ * @param isSerializingDerivedType A boolean indicating whether the serialization is for a derived type.
  * @param UpdateTrackVideoOffset The instance to serialize from.
  * @param writer Serialization writer to use to serialize this model
  */
@@ -13177,6 +13472,7 @@ export function serializeUpdateUserSettings(writer: SerializationWriter, updateU
 export function serializeUpdateVideoSettings(writer: SerializationWriter, updateVideoSettings: Partial<UpdateVideoSettings> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
     if (!updateVideoSettings || isSerializingDerivedType) { return; }
     writer.writeBooleanValue("ambientMode", updateVideoSettings.ambientMode);
+    writer.writeBooleanValue("skipIntroAndOutro", updateVideoSettings.skipIntroAndOutro);
     writer.writeAdditionalData(updateVideoSettings.additionalData);
 }
 /**
@@ -13311,6 +13607,7 @@ export function serializeValidationProblem(writer: SerializationWriter, validati
 export function serializeVideoSettings(writer: SerializationWriter, videoSettings: Partial<VideoSettings> | undefined | null = {}, isSerializingDerivedType: boolean = false) : void {
     if (!videoSettings || isSerializingDerivedType) { return; }
     writer.writeBooleanValue("ambientMode", videoSettings.ambientMode);
+    writer.writeBooleanValue("skipIntroAndOutro", videoSettings.skipIntroAndOutro);
     writer.writeAdditionalData(videoSettings.additionalData);
 }
 /**
@@ -13571,7 +13868,74 @@ export interface SmartPlaylistTemplatePage extends AdditionalDataHolder, Parsabl
     total?: number | null;
 }
 export type SmartPlaylistTrackSort = (typeof SmartPlaylistTrackSortObject)[keyof typeof SmartPlaylistTrackSortObject];
+/**
+ * A new analysis of the whole library was requested.
+ */
+export interface SongAnalysesStarted extends AdditionalDataHolder, Parsable {
+    /**
+     * Number of file analyses that are renewed; files never analyzed are analyzed anyway.
+     */
+    renewed?: number | null;
+}
+export type SongAnalysisStatus = (typeof SongAnalysisStatusObject)[keyof typeof SongAnalysisStatusObject];
+/**
+ * A part of a file that belongs to the song: from fileStartMilliseconds on, the file plays the song from songStartMilliseconds on, for durationMilliseconds. The time of the song is the time of the reference recording (the audio file) that synchronized lyrics follow.
+ */
+export interface SongPiece extends AdditionalDataHolder, Parsable {
+    /**
+     * The durationMilliseconds property
+     */
+    durationMilliseconds?: number | null;
+    /**
+     * The fileStartMilliseconds property
+     */
+    fileStartMilliseconds?: number | null;
+    /**
+     * The songStartMilliseconds property
+     */
+    songStartMilliseconds?: number | null;
+}
+/**
+ * Where the real song lies in a file, without intro, outro and parts that were added. Clients map positions between the audio file and the video with the pieces (song position = position of the file - fileStart + songStart within a piece), skip intro and outro and show synchronized lyrics relative to the song. Clients use it only if confident is true; otherwise the whole file counts.
+ */
+export interface SongSegment extends AdditionalDataHolder, Parsable {
+    /**
+     * How sure the analysis is, between 0 and 1; 1 for corrections of the admin, null for the whole file.
+     */
+    confidence?: number | null;
+    /**
+     * Whether clients use the segment: a correction of the admin, the whole file or a found segment with a confidence of at least 0.6.
+     */
+    confident?: boolean | null;
+    /**
+     * Position of the file where the song ends in milliseconds; null if the whole file is the song.
+     */
+    endMilliseconds?: number | null;
+    /**
+     * Whether the admin corrected start or end; no later analysis changes them.
+     */
+    manual?: boolean | null;
+    /**
+     * How the segment was found.
+     */
+    method?: SongSegmentMethod | null;
+    /**
+     * Whether the file did not match the other recording of the track (e.g. a live version); clients do not map positions between the audio file and the video then.
+     */
+    mismatch?: boolean | null;
+    /**
+     * The parts of the file that belong to the song, in the order of the file; empty if the whole file is the song.
+     */
+    pieces?: SongPiece[] | null;
+    /**
+     * Position of the file where the song starts in milliseconds; negative if the file starts that far into the song (only from corrections of the admin); 0 for the whole file.
+     */
+    startMilliseconds?: number | null;
+}
+export type SongSegmentMethod = (typeof SongSegmentMethodObject)[keyof typeof SongSegmentMethodObject];
+export type SongSegmentNotice = (typeof SongSegmentNoticeObject)[keyof typeof SongSegmentNoticeObject];
 export type SortDirection = (typeof SortDirectionObject)[keyof typeof SortDirectionObject];
+export type SoundSource = (typeof SoundSourceObject)[keyof typeof SoundSourceObject];
 /**
  * Whether the files of a media source can be organized.
  */
@@ -14236,6 +14600,14 @@ export interface TrackPlayback extends AdditionalDataHolder, Parsable {
      */
     format?: AudioFormat | null;
     /**
+     * Integrated loudness of the played recording in LUFS (EBU R 128), if measured; clients play the audio file and the sound of the video at the same loudness with it.
+     */
+    loudnessLufs?: number | null;
+    /**
+     * For the sound of a video of a track that also has an audio file: the gain in dB (at most 12 either way) that brings it to the loudness of the audio file; its ReplayGain is that of the audio file. Clients add it to the gain of the playback, so switching between both sources keeps the level. Null for the audio file itself and while a loudness is unknown.
+     */
+    loudnessMatchDb?: number | null;
+    /**
      * Direct play or transcoding.
      */
     method?: PlaybackMethod | null;
@@ -14247,6 +14619,14 @@ export interface TrackPlayback extends AdditionalDataHolder, Parsable {
      * The ReplayGain tags of the audio file.
      */
     replayGain?: ReplayGain | null;
+    /**
+     * Where the real song lies in the played recording. Clients skip intro and outro with it, map positions to the other recording when they switch between them and show synchronized lyrics relative to the song.
+     */
+    songSegment?: SongSegment | null;
+    /**
+     * Which recording the stream plays: the audio file or the sound of the video (see the parameter sound; Video also for tracks that only have a video).
+     */
+    sound?: SoundSource | null;
     /**
      * Signed, short-lived URL of the stream (path with query, relative to the server), for players that cannot send the session token: the file for direct play, the HLS master playlist for transcoding. Null if the track has to be transcoded and transcoding is unavailable. It stays valid until expiresAt and while the session is active.
      */
@@ -14308,6 +14688,10 @@ export interface TrackReview extends AdditionalDataHolder, Parsable {
      * The reviewedBy property
      */
     reviewedBy?: ProfileReference | null;
+    /**
+     * The songSegmentNotice property
+     */
+    songSegmentNotice?: SongSegmentNotice | null;
     /**
      * Whether an admin checked the metadata of a track. Every track starts Unreviewed, also tracks found by a scan later.
      */
@@ -14378,6 +14762,23 @@ export interface TrackReviewSummary extends AdditionalDataHolder, Parsable {
      */
     unreviewedCount?: number | null;
 }
+/**
+ * Where the real song lies in the primary audio file and the primary video of a track.
+ */
+export interface TrackSongSegments extends AdditionalDataHolder, Parsable {
+    /**
+     * The audio property
+     */
+    audio?: FileSongSegment | null;
+    /**
+     * Id of the track.
+     */
+    trackId?: Guid | null;
+    /**
+     * The video property
+     */
+    video?: FileSongSegment | null;
+}
 export type TrackSort = (typeof TrackSortObject)[keyof typeof TrackSortObject];
 /**
  * The offset of the video against the audio of a track.
@@ -14429,17 +14830,25 @@ export interface TrackVideoPlayback extends AdditionalDataHolder, Parsable {
      */
     height?: number | null;
     /**
+     * Integrated loudness of the sound of the video in LUFS (EBU R 128), if measured.
+     */
+    loudnessLufs?: number | null;
+    /**
      * Direct play, remux or transcoding.
      */
     method?: PlaybackMethod | null;
     /**
-     * Offset of the video against the audio of the track in milliseconds: position of the video = position of the audio + offset; 0 without offset. Clients that play the audio and show the video muted synchronize the video with it.
+     * Start of the song in the video in milliseconds while clients use its song segment, otherwise 0: position of the video = position of the audio + offset as long as the video cut nothing out. Kept for older clients; clients map positions with songSegment instead.
      */
     offsetMilliseconds?: number | null;
     /**
      * A file (direct play and remux) or an HLS stream (transcoding).
      */
     protocol?: StreamProtocol | null;
+    /**
+     * Where the real song lies in the video. Clients that play the audio file and show the video muted map the position of the song to the video with it (and keep the video still where it cut a part of the song out).
+     */
+    songSegment?: SongSegment | null;
     /**
      * Signed, short-lived URL of the stream (path with query, relative to the server), for players that cannot send the session token: the file for direct play, the remuxed MP4 file for a remux, the HLS master playlist for transcoding. Null if the video has to be transcoded and transcoding is unavailable. It stays valid until expiresAt and while the session is active.
      */
@@ -15060,6 +15469,19 @@ export interface UpdateTrackReviews extends AdditionalDataHolder, Parsable {
     trackIds?: Guid[] | null;
 }
 /**
+ * Corrects where the song lies in a file of a track. A value left out (null) comes from the analysis or the file.
+ */
+export interface UpdateTrackSongSegment extends AdditionalDataHolder, Parsable {
+    /**
+     * Position of the file where the song ends, in milliseconds, after the start and at most at the end of the file.
+     */
+    endMilliseconds?: number | null;
+    /**
+     * Position of the file where the song starts, in milliseconds from -600000 to the end of the file (exclusive); negative if the file starts that far into the song.
+     */
+    startMilliseconds?: number | null;
+}
+/**
  * Sets the offset of the video against the audio of a track.
  */
 export interface UpdateTrackVideoOffset extends AdditionalDataHolder, Parsable {
@@ -15167,6 +15589,10 @@ export interface UpdateVideoSettings extends AdditionalDataHolder, Parsable {
      * Whether videos show the ambient light in the free area around their picture.
      */
     ambientMode?: boolean | null;
+    /**
+     * Whether the cover and the visualization skip intro and outro of the sound of a music video.
+     */
+    skipIntroAndOutro?: boolean | null;
 }
 /**
  * Changes the visualization of the current profile. Missing or null values stay unchanged.
@@ -15395,6 +15821,10 @@ export interface VideoSettings extends AdditionalDataHolder, Parsable {
      * Whether videos show the ambient light: soft light in the colors of the current picture in the free area around it; true by default. Clients that show videos without a free area around them ignore it.
      */
     ambientMode?: boolean | null;
+    /**
+     * Whether the cover and the visualization skip intro and outro of the sound of a music video for tracks without an audio file, if the song analysis is sure where the song lies; true by default. The video view always plays the whole video.
+     */
+    skipIntroAndOutro?: boolean | null;
 }
 export type VisualizationIntensity = (typeof VisualizationIntensityObject)[keyof typeof VisualizationIntensityObject];
 export type VisualizationModule = (typeof VisualizationModuleObject)[keyof typeof VisualizationModuleObject];
@@ -15699,6 +16129,7 @@ export const HealthStatusObject = {
 export const HlsMediaObject = {
     Audio: "Audio",
     Video: "Video",
+    VideoSound: "VideoSound",
 } as const;
 /**
  * Why the run failed or was interrupted.
@@ -15728,6 +16159,7 @@ export const JobIdObject = {
     DatabaseBackup: "database-backup",
     LyricsDownload: "lyrics-download",
     LibraryCheck: "library-check",
+    SongAnalysis: "song-analysis",
     LibraryOrganize: "library-organize",
 } as const;
 /**
@@ -16348,9 +16780,40 @@ export const SmartPlaylistTrackSortObject = {
     DateAdded: "DateAdded",
     Duration: "Duration",
 } as const;
+/**
+ * Whether the analysis could read the file; null while it was never analyzed.
+ */
+export const SongAnalysisStatusObject = {
+    Analyzed: "Analyzed",
+    NoSound: "NoSound",
+    Failed: "Failed",
+} as const;
+/**
+ * How the segment was found.
+ */
+export const SongSegmentMethodObject = {
+    WholeFile: "WholeFile",
+    Alignment: "Alignment",
+    Lyrics: "Lyrics",
+    Structure: "Structure",
+} as const;
+/**
+ * Why the song segment of the audio file or the video needs a look (see GetTrackSongSegments); null if it does not.
+ */
+export const SongSegmentNoticeObject = {
+    LowConfidence: "LowConfidence",
+    Mismatch: "Mismatch",
+} as const;
 export const SortDirectionObject = {
     Asc: "Asc",
     Desc: "Desc",
+} as const;
+/**
+ * Which recording the stream plays: the audio file or the sound of the video (see the parameter sound; Video also for tracks that only have a video).
+ */
+export const SoundSourceObject = {
+    Audio: "Audio",
+    Video: "Video",
 } as const;
 /**
  * Whether the files of a media source can be organized: Available, ReadOnly (the folder cannot be written, e.g. a read-only mount), Missing (the folder does not exist) or Inactive (the source is switched off).

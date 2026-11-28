@@ -234,7 +234,14 @@ const jobNames: Record<string, JobPresentation> = {
         labelKey: 'adminJobs.names.libraryOrganize',
         scheduleKey: 'adminJobs.whenOrganizing',
     },
+    'song-analysis': {
+        labelKey: 'adminJobs.names.songAnalysis',
+        scheduleKey: 'adminJobs.afterScan',
+    },
 }
+
+/** Jobs that can also be run again for the whole library (everything they did is done again). */
+export const renewableJobs: ReadonlySet<string> = new Set(['song-analysis'])
 
 /** Message key of the name of a job; unknown jobs are shown with their id. */
 export function jobNameKey(id: string | null | undefined): string | null {

@@ -148,6 +148,28 @@ describe('ReviewList', () => {
         wrapper.unmount()
     })
 
+    it('marks songs whose song analysis is unsure or whose video does not match', async () => {
+        const { wrapper } = await mountWithRouter(ReviewList, {
+            items: [
+                { ...items[0]!, songSegmentNotice: 'LowConfidence' },
+                { ...items[1]!, songSegmentNotice: 'Mismatch' },
+            ],
+            reviewed: new Set(),
+            selected: new Set(),
+            label: 'Songs',
+        })
+
+        const rows = wrapper.findAll('[data-part="review-item"]')
+        expect(rows[0]!.attributes('data-state')).toContain('song-segment')
+        const unsure = rows[0]!.get('[data-part="badge"][data-state="song-segment-unsure"]')
+        expect(unsure.text()).toBe('Song start unsure')
+        expect(unsure.find('[data-icon="song-segment-notice"]').exists()).toBe(true)
+        expect(rows[1]!.get('[data-part="badge"][data-state="song-segment-mismatch"]').text()).toBe(
+            'Video does not match the song',
+        )
+        wrapper.unmount()
+    })
+
     it('marks reviewed songs and does not let them be selected', async () => {
         const { wrapper } = await mountWithRouter(ReviewList, {
             items,

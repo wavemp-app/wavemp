@@ -5,6 +5,7 @@ import {
     deckPosition,
     handoverLead,
     playResumeTimeout,
+    sourceSwitchCrossfade,
     type AudioEnvironment,
     type EngineEvents,
 } from '../engine'
@@ -987,6 +988,125 @@ describe('AudioEngine', () => {
 
             changeState(context, 'interrupted')
             expect(s.events.interrupted).not.toHaveBeenCalled()
+        })
+    })
+    describe('switching the source of the same song', () => {
+        const toVideo = (position: number): number => position + 20
+
+        it('starts the other source at the mapped position and stops the old one', async () => {
+            s.engine.load({ url: '/audio', gain: 1 })
+            await s.engine.play()
+            s.decks[0]!.advance(42, 200)
+
+            const switched = await s.engine.switchTo({ url: '/video', gain: 0.8 }, toVideo)
+
+            expect(switched).toBe(true)
+            expect(s.decks[1]!.src).toBe('/video')
+            expect(s.decks[1]!.currentTime).toBe(62)
+            expect(s.decks[1]!.play).toHaveBeenCalledOnce()
+            expect(s.decks[0]!.paused).toBe(true)
+            expect(s.decks[0]!.src).toBe('')
+            expect(s.engine.source).toEqual({ url: '/video', gain: 0.8 })
+            expect(s.events.timeupdate).toHaveBeenLastCalledWith(62, 0)
+        })
+
+        it('crossfades briefly between both sources with Web Audio', async () => {
+            s = setup(true)
+            s.engine.load({ url: '/audio', gain: 1 })
+            await s.engine.play()
+            s.decks[0]!.advance(42, 200)
+
+            await s.engine.switchTo({ url: '/video', gain: 1 }, toVideo)
+
+            expect(s.engine.crossfading).toBe(true)
+            const [, , duration] = graphOf(s.context!).fades[1]!.gain.setValueCurveAtTime.mock
+                .calls[0] as [Float32Array, number, number]
+            expect(duration).toBe(sourceSwitchCrossfade)
+        })
+
+        it('catches up the time the other source needed to load', async () => {
+            s.engine.load({ url: '/audio', gain: 1 })
+            await s.engine.play()
+            s.decks[0]!.advance(42, 200)
+            s.engine.prepare({ url: '/next', gain: 1 })
+            s.decks[1]!.readyState = 0
+            const switching = s.engine.switchTo({ url: '/video', gain: 1 }, toVideo)
+            await flush()
+
+            s.decks[0]!.currentTime = 43.5
+            s.decks[1]!.readyState = 4
+            s.decks[1]!.dispatchEvent(new Event('canplay'))
+            await switching
+
+            expect(s.decks[1]!.currentTime).toBe(63.5)
+            expect(s.engine.source?.url).toBe('/video')
+            // The next song is prepared again once the old source is gone.
+            expect(s.engine.hasPrepared).toBe(true)
+            expect(s.decks[0]!.src).toBe('/next')
+        })
+
+        it('keeps the old source when the other one does not become ready', async () => {
+            s.engine.load({ url: '/audio', gain: 1 })
+            await s.engine.play()
+            s.engine.prepare({ url: '/next', gain: 1 })
+            s.decks[1]!.readyState = 0
+            const switching = s.engine.switchTo({ url: '/video', gain: 1 }, toVideo)
+            await flush()
+
+            s.decks[1]!.dispatchEvent(new Event('error'))
+
+            expect(await switching).toBe(false)
+            expect(s.engine.source?.url).toBe('/audio')
+            expect(s.decks[0]!.paused).toBe(false)
+            expect(s.decks[1]!.src).toBe('/next')
+            expect(s.engine.hasPrepared).toBe(true)
+            expect(s.events.error).not.toHaveBeenCalled()
+        })
+
+        it('loads the other source in place while paused', async () => {
+            s.engine.load({ url: '/audio', gain: 1 })
+            s.decks[0]!.advance(10, 200)
+
+            expect(await s.engine.switchTo({ url: '/video', gain: 1 }, toVideo)).toBe(true)
+            s.decks[0]!.dispatchEvent(new Event('loadedmetadata'))
+
+            expect(s.decks[0]!.src).toBe('/video')
+            expect(s.decks[0]!.currentTime).toBe(30)
+            expect(s.decks[0]!.play).not.toHaveBeenCalled()
+        })
+    })
+
+    describe('a source with start and end (intro and outro skipped)', () => {
+        it('starts at the start of the source', () => {
+            s.engine.load({ url: '/video', gain: 1, start: 20 })
+            s.decks[0]!.dispatchEvent(new Event('loadedmetadata'))
+
+            expect(s.decks[0]!.currentTime).toBe(20)
+        })
+
+        it('ends at the end of the source and reports its end as the duration', async () => {
+            s.engine.load({ url: '/video', gain: 1, start: 20, end: 220 })
+            s.decks[0]!.dispatchEvent(new Event('loadedmetadata'))
+            await s.engine.play()
+
+            s.decks[0]!.advance(100, 260)
+            expect(s.engine.duration).toBe(220)
+            expect(s.events.ended).not.toHaveBeenCalled()
+
+            s.decks[0]!.advance(220.1, 260)
+            expect(s.events.ended).toHaveBeenCalledOnce()
+            expect(s.decks[0]!.paused).toBe(true)
+        })
+
+        it('moves on to the prepared song at the end of the source', async () => {
+            s.engine.load({ url: '/video', gain: 1, end: 220 })
+            await s.engine.play()
+            s.engine.prepare({ url: '/next', gain: 1 })
+
+            s.decks[0]!.advance(220.2, 260)
+
+            expect(s.events.advanced).toHaveBeenCalledOnce()
+            expect(s.engine.source?.url).toBe('/next')
         })
     })
 })

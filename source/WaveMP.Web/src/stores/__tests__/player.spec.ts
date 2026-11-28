@@ -6,7 +6,7 @@ import type { EngineEvents } from '@/player/engine'
 import { getLyrics } from '@/lyrics/api'
 import type { TrackLyrics } from '@/lyrics/timing'
 import { getPlayback, getVideoPlayback, recordPlay, reportNowPlaying } from '@/player/api'
-import type { FollowerClock, VideoFollowerEvents } from '@/player/videoFollower'
+import type { FollowerClock, VideoFollowerEvents, VideoMapping } from '@/player/videoFollower'
 import {
     videoDiagnosticsStorageKey,
     type VideoDiagnosticsSnapshot,
@@ -55,6 +55,16 @@ class FakeEngine implements PlayerEngine {
     readonly setEqualizer = vi.fn()
     readonly fadeOut = vi.fn()
     readonly restoreOutput = vi.fn()
+    readonly switched: { url: string; start?: number; end?: number; position: number }[] = []
+    readonly switchTo = vi.fn(
+        (
+            source: { url: string; gain: number; start?: number; end?: number },
+            map: (position: number) => number,
+        ) => {
+            this.switched.push({ ...source, position: map(this.position) })
+            return Promise.resolve(true)
+        },
+    )
     equalizerAvailable = true
     analyser: AnalyserNode | null = null
     /** Whether the track does not play, as the browser reports it; unknown unless a test sets it. */
@@ -238,7 +248,7 @@ describe('player store', () => {
         player.playTracks(abc, 1)
         await flushPromises()
 
-        expect(getPlayback).toHaveBeenCalledWith('b', ['Mp3', 'Flac'])
+        expect(getPlayback).toHaveBeenCalledWith('b', ['Mp3', 'Flac'], 'Audio')
         expect(engine.lastUrl).toBe('/stream/b')
         expect(engine.play).toHaveBeenCalledOnce()
         expect(player.state).toMatchObject({
@@ -556,10 +566,19 @@ describe('player store', () => {
             })
         })
 
-        it('plays the audio once and shows the muted video with its offset', async () => {
+        it('plays the audio once and shows the muted video at the moment of the song', async () => {
             vi.mocked(getVideoPlayback).mockResolvedValue({
                 ...video('a'),
-                offsetMilliseconds: 1500,
+                songSegment: {
+                    confident: true,
+                    pieces: [
+                        {
+                            fileStartMilliseconds: 1500,
+                            songStartMilliseconds: 0,
+                            durationMilliseconds: 198_500,
+                        },
+                    ],
+                },
             })
             const player = usePlayerStore()
             player.attachVideo(element)
@@ -574,7 +593,10 @@ describe('player store', () => {
                 videoCodecs: ['H264'],
                 audioCodecs: ['Aac'],
             })
-            expect(follower.load).toHaveBeenCalledWith({ url: '/video/a' }, 1500)
+            expect(follower.load).toHaveBeenCalledWith({ url: '/video/a' }, expect.anything())
+            const mapping = follower.load.mock.calls.at(-1)?.[1] as VideoMapping
+            expect(mapping.toVideo(10)).toBe(11.5)
+            expect(mapping.toClock(11.5)).toBe(10)
             expect(follower.setActive).toHaveBeenLastCalledWith(true)
             expect(player.stageView).toBe('cover')
 
@@ -701,7 +723,7 @@ describe('player store', () => {
 
             expect(player.state.trackId).toBe('c')
             expect(follower.unload).toHaveBeenCalled()
-            expect(follower.load).toHaveBeenLastCalledWith({ url: '/video/c' }, 0)
+            expect(follower.load).toHaveBeenLastCalledWith({ url: '/video/c' }, expect.anything())
             expect(engine.load).toHaveBeenCalledOnce()
         })
 
@@ -785,17 +807,162 @@ describe('player store', () => {
             expect(follower.allowPlayback).toHaveBeenCalledOnce()
         })
 
-        it('applies a new offset only to the video of the current track', async () => {
+        it('applies new song segments only to the video of the current track', async () => {
             const player = usePlayerStore()
             player.attachVideo(element)
             player.playTracks(withVideo, 0)
             await flushPromises()
+            const mapping = follower.load.mock.calls.at(-1)?.[1] as VideoMapping
+            expect(mapping.toVideo(5)).toBe(5)
+            const segments = {
+                video: {
+                    effective: {
+                        confident: true,
+                        pieces: [
+                            {
+                                fileStartMilliseconds: 10_000,
+                                songStartMilliseconds: 0,
+                                durationMilliseconds: 190_000,
+                            },
+                        ],
+                    },
+                },
+            }
 
-            player.applyVideoOffset('c', 500)
-            expect(follower.setOffset).not.toHaveBeenCalled()
+            follower.sync.mockClear()
+            player.applySongSegments('c', segments)
+            expect(follower.sync).not.toHaveBeenCalled()
+            expect(mapping.toVideo(5)).toBe(5)
 
-            player.applyVideoOffset('a', 500)
-            expect(follower.setOffset).toHaveBeenCalledWith(500)
+            player.applySongSegments('a', segments)
+            expect(follower.sync).toHaveBeenCalled()
+            expect(mapping.toVideo(5)).toBe(15)
+            expect(mapping.toClock(15)).toBe(5)
+        })
+
+        describe('song segments', () => {
+            /** The sound of the video: an intro of 10 s, the song of 180 s and an outro. */
+            const videoSound = (id: string): TrackPlayback =>
+                direct(id, {
+                    sound: 'Video',
+                    streamUrl: `/video-sound/${id}`,
+                    replayGain: { trackGain: -6 },
+                    loudnessMatchDb: -2,
+                    songSegment: {
+                        confident: true,
+                        method: 'Alignment',
+                        startMilliseconds: 10_000,
+                        endMilliseconds: 190_000,
+                        pieces: [
+                            {
+                                fileStartMilliseconds: 10_000,
+                                songStartMilliseconds: 0,
+                                durationMilliseconds: 180_000,
+                            },
+                        ],
+                    },
+                })
+
+            beforeEach(() => {
+                vi.mocked(getPlayback).mockImplementation((id, _formats, sound) =>
+                    Promise.resolve(sound === 'Video' ? videoSound(id) : direct(id)),
+                )
+                const session = useSessionStore()
+                vi.spyOn(session, 'updatePlayerViewMode').mockImplementation((mode) => {
+                    session.playerViewMode = mode
+                    return Promise.resolve()
+                })
+            })
+
+            it('switches to the sound of the video in the video view at the same moment', async () => {
+                const player = usePlayerStore()
+                player.selectViewMode('Cover')
+                player.playTracks(withVideo, 0)
+                await flushPromises()
+                engine.position = 30
+
+                player.selectViewMode('Video')
+                await flushPromises()
+
+                expect(getPlayback).toHaveBeenLastCalledWith('a', ['Mp3', 'Flac'], 'Video')
+                expect(engine.switched.at(-1)).toMatchObject({
+                    url: '/video-sound/a',
+                    position: 40,
+                })
+                // The sound of the video plays as loud as the audio file: 2 dB quieter here.
+                const audioGain = engine.loaded[0]?.gain ?? 0
+                const gain = engine.switchTo.mock.calls.at(-1)?.[0].gain ?? 0
+                expect(gain / audioGain).toBeCloseTo(10 ** (-2 / 20), 5)
+                expect(engine.switched.at(-1)?.start).toBeUndefined()
+
+                engine.position = 45
+                player.selectViewMode('Visualization')
+                await flushPromises()
+                expect(engine.switched.at(-1)).toEqual({
+                    url: '/stream/a',
+                    gain: expect.any(Number),
+                    position: 35,
+                })
+            })
+
+            it('shows the lyrics at the moment of the song, without a line in the intro', async () => {
+                const player = usePlayerStore()
+                player.selectViewMode('Video')
+                player.playTracks(withVideo, 0)
+                await flushPromises()
+
+                engine.events.timeupdate?.(45, 200)
+                expect(player.lyricsPosition).toBe(35)
+                expect(player.songDuration).toBe(180)
+
+                engine.events.timeupdate?.(5, 200)
+                expect(player.lyricsPosition).toBeNaN()
+
+                player.seekSong(20)
+                expect(engine.seek).toHaveBeenLastCalledWith(30)
+            })
+
+            it('skips intro and outro of a song with only a video, with the setting', async () => {
+                // The server plays the sound of the video for a song without an audio file.
+                const clip = [track('clip', { hasVideo: true })]
+                vi.mocked(getPlayback).mockImplementation((id) => Promise.resolve(videoSound(id)))
+                const session = useSessionStore()
+                const player = usePlayerStore()
+                player.selectViewMode('Cover')
+                player.playTracks(clip, 0)
+                await flushPromises()
+
+                expect(engine.loaded.at(-1)).toMatchObject({
+                    url: '/video-sound/clip',
+                    position: 10,
+                })
+                expect(engine.load.mock.calls.at(-1)?.[0]).toMatchObject({ start: 10, end: 190 })
+
+                session.video = { ambientMode: true, skipIntroAndOutro: false }
+                engine.position = 50
+                await flushPromises()
+                expect(engine.switched.at(-1)).toEqual({
+                    url: '/video-sound/clip',
+                    gain: expect.any(Number),
+                    position: 50,
+                })
+            })
+
+            it('plays intro and outro of a song with only a video in the video view', async () => {
+                // The server plays the sound of the video for a song without an audio file.
+                const clip = [track('clip', { hasVideo: true })]
+                vi.mocked(getPlayback).mockImplementation((id) => Promise.resolve(videoSound(id)))
+                const player = usePlayerStore()
+                player.selectViewMode('Video')
+                player.playTracks(clip, 0)
+                await flushPromises()
+
+                expect(engine.loaded.at(-1)).toMatchObject({
+                    url: '/video-sound/clip',
+                    position: 0,
+                })
+                expect(engine.load.mock.calls.at(-1)?.[0]).not.toHaveProperty('start')
+            })
         })
 
         it('lets the own controls of the video pause and play the audio', async () => {
@@ -909,7 +1076,7 @@ describe('player store', () => {
 
             expect(elements).toEqual([stage, mini])
             expect(followers[0]!.dispose).toHaveBeenCalledOnce()
-            expect(followers[1]!.load).toHaveBeenCalledWith({ url: '/video/a' }, 0)
+            expect(followers[1]!.load).toHaveBeenCalledWith({ url: '/video/a' }, expect.anything())
             expect(player.videoState).toBe('loading')
 
             // The stage closing meanwhile changes nothing for the mini player.
@@ -922,7 +1089,10 @@ describe('player store', () => {
             player.detachVideo(stage)
             player.attachVideo(stage)
             await flushPromises()
-            expect(followers.at(-1)!.load).toHaveBeenCalledWith({ url: '/video/a' }, 0)
+            expect(followers.at(-1)!.load).toHaveBeenCalledWith(
+                { url: '/video/a' },
+                expect.anything(),
+            )
             expect(engine.load).toHaveBeenCalledOnce()
             expect(player.state.playback).toBe('playing')
         })
@@ -945,7 +1115,7 @@ describe('player store', () => {
             await flushPromises()
 
             expect(elements).toEqual([stage, mini, stage])
-            expect(follower.load).toHaveBeenCalledWith({ url: '/video/a' }, 0)
+            expect(follower.load).toHaveBeenCalledWith({ url: '/video/a' }, expect.anything())
             expect(follower.setActive).toHaveBeenLastCalledWith(true)
         })
 

@@ -1,5 +1,6 @@
 // The video of the Now Playing stage. The audio engine always plays the track; the video element
-// only shows the picture: muted, at the position of the audio plus the offset of the track. While
+// only shows the picture: muted, at the position of the video that plays the moment of the song the
+// audio plays (see VideoMapping; the same position while the engine plays the sound of the video). While
 // the stage shows the cover or the visualization, the video waits paused with its source loaded, so
 // switching back is quick. A video file plays as it is, a transcoded video as HLS.
 //
@@ -53,6 +54,26 @@ export interface VideoFollowerEvents {
 }
 
 /** The source of a video. */
+/**
+ * Where the video is for a position of the audio the engine plays, and back: the same position
+ * while the engine plays the sound of the video itself, otherwise the position of the video that
+ * plays the same moment of the song (see src/player/songSegments.ts).
+ */
+export interface VideoMapping {
+    /** The position of the video for a position of the audio, in seconds. */
+    toVideo(position: number): number
+    /** The position of the audio for a position of the video, in seconds. */
+    toClock(videoPosition: number): number
+}
+
+/** A mapping by a fixed offset in seconds (position of the video = audio + offset). */
+export function offsetMapping(offset: number): VideoMapping {
+    return {
+        toVideo: (position) => position + offset,
+        toClock: (videoPosition) => videoPosition - offset,
+    }
+}
+
 export interface VideoFollowerSource {
     readonly url: string
     /** Whether the URL is an HLS master playlist instead of a file. */
@@ -112,7 +133,7 @@ export class VideoFollower {
     private revealing = false
     /** Whether the follower itself wants the video to play; other plays and pauses are the user's. */
     private wantsPlaying = false
-    private offset = 0
+    private mapping: VideoMapping = offsetMapping(0)
     private hls = false
     private lastSeek = Number.NEGATIVE_INFINITY
     /** The last seek of the follower is not done: the video did not play (or show) again since. */
@@ -233,11 +254,14 @@ export class VideoFollower {
         return this.state
     }
 
-    /** Loads a video; offset in milliseconds (position of the video = audio + offset). */
-    load(source: VideoFollowerSource, offsetMilliseconds = 0): void {
+    /**
+     * Loads a video with the mapping of its positions to those of the audio, or a fixed offset in
+     * milliseconds (position of the video = audio + offset).
+     */
+    load(source: VideoFollowerSource, mapping: VideoMapping | number = 0): void {
         this.unload()
         this.loaded = true
-        this.offset = offsetMilliseconds / 1000
+        this.mapping = typeof mapping === 'number' ? offsetMapping(mapping / 1000) : mapping
         this.hls = source.hls === true
         this.diagnostics.start(this.hls ? 'hls' : 'file', this.environment.now())
         this.setState('loading')
@@ -269,9 +293,14 @@ export class VideoFollower {
         }
     }
 
-    /** A new offset in milliseconds; it applies with the next check. */
+    /** A new fixed offset in milliseconds; it applies with the next check. */
     setOffset(offsetMilliseconds: number): void {
-        this.offset = offsetMilliseconds / 1000
+        this.mapping = offsetMapping(offsetMilliseconds / 1000)
+    }
+
+    /** The offset of the video at a position of the audio (constant within a piece of the song). */
+    private offsetAt(position: number): number {
+        return this.mapping.toVideo(position) - position
     }
 
     /**
@@ -345,7 +374,7 @@ export class VideoFollower {
             audioPosition: clock.position,
             playing: clock.playing,
             videoPosition: finiteOrZero(element.currentTime),
-            offset: this.offset,
+            offset: this.offsetAt(clock.position),
             videoDuration: finiteOrZero(element.duration),
             sinceLastSeek: (this.environment.now() - this.lastSeek) / 1000,
             hls: this.hls,
@@ -412,14 +441,14 @@ export class VideoFollower {
         }
 
         // Small jumps are the browser's (e.g. over a gap of the stream), not a move of the user.
-        const expected = this.clock().position + this.offset
+        const expected = this.mapping.toVideo(this.clock().position)
         if (Math.abs(time - expected) <= userSeekThreshold) {
             return
         }
 
         // The video is where the user wants it: no correction of the follower moves it back first.
         this.lastSeek = this.environment.now()
-        this.events.userSeek?.(Math.max(0, time - this.offset))
+        this.events.userSeek?.(Math.max(0, this.mapping.toClock(time)))
     }
 
     /**
@@ -446,7 +475,7 @@ export class VideoFollower {
 
         const measured = (this.environment.now() - this.lastSeek) / 1000
         this.seekLatency = nextSeekLatency(this.seekLatency, measured)
-        const target = videoTarget(clock.position, this.offset)
+        const target = videoTarget(clock.position, this.offsetAt(clock.position))
         const distance = Math.abs(finiteOrZero(element.currentTime) - target)
         this.missedSeeks = missedSeeksAfter(this.missedSeeks, distance, this.hls)
     }
@@ -475,7 +504,7 @@ export class VideoFollower {
             time: this.environment.now(),
             audioPosition: clock.position,
             drift: this.hasMetadata
-                ? videoPosition - videoTarget(clock.position, this.offset)
+                ? videoPosition - videoTarget(clock.position, this.offsetAt(clock.position))
                 : null,
             rate: element.playbackRate,
             readyState: element.readyState,

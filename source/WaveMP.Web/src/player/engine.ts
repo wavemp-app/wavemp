@@ -28,6 +28,17 @@ export interface DeckSource {
     readonly crossfade?: number
     /** What a casting device plays instead (see src/casting/engine.ts); the audio engine ignores it. */
     readonly cast?: CastMedia
+    /**
+     * Seconds of the file at which the track starts for the player (the intro of a music video is
+     * skipped): a prepared track starts there, and a load without a position as well.
+     */
+    readonly start?: number
+    /**
+     * Seconds of the file at which the track ends for the player (the outro of a music video is
+     * skipped): the next track follows from there as if the file ended. To the end of the file
+     * without.
+     */
+    readonly end?: number
 }
 
 export interface EngineEvents {
@@ -109,6 +120,12 @@ export const minimumCrossfade = 0.1
 /** The fading deck is unloaded this long after its crossfade. */
 export const crossfadeUnloadDelay = 0.25
 
+/** Seconds the sources of a track fade into each other when the player switches between them. */
+export const sourceSwitchCrossfade = 0.25
+
+/** Milliseconds a switch of the source waits for the new one (a transcoded stream may take a while). */
+export const sourceSwitchTimeout = 10000
+
 /** Steps per second of the fade of the sleep timer without Web Audio. */
 export const elementFadeStepsPerSecond = 10
 
@@ -135,6 +152,8 @@ interface Deck {
      * there; null without one. Cleared by seeked and with every new source.
      */
     target: SeekTarget | null
+    /** Whether the deck reached the end of its source (DeckSource.end) and reported it. */
+    endReached: boolean
 }
 
 interface Crossfade {
@@ -207,6 +226,10 @@ export class AudioEngine {
     private crossfade: Crossfade | null = null
     /** A next track prepared while a crossfade still uses the other deck; set once it ended. */
     private deferredPrepare: DeckSource | null = null
+    /** Increases with every switch of the source and every command that ends one. */
+    private switchGeneration = 0
+    /** Whether a switch of the source loads the other deck. */
+    private switching = false
     private equalizerState: EqualizerState = { enabled: false, preampDb: 0, gainsDb: [] }
     private equalizerLayout: readonly EqualizerBandLayout[] = fallbackEqualizerBands
     /** Factor of the output without Web Audio while the sleep timer fades it out. */
@@ -247,7 +270,7 @@ export class AudioEngine {
     }
 
     get duration(): number {
-        return finiteOrZero(this.deck.audio.duration)
+        return this.durationOf(this.deck)
     }
 
     get paused(): boolean {
@@ -274,6 +297,7 @@ export class AudioEngine {
      * element moves to the position once it knows the metadata; a seek before that replaces it.
      */
     load(source: DeckSource, position = 0): void {
+        this.cancelSwitch()
         this.endReadyWaits()
         this.cancelHandover()
         this.finishCrossfade()
@@ -282,12 +306,13 @@ export class AudioEngine {
         deck.source = source
         this.applyGain(deck)
         this.attach(deck, source)
-        deck.target = position > 0 ? { position, sent: false } : null
+        const start = position > 0 ? position : (source.start ?? 0)
+        deck.target = start > 0 ? { position: start, sent: false } : null
     }
 
     /** Loads the next track on the other deck, or forgets it with null. */
     prepare(source: DeckSource | null): void {
-        if (this.crossfade) {
+        if (this.crossfade || this.switching) {
             // The other deck still fades out; the track is loaded there once it is done.
             this.deferredPrepare = source
             return
@@ -303,6 +328,8 @@ export class AudioEngine {
             other.source = source
             this.applyGain(other)
             this.attach(other, source)
+            const start = source.start ?? 0
+            other.target = start > 0 ? { position: start, sent: false } : null
         } else {
             this.unload(other)
         }
@@ -350,6 +377,7 @@ export class AudioEngine {
 
     pause(): void {
         this.wantsPlay = false
+        this.cancelSwitch()
         this.cancelHandover()
         this.finishCrossfade()
         this.deck.audio.pause()
@@ -360,7 +388,84 @@ export class AudioEngine {
      * then, false when it fails, another track is loaded, the engine stops or the time runs out.
      */
     whenReady(timeoutMs: number): Promise<boolean> {
-        const deck = this.deck
+        return this.deckReady(this.deck, timeoutMs)
+    }
+
+    /**
+     * Switches the current track to another source of the same song (the audio file or the sound
+     * of its video) without a gap: the source loads on the other deck at the position mapPosition
+     * gives for the current position, catches up once it is ready and fades in shortly while the
+     * old one fades out (without Web Audio it takes over directly). A paused track just moves to
+     * the new source. True once the new source plays (or waits paused); false when it does not
+     * start in time, another command ended the switch, or a newer switch replaced it. A prepared
+     * next track is loaded again after the switch.
+     */
+    async switchTo(
+        source: DeckSource,
+        mapPosition: (position: number) => number,
+        crossfadeSeconds = sourceSwitchCrossfade,
+    ): Promise<boolean> {
+        const prepared = this.preparedSource
+        if (!this.wantsPlay || this.deck.audio.paused) {
+            this.load(source, mapPosition(this.position))
+            this.prepare(prepared)
+            return true
+        }
+
+        this.cancelSwitch()
+        this.cancelHandover()
+        this.finishCrossfade()
+        const generation = ++this.switchGeneration
+        this.prepared = null
+        this.deferredPrepare = prepared
+        this.switching = true
+        const target = this.other
+        target.source = source
+        this.applyGain(target)
+        this.attach(target, source)
+        target.target = { position: mapPosition(this.position), sent: false }
+        const ready = await this.deckReady(target, sourceSwitchTimeout)
+        if (generation !== this.switchGeneration) {
+            return false
+        }
+
+        this.switching = false
+        if (!ready || !this.wantsPlay) {
+            this.unload(target)
+            this.restoreDeferredPrepare()
+            return false
+        }
+
+        // Catch up the time the new source needed to load.
+        const position = mapPosition(this.position)
+        target.target = { position, sent: true }
+        target.audio.currentTime = position
+        const previous = this.deck
+        this.current = 1 - this.current
+        const fade = this.context !== null && target.fade !== null
+        if (fade && crossfadeSeconds >= minimumCrossfade) {
+            this.startCrossfade(previous, crossfadeSeconds)
+        } else {
+            this.setFade(target, 1)
+            previous.audio.pause()
+            this.unload(previous)
+            this.restoreDeferredPrepare()
+        }
+
+        try {
+            await target.audio.play()
+        } catch (error) {
+            if (!(error instanceof DOMException && error.name === 'AbortError')) {
+                this.events.error?.(error)
+            }
+        }
+
+        this.events.timeupdate?.(this.positionOf(target), this.durationOf(target))
+        return true
+    }
+
+    /** Waits until a deck can play on (see whenReady). */
+    private deckReady(deck: Deck, timeoutMs: number): Promise<boolean> {
         const audio = deck.audio
         const ready = (): boolean => audio.readyState >= haveFutureData && !audio.seeking
         if (!deck.source) {
@@ -421,6 +526,7 @@ export class AudioEngine {
 
     /** Stops and unloads both decks. */
     stop(): void {
+        this.cancelSwitch()
         this.endReadyWaits()
         this.wantsPlay = false
         this.cancelHandover()
@@ -434,11 +540,13 @@ export class AudioEngine {
      * moves there once the metadata is known, and the deck reports the position until then.
      */
     seek(position: number): void {
+        this.cancelSwitch()
         this.cancelHandover()
         this.finishCrossfade()
         const deck = this.deck
         const audio = deck.audio
         const target = clampPosition(position, finiteOrZero(audio.duration))
+        deck.endReached = false
         deck.target = { position: target, sent: audio.readyState >= haveMetadata }
         // Without metadata the browser keeps it as its start position; the deck makes sure of it.
         audio.currentTime = target
@@ -532,6 +640,60 @@ export class AudioEngine {
         return this.decks[1 - this.current]!
     }
 
+    /** Where the track of a deck ends: the end of its source or of the file, 0 while unknown. */
+    private durationOf(deck: Deck): number {
+        const file = finiteOrZero(deck.audio.duration)
+        const end = deck.source?.end
+        return typeof end === 'number' && end > 0 && (file === 0 || end < file) ? end : file
+    }
+
+    /** Ends a running switch of the source; the deck it loaded is freed. */
+    private cancelSwitch(): void {
+        if (!this.switching) {
+            return
+        }
+
+        this.switchGeneration++
+        this.switching = false
+        this.unload(this.other)
+        this.restoreDeferredPrepare()
+    }
+
+    /** Loads the next track that waited for a switch or crossfade to end. */
+    private restoreDeferredPrepare(): void {
+        const deferred = this.deferredPrepare
+        this.deferredPrepare = null
+        if (deferred && !this.crossfade) {
+            this.prepare(deferred)
+        }
+    }
+
+    /**
+     * The track reached the end of its source before the end of the file (a skipped outro): it ends
+     * there as if the file ended.
+     */
+    private checkSourceEnd(deck: Deck): void {
+        const end = deck.source?.end
+        if (
+            deck.endReached ||
+            typeof end !== 'number' ||
+            end <= 0 ||
+            deck.audio.paused ||
+            this.positionOf(deck) < end
+        ) {
+            return
+        }
+
+        deck.endReached = true
+        this.cancelHandover()
+        if (this.prepared) {
+            this.takeOver(true)
+        } else {
+            deck.audio.pause()
+            this.events.ended?.()
+        }
+    }
+
     private createDeck(index: number): Deck {
         const audio = this.environment.createAudio()
         const deck: Deck = {
@@ -541,6 +703,7 @@ export class AudioEngine {
             source: null,
             slot: new MediaSourceSlot(audio, this.environment.hls ?? browserHlsSupport),
             target: null,
+            endReached: false,
         }
         const active = (): boolean => this.decks[this.current] === deck
         audio.addEventListener('loadedmetadata', () => {
@@ -569,13 +732,14 @@ export class AudioEngine {
         })
         audio.addEventListener('timeupdate', () => {
             if (active()) {
-                this.events.timeupdate?.(this.positionOf(deck), finiteOrZero(audio.duration))
+                this.events.timeupdate?.(this.positionOf(deck), this.durationOf(deck))
                 this.scheduleHandover()
+                this.checkSourceEnd(deck)
             }
         })
         audio.addEventListener('durationchange', () => {
             if (active()) {
-                this.events.timeupdate?.(this.positionOf(deck), finiteOrZero(audio.duration))
+                this.events.timeupdate?.(this.positionOf(deck), this.durationOf(deck))
             }
         })
         audio.addEventListener('playing', () => active() && this.events.playing?.())
@@ -707,8 +871,9 @@ export class AudioEngine {
 
         const audio = this.deck.audio
         const crossfade = this.preparedCrossfade()
-        const remaining = finiteOrZero(audio.duration) - audio.currentTime
-        if (finiteOrZero(audio.duration) === 0 || remaining > crossfade + handoverWindow) {
+        const length = this.durationOf(this.deck)
+        const remaining = length - audio.currentTime
+        if (length === 0 || remaining > crossfade + handoverWindow) {
             return
         }
 
@@ -746,7 +911,7 @@ export class AudioEngine {
         }
 
         const previous = this.deck
-        const remaining = finiteOrZero(previous.audio.duration) - previous.audio.currentTime
+        const remaining = this.durationOf(previous) - previous.audio.currentTime
         const crossfade = ended ? 0 : Math.min(this.preparedCrossfade(), Math.max(0, remaining))
         this.current = 1 - this.current
         this.prepared = null
@@ -774,7 +939,7 @@ export class AudioEngine {
         }
 
         this.events.advanced?.()
-        this.events.timeupdate?.(finiteOrZero(audio.currentTime), finiteOrZero(audio.duration))
+        this.events.timeupdate?.(this.positionOf(this.deck), this.durationOf(this.deck))
     }
 
     private startCrossfade(previous: Deck, seconds: number): void {
@@ -807,11 +972,7 @@ export class AudioEngine {
         }
 
         this.setFade(this.deck, 1)
-        const deferred = this.deferredPrepare
-        this.deferredPrepare = null
-        if (deferred) {
-            this.prepare(deferred)
-        }
+        this.restoreDeferredPrepare()
     }
 
     private rampFade(deck: Deck, curve: Float32Array, start: number, seconds: number): void {
@@ -838,6 +999,7 @@ export class AudioEngine {
     /** Sets the source of a deck: a file directly, an HLS stream through the HLS support. */
     private attach(deck: Deck, source: DeckSource): void {
         deck.target = null
+        deck.endReached = false
         deck.slot.set(source.url, source.hls === true, (error) => {
             if (this.decks[this.current] === deck) {
                 this.events.error?.(error)
@@ -848,6 +1010,7 @@ export class AudioEngine {
     private unload(deck: Deck): void {
         deck.source = null
         deck.target = null
+        deck.endReached = false
         deck.slot.clear()
     }
 }
@@ -862,6 +1025,8 @@ function sameSource(source: DeckSource, other: DeckSource | null): boolean {
         !!other &&
         source.url === other.url &&
         source.gain === other.gain &&
-        (source.crossfade ?? 0) === (other.crossfade ?? 0)
+        (source.crossfade ?? 0) === (other.crossfade ?? 0) &&
+        source.start === other.start &&
+        source.end === other.end
     )
 }

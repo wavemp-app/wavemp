@@ -6805,4 +6805,114 @@
     [data-part='track-picker-item']:not([data-state~='selected']) > [data-field='context'] {
         color: var(--wmp-color-text-muted);
     }
+    /* Review inbox: an unsure or mismatching song analysis. */
+    [data-part='review-meta']
+        > [data-part='badge']:is(
+            [data-state~='song-segment-unsure'],
+            [data-state~='song-segment-mismatch']
+        ) {
+        --_badge-color: var(--wmp-color-warning);
+    }
+
+    [data-part='review-meta'] > [data-part='badge'] > [data-part='icon'] {
+        --wmp-icon-size: var(--wmp-icon-size-s);
+    }
+
+    /* --- Song segments ------------------------------------------------------------------- */
+
+    /* Where the song lies in the audio file and the video: per file a strip, status and fields. */
+    /* Sections after a form or section in a dialog, e.g. cover and song start in the metadata editor. */
+    [data-part='dialog-body'] > [data-part='form'] + [data-part='section'],
+    [data-part='dialog-body'] > [data-part='section'] + [data-part='section'] {
+        margin-block-start: var(--wmp-space-xl);
+    }
+
+    [data-part='song-segments'] {
+        display: grid;
+        gap: var(--wmp-space-l);
+        min-inline-size: 0;
+    }
+
+    [data-part='song-segments'][data-state='loading'] {
+        opacity: 0.6;
+    }
+
+    [data-part='song-segment'] {
+        display: grid;
+        gap: var(--wmp-space-s);
+        min-inline-size: 0;
+    }
+
+    [data-part='song-segment-header'] {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: var(--wmp-space-xs) var(--wmp-space-s);
+        min-inline-size: 0;
+    }
+
+    [data-part='song-segment-title'] {
+        margin: 0;
+        font-size: var(--wmp-font-size-m);
+        font-weight: var(--wmp-font-weight-bold);
+    }
+
+    [data-part='song-segment-status'] {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--wmp-space-xs);
+        min-inline-size: 0;
+        color: var(--wmp-color-text-muted);
+        font-size: var(--wmp-font-size-s);
+        overflow-wrap: anywhere;
+    }
+
+    [data-part='song-segment-status']:is([data-state='unsure'], [data-state='mismatch']) {
+        color: var(--wmp-color-warning);
+    }
+
+    [data-part='song-segment-status'][data-state='failed'] {
+        color: var(--wmp-color-danger);
+    }
+
+    [data-part='song-segment-status'] > [data-part='icon'] {
+        --wmp-icon-size: var(--wmp-icon-size-s);
+    }
+
+    /* The file as a track; the parts that belong to the song are filled, intro and outro stay empty. */
+    [data-part='song-strip'] {
+        position: relative;
+        block-size: var(--wmp-progress-height);
+        overflow: hidden;
+        border-radius: var(--wmp-radius-round);
+        background: var(--wmp-progress-track-background);
+    }
+
+    [data-part='song-strip-piece'] {
+        position: absolute;
+        inset-block: 0;
+        inset-inline-start: calc(var(--wmp-piece-start, 0) * 100%);
+        inline-size: calc(var(--wmp-piece-length, 0) * 100%);
+        background: var(--wmp-progress-fill-background);
+    }
+
+    [data-part='song-segment'][data-state='unsure'] [data-part='song-strip-piece'],
+    [data-part='song-segment'][data-state='mismatch'] [data-part='song-strip-piece'] {
+        background: var(--wmp-color-warning);
+    }
+
+    [data-part='song-strip-playhead'] {
+        position: absolute;
+        inset-block: 0;
+        inset-inline-start: calc(var(--wmp-playhead, 0) * 100%);
+        inline-size: 2px;
+        background: var(--wmp-color-text);
+    }
+
+    [data-part='song-strip-legend'] {
+        margin: 0;
+        color: var(--wmp-color-text-muted);
+        font-size: var(--wmp-font-size-s);
+        font-variant-numeric: tabular-nums;
+    }
 }

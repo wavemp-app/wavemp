@@ -55,9 +55,9 @@ function updateVisualization(change: VisualizationSettingsChange): void {
             :video-diagnostics="player.videoDiagnostics"
             :lyrics="player.lyrics"
             :playing="player.playback === 'playing'"
-            :position="player.position"
-            :duration="player.duration"
-            :clock="player.livePosition"
+            :position="player.lyricsPosition"
+            :duration="player.songDuration"
+            :clock="player.lyricsClock"
             :casting="player.casting"
             :cast-notice="castNotice"
             :remote-notice="remoteNotice"
@@ -66,7 +66,7 @@ function updateVisualization(change: VisualizationSettingsChange): void {
             @attach-video="player.attachVideo"
             @detach-video="player.detachVideo"
             @update-visualization="updateVisualization"
-            @seek="player.seek"
+            @seek="player.seekSong"
         />
         <PlayQueue
             v-if="player.queue.items.length > 0"
