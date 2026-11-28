@@ -143,6 +143,17 @@ describe('Chromecast backend', () => {
         expect(device.loads[1]?.request.autoplay).toBe(false)
     })
 
+    it('sets the level of every stream below the volume of the device', async () => {
+        const { backend, device } = await connected()
+
+        await backend.load({ ...song, kind: 'video', volume: 0.25 }, 0, true)
+        await backend.load(song, 0, true)
+
+        expect(device.streamVolumes).toEqual([0.25, 1])
+        expect(device.player.volumeLevel).toBe(0.5)
+        expect(device.controls).toEqual([])
+    })
+
     it('sends no image without a cover', async () => {
         const { backend, device } = await connected()
 

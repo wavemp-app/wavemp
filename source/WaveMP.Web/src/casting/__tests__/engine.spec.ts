@@ -119,6 +119,49 @@ describe('cast engine', () => {
         expect(events.ended).toHaveBeenCalled()
     })
 
+    it('ends a source at its end before the end of the file and pauses the device there', async () => {
+        const { layer, engine, events } = setup()
+        engine.load({ url: media.url, gain: 1, cast: media, start: 8, end: 150 }, 8)
+        await engine.play()
+
+        layer.events.timeupdate?.(100, 200)
+        expect(events.timeupdate).toHaveBeenLastCalledWith(100, 150)
+        expect(events.ended).not.toHaveBeenCalled()
+
+        layer.events.timeupdate?.(150.4, 200)
+        layer.events.timeupdate?.(151, 200)
+
+        expect(events.ended).toHaveBeenCalledTimes(1)
+        expect(layer.calls).toEqual(['pause'])
+    })
+
+    it('ends a source again after a seek back before its end, but not while paused', async () => {
+        const { layer, engine, events } = setup()
+        engine.load({ url: media.url, gain: 1, cast: media, end: 150 })
+        await engine.play()
+        layer.events.timeupdate?.(150, 200)
+
+        engine.seek(120)
+        layer.events.timeupdate?.(150, 200)
+        expect(events.ended).toHaveBeenCalledTimes(2)
+
+        engine.seek(120)
+        engine.pause()
+        layer.events.timeupdate?.(150, 200)
+        expect(events.ended).toHaveBeenCalledTimes(2)
+    })
+
+    it('plays a source without an end to the end of the media', async () => {
+        const { layer, engine, events } = setup()
+        engine.load({ url: media.url, gain: 1, cast: media })
+        await engine.play()
+
+        layer.events.timeupdate?.(199, 200)
+
+        expect(events.timeupdate).toHaveBeenLastCalledWith(199, 200)
+        expect(events.ended).not.toHaveBeenCalled()
+    })
+
     it('has no equalizer, crossfade, gain or visualization', () => {
         const { layer, engine } = setup()
 

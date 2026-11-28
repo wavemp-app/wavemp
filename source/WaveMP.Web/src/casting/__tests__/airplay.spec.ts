@@ -174,6 +174,28 @@ describe('AirPlay backend', () => {
         expect(backend.status).toMatchObject({ volume: 1, muted: true })
     })
 
+    it('lowers the element by the level of the stream and reports the volume without it', async () => {
+        const { backend, element } = await started()
+        await backend.requestSession(null)
+        backend.setVolume(0.8)
+        element.emit('volumechange')
+
+        await backend.load({ ...song, kind: 'video', volume: 0.5 }, 0, true)
+        element.emit('volumechange')
+        expect(element.volume).toBeCloseTo(0.4)
+        expect(backend.status.volume).toBeCloseTo(0.8)
+
+        backend.setVolume(0.6)
+        element.emit('volumechange')
+        expect(element.volume).toBeCloseTo(0.3)
+        expect(backend.status.volume).toBeCloseTo(0.6)
+
+        await backend.load(song, 0, true)
+        element.emit('volumechange')
+        expect(element.volume).toBeCloseTo(0.6)
+        expect(backend.status.volume).toBeCloseTo(0.6)
+    })
+
     it('hands the formats of the browser on to the device', async () => {
         const { backend } = await started()
 

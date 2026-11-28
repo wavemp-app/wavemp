@@ -23,6 +23,11 @@ const castState = {
 
 const playerState = { IDLE: 'IDLE', PLAYING: 'PLAYING', PAUSED: 'PAUSED', BUFFERING: 'BUFFERING' }
 
+/** A request of the page to set the level of the stream. */
+interface ReceivedVolumeRequest {
+    readonly volume: { readonly level: number | null }
+}
+
 /** A media load the simulated Chromecast received. */
 export interface ReceivedLoad {
     readonly info: MediaInfoApi & { readonly contentId: string; readonly contentType: string }
@@ -39,6 +44,8 @@ export class SimulatedChromecast {
     failNextLoad: string | null = null
     idleReason: string | null = null
     readonly loads: ReceivedLoad[] = []
+    /** The levels of the stream the page set on the media, in their order. */
+    readonly streamVolumes: number[] = []
     readonly options: { receiverApplicationId: string; autoJoinPolicy: string }[] = []
     requestedSessions = 0
     endedSessions = 0
@@ -69,6 +76,11 @@ export class SimulatedChromecast {
                     ? {
                           playerState: this.player.playerState ?? 'IDLE',
                           idleReason: this.idleReason,
+                          setVolume: (request: unknown, success: () => void) => {
+                              const { volume } = request as ReceivedVolumeRequest
+                              this.streamVolumes.push(volume.level ?? 1)
+                              success()
+                          },
                       }
                     : null,
         }
@@ -120,6 +132,15 @@ export class SimulatedChromecast {
         class Image {
             constructor(readonly url: string) {}
         }
+        class Volume {
+            constructor(
+                readonly level: number | null,
+                readonly muted: boolean | null,
+            ) {}
+        }
+        class VolumeRequest {
+            constructor(readonly volume: unknown) {}
+        }
 
         return {
             framework: {
@@ -137,6 +158,7 @@ export class SimulatedChromecast {
             chromeCast: {
                 AutoJoinPolicy: { ORIGIN_SCOPED: 'origin_scoped' },
                 Image,
+                Volume,
                 media: {
                     DEFAULT_MEDIA_RECEIVER_APP_ID: 'CC1AD845',
                     MediaInfo,
@@ -151,6 +173,7 @@ export class SimulatedChromecast {
                         }
                     },
                     LoadRequest,
+                    VolumeRequest,
                     StreamType: { BUFFERED: 'BUFFERED' },
                     HlsSegmentFormat: { TS: 'ts', TS_AAC: 'ts_aac' },
                     HlsVideoSegmentFormat: { MPEG2_TS: 'mpeg2_ts' },

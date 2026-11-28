@@ -2,7 +2,9 @@
 // media element of its own, which stays outside the audio graph of the player: WebKit routes the
 // element to the device as it is, so the equalizer, crossfade and ReplayGain do not apply. The device
 // selection is the AirPlay menu of the operating system; WebKit does not tell the name of the device.
-// Tests replace the element with a simulated device.
+// The volume of the element is the volume of the player; the level of a stream (the loudness match of
+// the sound of a video) lowers it on top, and the status reports the volume without it. Tests replace
+// the element with a simulated device.
 
 import {
     noCastStatus,
@@ -57,6 +59,8 @@ export class AirPlayBackend implements CastBackend {
     private element: AirPlayElement | null = null
     /** Whether the media of the web app is loaded (not only the preview for the menu). */
     private mediaLoaded = false
+    /** The level of the loaded stream (CastMedia.volume), applied on top of the volume. */
+    private level = 1
 
     constructor(private readonly options: AirPlayOptions) {}
 
@@ -92,7 +96,7 @@ export class AirPlayBackend implements CastBackend {
             this.onTargetChanged(element),
         )
         element.addEventListener('volumechange', () =>
-            this.setStatus({ volume: element.volume, muted: element.muted }),
+            this.setStatus({ volume: this.volumeOf(element), muted: element.muted }),
         )
         const time = (): void => {
             if (this.active) {
@@ -160,6 +164,9 @@ export class AirPlayBackend implements CastBackend {
         }
 
         this.mediaLoaded = true
+        const volume = this.current.volume
+        this.level = Math.min(1, Math.max(minimumLevel, media.volume ?? 1))
+        element.volume = volume * this.level
         element.src = media.url
         if (position > 0) {
             element.addEventListener(
@@ -204,7 +211,7 @@ export class AirPlayBackend implements CastBackend {
 
     setVolume(volume: number): void {
         if (this.element) {
-            this.element.volume = Math.min(1, Math.max(0, volume))
+            this.element.volume = Math.min(1, Math.max(0, volume)) * this.level
         }
     }
 
@@ -229,9 +236,14 @@ export class AirPlayBackend implements CastBackend {
 
         this.setStatus({
             connection: wireless ? 'connected' : 'disconnected',
-            volume: element.volume,
+            volume: this.volumeOf(element),
             muted: element.muted,
         })
+    }
+
+    /** The volume of the player: that of the element without the level of the stream. */
+    private volumeOf(element: AirPlayElement): number {
+        return Math.min(1, element.volume / this.level)
     }
 
     private setStatus(change: Partial<CastStatus>): void {
@@ -245,6 +257,12 @@ export class AirPlayBackend implements CastBackend {
         }
     }
 }
+
+/**
+ * The lowest level of a stream, so the volume of the player can always be read back from the
+ * element; a loudness match lowers a stream by at most 12 dB (about a quarter).
+ */
+const minimumLevel = 0.01
 
 function finite(value: number): number {
     return Number.isFinite(value) && value > 0 ? value : 0

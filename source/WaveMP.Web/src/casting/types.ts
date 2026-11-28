@@ -47,6 +47,11 @@ export interface CastMedia {
     readonly artworkUrl?: string
     /** Duration in seconds; 0 while unknown. */
     readonly duration: number
+    /**
+     * Level of the stream between 0 and 1 below the volume of the device, so the sound of a video
+     * plays as loud as the audio file of the track (see castVolumeOf); the full level without.
+     */
+    readonly volume?: number
 }
 
 /** What the device reports while it plays. */

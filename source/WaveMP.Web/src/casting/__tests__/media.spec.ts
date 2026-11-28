@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Track, TrackPlayback, TrackVideoPlayback } from '@/api/generated/models'
-import { absoluteUrl, castMediaKind, castMediaOf, hlsContentType } from '../media'
+import { absoluteUrl, castMediaKind, castMediaOf, castVolumeOf, hlsContentType } from '../media'
 
 const origin = 'https://music.example'
 
@@ -55,6 +55,23 @@ describe('media for a casting device', () => {
             artworkUrl: 'https://music.example/api/v1/tracks/t1/cover?size=1000&uid=u&exp=1&sig=y',
             duration: 200,
         })
+    })
+
+    it('lowers a louder video to the loudness of the audio file and leaves a quieter one at full level', () => {
+        const video: TrackVideoPlayback = {
+            trackId: 't1',
+            method: 'DirectPlay',
+            streamUrl: '/api/v1/tracks/t1/video/stream?sig=z',
+            loudnessMatchDb: -6,
+        }
+
+        expect(castVolumeOf(video)).toBeCloseTo(10 ** (-6 / 20), 5)
+        expect(castMediaOf(video, 'video', track, origin)?.volume).toBeCloseTo(0.501, 3)
+        expect(castVolumeOf({ ...video, loudnessMatchDb: 4 })).toBe(1)
+        expect(
+            castMediaOf({ ...video, loudnessMatchDb: 4 }, 'video', track, origin),
+        ).not.toHaveProperty('volume')
+        expect(castVolumeOf(direct())).toBe(1)
     })
 
     it('marks transcoded streams as HLS', () => {

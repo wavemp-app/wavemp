@@ -1,6 +1,7 @@
 // What a casting device plays for a track: the video of the track while the video view is chosen and
-// the track has one, otherwise its sound; with title, artist, album and cover. Pure functions, so the
-// rules are tested without a device.
+// the track has one, otherwise its sound; with title, artist, album, cover and the level that plays
+// the sound of a video as loud as the audio file. Pure functions, so the rules are tested without a
+// device.
 
 import {
     PlaybackMethodObject,
@@ -11,6 +12,7 @@ import {
     type TrackPlayback,
     type TrackVideoPlayback,
 } from '@/api/generated/models'
+import { loudnessMatchFactor } from '@/player/songSegments'
 import type { CastMedia } from './types'
 
 /** MIME type of the HLS playlists of the server. */
@@ -19,6 +21,15 @@ export const hlsContentType = 'application/vnd.apple.mpegurl'
 /** Whether a device plays the video or the sound of a track. */
 export function castMediaKind(mode: PlayerViewMode, hasVideo: boolean): CastMedia['kind'] {
     return mode === PlayerViewModeObject.Video && hasVideo ? 'video' : 'audio'
+}
+
+/**
+ * The level a device plays a stream at, so the sound of a video is as loud as the audio file of the
+ * track (its loudness match, see songSegments.ts). A device can only lower the level of a stream
+ * below its volume: a video that is quieter than the audio file plays at the full level.
+ */
+export function castVolumeOf(playback: TrackPlayback | TrackVideoPlayback): number {
+    return Math.min(1, loudnessMatchFactor(playback.loudnessMatchDb))
 }
 
 /**
@@ -48,6 +59,7 @@ export function castMediaOf(
         playback.protocol === StreamProtocolObject.Hls
     const fallbackType = hls ? hlsContentType : kind === 'video' ? 'video/mp4' : 'audio/mpeg'
     const duration = playback.durationMilliseconds ?? track.durationMilliseconds ?? 0
+    const volume = castVolumeOf(playback)
     return {
         url: absoluteUrl(playback.streamUrl, origin),
         contentType: playback.contentType ?? fallbackType,
@@ -61,5 +73,6 @@ export function castMediaOf(
                 ? absoluteUrl(playback.coverUrl, origin)
                 : undefined,
         duration: duration > 0 ? duration / 1000 : 0,
+        ...(volume < 1 ? { volume } : {}),
     }
 }

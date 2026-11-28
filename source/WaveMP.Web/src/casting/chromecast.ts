@@ -19,7 +19,15 @@ export interface CastSessionApi {
     /** Resolves when the device loaded the media; rejects with an error code of the SDK. */
     loadMedia(request: unknown): Promise<unknown>
     /** The media that plays on the device. */
-    getMediaSession(): { readonly playerState: string; readonly idleReason: string | null } | null
+    getMediaSession(): CastMediaSessionApi | null
+}
+
+/** The media that plays on the device (chrome.cast.media.Media). */
+export interface CastMediaSessionApi {
+    readonly playerState: string
+    readonly idleReason: string | null
+    /** Sets the level of the stream, below the volume of the device. */
+    setVolume(request: unknown, success: () => void, error: (error: unknown) => void): void
 }
 
 export interface CastContextApi {
@@ -94,12 +102,16 @@ export interface CastFrameworkApi {
 export interface ChromeCastApi {
     readonly AutoJoinPolicy: { readonly ORIGIN_SCOPED: string }
     readonly Image: new (url: string) => unknown
+    /** A level between 0 and 1 and whether it is muted; null leaves a value as it is. */
+    readonly Volume: new (level: number | null, muted: boolean | null) => unknown
     readonly media: {
         readonly DEFAULT_MEDIA_RECEIVER_APP_ID: string
         readonly MediaInfo: new (contentId: string, contentType: string) => MediaInfoApi
         readonly MusicTrackMediaMetadata: new () => MediaMetadataApi
         readonly GenericMediaMetadata: new () => MediaMetadataApi
         readonly LoadRequest: new (mediaInfo: MediaInfoApi) => LoadRequestApi
+        /** A request to set the level of the stream (Media.setVolume). */
+        readonly VolumeRequest: new (volume: unknown) => unknown
         readonly StreamType: { readonly BUFFERED: string }
         readonly HlsSegmentFormat: { readonly TS: string; readonly TS_AAC: string }
         readonly HlsVideoSegmentFormat: { readonly MPEG2_TS: string }
@@ -237,6 +249,7 @@ export class ChromecastBackend implements CastBackend {
             this.loading = false
         }
 
+        this.setStreamVolume(api.sdk, session, media.volume ?? 1)
         // The device may report its state before the load resolves, while it was still ignored.
         this.mediaLoaded = true
         const states = api.sdk.chromeCast.media.PlayerState
@@ -290,6 +303,27 @@ export class ChromecastBackend implements CastBackend {
         if (api && api.player.isMuted !== muted) {
             api.controller.muteOrUnmute()
         }
+    }
+
+    /**
+     * Sets the level of the stream that just loaded (the loudness match of the sound of a video):
+     * the stream volume of the media, which the volume of the device keeps on top. Every load sets
+     * it, so the next stream does not keep the level of a video. A device that refuses it plays the
+     * stream at the volume of the device.
+     */
+    private setStreamVolume(sdk: CastSdk, session: CastSessionApi, level: number): void {
+        const mediaSession = session.getMediaSession()
+        if (!mediaSession) {
+            return
+        }
+
+        const { chromeCast } = sdk
+        const volume = new chromeCast.Volume(Math.min(1, Math.max(0, level)), null)
+        mediaSession.setVolume(
+            new chromeCast.media.VolumeRequest(volume),
+            () => undefined,
+            () => undefined,
+        )
     }
 
     /** The media for the Default Media Receiver: the stream, its HLS segments and the metadata. */

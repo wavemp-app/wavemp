@@ -1,7 +1,7 @@
 import { createPinia, setActivePinia } from 'pinia'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
-import type { Track, TrackPlayback, TrackVideoPlayback } from '@/api/generated/models'
+import type { SongSegment, Track, TrackPlayback, TrackVideoPlayback } from '@/api/generated/models'
 import { FakeCastLayer } from '@/casting/__tests__/fakes'
 import type { DeckSource, EngineEvents } from '@/player/engine'
 import { getLyrics } from '@/lyrics/api'
@@ -262,6 +262,178 @@ describe('player store while casting', () => {
         await flushPromises()
 
         expect(layer.loads.at(-1)?.media).toMatchObject({ kind: 'audio', url: `${origin}/cast/v` })
+    })
+
+    describe('switching the view of a song with a video', () => {
+        /** The song in the video: an intro of 10 s, the song of 180 s and an outro of 10 s. */
+        const segment: SongSegment = {
+            confident: true,
+            method: 'Alignment',
+            startMilliseconds: 10_000,
+            endMilliseconds: 190_000,
+            pieces: [
+                {
+                    fileStartMilliseconds: 10_000,
+                    songStartMilliseconds: 0,
+                    durationMilliseconds: 180_000,
+                },
+            ],
+        }
+
+        /** Casts the song in the cover view and lets the device reach a position. */
+        async function castingSong(song: Track, at: number) {
+            const session = useSessionStore()
+            session.playerViewMode = 'Cover'
+            const player = usePlayerStore()
+            player.playTracks([song], 0)
+            await flushPromises()
+            layer.connect()
+            await flushPromises()
+            layer.events.timeupdate?.(at, 200)
+            return { player, session }
+        }
+
+        it('loads the video at the same moment of the song, at the level of the audio file', async () => {
+            vi.mocked(getVideoPlayback).mockImplementation((id) =>
+                Promise.resolve({ ...videoOf(id), songSegment: segment, loudnessMatchDb: -6 }),
+            )
+            const { player, session } = await castingSong(track('v', { hasVideo: true }), 30)
+            vi.mocked(recordPlay).mockClear()
+
+            session.playerViewMode = 'Video'
+            await flushPromises()
+
+            expect(layer.loads.at(-1)).toMatchObject({
+                media: { kind: 'video', url: `${origin}/cast-video/v` },
+                position: 40,
+                autoplay: true,
+            })
+            expect(layer.loads.at(-1)?.media.volume).toBeCloseTo(10 ** (-6 / 20), 5)
+            expect(player.state.position).toBe(40)
+            expect(player.state.playback).toBe('playing')
+
+            // In the outro the audio file plays its end; the song of the audio file has no intro.
+            layer.events.timeupdate?.(195, 200)
+            session.playerViewMode = 'Lyrics'
+            await flushPromises()
+
+            expect(layer.loads.at(-1)).toMatchObject({
+                media: { kind: 'audio', url: `${origin}/cast/v` },
+                position: 180,
+            })
+            expect(layer.loads.at(-1)?.media.volume).toBeUndefined()
+            expect(player.state.trackId).toBe('v')
+        })
+
+        it('keeps the song paused on the device while it switches', async () => {
+            vi.mocked(getVideoPlayback).mockImplementation((id) =>
+                Promise.resolve({ ...videoOf(id), songSegment: segment }),
+            )
+            const { player, session } = await castingSong(track('v', { hasVideo: true }), 30)
+            player.pause()
+
+            session.playerViewMode = 'Video'
+            await flushPromises()
+
+            expect(layer.loads.at(-1)).toMatchObject({ position: 40, autoplay: false })
+            expect(player.state.playback).toBe('paused')
+            expect(player.loading).toBe(false)
+        })
+
+        it('keeps playing the sound when the device cannot play the video', async () => {
+            vi.mocked(getVideoPlayback).mockImplementation((id) =>
+                Promise.resolve({ ...videoOf(id), streamUrl: null }),
+            )
+            const { player, session } = await castingSong(track('v', { hasVideo: true }), 30)
+            const loads = layer.loads.length
+
+            session.playerViewMode = 'Video'
+            await flushPromises()
+
+            expect(layer.loads).toHaveLength(loads)
+            expect(player.state.trackId).toBe('v')
+            expect(player.state.playback).toBe('playing')
+            expect(player.message).toBeNull()
+        })
+
+        describe('of a song with only a video', () => {
+            // The server plays the sound of the video for the cover, the visualization and lyrics.
+            const onlyVideo = track('o', { hasVideo: true })
+
+            beforeEach(() => {
+                vi.mocked(getPlayback).mockImplementation((id, _formats, _sound, target) =>
+                    Promise.resolve({
+                        ...playbackOf(id, target),
+                        sound: 'Video',
+                        songSegment: segment,
+                    }),
+                )
+                vi.mocked(getVideoPlayback).mockImplementation((id) =>
+                    Promise.resolve({ ...videoOf(id), songSegment: segment }),
+                )
+            })
+
+            it('skips intro and outro outside the video view and plays them in it', async () => {
+                const { player, session } = await castingSong(onlyVideo, 0)
+                expect(layer.loads.at(-1)).toMatchObject({
+                    media: { kind: 'audio' },
+                    position: 10,
+                })
+
+                // The track ends with the song.
+                layer.events.timeupdate?.(100, 200)
+                expect(player.state.duration).toBe(190)
+
+                session.playerViewMode = 'Video'
+                await flushPromises()
+
+                // The same file: the position stays, intro and outro play.
+                expect(layer.loads.at(-1)).toMatchObject({
+                    media: { kind: 'video' },
+                    position: 100,
+                })
+                layer.events.timeupdate?.(195, 200)
+                expect(player.state.position).toBe(195)
+                expect(player.state.playback).toBe('playing')
+            })
+
+            it('moves out of the intro when the video view is left there', async () => {
+                const { session } = await castingSong(onlyVideo, 0)
+                session.playerViewMode = 'Video'
+                await flushPromises()
+                layer.events.timeupdate?.(4, 200)
+
+                session.playerViewMode = 'Cover'
+                await flushPromises()
+
+                expect(layer.loads.at(-1)).toMatchObject({ media: { kind: 'audio' }, position: 10 })
+            })
+
+            it('plays intro and outro everywhere without the setting', async () => {
+                const session = useSessionStore()
+                session.video = { ...session.video, skipIntroAndOutro: false }
+
+                await castingSong(onlyVideo, 0)
+
+                expect(layer.loads.at(-1)).toMatchObject({ media: { kind: 'audio' }, position: 0 })
+            })
+
+            it('plays to the end of the song and goes on with the next one', async () => {
+                const session = useSessionStore()
+                session.playerViewMode = 'Cover'
+                const player = usePlayerStore()
+                player.playTracks([onlyVideo, track('n')], 0)
+                await flushPromises()
+                layer.connect()
+                await flushPromises()
+
+                layer.events.timeupdate?.(190.5, 200)
+                await flushPromises()
+
+                expect(player.state.trackId).toBe('n')
+                expect(layer.loads.at(-1)?.media.url).toBe(`${origin}/cast/n`)
+            })
+        })
     })
 
     it('goes back to the browser, paused at the position of the device, when it disconnects', async () => {

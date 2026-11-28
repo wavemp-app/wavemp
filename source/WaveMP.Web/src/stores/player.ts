@@ -256,6 +256,14 @@ function segmentOf(
     return value?.songSegment ?? null
 }
 
+/**
+ * The file a loaded track plays: the video (also when a casting device shows it) or the audio file.
+ * Positions in the same file need no mapping between the song segments.
+ */
+function fileOf(value: Loaded): SoundSource {
+    return value.source.cast?.kind === 'video' ? SoundSourceObject.Video : soundOf(value.playback)
+}
+
 /** Where the music plays: in the browser or on a casting device. */
 type Output = 'local' | 'cast'
 
@@ -298,7 +306,10 @@ function artistOf(track: Track | undefined): string | undefined {
  *
  * While a casting device is connected (see src/casting), the device plays instead of the browser:
  * the queue and the controls stay here, the device gets one track after the other (its video while
- * the video view is chosen), and equalizer, crossfade, ReplayGain and the visualization rest.
+ * the video view is chosen), and equalizer, crossfade, ReplayGain and the visualization rest. A
+ * change of the view loads the video or the sound on the device at the same moment of the song,
+ * the sound of a video at the level of the audio file; songs with only a video skip their intro and
+ * outro outside the video view there as well.
  *
  * On iPhone and iPad the browser stops the audio graph in the background: there the engine plays
  * on through plain audio elements while the page is hidden (see src/player/pathEngine.ts), and
@@ -435,8 +446,6 @@ export const usePlayerStore = defineStore('player', () => {
             !casting.value &&
             !remote.value,
     )
-    /** What a casting device plays of the current track: its video or its sound. */
-    const castKind = computed(() => castMediaKind(viewMode.value, hasVideo.value))
     /** The songs of the list autoplay goes on from. */
     const autoplayList = computed(() => autoplayContext(queue.value))
     /** Whether autoplay goes on after the list: on for the profile, repeat off and a list to follow. */
@@ -745,7 +754,10 @@ export const usePlayerStore = defineStore('player', () => {
      * Whether a playback skips intro and outro: the sound of a video played for the cover, the
      * visualization or the lyrics (the track has no audio file), with the setting of the profile.
      */
-    function skipsIntroAndOutro(value: TrackPlayback, wanted: SoundSource): boolean {
+    function skipsIntroAndOutro(
+        value: TrackPlayback | TrackVideoPlayback,
+        wanted: SoundSource,
+    ): boolean {
         return (
             wanted === SoundSourceObject.Audio &&
             soundOf(value) === SoundSourceObject.Video &&
@@ -824,7 +836,8 @@ export const usePlayerStore = defineStore('player', () => {
 
     /**
      * The playback for the casting device, decided by its formats: the video of the track while the
-     * video view is chosen and the track has one, otherwise its sound.
+     * video view is chosen and the track has one, otherwise its sound. The sound of the video of a
+     * song without an audio file skips intro and outro with the setting, as in the browser.
      */
     async function fetchCastPlayback(item: QueueItem): Promise<Loaded | PlayerMessage> {
         const track = item.track
@@ -844,11 +857,21 @@ export const usePlayerStore = defineStore('player', () => {
             return 'unsupported'
         }
 
+        const window =
+            kind === 'audio'
+                ? skipWindow(segmentOf(result), skipsIntroAndOutro(result, SoundSourceObject.Audio))
+                : null
         return {
             key: item.key,
             playback: result,
-            source: { url: media.url, gain: 1, cast: media },
-            sound: SoundSourceObject.Audio,
+            source: {
+                url: media.url,
+                gain: 1,
+                cast: media,
+                ...(window && window.start > 0 ? { start: window.start } : {}),
+                ...(window?.end !== undefined ? { end: window.end } : {}),
+            },
+            sound: kind === 'video' ? SoundSourceObject.Video : SoundSourceObject.Audio,
         }
     }
 
@@ -1753,9 +1776,8 @@ export const usePlayerStore = defineStore('player', () => {
         }
 
         const now = loaded
-        if (now && output === 'local') {
-            const file =
-                soundOf(now.playback) === SoundSourceObject.Video ? segments.video : segments.audio
+        if (now) {
+            const file = fileOf(now) === SoundSourceObject.Video ? segments.video : segments.audio
             if (file?.effective) {
                 setLoaded({ ...now, playback: { ...now.playback, songSegment: file.effective } })
             }
@@ -1783,12 +1805,17 @@ export const usePlayerStore = defineStore('player', () => {
      * The view changed between the video and the cover or visualization (or the setting to skip
      * intro and outro): the current track switches to the sound for it without a gap, at the same
      * moment of the song. A track that has only one of both sources keeps it and only skips intro
-     * and outro or not.
+     * and outro or not. While casting, the device switches (see switchCastSound).
      */
     async function switchSound(): Promise<void> {
         const item = current.value
         const now = loaded
-        if (output !== 'local' || remote.value || !item || !now || now.key !== item.key) {
+        if (remote.value || !item || !now || now.key !== item.key) {
+            return
+        }
+
+        if (output === 'cast') {
+            await switchCastSound(item, now)
             return
         }
 
@@ -1841,6 +1868,54 @@ export const usePlayerStore = defineStore('player', () => {
 
         setLoaded(next)
         follower?.sync()
+    }
+
+    /**
+     * The view changed between the video and the cover, visualization or lyrics while casting (or the
+     * setting to skip intro and outro): the device loads the video or the sound for the view at the
+     * same moment of the song, the sound of a video at the level of the audio file. A device plays
+     * one stream at a time, so it switches with a short pause instead of a crossfade. When the device
+     * cannot play the other one, it keeps playing what it plays.
+     */
+    async function switchCastSound(item: QueueItem, now: Loaded): Promise<void> {
+        const token = generation
+        const request = ++soundGeneration
+        const result = await fetchPlayback(item)
+        if (token !== generation || request !== soundGeneration || loaded !== now) {
+            return
+        }
+
+        if (typeof result === 'string') {
+            return
+        }
+
+        const sameFile = fileOf(result) === fileOf(now)
+        const { source } = result
+        if (
+            sameFile &&
+            source.cast?.kind === now.source.cast?.kind &&
+            source.start === now.source.start &&
+            source.end === now.source.end
+        ) {
+            // Nothing to play differently (e.g. the setting changed for a song with an audio file).
+            setLoaded(result)
+            return
+        }
+
+        const from = position.value
+        const target = sameFile
+            ? from
+            : mapPosition(segmentOf(now.playback), segmentOf(result.playback), from)
+        const at = source.start !== undefined && target < source.start ? source.start : target
+        setLoaded(result)
+        position.value = at
+        duration.value = seconds(result.playback.durationMilliseconds) || duration.value
+        const player = getCastEngine()
+        player.load(source, at)
+        if (playback.value === 'playing') {
+            loading.value = true
+            await startEngine(player)
+        }
     }
 
     /** The position of the song for the lyrics: NaN during an intro or outro (no line is sung). */
@@ -2110,7 +2185,7 @@ export const usePlayerStore = defineStore('player', () => {
     )
 
     // The video view is chosen or left, or the setting to skip intro and outro changes: the current
-    // track switches to the sound for the view (see switchSound).
+    // track switches to the sound for the view (see switchSound), also on a casting device.
     watch(
         () =>
             [
@@ -2160,13 +2235,6 @@ export const usePlayerStore = defineStore('player', () => {
 
     // A casting device connects or goes: the playback moves to it or back to the browser.
     watch(casting, (now) => switchOutput(now ? 'cast' : 'local'), { immediate: true })
-
-    // The video view is chosen or left while casting: the device plays the video or the sound.
-    watch(castKind, () => {
-        if (output === 'cast' && loaded) {
-            void startCurrent(playback.value === 'playing', position.value)
-        }
-    })
 
     // Another profile (or none) gets an empty player: stream URLs and history belong to the session.
     watch(

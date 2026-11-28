@@ -1,7 +1,8 @@
 // The engine of the player while it casts: the same interface as the audio engine, but the device
 // plays. The queue stays in the web app: the player store loads one track after the other, and the
 // controls go to the device. Equalizer, crossfade, ReplayGain, the sleep timer fade and the
-// visualization need the audio graph of the browser and do nothing here.
+// visualization need the audio graph of the browser and do nothing here. A source that ends before
+// the end of its file (a skipped outro of a music video) ends there as if the media ended.
 
 import type { DeckSource, EngineEvents } from '@/player/engine'
 import type { PlayerEngine } from '@/stores/player'
@@ -23,13 +24,17 @@ export class CastEngine implements PlayerEngine {
     private pending: PendingLoad | null = null
     /** Whether the last request was play; a pause while the device loads keeps it paused. */
     private wantsPlay = false
+    /** Where the loaded source ends before the end of its file (DeckSource.end); undefined without. */
+    private end: number | undefined
+    /** Whether the media reached that end and reported it. */
+    private endReached = false
 
     constructor(
         private readonly layer: CastLayer,
         private readonly events: EngineEvents = {},
     ) {
         layer.setPlaybackEvents({
-            timeupdate: (position, duration) => events.timeupdate?.(position, duration),
+            timeupdate: (position, duration) => this.onTimeUpdate(position, duration),
             playing: () => events.playing?.(),
             paused: () => events.paused?.(),
             waiting: () => events.waiting?.(),
@@ -52,6 +57,9 @@ export class CastEngine implements PlayerEngine {
             this.events.error?.(new Error('The source has no media for the device'))
             return
         }
+
+        this.end = typeof source.end === 'number' && source.end > 0 ? source.end : undefined
+        this.endReached = false
 
         let resolve: () => void = () => undefined
         const pending: PendingLoad = {
@@ -118,6 +126,10 @@ export class CastEngine implements PlayerEngine {
     }
 
     seek(position: number): void {
+        if (this.end !== undefined && position < this.end) {
+            this.endReached = false
+        }
+
         this.layer.seek(position)
     }
 
@@ -131,4 +143,22 @@ export class CastEngine implements PlayerEngine {
     fadeOut(): void {}
 
     restoreOutput(): void {}
+
+    /**
+     * Passes the time of the device on, with the end of the source as the duration. A playing
+     * source that reaches its end before the end of the file ends there: the device pauses, and the
+     * player goes on as if the media ended.
+     */
+    private onTimeUpdate(position: number, duration: number): void {
+        const end = this.end
+        const length = end !== undefined && (duration <= 0 || end < duration) ? end : duration
+        this.events.timeupdate?.(position, length)
+        if (end === undefined || this.endReached || !this.wantsPlay || position < end) {
+            return
+        }
+
+        this.endReached = true
+        this.events.ended?.()
+        this.layer.pause()
+    }
 }
