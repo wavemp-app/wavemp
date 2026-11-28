@@ -395,13 +395,58 @@ function fontFaceWeights(css: string, family: string): string[] {
 }
 
 describe('font of Classic 9x', () => {
-    it('is the shipped Pixelify Sans for the whole app, with system fonts as fallbacks only', () => {
-        const css = readCss(path.join(webAssets, 'themes', 'classic-9x', 'theme.css'))
+    const css = readCss(path.join(webAssets, 'themes', 'classic-9x', 'theme.css'))
+    // One pixel of W95FA is 80 of its 1000 units: 12.5 px (0.78125rem) is its native size.
+    const nativeSize = 0.78125
+
+    it('is the shipped W95FA for the whole app, with system fonts as fallbacks only', () => {
         const family = /--wmp-font-family:\s*([^;]+);/.exec(css)?.[1]?.replace(/\s+/g, ' ')
-        expect(family).toBe('"Pixelify Sans", system-ui, sans-serif')
-        // Regular and Bold, each as its Latin and Latin Extended subset.
-        expect(fontFaceWeights(css, 'Pixelify Sans')).toEqual(['400', '400', '700', '700'])
-        expect(/--wmp-font-weight-bold:\s*(\d+);/.exec(css)?.[1]).toBe('700')
+        expect(family).toBe('"W95FA", system-ui, sans-serif')
+        // The font has a single weight; Pixelify Sans is gone.
+        expect(fontFaceWeights(css, 'W95FA')).toEqual(['400'])
+        expect(css).not.toMatch(/Pixelify/)
+        const fonts = readdirSync(path.join(webAssets, 'themes', 'classic-9x', 'fonts')).sort()
+        expect(fonts).toEqual(['OFL.txt', 'win95fa-latin-400-normal.woff2'])
+    })
+
+    it('draws every text at the native size of the font or a whole multiple of it', () => {
+        const sizes = [...css.matchAll(/--wmp-font-size-([a-z]+):\s*([\d.]+)rem;/g)]
+        expect(sizes.map((match) => match[1]).sort()).toEqual(['l', 'm', 's', 'xl', 'xs'])
+        for (const [, name, value] of sizes) {
+            const multiple = Number(value) / nativeSize
+            expect(Number.isInteger(multiple) && multiple >= 1, `--wmp-font-size-${name}`).toBe(
+                true,
+            )
+        }
+        const diagnostics = /--wmp-video-diagnostics-font-size:\s*([\d.]+)rem;/.exec(css)?.[1]
+        expect(Number(diagnostics)).toBe(nativeSize)
+        // Every other size of the theme is a size variable or a whole multiple of the native size.
+        const fontSizes = [...css.matchAll(/(?<![\w-])font-size:\s*([^;]+);/g)].map(
+            (match) => match[1],
+        )
+        expect(fontSizes.length).toBeGreaterThan(0)
+        for (const size of fontSizes) {
+            expect(size).toMatch(
+                /^(?:var\(--wmp-font-size-[a-z]+\)|calc\(var\(--wmp-font-size-m\) \* \d\))$/,
+            )
+        }
+    })
+
+    it('keeps the baselines on whole pixels at the native size and at twice it', () => {
+        const lineHeight = Number(/--wmp-line-height:\s*([\d.]+);/.exec(css)?.[1])
+        for (const multiple of [1, 2]) {
+            const pixels = nativeSize * 16 * multiple * lineHeight
+            expect(Math.abs(pixels - Math.round(pixels))).toBeLessThan(1e-9)
+        }
+    })
+
+    it('never lets the browser fake a bold or italic cut of the font', () => {
+        const root = /^:root\s*\{([\s\S]*?)^\}/m.exec(css)?.[1] ?? ''
+        expect(root).toMatch(/font-synthesis:\s*none;/)
+        expect(/--wmp-font-weight-bold:\s*(\d+);/.exec(css)?.[1]).toBe('400')
+        expect(css).not.toMatch(/font-weight:\s*(?:[5-9]00|bold)/)
+        // The story of the recap scales its type with its width and keeps the system font.
+        expect(css).toMatch(/--wmp-recap-font-family:\s*system-ui, sans-serif;/)
     })
 })
 

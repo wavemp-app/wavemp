@@ -58,8 +58,9 @@ test('draws the theme Midnight with its own font Selawik', async ({ page, reques
     expect(failedFonts).toEqual([])
 })
 
-// The theme Classic 9x draws the whole app with its pixel font Pixelify Sans (Regular and Bold).
-test('draws the theme Classic 9x with its own font Pixelify Sans', async ({ page, request }) => {
+// The theme Classic 9x draws the whole app with its pixel font W95FA, which has one weight only,
+// at its native size of 12.5 px or twice it, and never with a bold the browser fakes.
+test('draws the theme Classic 9x with its own font W95FA', async ({ page, request }) => {
     user = await createUser(request, `Classic Font ${uniqueSuffix()}`)
     const headers = await sessionHeaders(request, user.id)
     await send(request, headers, 'patch', '/api/v1/me/settings', {
@@ -79,24 +80,27 @@ test('draws the theme Classic 9x with its own font Pixelify Sans', async ({ page
     await expect(page.locator(':root')).toHaveAttribute('data-theme', 'classic-9x')
 
     const fonts = await page.evaluate(async () => {
-        const weights = ['400', '700']
-        await Promise.all(
-            weights.map((weight) => document.fonts.load(`${weight} 1rem "Pixelify Sans"`)),
-        )
+        await document.fonts.load('400 12.5px W95FA')
         await document.fonts.ready
         const faces = [...document.fonts].filter(
-            (face) => face.family.replace(/"/g, '') === 'Pixelify Sans',
+            (face) => face.family.replace(/"/g, '') === 'W95FA',
         )
+        const body = getComputedStyle(document.body)
+        const title = document.querySelector("[data-part='content-title']")
         return {
-            loaded: weights.filter((weight) =>
-                faces.some((face) => face.weight === weight && face.status === 'loaded'),
-            ),
-            family: getComputedStyle(document.body).fontFamily,
+            faces: faces.map((face) => `${face.weight} ${face.status}`),
+            family: body.fontFamily,
+            synthesis: body.fontSynthesis,
+            bodySize: body.fontSize,
+            titleSize: title ? getComputedStyle(title).fontSize : '',
         }
     })
 
-    expect(fonts.loaded).toEqual(['400', '700'])
-    expect(fonts.family.split(',')[0]?.trim().replace(/"/g, '')).toBe('Pixelify Sans')
+    expect(fonts.faces).toEqual(['400 loaded'])
+    expect(fonts.family.split(',')[0]?.trim().replace(/"/g, '')).toBe('W95FA')
+    expect(fonts.synthesis).toBe('none')
+    expect(fonts.bodySize).toBe('12.5px')
+    expect(fonts.titleSize).toBe('25px')
     expect(failedFonts).toEqual([])
 })
 

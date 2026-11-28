@@ -10,57 +10,26 @@
  * Layout rules live in @media (width >= 64rem); below that, the fixed mobile base applies and
  * this file only provides colors, graphics and fonts.
  *
- * The font is Pixelify Sans (fonts/, SIL Open Font License 1.1, license text in fonts/OFL.txt),
- * shipped unchanged as its Latin and Latin Extended subsets; system-ui is only the fallback for
- * characters it does not have.
+ * The font is W95FA by Alina Sava (fonts/, SIL Open Font License 1.1, license text in
+ * fonts/OFL.txt), shipped unchanged from the npm package @fontsource/win95fa. It covers Latin-1
+ * (umlauts, ß, é, ó and the like); system-ui is the fallback for every character it does not
+ * have, such as further Latin letters (ł, š, ő), other scripts, dashes and the ellipsis.
+ *
+ * W95FA is a pixel font: one pixel of its glyphs is 80 of its 1000 units, so its native size is
+ * 12.5 px (0.78125rem). The theme draws every text at that size or at twice it (25 px) and gives
+ * lines a height of 16 or 32 px, so the pixels of the glyphs fall on whole pixels of the screen.
+ * The font has a single weight: font-synthesis keeps the browser from smearing a fake bold or
+ * italic, and the theme emphasizes with size, color and the bevels instead (see "Emphasis").
  */
 
 /* --- Font ----------------------------------------------------------------------------------- */
 
 @font-face {
-    font-family: "Pixelify Sans";
-    src: url('/themes/classic-9x/fonts/pixelify-sans-latin-400-normal.woff2') format('woff2');
+    font-family: "W95FA";
+    src: url('/themes/classic-9x/fonts/win95fa-latin-400-normal.woff2') format('woff2');
     font-style: normal;
     font-weight: 400;
     font-display: swap;
-    unicode-range:
-        U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308,
-        U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
-}
-
-@font-face {
-    font-family: "Pixelify Sans";
-    src: url('/themes/classic-9x/fonts/pixelify-sans-latin-ext-400-normal.woff2') format('woff2');
-    font-style: normal;
-    font-weight: 400;
-    font-display: swap;
-    unicode-range:
-        U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329,
-        U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113,
-        U+2C60-2C7F, U+A720-A7FF;
-}
-
-@font-face {
-    font-family: "Pixelify Sans";
-    src: url('/themes/classic-9x/fonts/pixelify-sans-latin-700-normal.woff2') format('woff2');
-    font-style: normal;
-    font-weight: 700;
-    font-display: swap;
-    unicode-range:
-        U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308,
-        U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
-}
-
-@font-face {
-    font-family: "Pixelify Sans";
-    src: url('/themes/classic-9x/fonts/pixelify-sans-latin-ext-700-normal.woff2') format('woff2');
-    font-style: normal;
-    font-weight: 700;
-    font-display: swap;
-    unicode-range:
-        U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329,
-        U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113,
-        U+2C60-2C7F, U+A720-A7FF;
 }
 
 
@@ -90,15 +59,22 @@
     --c9-dither: repeating-conic-gradient(#ffffff 0 25%, #c3c3c3 0 50%) 0 0 / 2px 2px;
     --c9-title: linear-gradient(90deg, #0b2a7a, #2f5f9c);
 
-    /* One pixel face for the whole window; bold is the 700 cut of the font. */
-    --wmp-font-family: "Pixelify Sans", system-ui, sans-serif;
-    --wmp-font-size-xs: 0.75rem;
-    --wmp-font-size-s: 0.875rem;
-    --wmp-font-size-m: 1rem;
-    --wmp-font-size-l: 1.125rem;
-    --wmp-font-size-xl: 1.375rem;
-    --wmp-font-weight-bold: 700;
-    --wmp-line-height: 1.35;
+    /*
+     * One pixel face for the whole window, on phones and on the desktop: the native size for
+     * every text, twice the native size only for the titles of pages. "Bold" is the one weight
+     * of the font; 1.28 makes lines of 16 px at the native size and of 32 px at twice it.
+     */
+    --wmp-font-family: "W95FA", system-ui, sans-serif;
+    --wmp-font-size-xs: 0.78125rem;
+    --wmp-font-size-s: 0.78125rem;
+    --wmp-font-size-m: 0.78125rem;
+    --wmp-font-size-l: 0.78125rem;
+    --wmp-font-size-xl: 1.5625rem;
+    --wmp-font-weight-bold: 400;
+    --wmp-line-height: 1.28;
+    --wmp-video-diagnostics-font-size: 0.78125rem;
+    /* The story of the recap scales its type with its width, which a pixel font cannot follow. */
+    --wmp-recap-font-family: system-ui, sans-serif;
 
     /*
      * The palette: a gray face, white fields, black text, a dark navy for the title bar, the
@@ -209,7 +185,67 @@
     /* Buttons sink in with their bevel instead of shrinking. */
     --wmp-motion-press-scale: 1;
 
+    font-synthesis: none;
     font-variant-numeric: tabular-nums;
+}
+
+/* --- Emphasis --------------------------------------------------------------------------------- */
+
+/*
+ * Where the base sets a text in bold, the theme decides per element how it stands out instead:
+ * - Titles of pages are twice the native size (the base gives them --wmp-font-size-xl), and so
+ *   is the title of the song in the full-screen player of phones.
+ * - Headings of sections, groups, panes and windows inside the page are navy.
+ * - Chosen and current entries (tabs, the default button, the playing song, the current entry
+ *   of a list) are shown by their bevel, the selection or their navy color; their label stays
+ *   plain. Entries of a menu that pick an option get a bullet (see "Dialogs and menus").
+ * - Suggested values that differ from the current ones are underlined in their color.
+ * - Conflicts and warnings keep their color and their symbol.
+ * Headings and table headings in the markup keep the one weight as well, also for characters
+ * that come from the fallback font.
+ */
+:where(h1, h2, h3, h4, h5, h6, th, b, strong) {
+    font-weight: var(--wmp-font-weight-normal);
+}
+
+[data-part='queue-pane-title'],
+[data-part='group-overview-title'],
+[data-part='device-picker-title'],
+[data-part='file-selection-title'],
+[data-part='online-section-title'],
+[data-part='stats-table-heading'],
+[data-part='path-segment'][data-kind='template'],
+[data-part='picture-source'][data-state='active'] > [data-part='picture-source-name'] {
+    color: #0b2a7a;
+}
+
+[data-part='online-compare-row']:is([data-state='missing'], [data-state='different'])
+    > [data-part='online-compare-suggested'] {
+    text-decoration: underline;
+}
+
+/* The root of a path is slanted in the base; here it is gray, as the font has no italic. */
+[data-part='path-segment'][data-kind='root'] {
+    color: #3b3b3b;
+}
+
+/* Initials of profiles: the native size, three times it on the large pictures. */
+[data-part='avatar'] {
+    font-size: var(--wmp-font-size-m);
+}
+
+:is([data-part='profile-tile'], [data-part='pin-entry'], [data-part='avatar-editor'])
+    [data-part='avatar'] {
+    font-size: calc(var(--wmp-font-size-m) * 3);
+}
+
+[data-part='profile-summary'] [data-part='avatar'] {
+    font-size: var(--wmp-font-size-xl);
+}
+
+/* The story of the recap is drawn in the system font, with its real bold weights. */
+[data-part='recap-story'] {
+    font-synthesis: initial;
 }
 
 /* --- Bevelled buttons ----------------------------------------------------------------------- */
@@ -235,7 +271,6 @@
         inset 2px 2px #ffffff,
         inset -3px -3px #808080,
         inset 3px 3px #dfdfdf;
-    font-weight: var(--wmp-font-weight-bold);
 }
 
 :where(button, a):is([data-variant='default'], [data-variant='round']):active:not(
@@ -454,7 +489,6 @@
     box-shadow:
         inset 1px 1px rgb(0 0 0 / 50%),
         inset -1px -1px rgb(255 255 255 / 25%);
-    font-weight: var(--wmp-font-weight-bold);
 }
 
 [data-part='server-status'] {
@@ -540,7 +574,7 @@
 }
 
 [data-part='breadcrumb-link'][aria-current='page'] {
-    font-weight: var(--wmp-font-weight-bold);
+    color: #0b2a7a;
 }
 
 a[data-part='breadcrumb-link']:hover {
@@ -698,12 +732,15 @@ a[data-part='breadcrumb-link']:hover {
     --wmp-icon-fill: #000000;
 }
 
+/* Titles of pages are twice the native size (base: --wmp-font-size-xl), headings are navy. */
 [data-part='content-title'],
-[data-part='detail-title'],
+[data-part='detail-title'] {
+    color: #000000;
+}
+
 [data-part='shelf-title'],
 [data-part='section-title'] {
-    color: #000000;
-    font-weight: var(--wmp-font-weight-bold);
+    color: #0b2a7a;
 }
 
 [data-part='placeholder-notice'] {
@@ -731,8 +768,7 @@ a[data-part='breadcrumb-link']:hover {
 }
 
 [data-part='empty-state-title'] {
-    color: #000000;
-    font-weight: var(--wmp-font-weight-bold);
+    color: #0b2a7a;
 }
 
 [data-part='empty-state-text'] {
@@ -847,8 +883,7 @@ a[data-part='breadcrumb-link']:hover {
 
 [data-part='list-group-header'] {
     border-block-end: 1px dotted #808080;
-    color: #000000;
-    font-weight: var(--wmp-font-weight-bold);
+    color: #0b2a7a;
 }
 
 [data-part='list-group'] + [data-part='list-group'] {
@@ -860,8 +895,7 @@ a[data-part='breadcrumb-link']:hover {
 }
 
 [data-part='list-group-meta'] > [data-part='meta-item'][data-field='album'] {
-    color: #000000;
-    font-weight: var(--wmp-font-weight-bold);
+    color: #0b2a7a;
 }
 
 [data-part='list-row'] {
@@ -879,7 +913,6 @@ a[data-part='breadcrumb-link']:hover {
 
 [data-part='list-row'][data-state~='playing'] [data-part='list-cell'][data-column='title'] {
     color: #0b2a7a;
-    font-weight: var(--wmp-font-weight-bold);
 }
 
 [data-part='list-row'][aria-selected='true'][data-state~='playing']
@@ -911,7 +944,6 @@ a[data-part='breadcrumb-link']:hover {
 
 [data-part='tile-title'] {
     color: #000000;
-    font-weight: var(--wmp-font-weight-bold);
 }
 
 [data-part='tile-subtitle'] {
@@ -999,17 +1031,16 @@ a[data-part='breadcrumb-link']:hover {
         2px 2px 0 #dfdfdf;
 }
 
-/* Lyrics read like a document: black on white, the current line in navy. */
+/*
+ * Lyrics read like a document on white: the current line in navy, the others in a gray that is
+ * light enough to set the navy line apart and still keeps 5.3:1.
+ */
 [data-part='stage-view'][data-kind='lyrics'],
 [data-part='lyrics'] {
     --wmp-lyrics-color: #0b2a7a;
-    --wmp-lyrics-muted-color: #4a4a4a;
+    --wmp-lyrics-muted-color: #6b6b6b;
 
     background: #ffffff;
-}
-
-[data-part='lyrics-line'][data-state~='active'] {
-    font-weight: var(--wmp-font-weight-bold);
 }
 
 [data-part='visualization'] {
@@ -1129,7 +1160,6 @@ a[data-part='breadcrumb-link']:hover {
 
 [data-part='now-playing-title'] {
     color: #000000;
-    font-weight: var(--wmp-font-weight-bold);
 }
 
 [data-part='now-playing-artist'] {
@@ -1188,7 +1218,6 @@ a[data-part='breadcrumb-link']:hover {
 
 [data-part='sleep-timer-remaining'] {
     color: #0b2a7a;
-    font-weight: var(--wmp-font-weight-bold);
 }
 
 [data-part='cast-status'] {
@@ -1209,7 +1238,7 @@ a[data-part='breadcrumb-link']:hover {
 }
 
 [data-part='resume-device'] {
-    font-weight: var(--wmp-font-weight-bold);
+    color: #0b2a7a;
 }
 
 /* --- Mini player --------------------------------------------------------------------------- */
@@ -1224,10 +1253,6 @@ a[data-part='breadcrumb-link']:hover {
     box-shadow:
         var(--c9-window),
         3px 3px 0 rgb(0 0 0 / 35%);
-}
-
-[data-part='compact-player-title'] {
-    font-weight: var(--wmp-font-weight-bold);
 }
 
 [data-part='compact-player-artist'],
@@ -1286,7 +1311,6 @@ a[data-part='breadcrumb-link']:hover {
         inset 5px 5px #808080,
         inset -5px -5px #dfdfdf;
     color: #000000;
-    font-weight: var(--wmp-font-weight-bold);
 }
 
 /* --- Full-screen player (mobile) ------------------------------------------------------------- */
@@ -1297,6 +1321,11 @@ a[data-part='breadcrumb-link']:hover {
 
     background: #c3c3c3;
     box-shadow: none;
+}
+
+/* The title of the song is the title of this page: twice the native size, like page titles. */
+[data-part='transport'][data-state~='expanded'] [data-part='now-playing-title'] {
+    font-size: var(--wmp-font-size-xl);
 }
 
 [data-part='transport'][data-state~='expanded'] [data-part='btn-play'] {
@@ -1335,7 +1364,6 @@ a[data-part='breadcrumb-link']:hover {
 
 [data-part='profile-select-title'] {
     color: #ffffff;
-    font-weight: var(--wmp-font-weight-bold);
 }
 
 [data-part='profile-select-hint'] {
@@ -1397,8 +1425,7 @@ a[data-part='breadcrumb-link']:hover {
 }
 
 [data-part='pin-entry-title'] {
-    color: #000000;
-    font-weight: var(--wmp-font-weight-bold);
+    color: #0b2a7a;
 }
 
 [data-part='pin-dots'] {
@@ -1520,7 +1547,6 @@ a[data-part='breadcrumb-link']:hover {
 
 [data-part='theme-option'] > [data-part='label'] {
     color: #000000;
-    font-weight: var(--wmp-font-weight-bold);
 }
 
 [data-part='theme-preview'] {
@@ -1755,7 +1781,6 @@ a[data-part='breadcrumb-link']:hover {
         inset -2px 0 #808080,
         inset 2px 0 #dfdfdf;
     color: #000000;
-    font-weight: var(--wmp-font-weight-bold);
 }
 
 [data-part='admin-nav-item'][data-state~='active']::before,
@@ -1780,8 +1805,7 @@ a[data-part='breadcrumb-link']:hover {
 }
 
 [data-part='disclosure-summary'] {
-    color: #000000;
-    font-weight: var(--wmp-font-weight-bold);
+    color: #0b2a7a;
 }
 
 [data-part='disclosure'][open] > [data-part='disclosure-summary'] {
@@ -1894,7 +1918,6 @@ a[data-part='breadcrumb-link']:hover {
 
 [data-part='dialog-title'] {
     color: #ffffff;
-    font-weight: var(--wmp-font-weight-bold);
 }
 
 /* Close and back in the title bar are small gray buttons. */
@@ -1944,8 +1967,19 @@ a[data-part='breadcrumb-link']:hover {
     text-shadow: 1px 1px 0 #ffffff;
 }
 
-[data-part='menu-item'][aria-checked='true'] {
-    font-weight: var(--wmp-font-weight-bold);
+/*
+ * Entries that pick one of several options carry a bullet in front of their label: a square of
+ * the text color on the chosen one, an empty place of the same width on the others.
+ */
+[data-part='menu-item'][aria-checked]::before {
+    flex: none;
+    inline-size: 6px;
+    block-size: 6px;
+    content: '';
+}
+
+[data-part='menu-item'][aria-checked='true']::before {
+    background: currentColor;
 }
 
 [data-part='menu-separator'] {
@@ -1968,7 +2002,7 @@ a[data-part='breadcrumb-link']:hover {
 }
 
 [data-part='shortcut-group-title'] {
-    font-weight: var(--wmp-font-weight-bold);
+    color: #0b2a7a;
 }
 
 /* --- Quick jump: group headings and the overview of the groups ------------------------------ */
@@ -1979,7 +2013,7 @@ a[data-part='breadcrumb-link']:hover {
 }
 
 [data-part='tile-group-title'] {
-    color: #000000;
+    color: #0b2a7a;
 }
 
 [data-part='btn-group-jump'] {
@@ -2469,11 +2503,6 @@ a[data-part='breadcrumb-link']:hover {
 
 @media (width >= 64rem) {
     :root {
-        --wmp-font-size-xs: 0.75rem;
-        --wmp-font-size-s: 0.8125rem;
-        --wmp-font-size-m: 0.875rem;
-        --wmp-font-size-l: 1rem;
-        --wmp-font-size-xl: 1.25rem;
         --wmp-header-height: 2.25rem;
         --wmp-toolbar-height: 2.25rem;
         --wmp-sidebar-width: 14rem;
