@@ -164,6 +164,13 @@ public class UserSettings
     public bool VideoAmbientMode { get; set; } = true;
 
     /// <summary>
+    /// Whether the players skip the intro and the outro of a music video while it is only listened to (cover and
+    /// visualization views of a song without an audio file), as far as the song analysis is sure about them; on by
+    /// default.
+    /// </summary>
+    public bool VideoSkipIntroAndOutro { get; set; } = true;
+
+    /// <summary>
     /// How much detail the visualization draws; <see cref="VisualizationQuality.Auto"/> by default, which lets the
     /// player choose the level by the frame rate of the device.
     /// </summary>

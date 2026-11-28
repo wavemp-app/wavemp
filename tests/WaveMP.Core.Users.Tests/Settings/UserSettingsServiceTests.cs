@@ -182,6 +182,7 @@ public class UserSettingsServiceTests
         result.AutoplayEnabled.Should().BeTrue();
         result.AutoplayIncludeVideoOnly.Should().BeTrue();
         result.VideoAmbientMode.Should().BeTrue();
+        result.VideoSkipIntroAndOutro.Should().BeTrue();
     }
 
     [Test]
@@ -197,6 +198,21 @@ public class UserSettingsServiceTests
         result!.VideoAmbientMode.Should().BeFalse();
         result.AutoplayEnabled.Should().BeFalse();
         await _users.Received(1).UpdateAsync(user, Arg.Any<CancellationToken>());
+    }
+
+    [Test]
+    public async Task UpdateAsync_WithSkipIntroAndOutro_SavesItAndKeepsTheAmbientMode()
+    {
+        User user = Given("en");
+        user.Settings!.VideoAmbientMode = false;
+
+        UserSettings? result = await _service.UpdateAsync(
+            user.Id,
+            new UpdateUserSettingsCommand(VideoSkipIntroAndOutro: false));
+
+        (result!.VideoSkipIntroAndOutro, result.VideoAmbientMode).Should().Be((false, false));
+        (await _service.UpdateAsync(user.Id, new UpdateUserSettingsCommand(AutoplayEnabled: true)))!
+            .VideoSkipIntroAndOutro.Should().BeFalse();
     }
 
     [Test]

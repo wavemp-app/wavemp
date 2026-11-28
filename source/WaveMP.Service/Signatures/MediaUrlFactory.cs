@@ -127,8 +127,8 @@ public sealed class MediaUrlFactory(IMediaUrlIssuer issuer, LinkGenerator links)
 
     /// <summary>
     /// The signed URL of the sound of a track as decided: the file for direct play, the HLS master playlist of the
-    /// sound for transcoding; <c>null</c> if the track has to be transcoded and transcoding is unavailable or the
-    /// duration of the track is unknown.
+    /// sound for transcoding (of the video with <see cref="HlsMediaDto.VideoSound"/>); <c>null</c> if the track has to
+    /// be transcoded and transcoding is unavailable or the duration of the track is unknown.
     /// </summary>
     public MediaUrl? CreatePlaybackUrl(
         HttpContext context,
@@ -136,7 +136,8 @@ public sealed class MediaUrlFactory(IMediaUrlIssuer issuer, LinkGenerator links)
         PlaybackMethod method,
         TimeSpan? duration,
         bool transcodingAvailable,
-        MediaUrlTarget target = MediaUrlTarget.Local)
+        MediaUrlTarget target = MediaUrlTarget.Local,
+        HlsMediaDto media = HlsMediaDto.Audio)
     {
         if (method == PlaybackMethod.DirectPlay)
         {
@@ -144,7 +145,7 @@ public sealed class MediaUrlFactory(IMediaUrlIssuer issuer, LinkGenerator links)
         }
 
         return transcodingAvailable && duration > TimeSpan.Zero
-            ? CreateHlsMasterUrl(context, trackId, HlsMediaDto.Audio, duration, target)
+            ? CreateHlsMasterUrl(context, trackId, media, duration, target)
             : null;
     }
 

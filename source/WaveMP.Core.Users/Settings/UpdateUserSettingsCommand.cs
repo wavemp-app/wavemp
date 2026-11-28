@@ -34,6 +34,8 @@ namespace WaveMP.Core.Users.Settings;
 /// <param name="AutoplayEnabled">Whether the players go on with matching songs when a list ends.</param>
 /// <param name="AutoplayIncludeVideoOnly">Whether autoplay also chooses songs that only have a music video.</param>
 /// <param name="VideoAmbientMode">Whether videos show the ambient light in the free area around their picture.</param>
+/// <param name="VideoSkipIntroAndOutro">Whether the cover and the visualization skip intro and outro of the sound of a
+/// music video.</param>
 /// <param name="VisualizationColorScheme">
 /// Id of the chosen color scheme of the visualization; an empty or blank id forgets it, so the player shows the first
 /// color scheme of the module.
@@ -67,4 +69,5 @@ public sealed record UpdateUserSettingsCommand(
     bool? VideoAmbientMode = null,
     string? VisualizationColorScheme = null,
     VisualizationIntensity? VisualizationIntensity = null,
-    int? VisualizationMilkdropSpeed = null);
+    int? VisualizationMilkdropSpeed = null,
+    bool? VideoSkipIntroAndOutro = null);

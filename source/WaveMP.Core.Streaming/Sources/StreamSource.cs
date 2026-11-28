@@ -1,5 +1,6 @@
 using WaveMP.Core.Streaming.Formats;
 using WaveMP.Data.Entities;
+using WaveMP.Data.Segments;
 
 namespace WaveMP.Core.Streaming.Sources;
 
@@ -19,6 +20,12 @@ namespace WaveMP.Core.Streaming.Sources;
 /// <param name="ReplayGain">The ReplayGain tags of the file.</param>
 /// <param name="Origin">Whether the sound comes from the audio file or from the video of the track.</param>
 /// <param name="SampleRate">Sample rate of the sound, if known.</param>
+/// <param name="Segment">Where the song lies in the file (see <see cref="SongSegment"/>); the whole file if
+/// unknown.</param>
+/// <param name="LoudnessLufs">Integrated loudness of the sound in LUFS, if measured.</param>
+/// <param name="LoudnessMatchDb">Gain in dB that brings the sound of a video to the loudness of the audio file of the
+/// track (see <see cref="LoudnessMatch"/>); <c>null</c> for the audio file itself and if a loudness is unknown.
+/// </param>
 public sealed record StreamSource(
     Guid TrackId,
     Guid FileId,
@@ -31,4 +38,7 @@ public sealed record StreamSource(
     TimeSpan? Duration,
     ReplayGainValues ReplayGain,
     MediaFileKind Origin = MediaFileKind.Audio,
-    int? SampleRate = null);
+    int? SampleRate = null,
+    SongSegment? Segment = null,
+    double? LoudnessLufs = null,
+    double? LoudnessMatchDb = null);

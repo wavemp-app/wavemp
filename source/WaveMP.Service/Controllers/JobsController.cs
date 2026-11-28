@@ -25,6 +25,8 @@ public sealed class JobsController(IJobService jobs) : ControllerBase
 {
     internal const string GetJobRunRoute = "GetJobRun";
 
+    internal const string GetJobRoute = "GetJob";
+
     /// <summary>
     /// Lists the jobs with their state, schedule, next and last run.
     /// </summary>
@@ -52,7 +54,7 @@ public sealed class JobsController(IJobService jobs) : ControllerBase
     /// <param name="cancellationToken">Aborts the request.</param>
     /// <response code="200">The job.</response>
     /// <response code="404">The job does not exist (code <c>job.not_found</c>).</response>
-    [HttpGet("{id}", Name = "GetJob")]
+    [HttpGet("{id}", Name = GetJobRoute)]
     [ProducesResponseType<JobDto>(StatusCodes.Status200OK, "application/json")]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound, "application/problem+json")]
     public async Task<ActionResult<JobDto>> GetJobAsync(string id, CancellationToken cancellationToken)

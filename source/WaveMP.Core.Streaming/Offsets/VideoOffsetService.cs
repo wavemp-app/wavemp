@@ -17,7 +17,7 @@ internal sealed class VideoOffsetService(ITrackRepository tracks) : IVideoOffset
 
         return row.File is null
             ? new VideoOffsetResult(VideoOffsetStatus.NoVideo, trackId)
-            : new VideoOffsetResult(VideoOffsetStatus.Found, trackId, row.VideoOffsetMilliseconds);
+            : new VideoOffsetResult(VideoOffsetStatus.Found, trackId, row.ManualSongStartMilliseconds ?? 0);
     }
 
     public async Task<VideoOffsetResult> SetAsync(
@@ -30,14 +30,25 @@ internal sealed class VideoOffsetService(ITrackRepository tracks) : IVideoOffset
             return new VideoOffsetResult(VideoOffsetStatus.Invalid, trackId);
         }
 
-        VideoOffsetResult current = await GetAsync(trackId, cancellationToken);
-        if (!current.IsFound)
+        TrackFileRow? row = await tracks.FindPrimaryFileAsync(trackId, MediaFileKind.Video, cancellationToken);
+        if (row is null)
         {
-            return current;
+            return new VideoOffsetResult(VideoOffsetStatus.TrackNotFound, trackId);
         }
 
-        // A scan may have removed the track in the meantime.
-        return await tracks.SetVideoOffsetAsync(trackId, milliseconds, cancellationToken)
+        if (row.File is null)
+        {
+            return new VideoOffsetResult(VideoOffsetStatus.NoVideo, trackId);
+        }
+
+        // The offset is the corrected start of the song in the video (0 removes it, so the analysis counts again); a
+        // corrected end stays. A scan may have removed the track in the meantime.
+        return await tracks.SetManualSongSegmentAsync(
+                trackId,
+                MediaFileKind.Video,
+                milliseconds == 0 ? null : milliseconds,
+                row.ManualSongEndMilliseconds,
+                cancellationToken)
             ? new VideoOffsetResult(VideoOffsetStatus.Found, trackId, milliseconds)
             : new VideoOffsetResult(VideoOffsetStatus.TrackNotFound, trackId);
     }

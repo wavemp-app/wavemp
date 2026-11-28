@@ -53,10 +53,16 @@ public interface ITrackRepository
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Sets the offset of the video against the audio of the track in milliseconds. Returns <c>false</c> if the track
-    /// does not exist.
+    /// Sets the start and the end of the song in the primary file of the kind (audio or video) as the admin corrected
+    /// them, in milliseconds of the file; <c>null</c> takes the value the song analysis found. Returns <c>false</c> if
+    /// the track does not exist.
     /// </summary>
-    Task<bool> SetVideoOffsetAsync(Guid trackId, int milliseconds, CancellationToken cancellationToken = default);
+    Task<bool> SetManualSongSegmentAsync(
+        Guid trackId,
+        MediaFileKind kind,
+        int? startMilliseconds,
+        int? endMilliseconds,
+        CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Lists the files of a track: audio, video and its own pictures, also duplicates of lower quality.

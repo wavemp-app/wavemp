@@ -37,4 +37,10 @@ public static class JobIds
     /// organize operations an admin confirmed (moves, tags, undos). Started by the organize endpoints only.
     /// </summary>
     public const string LibraryOrganize = "library-organize";
+
+    /// <summary>
+    /// Finds where the real song lies in new and changed audio files and videos (without intro, outro and cut parts)
+    /// and measures their loudness, after scans and when an admin asks for a song or the library to be analyzed again.
+    /// </summary>
+    public const string SongAnalysis = "song-analysis";
 }

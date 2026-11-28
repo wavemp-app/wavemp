@@ -9,4 +9,9 @@ public sealed class UpdateVideoSettingsDto
     /// Whether videos show the ambient light in the free area around their picture.
     /// </summary>
     public bool? AmbientMode { get; init; }
+
+    /// <summary>
+    /// Whether the cover and the visualization skip intro and outro of the sound of a music video.
+    /// </summary>
+    public bool? SkipIntroAndOutro { get; init; }
 }

@@ -522,6 +522,163 @@ public class VideoStreamingApiTests
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
 
+    [Test]
+    public async Task GetTrackSongSegments_ScannedClip_HasBeenAnalyzedAfterTheScan()
+    {
+        TrackSongSegmentsDto segments = await _admin.GetJsonAsync<TrackSongSegmentsDto>(SegmentsPath("Clip"));
+
+        segments.Audio.Should().BeNull();
+        segments.Video!.Pending.Should().BeFalse();
+        segments.Video.Status.Should().Be(SongAnalysisStatusDto.Analyzed);
+        segments.Video.LoudnessLufs.Should().NotBeNull();
+        segments.Video.DurationMilliseconds.Should().BeInRange(6500, 7500);
+        segments.Video.Effective.Should().BeEquivalentTo(new
+        {
+            StartMilliseconds = 0,
+            Method = SongSegmentMethodDto.WholeFile,
+            Manual = false,
+            Mismatch = false,
+        });
+    }
+
+    [Test]
+    public async Task SetTrackSongSegment_Correction_IsUsedByThePlaybackUntilItIsReset()
+    {
+        string path = SegmentsPath("Clip") + "/video";
+        try
+        {
+            HttpResponseMessage response = await _admin.SendJsonAsync(
+                "PUT",
+                path,
+                """{ "startMilliseconds": 1500, "endMilliseconds": 6000 }""");
+            response.StatusCode.Should().Be(HttpStatusCode.OK, await response.Content.ReadAsStringAsync());
+            TrackSongSegmentsDto saved = (await response.Content.ReadFromJsonAsync<TrackSongSegmentsDto>(
+                HttpClientExtensions.JsonOptions))!;
+
+            saved.Video!.ManualStartMilliseconds.Should().Be(1500);
+            saved.Video.Effective.Should().BeEquivalentTo(new
+            {
+                StartMilliseconds = 1500,
+                EndMilliseconds = (int?)6000,
+                Manual = true,
+                Confident = true,
+            });
+            TrackVideoPlaybackDto video = await VideoPlaybackAsync("Clip", BrowserCapabilities);
+            video.SongSegment.StartMilliseconds.Should().Be(1500);
+            TrackPlaybackDto sound = await _user.GetJsonAsync<TrackPlaybackDto>(
+                $"/api/v1/tracks/{Track("Clip").Id}/playback?audioFormats=Mp4Aac&sound=Video");
+            sound.SongSegment.EndMilliseconds.Should().Be(6000);
+        }
+        finally
+        {
+            HttpResponseMessage reset = await _admin.SendJsonAsync("DELETE", path, null);
+            reset.StatusCode.Should().Be(HttpStatusCode.OK);
+            (await reset.Content.ReadFromJsonAsync<TrackSongSegmentsDto>(HttpClientExtensions.JsonOptions))!
+                .Video!.Effective.Manual.Should().BeFalse();
+        }
+    }
+
+    [TestCase("""{ "startMilliseconds": 7500 }""", "startMilliseconds")]
+    [TestCase("""{ "startMilliseconds": -600001 }""", "startMilliseconds")]
+    [TestCase("""{ "endMilliseconds": 999999 }""", "endMilliseconds")]
+    [TestCase("""{ "startMilliseconds": 3000, "endMilliseconds": 2000 }""", "endMilliseconds")]
+    public async Task SetTrackSongSegment_OutsideTheFile_ReturnsOutOfRange(string body, string field)
+    {
+        HttpResponseMessage response = await _admin.SendJsonAsync("PUT", SegmentsPath("Clip") + "/video", body);
+
+        IReadOnlyList<ValidationErrorDto> errors = await response.ShouldBeValidationProblemAsync();
+        errors.Should().ContainSingle().Which.Should().BeEquivalentTo(new
+        {
+            Field = field,
+            Code = ValidationErrorCodeDto.OutOfRange,
+        });
+        (await _admin.GetJsonAsync<TrackSongSegmentsDto>(SegmentsPath("Clip"))).Video!.ManualStartMilliseconds
+            .Should().BeNull();
+    }
+
+    [Test]
+    public async Task SetTrackSongSegment_KindWithoutFile_ReturnsNoAudioOrNoVideo()
+    {
+        await (await _admin.SendJsonAsync("PUT", SegmentsPath("Clip") + "/audio", """{ "startMilliseconds": 10 }"""))
+            .ShouldBeProblemAsync(HttpStatusCode.NotFound, "track.no_audio");
+        await (await _admin.SendJsonAsync("PUT", SegmentsPath("Song") + "/video", """{ "startMilliseconds": 10 }"""))
+            .ShouldBeProblemAsync(HttpStatusCode.NotFound, "track.no_video");
+        await (await _admin.GetAsync($"/api/v1/tracks/{Guid.NewGuid()}/song-segments"))
+            .ShouldBeProblemAsync(HttpStatusCode.NotFound, "track.not_found");
+    }
+
+    [Test]
+    public async Task SongSegments_User_ReturnsForbidden()
+    {
+        await (await _user.GetAsync(SegmentsPath("Clip"))).ShouldBeProblemAsync(
+            HttpStatusCode.Forbidden,
+            "auth.forbidden");
+        await (await _user.PostAsync("/api/v1/song-analyses", null)).ShouldBeProblemAsync(
+            HttpStatusCode.Forbidden,
+            "auth.forbidden");
+    }
+
+    [Test]
+    public async Task AnalyzeSongs_TrackAndLibrary_AnalyzesThemAgain()
+    {
+        HttpResponseMessage track = await _admin.PostAsync(
+            $"/api/v1/tracks/{Track("Song").Id}/song-analyses",
+            null);
+        track.StatusCode.Should().Be(HttpStatusCode.Accepted);
+        track.Headers.Location!.OriginalString.Should().EndWith(SegmentsPath("Song"));
+        await _admin.WaitForJobsIdleAsync();
+        HttpResponseMessage all = await _admin.PostAsync("/api/v1/song-analyses", null);
+        SongAnalysesStartedDto started = (await all.Content.ReadFromJsonAsync<SongAnalysesStartedDto>(
+            HttpClientExtensions.JsonOptions))!;
+        await _admin.WaitForJobsIdleAsync();
+
+        all.StatusCode.Should().Be(HttpStatusCode.Accepted);
+        all.Headers.Location!.OriginalString.Should().EndWith("/api/v1/jobs/song-analysis");
+        started.Renewed.Should().BeGreaterThanOrEqualTo(4);
+        TrackSongSegmentsDto song = await _admin.GetJsonAsync<TrackSongSegmentsDto>(SegmentsPath("Song"));
+        song.Audio!.Pending.Should().BeFalse();
+        song.Audio.Status.Should().Be(SongAnalysisStatusDto.Analyzed);
+        (await _admin.PostAsync($"/api/v1/tracks/{Guid.NewGuid()}/song-analyses", null))
+            .StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Test]
+    public async Task GetTrackPlayback_SoundOfTheVideo_TranscodesTheSoundOfTheVideoOverHls()
+    {
+        TrackPlaybackDto video = await _user.GetJsonAsync<TrackPlaybackDto>(
+            $"/api/v1/tracks/{Track("Clip").Id}/playback?audioFormats=Mp4Aac&sound=Video");
+        TrackPlaybackDto audio = await _user.GetJsonAsync<TrackPlaybackDto>(
+            $"/api/v1/tracks/{Track("Song").Id}/playback?audioFormats=Flac&sound=Video");
+
+        video.Sound.Should().Be(SoundSourceDto.Video);
+        video.TranscodeReason.Should().Be(TranscodeReasonDto.AudioFromVideo);
+        video.StreamUrl.Should().Contain("media=VideoSound");
+        string master = await _anonymous.GetStringAsync(video.StreamUrl);
+        string media = await _anonymous.GetStringAsync(Resolve(video.StreamUrl!, UriLines(master).First()));
+        HttpResponseMessage segment = await _anonymous.GetAsync(
+            Resolve(Resolve(video.StreamUrl!, UriLines(master).First()), UriLines(media).First()));
+        segment.StatusCode.Should().Be(HttpStatusCode.OK);
+        (await segment.Content.ReadAsByteArrayAsync()).Should().NotBeEmpty();
+        video.LoudnessLufs.Should().NotBeNull();
+        audio.Sound.Should().Be(SoundSourceDto.Audio);
+        audio.Method.Should().Be(PlaybackMethodDto.DirectPlay);
+        audio.SongSegment.Method.Should().Be(SongSegmentMethodDto.WholeFile);
+    }
+
+    [Test]
+    public async Task GetTrackPlayback_UnknownSound_ReturnsBadRequest()
+    {
+        HttpResponseMessage response = await _user.GetAsync(
+            $"/api/v1/tracks/{Track("Song").Id}/playback?audioFormats=Flac&sound=Radio");
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    private string SegmentsPath(string title)
+    {
+        return $"/api/v1/tracks/{Track(title).Id}/song-segments";
+    }
+
     private string OffsetPath(string title)
     {
         return $"/api/v1/tracks/{Track(title).Id}/video/offset";

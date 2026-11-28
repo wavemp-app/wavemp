@@ -1,5 +1,6 @@
 <Solution>
   <Folder Name="/source/">
+    <Project Path="source/WaveMP.Core.Analysis/WaveMP.Core.Analysis.csproj" />
     <Project Path="source/WaveMP.Core.ArtistPictures/WaveMP.Core.ArtistPictures.csproj" />
     <Project Path="source/WaveMP.Core.Autoplay/WaveMP.Core.Autoplay.csproj" />
     <Project Path="source/WaveMP.Core.Backups/WaveMP.Core.Backups.csproj" />
@@ -26,6 +27,7 @@
     <Project Path="source/WaveMP.Service/WaveMP.Service.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/WaveMP.Core.Analysis.Tests/WaveMP.Core.Analysis.Tests.csproj" />
     <Project Path="tests/WaveMP.Core.ArtistPictures.Tests/WaveMP.Core.ArtistPictures.Tests.csproj" />
     <Project Path="tests/WaveMP.Core.Autoplay.Tests/WaveMP.Core.Autoplay.Tests.csproj" />
     <Project Path="tests/WaveMP.Core.Backups.Tests/WaveMP.Core.Backups.Tests.csproj" />

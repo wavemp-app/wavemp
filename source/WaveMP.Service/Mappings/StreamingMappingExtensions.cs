@@ -3,6 +3,8 @@ using WaveMP.Core.Streaming.Formats;
 using WaveMP.Core.Streaming.Offsets;
 using WaveMP.Core.Streaming.Signatures;
 using WaveMP.Core.Streaming.Sources;
+using WaveMP.Data.Entities;
+using WaveMP.Data.Segments;
 using WaveMP.Service.Dtos;
 using WaveMP.Service.Signatures;
 
@@ -35,6 +37,10 @@ public static class StreamingMappingExtensions
                 : null,
             ReplayGain = source.ReplayGain.ToDto(),
             CoverUrl = cover?.Url,
+            Sound = source.Origin == MediaFileKind.Video ? SoundSourceDto.Video : SoundSourceDto.Audio,
+            SongSegment = (source.Segment ?? SongSegment.WholeFile).ToDto(),
+            LoudnessLufs = source.LoudnessLufs,
+            LoudnessMatchDb = source.LoudnessMatchDb,
         };
     }
 
@@ -68,6 +74,8 @@ public static class StreamingMappingExtensions
                 : null,
             OffsetMilliseconds = source.OffsetMilliseconds,
             CoverUrl = cover?.Url,
+            SongSegment = (source.Segment ?? SongSegment.WholeFile).ToDto(),
+            LoudnessLufs = source.LoudnessLufs,
         };
     }
 

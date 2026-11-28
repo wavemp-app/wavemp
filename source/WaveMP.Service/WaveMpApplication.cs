@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Options;
+using WaveMP.Core.Analysis.Extensions;
 using WaveMP.Core.ArtistPictures.Extensions;
 using WaveMP.Core.Autoplay.Extensions;
 using WaveMP.Core.Backups.Extensions;
@@ -64,6 +65,7 @@ public static class WaveMpApplication
         builder.Services.AddWaveMpScanning();
         builder.Services.AddWaveMpLibrary();
         builder.Services.AddWaveMpLyrics();
+        builder.Services.AddWaveMpAnalysis();
         builder.Services.AddWaveMpOnlineMetadata();
         builder.Services.AddWaveMpCaching();
         builder.Services.AddWaveMpPlaylists();

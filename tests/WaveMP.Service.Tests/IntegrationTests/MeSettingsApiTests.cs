@@ -298,6 +298,7 @@ public class MeSettingsApiTests
             settings.SleepTimer.FadeSeconds.Should().Be(10);
             settings.Autoplay.Should().BeEquivalentTo(new { Enabled = true, IncludeVideoOnly = true });
             settings.Video.AmbientMode.Should().BeTrue();
+            settings.Video.SkipIntroAndOutro.Should().BeTrue();
         }
     }
 
@@ -313,9 +314,27 @@ public class MeSettingsApiTests
             UserSettingsDto read = await client.GetJsonAsync<UserSettingsDto>("/api/v1/me/settings");
 
             response.StatusCode.Should().Be(HttpStatusCode.OK);
-            (await response.Content.ReadAsStringAsync()).Should().Contain("\"video\":{\"ambientMode\":false}");
+            (await response.Content.ReadAsStringAsync()).Should()
+                .Contain("\"video\":{\"ambientMode\":false,\"skipIntroAndOutro\":true}");
             read.Video.AmbientMode.Should().BeFalse();
+            read.Video.SkipIntroAndOutro.Should().BeTrue();
             read.Autoplay.Enabled.Should().BeFalse();
+        }
+    }
+
+    [Test]
+    public async Task UpdateMySettings_WithSkipIntroAndOutro_KeepsItForTheProfileAndTheAmbientMode()
+    {
+        (Guid _, HttpClient client) = await CreateProfileAsync();
+        using (client)
+        {
+            await PatchAsync(client, new { video = new { ambientMode = false } });
+
+            HttpResponseMessage response = await PatchAsync(client, new { video = new { skipIntroAndOutro = false } });
+            UserSettingsDto read = await client.GetJsonAsync<UserSettingsDto>("/api/v1/me/settings");
+
+            response.StatusCode.Should().Be(HttpStatusCode.OK);
+            read.Video.Should().BeEquivalentTo(new { AmbientMode = false, SkipIntroAndOutro = false });
         }
     }
 

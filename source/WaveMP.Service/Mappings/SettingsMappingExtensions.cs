@@ -36,7 +36,11 @@ public static class SettingsMappingExtensions
                 Enabled = settings.AutoplayEnabled,
                 IncludeVideoOnly = settings.AutoplayIncludeVideoOnly,
             },
-            Video = new VideoSettingsDto { AmbientMode = settings.VideoAmbientMode },
+            Video = new VideoSettingsDto
+            {
+                AmbientMode = settings.VideoAmbientMode,
+                SkipIntroAndOutro = settings.VideoSkipIntroAndOutro,
+            },
             Visualization = new VisualizationSettingsDto
             {
                 Module = settings.VisualizationModule.ToDto(),
@@ -81,7 +85,8 @@ public static class SettingsMappingExtensions
             request.Video?.AmbientMode,
             request.Visualization?.ColorScheme,
             request.Visualization?.Intensity?.ToEntity(),
-            request.Visualization?.MilkdropSpeed);
+            request.Visualization?.MilkdropSpeed,
+            request.Video?.SkipIntroAndOutro);
     }
 
     public static ThemeAppearanceDto ToDto(this ThemeAppearance appearance)

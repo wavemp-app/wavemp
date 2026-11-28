@@ -126,6 +126,12 @@ public class MediaFile
     public MediaFileIssue? Issue { get; set; }
 
     /// <summary>
+    /// What the song analysis found in the sound of the file; <c>null</c> until it was analyzed (only audio files and
+    /// videos are).
+    /// </summary>
+    public MediaFileAnalysis? Analysis { get; set; }
+
+    /// <summary>
     /// Version of the metadata reader that read the file. Files read by an older version are read again.
     /// </summary>
     public required int MetadataVersion { get; set; }

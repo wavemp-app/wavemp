@@ -21,7 +21,13 @@ public class VideoOffsetServiceTests
         _tracks = Substitute.For<ITrackRepository>();
         _tracks.FindPrimaryFileAsync(Arg.Any<Guid>(), Arg.Any<MediaFileKind>(), Arg.Any<CancellationToken>())
             .Returns((TrackFileRow?)null);
-        _tracks.SetVideoOffsetAsync(Arg.Any<Guid>(), Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns(true);
+        _tracks.SetManualSongSegmentAsync(
+                Arg.Any<Guid>(),
+                Arg.Any<MediaFileKind>(),
+                Arg.Any<int?>(),
+                Arg.Any<int?>(),
+                Arg.Any<CancellationToken>())
+            .Returns(true);
         _service = new VideoOffsetService(_tracks);
     }
 
@@ -55,19 +61,49 @@ public class VideoOffsetServiceTests
         result.Status.Should().Be(VideoOffsetStatus.NoVideo);
     }
 
+    [Test]
+    public async Task GetAsync_TrackWithoutCorrection_ReturnsZero()
+    {
+        GivenTrack(withVideo: true, offset: null);
+
+        VideoOffsetResult result = await _service.GetAsync(_trackId);
+
+        result.Should().Be(new VideoOffsetResult(VideoOffsetStatus.Found, _trackId, 0));
+    }
+
     [TestCase(VideoOffsets.MinMilliseconds)]
     [TestCase(-1)]
-    [TestCase(0)]
     [TestCase(1500)]
     [TestCase(VideoOffsets.MaxMilliseconds)]
-    public async Task SetAsync_ValidOffset_StoresIt(int milliseconds)
+    public async Task SetAsync_ValidOffset_StoresItAsCorrectedStartOfTheSongAndKeepsTheEnd(int milliseconds)
     {
-        GivenTrack(withVideo: true, offset: 200);
+        GivenTrack(withVideo: true, offset: 200, end: 90_000);
 
         VideoOffsetResult result = await _service.SetAsync(_trackId, milliseconds);
 
         result.Should().Be(new VideoOffsetResult(VideoOffsetStatus.Found, _trackId, milliseconds));
-        await _tracks.Received(1).SetVideoOffsetAsync(_trackId, milliseconds, Arg.Any<CancellationToken>());
+        await _tracks.Received(1).SetManualSongSegmentAsync(
+            _trackId,
+            MediaFileKind.Video,
+            milliseconds,
+            90_000,
+            Arg.Any<CancellationToken>());
+    }
+
+    [Test]
+    public async Task SetAsync_Zero_RemovesTheCorrectedStart()
+    {
+        GivenTrack(withVideo: true, offset: 200);
+
+        VideoOffsetResult result = await _service.SetAsync(_trackId, 0);
+
+        result.Should().Be(new VideoOffsetResult(VideoOffsetStatus.Found, _trackId, 0));
+        await _tracks.Received(1).SetManualSongSegmentAsync(
+            _trackId,
+            MediaFileKind.Video,
+            null,
+            null,
+            Arg.Any<CancellationToken>());
     }
 
     [TestCase(VideoOffsets.MinMilliseconds - 1)]
@@ -81,7 +117,7 @@ public class VideoOffsetServiceTests
         VideoOffsetResult result = await _service.SetAsync(_trackId, milliseconds);
 
         result.Status.Should().Be(VideoOffsetStatus.Invalid);
-        await _tracks.DidNotReceiveWithAnyArgs().SetVideoOffsetAsync(default, default, default);
+        await _tracks.DidNotReceiveWithAnyArgs().SetManualSongSegmentAsync(default, default, default, default, default);
     }
 
     [Test]
@@ -90,7 +126,7 @@ public class VideoOffsetServiceTests
         VideoOffsetResult result = await _service.SetAsync(_trackId, 100);
 
         result.Status.Should().Be(VideoOffsetStatus.TrackNotFound);
-        await _tracks.DidNotReceiveWithAnyArgs().SetVideoOffsetAsync(default, default, default);
+        await _tracks.DidNotReceiveWithAnyArgs().SetManualSongSegmentAsync(default, default, default, default, default);
     }
 
     [Test]
@@ -101,14 +137,20 @@ public class VideoOffsetServiceTests
         VideoOffsetResult result = await _service.SetAsync(_trackId, 100);
 
         result.Status.Should().Be(VideoOffsetStatus.NoVideo);
-        await _tracks.DidNotReceiveWithAnyArgs().SetVideoOffsetAsync(default, default, default);
+        await _tracks.DidNotReceiveWithAnyArgs().SetManualSongSegmentAsync(default, default, default, default, default);
     }
 
     [Test]
     public async Task SetAsync_TrackRemovedInTheMeantime_ReturnsTrackNotFound()
     {
         GivenTrack(withVideo: true, offset: 0);
-        _tracks.SetVideoOffsetAsync(_trackId, 100, Arg.Any<CancellationToken>()).Returns(false);
+        _tracks.SetManualSongSegmentAsync(
+                _trackId,
+                MediaFileKind.Video,
+                100,
+                Arg.Any<int?>(),
+                Arg.Any<CancellationToken>())
+            .Returns(false);
 
         VideoOffsetResult result = await _service.SetAsync(_trackId, 100);
 
@@ -124,7 +166,7 @@ public class VideoOffsetServiceTests
         VideoOffsets.IsValid(milliseconds).Should().Be(expected);
     }
 
-    private void GivenTrack(bool withVideo, int offset)
+    private void GivenTrack(bool withVideo, int? offset, int? end = null)
     {
         MediaFile? video = withVideo
             ? new MediaFile
@@ -150,6 +192,6 @@ public class VideoOffsetServiceTests
             }
             : null;
         _tracks.FindPrimaryFileAsync(_trackId, MediaFileKind.Video, Arg.Any<CancellationToken>())
-            .Returns(new TrackFileRow(_trackId, video, offset));
+            .Returns(new TrackFileRow(_trackId, video, offset, end));
     }
 }

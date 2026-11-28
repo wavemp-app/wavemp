@@ -385,13 +385,95 @@ public class StreamServiceTests
         (await _service.GetAudioSourceAsync(trackId)).Status.Should().Be(StreamSourceStatus.NoAudio);
     }
 
+    [Test]
+    public async Task GetSoundSourceAsync_SoundOfTheVideo_ReturnsTheVideoWithItsSegmentAndLoudness()
+    {
+        var trackId = Guid.NewGuid();
+        MediaFile audio = AudioFile("Song.mp3", "mp3", "mp3", "mp3");
+        audio.Tags = new MediaFileTags { ReplayGainTrackGain = -6.5, ReplayGainTrackPeak = 0.9 };
+        audio.Analysis = new MediaFileAnalysis
+        {
+            MediaFileId = audio.Id,
+            Version = 1,
+            FileSize = audio.Size,
+            FileModifiedAt = audio.ModifiedAt,
+            AnalyzedAt = DateTimeOffset.UnixEpoch,
+            Status = SongAnalysisStatus.Analyzed,
+            Method = SongSegmentMethod.WholeFile,
+            LoudnessLufs = -14,
+        };
+        Track(trackId, audio);
+        WriteFile("Song.mp3", 10);
+        MediaFile video = VideoFile("Song.mp4", "mov,mp4,m4a,3gp,3g2,mj2", "h264", "aac", "mp4");
+        video.Analysis = new MediaFileAnalysis
+        {
+            MediaFileId = video.Id,
+            Version = 1,
+            FileSize = video.Size,
+            FileModifiedAt = video.ModifiedAt,
+            AnalyzedAt = DateTimeOffset.UnixEpoch,
+            Status = SongAnalysisStatus.Analyzed,
+            Method = SongSegmentMethod.Alignment,
+            Confidence = 0.9,
+            Pieces = [new SongPiece(4000, 0, 100_000)],
+            LoudnessLufs = -8.5,
+        };
+        Video(trackId, video);
+        WriteFile("Song.mp4", 10);
+
+        StreamSource source = (await _service.GetSoundSourceAsync(trackId, sound: SoundSource.Video)).Source!;
+        PlaybackResult decision = await _service.DecideAsync(
+            trackId,
+            new HashSet<AudioFormat> { AudioFormat.Mp3 },
+            sound: SoundSource.Video);
+
+        (source.Origin, source.FileId, source.LoudnessLufs)
+            .Should().Be((MediaFileKind.Video, video.Id, (double?)-8.5));
+        source.Segment!.StartMilliseconds.Should().Be(4000);
+        source.LoudnessMatchDb.Should().Be(-5.5);
+        source.ReplayGain.Should().Be(new ReplayGainValues(-6.5, null, null, null));
+        decision.Decision!.Reason.Should().Be(TranscodeReason.AudioFromVideo);
+        (await _service.GetSoundSourceAsync(trackId)).Source!.FileId.Should().Be(audio.Id);
+    }
+
+    [Test]
+    public async Task GetSoundSourceAsync_SoundOfAVideoWithoutSound_FallsBackToTheAudioFile()
+    {
+        var trackId = Guid.NewGuid();
+        MediaFile audio = AudioFile("Song.mp3", "mp3", "mp3", "mp3");
+        Track(trackId, audio);
+        WriteFile("Song.mp3", 10);
+        Video(trackId, VideoFile("Song.mp4", "mov,mp4,m4a,3gp,3g2,mj2", "h264", null, "mp4"));
+        WriteFile("Song.mp4", 10);
+
+        StreamSource source = (await _service.GetSoundSourceAsync(trackId, sound: SoundSource.Video)).Source!;
+
+        (source.Origin, source.FileId).Should().Be((MediaFileKind.Audio, audio.Id));
+    }
+
+    [Test]
+    public async Task GetAudioSourceAsync_CorrectedSegment_CarriesIt()
+    {
+        var trackId = Guid.NewGuid();
+        MediaFile audio = AudioFile("Song.mp3", "mp3", "mp3", "mp3");
+        audio.Duration = TimeSpan.FromMinutes(3);
+        _tracks.FindPrimaryFileAsync(trackId, MediaFileKind.Audio, Arg.Any<CancellationToken>())
+            .Returns(new TrackFileRow(trackId, audio, 1500, 170_000));
+        WriteFile("Song.mp3", 10);
+
+        StreamSource source = (await _service.GetAudioSourceAsync(trackId)).Source!;
+
+        source.Segment!.Manual.Should().BeTrue();
+        (source.Segment.StartMilliseconds, source.Segment.EndMilliseconds).Should().Be((1500, (int?)170_000));
+    }
+
     private void Track(Guid trackId, MediaFile? file)
     {
         _tracks.FindPrimaryFileAsync(trackId, MediaFileKind.Audio, Arg.Any<CancellationToken>())
             .Returns(new TrackFileRow(trackId, file));
     }
 
-    private void Video(Guid trackId, MediaFile? file, int offsetMilliseconds = 0)
+    private void Video(Guid trackId, MediaFile? file, int? offsetMilliseconds = null)
     {
         _tracks.FindPrimaryFileAsync(trackId, MediaFileKind.Video, Arg.Any<CancellationToken>())
             .Returns(new TrackFileRow(trackId, file, offsetMilliseconds));

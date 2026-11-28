@@ -6,6 +6,7 @@ using WaveMP.Core.Streaming.Formats;
 using WaveMP.Core.Streaming.Signatures;
 using WaveMP.Core.Streaming.Sources;
 using WaveMP.Core.Transcoding.Services;
+using WaveMP.Data.Entities;
 using WaveMP.Service.Dtos;
 using WaveMP.Service.Extensions;
 using WaveMP.Service.Mappings;
@@ -52,6 +53,9 @@ public sealed class TrackStreamsController(
     /// <param name="audioFormats">The audio formats the client plays (1 to 20, repeated query parameter).</param>
     /// <param name="cancellationToken">Aborts the request.</param>
     /// <param name="target">Who plays the stream: the client itself (default) or a casting device.</param>
+    /// <param name="sound">Which recording to play: the audio file (default) or the sound of the video with its intro
+    /// and outro (always transcoded), for the video view; each falls back to the other one if the track lacks it.
+    /// </param>
     /// <response code="200">How the client plays the track.</response>
     /// <response code="400">Missing, too many or invalid formats (code <c>request.invalid</c>).</response>
     /// <response code="404">The track does not exist (code <c>track.not_found</c>), has neither an audio file nor a
@@ -65,15 +69,21 @@ public sealed class TrackStreamsController(
         Guid id,
         [FromQuery] AudioFormatDto[]? audioFormats,
         CancellationToken cancellationToken,
-        [FromQuery] PlaybackTargetDto target = PlaybackTargetDto.Local)
+        [FromQuery] PlaybackTargetDto target = PlaybackTargetDto.Local,
+        [FromQuery] SoundSourceDto sound = SoundSourceDto.Audio)
     {
         this.ValidateEnum<PlaybackTargetDto>(target, nameof(target));
+        this.ValidateEnum<SoundSourceDto>(sound, nameof(sound));
         if (!ValidateFormats(audioFormats, required: true))
         {
             return ValidationProblem();
         }
 
-        PlaybackResult result = await streams.DecideAsync(id, ToSet(audioFormats), cancellationToken);
+        PlaybackResult result = await streams.DecideAsync(
+            id,
+            ToSet(audioFormats),
+            cancellationToken,
+            sound.ToSoundSource());
         if (!result.IsFound)
         {
             return NotFound(result.Status);
@@ -87,7 +97,10 @@ public sealed class TrackStreamsController(
             result.Decision.Method,
             duration,
             transcoding.IsAvailable,
-            urlTarget);
+            urlTarget,
+            sound == SoundSourceDto.Video && result.Source.Origin == MediaFileKind.Video
+                ? HlsMediaDto.VideoSound
+                : HlsMediaDto.Audio);
         MediaUrl? cover = urlTarget == MediaUrlTarget.Cast ? urls.CreateCoverUrl(HttpContext, id, duration) : null;
         Response.Headers.CacheControl = "no-store";
         return Ok(result.Source.ToDto(result.Decision, stream, cover));

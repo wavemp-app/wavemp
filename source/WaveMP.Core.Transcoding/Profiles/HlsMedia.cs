@@ -14,4 +14,10 @@ public enum HlsMedia
     /// The video with its sound.
     /// </summary>
     Video,
+
+    /// <summary>
+    /// Only the sound of the video, also for tracks with an audio file (the audio file for a video without sound):
+    /// what a client plays while it shows the video. Transcoded like <see cref="Audio"/>.
+    /// </summary>
+    VideoSound,
 }

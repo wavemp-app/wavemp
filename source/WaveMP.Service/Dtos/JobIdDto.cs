@@ -42,6 +42,14 @@ public enum JobIdDto
     LibraryCheck,
 
     /// <summary>
+    /// Finds where the real song lies in new and changed audio files and videos (without intro, outro and cut parts)
+    /// and measures their loudness, after scans and when an admin asks for a song or the library to be analyzed again;
+    /// see GetTrackSongSegments.
+    /// </summary>
+    [JsonStringEnumMemberName("song-analysis")]
+    SongAnalysis,
+
+    /// <summary>
     /// Organizes the media files: plans the preview of reorganizing the library and runs the organize operations an
     /// admin confirmed; started by the organize endpoints only, see ApplyOrganizeOperation.
     /// </summary>

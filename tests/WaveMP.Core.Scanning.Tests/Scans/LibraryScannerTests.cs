@@ -3021,7 +3021,8 @@ public class LibraryScannerTests
                 .SetProperty(track => track.ReviewedAt, _day)
                 .SetProperty(track => track.ReviewedByUserId, first.Id)
                 .SetProperty(track => track.CoverPriority, CoverPriority.TrackFirst)
-                .SetProperty(track => track.VideoOffsetMilliseconds, 250));
+                .SetProperty(track => track.VideoSongStartMilliseconds, 250)
+                .SetProperty(track => track.AudioSongEndMilliseconds, 90_000));
         }
 
         return new SongData(
@@ -3064,8 +3065,8 @@ public class LibraryScannerTests
             (song.DirectoryPath, song.BaseName).Should().Be((folder, baseName));
             song.FirstSeenAt.Should().Be(_day.AddDays(-10));
             (song.ReviewedAt, song.ReviewedByUserId).Should().Be(((DateTimeOffset?)_day, (Guid?)data.First.Id));
-            (song.CoverPriority, song.VideoOffsetMilliseconds).Should().Be(
-                ((CoverPriority?)CoverPriority.TrackFirst, 250));
+            (song.CoverPriority, song.VideoSongStartMilliseconds, song.AudioSongEndMilliseconds).Should().Be(
+                ((CoverPriority?)CoverPriority.TrackFirst, (int?)250, (int?)90_000));
             song.Files.Select(file => (file.RelativePath, file.IsPrimary)).Should().BeEquivalentTo([
                 ($"{folder}/{baseName}.mp3", true),
                 ($"{folder}/{baseName}.flac", false),

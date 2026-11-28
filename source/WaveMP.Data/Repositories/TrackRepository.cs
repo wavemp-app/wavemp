@@ -98,33 +98,51 @@ internal sealed class TrackRepository(WaveMpDbContext dbContext) : ITrackReposit
         MediaFileKind kind,
         CancellationToken cancellationToken = default)
     {
-        // Checks that the track exists and reads its offset in one query.
-        int? offset = await dbContext.Tracks.AsNoTracking()
+        // Checks that the track exists and reads the corrections of its song segments in one query.
+        var manual = await dbContext.Tracks.AsNoTracking()
             .Where(track => track.Id == trackId)
-            .Select(track => (int?)track.VideoOffsetMilliseconds)
+            .Select(track => new
+            {
+                AudioStart = track.AudioSongStartMilliseconds,
+                AudioEnd = track.AudioSongEndMilliseconds,
+                VideoStart = track.VideoSongStartMilliseconds,
+                VideoEnd = track.VideoSongEndMilliseconds,
+            })
             .FirstOrDefaultAsync(cancellationToken);
-        if (offset is not { } videoOffset)
+        if (manual is null)
         {
             return null;
         }
 
         MediaFile? file = await dbContext.MediaFiles.AsNoTracking()
+            .Include(file => file.Analysis)
             .Where(file => file.TrackId == trackId && file.Kind == kind && file.IsPrimary)
             .OrderBy(file => file.Id)
             .FirstOrDefaultAsync(cancellationToken);
-        return new TrackFileRow(trackId, file, videoOffset);
+        return kind == MediaFileKind.Video
+            ? new TrackFileRow(trackId, file, manual.VideoStart, manual.VideoEnd)
+            : new TrackFileRow(trackId, file, manual.AudioStart, manual.AudioEnd);
     }
 
-    public async Task<bool> SetVideoOffsetAsync(
+    public async Task<bool> SetManualSongSegmentAsync(
         Guid trackId,
-        int milliseconds,
+        MediaFileKind kind,
+        int? startMilliseconds,
+        int? endMilliseconds,
         CancellationToken cancellationToken = default)
     {
         // Not a change of the content of the library, so the time of the last change stays.
-        int changed = await dbContext.Tracks
-            .Where(track => track.Id == trackId)
-            .ExecuteUpdateAsync(
-                setters => setters.SetProperty(track => track.VideoOffsetMilliseconds, milliseconds),
+        IQueryable<Track> tracks = dbContext.Tracks.Where(track => track.Id == trackId);
+        int changed = kind == MediaFileKind.Video
+            ? await tracks.ExecuteUpdateAsync(
+                setters => setters
+                    .SetProperty(track => track.VideoSongStartMilliseconds, startMilliseconds)
+                    .SetProperty(track => track.VideoSongEndMilliseconds, endMilliseconds),
+                cancellationToken)
+            : await tracks.ExecuteUpdateAsync(
+                setters => setters
+                    .SetProperty(track => track.AudioSongStartMilliseconds, startMilliseconds)
+                    .SetProperty(track => track.AudioSongEndMilliseconds, endMilliseconds),
                 cancellationToken);
         return changed > 0;
     }

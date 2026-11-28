@@ -6,7 +6,7 @@ namespace WaveMP.Service.Mappings;
 
 public static class TrackReviewMappingExtensions
 {
-    public static TrackReviewDto ToDto(this TrackReviewRow row)
+    public static TrackReviewDto ToDto(this TrackReviewRow row, SongSegmentNotice? notice = null)
     {
         return new TrackReviewDto
         {
@@ -30,6 +30,7 @@ public static class TrackReviewMappingExtensions
             HasCover = row.HasCover,
             FirstSeenAt = row.FirstSeenAt,
             MissingTags = [.. row.MissingTags.Select(tag => tag.ToDto())],
+            SongSegmentNotice = notice?.ToDto(),
             Status = StatusOf(row.Review),
             ReviewedAt = row.Review.ReviewedAt,
             ReviewedBy = ReviewerOf(row.Review),

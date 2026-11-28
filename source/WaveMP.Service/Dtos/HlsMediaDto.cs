@@ -18,4 +18,9 @@ public enum HlsMediaDto
     /// The video with its sound.
     /// </summary>
     Video,
+
+    /// <summary>
+    /// Only the sound of the video, also for tracks with an audio file (the audio file for a video without sound).
+    /// </summary>
+    VideoSound,
 }

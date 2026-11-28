@@ -211,6 +211,7 @@ public class ModelTests
     [TestCase(nameof(UserSettings.AutoplayEnabled), true)]
     [TestCase(nameof(UserSettings.AutoplayIncludeVideoOnly), true)]
     [TestCase(nameof(UserSettings.VideoAmbientMode), true)]
+    [TestCase(nameof(UserSettings.VideoSkipIntroAndOutro), true)]
     [TestCase(nameof(UserSettings.VisualizationAutoChange), true)]
     [TestCase(nameof(UserSettings.VisualizationAutoChangeSeconds), 30)]
     [TestCase(nameof(UserSettings.VisualizationMilkdropSpeed), 50)]
@@ -238,6 +239,7 @@ public class ModelTests
         settings.AutoplayEnabled.Should().BeTrue();
         settings.AutoplayIncludeVideoOnly.Should().BeTrue();
         settings.VideoAmbientMode.Should().BeTrue();
+        settings.VideoSkipIntroAndOutro.Should().BeTrue();
         settings.VisualizationModule.Should().Be(VisualizationModule.Milkdrop);
         settings.VisualizationPreset.Should().BeNull();
         settings.VisualizationAutoChange.Should().BeTrue();

@@ -74,7 +74,10 @@ public class JobsApiTests
         JobDto lyrics = jobs.Items.Should().ContainSingle(job => job.Id == JobIdDto.LyricsDownload).Subject;
         JobDto check = jobs.Items.Should().ContainSingle(job => job.Id == JobIdDto.LibraryCheck).Subject;
         JobDto organize = jobs.Items.Should().ContainSingle(job => job.Id == JobIdDto.LibraryOrganize).Subject;
-        jobs.Total.Should().Be(6);
+        JobDto analysis = jobs.Items.Should().ContainSingle(job => job.Id == JobIdDto.SongAnalysis).Subject;
+        jobs.Total.Should().Be(7);
+        analysis.IntervalMinutes.Should().BeNull("it runs after scans and when an admin asks for it");
+        analysis.NextRunAt.Should().BeNull();
         organize.IntervalMinutes.Should().BeNull("it runs only for an organize operation");
         organize.NextRunAt.Should().BeNull();
         check.IntervalMinutes.Should().BeNull();

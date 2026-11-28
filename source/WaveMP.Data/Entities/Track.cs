@@ -99,10 +99,31 @@ public class Track
     public required DateTimeOffset UpdatedAt { get; set; }
 
     /// <summary>
-    /// Offset of the video against the audio in milliseconds: position of the video = position of the audio + offset.
-    /// Set by the admin for videos whose music starts earlier or later than in the audio file; a scan never changes it.
+    /// Where the song starts in the primary audio file, in milliseconds, as the admin corrected it; <c>null</c> takes
+    /// the start the song analysis found (see <see cref="MediaFileAnalysis"/>). Neither a scan nor an analysis ever
+    /// changes it; it stays with the track when its files move.
     /// </summary>
-    public int VideoOffsetMilliseconds { get; set; }
+    public int? AudioSongStartMilliseconds { get; set; }
+
+    /// <summary>
+    /// Where the song ends in the primary audio file, in milliseconds, as the admin corrected it; <c>null</c> takes the
+    /// end the song analysis found.
+    /// </summary>
+    public int? AudioSongEndMilliseconds { get; set; }
+
+    /// <summary>
+    /// Where the song starts in the primary video, in milliseconds, as the admin corrected it: the position of the
+    /// video at which the audio file is at its song start. Negative if the video only starts after the beginning of
+    /// the song. <c>null</c> takes the start the song analysis found. Neither a scan nor an analysis ever changes it.
+    /// It replaces the former offset of the video against the audio, which had the same meaning.
+    /// </summary>
+    public int? VideoSongStartMilliseconds { get; set; }
+
+    /// <summary>
+    /// Where the song ends in the primary video, in milliseconds, as the admin corrected it; <c>null</c> takes the end
+    /// the song analysis found.
+    /// </summary>
+    public int? VideoSongEndMilliseconds { get; set; }
 
     /// <summary>
     /// The cover rule of the track, an exception the admin set: whether it shows its own cover or the cover of its

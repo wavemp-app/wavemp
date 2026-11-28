@@ -60,6 +60,7 @@ public static class TranscodingMappingExtensions
         {
             HlsMedia.Audio => HlsMediaDto.Audio,
             HlsMedia.Video => HlsMediaDto.Video,
+            HlsMedia.VideoSound => HlsMediaDto.VideoSound,
             _ => throw new ArgumentOutOfRangeException(nameof(media), media, "Unknown media."),
         };
     }
@@ -70,6 +71,7 @@ public static class TranscodingMappingExtensions
         {
             HlsMediaDto.Audio => HlsMedia.Audio,
             HlsMediaDto.Video => HlsMedia.Video,
+            HlsMediaDto.VideoSound => HlsMedia.VideoSound,
             _ => throw new ArgumentOutOfRangeException(nameof(media), media, "Unknown media."),
         };
     }

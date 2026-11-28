@@ -79,9 +79,9 @@ public sealed class TrackVideoPlaybackDto
     public long? DurationMilliseconds { get; init; }
 
     /// <summary>
-    /// Offset of the video against the audio of the track in milliseconds: position of the video = position of the
-    /// audio + offset; 0 without offset. Clients that play the audio and show the video muted synchronize the video
-    /// with it.
+    /// Start of the song in the video in milliseconds while clients use its song segment, otherwise 0: position of
+    /// the video = position of the audio + offset as long as the video cut nothing out. Kept for older clients;
+    /// clients map positions with songSegment instead.
     /// </summary>
     public required int OffsetMilliseconds { get; init; }
 
@@ -91,4 +91,15 @@ public sealed class TrackVideoPlaybackDto
     /// without a cover it answers 404.
     /// </summary>
     public string? CoverUrl { get; init; }
+
+    /// <summary>
+    /// Where the real song lies in the video. Clients that play the audio file and show the video muted map the
+    /// position of the song to the video with it (and keep the video still where it cut a part of the song out).
+    /// </summary>
+    public required SongSegmentDto SongSegment { get; init; }
+
+    /// <summary>
+    /// Integrated loudness of the sound of the video in LUFS (EBU R 128), if measured.
+    /// </summary>
+    public double? LoudnessLufs { get; init; }
 }

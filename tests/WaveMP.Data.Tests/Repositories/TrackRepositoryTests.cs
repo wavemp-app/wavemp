@@ -4,6 +4,7 @@ using WaveMP.Data.Entities;
 using WaveMP.Data.Projections;
 using WaveMP.Data.Queries;
 using WaveMP.Data.Repositories;
+using WaveMP.Data.Segments;
 using WaveMP.Testing.Seeds;
 
 namespace WaveMP.Data.Tests.Repositories;
@@ -365,65 +366,89 @@ public class TrackRepositoryTests : LibraryDatabaseTests
     }
 
     [Test]
-    public async Task FindPrimaryFileAsync_Always_ReturnsTheVideoOffset()
+    public async Task FindPrimaryFileAsync_Always_ReturnsTheCorrectionsOfTheKind()
     {
         StandardLibrary library = await SeedStandardLibraryAsync();
-        await new TrackRepository(CreateDbContext()).SetVideoOffsetAsync(library.Closing.Id, -1250);
+        TrackRepository repository = new(CreateDbContext());
+        await repository.SetManualSongSegmentAsync(library.Closing.Id, MediaFileKind.Video, -1250, 60_000);
+        await repository.SetManualSongSegmentAsync(library.Closing.Id, MediaFileKind.Audio, 300, null);
+
+        TrackFileRow? video = await new TrackRepository(CreateDbContext())
+            .FindPrimaryFileAsync(library.Closing.Id, MediaFileKind.Video);
+        TrackFileRow? audio = await new TrackRepository(CreateDbContext())
+            .FindPrimaryFileAsync(library.Closing.Id, MediaFileKind.Audio);
+
+        (video!.ManualSongStartMilliseconds, video.ManualSongEndMilliseconds).Should().Be((-1250, 60_000));
+        (audio!.ManualSongStartMilliseconds, audio.ManualSongEndMilliseconds).Should().Be((300, (int?)null));
+        video.Segment.Should().Match<SongSegment>(segment => segment.Manual && segment.StartMilliseconds == -1250);
+    }
+
+    [Test]
+    public async Task FindPrimaryFileAsync_WithoutCorrection_ReturnsTheWholeFile()
+    {
+        StandardLibrary library = await SeedStandardLibraryAsync();
 
         TrackFileRow? row = await new TrackRepository(CreateDbContext())
             .FindPrimaryFileAsync(library.Closing.Id, MediaFileKind.Video);
 
-        row!.VideoOffsetMilliseconds.Should().Be(-1250);
+        (row!.ManualSongStartMilliseconds, row.ManualSongEndMilliseconds).Should().Be(((int?)null, (int?)null));
+        row.Segment.Should().Be(SongSegment.WholeFile);
     }
 
     [Test]
-    public async Task FindPrimaryFileAsync_WithoutOffset_ReturnsZero()
+    public async Task SetManualSongSegmentAsync_KnownTrack_StoresItAndKeepsTheTimeOfTheLastChange()
     {
         StandardLibrary library = await SeedStandardLibraryAsync();
 
-        TrackFileRow? row = await new TrackRepository(CreateDbContext())
-            .FindPrimaryFileAsync(library.Closing.Id, MediaFileKind.Video);
-
-        row!.VideoOffsetMilliseconds.Should().Be(0);
-    }
-
-    [Test]
-    public async Task SetVideoOffsetAsync_KnownTrack_StoresItAndKeepsTheTimeOfTheLastChange()
-    {
-        StandardLibrary library = await SeedStandardLibraryAsync();
-
-        bool set = await new TrackRepository(CreateDbContext()).SetVideoOffsetAsync(library.Closing.Id, 1500);
+        bool set = await new TrackRepository(CreateDbContext())
+            .SetManualSongSegmentAsync(library.Closing.Id, MediaFileKind.Video, 1500, 200_000);
 
         set.Should().BeTrue();
         Track track = await CreateDbContext().Tracks.SingleAsync(track => track.Id == library.Closing.Id);
-        track.VideoOffsetMilliseconds.Should().Be(1500);
+        (track.VideoSongStartMilliseconds, track.VideoSongEndMilliseconds).Should().Be((1500, 200_000));
+        (track.AudioSongStartMilliseconds, track.AudioSongEndMilliseconds).Should().Be(((int?)null, (int?)null));
         track.UpdatedAt.Should().Be(library.Closing.UpdatedAt);
     }
 
     [Test]
-    public async Task SetVideoOffsetAsync_UnknownTrack_ReturnsFalse()
+    public async Task SetManualSongSegmentAsync_Nulls_RemovesTheCorrection()
+    {
+        StandardLibrary library = await SeedStandardLibraryAsync();
+        TrackRepository repository = new(CreateDbContext());
+        await repository.SetManualSongSegmentAsync(library.Closing.Id, MediaFileKind.Audio, 1500, 200_000);
+
+        await repository.SetManualSongSegmentAsync(library.Closing.Id, MediaFileKind.Audio, null, null);
+
+        Track track = await CreateDbContext().Tracks.SingleAsync(track => track.Id == library.Closing.Id);
+        (track.AudioSongStartMilliseconds, track.AudioSongEndMilliseconds).Should().Be(((int?)null, (int?)null));
+    }
+
+    [Test]
+    public async Task SetManualSongSegmentAsync_UnknownTrack_ReturnsFalse()
     {
         await SeedStandardLibraryAsync();
 
-        bool set = await new TrackRepository(CreateDbContext()).SetVideoOffsetAsync(Guid.NewGuid(), 1500);
+        bool set = await new TrackRepository(CreateDbContext())
+            .SetManualSongSegmentAsync(Guid.NewGuid(), MediaFileKind.Video, 1500, null);
 
         set.Should().BeFalse();
     }
 
     [Test]
-    public async Task SetVideoOffsetAsync_ChangedTrackSavedLater_KeepsTheOffset()
+    public async Task SetManualSongSegmentAsync_ChangedTrackSavedLater_KeepsTheCorrection()
     {
         StandardLibrary library = await SeedStandardLibraryAsync();
         await using WaveMpDbContext scan = CreateDbContext();
         Track tracked = await scan.Tracks.SingleAsync(track => track.Id == library.Closing.Id);
 
-        await new TrackRepository(CreateDbContext()).SetVideoOffsetAsync(library.Closing.Id, 800);
+        await new TrackRepository(CreateDbContext())
+            .SetManualSongSegmentAsync(library.Closing.Id, MediaFileKind.Video, 800, null);
         tracked.Title = "Closing (Remastered)";
         await scan.SaveChangesAsync();
 
         Track track = await CreateDbContext().Tracks.SingleAsync(track => track.Id == library.Closing.Id);
         track.Title.Should().Be("Closing (Remastered)");
-        track.VideoOffsetMilliseconds.Should().Be(800);
+        track.VideoSongStartMilliseconds.Should().Be(800);
     }
 
     [Test]

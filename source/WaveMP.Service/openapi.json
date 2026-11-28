@@ -16273,6 +16273,389 @@
         ]
       }
     },
+    "/api/v1/tracks/{id}/song-segments": {
+      "get": {
+        "tags": [
+          "TrackSongSegments"
+        ],
+        "summary": "Returns the song segments of the primary audio file and the primary video of a track: what the analysis found, the corrections of the admin and the segment the players use.",
+        "operationId": "GetTrackSongSegments",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Id of the track.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "The song segments.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrackSongSegments"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The track does not exist (code `track.not_found`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/api/v1/tracks/{id}/song-segments/{kind}": {
+      "put": {
+        "tags": [
+          "TrackSongSegments"
+        ],
+        "summary": "Corrects where the song starts and ends in the primary audio file or the primary video of a track, in milliseconds of the file. The correction is stored in the database (files are never written), stays across scans and is never changed by the analysis; a value left out comes from the analysis or the file.",
+        "operationId": "SetTrackSongSegment",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Id of the track.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "kind",
+            "in": "path",
+            "description": "The file: Audio or Video.",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/SongSegmentKind"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "Start and end of the song.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateTrackSongSegment"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateTrackSongSegment"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "The song segments after the correction.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrackSongSegments"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Start or end outside the file, or the end not after the start (code `request.invalid`, field `startMilliseconds` or `endMilliseconds` with `out_of_range` and min and max).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The track does not exist (code `track.not_found`) or has no file of the kind (code `track.no_audio` or `track.no_video`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "TrackSongSegments"
+        ],
+        "summary": "Removes the correction of the primary audio file or the primary video of a track, so the players use what the analysis found again.",
+        "operationId": "ResetTrackSongSegment",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Id of the track.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "kind",
+            "in": "path",
+            "description": "The file: Audio or Video.",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/SongSegmentKind"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "The song segments after the change.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrackSongSegments"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationProblem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The track does not exist (code `track.not_found`) or has no file of the kind (code `track.no_audio` or `track.no_video`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/api/v1/tracks/{id}/song-analyses": {
+      "post": {
+        "tags": [
+          "TrackSongSegments"
+        ],
+        "summary": "Lets the song analysis analyze the files of a track again in the background (job `song-analysis`), e.g. after its lyrics changed. Corrections of the admin stay.",
+        "operationId": "AnalyzeTrackSong",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Id of the track.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "The analysis is queued; Location points to the song segments of the track, whose files show as pending until they are analyzed.",
+            "headers": {
+              "Location": {
+                "description": "Address of the queued run, to follow its progress.",
+                "required": true,
+                "schema": {
+                  "type": "string",
+                  "format": "uri-reference"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The track does not exist (code `track.not_found`).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/api/v1/song-analyses": {
+      "post": {
+        "tags": [
+          "TrackSongSegments"
+        ],
+        "summary": "Lets the song analysis analyze all files of the library again in the background (job `song-analysis`, at a low priority). Corrections of the admin stay.",
+        "operationId": "AnalyzeAllSongs",
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "The analysis is queued; Location points to the job `song-analysis` and its state.",
+            "headers": {
+              "Location": {
+                "description": "Address of the queued run, to follow its progress.",
+                "required": true,
+                "schema": {
+                  "type": "string",
+                  "format": "uri-reference"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SongAnalysesStarted"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
     "/api/v1/tracks/{id}/playback": {
       "get": {
         "tags": [
@@ -16309,6 +16692,15 @@
             "schema": {
               "default": "Local",
               "$ref": "#/components/schemas/PlaybackTarget"
+            }
+          },
+          {
+            "name": "sound",
+            "in": "query",
+            "description": "Which recording to play: the audio file (default) or the sound of the video with its intro and outro (always transcoded), for the video view; each falls back to the other one if the track lacks it.",
+            "schema": {
+              "default": "Audio",
+              "$ref": "#/components/schemas/SoundSource"
             }
           }
         ],
@@ -20377,6 +20769,86 @@
         "type": "string",
         "description": "Which file a track uses in a category of the file selection. Automatic: no selection, the file of the highest quality. Selected: the file the admin selected. Missing: the admin selected a file that is gone; the track falls back to the automatic choice until the file is back, another file is selected or the selection is reset."
       },
+      "FileSongSegment": {
+        "required": [
+          "fileId",
+          "pending",
+          "detected",
+          "effective"
+        ],
+        "type": "object",
+        "properties": {
+          "fileId": {
+            "type": "string",
+            "description": "Id of the file.",
+            "format": "uuid"
+          },
+          "durationMilliseconds": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "description": "Duration of the file in milliseconds, if known.",
+            "format": "int64"
+          },
+          "status": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "Whether the analysis could read the file; null while it was never analyzed.",
+                "$ref": "#/components/schemas/SongAnalysisStatus"
+              }
+            ]
+          },
+          "pending": {
+            "type": "boolean",
+            "description": "Whether the file waits for a (new) analysis."
+          },
+          "analyzedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "description": "When the file was analyzed; null while it was never analyzed.",
+            "format": "date-time"
+          },
+          "loudnessLufs": {
+            "type": [
+              "null",
+              "number"
+            ],
+            "description": "Integrated loudness of the sound in LUFS (EBU R 128), if measured. Clients play the audio file and the sound of the video at the same loudness with it.",
+            "format": "double"
+          },
+          "detected": {
+            "description": "The segment the analysis found, without the corrections of the admin.",
+            "$ref": "#/components/schemas/SongSegment"
+          },
+          "manualStartMilliseconds": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "description": "Start of the song as the admin corrected it, in milliseconds of the file; null without correction.",
+            "format": "int32"
+          },
+          "manualEndMilliseconds": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "description": "End of the song as the admin corrected it, in milliseconds of the file; null without correction.",
+            "format": "int32"
+          },
+          "effective": {
+            "description": "The segment the players use.",
+            "$ref": "#/components/schemas/SongSegment"
+          }
+        },
+        "description": "The song segment of a file of a track with the result of the analysis and the corrections of the admin."
+      },
       "Genre": {
         "required": [
           "id",
@@ -20558,7 +21030,8 @@
       "HlsMedia": {
         "enum": [
           "Audio",
-          "Video"
+          "Video",
+          "VideoSound"
         ],
         "type": "string",
         "description": "What an HLS stream of a track carries."
@@ -20705,6 +21178,7 @@
           "database-backup",
           "lyrics-download",
           "library-check",
+          "song-analysis",
           "library-organize"
         ],
         "type": "string",
@@ -25532,12 +26006,148 @@
         "type": "string",
         "description": "Sort key of the songs of a smart playlist. Songs without a value (e.g. without year or never played) come last in both directions; ties are sorted by album, disc and track number. Rating, PlayCount and LastPlayed are those of the current profile."
       },
+      "SongAnalysesStarted": {
+        "required": [
+          "renewed"
+        ],
+        "type": "object",
+        "properties": {
+          "renewed": {
+            "type": "integer",
+            "description": "Number of file analyses that are renewed; files never analyzed are analyzed anyway.",
+            "format": "int32"
+          }
+        },
+        "description": "A new analysis of the whole library was requested."
+      },
+      "SongAnalysisStatus": {
+        "enum": [
+          "Analyzed",
+          "NoSound",
+          "Failed"
+        ],
+        "type": "string"
+      },
+      "SongPiece": {
+        "required": [
+          "fileStartMilliseconds",
+          "songStartMilliseconds",
+          "durationMilliseconds"
+        ],
+        "type": "object",
+        "properties": {
+          "fileStartMilliseconds": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "songStartMilliseconds": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "durationMilliseconds": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "description": "A part of a file that belongs to the song: from fileStartMilliseconds on, the file plays the song from songStartMilliseconds on, for durationMilliseconds. The time of the song is the time of the reference recording (the audio file) that synchronized lyrics follow."
+      },
+      "SongSegment": {
+        "required": [
+          "startMilliseconds",
+          "pieces",
+          "method",
+          "confident",
+          "manual",
+          "mismatch"
+        ],
+        "type": "object",
+        "properties": {
+          "startMilliseconds": {
+            "type": "integer",
+            "description": "Position of the file where the song starts in milliseconds; negative if the file starts that far into the song (only from corrections of the admin); 0 for the whole file.",
+            "format": "int32"
+          },
+          "endMilliseconds": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "description": "Position of the file where the song ends in milliseconds; null if the whole file is the song.",
+            "format": "int32"
+          },
+          "pieces": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SongPiece"
+            },
+            "description": "The parts of the file that belong to the song, in the order of the file; empty if the whole file is the song."
+          },
+          "method": {
+            "description": "How the segment was found.",
+            "$ref": "#/components/schemas/SongSegmentMethod"
+          },
+          "confidence": {
+            "type": [
+              "null",
+              "number"
+            ],
+            "description": "How sure the analysis is, between 0 and 1; 1 for corrections of the admin, null for the whole file.",
+            "format": "double"
+          },
+          "confident": {
+            "type": "boolean",
+            "description": "Whether clients use the segment: a correction of the admin, the whole file or a found segment with a confidence of at least 0.6."
+          },
+          "manual": {
+            "type": "boolean",
+            "description": "Whether the admin corrected start or end; no later analysis changes them."
+          },
+          "mismatch": {
+            "type": "boolean",
+            "description": "Whether the file did not match the other recording of the track (e.g. a live version); clients do not map positions between the audio file and the video then."
+          }
+        },
+        "description": "Where the real song lies in a file, without intro, outro and parts that were added. Clients map positions between the audio file and the video with the pieces (song position = position of the file - fileStart + songStart within a piece), skip intro and outro and show synchronized lyrics relative to the song. Clients use it only if confident is true; otherwise the whole file counts."
+      },
+      "SongSegmentKind": {
+        "enum": [
+          "Audio",
+          "Video"
+        ],
+        "type": "string",
+        "description": "The file of a track whose song segment is meant: the primary audio file or the primary video."
+      },
+      "SongSegmentMethod": {
+        "enum": [
+          "WholeFile",
+          "Alignment",
+          "Lyrics",
+          "Structure"
+        ],
+        "type": "string",
+        "description": "How the song analysis found the song in a file."
+      },
+      "SongSegmentNotice": {
+        "enum": [
+          "LowConfidence",
+          "Mismatch"
+        ],
+        "type": "string"
+      },
       "SortDirection": {
         "enum": [
           "Asc",
           "Desc"
         ],
         "type": "string"
+      },
+      "SoundSource": {
+        "enum": [
+          "Audio",
+          "Video"
+        ],
+        "type": "string",
+        "description": "Which recording of a track a playback of its sound plays."
       },
       "SourceAvailability": {
         "required": [
@@ -26619,7 +27229,9 @@
           "trackId",
           "method",
           "protocol",
-          "replayGain"
+          "replayGain",
+          "sound",
+          "songSegment"
         ],
         "type": "object",
         "properties": {
@@ -26698,6 +27310,30 @@
               "string"
             ],
             "description": "Signed URL of the cover of the track (path with query, relative to the server), which a casting device shows next to the music; only for the target Cast, otherwise null. It is valid as long as the stream URL; for a track without a cover it answers 404."
+          },
+          "sound": {
+            "description": "Which recording the stream plays: the audio file or the sound of the video (see the parameter sound; Video also for tracks that only have a video).",
+            "$ref": "#/components/schemas/SoundSource"
+          },
+          "songSegment": {
+            "description": "Where the real song lies in the played recording. Clients skip intro and outro with it, map positions to the other recording when they switch between them and show synchronized lyrics relative to the song.",
+            "$ref": "#/components/schemas/SongSegment"
+          },
+          "loudnessLufs": {
+            "type": [
+              "null",
+              "number"
+            ],
+            "description": "Integrated loudness of the played recording in LUFS (EBU R 128), if measured; clients play the audio file and the sound of the video at the same loudness with it.",
+            "format": "double"
+          },
+          "loudnessMatchDb": {
+            "type": [
+              "null",
+              "number"
+            ],
+            "description": "For the sound of a video of a track that also has an audio file: the gain in dB (at most 12 either way) that brings it to the loudness of the audio file; its ReplayGain is that of the audio file. Clients add it to the gain of the playback, so switching between both sources keeps the level. Null for the audio file itself and while a loudness is unknown.",
+            "format": "double"
           }
         },
         "description": "How the client plays the audio of a track, and the signed URL of its stream."
@@ -26775,6 +27411,17 @@
               "$ref": "#/components/schemas/MetadataTag"
             },
             "description": "The checked fields the tags lack: of the audio file the track plays, for tracks with a video only of the video. Empty if the tags are complete."
+          },
+          "songSegmentNotice": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "Why the song segment of the audio file or the video needs a look (see GetTrackSongSegments); null if it does not.",
+                "$ref": "#/components/schemas/SongSegmentNotice"
+              }
+            ]
           },
           "status": {
             "$ref": "#/components/schemas/TrackReviewStatus"
@@ -26906,6 +27553,42 @@
         },
         "description": "Number of tracks per review status, for example for the badge of the review inbox."
       },
+      "TrackSongSegments": {
+        "required": [
+          "trackId"
+        ],
+        "type": "object",
+        "properties": {
+          "trackId": {
+            "type": "string",
+            "description": "Id of the track.",
+            "format": "uuid"
+          },
+          "audio": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "The primary audio file; null without one.",
+                "$ref": "#/components/schemas/FileSongSegment"
+              }
+            ]
+          },
+          "video": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "description": "The primary video; null without one.",
+                "$ref": "#/components/schemas/FileSongSegment"
+              }
+            ]
+          }
+        },
+        "description": "Where the real song lies in the primary audio file and the primary video of a track."
+      },
       "TrackSort": {
         "enum": [
           "AlbumArtist",
@@ -26947,7 +27630,8 @@
           "method",
           "protocol",
           "hasAudio",
-          "offsetMilliseconds"
+          "offsetMilliseconds",
+          "songSegment"
         ],
         "type": "object",
         "properties": {
@@ -27060,7 +27744,7 @@
           },
           "offsetMilliseconds": {
             "type": "integer",
-            "description": "Offset of the video against the audio of the track in milliseconds: position of the video = position of the audio + offset; 0 without offset. Clients that play the audio and show the video muted synchronize the video with it.",
+            "description": "Start of the song in the video in milliseconds while clients use its song segment, otherwise 0: position of the video = position of the audio + offset as long as the video cut nothing out. Kept for older clients; clients map positions with songSegment instead.",
             "format": "int32"
           },
           "coverUrl": {
@@ -27069,6 +27753,18 @@
               "string"
             ],
             "description": "Signed URL of the cover of the track (path with query, relative to the server), which a casting device shows next to the music; only for the target Cast, otherwise null. It is valid as long as the stream URL; for a track without a cover it answers 404."
+          },
+          "songSegment": {
+            "description": "Where the real song lies in the video. Clients that play the audio file and show the video muted map the position of the song to the video with it (and keep the video still where it cut a part of the song out).",
+            "$ref": "#/components/schemas/SongSegment"
+          },
+          "loudnessLufs": {
+            "type": [
+              "null",
+              "number"
+            ],
+            "description": "Integrated loudness of the sound of the video in LUFS (EBU R 128), if measured.",
+            "format": "double"
           }
         },
         "description": "How the client plays the video of a track, and the signed URL of its stream."
@@ -28228,6 +28924,28 @@
         },
         "description": "Sets the review status of several tracks at once."
       },
+      "UpdateTrackSongSegment": {
+        "type": "object",
+        "properties": {
+          "startMilliseconds": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "description": "Position of the file where the song starts, in milliseconds from -600000 to the end of the file (exclusive); negative if the file starts that far into the song.",
+            "format": "int32"
+          },
+          "endMilliseconds": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "description": "Position of the file where the song ends, in milliseconds, after the start and at most at the end of the file.",
+            "format": "int32"
+          }
+        },
+        "description": "Corrects where the song lies in a file of a track. A value left out (null) comes from the analysis or the file."
+      },
       "UpdateTrackVideoOffset": {
         "required": [
           "offsetMilliseconds"
@@ -28464,6 +29182,13 @@
               "boolean"
             ],
             "description": "Whether videos show the ambient light in the free area around their picture."
+          },
+          "skipIntroAndOutro": {
+            "type": [
+              "null",
+              "boolean"
+            ],
+            "description": "Whether the cover and the visualization skip intro and outro of the sound of a music video."
           }
         },
         "description": "Changes the videos of the Now Playing view of the current profile. Missing or null values stay unchanged."
@@ -28855,13 +29580,18 @@
       },
       "VideoSettings": {
         "required": [
-          "ambientMode"
+          "ambientMode",
+          "skipIntroAndOutro"
         ],
         "type": "object",
         "properties": {
           "ambientMode": {
             "type": "boolean",
             "description": "Whether videos show the ambient light: soft light in the colors of the current picture in the free area around it; true by default. Clients that show videos without a free area around them ignore it."
+          },
+          "skipIntroAndOutro": {
+            "type": "boolean",
+            "description": "Whether the cover and the visualization skip intro and outro of the sound of a music video for tracks without an audio file, if the song analysis is sure where the song lies; true by default. The video view always plays the whole video."
           }
         },
         "description": "Videos of the Now Playing view of the current profile."
@@ -29182,6 +29912,9 @@
     },
     {
       "name": "Tracks"
+    },
+    {
+      "name": "TrackSongSegments"
     },
     {
       "name": "TrackStreams"

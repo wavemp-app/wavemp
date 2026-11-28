@@ -5,6 +5,7 @@ using WaveMP.Core.Streaming.Formats;
 using WaveMP.Data.Entities;
 using WaveMP.Data.Projections;
 using WaveMP.Data.Repositories;
+using WaveMP.Data.Segments;
 
 namespace WaveMP.Core.Streaming.Sources;
 
@@ -20,13 +21,34 @@ internal sealed class StreamService(ITrackRepository tracks, IMediaFileLocator l
             return StreamSourceResult.Of(StreamSourceStatus.TrackNotFound);
         }
 
-        return row.File is { } file ? FromAudioFile(trackId, file) : StreamSourceResult.Of(StreamSourceStatus.NoAudio);
+        return row.File is { } file
+            ? FromAudioFile(trackId, file, row.Segment)
+            : StreamSourceResult.Of(StreamSourceStatus.NoAudio);
     }
 
     public async Task<StreamSourceResult> GetSoundSourceAsync(
         Guid trackId,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        SoundSource sound = SoundSource.Audio)
     {
+        if (sound == SoundSource.Video)
+        {
+            VideoSourceResult wanted = await GetVideoSourceAsync(trackId, cancellationToken);
+            if (wanted is { IsFound: true, Source.HasAudio: true })
+            {
+                TrackFileRow? audioRow = await tracks.FindPrimaryFileAsync(
+                    trackId,
+                    MediaFileKind.Audio,
+                    cancellationToken);
+                return StreamSourceResult.Found(MatchedTo(FromVideo(wanted.Source), audioRow?.File));
+            }
+
+            if (wanted.Status is StreamSourceStatus.TrackNotFound)
+            {
+                return StreamSourceResult.Of(wanted.Status);
+            }
+        }
+
         StreamSourceResult audio = await GetAudioSourceAsync(trackId, cancellationToken);
         if (audio.Status != StreamSourceStatus.NoAudio)
         {
@@ -45,9 +67,10 @@ internal sealed class StreamService(ITrackRepository tracks, IMediaFileLocator l
     public async Task<PlaybackResult> DecideAsync(
         Guid trackId,
         IReadOnlySet<AudioFormat> supported,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        SoundSource sound = SoundSource.Audio)
     {
-        StreamSourceResult result = await GetSoundSourceAsync(trackId, cancellationToken);
+        StreamSourceResult result = await GetSoundSourceAsync(trackId, cancellationToken, sound);
         if (!result.IsFound)
         {
             return new PlaybackResult(result.Status, null, null);
@@ -99,7 +122,8 @@ internal sealed class StreamService(ITrackRepository tracks, IMediaFileLocator l
             CreateETag(file.Id, info.Length, modified),
             file.Duration,
             file.MetadataVersion >= VideoFormats.MetadataVersion,
-            row.VideoOffsetMilliseconds));
+            row.Segment,
+            file.Analysis?.LoudnessLufs));
     }
 
     public async Task<VideoPlaybackResult> DecideVideoAsync(
@@ -116,7 +140,7 @@ internal sealed class StreamService(ITrackRepository tracks, IMediaFileLocator l
             : new VideoPlaybackResult(result.Status, null, null);
     }
 
-    private StreamSourceResult FromAudioFile(Guid trackId, MediaFile file)
+    private StreamSourceResult FromAudioFile(Guid trackId, MediaFile file, SongSegment segment)
     {
         if (!TryGetFile(file, out string fullPath, out FileInfo? info))
         {
@@ -137,7 +161,24 @@ internal sealed class StreamService(ITrackRepository tracks, IMediaFileLocator l
             file.Duration,
             ReplayGainValues.From(file.Tags),
             MediaFileKind.Audio,
-            file.SampleRate));
+            file.SampleRate,
+            segment,
+            file.Analysis?.LoudnessLufs));
+    }
+
+    /// <summary>
+    /// The sound of a video for a track that also has an audio file: it takes over the ReplayGain of the audio file
+    /// and the difference of their loudness, so the client plays both at the same level.
+    /// </summary>
+    private static StreamSource MatchedTo(StreamSource video, MediaFile? audio)
+    {
+        return audio is null
+            ? video
+            : video with
+            {
+                ReplayGain = ReplayGainValues.From(audio.Tags) with { TrackPeak = null, AlbumPeak = null },
+                LoudnessMatchDb = LoudnessMatch.Between(audio.Analysis?.LoudnessLufs, video.LoudnessLufs),
+            };
     }
 
     /// <summary>
@@ -157,7 +198,9 @@ internal sealed class StreamService(ITrackRepository tracks, IMediaFileLocator l
             video.Duration,
             ReplayGainValues.None,
             MediaFileKind.Video,
-            video.SampleRate);
+            video.SampleRate,
+            video.Segment,
+            video.LoudnessLufs);
     }
 
     private bool TryGetFile(

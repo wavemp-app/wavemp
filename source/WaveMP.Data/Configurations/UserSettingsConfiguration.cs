@@ -111,6 +111,11 @@ internal sealed class UserSettingsConfiguration : IEntityTypeConfiguration<UserS
             .HasDefaultValue(true)
             .ValueGeneratedNever();
 
+        // Skipping the intro and the outro of videos is on for existing profiles as for new ones.
+        builder.Property(settings => settings.VideoSkipIntroAndOutro)
+            .HasDefaultValue(true)
+            .ValueGeneratedNever();
+
         // Like the playback settings above: existing rows get the defaults of a new profile, and the entity always
         // writes its values (VisualizationAutoChange and VisualizationAutoChangeSeconds differ from the defaults of
         // their CLR types).

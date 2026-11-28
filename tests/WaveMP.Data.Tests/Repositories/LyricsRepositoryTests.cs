@@ -50,6 +50,58 @@ public class LyricsRepositoryTests : LibraryDatabaseTests
         (await repository.FindTrackAsync(Guid.NewGuid())).Should().BeNull();
     }
 
+    [TestCase(null, 300)]
+    [TestCase(0.3, 300)]
+    [TestCase(0.8, 200)]
+    public async Task FindTrackAsync_VideoWithSongSegment_HasTheDurationOfTheSongIfTheAnalysisIsSure(
+        double? confidence,
+        int expectedSeconds)
+    {
+        LibrarySeed seed = new();
+        Track track = seed.Track("Song", duration: TimeSpan.FromSeconds(300));
+        MediaFile video = seed.File($"{track.BaseName}.mkv", MediaFileKind.Video, track);
+        video.Duration = TimeSpan.FromSeconds(300);
+        await SaveAsync(seed);
+        if (confidence is { } value)
+        {
+            await new SongAnalysisRepository(CreateDbContext()).SaveAsync(
+            [
+                new MediaFileAnalysis
+                {
+                    MediaFileId = video.Id,
+                    Version = 1,
+                    FileSize = video.Size,
+                    FileModifiedAt = video.ModifiedAt,
+                    AnalyzedAt = LibrarySeed.DefaultTime,
+                    Status = SongAnalysisStatus.Analyzed,
+                    Method = SongSegmentMethod.Lyrics,
+                    Confidence = value,
+                    Pieces = [new SongPiece(40_000, 0, 200_000)],
+                },
+            ]);
+        }
+
+        LyricsTrackRow? row = await new LyricsRepository(CreateDbContext()).FindTrackAsync(track.Id);
+
+        row!.Duration.Should().Be(TimeSpan.FromSeconds(expectedSeconds));
+    }
+
+    [Test]
+    public async Task FindTrackAsync_CorrectedSongSegment_HasTheDurationOfTheCorrectedSong()
+    {
+        LibrarySeed seed = new();
+        Track track = seed.Track("Song", duration: TimeSpan.FromSeconds(300));
+        MediaFile audio = seed.File($"{track.BaseName}.mp3", MediaFileKind.Audio, track);
+        audio.Duration = TimeSpan.FromSeconds(300);
+        await SaveAsync(seed);
+        await new TrackRepository(CreateDbContext())
+            .SetManualSongSegmentAsync(track.Id, MediaFileKind.Audio, 10_000, 250_000);
+
+        LyricsTrackRow? row = await new LyricsRepository(CreateDbContext()).FindTrackAsync(track.Id);
+
+        row!.Duration.Should().Be(TimeSpan.FromSeconds(240));
+    }
+
     [Test]
     public async Task SaveDownloadAsync_TwiceForATrack_ReplacesTheResult()
     {

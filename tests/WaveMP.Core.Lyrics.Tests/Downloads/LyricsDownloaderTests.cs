@@ -524,6 +524,89 @@ public class LyricsDownloaderTests
         await _repository.DidNotReceiveWithAnyArgs().SaveDownloadAsync(default!, default);
     }
 
+    [Test]
+    public async Task FindCandidateAsync_ExactMatch_ReturnsItWithoutSavingAnything()
+    {
+        _lrclib.GetAsync(Arg.Any<LrclibQuery>(), Arg.Any<CancellationToken>())
+            .Returns(LrclibResponse.Found([_synced]));
+
+        LyricsCandidate candidate = await _downloader.FindCandidateAsync(_trackId);
+
+        candidate.Should().Be(new LyricsCandidate(LyricsDownloadOutcome.NotNeeded, _synced));
+        candidate.Duration.Should().Be(TimeSpan.FromSeconds(180));
+        await _repository.DidNotReceiveWithAnyArgs().SaveDownloadAsync(default!, default);
+        await _files.DidNotReceiveWithAnyArgs().CreateAsync(default, default!, default!, default);
+    }
+
+    [Test]
+    public async Task FindCandidateAsync_OnlyALongerRecording_ReturnsItsSynchronizedLyricsForTheAlignment()
+    {
+        // The track is a music video with an intro: LRCLIB only knows the song with another duration.
+        LrclibRecord album = _synced with { Id = 9, TrackName = "Song", ArtistName = "Band", Duration = 240 };
+        _lrclib.SearchAsync(Arg.Any<LrclibQuery>(), Arg.Any<CancellationToken>())
+            .Returns(LrclibResponse.Found([album]));
+
+        LyricsCandidate candidate = await _downloader.FindCandidateAsync(_trackId);
+
+        candidate.Outcome.Should().Be(LyricsDownloadOutcome.NotNeeded);
+        candidate.Record.Should().Be(album);
+        candidate.Duration.Should().Be(TimeSpan.FromSeconds(240));
+        await _repository.DidNotReceiveWithAnyArgs().SaveDownloadAsync(default!, default);
+    }
+
+    [Test]
+    public async Task FindCandidateAsync_NothingSwitchedOffOrServiceBusy_ReturnsNoCandidate()
+    {
+        (await _downloader.FindCandidateAsync(_trackId)).Should()
+            .Be(new LyricsCandidate(LyricsDownloadOutcome.NotFound));
+
+        _lrclib.GetAsync(Arg.Any<LrclibQuery>(), Arg.Any<CancellationToken>())
+            .Returns(LrclibResponse.RateLimited(null));
+        LyricsCandidate limited = await _downloader.FindCandidateAsync(_trackId);
+        (limited.Outcome, limited.IsTransient).Should().Be((LyricsDownloadOutcome.RateLimited, true));
+
+        _settings.Current.Returns(new LibrarySettings());
+        (await _downloader.FindCandidateAsync(_trackId)).Outcome.Should().Be(LyricsDownloadOutcome.Disabled);
+    }
+
+    [Test]
+    public async Task SaveCandidateAsync_DurationOfTheSongFits_SavesTheSynchronizedLyrics()
+    {
+        LyricsDownloadResult result = await _downloader.SaveCandidateAsync(_trackId, _synced);
+
+        (result.Outcome, result.OtherVersion).Should().Be((LyricsDownloadOutcome.SavedToFile, false));
+        await _files.Received(1).CreateAsync(
+            MediaSource.DefaultId,
+            "Band/Song.lrc",
+            "[00:01.00]Synced",
+            Arg.Any<CancellationToken>());
+    }
+
+    [Test]
+    public async Task SaveCandidateAsync_OtherDuration_SavesOnlyThePlainLinesAsOtherVersion()
+    {
+        LyricsDownloadResult result = await _downloader.SaveCandidateAsync(_trackId, _synced with { Duration = 300 });
+
+        (result.Outcome, result.OtherVersion).Should().Be((LyricsDownloadOutcome.SavedToFile, true));
+        await _files.Received(1).CreateAsync(
+            MediaSource.DefaultId,
+            "Band/Song.lrc",
+            "Plain",
+            Arg.Any<CancellationToken>());
+    }
+
+    [Test]
+    public async Task SaveCandidateAsync_LyricsFileOfTheUser_KeepsIt()
+    {
+        _repository.FindTrackAsync(_trackId, Arg.Any<CancellationToken>()).Returns(Row(lyricsFile: "Band/Song.lrc"));
+
+        LyricsDownloadResult result = await _downloader.SaveCandidateAsync(_trackId, _synced);
+
+        result.Outcome.Should().Be(LyricsDownloadOutcome.LyricsFileExists);
+        await _files.DidNotReceiveWithAnyArgs().ReplaceAsync(default, default!, default!, default);
+        await _files.DidNotReceiveWithAnyArgs().CreateAsync(default, default!, default!, default);
+    }
+
     private static LyricsTrackRow Row(string? lyricsFile = null, string? album = "Album", string directory = "Band")
     {
         return new LyricsTrackRow(

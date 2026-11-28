@@ -168,6 +168,11 @@ internal sealed class UserSettingsService(IUserRepository users) : IUserSettings
         {
             settings.VideoAmbientMode = ambientMode;
         }
+
+        if (command.VideoSkipIntroAndOutro is { } skip)
+        {
+            settings.VideoSkipIntroAndOutro = skip;
+        }
     }
 
     private static void Validate(UpdateUserSettingsCommand command)

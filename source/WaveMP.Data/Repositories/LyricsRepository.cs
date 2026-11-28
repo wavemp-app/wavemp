@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using WaveMP.Data.Entities;
 using WaveMP.Data.Projections;
+using WaveMP.Data.Segments;
 
 namespace WaveMP.Data.Repositories;
 
@@ -8,8 +9,9 @@ internal sealed class LyricsRepository(WaveMpDbContext dbContext) : ILyricsRepos
 {
     public async Task<LyricsTrackRow?> FindTrackAsync(Guid trackId, CancellationToken cancellationToken = default)
     {
-        return (await Rows(dbContext.Tracks.AsNoTracking().Where(track => track.Id == trackId))
-            .ToListAsync(cancellationToken)).FirstOrDefault();
+        List<LyricsTrackRow> rows = await Rows(dbContext.Tracks.AsNoTracking().Where(track => track.Id == trackId))
+            .ToListAsync(cancellationToken);
+        return (await WithSongDurationsAsync(rows, cancellationToken)).FirstOrDefault();
     }
 
     public async Task<IReadOnlyList<LyricsTrackRow>> ListTracksToLookUpAsync(
@@ -43,7 +45,7 @@ internal sealed class LyricsRepository(WaveMpDbContext dbContext) : ILyricsRepos
             .ThenBy(track => track.FirstSeenAt)
             .ThenBy(track => track.Id)
             .Take(limit);
-        return await Rows(tracks).ToListAsync(cancellationToken);
+        return await WithSongDurationsAsync(await Rows(tracks).ToListAsync(cancellationToken), cancellationToken);
     }
 
     public async Task<bool> SaveDownloadAsync(LyricsDownload download, CancellationToken cancellationToken = default)
@@ -115,6 +117,60 @@ internal sealed class LyricsRepository(WaveMpDbContext dbContext) : ILyricsRepos
         }
 
         return await downloads.ExecuteDeleteAsync(cancellationToken);
+    }
+
+    /// <summary>
+    /// Gives the rows the duration of the song instead of the duration of the file where the players use a song
+    /// segment of the file the track plays (its audio file, otherwise its video): lyrics of the album version then fit
+    /// a video with an intro.
+    /// </summary>
+    private async Task<IReadOnlyList<LyricsTrackRow>> WithSongDurationsAsync(
+        List<LyricsTrackRow> rows,
+        CancellationToken cancellationToken)
+    {
+        if (rows.Count == 0)
+        {
+            return rows;
+        }
+
+        Guid[] ids = [.. rows.Select(row => row.TrackId)];
+        var files = await dbContext.MediaFiles.AsNoTracking()
+            .Where(file => file.TrackId != null
+                && ids.Contains(file.TrackId.Value)
+                && file.IsPrimary
+                && (file.Kind == MediaFileKind.Audio || file.Kind == MediaFileKind.Video))
+            .Select(file => new { TrackId = file.TrackId!.Value, file.Kind, file.Duration, file.Analysis })
+            .ToListAsync(cancellationToken);
+        var manual = await dbContext.Tracks.AsNoTracking()
+            .Where(track => ids.Contains(track.Id))
+            .Select(track => new
+            {
+                track.Id,
+                track.AudioSongStartMilliseconds,
+                track.AudioSongEndMilliseconds,
+                track.VideoSongStartMilliseconds,
+                track.VideoSongEndMilliseconds,
+            })
+            .ToDictionaryAsync(track => track.Id, cancellationToken);
+        return [.. rows.Select(row =>
+        {
+            var file = files.FirstOrDefault(file => file.TrackId == row.TrackId && file.Kind == MediaFileKind.Audio)
+                ?? files.FirstOrDefault(file => file.TrackId == row.TrackId && file.Kind == MediaFileKind.Video);
+            if (file is null || !manual.TryGetValue(row.TrackId, out var track))
+            {
+                return row;
+            }
+
+            bool audio = file.Kind == MediaFileKind.Audio;
+            var segment = SongSegment.Of(
+                file.Analysis,
+                audio ? track.AudioSongStartMilliseconds : track.VideoSongStartMilliseconds,
+                audio ? track.AudioSongEndMilliseconds : track.VideoSongEndMilliseconds,
+                file.Duration);
+            return segment is { IsConfident: true, SongLengthMilliseconds: { } length }
+                ? row with { Duration = TimeSpan.FromMilliseconds(length) }
+                : row;
+        })];
     }
 
     private IQueryable<LyricsTrackRow> Rows(IQueryable<Track> tracks)

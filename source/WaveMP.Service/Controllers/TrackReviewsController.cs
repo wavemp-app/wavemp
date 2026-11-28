@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using WaveMP.Core.Analysis.Services;
 using WaveMP.Core.Library.Reviews;
 using WaveMP.Data.Projections;
 using WaveMP.Data.Queries;
@@ -21,7 +22,7 @@ namespace WaveMP.Service.Controllers;
 [Route("api/v1")]
 [ProducesResponseType<ProblemDetails>(StatusCodes.Status401Unauthorized, "application/problem+json")]
 [ProducesResponseType<ProblemDetails>(StatusCodes.Status403Forbidden, "application/problem+json")]
-public sealed class TrackReviewsController(ITrackReviewService reviews) : ControllerBase
+public sealed class TrackReviewsController(ITrackReviewService reviews, ISongSegmentService segments) : ControllerBase
 {
     /// <summary>
     /// Lists the tracks of a review status (unreviewed by default) with the fields their tags lack, sorted, filtered
@@ -71,7 +72,12 @@ public sealed class TrackReviewsController(ITrackReviewService reviews) : Contro
                 missingTags,
                 q),
             cancellationToken);
-        return Ok(page.ToDto(row => row.ToDto()));
+        IReadOnlyDictionary<Guid, SongSegmentNotice> notices = await segments.FindNoticesAsync(
+            [.. page.Items.Select(row => row.TrackId)],
+            cancellationToken);
+        return Ok(page.ToDto(row => row.ToDto(notices.TryGetValue(row.TrackId, out SongSegmentNotice notice)
+            ? notice
+            : null)));
     }
 
     /// <summary>

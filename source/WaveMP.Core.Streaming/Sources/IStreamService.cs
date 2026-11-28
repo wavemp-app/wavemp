@@ -16,9 +16,13 @@ public interface IStreamService
 
     /// <summary>
     /// The file whose sound the track plays: its audio file (see <see cref="GetAudioSourceAsync"/>) or, if it has
-    /// none, its video. <see cref="StreamSourceStatus.NoAudio"/> only for tracks without both.
+    /// none, its video. With <see cref="SoundSource.Video"/>, the sound of the video first and the audio file for a
+    /// video without sound. <see cref="StreamSourceStatus.NoAudio"/> only for tracks without both.
     /// </summary>
-    Task<StreamSourceResult> GetSoundSourceAsync(Guid trackId, CancellationToken cancellationToken = default);
+    Task<StreamSourceResult> GetSoundSourceAsync(
+        Guid trackId,
+        CancellationToken cancellationToken = default,
+        SoundSource sound = SoundSource.Audio);
 
     /// <summary>
     /// The file whose sound the track plays (see <see cref="GetSoundSourceAsync"/>) and whether a client that
@@ -28,7 +32,8 @@ public interface IStreamService
     Task<PlaybackResult> DecideAsync(
         Guid trackId,
         IReadOnlySet<AudioFormat> supported,
-        CancellationToken cancellationToken = default);
+        CancellationToken cancellationToken = default,
+        SoundSource sound = SoundSource.Audio);
 
     /// <summary>
     /// The primary video of the track, checked on the disk like the audio file.

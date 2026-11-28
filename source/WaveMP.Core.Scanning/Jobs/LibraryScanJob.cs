@@ -6,8 +6,6 @@ using WaveMP.Core.Jobs.Runs;
 using WaveMP.Core.Jobs.Services;
 using WaveMP.Core.Scanning.Plans;
 using WaveMP.Core.Scanning.Scans;
-using WaveMP.Core.Settings.Groups;
-using WaveMP.Core.Settings.Snapshots;
 using WaveMP.Data.Entities;
 
 namespace WaveMP.Core.Scanning.Jobs;
@@ -17,16 +15,16 @@ namespace WaveMP.Core.Scanning.Jobs;
 /// list of folders of sources, sent by the file watcher and after the admin added or changed a source). Never runs in
 /// parallel to itself; every run is built in a dependency injection scope of its own. The result becomes part of the
 /// run history. After a full scan, and after a partial scan that changed files, it starts the job
-/// <see cref="JobIds.CoverCache"/>, which prepares the covers of the changed library, and, if the download of lyrics is
-/// switched on, the job <see cref="JobIds.LyricsDownload"/>, which looks up the lyrics of new tracks. After every scan
-/// it starts the job <see cref="JobIds.LibraryCheck"/>, which looks for problems in the library.
+/// <see cref="JobIds.CoverCache"/>, which prepares the covers of the changed library, and the job
+/// <see cref="JobIds.SongAnalysis"/>, which finds the real song in new and changed files and then looks up the lyrics
+/// of new tracks (it starts the job <see cref="JobIds.LyricsDownload"/> when it is done). After every scan it starts
+/// the job <see cref="JobIds.LibraryCheck"/>, which looks for problems in the library.
 /// </summary>
 [DisallowConcurrentExecution]
 public sealed class LibraryScanJob(
     ILibraryScanner scanner,
     IJobRunTracker tracker,
     IJobService jobs,
-    ISettingsSnapshot<LibrarySettings> settings,
     ILogger<LibraryScanJob> logger) : IJob
 {
     private static readonly JsonSerializerOptions _payloadOptions = new(JsonSerializerDefaults.Web);
@@ -41,10 +39,10 @@ public sealed class LibraryScanJob(
         if (ShouldPrepareCovers(scope, result))
         {
             await StartFollowUpAsync(JobIds.CoverCache);
-            if (settings.Current.DownloadLyrics)
-            {
-                await StartFollowUpAsync(JobIds.LyricsDownload);
-            }
+
+            // The analysis looks up the lyrics in the order its detection needs them and starts the download of the
+            // rest when it is done.
+            await StartFollowUpAsync(JobIds.SongAnalysis);
         }
 
         // Also after scans without changes: the check also sees what changed since its last run without a scan, such

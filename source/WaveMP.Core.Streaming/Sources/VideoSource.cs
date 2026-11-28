@@ -1,4 +1,5 @@
 using WaveMP.Core.Streaming.Formats;
+using WaveMP.Data.Segments;
 
 namespace WaveMP.Core.Streaming.Sources;
 
@@ -24,8 +25,9 @@ namespace WaveMP.Core.Streaming.Sources;
 /// <param name="Duration">Duration of the file, if known.</param>
 /// <param name="MetadataComplete">Whether the scan stored everything the decision needs (sound and pixel format);
 /// videos read by an older scan are transcoded until the next scan reads them again.</param>
-/// <param name="OffsetMilliseconds">Offset of the video against the audio in milliseconds: position of the video =
-/// position of the audio + offset.</param>
+/// <param name="Segment">Where the song lies in the video (see <see cref="SongSegment"/>); the whole file if
+/// unknown.</param>
+/// <param name="LoudnessLufs">Integrated loudness of the sound of the video in LUFS, if measured.</param>
 public sealed record VideoSource(
     Guid TrackId,
     Guid FileId,
@@ -44,4 +46,14 @@ public sealed record VideoSource(
     string ETag,
     TimeSpan? Duration,
     bool MetadataComplete,
-    int OffsetMilliseconds = 0);
+    SongSegment? Segment = null,
+    double? LoudnessLufs = null)
+{
+    /// <summary>
+    /// The former offset of the video against the audio in milliseconds (position of the video = position of the
+    /// audio + offset): the start of the song in the video while the players use its segment, otherwise 0.
+    /// </summary>
+    public int OffsetMilliseconds => Segment is { IsConfident: true, Pieces.Count: > 0 } segment
+        ? segment.StartMilliseconds
+        : 0;
+}

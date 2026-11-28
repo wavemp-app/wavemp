@@ -4,6 +4,8 @@ using WaveMP.Core.Streaming.Decisions;
 using WaveMP.Core.Streaming.Formats;
 using WaveMP.Core.Streaming.Offsets;
 using WaveMP.Core.Streaming.Sources;
+using WaveMP.Data.Entities;
+using WaveMP.Data.Segments;
 using WaveMP.Service.Dtos;
 using WaveMP.Service.Mappings;
 using WaveMP.Service.Signatures;
@@ -46,6 +48,60 @@ public class StreamingMappingExtensionsTests
             ExpiresAt = stream.ExpiresAt,
             DurationMilliseconds = 2500,
             ReplayGain = new ReplayGainDto { TrackGain = -6.5, TrackPeak = 0.98 },
+            Sound = SoundSourceDto.Audio,
+            SongSegment = new SongSegmentDto
+            {
+                StartMilliseconds = 0,
+                Pieces = [],
+                Method = SongSegmentMethodDto.WholeFile,
+                Confident = true,
+                Manual = false,
+                Mismatch = false,
+            },
+        });
+    }
+
+    [Test]
+    public void ToDto_SoundOfTheVideo_CarriesItsSegmentAndLoudness()
+    {
+        SongSegment segment = new(
+            [new SongPiece(4000, 0, 60_000), new SongPiece(70_000, 66_000, 30_000)],
+            SongSegmentMethod.Alignment,
+            0.82,
+            false,
+            false);
+        StreamSource source = _source with { Origin = MediaFileKind.Video, Segment = segment, LoudnessLufs = -9.5 };
+
+        TrackPlaybackDto dto = source.ToDto(
+            new PlaybackDecision(PlaybackMethod.Transcode, null, TranscodeReason.AudioFromVideo),
+            null);
+
+        dto.Sound.Should().Be(SoundSourceDto.Video);
+        dto.LoudnessLufs.Should().Be(-9.5);
+        dto.SongSegment.Should().BeEquivalentTo(new SongSegmentDto
+        {
+            StartMilliseconds = 4000,
+            EndMilliseconds = 100_000,
+            Pieces =
+            [
+                new SongPieceDto
+                {
+                    FileStartMilliseconds = 4000,
+                    SongStartMilliseconds = 0,
+                    DurationMilliseconds = 60_000,
+                },
+                new SongPieceDto
+                {
+                    FileStartMilliseconds = 70_000,
+                    SongStartMilliseconds = 66_000,
+                    DurationMilliseconds = 30_000,
+                },
+            ],
+            Method = SongSegmentMethodDto.Alignment,
+            Confidence = 0.82,
+            Confident = true,
+            Manual = false,
+            Mismatch = false,
         });
     }
 
@@ -105,6 +161,25 @@ public class StreamingMappingExtensionsTests
             ExpiresAt = stream.ExpiresAt,
             DurationMilliseconds = 61000,
             OffsetMilliseconds = -1500,
+            SongSegment = new SongSegmentDto
+            {
+                StartMilliseconds = -1500,
+                EndMilliseconds = 61000,
+                Pieces =
+                [
+                    new SongPieceDto
+                    {
+                        FileStartMilliseconds = 0,
+                        SongStartMilliseconds = 1500,
+                        DurationMilliseconds = 61000,
+                    },
+                ],
+                Method = SongSegmentMethodDto.WholeFile,
+                Confidence = 1,
+                Confident = true,
+                Manual = true,
+                Mismatch = false,
+            },
         });
     }
 
@@ -220,7 +295,7 @@ public class StreamingMappingExtensionsTests
             "tag",
             TimeSpan.FromSeconds(61),
             true,
-            -1500);
+            SongSegment.Of(null, -1500, null, TimeSpan.FromSeconds(61)));
     }
 
     [Test]

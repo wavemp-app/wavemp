@@ -35,6 +35,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IServerSecretRepository, ServerSecretRepository>();
         services.AddScoped<IServerSettingRepository, ServerSettingRepository>();
         services.AddScoped<IJobRunRepository, JobRunRepository>();
+        services.AddScoped<ISongAnalysisRepository, SongAnalysisRepository>();
         services.AddScoped<IMediaSourceRepository, MediaSourceRepository>();
         services.AddScoped<ILibraryScanRepository, LibraryScanRepository>();
         services.AddScoped<IArtistRepository, ArtistRepository>();

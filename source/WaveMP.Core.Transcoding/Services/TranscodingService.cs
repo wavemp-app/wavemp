@@ -39,7 +39,10 @@ internal sealed class TranscodingService(
         }
         else
         {
-            StreamSourceResult sound = await streams.GetSoundSourceAsync(trackId, cancellationToken);
+            StreamSourceResult sound = await streams.GetSoundSourceAsync(
+                trackId,
+                cancellationToken,
+                media == HlsMedia.VideoSound ? SoundSource.Video : SoundSource.Audio);
             status = StatusOf(sound.Status);
             input = sound.IsFound ? InputOf(sound.Source) : null;
         }
@@ -54,8 +57,9 @@ internal sealed class TranscodingService(
             return TranscodeVariantResult.Of(TranscodeVariantStatus.DurationUnknown);
         }
 
+        // The sound of the video is transcoded like any other sound.
         TranscodeProfile profile = TranscodeProfiles.For(
-            media,
+            media == HlsMedia.VideoSound ? HlsMedia.Audio : media,
             input,
             settings.Current,
             options.Value.SegmentDuration);

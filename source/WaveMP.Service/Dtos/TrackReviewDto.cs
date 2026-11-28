@@ -49,6 +49,12 @@ public sealed class TrackReviewDto
     /// </summary>
     public required IReadOnlyList<MetadataTagDto> MissingTags { get; init; }
 
+    /// <summary>
+    /// Why the song segment of the audio file or the video needs a look (see GetTrackSongSegments); null if it does
+    /// not.
+    /// </summary>
+    public SongSegmentNoticeDto? SongSegmentNotice { get; init; }
+
     public required TrackReviewStatusDto Status { get; init; }
 
     /// <summary>

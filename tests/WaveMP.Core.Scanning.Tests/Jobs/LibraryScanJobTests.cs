@@ -82,24 +82,27 @@ public class LibraryScanJobTests
             Arg.Any<CancellationToken>());
     }
 
-    [TestCase(true, true, 1)]
-    [TestCase(false, true, 0)]
-    [TestCase(true, false, 0)]
-    public async Task Execute_AfterTheScan_StartsTheDownloadOfLyricsOnlyWhenSwitchedOnAndAfterChanges(
-        bool downloadLyrics,
-        bool changed,
+    [TestCase(true, 0, 1)]
+    [TestCase(false, 1, 1)]
+    [TestCase(false, 0, 0)]
+    public async Task Execute_AfterTheScan_StartsTheSongAnalysisAfterFullScansAndChangesButNotTheLyricsDownload(
+        bool full,
+        int filesAdded,
         int expected)
     {
         ILibraryScanner scanner = Substitute.For<ILibraryScanner>();
         scanner.ScanAsync(Arg.Any<ScanScope>(), Arg.Any<Guid>(), Arg.Any<CancellationToken>())
-            .Returns(new ScanResult(new ScanStatistics { FilesAdded = changed ? 1 : 0, IsPartial = true }, []));
+            .Returns(new ScanResult(new ScanStatistics { FilesAdded = filesAdded, IsPartial = !full }, []));
         IJobService jobs = Substitute.For<IJobService>();
-        IJobExecutionContext context = ContextFor(ScanScope.Of(_source, ["Artist/Album"]));
+        IJobExecutionContext context = ContextFor(full ? null : ScanScope.Of(_source, ["Artist/Album"]));
 
-        await CreateJob(scanner, jobs, settings: new LibrarySettings { DownloadLyrics = downloadLyrics })
-            .Execute(context, CancellationToken.None);
+        await CreateJob(scanner, jobs).Execute(context, CancellationToken.None);
 
+        // The analysis looks up the lyrics in its order and starts the download of the rest itself.
         await jobs.Received(expected).StartRunAsync(
+            new JobRunRequest(JobIds.SongAnalysis, JobRunTrigger.LibraryScan),
+            Arg.Any<CancellationToken>());
+        await jobs.DidNotReceive().StartRunAsync(
             new JobRunRequest(JobIds.LyricsDownload, JobRunTrigger.LibraryScan),
             Arg.Any<CancellationToken>());
     }
@@ -133,9 +136,7 @@ public class LibraryScanJobTests
             .ThrowsAsync(new InvalidOperationException("Database gone"));
         IJobExecutionContext context = ContextFor(null);
 
-        Func<Task> execute = async () =>
-            await CreateJob(scanner, jobs, settings: new LibrarySettings { DownloadLyrics = true })
-                .Execute(context, CancellationToken.None);
+        Func<Task> execute = async () => await CreateJob(scanner, jobs).Execute(context, CancellationToken.None);
 
         await execute.Should().NotThrowAsync();
         context.Received().Result = result;
@@ -201,17 +202,9 @@ public class LibraryScanJobTests
     private static LibraryScanJob CreateJob(
         ILibraryScanner scanner,
         IJobService jobs,
-        JobRunTracker? tracker = null,
-        LibrarySettings? settings = null)
+        JobRunTracker? tracker = null)
     {
-        ISettingsSnapshot<LibrarySettings> snapshot = Substitute.For<ISettingsSnapshot<LibrarySettings>>();
-        snapshot.Current.Returns(settings ?? new LibrarySettings());
-        return new LibraryScanJob(
-            scanner,
-            tracker ?? new JobRunTracker(),
-            jobs,
-            snapshot,
-            NullLogger<LibraryScanJob>.Instance);
+        return new LibraryScanJob(scanner, tracker ?? new JobRunTracker(), jobs, NullLogger<LibraryScanJob>.Instance);
     }
 
     private static IJobExecutionContext ContextFor(ScanScope? scope)

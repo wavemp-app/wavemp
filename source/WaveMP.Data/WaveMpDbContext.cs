@@ -47,6 +47,8 @@ public class WaveMpDbContext(DbContextOptions<WaveMpDbContext> options) : DbCont
 
     public DbSet<MediaFile> MediaFiles => Set<MediaFile>();
 
+    public DbSet<MediaFileAnalysis> MediaFileAnalyses => Set<MediaFileAnalysis>();
+
     public DbSet<Cover> Covers => Set<Cover>();
 
     public DbSet<OnlineCover> OnlineCovers => Set<OnlineCover>();
@@ -128,6 +130,7 @@ public class WaveMpDbContext(DbContextOptions<WaveMpDbContext> options) : DbCont
         modelBuilder.ApplyConfiguration(new TrackArtistCreditConfiguration());
         modelBuilder.ApplyConfiguration(new AlbumArtistCreditConfiguration());
         modelBuilder.ApplyConfiguration(new MediaFileConfiguration());
+        modelBuilder.ApplyConfiguration(new MediaFileAnalysisConfiguration());
         modelBuilder.ApplyConfiguration(new CoverConfiguration());
         modelBuilder.ApplyConfiguration(new OnlineCoverConfiguration());
         modelBuilder.ApplyConfiguration(new TrackFileSelectionConfiguration());

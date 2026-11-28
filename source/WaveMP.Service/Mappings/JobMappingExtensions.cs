@@ -60,6 +60,7 @@ public static class JobMappingExtensions
             JobIds.LyricsDownload => JobIdDto.LyricsDownload,
             JobIds.LibraryCheck => JobIdDto.LibraryCheck,
             JobIds.LibraryOrganize => JobIdDto.LibraryOrganize,
+            JobIds.SongAnalysis => JobIdDto.SongAnalysis,
             _ => throw new ArgumentOutOfRangeException(nameof(jobId), jobId, "Unknown job."),
         };
     }

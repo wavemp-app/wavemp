@@ -32,6 +32,7 @@ FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:10.0-alpine@sha256:0
 ARG TARGETARCH
 WORKDIR /src
 COPY .editorconfig global.json Directory.Build.props Directory.Packages.props ./
+COPY source/WaveMP.Core.Analysis/WaveMP.Core.Analysis.csproj source/WaveMP.Core.Analysis/
 COPY source/WaveMP.Core.ArtistPictures/WaveMP.Core.ArtistPictures.csproj source/WaveMP.Core.ArtistPictures/
 COPY source/WaveMP.Core.Autoplay/WaveMP.Core.Autoplay.csproj source/WaveMP.Core.Autoplay/
 COPY source/WaveMP.Core.Backups/WaveMP.Core.Backups.csproj source/WaveMP.Core.Backups/
@@ -57,6 +58,7 @@ COPY source/WaveMP.Core.Users/WaveMP.Core.Users.csproj source/WaveMP.Core.Users/
 COPY source/WaveMP.Data/WaveMP.Data.csproj source/WaveMP.Data/
 COPY source/WaveMP.Service/WaveMP.Service.csproj source/WaveMP.Service/
 RUN dotnet restore source/WaveMP.Service/WaveMP.Service.csproj -a "$TARGETARCH"
+COPY source/WaveMP.Core.Analysis/ source/WaveMP.Core.Analysis/
 COPY source/WaveMP.Core.ArtistPictures/ source/WaveMP.Core.ArtistPictures/
 COPY source/WaveMP.Core.Autoplay/ source/WaveMP.Core.Autoplay/
 COPY source/WaveMP.Core.Backups/ source/WaveMP.Core.Backups/

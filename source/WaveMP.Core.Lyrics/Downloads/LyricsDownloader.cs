@@ -123,6 +123,87 @@ internal sealed class LyricsDownloader(
             otherVersion);
     }
 
+    public async Task<LyricsCandidate> FindCandidateAsync(
+        Guid trackId,
+        CancellationToken cancellationToken = default)
+    {
+        if (!settings.Current.DownloadLyrics)
+        {
+            return new LyricsCandidate(LyricsDownloadOutcome.Disabled);
+        }
+
+        LyricsTrackRow? track = await repository.FindTrackAsync(trackId, cancellationToken);
+        if (track is null)
+        {
+            return new LyricsCandidate(LyricsDownloadOutcome.TrackNotFound);
+        }
+
+        var plan = LyricsLookupPlan.Of(track);
+        LookupResult lookup = await LookUpAsync(plan, cancellationToken);
+        switch (lookup.Response.Status)
+        {
+            case LrclibStatus.RateLimited:
+                return new LyricsCandidate(LyricsDownloadOutcome.RateLimited, RetryAfter: lookup.Response.RetryAfter);
+            case LrclibStatus.Unavailable:
+                return new LyricsCandidate(LyricsDownloadOutcome.Unavailable);
+        }
+
+        if (lookup is { Record.HasSyncedLyrics: true, OtherVersion: false })
+        {
+            return new LyricsCandidate(LyricsDownloadOutcome.NotNeeded, lookup.Record);
+        }
+
+        // Another recording of the song with synchronized lyrics: of the same album first, then the closest duration.
+        LrclibRecord? other = LrclibMatcher.ChooseOtherVersion(
+            lookup.Seen.Where(record => record.HasSyncedLyrics),
+            plan.Query,
+            plan.Names);
+        if (other is not null)
+        {
+            return new LyricsCandidate(LyricsDownloadOutcome.NotNeeded, other);
+        }
+
+        return new LyricsCandidate(
+            lookup.Instrumental ? LyricsDownloadOutcome.Instrumental : LyricsDownloadOutcome.NotFound);
+    }
+
+    public async Task<LyricsDownloadResult> SaveCandidateAsync(
+        Guid trackId,
+        LrclibRecord record,
+        CancellationToken cancellationToken = default)
+    {
+        if (!settings.Current.DownloadLyrics)
+        {
+            return new LyricsDownloadResult(LyricsDownloadOutcome.Disabled);
+        }
+
+        LyricsTrackRow? track = await repository.FindTrackAsync(trackId, cancellationToken);
+        if (track is null)
+        {
+            return new LyricsDownloadResult(LyricsDownloadOutcome.TrackNotFound);
+        }
+
+        bool otherVersion = !LrclibMatcher.FitsDuration(record, track.Duration);
+        if (record.Instrumental || LrclibMatcher.LyricsOf(record, otherVersion) is not { } text)
+        {
+            return new LyricsDownloadResult(record.Instrumental
+                ? LyricsDownloadOutcome.Instrumental
+                : LyricsDownloadOutcome.NotFound);
+        }
+
+        // Only plain lines the download kept of another version are replaced, never lyrics from elsewhere.
+        bool replace = track.Download is { OtherVersion: true } download
+            && download.Status is LyricsDownloadStatus.SavedToFile or LyricsDownloadStatus.SavedToDatabase;
+        if (track.LyricsFilePath is not null && !replace)
+        {
+            return new LyricsDownloadResult(LyricsDownloadOutcome.LyricsFileExists);
+        }
+
+        return ToResult(
+            await saver.SaveAsync(track, text, LyricsOrigin.Download, otherVersion, replace, cancellationToken),
+            otherVersion);
+    }
+
     private static LyricsDownloadResult ToResult(LyricsSaveOutcome outcome, bool otherVersion)
     {
         return new LyricsDownloadResult(
@@ -154,7 +235,7 @@ internal sealed class LyricsDownloader(
             last = await lrclib.GetAsync(plan.Query, cancellationToken);
             if (Ask(last, plan.Query, seen, ref instrumental) is { } result)
             {
-                return result;
+                return result with { Seen = seen };
             }
         }
 
@@ -163,7 +244,7 @@ internal sealed class LyricsDownloader(
             last = await lrclib.SearchAsync(query, cancellationToken);
             if (Ask(last, query, seen, ref instrumental) is { } result)
             {
-                return result;
+                return result with { Seen = seen };
             }
         }
 
@@ -176,17 +257,17 @@ internal sealed class LyricsDownloader(
                 : last;
             if (Ask(named, plan.Query, seen, ref instrumental) is { } result)
             {
-                return result;
+                return result with { Seen = seen };
             }
         }
 
         if (instrumental)
         {
-            return new LookupResult(last, null, OtherVersion: false, Instrumental: true);
+            return new LookupResult(last, null, OtherVersion: false, Instrumental: true) { Seen = seen };
         }
 
         LrclibRecord? other = LrclibMatcher.ChooseOtherVersion(seen, plan.Query, plan.Names);
-        return new LookupResult(last, other, OtherVersion: other is not null, Instrumental: false);
+        return new LookupResult(last, other, OtherVersion: other is not null, Instrumental: false) { Seen = seen };
 
         LookupResult? Ask(
             LrclibResponse response,
@@ -230,5 +311,11 @@ internal sealed class LyricsDownloader(
         LrclibResponse Response,
         LrclibRecord? Record,
         bool OtherVersion,
-        bool Instrumental);
+        bool Instrumental)
+    {
+        /// <summary>
+        /// All tracks LRCLIB answered with during the lookup.
+        /// </summary>
+        public IReadOnlyList<LrclibRecord> Seen { get; init; } = [];
+    }
 }
