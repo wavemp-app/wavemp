@@ -173,9 +173,10 @@ public class SongAnalyzerTests
             "Song.flac",
             SyntheticSound.Bursts(60, _lines.Select(line => line + 8)));
         GivenTrack(audio, null);
-        _lyrics.GetAsync(_trackId, Arg.Any<CancellationToken>()).Returns(LyricsResult.Found(new Lyrics.Documents.TrackLyrics(
+        var ownLyrics = new Lyrics.Documents.TrackLyrics(
             Lyrics.Parsers.LrcParser.Parse(Lrc(_lines)),
-            Lyrics.Documents.LyricsSource.File)));
+            Lyrics.Documents.LyricsSource.File);
+        _lyrics.GetAsync(_trackId, Arg.Any<CancellationToken>()).Returns(LyricsResult.Found(ownLyrics));
 
         await CreateAnalyzer().AnalyzeAsync(_trackId);
 

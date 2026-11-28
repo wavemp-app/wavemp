@@ -38,7 +38,8 @@ public sealed record FileSongSegment(
 /// The result of a correction.
 /// </summary>
 /// <param name="Status">Whether it was saved.</param>
-/// <param name="Segments">The song segments of the track after the correction, for <see cref="SongSegmentUpdateStatus.Saved"/>.</param>
+/// <param name="Segments">The song segments of the track after the correction, for
+/// <see cref="SongSegmentUpdateStatus.Saved"/>.</param>
 /// <param name="InvalidField">The field that is out of range, for <see cref="SongSegmentUpdateStatus.Invalid"/>:
 /// <c>startMilliseconds</c> or <c>endMilliseconds</c>.</param>
 /// <param name="Minimum">The smallest allowed value of the invalid field.</param>

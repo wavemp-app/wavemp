@@ -48,8 +48,8 @@ public static class LyricsAligner
     private const int After = 20;
 
     /// <summary>
-    /// Aligns the lines with the file; <c>null</c> without enough lines, without onsets or if the file has the length of
-    /// the recording of the lyrics.
+    /// Aligns the lines with the file; <c>null</c> without enough lines, without onsets or if the file has the length
+    /// of the recording of the lyrics.
     /// </summary>
     /// <param name="features">The sound of the file.</param>
     /// <param name="lineStarts">When the lines start in the recording of the lyrics.</param>

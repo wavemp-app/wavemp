@@ -9,7 +9,10 @@ namespace WaveMP.Core.Analysis.Decoding;
 /// <param name="Status">Whether the sound was read, the file has none or it could not be read.</param>
 /// <param name="Features">The features of the sound; <c>null</c> unless it was read.</param>
 /// <param name="LoudnessLufs">Integrated loudness in LUFS (EBU R 128); <c>null</c> if it could not be measured.</param>
-public sealed record SoundReading(SongAnalysisStatus Status, SoundFeatures? Features = null, double? LoudnessLufs = null)
+public sealed record SoundReading(
+    SongAnalysisStatus Status,
+    SoundFeatures? Features = null,
+    double? LoudnessLufs = null)
 {
     public static SoundReading NoSound { get; } = new(SongAnalysisStatus.NoSound);
 
