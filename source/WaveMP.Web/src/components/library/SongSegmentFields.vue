@@ -351,11 +351,17 @@ async function togglePreview(kind: SongSegmentKind, edge: Edge): Promise<void> {
         })
         element.addEventListener('timeupdate', onPreviewTime)
         element.addEventListener('ended', stopPreview)
-        previewSlot.set(
+        const slot = previewSlot
+        slot.set(
             playback.streamUrl,
             playback.method === 'Transcode' || playback.protocol === 'Hls',
             stopPreview,
         )
+        // A stream attaches asynchronously and would drop a play from before.
+        if (!(await slot.ready()) || previewElement !== element) {
+            return
+        }
+
         await element.play()
     } catch {
         stopPreview()

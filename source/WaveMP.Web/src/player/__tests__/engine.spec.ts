@@ -546,6 +546,67 @@ describe('AudioEngine', () => {
         expect(s.events.error).toHaveBeenCalledOnce()
     })
 
+    it('plays an HLS stream only once it is attached', async () => {
+        // The previous track is still on the deck while the stream of the next one attaches.
+        s.engine.load({ url: '/a', gain: 1 })
+        s.engine.load({ url: '/b.m3u8', gain: 1, hls: true })
+
+        expect(s.decks[0]!.src).toBe('')
+        const playing = s.engine.play()
+        await flush()
+        expect(s.decks[0]!.play).not.toHaveBeenCalled()
+
+        await s.hls.complete(0)
+        await playing
+
+        expect(s.decks[0]!.play).toHaveBeenCalledOnce()
+        expect(s.events.error).not.toHaveBeenCalled()
+    })
+
+    it('does not play an HLS stream that attached after a pause or failed to attach', async () => {
+        s.engine.load({ url: '/a.m3u8', gain: 1, hls: true })
+        const paused = s.engine.play()
+        s.engine.pause()
+        await s.hls.complete(0)
+        await paused
+
+        s.engine.load({ url: '/b.m3u8', gain: 1, hls: true })
+        const failed = s.engine.play()
+        s.hls.attached[1]!.reject(new Error('no HLS'))
+        await failed
+
+        expect(s.decks[0]!.play).not.toHaveBeenCalled()
+        expect(s.events.error).toHaveBeenCalledOnce()
+    })
+
+    it('plays the HLS stream that replaced the one it waited for', async () => {
+        s.engine.load({ url: '/a.m3u8', gain: 1, hls: true })
+        const playing = s.engine.play()
+        s.engine.load({ url: '/b.m3u8', gain: 1, hls: true })
+        await s.hls.complete(0)
+        expect(s.decks[0]!.play).not.toHaveBeenCalled()
+
+        await s.hls.complete(1)
+        await playing
+
+        expect(s.decks[0]!.play).toHaveBeenCalledOnce()
+        expect(s.hls.attached[0]!.destroy).toHaveBeenCalledOnce()
+    })
+
+    it('takes over a prepared HLS stream once it is attached', async () => {
+        s.engine.load({ url: '/a', gain: 1 })
+        await s.engine.play()
+        s.engine.prepare({ url: '/b.m3u8', gain: 1, hls: true })
+
+        s.decks[0]!.end()
+        expect(s.events.advanced).toHaveBeenCalledOnce()
+        expect(s.decks[1]!.play).not.toHaveBeenCalled()
+
+        await s.hls.complete(0)
+        await flush()
+        expect(s.decks[1]!.play).toHaveBeenCalledOnce()
+    })
+
     it('stays paused when paused while the audio context resumes', async () => {
         s = setup(true)
         let resume: () => void = () => undefined

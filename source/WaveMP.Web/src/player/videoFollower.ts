@@ -53,7 +53,6 @@ export interface VideoFollowerEvents {
     diagnostics?(snapshot: VideoDiagnosticsSnapshot): void
 }
 
-/** The source of a video. */
 /**
  * Where the video is for a position of the audio the engine plays, and back: the same position
  * while the engine plays the sound of the video itself, otherwise the position of the video that
@@ -74,6 +73,7 @@ export function offsetMapping(offset: number): VideoMapping {
     }
 }
 
+/** The source of a video. */
 export interface VideoFollowerSource {
     readonly url: string
     /** Whether the URL is an HLS master playlist instead of a file. */

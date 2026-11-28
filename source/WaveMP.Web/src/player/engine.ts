@@ -347,8 +347,14 @@ export class AudioEngine {
             }
         }
 
+        // An HLS stream that still attaches would drop the play once it sets the src of the element.
+        const deck = this.deck
+        if (deck.slot.pending && !(await this.sourceAttached(deck))) {
+            return
+        }
+
         try {
-            await this.deck.audio.play()
+            await deck.audio.play()
         } catch (error) {
             // An interrupted play (pause or new source meanwhile) is no error.
             if (!(error instanceof DOMException && error.name === 'AbortError')) {
@@ -647,6 +653,32 @@ export class AudioEngine {
         return typeof end === 'number' && end > 0 && (file === 0 || end < file) ? end : file
     }
 
+    /**
+     * Waits until the source of a deck is on its element (an HLS stream attaches asynchronously):
+     * true when the deck should play it now, false when the stream failed, the engine should no
+     * longer play or the deck is no longer the current one (a takeover plays the new one itself).
+     */
+    private async sourceAttached(deck: Deck): Promise<boolean> {
+        const attached = await deck.slot.ready()
+        return attached && this.wantsPlay && deck === this.deck && deck.source !== null
+    }
+
+    /**
+     * Plays the deck that just became the current one: at once when its source is on the element
+     * (gapless), otherwise once its stream is attached.
+     */
+    private playCurrentDeck(deck: Deck): void {
+        const play = (): void => {
+            void deck.audio.play().catch((error: unknown) => this.events.error?.(error))
+        }
+        if (!deck.slot.pending) {
+            play()
+            return
+        }
+
+        void this.sourceAttached(deck).then((attached) => attached && play())
+    }
+
     /** Ends a running switch of the source; the deck it loaded is freed. */
     private cancelSwitch(): void {
         if (!this.switching) {
@@ -915,14 +947,13 @@ export class AudioEngine {
         const crossfade = ended ? 0 : Math.min(this.preparedCrossfade(), Math.max(0, remaining))
         this.current = 1 - this.current
         this.prepared = null
-        const audio = this.deck.audio
         if (crossfade >= minimumCrossfade) {
             this.startCrossfade(previous, crossfade)
         } else {
             this.setFade(this.deck, 1)
         }
 
-        void audio.play().catch((error: unknown) => this.events.error?.(error))
+        this.playCurrentDeck(this.deck)
         previous.source = null
         if (ended) {
             this.unload(previous)
